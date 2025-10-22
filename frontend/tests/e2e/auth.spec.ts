@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { apiEndpoint } from './config';
 
 /**
  * Test E2E: Authentification complète (Frontend + Backend)
@@ -121,7 +122,7 @@ test.describe('Authentication Flow', () => {
 test.describe('Role-Based Access', () => {
   test('should redirect Syndic to syndic dashboard', async ({ page }) => {
     // Créer un utilisateur Syndic via l'API backend
-    const response = await page.request.post('http://127.0.0.1:8080/api/v1/auth/register', {
+    const response = await page.request.post(apiEndpoint('/api/v1/auth/register'), {
       data: {
         email: `syndic-${Date.now()}@test.com`,
         password: 'test123',
@@ -146,7 +147,7 @@ test.describe('Role-Based Access', () => {
 
   test('should redirect Accountant to accountant dashboard', async ({ page }) => {
     // Créer un utilisateur Comptable
-    const response = await page.request.post('http://127.0.0.1:8080/api/v1/auth/register', {
+    const response = await page.request.post(apiEndpoint('/api/v1/auth/register'), {
       data: {
         email: `accountant-${Date.now()}@test.com`,
         password: 'test123',

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { authStore } from '../../stores/auth';
+  import { apiEndpoint } from '../../lib/config';
 
   interface Stats {
     totalOrganizations: number;
@@ -46,7 +47,7 @@
     seedError = '';
 
     try {
-      const response = await fetch('http://127.0.0.1:8080/api/v1/seed/demo', {
+      const response = await fetch(apiEndpoint('/api/v1/seed/demo'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${$authStore.token}`,
@@ -82,7 +83,7 @@
     seedError = '';
 
     try {
-      const response = await fetch('http://127.0.0.1:8080/api/v1/seed/clear', {
+      const response = await fetch(apiEndpoint('/api/v1/seed/clear'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${$authStore.token}`,

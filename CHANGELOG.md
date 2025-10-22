@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - API Configuration Centralization (2025-10-22)
+
+#### Frontend (Astro + Svelte)
+
+- **Centralized API Configuration** (`src/lib/config.ts`)
+  - Created configuration module that reads API URL from environment variables
+  - `API_URL` constant with fallback to `http://127.0.0.1:8080` for development
+  - `apiEndpoint(path)` helper function for constructing API endpoints
+  - Supports SSR (Server-Side Rendering) with safe environment variable access
+
+- **Environment Variables**
+  - `.env` file with `PUBLIC_API_URL` variable
+  - `.env.example` template for documentation
+  - Production-ready: Change `PUBLIC_API_URL` to configure backend URL
+
+- **Removed Hardcoded URLs**
+  - `LoginForm.svelte` - Now uses `apiEndpoint('/api/v1/auth/login')`
+  - `AdminDashboard.svelte` - Uses `apiEndpoint()` for seed endpoints
+  - `BuildingList.svelte` - Removed local API_URL constant, uses `apiEndpoint()`
+  - `sync.ts` - Reads from `API_URL` from config module
+  - E2E tests - Created `tests/e2e/config.ts` with test-specific API configuration
+
+- **Benefits**
+  - Single source of truth for API URL configuration
+  - Easy deployment to different environments (dev, staging, prod)
+  - No code changes needed for deployment
+  - Supports environment-specific configuration
+
+**Migration Guide:**
+- Development: No changes needed (defaults to http://127.0.0.1:8080)
+- Production: Set `PUBLIC_API_URL=https://api.your-domain.com` in `.env`
+- Docker: Pass `PUBLIC_API_URL` as environment variable
+
 ### Added - Database Seeding System (2025-10-22)
 
 #### Backend (Rust/Actix-web)

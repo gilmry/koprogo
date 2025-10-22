@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { apiEndpoint } from './config';
 
 /**
  * Test E2E: Dashboards par rôle
@@ -15,7 +16,7 @@ test.describe('Syndic Dashboard', () => {
     await page.goto('/login');
 
     // Créer un utilisateur syndic
-    const response = await page.request.post('http://127.0.0.1:8080/api/v1/auth/register', {
+    const response = await page.request.post(apiEndpoint('/api/v1/auth/register'), {
       data: {
         email: `syndic-${Date.now()}@test.com`,
         password: 'test123',
@@ -74,7 +75,7 @@ test.describe('Accountant Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
 
-    const response = await page.request.post('http://127.0.0.1:8080/api/v1/auth/register', {
+    const response = await page.request.post(apiEndpoint('/api/v1/auth/register'), {
       data: {
         email: `accountant-${Date.now()}@test.com`,
         password: 'test123',
@@ -108,7 +109,7 @@ test.describe('Owner Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
 
-    const response = await page.request.post('http://127.0.0.1:8080/api/v1/auth/register', {
+    const response = await page.request.post(apiEndpoint('/api/v1/auth/register'), {
       data: {
         email: `owner-${Date.now()}@test.com`,
         password: 'test123',
@@ -145,7 +146,7 @@ test.describe('SuperAdmin Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
 
-    const response = await page.request.post('http://127.0.0.1:8080/api/v1/auth/register', {
+    const response = await page.request.post(apiEndpoint('/api/v1/auth/register'), {
       data: {
         email: `admin-${Date.now()}@test.com`,
         password: 'test123',

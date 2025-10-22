@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { apiEndpoint } from '../lib/config';
 
   interface Building {
     id: string;
@@ -16,8 +17,6 @@
   let loading = true;
   let error = '';
   let showForm = false;
-
-  const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
   let newBuilding = {
     name: '',
@@ -36,7 +35,7 @@
   async function loadBuildings() {
     try {
       loading = true;
-      const response = await fetch(`${API_URL}/buildings`);
+      const response = await fetch(apiEndpoint('/api/v1/buildings'));
       if (!response.ok) throw new Error('Failed to load buildings');
       buildings = await response.json();
       error = '';
@@ -50,7 +49,7 @@
   async function createBuilding(e: Event) {
     e.preventDefault();
     try {
-      const response = await fetch(`${API_URL}/buildings`, {
+      const response = await fetch(apiEndpoint('/api/v1/buildings'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newBuilding)

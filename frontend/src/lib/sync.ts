@@ -1,8 +1,9 @@
 // Synchronization service for offline/online data sync
 import { localDB } from './db';
 import type { User, Building, Owner, Unit, Expense } from './types';
+import { API_URL } from './config';
 
-const API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
+const API_BASE_URL = `${API_URL}/api/v1`;
 
 export class SyncService {
   private isOnline: boolean = typeof navigator !== 'undefined' ? navigator.onLine : false;
