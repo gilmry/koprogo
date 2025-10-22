@@ -1,14 +1,10 @@
-mod application;
-mod domain;
-mod infrastructure;
-
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, HttpServer};
-use application::use_cases::*;
 use dotenv::dotenv;
 use env_logger::Env;
-use infrastructure::database::*;
-use infrastructure::web::{configure_routes, AppState};
+use koprogo_api::application::use_cases::*;
+use koprogo_api::infrastructure::database::*;
+use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use std::env;
 use std::sync::Arc;
 
@@ -18,6 +14,7 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "super-secret-key-change-in-production".to_string());
     let server_host = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let server_port = env::var("SERVER_PORT")
         .unwrap_or_else(|_| "8080".to_string())
@@ -35,18 +32,21 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to run migrations");
 
     // Initialize repositories
+    let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
     let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
     let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
 
     // Initialize use cases
+    let auth_use_cases = AuthUseCases::new(user_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo);
     let unit_use_cases = UnitUseCases::new(unit_repo);
     let owner_use_cases = OwnerUseCases::new(owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo);
 
     let app_state = web::Data::new(AppState::new(
+        auth_use_cases,
         building_use_cases,
         unit_use_cases,
         owner_use_cases,

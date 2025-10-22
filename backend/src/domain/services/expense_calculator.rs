@@ -36,7 +36,7 @@ impl ExpenseCalculator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::entities::{ExpenseCategory, PaymentStatus, UnitType};
+    use crate::domain::entities::{ExpenseCategory, UnitType};
     use chrono::Utc;
     use uuid::Uuid;
 

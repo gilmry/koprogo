@@ -2,17 +2,23 @@ use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::domain::entities::Building;
 use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository};
 use serial_test::serial;
-use testcontainers::clients::Cli;
+use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use testcontainers_modules::postgres::Postgres;
 
-#[tokio::test]
-#[serial]
-async fn test_create_and_find_building() {
-    let docker = Cli::default();
-    let postgres_container = docker.run(Postgres::default());
+async fn setup_test_db() -> (PostgresBuildingRepository, ContainerAsync<Postgres>) {
+    let postgres_container = Postgres::default()
+        .start()
+        .await
+        .expect("Failed to start postgres container");
+
+    let host_port = postgres_container
+        .get_host_port_ipv4(5432)
+        .await
+        .expect("Failed to get host port");
+
     let connection_string = format!(
         "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        postgres_container.get_host_port_ipv4(5432)
+        host_port
     );
 
     let pool = create_pool(&connection_string)
@@ -26,6 +32,14 @@ async fn test_create_and_find_building() {
         .expect("Failed to run migrations");
 
     let repo = PostgresBuildingRepository::new(pool);
+
+    (repo, postgres_container)
+}
+
+#[tokio::test]
+#[serial]
+async fn test_create_and_find_building() {
+    let (repo, _container) = setup_test_db().await;
 
     // Create a building
     let building = Building::new(
@@ -74,23 +88,7 @@ async fn test_create_and_find_building() {
 #[tokio::test]
 #[serial]
 async fn test_find_all_buildings() {
-    let docker = Cli::default();
-    let postgres_container = docker.run(Postgres::default());
-    let connection_string = format!(
-        "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        postgres_container.get_host_port_ipv4(5432)
-    );
-
-    let pool = create_pool(&connection_string)
-        .await
-        .expect("Failed to create pool");
-
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
-
-    let repo = PostgresBuildingRepository::new(pool);
+    let (repo, _container) = setup_test_db().await;
 
     // Create multiple buildings
     for i in 1..=3 {

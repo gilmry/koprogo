@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 pub struct CreateBuildingDto {
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub name: String,
@@ -24,7 +24,7 @@ pub struct CreateBuildingDto {
     pub construction_year: Option<i32>,
 }
 
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 pub struct UpdateBuildingDto {
     #[validate(length(min = 1))]
     pub name: String,

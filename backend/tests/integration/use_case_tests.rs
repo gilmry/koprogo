@@ -3,17 +3,23 @@ use koprogo_api::application::use_cases::BuildingUseCases;
 use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository};
 use serial_test::serial;
 use std::sync::Arc;
-use testcontainers::clients::Cli;
+use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use testcontainers_modules::postgres::Postgres;
 
-#[tokio::test]
-#[serial]
-async fn test_building_use_case_create() {
-    let docker = Cli::default();
-    let postgres_container = docker.run(Postgres::default());
+async fn setup_test_use_case() -> (BuildingUseCases, ContainerAsync<Postgres>) {
+    let postgres_container = Postgres::default()
+        .start()
+        .await
+        .expect("Failed to start postgres container");
+
+    let host_port = postgres_container
+        .get_host_port_ipv4(5432)
+        .await
+        .expect("Failed to get host port");
+
     let connection_string = format!(
         "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        postgres_container.get_host_port_ipv4(5432)
+        host_port
     );
 
     let pool = create_pool(&connection_string)
@@ -27,6 +33,14 @@ async fn test_building_use_case_create() {
 
     let repo = Arc::new(PostgresBuildingRepository::new(pool));
     let use_cases = BuildingUseCases::new(repo);
+
+    (use_cases, postgres_container)
+}
+
+#[tokio::test]
+#[serial]
+async fn test_building_use_case_create() {
+    let (use_cases, _container) = setup_test_use_case().await;
 
     let dto = CreateBuildingDto {
         name: "Test Building".to_string(),
@@ -49,24 +63,7 @@ async fn test_building_use_case_create() {
 #[tokio::test]
 #[serial]
 async fn test_building_use_case_validation() {
-    let docker = Cli::default();
-    let postgres_container = docker.run(Postgres::default());
-    let connection_string = format!(
-        "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        postgres_container.get_host_port_ipv4(5432)
-    );
-
-    let pool = create_pool(&connection_string)
-        .await
-        .expect("Failed to create pool");
-
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
-
-    let repo = Arc::new(PostgresBuildingRepository::new(pool));
-    let use_cases = BuildingUseCases::new(repo);
+    let (use_cases, _container) = setup_test_use_case().await;
 
     // Test with empty name (should fail)
     let dto = CreateBuildingDto {

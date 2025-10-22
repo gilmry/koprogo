@@ -5,6 +5,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/v1")
             .service(health_check)
+            // Authentication
+            .service(login)
+            .service(register)
+            .service(get_current_user)
             // Buildings
             .service(create_building)
             .service(list_buildings)

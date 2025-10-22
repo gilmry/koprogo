@@ -1,9 +1,13 @@
 ---
+import '../styles/global.css';
+import Navigation from '../components/Navigation.svelte';
+
 interface Props {
 	title: string;
+	showNav?: boolean;
 }
 
-const { title } = Astro.props;
+const { title, showNav = true } = Astro.props;
 ---
 
 <!doctype html>
@@ -17,27 +21,13 @@ const { title } = Astro.props;
 		<title>{title}</title>
 	</head>
 	<body class="bg-gray-50 min-h-screen">
-		<nav class="bg-white shadow-sm">
-			<div class="container mx-auto px-4 py-4">
-				<div class="flex items-center justify-between">
-					<a href="/" class="text-2xl font-bold text-primary-600">
-						KoproGo
-					</a>
-					<div class="space-x-6">
-						<a href="/" class="text-gray-600 hover:text-primary-600">Accueil</a>
-						<a href="/buildings" class="text-gray-600 hover:text-primary-600">Immeubles</a>
-						<a href="/owners" class="text-gray-600 hover:text-primary-600">Copropriétaires</a>
-						<a href="/expenses" class="text-gray-600 hover:text-primary-600">Charges</a>
-					</div>
-				</div>
-			</div>
-		</nav>
+		{showNav && <Navigation client:load />}
 		<slot />
 		<footer class="bg-white mt-12 border-t">
 			<div class="container mx-auto px-4 py-6 text-center text-gray-600">
-				<p>&copy; 2024 KoproGo - Gestion de Copropriété</p>
+				<p>&copy; 2025 KoproGo - Gestion de Copropriété SaaS</p>
 				<p class="text-sm mt-2">
-					Architecture Hexagonale · Tests Complets · GDPR · ISO 27001
+					Architecture Hexagonale · Rust · Actix-web · PostgreSQL · GDPR · ISO 27001
 				</p>
 			</div>
 		</footer>

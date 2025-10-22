@@ -3,36 +3,52 @@ use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::use_cases::BuildingUseCases;
 use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository};
 use std::sync::Arc;
-use testcontainers::clients::Cli;
+use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use testcontainers_modules::postgres::Postgres;
 
-#[derive(Debug, World)]
+#[derive(World)]
 #[world(init = Self::new)]
 pub struct BuildingWorld {
-    docker: Option<Cli>,
-    postgres_container: Option<testcontainers::Container<'static, Postgres>>,
     use_cases: Option<Arc<BuildingUseCases>>,
     building_dto: Option<CreateBuildingDto>,
     last_result: Option<Result<String, String>>,
+    _container: Option<ContainerAsync<Postgres>>,
+}
+
+impl std::fmt::Debug for BuildingWorld {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BuildingWorld")
+            .field("use_cases", &"<BuildingUseCases>")
+            .field("building_dto", &self.building_dto)
+            .field("last_result", &self.last_result)
+            .finish()
+    }
 }
 
 impl BuildingWorld {
-    async fn new() -> Result<Self, Box<dyn std::error::Error>> {
-        Ok(Self {
-            docker: None,
-            postgres_container: None,
+    async fn new() -> Self {
+        Self {
             use_cases: None,
             building_dto: None,
             last_result: None,
-        })
+            _container: None,
+        }
     }
 
     async fn setup_database(&mut self) {
-        let docker = Cli::default();
-        let postgres_container = docker.run(Postgres::default());
+        let postgres_container = Postgres::default()
+            .start()
+            .await
+            .expect("Failed to start postgres container");
+
+        let host_port = postgres_container
+            .get_host_port_ipv4(5432)
+            .await
+            .expect("Failed to get host port");
+
         let connection_string = format!(
             "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-            postgres_container.get_host_port_ipv4(5432)
+            host_port
         );
 
         let pool = create_pool(&connection_string)
@@ -47,9 +63,8 @@ impl BuildingWorld {
         let repo = Arc::new(PostgresBuildingRepository::new(pool));
         let use_cases = BuildingUseCases::new(repo);
 
-        self.docker = Some(docker);
-        self.postgres_container = Some(postgres_container);
         self.use_cases = Some(Arc::new(use_cases));
+        self._container = Some(postgres_container);
     }
 }
 

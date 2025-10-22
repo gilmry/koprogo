@@ -5,19 +5,19 @@ edition = "2021"
 
 [dependencies]
 # Web framework
-actix-web = "4.9"
+actix-web = "4.11"
 actix-cors = "0.7"
-actix-rt = "2.10"
+actix-rt = "2.11"
 
 # Async runtime
-tokio = { version = "1.41", features = ["macros", "rt-multi-thread", "time"] }
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "time"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Database
-sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "migrate"] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "migrate"] }
 
 # Configuration
 dotenv = "0.15"
@@ -44,8 +44,7 @@ anyhow = "1.0"
 # Unit & Integration tests
 mockall = "0.13"
 tokio-test = "0.4"
-testcontainers = "0.23"
-testcontainers-modules = { version = "0.10", features = ["postgres"] }
+testcontainers-modules = { version = "0.11", features = ["postgres"] }
 
 # BDD tests
 cucumber = { version = "0.21", features = ["macros"] }

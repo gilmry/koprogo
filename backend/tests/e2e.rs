@@ -5,22 +5,23 @@ use koprogo_api::infrastructure::database::{create_pool, *};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use serial_test::serial;
 use std::sync::Arc;
-use testcontainers::clients::Cli;
+use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use testcontainers_modules::postgres::Postgres;
 
-async fn setup_test_app() -> (
-    impl actix_web::dev::Service<
-        actix_http::Request,
-        Response = actix_web::dev::ServiceResponse,
-        Error = actix_web::Error,
-    >,
-    testcontainers::Container<'static, Postgres>,
-) {
-    let docker = Cli::default();
-    let postgres_container = docker.run(Postgres::default());
+async fn setup_test_db() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres>) {
+    let postgres_container = Postgres::default()
+        .start()
+        .await
+        .expect("Failed to start postgres container");
+
+    let host_port = postgres_container
+        .get_host_port_ipv4(5432)
+        .await
+        .expect("Failed to get host port");
+
     let connection_string = format!(
         "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        postgres_container.get_host_port_ipv4(5432)
+        host_port
     );
 
     let pool = create_pool(&connection_string)
@@ -49,20 +50,20 @@ async fn setup_test_app() -> (
         expense_use_cases,
     ));
 
+    (app_state, postgres_container)
+}
+
+#[actix_web::test]
+#[serial]
+async fn test_health_endpoint() {
+    let (app_state, _container) = setup_test_db().await;
+
     let app = test::init_service(
         App::new()
             .app_data(app_state)
             .configure(configure_routes),
     )
     .await;
-
-    (app, postgres_container)
-}
-
-#[actix_web::test]
-#[serial]
-async fn test_health_endpoint() {
-    let (app, _container) = setup_test_app().await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/health")
@@ -75,7 +76,14 @@ async fn test_health_endpoint() {
 #[actix_web::test]
 #[serial]
 async fn test_create_building_endpoint() {
-    let (app, _container) = setup_test_app().await;
+    let (app_state, _container) = setup_test_db().await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state)
+            .configure(configure_routes),
+    )
+    .await;
 
     let dto = CreateBuildingDto {
         name: "Test Building".to_string(),
@@ -99,7 +107,14 @@ async fn test_create_building_endpoint() {
 #[actix_web::test]
 #[serial]
 async fn test_list_buildings_endpoint() {
-    let (app, _container) = setup_test_app().await;
+    let (app_state, _container) = setup_test_db().await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state)
+            .configure(configure_routes),
+    )
+    .await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/buildings")
@@ -112,7 +127,14 @@ async fn test_list_buildings_endpoint() {
 #[actix_web::test]
 #[serial]
 async fn test_create_building_validation_fails() {
-    let (app, _container) = setup_test_app().await;
+    let (app_state, _container) = setup_test_db().await;
+
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state)
+            .configure(configure_routes),
+    )
+    .await;
 
     let dto = CreateBuildingDto {
         name: "".to_string(), // Invalid: empty name
