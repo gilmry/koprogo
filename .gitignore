@@ -1,6 +1,7 @@
 # Rust
 target/
-Cargo.lock
+# Cargo.lock should be committed for applications (not libraries)
+# Cargo.lock
 *.rs.bk
 *.pdb
 
@@ -10,6 +11,7 @@ dist/
 .astro/
 .env
 .env.local
+# package-lock.json should be committed for reproducible builds
 
 # Database
 *.db
