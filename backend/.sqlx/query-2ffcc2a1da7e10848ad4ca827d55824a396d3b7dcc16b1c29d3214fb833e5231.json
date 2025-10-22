@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM owners",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "2ffcc2a1da7e10848ad4ca827d55824a396d3b7dcc16b1c29d3214fb833e5231"
+}

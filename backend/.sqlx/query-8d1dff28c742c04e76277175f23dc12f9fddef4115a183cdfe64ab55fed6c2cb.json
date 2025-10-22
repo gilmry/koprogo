@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM buildings",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "8d1dff28c742c04e76277175f23dc12f9fddef4115a183cdfe64ab55fed6c2cb"
+}
