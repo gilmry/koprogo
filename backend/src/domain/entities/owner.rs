@@ -124,7 +124,8 @@ mod tests {
             "Paris".to_string(),
             "75001".to_string(),
             "France".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         let result = owner.update_contact(
             "new.email@example.com".to_string(),

@@ -13,7 +13,10 @@ impl BuildingUseCases {
         Self { repository }
     }
 
-    pub async fn create_building(&self, dto: CreateBuildingDto) -> Result<BuildingResponseDto, String> {
+    pub async fn create_building(
+        &self,
+        dto: CreateBuildingDto,
+    ) -> Result<BuildingResponseDto, String> {
         let building = Building::new(
             dto.name,
             dto.address,
@@ -99,9 +102,7 @@ mod tests {
     async fn test_create_building_success() {
         let mut mock_repo = MockBuildingRepo::new();
 
-        mock_repo
-            .expect_create()
-            .returning(|b| Ok(b.clone()));
+        mock_repo.expect_create().returning(|b| Ok(b.clone()));
 
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 

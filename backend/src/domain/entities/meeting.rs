@@ -5,8 +5,8 @@ use uuid::Uuid;
 /// Type d'assemblée générale
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum MeetingType {
-    Ordinary,       // Assemblée Générale Ordinaire (AGO)
-    Extraordinary,  // Assemblée Générale Extraordinaire (AGE)
+    Ordinary,      // Assemblée Générale Ordinaire (AGO)
+    Extraordinary, // Assemblée Générale Extraordinaire (AGE)
 }
 
 /// Statut de l'assemblée
@@ -129,7 +129,8 @@ mod tests {
             None,
             future_date,
             "Salle des fêtes".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         let result = meeting.add_agenda_item("Approbation des comptes".to_string());
         assert!(result.is_ok());
@@ -148,7 +149,8 @@ mod tests {
             None,
             future_date,
             "Salle des fêtes".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         meeting.complete(45);
         assert_eq!(meeting.status, MeetingStatus::Completed);

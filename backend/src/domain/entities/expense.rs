@@ -5,13 +5,13 @@ use uuid::Uuid;
 /// Catégorie de charges
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ExpenseCategory {
-    Maintenance,      // Entretien
-    Repairs,          // Réparations
-    Insurance,        // Assurance
-    Utilities,        // Charges courantes (eau, électricité)
-    Cleaning,         // Nettoyage
-    Administration,   // Administration
-    Works,            // Travaux
+    Maintenance,    // Entretien
+    Repairs,        // Réparations
+    Insurance,      // Assurance
+    Utilities,      // Charges courantes (eau, électricité)
+    Cleaning,       // Nettoyage
+    Administration, // Administration
+    Works,          // Travaux
     Other,
 }
 
@@ -143,7 +143,8 @@ mod tests {
             Utc::now(),
             None,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(!expense.is_paid());
         expense.mark_as_paid();

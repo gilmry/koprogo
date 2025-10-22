@@ -1,7 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use koprogo_api::domain::entities::{Building, Unit, UnitType, Owner, Expense, ExpenseCategory};
-use koprogo_api::domain::services::ExpenseCalculator;
 use chrono::Utc;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use koprogo_api::domain::entities::{Building, Expense, ExpenseCategory, Owner, Unit, UnitType};
+use koprogo_api::domain::services::ExpenseCalculator;
 use uuid::Uuid;
 
 fn benchmark_building_creation(c: &mut Criterion) {
@@ -110,9 +110,7 @@ fn benchmark_unit_share_calculation(c: &mut Criterion) {
     .unwrap();
 
     c.bench_function("calculate_unit_share", |b| {
-        b.iter(|| {
-            ExpenseCalculator::calculate_unit_share(black_box(&expense), black_box(&unit))
-        });
+        b.iter(|| ExpenseCalculator::calculate_unit_share(black_box(&expense), black_box(&unit)));
     });
 }
 

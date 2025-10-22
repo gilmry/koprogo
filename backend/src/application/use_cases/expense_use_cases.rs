@@ -14,7 +14,10 @@ impl ExpenseUseCases {
         Self { repository }
     }
 
-    pub async fn create_expense(&self, dto: CreateExpenseDto) -> Result<ExpenseResponseDto, String> {
+    pub async fn create_expense(
+        &self,
+        dto: CreateExpenseDto,
+    ) -> Result<ExpenseResponseDto, String> {
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
 
@@ -41,7 +44,10 @@ impl ExpenseUseCases {
         Ok(expense.map(|e| self.to_response_dto(&e)))
     }
 
-    pub async fn list_expenses_by_building(&self, building_id: Uuid) -> Result<Vec<ExpenseResponseDto>, String> {
+    pub async fn list_expenses_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<ExpenseResponseDto>, String> {
         let expenses = self.repository.find_by_building(building_id).await?;
         Ok(expenses.iter().map(|e| self.to_response_dto(e)).collect())
     }

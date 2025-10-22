@@ -21,7 +21,7 @@ pub struct Unit {
     pub unit_type: UnitType,
     pub floor: Option<i32>,
     pub surface_area: f64, // en m²
-    pub quota: f64, // Quote-part en millièmes
+    pub quota: f64,        // Quote-part en millièmes
     pub owner_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -119,7 +119,8 @@ mod tests {
             Some(1),
             75.5,
             50.0,
-        ).unwrap();
+        )
+        .unwrap();
 
         let owner_id = Uuid::new_v4();
         unit.assign_owner(owner_id);

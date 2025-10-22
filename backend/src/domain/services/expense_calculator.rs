@@ -16,12 +16,20 @@ impl ExpenseCalculator {
 
     /// Calcule le montant total payé
     pub fn calculate_paid_expenses(expenses: &[Expense]) -> f64 {
-        expenses.iter().filter(|e| e.is_paid()).map(|e| e.amount).sum()
+        expenses
+            .iter()
+            .filter(|e| e.is_paid())
+            .map(|e| e.amount)
+            .sum()
     }
 
     /// Calcule le montant total impayé
     pub fn calculate_unpaid_expenses(expenses: &[Expense]) -> f64 {
-        expenses.iter().filter(|e| !e.is_paid()).map(|e| e.amount).sum()
+        expenses
+            .iter()
+            .filter(|e| !e.is_paid())
+            .map(|e| e.amount)
+            .sum()
     }
 }
 
@@ -44,7 +52,8 @@ mod tests {
             Utc::now(),
             None,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let unit = Unit::new(
             building_id,
@@ -53,7 +62,8 @@ mod tests {
             Some(1),
             75.0,
             50.0, // 50/1000 = 5%
-        ).unwrap();
+        )
+        .unwrap();
 
         let share = ExpenseCalculator::calculate_unit_share(&expense, &unit);
         assert_eq!(share, 50.0); // 5% de 1000€ = 50€
@@ -72,7 +82,8 @@ mod tests {
                 Utc::now(),
                 None,
                 None,
-            ).unwrap(),
+            )
+            .unwrap(),
             Expense::new(
                 building_id,
                 ExpenseCategory::Repairs,
@@ -81,7 +92,8 @@ mod tests {
                 Utc::now(),
                 None,
                 None,
-            ).unwrap(),
+            )
+            .unwrap(),
         ];
 
         let total = ExpenseCalculator::calculate_total_expenses(&expenses);
@@ -100,7 +112,8 @@ mod tests {
             Utc::now(),
             None,
             None,
-        ).unwrap();
+        )
+        .unwrap();
         expense1.mark_as_paid();
 
         let expense2 = Expense::new(
@@ -111,7 +124,8 @@ mod tests {
             Utc::now(),
             None,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let expenses = vec![expense1, expense2];
 

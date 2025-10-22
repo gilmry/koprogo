@@ -16,7 +16,11 @@ pub async fn create_expense(
         }));
     }
 
-    match state.expense_use_cases.create_expense(dto.into_inner()).await {
+    match state
+        .expense_use_cases
+        .create_expense(dto.into_inner())
+        .await
+    {
         Ok(expense) => HttpResponse::Created().json(expense),
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": err
@@ -42,7 +46,11 @@ pub async fn list_expenses_by_building(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match state.expense_use_cases.list_expenses_by_building(*building_id).await {
+    match state
+        .expense_use_cases
+        .list_expenses_by_building(*building_id)
+        .await
+    {
         Ok(expenses) => HttpResponse::Ok().json(expenses),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
@@ -51,10 +59,7 @@ pub async fn list_expenses_by_building(
 }
 
 #[put("/expenses/{id}/mark-paid")]
-pub async fn mark_expense_paid(
-    state: web::Data<AppState>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn mark_expense_paid(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
     match state.expense_use_cases.mark_as_paid(*id).await {
         Ok(expense) => HttpResponse::Ok().json(expense),
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({

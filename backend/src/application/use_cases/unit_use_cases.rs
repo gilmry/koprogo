@@ -35,12 +35,19 @@ impl UnitUseCases {
         Ok(unit.map(|u| self.to_response_dto(&u)))
     }
 
-    pub async fn list_units_by_building(&self, building_id: Uuid) -> Result<Vec<UnitResponseDto>, String> {
+    pub async fn list_units_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<UnitResponseDto>, String> {
         let units = self.repository.find_by_building(building_id).await?;
         Ok(units.iter().map(|u| self.to_response_dto(u)).collect())
     }
 
-    pub async fn assign_owner(&self, unit_id: Uuid, owner_id: Uuid) -> Result<UnitResponseDto, String> {
+    pub async fn assign_owner(
+        &self,
+        unit_id: Uuid,
+        owner_id: Uuid,
+    ) -> Result<UnitResponseDto, String> {
         let mut unit = self
             .repository
             .find_by_id(unit_id)

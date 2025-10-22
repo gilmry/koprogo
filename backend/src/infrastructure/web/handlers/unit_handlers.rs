@@ -42,7 +42,11 @@ pub async fn list_units_by_building(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match state.unit_use_cases.list_units_by_building(*building_id).await {
+    match state
+        .unit_use_cases
+        .list_units_by_building(*building_id)
+        .await
+    {
         Ok(units) => HttpResponse::Ok().json(units),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err

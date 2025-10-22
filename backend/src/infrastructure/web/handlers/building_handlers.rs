@@ -16,7 +16,11 @@ pub async fn create_building(
         }));
     }
 
-    match state.building_use_cases.create_building(dto.into_inner()).await {
+    match state
+        .building_use_cases
+        .create_building(dto.into_inner())
+        .await
+    {
         Ok(building) => HttpResponse::Created().json(building),
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": err
@@ -60,7 +64,11 @@ pub async fn update_building(
         }));
     }
 
-    match state.building_use_cases.update_building(*id, dto.into_inner()).await {
+    match state
+        .building_use_cases
+        .update_building(*id, dto.into_inner())
+        .await
+    {
         Ok(building) => HttpResponse::Ok().json(building),
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": err

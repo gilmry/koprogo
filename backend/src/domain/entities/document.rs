@@ -144,7 +144,8 @@ mod tests {
             1024,
             "application/pdf".to_string(),
             uploader_id,
-        ).unwrap();
+        )
+        .unwrap();
 
         let meeting_id = Uuid::new_v4();
         document.link_to_meeting(meeting_id);

@@ -1,5 +1,5 @@
-mod domain;
 mod application;
+mod domain;
 mod infrastructure;
 
 use actix_cors::Cors;
@@ -8,7 +8,7 @@ use application::use_cases::*;
 use dotenv::dotenv;
 use env_logger::Env;
 use infrastructure::database::*;
-use infrastructure::web::{AppState, configure_routes};
+use infrastructure::web::{configure_routes, AppState};
 use std::env;
 use std::sync::Arc;
 

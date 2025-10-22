@@ -58,12 +58,8 @@ async fn given_system(world: &mut BuildingWorld) {
     world.setup_database().await;
 }
 
-#[when(regex = r"^I create a building named \"([^\"]*)\" in \"([^\"]*)\"$")]
-async fn when_create_building(
-    world: &mut BuildingWorld,
-    name: String,
-    city: String,
-) {
+#[when(regex = r#"^I create a building named "([^"]*)" in "([^"]*)"$"#)]
+async fn when_create_building(world: &mut BuildingWorld, name: String, city: String) {
     let dto = CreateBuildingDto {
         name: name.clone(),
         address: "123 Test St".to_string(),
@@ -88,7 +84,7 @@ async fn then_building_created(world: &mut BuildingWorld) {
     assert!(world.last_result.as_ref().unwrap().is_ok());
 }
 
-#[then(regex = r"^the building should be in \"([^\"]*)\"$")]
+#[then(regex = r#"^the building should be in "([^"]*)"$"#)]
 async fn then_building_in_city(world: &mut BuildingWorld, city: String) {
     assert!(world.building_dto.is_some());
     assert_eq!(world.building_dto.as_ref().unwrap().city, city);

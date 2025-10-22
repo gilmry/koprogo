@@ -49,7 +49,13 @@ impl Building {
         })
     }
 
-    pub fn update_info(&mut self, name: String, address: String, city: String, postal_code: String) {
+    pub fn update_info(
+        &mut self,
+        name: String,
+        address: String,
+        city: String,
+        postal_code: String,
+    ) {
         self.name = name;
         self.address = address;
         self.city = city;
@@ -122,7 +128,8 @@ mod tests {
             "France".to_string(),
             10,
             None,
-        ).unwrap();
+        )
+        .unwrap();
 
         let old_updated_at = building.updated_at;
 
