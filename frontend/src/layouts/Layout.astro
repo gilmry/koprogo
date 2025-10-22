@@ -1,0 +1,45 @@
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="KoproGo - Plateforme SaaS de Gestion de Copropriété" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body class="bg-gray-50 min-h-screen">
+		<nav class="bg-white shadow-sm">
+			<div class="container mx-auto px-4 py-4">
+				<div class="flex items-center justify-between">
+					<a href="/" class="text-2xl font-bold text-primary-600">
+						KoproGo
+					</a>
+					<div class="space-x-6">
+						<a href="/" class="text-gray-600 hover:text-primary-600">Accueil</a>
+						<a href="/buildings" class="text-gray-600 hover:text-primary-600">Immeubles</a>
+						<a href="/owners" class="text-gray-600 hover:text-primary-600">Copropriétaires</a>
+						<a href="/expenses" class="text-gray-600 hover:text-primary-600">Charges</a>
+					</div>
+				</div>
+			</div>
+		</nav>
+		<slot />
+		<footer class="bg-white mt-12 border-t">
+			<div class="container mx-auto px-4 py-6 text-center text-gray-600">
+				<p>&copy; 2024 KoproGo - Gestion de Copropriété</p>
+				<p class="text-sm mt-2">
+					Architecture Hexagonale · Tests Complets · GDPR · ISO 27001
+				</p>
+			</div>
+		</footer>
+	</body>
+</html>

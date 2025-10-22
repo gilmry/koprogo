@@ -1,0 +1,49 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BuildingList from '../components/BuildingList.svelte';
+---
+
+<Layout title="KoproGo - Gestion de Copropriété">
+	<main class="container mx-auto px-4 py-8">
+		<div class="text-center mb-12">
+			<h1 class="text-4xl font-bold text-gray-900 mb-4">
+				🏢 KoproGo
+			</h1>
+			<p class="text-xl text-gray-600">
+				Plateforme SaaS de Gestion de Copropriété
+			</p>
+			<p class="text-sm text-gray-500 mt-2">
+				Architecture Hexagonale · Rust · Actix-web · PostgreSQL
+			</p>
+		</div>
+
+		<div class="grid gap-8 md:grid-cols-3 mb-12">
+			<div class="bg-white p-6 rounded-lg shadow-md">
+				<h2 class="text-2xl font-semibold mb-2">⚡ Performance</h2>
+				<p class="text-gray-600">
+					Latence P99 &lt; 5ms<br/>
+					100k req/s throughput
+				</p>
+			</div>
+			<div class="bg-white p-6 rounded-lg shadow-md">
+				<h2 class="text-2xl font-semibold mb-2">🔒 Sécurité</h2>
+				<p class="text-gray-600">
+					Conforme GDPR<br/>
+					ISO 27001 ready
+				</p>
+			</div>
+			<div class="bg-white p-6 rounded-lg shadow-md">
+				<h2 class="text-2xl font-semibold mb-2">🌱 Écologique</h2>
+				<p class="text-gray-600">
+					&lt; 0.5g CO2/requête<br/>
+					Architecture optimisée
+				</p>
+			</div>
+		</div>
+
+		<section class="bg-white rounded-lg shadow-md p-6">
+			<h2 class="text-2xl font-bold mb-6">Immeubles</h2>
+			<BuildingList client:load />
+		</section>
+	</main>
+</Layout>
