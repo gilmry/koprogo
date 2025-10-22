@@ -28,8 +28,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 
 # Create non-root user
-RUN addgroup -g 1000 koprogo && \
-    adduser -u 1000 -G koprogo -s /bin/sh -D koprogo && \
+RUN addgroup -g 10001 koprogo && \
+    adduser -u 10001 -G koprogo -s /bin/sh -D koprogo && \
     chown -R koprogo:koprogo /app
 
 USER koprogo
