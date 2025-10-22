@@ -4,9 +4,12 @@
 
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org)
 [![Actix-web](https://img.shields.io/badge/Actix--web-4.9-blue.svg)](https://actix.rs/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue.svg)](https://www.postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![Astro](https://img.shields.io/badge/Astro-4.0-purple.svg)](https://astro.build/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+![CI Pipeline](https://github.com/gilmry/koprogo/actions/workflows/ci.yml/badge.svg)
+![Security Audit](https://github.com/gilmry/koprogo/actions/workflows/security.yml/badge.svg)
 
 ## 🎯 Vue d'ensemble
 
@@ -250,6 +253,67 @@ cargo bench
 make bench
 ```
 
+## 🔄 CI/CD Pipelines
+
+KoproGo dispose d'une infrastructure CI/CD complète avec GitHub Actions pour garantir la qualité du code et automatiser les déploiements.
+
+### Workflows Automatiques
+
+#### 🚀 CI Pipeline (`.github/workflows/ci.yml`)
+Se déclenche automatiquement sur chaque push et pull request :
+
+**Tests Backend Rust :**
+- ✅ **Lint & Format** : `cargo fmt --check` + `cargo clippy`
+- ✅ **Unit Tests** : Tests unitaires isolés (`cargo test --lib`)
+- ✅ **Integration Tests** : Tests avec PostgreSQL et migrations
+- ✅ **BDD Tests** : Tests Cucumber/Gherkin
+- ✅ **E2E Tests** : Tests complets des endpoints API
+
+**Tests Frontend :**
+- ✅ **TypeScript Check** : Vérification Astro (`astro check`)
+- ✅ **Build** : Compilation du frontend
+- ✅ **Format Check** : Validation Prettier
+
+**Build Final :**
+- ✅ **Release Build** : Compilation optimisée
+- ✅ **Artifacts** : Upload du binaire (7 jours de rétention)
+
+#### 🔒 Security Audit (`.github/workflows/security.yml`)
+Analyse de sécurité automatique :
+
+- 🛡️ **Cargo Audit** : Scan des vulnérabilités Rust
+- 🛡️ **NPM Audit** : Scan des vulnérabilités JavaScript
+- 🛡️ **Dependency Review** : Analyse des dépendances dans les PR
+- 📅 **Planification** : Hebdomadaire (dimanche minuit)
+
+#### 📊 Benchmarks (`.github/workflows/benchmarks.yml`)
+Tests de performance :
+
+- ⚡ **Criterion Benchmarks** : Mesure des performances
+- 📈 **Rapports HTML** : Visualisations détaillées
+- 📦 **Artifacts** : Résultats conservés 30 jours
+- 🎯 **Déclenchement** : Manuel ou planifié (lundi 2h UTC)
+
+### Optimisations
+
+- **Caching** : Cache intelligent de Cargo (registry, index, build) et NPM
+- **Parallélisation** : Tous les tests s'exécutent en parallèle
+- **Services PostgreSQL** : Configuration automatique pour les tests
+- **Migrations** : Application automatique via SQLx
+
+### Surveiller les Workflows
+
+```bash
+# Via GitHub CLI
+gh run list --workflow=ci.yml
+gh run watch
+
+# Ou visitez directement
+# https://github.com/gilmry/koprogo/actions
+```
+
+Voir [.github/workflows/README.md](.github/workflows/README.md) pour la documentation complète.
+
 ## 📊 Performances
 
 ### Objectifs
@@ -396,11 +460,12 @@ make docker-down       # Arrêter Docker
 - [ ] MinIO pour stockage documents
 - [ ] Optimisation < 5ms P99 latency
 
-### Phase 3 - Production 📋
-- [ ] Kubernetes (OVH Cloud)
-- [ ] Terraform IaC
-- [ ] Helm charts
-- [ ] CI/CD GitHub Actions
+### Phase 3 - Production 🚧
+- [x] CI/CD GitHub Actions (Pipelines complètes)
+- [x] Infrastructure as Code (Terraform modules OVH)
+- [x] Helm charts (Kubernetes)
+- [x] Ansible playbooks (K3s, sécurité)
+- [ ] Déploiement production OVH Cloud
 - [ ] Monitoring (Prometheus + Grafana)
 
 ### Phase 4 - Conformité 🔒
