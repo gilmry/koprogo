@@ -1,0 +1,6 @@
+# Backend configuration file
+# Usage: terraform init -backend-config=backend.hcl
+
+# OVH Object Storage credentials for Terraform state
+access_key = "YOUR_OVH_S3_ACCESS_KEY"
+secret_key = "YOUR_OVH_S3_SECRET_KEY"

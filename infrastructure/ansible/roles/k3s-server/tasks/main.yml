@@ -1,0 +1,132 @@
+---
+# K3s Server Role - Install and configure K3s control plane
+
+- name: Check if K3s is already installed
+  stat:
+    path: /usr/local/bin/k3s
+  register: k3s_binary
+
+- name: Download K3s installation script
+  get_url:
+    url: https://get.k3s.io
+    dest: /tmp/k3s_install.sh
+    mode: '0700'
+  when: not k3s_binary.stat.exists
+
+- name: Install K3s server (first control plane)
+  shell: |
+    INSTALL_K3S_VERSION="{{ k3s_version | default('v1.28.5+k3s1') }}" \
+    K3S_TOKEN="{{ k3s_token }}" \
+    INSTALL_K3S_EXEC="server \
+      --cluster-init \
+      --disable traefik \
+      --disable servicelb \
+      --write-kubeconfig-mode 644 \
+      --tls-san {{ ansible_host }} \
+      --tls-san {{ private_ip }} \
+      --node-name {{ inventory_hostname }} \
+      --node-ip {{ private_ip }} \
+      --node-external-ip {{ ansible_host }} \
+      --cluster-cidr {{ k3s_cluster_cidr | default('10.42.0.0/16') }} \
+      --service-cidr {{ k3s_service_cidr | default('10.43.0.0/16') }} \
+      --kube-apiserver-arg='--request-timeout=300s' \
+      --kube-apiserver-arg='--max-requests-inflight=2000' \
+      --kube-controller-manager-arg='--node-monitor-period=5s' \
+      --kube-controller-manager-arg='--node-monitor-grace-period=20s' \
+      --kubelet-arg='--max-pods=250' \
+      --kubelet-arg='--kube-reserved=cpu=500m,memory=1Gi,ephemeral-storage=1Gi' \
+      --kubelet-arg='--system-reserved=cpu=500m,memory=1Gi,ephemeral-storage=1Gi'" \
+    sh /tmp/k3s_install.sh
+  when: not k3s_binary.stat.exists and inventory_hostname == groups['k3s_control_plane'][0]
+  environment:
+    INSTALL_K3S_SKIP_START: "false"
+
+- name: Install K3s server (additional control planes)
+  shell: |
+    INSTALL_K3S_VERSION="{{ k3s_version | default('v1.28.5+k3s1') }}" \
+    K3S_TOKEN="{{ k3s_token }}" \
+    K3S_URL="https://{{ hostvars[groups['k3s_control_plane'][0]]['private_ip'] }}:6443" \
+    INSTALL_K3S_EXEC="server \
+      --disable traefik \
+      --disable servicelb \
+      --write-kubeconfig-mode 644 \
+      --tls-san {{ ansible_host }} \
+      --tls-san {{ private_ip }} \
+      --node-name {{ inventory_hostname }} \
+      --node-ip {{ private_ip }} \
+      --node-external-ip {{ ansible_host }}" \
+    sh /tmp/k3s_install.sh
+  when: not k3s_binary.stat.exists and inventory_hostname != groups['k3s_control_plane'][0]
+  environment:
+    INSTALL_K3S_SKIP_START: "false"
+
+- name: Wait for K3s to be ready
+  wait_for:
+    port: 6443
+    delay: 10
+    timeout: 300
+
+- name: Get K3s node token
+  command: cat /var/lib/rancher/k3s/server/node-token
+  register: k3s_node_token
+  changed_when: false
+  run_once: true
+  delegate_to: "{{ groups['k3s_control_plane'][0] }}"
+
+- name: Save node token to local
+  set_fact:
+    k3s_node_token_value: "{{ k3s_node_token.stdout }}"
+  run_once: true
+  delegate_to: localhost
+
+- name: Ensure K3s service is enabled and started
+  systemd:
+    name: k3s
+    enabled: yes
+    state: started
+
+- name: Create .kube directory for ubuntu user
+  file:
+    path: /home/ubuntu/.kube
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+
+- name: Copy kubeconfig for ubuntu user
+  copy:
+    src: /etc/rancher/k3s/k3s.yaml
+    dest: /home/ubuntu/.kube/config
+    remote_src: yes
+    owner: ubuntu
+    group: ubuntu
+    mode: '0600'
+
+- name: Update kubeconfig server address
+  replace:
+    path: /home/ubuntu/.kube/config
+    regexp: 'https://127.0.0.1:6443'
+    replace: 'https://{{ ansible_host }}:6443'
+
+- name: Fetch kubeconfig to local machine
+  fetch:
+    src: /home/ubuntu/.kube/config
+    dest: "~/.kube/koprogo-{{ environment }}"
+    flat: yes
+  run_once: true
+  delegate_to: "{{ groups['k3s_control_plane'][0] }}"
+
+- name: Label control plane nodes
+  command: kubectl label nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane=true --overwrite
+  delegate_to: "{{ groups['k3s_control_plane'][0] }}"
+  run_once: true
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+- name: Taint control plane nodes (no workloads)
+  command: kubectl taint nodes {{ inventory_hostname }} node-role.kubernetes.io/control-plane=true:NoSchedule --overwrite
+  delegate_to: "{{ groups['k3s_control_plane'][0] }}"
+  run_once: true
+  environment:
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+  when: not allow_workloads_on_control_plane | default(false)
