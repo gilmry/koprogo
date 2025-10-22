@@ -28,6 +28,9 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(create_expense)
             .service(get_expense)
             .service(list_expenses_by_building)
-            .service(mark_expense_paid),
+            .service(mark_expense_paid)
+            // Seed (SuperAdmin only)
+            .service(seed_demo_data)
+            .service(clear_demo_data),
     );
 }

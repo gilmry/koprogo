@@ -5,22 +5,25 @@ import type { User, Building, Owner, Unit, Expense } from './types';
 const API_BASE_URL = 'http://127.0.0.1:8080/api/v1';
 
 export class SyncService {
-  private isOnline: boolean = navigator.onLine;
+  private isOnline: boolean = typeof navigator !== 'undefined' ? navigator.onLine : false;
   private syncInProgress: boolean = false;
   private token: string | null = null;
 
   constructor() {
-    // Listen to online/offline events
-    window.addEventListener('online', () => {
-      console.log('🟢 Application is online');
-      this.isOnline = true;
-      this.sync();
-    });
+    // Only setup event listeners on the client side
+    if (typeof window !== 'undefined') {
+      // Listen to online/offline events
+      window.addEventListener('online', () => {
+        console.log('🟢 Application is online');
+        this.isOnline = true;
+        this.sync();
+      });
 
-    window.addEventListener('offline', () => {
-      console.log('🔴 Application is offline');
-      this.isOnline = false;
-    });
+      window.addEventListener('offline', () => {
+        console.log('🔴 Application is offline');
+        this.isOnline = false;
+      });
+    }
   }
 
   setToken(token: string | null) {

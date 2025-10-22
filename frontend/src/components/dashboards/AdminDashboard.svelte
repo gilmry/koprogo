@@ -18,6 +18,10 @@
     monthlyRevenue: 0,
   };
   let loading = true;
+  let seedLoading = false;
+  let clearLoading = false;
+  let seedMessage = '';
+  let seedError = '';
 
   $: user = $authStore.user;
 
@@ -35,6 +39,73 @@
       loading = false;
     }, 500);
   });
+
+  const handleSeedDemoData = async () => {
+    seedLoading = true;
+    seedMessage = '';
+    seedError = '';
+
+    try {
+      const response = await fetch('http://127.0.0.1:8080/api/v1/seed/demo', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${$authStore.token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        seedMessage = data.message || 'Données de démonstration créées avec succès!';
+        // Reload stats after seeding
+        setTimeout(() => seedMessage = '', 5000);
+      } else {
+        seedError = data.error || 'Erreur lors de la création des données';
+        setTimeout(() => seedError = '', 5000);
+      }
+    } catch (error) {
+      console.error('Seed error:', error);
+      seedError = 'Erreur de connexion au serveur';
+      setTimeout(() => seedError = '', 5000);
+    } finally {
+      seedLoading = false;
+    }
+  };
+
+  const handleClearDemoData = async () => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer toutes les données de démonstration?')) {
+      return;
+    }
+
+    clearLoading = true;
+    seedMessage = '';
+    seedError = '';
+
+    try {
+      const response = await fetch('http://127.0.0.1:8080/api/v1/seed/clear', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${$authStore.token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        seedMessage = data.message || 'Données de démonstration supprimées avec succès!';
+        setTimeout(() => seedMessage = '', 5000);
+      } else {
+        seedError = data.error || 'Erreur lors de la suppression des données';
+        setTimeout(() => seedError = '', 5000);
+      }
+    } catch (error) {
+      console.error('Clear error:', error);
+      seedError = 'Erreur de connexion au serveur';
+      setTimeout(() => seedError = '', 5000);
+    } finally {
+      clearLoading = false;
+    }
+  };
 </script>
 
 <div>
@@ -113,6 +184,72 @@
         <p class="text-3xl font-bold text-gray-900">{stats.monthlyRevenue}€</p>
         <p class="text-sm text-green-600 mt-1">+8.5% ce mois</p>
       {/if}
+    </div>
+  </div>
+
+  <!-- Database Management -->
+  <div class="bg-white rounded-lg shadow mb-8">
+    <div class="p-6 border-b border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900">Gestion de la base de données</h2>
+      <p class="text-sm text-gray-600 mt-1">Gérer les données de démonstration pour les tests et la présentation</p>
+    </div>
+    <div class="p-6">
+      {#if seedMessage}
+        <div class="mb-4 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg">
+          ✓ {seedMessage}
+        </div>
+      {/if}
+      {#if seedError}
+        <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          ✗ {seedError}
+        </div>
+      {/if}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="border-2 border-gray-200 rounded-lg p-6">
+          <div class="flex items-center mb-4">
+            <span class="text-3xl mr-3">🌱</span>
+            <div>
+              <h3 class="font-semibold text-gray-900">Générer les données de démo</h3>
+              <p class="text-sm text-gray-600">Crée une organisation complète avec utilisateurs, immeubles et charges</p>
+            </div>
+          </div>
+          <button
+            on:click={handleSeedDemoData}
+            disabled={seedLoading || clearLoading}
+            class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {seedLoading ? 'Génération en cours...' : 'Générer les données'}
+          </button>
+          <div class="mt-3 text-xs text-gray-500">
+            <p class="font-semibold mb-1">Comptes créés:</p>
+            <ul class="space-y-0.5 ml-4">
+              <li>• Syndic: syndic@copro-demo.fr / syndic123</li>
+              <li>• Comptable: comptable@copro-demo.fr / comptable123</li>
+              <li>• Propriétaire 1: proprietaire1@copro-demo.fr / owner123</li>
+              <li>• Propriétaire 2: proprietaire2@copro-demo.fr / owner123</li>
+            </ul>
+          </div>
+        </div>
+        <div class="border-2 border-gray-200 rounded-lg p-6">
+          <div class="flex items-center mb-4">
+            <span class="text-3xl mr-3">🗑️</span>
+            <div>
+              <h3 class="font-semibold text-gray-900">Supprimer les données de démo</h3>
+              <p class="text-sm text-gray-600">Supprime toutes les données de démonstration (préserve le SuperAdmin)</p>
+            </div>
+          </div>
+          <button
+            on:click={handleClearDemoData}
+            disabled={seedLoading || clearLoading}
+            class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {clearLoading ? 'Suppression en cours...' : 'Supprimer les données'}
+          </button>
+          <p class="mt-3 text-xs text-gray-500">
+            ⚠️ Cette action supprimera toutes les organisations, utilisateurs, immeubles, propriétaires, lots et charges de démonstration.
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 

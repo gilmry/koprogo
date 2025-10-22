@@ -31,6 +31,14 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to run migrations");
 
+    // Seed superadmin account
+    log::info!("Seeding superadmin account...");
+    let seeder = DatabaseSeeder::new(pool.clone());
+    match seeder.seed_superadmin().await {
+        Ok(user) => log::info!("SuperAdmin account ready: {}", user.email),
+        Err(e) => log::error!("Failed to seed superadmin: {}", e),
+    }
+
     // Initialize repositories
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
     let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
@@ -51,6 +59,7 @@ async fn main() -> std::io::Result<()> {
         unit_use_cases,
         owner_use_cases,
         expense_use_cases,
+        pool.clone(),
     ));
 
     log::info!("Starting server at {}:{}", server_host, server_port);

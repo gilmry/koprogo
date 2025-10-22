@@ -7,6 +7,111 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Database Seeding System (2025-10-22)
+
+#### Backend (Rust/Actix-web)
+
+- **Database Seeder Module** (`infrastructure/database/seed.rs`)
+  - `DatabaseSeeder` class with comprehensive seeding capabilities
+  - `seed_superadmin()` - Automatic SuperAdmin account creation on startup
+    - Fixed UUID for SuperAdmin: `00000000-0000-0000-0000-000000000001`
+    - Default credentials: admin@koprogo.com / admin123
+  - `seed_demo_data()` - Creates complete demo dataset:
+    - 1 Organization: "Copropriété Démo SAS"
+    - 4 Users: Syndic, Accountant, 2 Owners with real credentials
+    - 2 Buildings: "Résidence Les Champs" (Paris), "Le Jardin Fleuri" (Lyon)
+    - 3 Owners with full contact details (address, city, postal_code)
+    - 4 Units: Apartments with floor, surface_area, quota
+    - 4 Expenses: Mixed paid/pending with suppliers and invoice numbers
+  - `clear_demo_data()` - Removes all demo data while preserving SuperAdmin
+    - Proper deletion order respecting FK constraints
+
+- **API Endpoints** (`handlers/seed_handlers.rs`)
+  - `POST /api/v1/seed/demo` - Seeds demo data (SuperAdmin only)
+  - `POST /api/v1/seed/clear` - Clears demo data (SuperAdmin only)
+  - JWT token verification with role check
+  - Returns comprehensive success messages with credentials
+
+- **Application Integration**
+  - Updated `AppState` to include database pool for seeding operations
+  - Automatic SuperAdmin seeding after migrations in `main.rs`
+  - Logging of SuperAdmin creation success/failure
+
+#### Frontend (Astro + Svelte)
+
+- **AdminDashboard Enhancement**
+  - New "Gestion de la base de données" section
+  - "Générer les données" button with:
+    - Real-time loading states
+    - Display of created demo account credentials
+    - Success/error message handling
+  - "Supprimer les données" button with:
+    - Confirmation dialog
+    - Warning about data deletion
+    - Visual feedback
+  - Both buttons call real backend API with JWT authentication
+
+- **LoginForm Cleanup**
+  - Removed hardcoded demo users object
+  - Updated to show only SuperAdmin credentials
+  - Added note about generating demo data from dashboard
+
+### Fixed - Docker & SSR Issues (2025-10-22)
+
+#### Docker Build Fixes
+- **Backend Dockerfile**
+  - Added `COPY tests ./tests` to include BDD tests
+  - Added `COPY benches ./benches` to include load tests
+  - Resolved Cargo build errors for missing test/bench files
+
+#### SSR (Server-Side Rendering) Fixes
+- **Frontend `sync.ts`**
+  - Protected `window` access with `typeof window !== 'undefined'` check
+  - Protected `navigator` access with `typeof navigator !== 'undefined'` check
+  - Event listeners only registered on client side
+  - Resolved "window is not defined" errors during SSR
+
+- **Frontend `db.ts`**
+  - Protected `indexedDB` access with `typeof indexedDB === 'undefined'` check
+  - Skip IndexedDB initialization on server side
+  - Graceful degradation for SSR compatibility
+
+#### Frontend Tests
+- **E2E Tests (`dashboards.spec.ts`)**
+  - Fixed TypeScript error: Changed `page.click().first()` to `page.locator().first().click()`
+  - Proper Playwright API usage for element selection
+
+### Changed - Database Schema Compliance (2025-10-22)
+
+- **Seeding Queries Updated**
+  - Owners table: Uses `address`, `city`, `postal_code`, `country` fields
+  - Units table: Uses `surface_area`, `quota`, `floor`, `unit_type` ENUM
+  - Expenses table: Uses `category`, `payment_status` ENUMs, `supplier`, `invoice_number`
+  - Changed from `sqlx::query!()` to `sqlx::query()` for ENUM type compatibility
+
+### Security - SuperAdmin Protection (2025-10-22)
+
+- SuperAdmin-only endpoints with JWT verification
+- Role-based access control for seeding operations
+- Demo data deletion preserves SuperAdmin account
+- Fixed UUID prevents accidental SuperAdmin deletion
+
+### Demo Credentials Available After Seeding
+
+```
+SuperAdmin (always available):
+- Email: admin@koprogo.com
+- Password: admin123
+
+Demo Users (created via seed):
+- Syndic: syndic@copro-demo.fr / syndic123
+- Comptable: comptable@copro-demo.fr / comptable123
+- Propriétaire 1: proprietaire1@copro-demo.fr / owner123
+- Propriétaire 2: proprietaire2@copro-demo.fr / owner123
+```
+
+---
+
 ### Added - Authentication & Multi-tenancy System
 
 #### Backend (Rust/Actix-web)

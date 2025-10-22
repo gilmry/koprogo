@@ -8,55 +8,6 @@
   let error = '';
   let loading = false;
 
-  // Demo users for testing (will be replaced with real API call)
-  const demoUsers: Record<string, { password: string; user: User }> = {
-    'admin@koprogo.com': {
-      password: 'admin123',
-      user: {
-        id: '1',
-        email: 'admin@koprogo.com',
-        firstName: 'Admin',
-        lastName: 'System',
-        role: UserRole.SUPERADMIN,
-      },
-    },
-    'syndic@example.com': {
-      password: 'syndic123',
-      user: {
-        id: '2',
-        email: 'syndic@example.com',
-        firstName: 'Jean',
-        lastName: 'Dupont',
-        role: UserRole.SYNDIC,
-        organizationId: 'org-1',
-        buildingIds: ['building-1', 'building-2'],
-      },
-    },
-    'comptable@example.com': {
-      password: 'comptable123',
-      user: {
-        id: '3',
-        email: 'comptable@example.com',
-        firstName: 'Marie',
-        lastName: 'Martin',
-        role: UserRole.ACCOUNTANT,
-        organizationId: 'org-1',
-        buildingIds: ['building-1'],
-      },
-    },
-    'owner@example.com': {
-      password: 'owner123',
-      user: {
-        id: '4',
-        email: 'owner@example.com',
-        firstName: 'Pierre',
-        lastName: 'Durand',
-        role: UserRole.OWNER,
-        buildingIds: ['building-1'],
-      },
-    },
-  };
-
   const handleLogin = async (e: Event) => {
     e.preventDefault();
     error = '';
@@ -166,12 +117,10 @@
   </button>
 
   <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-    <p class="text-xs font-semibold text-gray-700 mb-2">Comptes de démonstration:</p>
+    <p class="text-xs font-semibold text-gray-700 mb-2">Comptes de test:</p>
     <div class="space-y-1 text-xs text-gray-600">
       <p>👑 <strong>SuperAdmin:</strong> admin@koprogo.com / admin123</p>
-      <p>🏢 <strong>Syndic:</strong> syndic@example.com / syndic123</p>
-      <p>📊 <strong>Comptable:</strong> comptable@example.com / comptable123</p>
-      <p>🏠 <strong>Copropriétaire:</strong> owner@example.com / owner123</p>
+      <p class="text-gray-500 text-[10px] mt-1">Les données de démonstration peuvent être générées depuis le dashboard SuperAdmin</p>
     </div>
   </div>
 </form>

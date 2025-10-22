@@ -17,6 +17,11 @@ export class LocalDB {
   private db: IDBDatabase | null = null;
 
   async init(): Promise<void> {
+    // Skip initialization on server side
+    if (typeof indexedDB === 'undefined') {
+      return Promise.resolve();
+    }
+
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 

@@ -192,7 +192,7 @@ test.describe('Navigation Between Pages', () => {
     await expect(page).toHaveURL('/buildings');
 
     // Retourner au dashboard
-    await page.click('a[href*="dashboard"]').first();
+    await page.locator('a[href*="dashboard"]').first().click();
     await expect(page).toHaveURL(dashboardUrl);
 
     // Vérifier que le dashboard se charge correctement
