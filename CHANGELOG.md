@@ -89,6 +89,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated to show only SuperAdmin credentials
   - Added note about generating demo data from dashboard
 
+### Fixed - Docker Build & Rust Nightly (2025-10-22)
+
+#### Backend Dockerfile
+- **Rust Nightly Support**
+  - Changed from `rust:1.83-slim` to `rustlang/rust:nightly-slim`
+  - Resolves `base64ct-1.8.0` dependency requiring Rust edition 2024
+  - Edition 2024 only available in nightly builds
+
+- **SQLx Offline Mode**
+  - Added `ENV SQLX_OFFLINE=true` to Dockerfile
+  - Copied `.sqlx/` cache directory to Docker build context
+  - Eliminates need for DATABASE_URL during Docker builds
+  - Uses pre-generated query cache for compile-time verification
+
+**Why these changes:**
+- Some dependencies require Rust edition 2024 features
+- SQLx macros need offline mode in Docker builds (no DB connection available)
+- Production-ready: builds work without runtime database access
+
 ### Fixed - Docker & SSR Issues (2025-10-22)
 
 #### Docker Build Fixes

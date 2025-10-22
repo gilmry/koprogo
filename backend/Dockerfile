@@ -19,6 +19,10 @@ COPY src ./src
 COPY migrations ./migrations
 COPY tests ./tests
 COPY benches ./benches
+COPY .sqlx ./.sqlx
+
+# Set SQLx offline mode for Docker builds
+ENV SQLX_OFFLINE=true
 
 # Build for release
 RUN cargo build --release
