@@ -1,7 +1,7 @@
 # Multi-stage build for optimal size and security
 
 # Stage 1: Build
-FROM rust:1.83-slim as builder
+FROM rustlang/rust:nightly-slim as builder
 
 WORKDIR /app
 
