@@ -1,0 +1,91 @@
+# docker-compose.prod.yml
+# Configuration pour production avec Traefik reverse proxy
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+services:
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v3.0
+    container_name: koprogo-traefik
+    restart: unless-stopped
+    command:
+      - "--configFile=/etc/traefik/traefik.yml"
+    ports:
+      - "80:80"       # HTTP
+      # Dashboard désactivé en production pour sécurité
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.prod.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - koprogo-network
+    labels:
+      - "traefik.enable=true"
+
+  postgres:
+    restart: unless-stopped
+    environment:
+      # En production, utiliser des credentials sécurisés via variables d'environnement
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-koprogo123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    labels:
+      - "traefik.enable=false"
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports: []  # Traefik gère le routage, pas d'exposition directe
+    environment:
+      DATABASE_URL: postgresql://koprogo:${POSTGRES_PASSWORD:-koprogo123}@postgres:5432/koprogo_db
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      RUST_LOG: warn
+      # En production, changer JWT_SECRET via variable d'environnement
+      JWT_SECRET: ${JWT_SECRET:-super-secret-change-in-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      # Route API: koprogo.com/api/*
+      - "traefik.http.routers.koprogo-api.rule=Host(`koprogo.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.koprogo-api.entrypoints=web"
+      - "traefik.http.routers.koprogo-api.priority=100"
+      - "traefik.http.services.koprogo-api.loadbalancer.server.port=8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports: []  # Traefik gère le routage, pas d'exposition directe
+    environment:
+      # Frontend appelle l'API via le reverse proxy
+      PUBLIC_API_URL: http://koprogo.com/api/v1
+    command: node ./dist/server/entry.mjs
+    depends_on:
+      api:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      # Route Frontend: koprogo.com/*
+      - "traefik.http.routers.koprogo-frontend.rule=Host(`koprogo.com`)"
+      - "traefik.http.routers.koprogo-frontend.entrypoints=web"
+      - "traefik.http.routers.koprogo-frontend.priority=1"
+      - "traefik.http.services.koprogo-frontend.loadbalancer.server.port=3000"
+
+# Volumes et networks doivent être définis même en mode override
+volumes:
+  postgres_data:
+
+networks:
+  koprogo-network:
+    driver: bridge

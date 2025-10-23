@@ -25,7 +25,8 @@ jobs:
       - name: Run cargo audit
         run: |
           cd backend
-          cargo audit
+          # Ignore RUSTSEC-2023-0071: rsa vulnerability from sqlx-mysql (we only use postgres)
+          cargo audit --ignore RUSTSEC-2023-0071
 
   npm-audit:
     name: NPM Security Audit

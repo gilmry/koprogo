@@ -84,66 +84,6 @@ jobs:
           cd backend
           cargo test --lib --all-features
 
-  test-integration:
-    name: Integration Tests
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: koprogo_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install sqlx-cli
-        run: cargo install sqlx-cli --no-default-features --features postgres
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: backend/target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Setup test database
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
-        run: |
-          cd backend
-          sqlx migrate run
-
-      - name: Run integration tests
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
-        run: |
-          cd backend
-          cargo test --test integration
-
   test-bdd:
     name: BDD Tests
     runs-on: ubuntu-latest
@@ -289,12 +229,12 @@ jobs:
       - name: Check formatting
         run: |
           cd frontend
-          npx prettier --check "src/**/*.{astro,svelte,ts,js}"
+          npx prettier --check .
 
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-integration, test-bdd, test-e2e, frontend-check]
+    needs: [lint, test-unit, test-bdd, test-e2e, frontend-check]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

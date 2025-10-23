@@ -1,27 +1,28 @@
 // Synchronization service for offline/online data sync
-import { localDB } from './db';
-import type { User, Building, Owner, Unit, Expense } from './types';
-import { API_URL } from './config';
+import { localDB } from "./db";
+import type { User, Building, Owner, Unit, Expense } from "./types";
+import { API_URL } from "./config";
 
 const API_BASE_URL = `${API_URL}/api/v1`;
 
 export class SyncService {
-  private isOnline: boolean = typeof navigator !== 'undefined' ? navigator.onLine : false;
+  private isOnline: boolean =
+    typeof navigator !== "undefined" ? navigator.onLine : false;
   private syncInProgress: boolean = false;
   private token: string | null = null;
 
   constructor() {
     // Only setup event listeners on the client side
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       // Listen to online/offline events
-      window.addEventListener('online', () => {
-        console.log('🟢 Application is online');
+      window.addEventListener("online", () => {
+        console.log("🟢 Application is online");
         this.isOnline = true;
         this.sync();
       });
 
-      window.addEventListener('offline', () => {
-        console.log('🔴 Application is offline');
+      window.addEventListener("offline", () => {
+        console.log("🔴 Application is offline");
         this.isOnline = false;
       });
     }
@@ -35,13 +36,16 @@ export class SyncService {
     return this.isOnline;
   }
 
-  private async fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+  private async fetchWithAuth(
+    url: string,
+    options: RequestInit = {},
+  ): Promise<Response> {
     const headers = new Headers(options.headers);
 
     if (this.token) {
-      headers.set('Authorization', `Bearer ${this.token}`);
+      headers.set("Authorization", `Bearer ${this.token}`);
     }
-    headers.set('Content-Type', 'application/json');
+    headers.set("Content-Type", "application/json");
 
     return fetch(url, {
       ...options,
@@ -56,11 +60,11 @@ export class SyncService {
     }
 
     this.syncInProgress = true;
-    console.log('🔄 Starting synchronization...');
+    console.log("🔄 Starting synchronization...");
 
     try {
       const queue = await localDB.getSyncQueue();
-      const unsyncedItems = queue.filter(item => !item.synced);
+      const unsyncedItems = queue.filter((item) => !item.synced);
 
       for (const item of unsyncedItems) {
         try {
@@ -80,9 +84,9 @@ export class SyncService {
       // Fetch fresh data from server
       await this.fetchAllData();
 
-      console.log('✅ Synchronization completed');
+      console.log("✅ Synchronization completed");
     } catch (error) {
-      console.error('❌ Synchronization failed:', error);
+      console.error("❌ Synchronization failed:", error);
     } finally {
       this.syncInProgress = false;
     }
@@ -93,25 +97,25 @@ export class SyncService {
     let url = `${API_BASE_URL}/${entity}`;
 
     switch (action) {
-      case 'create':
+      case "create":
         await this.fetchWithAuth(url, {
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify(data),
         });
         break;
 
-      case 'update':
+      case "update":
         url = `${url}/${data.id}`;
         await this.fetchWithAuth(url, {
-          method: 'PUT',
+          method: "PUT",
           body: JSON.stringify(data),
         });
         break;
 
-      case 'delete':
+      case "delete":
         url = `${url}/${data.id}`;
         await this.fetchWithAuth(url, {
-          method: 'DELETE',
+          method: "DELETE",
         });
         break;
     }
@@ -123,7 +127,9 @@ export class SyncService {
 
     try {
       // Fetch buildings
-      const buildingsRes = await this.fetchWithAuth(`${API_BASE_URL}/buildings`);
+      const buildingsRes = await this.fetchWithAuth(
+        `${API_BASE_URL}/buildings`,
+      );
       if (buildingsRes.ok) {
         const buildings = await buildingsRes.json();
         await localDB.saveBuildings(buildings);
@@ -138,7 +144,7 @@ export class SyncService {
 
       // Note: Units and expenses might need building-specific endpoints
     } catch (error) {
-      console.error('Failed to fetch data from server:', error);
+      console.error("Failed to fetch data from server:", error);
     }
   }
 
@@ -153,7 +159,7 @@ export class SyncService {
           return buildings;
         }
       } catch (error) {
-        console.log('Falling back to local data');
+        console.log("Falling back to local data");
       }
     }
 
@@ -165,22 +171,22 @@ export class SyncService {
     if (this.isOnline && this.token) {
       try {
         const response = await this.fetchWithAuth(`${API_BASE_URL}/buildings`, {
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify(building),
         });
 
         if (response.ok) {
           const newBuilding = await response.json();
-          await localDB.put('buildings', newBuilding);
+          await localDB.put("buildings", newBuilding);
           return newBuilding;
         }
       } catch (error) {
-        console.log('Offline: queueing building creation');
+        console.log("Offline: queueing building creation");
       }
     }
 
     // Queue for later sync
-    await localDB.addToSyncQueue('create', 'buildings', building);
+    await localDB.addToSyncQueue("create", "buildings", building);
 
     // Create temporary local record
     const tempBuilding = {
@@ -189,7 +195,7 @@ export class SyncService {
       createdAt: new Date().toISOString(),
     } as Building;
 
-    await localDB.put('buildings', tempBuilding);
+    await localDB.put("buildings", tempBuilding);
     return tempBuilding;
   }
 
@@ -203,7 +209,7 @@ export class SyncService {
           return owners;
         }
       } catch (error) {
-        console.log('Falling back to local data');
+        console.log("Falling back to local data");
       }
     }
 
@@ -218,7 +224,9 @@ export class SyncService {
         const allExpenses: Expense[] = [];
 
         for (const building of buildings) {
-          const response = await this.fetchWithAuth(`${API_BASE_URL}/buildings/${building.id}/expenses`);
+          const response = await this.fetchWithAuth(
+            `${API_BASE_URL}/buildings/${building.id}/expenses`,
+          );
           if (response.ok) {
             const expenses = await response.json();
             allExpenses.push(...expenses);
@@ -228,7 +236,7 @@ export class SyncService {
         await localDB.saveExpenses(allExpenses);
         return allExpenses;
       } catch (error) {
-        console.log('Falling back to local data');
+        console.log("Falling back to local data");
       }
     }
 
@@ -248,12 +256,12 @@ export class SyncService {
   // Clear local data on logout
   async clearLocalData(): Promise<void> {
     this.token = null;
-    await localDB.clear('users');
-    await localDB.clear('buildings');
-    await localDB.clear('owners');
-    await localDB.clear('units');
-    await localDB.clear('expenses');
-    await localDB.clear('sync_queue');
+    await localDB.clear("users");
+    await localDB.clear("buildings");
+    await localDB.clear("owners");
+    await localDB.clear("units");
+    await localDB.clear("expenses");
+    await localDB.clear("sync_queue");
   }
 }
 

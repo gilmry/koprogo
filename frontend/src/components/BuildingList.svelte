@@ -101,10 +101,11 @@
     <form on:submit={createBuilding} class="bg-gray-50 p-6 rounded-lg space-y-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-name" class="block text-sm font-medium text-gray-700 mb-1">
             Nom de l'immeuble *
           </label>
           <input
+            id="building-name"
             type="text"
             bind:value={newBuilding.name}
             required
@@ -112,10 +113,11 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-units" class="block text-sm font-medium text-gray-700 mb-1">
             Nombre de lots *
           </label>
           <input
+            id="building-units"
             type="number"
             bind:value={newBuilding.total_units}
             required
@@ -126,10 +128,11 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="building-address" class="block text-sm font-medium text-gray-700 mb-1">
           Adresse *
         </label>
         <input
+          id="building-address"
           type="text"
           bind:value={newBuilding.address}
           required
@@ -139,10 +142,11 @@
 
       <div class="grid grid-cols-3 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-city" class="block text-sm font-medium text-gray-700 mb-1">
             Ville *
           </label>
           <input
+            id="building-city"
             type="text"
             bind:value={newBuilding.city}
             required
@@ -150,10 +154,11 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-postal" class="block text-sm font-medium text-gray-700 mb-1">
             Code postal *
           </label>
           <input
+            id="building-postal"
             type="text"
             bind:value={newBuilding.postal_code}
             required
@@ -161,10 +166,11 @@
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-year" class="block text-sm font-medium text-gray-700 mb-1">
             Année de construction
           </label>
           <input
+            id="building-year"
             type="number"
             bind:value={newBuilding.construction_year}
             min="1800"

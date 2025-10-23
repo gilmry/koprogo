@@ -36,6 +36,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binary from builder

@@ -5,6 +5,7 @@ Ce dossier contient les tests End-to-End (E2E) de KoproGo utilisant Playwright. 
 ## 🎥 Documentation Vivante
 
 Les vidéos générées par les tests servent de documentation pour :
+
 - ✅ Démontrer les parcours utilisateurs fonctionnels
 - ✅ Onboarder de nouveaux développeurs
 - ✅ Présenter les fonctionnalités aux clients
@@ -45,33 +46,41 @@ Le backend doit être accessible sur `http://127.0.0.1:8080`
 ## 🧪 Exécution des Tests
 
 ### Mode Headless (CI/CD)
+
 ```bash
 npm run test:e2e
 ```
+
 - Lance tous les tests en arrière-plan
 - Génère automatiquement les vidéos dans `test-results/`
 - Crée un rapport HTML
 
 ### Mode UI (Recommandé pour le développement)
+
 ```bash
 npm run test:e2e:ui
 ```
+
 - Interface graphique interactive
 - Visualisation en temps réel
 - Rejeu des tests facilement
 - Inspection du DOM
 
 ### Mode Headed (Voir le navigateur)
+
 ```bash
 npm run test:e2e:headed
 ```
+
 - Voir le navigateur s'exécuter en temps réel
 - Utile pour déboguer
 
 ### Mode Debug (Pas à pas)
+
 ```bash
 npm run test:e2e:debug
 ```
+
 - Debugger interactif Playwright
 - Points d'arrêt automatiques
 - Inspection du state
@@ -110,17 +119,22 @@ use: {
 ### Visualiser les Vidéos
 
 #### Option 1: Rapport HTML (Recommandé)
+
 ```bash
 npm run test:e2e:report
 ```
+
 Ouvre un rapport HTML interactif avec :
+
 - ✅ Vidéos intégrées
 - ✅ Screenshots
 - ✅ Traces Playwright
 - ✅ Logs de console
 
 #### Option 2: Lecteur Vidéo
+
 Ouvrir directement les fichiers `.webm` dans :
+
 - Chrome/Chromium
 - Firefox
 - VLC
@@ -129,12 +143,14 @@ Ouvrir directement les fichiers `.webm` dans :
 ## 📊 Rapport de Tests
 
 ### Générer et Voir le Rapport
+
 ```bash
 npm run test:e2e          # Lance les tests
 npm run test:e2e:report   # Ouvre le rapport
 ```
 
 Le rapport contient :
+
 - 📹 **Vidéos de chaque test**
 - 📸 Screenshots à chaque étape
 - 📝 Traces d'exécution détaillées
@@ -144,6 +160,7 @@ Le rapport contient :
 ## 🎬 Scénarios Couverts
 
 ### 1. Authentification (`auth.spec.ts`)
+
 - ✅ Page de login accessible
 - ✅ Login avec credentials backend réels
 - ✅ Redirection vers dashboard selon le rôle
@@ -155,6 +172,7 @@ Le rapport contient :
 **Vidéo générée** : Parcours complet d'un utilisateur qui se connecte et accède à son dashboard.
 
 ### 2. Dashboards (`dashboards.spec.ts`)
+
 - ✅ Dashboard Syndic (gestion immeubles, tâches)
 - ✅ Dashboard Comptable (finances, transactions)
 - ✅ Dashboard Copropriétaire (infos personnelles)
@@ -165,6 +183,7 @@ Le rapport contient :
 **Vidéos générées** : Un parcours vidéo pour chaque type d'utilisateur.
 
 ### 3. PWA et Offline (`pwa-offline.spec.ts`)
+
 - ✅ Manifest.json présent et valide
 - ✅ Service Worker enregistré
 - ✅ Indicateur online/offline fonctionnel
@@ -189,6 +208,7 @@ video: {
 ```
 
 Options :
+
 - `'on'` : **Recommandé pour la doc** - Enregistre toujours
 - `'retain-on-failure'` : Seulement en cas d'échec
 - `'on-first-retry'` : Lors du premier retry
@@ -215,18 +235,18 @@ use: {
 ### Template de Base
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Ma Fonctionnalité', () => {
-  test('devrait faire quelque chose', async ({ page }) => {
+test.describe("Ma Fonctionnalité", () => {
+  test("devrait faire quelque chose", async ({ page }) => {
     // Arrange
-    await page.goto('/ma-page');
+    await page.goto("/ma-page");
 
     // Act
-    await page.click('button');
+    await page.click("button");
 
     // Assert
-    await expect(page.locator('text=Succès')).toBeVisible();
+    await expect(page.locator("text=Succès")).toBeVisible();
   });
 });
 ```
@@ -241,24 +261,27 @@ test.describe('Ma Fonctionnalité', () => {
 ### Test avec API Backend
 
 ```typescript
-test('devrait créer un utilisateur via l\'API', async ({ page }) => {
-  const response = await page.request.post('http://127.0.0.1:8080/api/v1/auth/register', {
-    data: {
-      email: `user-${Date.now()}@test.com`,
-      password: 'test123',
-      first_name: 'Test',
-      last_name: 'User',
-      role: 'syndic'
-    }
-  });
+test("devrait créer un utilisateur via l'API", async ({ page }) => {
+  const response = await page.request.post(
+    "http://127.0.0.1:8080/api/v1/auth/register",
+    {
+      data: {
+        email: `user-${Date.now()}@test.com`,
+        password: "test123",
+        first_name: "Test",
+        last_name: "User",
+        role: "syndic",
+      },
+    },
+  );
 
   const { user, token } = await response.json();
   expect(response.ok()).toBeTruthy();
 
   // Maintenant utiliser ces credentials pour login
-  await page.goto('/login');
+  await page.goto("/login");
   await page.fill('input[type="email"]', user.email);
-  await page.fill('input[type="password"]', 'test123');
+  await page.fill('input[type="password"]', "test123");
   await page.click('button[type="submit"]');
 });
 ```
@@ -315,16 +338,19 @@ Les vidéos sont automatiquement sauvegardées comme **artifacts GitHub** !
 ## 📚 Utilisation comme Documentation
 
 ### 1. Pour l'équipe de développement
+
 - Partager les vidéos dans Slack/Teams
 - Inclure dans les pull requests
 - Onboarding de nouveaux développeurs
 
 ### 2. Pour les clients/stakeholders
+
 - Démonstration des fonctionnalités
 - Validation des specs
 - Acceptance testing
 
 ### 3. Pour le support
+
 - Reproduire les bugs clients
 - Créer des guides visuels
 - Formation des utilisateurs
@@ -341,21 +367,27 @@ Les vidéos sont automatiquement sauvegardées comme **artifacts GitHub** !
 ### Problèmes Courants
 
 #### Backend pas démarré
+
 ```
 Error: connect ECONNREFUSED 127.0.0.1:8080
 ```
+
 **Solution** : `cd ../backend && cargo run`
 
 #### Timeout
+
 ```
 Error: page.waitForURL: Timeout 30000ms exceeded
 ```
+
 **Solution** : Augmenter le `navigationTimeout` dans la config
 
 #### Service Worker
+
 ```
 Service worker not registered
 ```
+
 **Solution** : S'assurer que le PWA plugin est configuré
 
 ## 📖 Ressources

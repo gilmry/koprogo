@@ -1,6 +1,6 @@
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, HttpServer};
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use env_logger::Env;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::*;
@@ -14,7 +14,8 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "super-secret-key-change-in-production".to_string());
+    let jwt_secret = env::var("JWT_SECRET")
+        .unwrap_or_else(|_| "super-secret-key-change-in-production".to_string());
     let server_host = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let server_port = env::var("SERVER_PORT")
         .unwrap_or_else(|_| "8080".to_string())

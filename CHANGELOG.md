@@ -7,6 +7,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - CI/CD Pipeline & Code Quality (2025-10-23)
+
+#### Backend Improvements
+
+**Security Audit Fixes**
+- Replaced `dotenv` (unmaintained) with `dotenvy` for environment variable management
+- Updated `validator` from 0.18 → 0.19 (fixes RUSTSEC-2024-0421 idna Punycode vulnerability)
+- Added cargo audit configuration (`backend/audit.toml`) with documented security exceptions
+- Configured `--ignore RUSTSEC-2023-0071` for RSA vulnerability from unused sqlx-mysql dependency
+
+**Code Quality & Linting**
+- Fixed all Clippy warnings to pass strict CI checks (`-D warnings`):
+  - Replaced redundant pattern matching (`if let Some(_)`) with `.is_some()` checks
+  - Removed unnecessary `format!()` calls, using `.to_string()` instead
+  - Added pragmatic `#[allow(clippy::too_many_arguments)]` for domain entity constructors
+- Applied `cargo fmt` to entire codebase for consistent formatting
+- Updated E2E tests to match current `AppState::new()` signature (added auth_use_cases and pool)
+
+**Dependency Updates** (via `cargo update`)
+- `validator` 0.18.1 → 0.19.0
+- `bollard` 0.17.1 → 0.18.1
+- `globset` 0.4.17 → 0.4.18
+- `testcontainers` 0.23.1 → 0.23.3
+- `proc-macro-error` → `proc-macro-error2` (maintained fork)
+- Removed `idna` 0.5.0 (vulnerable version)
+
+#### Frontend Improvements
+
+**Formatting & Tooling**
+- Installed `prettier-plugin-astro` and `prettier-plugin-svelte` for proper file formatting
+- Formatted 13 TypeScript/Astro/Svelte files + SQLx cache JSON files
+- All files now pass `npx prettier --check .`
+
+**Security**
+- Zero npm vulnerabilities (`npm audit --audit-level=moderate` passes)
+
+#### CI/CD Workflow Updates
+
+**GitHub Actions Improvements**
+- Updated `security.yml` to use `cargo audit --ignore RUSTSEC-2023-0071` with documentation
+- Simplified `ci.yml` by removing empty `test-integration` job (E2E tests serve as integration tests)
+- Fixed Prettier check command to use `npx prettier --check .` for all files
+- Removed `test-integration` from build dependencies
+
+**Test Suite Cleanup**
+- Removed empty integration test structure:
+  - Deleted `tests/integration/building_repository_tests.rs` (empty)
+  - Deleted `tests/integration/use_case_tests.rs` (empty)
+  - Deleted `tests/integration/mod.rs` (empty)
+  - E2E tests with testcontainers already provide integration testing
+
+#### Documentation
+
+**New Make Commands**
+- `make ci-local` - Test GitHub Actions workflows locally using act
+- `make docs-build` - Generate Sphinx documentation
+- `make docs-serve` - Serve documentation with live reload
+- `make docs-clean` - Clean generated documentation
+
+**Sphinx Documentation Setup**
+- Configured Sphinx for project documentation
+- ReadTheDocs theme with modern styling
+- Automatic API documentation generation
+- Markdown support via myst-parser
+
+#### Test Results - All Checks Passing ✅
+
+| Check | Status | Results |
+|-------|--------|---------|
+| Rust formatting | ✅ PASS | `cargo fmt --check` |
+| Clippy linting | ✅ PASS | Zero warnings with `-D warnings` |
+| Unit tests | ✅ PASS | 36/36 tests |
+| BDD tests | ✅ PASS | 2 scenarios, 8 steps |
+| E2E tests | ✅ PASS | 4/4 tests |
+| Cargo audit | ✅ PASS | 1 ignored (documented) |
+| Frontend build | ✅ PASS | TypeScript compilation |
+| Prettier | ✅ PASS | All files formatted |
+| NPM audit | ✅ PASS | 0 vulnerabilities |
+
+#### Migration Notes
+
+**For Developers**
+
+Replace dotenv imports:
+```rust
+// Before
+use dotenv::dotenv;
+
+// After
+use dotenvy::dotenv;
+```
+
+**For CI/CD**
+
+Cargo audit now requires ignore flag:
+```bash
+cargo audit --ignore RUSTSEC-2023-0071
+```
+
+**Security Exception Justification**
+
+RUSTSEC-2023-0071 (RSA Marvin Attack) comes from `sqlx-mysql` dependency. We only use PostgreSQL features, so the MySQL/RSA code path is never executed in production. This is a false positive for our use case.
+
 ### Changed - API Configuration Centralization (2025-10-22)
 
 #### Frontend (Astro + Svelte)

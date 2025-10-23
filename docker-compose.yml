@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U koprogo"]
+      test: ["CMD-SHELL", "pg_isready -U koprogo -d koprogo_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,9 +33,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - cargo_cache:/usr/local/cargo
+    # volumes:
+    #   - ./backend:/app  # Désactivé: écrase le binaire compilé dans l'image
+    #   - cargo_cache:/usr/local/cargo  # Pas nécessaire en production
     networks:
       - koprogo-network
 
@@ -50,9 +50,9 @@ services:
       - "3000:3000"
     depends_on:
       - api
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+    # volumes:
+    #   - ./frontend:/app  # Désactivé: utilise le build de l'image
+    #   - /app/node_modules
     networks:
       - koprogo-network
 

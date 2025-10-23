@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { authStore } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import SyncStatus from './SyncStatus.svelte';
@@ -7,6 +8,11 @@
 
   $: user = $authStore.user;
   $: isAuthenticated = $authStore.isAuthenticated;
+
+  // Initialize auth store from localStorage on mount
+  onMount(async () => {
+    await authStore.init();
+  });
 
   const logout = async () => {
     await authStore.logout();
@@ -100,7 +106,7 @@
         <!-- User Menu -->
         <div class="relative">
           <button
-            on:click={() => showUserMenu = !showUserMenu}
+            on:click|stopPropagation={() => showUserMenu = !showUserMenu}
             class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
           >
             <div class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold">
@@ -116,15 +122,23 @@
 
           {#if showUserMenu}
             <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-              <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+              <a
+                href="/profile"
+                on:click|stopPropagation
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
                 👤 Profil
               </a>
-              <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+              <a
+                href="/settings"
+                on:click|stopPropagation
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
                 ⚙️ Paramètres
               </a>
               <hr class="my-1" />
               <button
-                on:click={logout}
+                on:click|stopPropagation={logout}
                 class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
               >
                 🚪 Déconnexion

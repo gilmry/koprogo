@@ -1,0 +1,133 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Paramètres - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">Paramètres</h1>
+
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-yellow-700">
+              Cette page est en cours de développement. Les paramètres avancés seront bientôt disponibles.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <!-- Paramètres généraux -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Paramètres Généraux</h2>
+          <ul class="space-y-2 text-gray-600">
+            <li class="flex items-center">
+              <span class="mr-2">🌐</span>
+              <span>Langue de l'interface (Français, English)</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">🕐</span>
+              <span>Fuseau horaire</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">📅</span>
+              <span>Format de date (JJ/MM/AAAA, MM/JJ/AAAA)</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">💰</span>
+              <span>Devise par défaut (EUR, USD)</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Notifications -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Notifications</h2>
+          <ul class="space-y-2 text-gray-600">
+            <li class="flex items-center">
+              <span class="mr-2">📧</span>
+              <span>Notifications par email</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">🔔</span>
+              <span>Notifications push</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">📱</span>
+              <span>Notifications SMS</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">⚙️</span>
+              <span>Fréquence des récapitulatifs</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">🔕</span>
+              <span>Mode Ne pas déranger</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Confidentialité et Données -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Confidentialité et Données</h2>
+          <ul class="space-y-2 text-gray-600">
+            <li class="flex items-center">
+              <span class="mr-2">🔒</span>
+              <span>Contrôle de la confidentialité</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">📊</span>
+              <span>Collecte de données analytiques</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">📥</span>
+              <span>Exporter mes données (RGPD)</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">🗑️</span>
+              <span>Supprimer mon compte</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Intégrations -->
+        <div class="bg-white rounded-lg shadow p-6">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Intégrations</h2>
+          <ul class="space-y-2 text-gray-600">
+            <li class="flex items-center">
+              <span class="mr-2">🔗</span>
+              <span>API et webhooks</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">📨</span>
+              <span>Intégration email (SMTP)</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">☁️</span>
+              <span>Services cloud (Drive, Dropbox)</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">💳</span>
+              <span>Passerelles de paiement</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <a href="javascript:history.back()" class="inline-flex items-center text-primary-600 hover:text-primary-700">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Retour
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

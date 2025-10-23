@@ -46,6 +46,18 @@
     seedMessage = '';
     seedError = '';
 
+    // DEBUG: Log token state
+    console.log('=== DEBUG: Seed Demo Data ===');
+    console.log('Auth Store State:', $authStore);
+    console.log('Token:', $authStore.token);
+    console.log('Is Authenticated:', $authStore.isAuthenticated);
+    if (typeof window !== 'undefined') {
+      console.log('LocalStorage Token:', localStorage.getItem('koprogo_token'));
+      console.log('LocalStorage User:', localStorage.getItem('koprogo_user'));
+    }
+    console.log('API Endpoint:', apiEndpoint('/api/v1/seed/demo'));
+    console.log('============================');
+
     try {
       const response = await fetch(apiEndpoint('/api/v1/seed/demo'), {
         method: 'POST',

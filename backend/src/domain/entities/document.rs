@@ -33,6 +33,7 @@ pub struct Document {
 }
 
 impl Document {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         building_id: Uuid,
         document_type: DocumentType,

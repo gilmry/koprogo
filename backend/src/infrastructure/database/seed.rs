@@ -19,13 +19,10 @@ impl DatabaseSeeder {
         let superadmin_password = "admin123"; // Change in production!
 
         // Check if superadmin already exists
-        let existing = sqlx::query!(
-            "SELECT id FROM users WHERE email = $1",
-            superadmin_email
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to check existing superadmin: {}", e))?;
+        let existing = sqlx::query!("SELECT id FROM users WHERE email = $1", superadmin_email)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to check existing superadmin: {}", e))?;
 
         if existing.is_some() {
             log::info!("Superadmin already exists");
@@ -262,15 +259,7 @@ impl DatabaseSeeder {
             .await?;
 
         let _unit3_id = self
-            .create_demo_unit(
-                building1_id,
-                None,
-                "103",
-                "apartment",
-                Some(1),
-                85.0,
-                300.0,
-            )
+            .create_demo_unit(building1_id, None, "103", "apartment", Some(1), 85.0, 300.0)
             .await?;
 
         let _unit4_id = self
@@ -338,8 +327,7 @@ impl DatabaseSeeder {
 
         log::info!("✅ Demo expenses created");
 
-        Ok(format!(
-            "✅ Demo data seeded successfully!\n\n\
+        Ok("✅ Demo data seeded successfully!\n\n\
             📊 Summary:\n\
             - 1 Organization: Copropriété Démo SAS\n\
             - 4 Users: 1 Syndic, 1 Accountant, 2 Owners\n\
@@ -353,7 +341,7 @@ impl DatabaseSeeder {
             - Propriétaire 1: proprietaire1@copro-demo.fr / owner123\n\
             - Propriétaire 2: proprietaire2@copro-demo.fr / owner123\n\
             - SuperAdmin: admin@koprogo.com / admin123"
-        ))
+            .to_string())
     }
 
     async fn create_demo_user(
@@ -365,8 +353,8 @@ impl DatabaseSeeder {
         role: &str,
         organization_id: Option<Uuid>,
     ) -> Result<Uuid, String> {
-        let password_hash = hash(password, DEFAULT_COST)
-            .map_err(|e| format!("Failed to hash password: {}", e))?;
+        let password_hash =
+            hash(password, DEFAULT_COST).map_err(|e| format!("Failed to hash password: {}", e))?;
 
         let user_id = Uuid::new_v4();
         let now = Utc::now();
@@ -394,6 +382,7 @@ impl DatabaseSeeder {
         Ok(user_id)
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn create_demo_building(
         &self,
         org_id: Uuid,
@@ -432,6 +421,7 @@ impl DatabaseSeeder {
         Ok(building_id)
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn create_demo_owner(
         &self,
         first_name: &str,
@@ -470,6 +460,7 @@ impl DatabaseSeeder {
         Ok(owner_id)
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn create_demo_unit(
         &self,
         building_id: Uuid,
@@ -506,6 +497,7 @@ impl DatabaseSeeder {
         Ok(unit_id)
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn create_demo_expense(
         &self,
         building_id: Uuid,
@@ -519,11 +511,10 @@ impl DatabaseSeeder {
     ) -> Result<Uuid, String> {
         let expense_id = Uuid::new_v4();
         let now = Utc::now();
-        let expense_date_parsed = chrono::DateTime::parse_from_rfc3339(
-            &format!("{}T00:00:00Z", expense_date)
-        )
-        .map_err(|e| format!("Failed to parse date: {}", e))?
-        .with_timezone(&Utc);
+        let expense_date_parsed =
+            chrono::DateTime::parse_from_rfc3339(&format!("{}T00:00:00Z", expense_date))
+                .map_err(|e| format!("Failed to parse date: {}", e))?
+                .with_timezone(&Utc);
 
         sqlx::query(
             r#"

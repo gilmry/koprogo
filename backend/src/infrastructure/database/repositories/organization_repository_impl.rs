@@ -56,7 +56,9 @@ impl OrganizationRepository for PostgresOrganizationRepository {
 
         match result {
             Some(row) => {
-                let subscription_plan = row.subscription_plan.parse::<SubscriptionPlan>()
+                let subscription_plan = row
+                    .subscription_plan
+                    .parse::<SubscriptionPlan>()
                     .map_err(|e| format!("Invalid subscription plan: {}", e))?;
 
                 Ok(Some(Organization {
@@ -92,7 +94,9 @@ impl OrganizationRepository for PostgresOrganizationRepository {
 
         match result {
             Some(row) => {
-                let subscription_plan = row.subscription_plan.parse::<SubscriptionPlan>()
+                let subscription_plan = row
+                    .subscription_plan
+                    .parse::<SubscriptionPlan>()
                     .map_err(|e| format!("Invalid subscription plan: {}", e))?;
 
                 Ok(Some(Organization {

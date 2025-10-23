@@ -48,10 +48,10 @@ pub struct UserResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,  // user id
+    pub sub: String, // user id
     pub email: String,
     pub role: String,
     pub organization_id: Option<uuid::Uuid>,
-    pub exp: i64,     // expiration timestamp
-    pub iat: i64,     // issued at
+    pub exp: i64, // expiration timestamp
+    pub iat: i64, // issued at
 }

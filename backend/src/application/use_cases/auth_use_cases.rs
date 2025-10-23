@@ -59,7 +59,7 @@ impl AuthUseCases {
 
     pub async fn register(&self, request: RegisterRequest) -> Result<LoginResponse, String> {
         // Check if email already exists
-        if let Some(_) = self.user_repo.find_by_email(&request.email).await? {
+        if (self.user_repo.find_by_email(&request.email).await?).is_some() {
             return Err("Email already exists".to_string());
         }
 

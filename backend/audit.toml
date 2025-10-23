@@ -1,0 +1,10 @@
+# cargo-audit configuration
+# See: https://github.com/rustsec/rustsec/tree/main/cargo-audit
+
+[advisories]
+# Ignore the RSA Marvin Attack vulnerability from sqlx-mysql
+# Justification: We only use PostgreSQL (not MySQL), so sqlx-mysql code is never executed
+# The vulnerability is in RSA decryption operations that are not in our code path
+ignore = [
+    "RUSTSEC-2023-0071"  # rsa 0.9.8 - Marvin Attack (from sqlx-mysql, not used)
+]

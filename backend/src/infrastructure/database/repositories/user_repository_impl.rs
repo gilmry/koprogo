@@ -55,7 +55,9 @@ impl UserRepository for PostgresUserRepository {
 
         match result {
             Some(row) => {
-                let role = row.role.parse::<UserRole>()
+                let role = row
+                    .role
+                    .parse::<UserRole>()
                     .map_err(|e| format!("Invalid role: {}", e))?;
 
                 Ok(Some(User {
@@ -90,7 +92,9 @@ impl UserRepository for PostgresUserRepository {
 
         match result {
             Some(row) => {
-                let role = row.role.parse::<UserRole>()
+                let role = row
+                    .role
+                    .parse::<UserRole>()
                     .map_err(|e| format!("Invalid role: {}", e))?;
 
                 Ok(Some(User {

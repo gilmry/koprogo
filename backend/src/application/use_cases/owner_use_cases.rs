@@ -15,7 +15,7 @@ impl OwnerUseCases {
 
     pub async fn create_owner(&self, dto: CreateOwnerDto) -> Result<OwnerResponseDto, String> {
         // Vérifier si l'email existe déjà
-        if let Some(_) = self.repository.find_by_email(&dto.email).await? {
+        if (self.repository.find_by_email(&dto.email).await?).is_some() {
             return Err("Email already exists".to_string());
         }
 

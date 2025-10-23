@@ -3,8 +3,8 @@ use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::use_cases::BuildingUseCases;
 use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository};
 use std::sync::Arc;
-use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use testcontainers_modules::postgres::Postgres;
+use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 
 #[derive(World)]
 #[world(init = Self::new)]

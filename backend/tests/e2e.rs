@@ -1,12 +1,15 @@
 use actix_web::{test, App};
 use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::use_cases::*;
-use koprogo_api::infrastructure::database::{create_pool, *};
+use koprogo_api::infrastructure::database::{
+    create_pool, PostgresBuildingRepository, PostgresExpenseRepository, PostgresOwnerRepository,
+    PostgresUnitRepository, PostgresUserRepository,
+};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use serial_test::serial;
 use std::sync::Arc;
-use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use testcontainers_modules::postgres::Postgres;
+use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 
 async fn setup_test_db() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres>) {
     let postgres_container = Postgres::default()
@@ -37,17 +40,22 @@ async fn setup_test_db() -> (actix_web::web::Data<AppState>, ContainerAsync<Post
     let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
+    let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
 
+    let jwt_secret = "test-secret-key".to_string();
+    let auth_use_cases = AuthUseCases::new(user_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo);
     let unit_use_cases = UnitUseCases::new(unit_repo);
     let owner_use_cases = OwnerUseCases::new(owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo);
 
     let app_state = actix_web::web::Data::new(AppState::new(
+        auth_use_cases,
         building_use_cases,
         unit_use_cases,
         owner_use_cases,
         expense_use_cases,
+        pool.clone(),
     ));
 
     (app_state, postgres_container)
@@ -58,16 +66,9 @@ async fn setup_test_db() -> (actix_web::web::Data<AppState>, ContainerAsync<Post
 async fn test_health_endpoint() {
     let (app_state, _container) = setup_test_db().await;
 
-    let app = test::init_service(
-        App::new()
-            .app_data(app_state)
-            .configure(configure_routes),
-    )
-    .await;
+    let app = test::init_service(App::new().app_data(app_state).configure(configure_routes)).await;
 
-    let req = test::TestRequest::get()
-        .uri("/api/v1/health")
-        .to_request();
+    let req = test::TestRequest::get().uri("/api/v1/health").to_request();
 
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
@@ -78,12 +79,7 @@ async fn test_health_endpoint() {
 async fn test_create_building_endpoint() {
     let (app_state, _container) = setup_test_db().await;
 
-    let app = test::init_service(
-        App::new()
-            .app_data(app_state)
-            .configure(configure_routes),
-    )
-    .await;
+    let app = test::init_service(App::new().app_data(app_state).configure(configure_routes)).await;
 
     let dto = CreateBuildingDto {
         name: "Test Building".to_string(),
@@ -109,12 +105,7 @@ async fn test_create_building_endpoint() {
 async fn test_list_buildings_endpoint() {
     let (app_state, _container) = setup_test_db().await;
 
-    let app = test::init_service(
-        App::new()
-            .app_data(app_state)
-            .configure(configure_routes),
-    )
-    .await;
+    let app = test::init_service(App::new().app_data(app_state).configure(configure_routes)).await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/buildings")
@@ -129,12 +120,7 @@ async fn test_list_buildings_endpoint() {
 async fn test_create_building_validation_fails() {
     let (app_state, _container) = setup_test_db().await;
 
-    let app = test::init_service(
-        App::new()
-            .app_data(app_state)
-            .configure(configure_routes),
-    )
-    .await;
+    let app = test::init_service(App::new().app_data(app_state).configure(configure_routes)).await;
 
     let dto = CreateBuildingDto {
         name: "".to_string(), // Invalid: empty name

@@ -19,6 +19,7 @@ pub struct Owner {
 }
 
 impl Owner {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         first_name: String,
         last_name: String,
