@@ -495,13 +495,20 @@ Documentation complète disponible dans le dossier `docs/` :
 - **[Capacity Calculator](monitoring/scripts/capacity_calculator.sh)** - Estimation du nombre de copropriétés supportées
 
 ### Business & Marché
-- **[Business Plan](docs/BUSINESS_PLAN.md)** - Plan d'affaires complet 2025-2028
+- **[Business Plan Bootstrap](docs/BUSINESS_PLAN_BOOTSTRAP.md)** ⭐ - Plan d'affaires bootstrap 2025-2028 (RECOMMANDÉ)
+  - Stratégie OpenCore (core open-source + features premium)
+  - Équipe 3 personnes (2 FTE), 0€ coûts main d'oeuvre
+  - Croissance organique (SEO, communauté, bouche-à-oreille)
+  - Projections réalistes (60 copros → 2,100 copros)
+  - Rentable dès mois 2, 0€ financement externe
+  - LTV/CAC exceptionnel : 226:1 (vs 3:1 target SaaS)
+  - Profit Année 3 : 39,865€ (viabilité temps plein)
+- **[Business Plan VC-Backed](docs/BUSINESS_PLAN.md)** - Version avec financement externe (alternative)
   - Executive Summary & Vision
-  - Projections financières détaillées (120 copros → 3,000 copros)
-  - Stratégie commerciale dual-market (Europe + Maghreb)
-  - Modèle économique (LTV/CAC, Unit Economics)
+  - Projections agressives (120 copros → 3,000 copros)
+  - Stratégie commerciale avec ads payants
   - Besoins financement (Seed 50k€, Series A 500k€-1M€)
-  - Roadmap produit, géographique, équipe
+  - Hiring 1 → 10 personnes
 - **[Market Analysis](docs/MARKET_ANALYSIS.md)** - Analyse marché Europe & Afrique du Nord (Belgique, France, Espagne, Italie, Allemagne, Tunisie)
   - Réglementation par pays (syndic obligatoire, seuils)
   - Concurrence et opportunités
