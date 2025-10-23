@@ -481,6 +481,46 @@ make docker-down       # Arrêter Docker
 - [ ] Export comptable
 - [ ] Mobile app (Flutter)
 
+## 📚 Documentation
+
+Documentation complète disponible dans le dossier `docs/` :
+
+### Guides de Déploiement
+- **[VPS Deployment Guide](docs/VPS_DEPLOYMENT.md)** - Déploiement sur VPS low-cost (Hetzner, OVH, DigitalOcean)
+- **[Infrastructure Roadmap](docs/INFRASTRUCTURE_ROADMAP.md)** - Roadmap d'évolution (5€/mois → 270€/mois)
+- **[Infrastructure K3s](infrastructure/README.md)** - Kubernetes sur OVH Cloud
+
+### Monitoring & Opérations
+- **[Monitoring Guide](monitoring/README.md)** - Scripts de monitoring VPS (RAM, CPU, PostgreSQL, capacité)
+- **[Capacity Calculator](monitoring/scripts/capacity_calculator.sh)** - Estimation du nombre de copropriétés supportées
+
+### Business & Marché
+- **[Business Plan Bootstrap](docs/BUSINESS_PLAN_BOOTSTRAP.md)** ⭐ - Plan d'affaires bootstrap 2025-2028 (RECOMMANDÉ)
+  - Stratégie OpenCore (core open-source + features premium)
+  - Équipe 3 personnes (2 FTE), 0€ coûts main d'oeuvre
+  - Croissance organique (SEO, communauté, bouche-à-oreille)
+  - Projections réalistes (60 copros → 2,100 copros)
+  - Rentable dès mois 2, 0€ financement externe
+  - LTV/CAC exceptionnel : 226:1 (vs 3:1 target SaaS)
+  - Profit Année 3 : 39,865€ (viabilité temps plein)
+- **[Business Plan VC-Backed](docs/BUSINESS_PLAN.md)** - Version avec financement externe (alternative)
+  - Executive Summary & Vision
+  - Projections agressives (120 copros → 3,000 copros)
+  - Stratégie commerciale avec ads payants
+  - Besoins financement (Seed 50k€, Series A 500k€-1M€)
+  - Hiring 1 → 10 personnes
+- **[Market Analysis](docs/MARKET_ANALYSIS.md)** - Analyse marché Europe & Afrique du Nord (Belgique, France, Espagne, Italie, Allemagne, Tunisie)
+  - Réglementation par pays (syndic obligatoire, seuils)
+  - Concurrence et opportunités
+  - Pricing recommandé (Europe vs Maghreb)
+  - Stratégie expansion géographique
+  - Règles métier à implémenter
+
+### Guides Techniques
+- **[CLAUDE.md](CLAUDE.md)** - Instructions pour développeurs (Architecture, Commandes, TDD)
+- **[E2E Testing Guide](E2E_TESTING_GUIDE.md)** - Tests End-to-End
+- **[Makefile Guide](MAKEFILE_GUIDE.md)** - Commandes disponibles
+
 ## 📝 Contribuer
 
 Contributions bienvenues ! Voir [CONTRIBUTING.md](CONTRIBUTING.md) (à venir).
