@@ -9,6 +9,7 @@ use uuid::Uuid;
 use std::sync::Arc;
 use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
+use koprogo_api::domain::i18n::{I18n, TranslationKey, Language};
 
 #[derive(World)]
 #[world(init = Self::new)]
@@ -336,6 +337,36 @@ async fn when_try_download_last_document(world: &mut BuildingWorld) {
 #[then("the download should fail")]
 async fn then_download_should_fail(world: &mut BuildingWorld) {
     assert!(world.last_result.as_ref().map(|r| r.is_err()).unwrap_or(false));
+}
+
+// i18n
+#[when(regex = r#"^I translate key "([^"]*)" to "([a-zA-Z]+)"$"#)]
+async fn when_translate_key(_world: &mut BuildingWorld, key: String, lang: String) {
+    let tk = match key.as_str() {
+        "BuildingNameEmpty" => TranslationKey::BuildingNameEmpty,
+        "TotalUnitsMustBePositive" => TranslationKey::TotalUnitsMustBePositive,
+        "DescriptionEmpty" => TranslationKey::DescriptionEmpty,
+        "AmountMustBePositive" => TranslationKey::AmountMustBePositive,
+        "FirstNameEmpty" => TranslationKey::FirstNameEmpty,
+        "LastNameEmpty" => TranslationKey::LastNameEmpty,
+        "InvalidEmailFormat" => TranslationKey::InvalidEmailFormat,
+        "NotFound" => TranslationKey::NotFound,
+        "Unauthorized" => TranslationKey::Unauthorized,
+        _ => TranslationKey::InternalError,
+    };
+    let lang = Language::from_code(&lang).unwrap_or_default();
+    let txt = I18n::translate(tk, lang);
+    // stash in last_result for assertion
+    // store as Ok(text)
+    // We cannot mutate world directly beyond fields; reuse last_result
+    // use empty Err for none
+    _world.last_result = Some(Ok(txt));
+}
+
+#[then(regex = r#"^the translation should be "([^"]*)"$"#)]
+async fn then_translation_equals(world: &mut BuildingWorld, expected: String) {
+    let got = world.last_result.as_ref().unwrap().as_ref().unwrap();
+    assert_eq!(got, &expected);
 }
 
 // Meetings lifecycle
