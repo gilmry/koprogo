@@ -1,5 +1,5 @@
 use crate::application::dto::{CreateBuildingDto, UpdateBuildingDto};
-use crate::infrastructure::web::AppState;
+use crate::infrastructure::web::{AppState, OrganizationId};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
@@ -7,8 +7,13 @@ use validator::Validate;
 #[post("/buildings")]
 pub async fn create_building(
     state: web::Data<AppState>,
-    dto: web::Json<CreateBuildingDto>,
+    organization: OrganizationId, // JWT-extracted organization_id (SECURE!)
+    mut dto: web::Json<CreateBuildingDto>,
 ) -> impl Responder {
+    // Override the organization_id from DTO with the one from JWT token
+    // This prevents users from creating buildings in other organizations
+    dto.organization_id = organization.0.to_string();
+
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Validation failed",
