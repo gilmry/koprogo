@@ -5,6 +5,7 @@ use uuid::Uuid;
 /// Filters for building list queries
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct BuildingFilters {
+    pub organization_id: Option<Uuid>,
     pub city: Option<String>,
     pub construction_year: Option<i32>,
     pub min_units: Option<i32>,
@@ -14,6 +15,7 @@ pub struct BuildingFilters {
 /// Filters for expense list queries
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct ExpenseFilters {
+    pub organization_id: Option<Uuid>,
     pub building_id: Option<Uuid>,
     pub category: Option<String>,
     pub status: Option<String>,
@@ -27,6 +29,7 @@ pub struct ExpenseFilters {
 /// Filters for unit list queries
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct UnitFilters {
+    pub organization_id: Option<Uuid>,
     pub building_id: Option<Uuid>,
     pub unit_type: Option<String>,
     pub has_owner: Option<bool>,
@@ -38,6 +41,7 @@ pub struct UnitFilters {
 /// Filters for owner list queries
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct OwnerFilters {
+    pub organization_id: Option<Uuid>,
     pub email: Option<String>,
     pub phone: Option<String>,
     pub last_name: Option<String>,

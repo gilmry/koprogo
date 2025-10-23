@@ -1,5 +1,5 @@
-use crate::application::dto::{CreateBuildingDto, UpdateBuildingDto};
-use crate::infrastructure::web::{AppState, OrganizationId};
+use crate::application::dto::{CreateBuildingDto, PageRequest, PageResponse, UpdateBuildingDto};
+use crate::infrastructure::web::{AppState, AuthenticatedUser, OrganizationId};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
@@ -34,9 +34,28 @@ pub async fn create_building(
 }
 
 #[get("/buildings")]
-pub async fn list_buildings(state: web::Data<AppState>) -> impl Responder {
-    match state.building_use_cases.list_buildings().await {
-        Ok(buildings) => HttpResponse::Ok().json(buildings),
+pub async fn list_buildings(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    page_request: web::Query<PageRequest>,
+) -> impl Responder {
+    // Extract organization_id from authenticated user (secure!)
+    let organization_id = user.organization_id;
+
+    match state
+        .building_use_cases
+        .list_buildings_paginated(&page_request, organization_id)
+        .await
+    {
+        Ok((buildings, total)) => {
+            let response = PageResponse::new(
+                buildings,
+                page_request.page,
+                page_request.per_page,
+                total,
+            );
+            HttpResponse::Ok().json(response)
+        }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),

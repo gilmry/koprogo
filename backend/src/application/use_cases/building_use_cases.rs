@@ -47,6 +47,25 @@ impl BuildingUseCases {
         Ok(buildings.iter().map(|b| self.to_response_dto(b)).collect())
     }
 
+    pub async fn list_buildings_paginated(
+        &self,
+        page_request: &crate::application::dto::PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<BuildingResponseDto>, i64), String> {
+        let filters = crate::application::dto::BuildingFilters {
+            organization_id,
+            ..Default::default()
+        };
+
+        let (buildings, total) = self
+            .repository
+            .find_all_paginated(page_request, &filters)
+            .await?;
+
+        let dtos = buildings.iter().map(|b| self.to_response_dto(b)).collect();
+        Ok((dtos, total))
+    }
+
     pub async fn update_building(
         &self,
         id: Uuid,

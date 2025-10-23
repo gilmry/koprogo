@@ -223,4 +223,76 @@ impl DocumentRepository for PostgresDocumentRepository {
 
         Ok(result.rows_affected() > 0)
     }
+
+    async fn find_all_paginated(
+        &self,
+        page_request: &crate::application::dto::PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<Document>, i64), String> {
+        // Validate page request
+        page_request.validate()?;
+
+        // Build WHERE clause
+        let where_clause = if let Some(org_id) = organization_id {
+            format!("WHERE organization_id = '{}'", org_id)
+        } else {
+            String::new()
+        };
+
+        // Count total items
+        let count_query = format!("SELECT COUNT(*) FROM documents {}", where_clause);
+        let total_items = sqlx::query_scalar::<_, i64>(&count_query)
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
+
+        // Fetch paginated data
+        let data_query = format!(
+            "SELECT id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at \
+             FROM documents {} ORDER BY created_at DESC LIMIT {} OFFSET {}",
+            where_clause,
+            page_request.limit(),
+            page_request.offset()
+        );
+
+        let rows = sqlx::query(&data_query)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
+
+        let documents: Vec<Document> = rows
+            .iter()
+            .map(|row| {
+                let document_type_str: String = row.get("document_type");
+                let document_type = match document_type_str.as_str() {
+                    "meeting_minutes" => DocumentType::MeetingMinutes,
+                    "financial_statement" => DocumentType::FinancialStatement,
+                    "invoice" => DocumentType::Invoice,
+                    "contract" => DocumentType::Contract,
+                    "regulation" => DocumentType::Regulation,
+                    "works_quote" => DocumentType::WorksQuote,
+                    _ => DocumentType::Other,
+                };
+
+                Document {
+                    id: row.get("id"),
+                    organization_id: row.get("organization_id"),
+                    building_id: row.get("building_id"),
+                    document_type,
+                    title: row.get("title"),
+                    description: row.get("description"),
+                    file_path: row.get("file_path"),
+                    file_size: row.get("file_size"),
+                    mime_type: row.get("mime_type"),
+                    uploaded_by: row.get("uploaded_by"),
+                    related_meeting_id: row.get("related_meeting_id"),
+                    related_expense_id: row.get("related_expense_id"),
+                    created_at: row.get("created_at"),
+                    updated_at: row.get("updated_at"),
+                }
+            })
+            .collect();
+
+        Ok((documents, total_items))
+    }
 }
