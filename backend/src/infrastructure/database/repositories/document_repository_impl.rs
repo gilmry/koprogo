@@ -58,7 +58,7 @@ impl DocumentRepository for PostgresDocumentRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Document>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
+            SELECT id, organization_id, building_id, document_type::text AS document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
             FROM documents
             WHERE id = $1
             "#,

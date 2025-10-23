@@ -61,7 +61,7 @@ impl MeetingRepository for PostgresMeetingRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Meeting>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at
+            SELECT id, organization_id, building_id, meeting_type::text AS meeting_type, title, description, scheduled_date, location, status::text AS status, agenda, attendees_count, created_at, updated_at
             FROM meetings
             WHERE id = $1
             "#,
@@ -109,7 +109,7 @@ impl MeetingRepository for PostgresMeetingRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Meeting>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at
+            SELECT id, organization_id, building_id, meeting_type::text AS meeting_type, title, description, scheduled_date, location, status::text AS status, agenda, attendees_count, created_at, updated_at
             FROM meetings
             WHERE building_id = $1
             ORDER BY scheduled_date DESC

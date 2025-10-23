@@ -113,6 +113,11 @@ impl BuildingRepository for PostgresBuildingRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        if filters.organization_id.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("organization_id = ${}", param_count));
+        }
+
         if filters.city.is_some() {
             param_count += 1;
             where_clauses.push(format!("city ILIKE ${}", param_count));
@@ -157,6 +162,9 @@ impl BuildingRepository for PostgresBuildingRepository {
         let count_query = format!("SELECT COUNT(*) FROM buildings {}", where_clause);
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
+        if let Some(org_id) = filters.organization_id {
+            count_query = count_query.bind(org_id);
+        }
         if let Some(city) = &filters.city {
             count_query = count_query.bind(format!("%{}%", city));
         }
@@ -193,6 +201,9 @@ impl BuildingRepository for PostgresBuildingRepository {
 
         let mut data_query = sqlx::query(&data_query);
 
+        if let Some(org_id) = filters.organization_id {
+            data_query = data_query.bind(org_id);
+        }
         if let Some(city) = &filters.city {
             data_query = data_query.bind(format!("%{}%", city));
         }

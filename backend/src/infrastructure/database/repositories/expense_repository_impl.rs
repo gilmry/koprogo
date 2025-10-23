@@ -40,7 +40,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         sqlx::query(
             r#"
             INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            VALUES ($1, $2, $3, CAST($4 AS expense_category), $5, $6, $7, CAST($8 AS payment_status), $9, $10, $11, $12)
             "#,
         )
         .bind(expense.id)
@@ -65,7 +65,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Expense>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at
+            SELECT id, organization_id, building_id,
+                   category::text AS category, description, amount, expense_date,
+                   payment_status::text AS payment_status, supplier, invoice_number, created_at, updated_at
             FROM expenses
             WHERE id = $1
             "#,
@@ -116,7 +118,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Expense>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at
+            SELECT id, organization_id, building_id,
+                   category::text AS category, description, amount, expense_date,
+                   payment_status::text AS payment_status, supplier, invoice_number, created_at, updated_at
             FROM expenses
             WHERE building_id = $1
             ORDER BY expense_date DESC
@@ -267,7 +271,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at \
+            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, supplier, invoice_number, created_at, updated_at \
              FROM expenses {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,

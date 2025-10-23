@@ -1,6 +1,6 @@
 use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
-use actix_web::{test, App, http::header, web};
+use actix_web::{test, App, http::header};
 use koprogo_api::infrastructure::web::configure_routes;
 
 #[actix_web::test]
@@ -83,4 +83,3 @@ async fn cors_blocks_disallowed_origin() {
     assert!(resp.status().is_success());
     assert!(resp.headers().get(header::ACCESS_CONTROL_ALLOW_ORIGIN).is_none());
 }
-
