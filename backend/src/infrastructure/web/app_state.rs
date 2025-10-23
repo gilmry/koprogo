@@ -1,6 +1,6 @@
 use crate::application::use_cases::{
     AuthUseCases, BuildingUseCases, DocumentUseCases, ExpenseUseCases, MeetingUseCases,
-    OwnerUseCases, UnitUseCases,
+    OwnerUseCases, PcnUseCases, UnitUseCases,
 };
 use crate::infrastructure::pool::DbPool;
 use std::sync::Arc;
@@ -13,6 +13,7 @@ pub struct AppState {
     pub expense_use_cases: Arc<ExpenseUseCases>,
     pub meeting_use_cases: Arc<MeetingUseCases>,
     pub document_use_cases: Arc<DocumentUseCases>,
+    pub pcn_use_cases: Arc<PcnUseCases>,
     pub pool: DbPool, // For seeding operations
 }
 
@@ -25,6 +26,7 @@ impl AppState {
         expense_use_cases: ExpenseUseCases,
         meeting_use_cases: MeetingUseCases,
         document_use_cases: DocumentUseCases,
+        pcn_use_cases: PcnUseCases,
         pool: DbPool,
     ) -> Self {
         Self {
@@ -35,6 +37,7 @@ impl AppState {
             expense_use_cases: Arc::new(expense_use_cases),
             meeting_use_cases: Arc::new(meeting_use_cases),
             document_use_cases: Arc::new(document_use_cases),
+            pcn_use_cases: Arc::new(pcn_use_cases),
             pool,
         }
     }

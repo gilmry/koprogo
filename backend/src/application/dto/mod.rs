@@ -6,6 +6,7 @@ pub mod filters;
 pub mod meeting_dto;
 pub mod owner_dto;
 pub mod pagination;
+pub mod pcn_dto;
 pub mod unit_dto;
 
 pub use auth_dto::*;
@@ -16,4 +17,5 @@ pub use filters::*;
 pub use meeting_dto::*;
 pub use owner_dto::*;
 pub use pagination::*;
+pub use pcn_dto::*;
 pub use unit_dto::*;

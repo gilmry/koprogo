@@ -52,8 +52,7 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize file storage
     let upload_dir = env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
-    let file_storage =
-        FileStorage::new(&upload_dir).expect("Failed to initialize file storage");
+    let file_storage = FileStorage::new(&upload_dir).expect("Failed to initialize file storage");
 
     // Initialize repositories
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
@@ -70,9 +69,10 @@ async fn main() -> std::io::Result<()> {
     let building_use_cases = BuildingUseCases::new(building_repo);
     let unit_use_cases = UnitUseCases::new(unit_repo);
     let owner_use_cases = OwnerUseCases::new(owner_repo);
-    let expense_use_cases = ExpenseUseCases::new(expense_repo);
+    let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage);
+    let pcn_use_cases = PcnUseCases::new(expense_repo);
 
     let app_state = web::Data::new(AppState::new(
         auth_use_cases,
@@ -82,6 +82,7 @@ async fn main() -> std::io::Result<()> {
         expense_use_cases,
         meeting_use_cases,
         document_use_cases,
+        pcn_use_cases,
         pool.clone(),
     ));
 
