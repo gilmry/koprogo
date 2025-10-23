@@ -89,13 +89,11 @@ impl FileStorage {
 
     /// Sanitize filename to prevent path traversal attacks
     fn sanitize_filename(&self, filename: &str) -> String {
+        // Replace path separators and sanitize the filename
         filename
-            .chars()
-            .map(|c| match c {
-                '/' | '\\' | '..' => '_',
-                _ => c,
-            })
-            .collect()
+            .replace("..", "_")
+            .replace('/', "_")
+            .replace('\\', "_")
     }
 }
 
@@ -156,7 +154,7 @@ mod tests {
 
         assert_eq!(
             storage.sanitize_filename("../etc/passwd"),
-            "___etc_passwd"
+            "__etc_passwd"
         );
         assert_eq!(storage.sanitize_filename("normal.pdf"), "normal.pdf");
 

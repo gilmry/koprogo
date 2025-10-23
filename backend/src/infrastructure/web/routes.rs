@@ -1,14 +1,9 @@
 use crate::infrastructure::web::handlers::*;
-use crate::infrastructure::web::middleware::create_api_rate_limiter;
 use actix_web::web;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
-    // Create API rate limiter (100 req/min)
-    let api_limiter = create_api_rate_limiter();
-
     cfg.service(
         web::scope("/api/v1")
-            .wrap(api_limiter)
             .service(health_check)
             // Authentication
             .service(login)

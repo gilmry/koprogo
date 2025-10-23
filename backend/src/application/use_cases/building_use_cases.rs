@@ -1,4 +1,4 @@
-use crate::application::dto::{BuildingResponseDto, CreateBuildingDto, UpdateBuildingDto};
+use crate::application::dto::{BuildingFilters, BuildingResponseDto, CreateBuildingDto, PageRequest, UpdateBuildingDto};
 use crate::application::ports::BuildingRepository;
 use crate::domain::entities::Building;
 use std::sync::Arc;
@@ -93,6 +93,11 @@ mod tests {
             async fn create(&self, building: &Building) -> Result<Building, String>;
             async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String>;
             async fn find_all(&self) -> Result<Vec<Building>, String>;
+            async fn find_all_paginated(
+                &self,
+                page_request: &PageRequest,
+                filters: &BuildingFilters,
+            ) -> Result<(Vec<Building>, i64), String>;
             async fn update(&self, building: &Building) -> Result<Building, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
         }

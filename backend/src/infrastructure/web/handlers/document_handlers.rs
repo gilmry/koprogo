@@ -1,171 +1,59 @@
-use crate::application::dto::{DocumentResponse, LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest};
+use crate::application::dto::{LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest};
 use crate::domain::entities::DocumentType;
 use crate::infrastructure::web::app_state::AppState;
-use actix_multipart::Multipart;
+use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use futures_util::StreamExt;
-use serde::Deserialize;
 use uuid::Uuid;
 
+#[derive(Debug, MultipartForm)]
+pub struct UploadForm {
+    #[multipart(limit = "50MB")]
+    file: TempFile,
+    building_id: Text<String>,
+    document_type: Text<String>,
+    title: Text<String>,
+    description: Option<Text<String>>,
+    uploaded_by: Text<String>,
+}
+
 /// Upload a document with multipart/form-data
-/// Expected fields:
-/// - file: the file to upload
-/// - building_id: UUID
-/// - document_type: string (meeting_minutes, invoice, contract, etc.)
-/// - title: string
-/// - description: optional string
-/// - uploaded_by: UUID
-/// - related_meeting_id: optional UUID
-/// - related_expense_id: optional UUID
 #[post("/documents")]
 pub async fn upload_document(
     app_state: web::Data<AppState>,
-    mut payload: Multipart,
+    MultipartForm(form): MultipartForm<UploadForm>,
 ) -> impl Responder {
-    let mut file_content: Option<Vec<u8>> = None;
-    let mut filename: Option<String> = None;
-    let mut mime_type: Option<String> = None;
-    let mut building_id: Option<Uuid> = None;
-    let mut document_type: Option<DocumentType> = None;
-    let mut title: Option<String> = None;
-    let mut description: Option<String> = None;
-    let mut uploaded_by: Option<Uuid> = None;
-
-    // Process multipart fields
-    while let Some(item) = payload.next().await {
-        let mut field = match item {
-            Ok(field) => field,
-            Err(e) => return HttpResponse::BadRequest().json(format!("Multipart error: {}", e)),
-        };
-
-        let field_name = field.name().to_string();
-
-        match field_name.as_str() {
-            "file" => {
-                // Get filename and content type
-                filename = field
-                    .content_disposition()
-                    .get_filename()
-                    .map(|s| s.to_string());
-                mime_type = field.content_type().map(|ct| ct.to_string());
-
-                // Read file content
-                let mut content = Vec::new();
-                while let Some(chunk) = field.next().await {
-                    match chunk {
-                        Ok(data) => content.extend_from_slice(&data),
-                        Err(e) => {
-                            return HttpResponse::BadRequest()
-                                .json(format!("Error reading file: {}", e))
-                        }
-                    }
-                }
-                file_content = Some(content);
-            }
-            "building_id" => {
-                let mut value = Vec::new();
-                while let Some(chunk) = field.next().await {
-                    if let Ok(data) = chunk {
-                        value.extend_from_slice(&data);
-                    }
-                }
-                if let Ok(str_val) = String::from_utf8(value) {
-                    building_id = Uuid::parse_str(str_val.trim()).ok();
-                }
-            }
-            "document_type" => {
-                let mut value = Vec::new();
-                while let Some(chunk) = field.next().await {
-                    if let Ok(data) = chunk {
-                        value.extend_from_slice(&data);
-                    }
-                }
-                if let Ok(str_val) = String::from_utf8(value) {
-                    document_type = match str_val.trim() {
-                        "meeting_minutes" | "MeetingMinutes" => Some(DocumentType::MeetingMinutes),
-                        "financial_statement" | "FinancialStatement" => {
-                            Some(DocumentType::FinancialStatement)
-                        }
-                        "invoice" | "Invoice" => Some(DocumentType::Invoice),
-                        "contract" | "Contract" => Some(DocumentType::Contract),
-                        "regulation" | "Regulation" => Some(DocumentType::Regulation),
-                        "works_quote" | "WorksQuote" => Some(DocumentType::WorksQuote),
-                        "other" | "Other" => Some(DocumentType::Other),
-                        _ => None,
-                    };
-                }
-            }
-            "title" => {
-                let mut value = Vec::new();
-                while let Some(chunk) = field.next().await {
-                    if let Ok(data) = chunk {
-                        value.extend_from_slice(&data);
-                    }
-                }
-                if let Ok(str_val) = String::from_utf8(value) {
-                    title = Some(str_val.trim().to_string());
-                }
-            }
-            "description" => {
-                let mut value = Vec::new();
-                while let Some(chunk) = field.next().await {
-                    if let Ok(data) = chunk {
-                        value.extend_from_slice(&data);
-                    }
-                }
-                if let Ok(str_val) = String::from_utf8(value) {
-                    let trimmed = str_val.trim();
-                    if !trimmed.is_empty() {
-                        description = Some(trimmed.to_string());
-                    }
-                }
-            }
-            "uploaded_by" => {
-                let mut value = Vec::new();
-                while let Some(chunk) = field.next().await {
-                    if let Ok(data) = chunk {
-                        value.extend_from_slice(&data);
-                    }
-                }
-                if let Ok(str_val) = String::from_utf8(value) {
-                    uploaded_by = Uuid::parse_str(str_val.trim()).ok();
-                }
-            }
-            _ => {} // Ignore unknown fields
-        }
-    }
-
-    // Validate required fields
-    let file_content = match file_content {
-        Some(content) => content,
-        None => return HttpResponse::BadRequest().json("Missing file field"),
+    // Parse building_id
+    let building_id = match Uuid::parse_str(&form.building_id.0) {
+        Ok(id) => id,
+        Err(_) => return HttpResponse::BadRequest().json("Invalid building_id"),
     };
 
-    let filename = match filename {
-        Some(name) => name,
-        None => return HttpResponse::BadRequest().json("Missing filename"),
+    // Parse document_type
+    let document_type = match form.document_type.0.as_str() {
+        "meeting_minutes" | "MeetingMinutes" => DocumentType::MeetingMinutes,
+        "financial_statement" | "FinancialStatement" => DocumentType::FinancialStatement,
+        "invoice" | "Invoice" => DocumentType::Invoice,
+        "contract" | "Contract" => DocumentType::Contract,
+        "regulation" | "Regulation" => DocumentType::Regulation,
+        "works_quote" | "WorksQuote" => DocumentType::WorksQuote,
+        "other" | "Other" => DocumentType::Other,
+        _ => return HttpResponse::BadRequest().json("Invalid document_type"),
     };
 
-    let mime_type = mime_type.unwrap_or_else(|| "application/octet-stream".to_string());
-
-    let building_id = match building_id {
-        Some(id) => id,
-        None => return HttpResponse::BadRequest().json("Missing or invalid building_id"),
+    // Parse uploaded_by
+    let uploaded_by = match Uuid::parse_str(&form.uploaded_by.0) {
+        Ok(id) => id,
+        Err(_) => return HttpResponse::BadRequest().json("Invalid uploaded_by"),
     };
 
-    let document_type = match document_type {
-        Some(dt) => dt,
-        None => return HttpResponse::BadRequest().json("Missing or invalid document_type"),
-    };
+    // Get file metadata
+    let filename = form.file.file_name.clone().unwrap_or_else(|| "unnamed".to_string());
+    let mime_type = form.file.content_type.as_ref().map(|ct| ct.to_string()).unwrap_or_else(|| "application/octet-stream".to_string());
 
-    let title = match title {
-        Some(t) => t,
-        None => return HttpResponse::BadRequest().json("Missing title"),
-    };
-
-    let uploaded_by = match uploaded_by {
-        Some(id) => id,
-        None => return HttpResponse::BadRequest().json("Missing or invalid uploaded_by"),
+    // Read file content
+    let file_content = match std::fs::read(form.file.file.path()) {
+        Ok(content) => content,
+        Err(e) => return HttpResponse::InternalServerError().json(format!("Failed to read file: {}", e)),
     };
 
     // Upload document
@@ -174,8 +62,8 @@ pub async fn upload_document(
         .upload_document(
             building_id,
             document_type,
-            title,
-            description,
+            form.title.0.clone(),
+            form.description.map(|d| d.0),
             filename,
             file_content,
             mime_type,

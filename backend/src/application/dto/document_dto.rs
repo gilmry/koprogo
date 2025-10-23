@@ -24,6 +24,7 @@ pub struct DocumentResponse {
 
 impl From<Document> for DocumentResponse {
     fn from(doc: Document) -> Self {
+        let file_size_mb = doc.file_size_mb();
         Self {
             id: doc.id,
             building_id: doc.building_id,
@@ -32,7 +33,7 @@ impl From<Document> for DocumentResponse {
             description: doc.description,
             file_path: doc.file_path,
             file_size: doc.file_size,
-            file_size_mb: doc.file_size_mb(),
+            file_size_mb,
             mime_type: doc.mime_type,
             uploaded_by: doc.uploaded_by,
             related_meeting_id: doc.related_meeting_id,
