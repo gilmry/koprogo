@@ -49,10 +49,10 @@ impl BuildingUseCases {
 
     pub async fn list_buildings_paginated(
         &self,
-        page_request: &crate::application::dto::PageRequest,
+        page_request: &PageRequest,
         organization_id: Option<Uuid>,
     ) -> Result<(Vec<BuildingResponseDto>, i64), String> {
-        let filters = crate::application::dto::BuildingFilters {
+        let filters = BuildingFilters {
             organization_id,
             ..Default::default()
         };

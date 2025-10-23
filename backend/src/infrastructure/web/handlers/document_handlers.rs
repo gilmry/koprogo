@@ -1,6 +1,8 @@
-use crate::application::dto::{LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest};
+use crate::application::dto::{
+    LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest, PageRequest, PageResponse,
+};
 use crate::domain::entities::DocumentType;
-use crate::infrastructure::web::{app_state::AppState, OrganizationId};
+use crate::infrastructure::web::{app_state::AppState, AuthenticatedUser, OrganizationId};
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
@@ -100,6 +102,33 @@ pub async fn get_document(app_state: web::Data<AppState>, path: web::Path<Uuid>)
     match app_state.document_use_cases.get_document(id).await {
         Ok(document) => HttpResponse::Ok().json(document),
         Err(e) => HttpResponse::NotFound().json(e),
+    }
+}
+
+/// List all documents with pagination
+#[get("/documents")]
+pub async fn list_documents(
+    app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    page_request: web::Query<PageRequest>,
+) -> impl Responder {
+    let organization_id = user.organization_id;
+
+    match app_state
+        .document_use_cases
+        .list_documents_paginated(&page_request, organization_id)
+        .await
+    {
+        Ok((documents, total)) => {
+            let response = PageResponse::new(
+                documents,
+                page_request.page,
+                page_request.per_page,
+                total,
+            );
+            HttpResponse::Ok().json(response)
+        }
+        Err(e) => HttpResponse::InternalServerError().json(e),
     }
 }
 

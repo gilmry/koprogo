@@ -1,5 +1,5 @@
-use crate::application::dto::CreateExpenseDto;
-use crate::infrastructure::web::{AppState, OrganizationId};
+use crate::application::dto::{CreateExpenseDto, PageRequest, PageResponse};
+use crate::infrastructure::web::{AppState, AuthenticatedUser, OrganizationId};
 use actix_web::{get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
@@ -39,6 +39,34 @@ pub async fn get_expense(state: web::Data<AppState>, id: web::Path<Uuid>) -> imp
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Expense not found"
         })),
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+#[get("/expenses")]
+pub async fn list_expenses(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    page_request: web::Query<PageRequest>,
+) -> impl Responder {
+    let organization_id = user.organization_id;
+
+    match state
+        .expense_use_cases
+        .list_expenses_paginated(&page_request, organization_id)
+        .await
+    {
+        Ok((expenses, total)) => {
+            let response = PageResponse::new(
+                expenses,
+                page_request.page,
+                page_request.per_page,
+                total,
+            );
+            HttpResponse::Ok().json(response)
+        }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),

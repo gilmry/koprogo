@@ -1,4 +1,4 @@
-use crate::application::dto::{CreateUnitDto, UnitResponseDto};
+use crate::application::dto::{CreateUnitDto, PageRequest, UnitFilters, UnitResponseDto};
 use crate::application::ports::UnitRepository;
 use crate::domain::entities::Unit;
 use std::sync::Arc;
@@ -44,6 +44,25 @@ impl UnitUseCases {
     ) -> Result<Vec<UnitResponseDto>, String> {
         let units = self.repository.find_by_building(building_id).await?;
         Ok(units.iter().map(|u| self.to_response_dto(u)).collect())
+    }
+
+    pub async fn list_units_paginated(
+        &self,
+        page_request: &PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<UnitResponseDto>, i64), String> {
+        let filters = UnitFilters {
+            organization_id,
+            ..Default::default()
+        };
+
+        let (units, total) = self
+            .repository
+            .find_all_paginated(page_request, &filters)
+            .await?;
+
+        let dtos = units.iter().map(|u| self.to_response_dto(u)).collect();
+        Ok((dtos, total))
     }
 
     pub async fn assign_owner(

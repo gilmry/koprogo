@@ -1,6 +1,6 @@
 use crate::application::dto::{
     AddAgendaItemRequest, CompleteMeetingRequest, CreateMeetingRequest, MeetingResponse,
-    UpdateMeetingRequest,
+    PageRequest, UpdateMeetingRequest,
 };
 use crate::application::ports::MeetingRepository;
 use crate::domain::entities::Meeting;
@@ -45,6 +45,20 @@ impl MeetingUseCases {
     ) -> Result<Vec<MeetingResponse>, String> {
         let meetings = self.repository.find_by_building(building_id).await?;
         Ok(meetings.into_iter().map(MeetingResponse::from).collect())
+    }
+
+    pub async fn list_meetings_paginated(
+        &self,
+        page_request: &PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<MeetingResponse>, i64), String> {
+        let (meetings, total) = self
+            .repository
+            .find_all_paginated(page_request, organization_id)
+            .await?;
+
+        let dtos = meetings.into_iter().map(MeetingResponse::from).collect();
+        Ok((dtos, total))
     }
 
     pub async fn update_meeting(

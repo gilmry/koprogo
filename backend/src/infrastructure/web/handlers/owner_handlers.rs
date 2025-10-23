@@ -1,5 +1,5 @@
-use crate::application::dto::CreateOwnerDto;
-use crate::infrastructure::web::{AppState, OrganizationId};
+use crate::application::dto::{CreateOwnerDto, PageRequest, PageResponse};
+use crate::infrastructure::web::{AppState, AuthenticatedUser, OrganizationId};
 use actix_web::{get, post, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
@@ -29,9 +29,27 @@ pub async fn create_owner(
 }
 
 #[get("/owners")]
-pub async fn list_owners(state: web::Data<AppState>) -> impl Responder {
-    match state.owner_use_cases.list_owners().await {
-        Ok(owners) => HttpResponse::Ok().json(owners),
+pub async fn list_owners(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    page_request: web::Query<PageRequest>,
+) -> impl Responder {
+    let organization_id = user.organization_id;
+
+    match state
+        .owner_use_cases
+        .list_owners_paginated(&page_request, organization_id)
+        .await
+    {
+        Ok((owners, total)) => {
+            let response = PageResponse::new(
+                owners,
+                page_request.page,
+                page_request.per_page,
+                total,
+            );
+            HttpResponse::Ok().json(response)
+        }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),

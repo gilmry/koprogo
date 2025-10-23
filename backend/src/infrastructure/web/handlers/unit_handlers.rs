@@ -1,5 +1,5 @@
-use crate::application::dto::CreateUnitDto;
-use crate::infrastructure::web::{AppState, OrganizationId};
+use crate::application::dto::{CreateUnitDto, PageRequest, PageResponse};
+use crate::infrastructure::web::{AppState, AuthenticatedUser, OrganizationId};
 use actix_web::{get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
@@ -35,6 +35,34 @@ pub async fn get_unit(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl R
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Unit not found"
         })),
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+#[get("/units")]
+pub async fn list_units(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    page_request: web::Query<PageRequest>,
+) -> impl Responder {
+    let organization_id = user.organization_id;
+
+    match state
+        .unit_use_cases
+        .list_units_paginated(&page_request, organization_id)
+        .await
+    {
+        Ok((units, total)) => {
+            let response = PageResponse::new(
+                units,
+                page_request.page,
+                page_request.per_page,
+                total,
+            );
+            HttpResponse::Ok().json(response)
+        }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),

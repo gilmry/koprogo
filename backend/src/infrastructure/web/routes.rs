@@ -18,6 +18,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_building)
             // Units
             .service(create_unit)
+            .service(list_units)
             .service(get_unit)
             .service(list_units_by_building)
             .service(assign_owner)
@@ -27,11 +28,13 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_owner)
             // Expenses
             .service(create_expense)
+            .service(list_expenses)
             .service(get_expense)
             .service(list_expenses_by_building)
             .service(mark_expense_paid)
             // Meetings
             .service(create_meeting)
+            .service(list_meetings)
             .service(get_meeting)
             .service(list_meetings_by_building)
             .service(update_meeting)
@@ -41,6 +44,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_meeting)
             // Documents
             .service(upload_document)
+            .service(list_documents)
             .service(get_document)
             .service(download_document)
             .service(list_documents_by_building)

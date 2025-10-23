@@ -1,4 +1,4 @@
-use crate::application::dto::{CreateOwnerDto, OwnerResponseDto};
+use crate::application::dto::{CreateOwnerDto, OwnerFilters, OwnerResponseDto, PageRequest};
 use crate::application::ports::OwnerRepository;
 use crate::domain::entities::Owner;
 use std::sync::Arc;
@@ -46,6 +46,25 @@ impl OwnerUseCases {
     pub async fn list_owners(&self) -> Result<Vec<OwnerResponseDto>, String> {
         let owners = self.repository.find_all().await?;
         Ok(owners.iter().map(|o| self.to_response_dto(o)).collect())
+    }
+
+    pub async fn list_owners_paginated(
+        &self,
+        page_request: &PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<OwnerResponseDto>, i64), String> {
+        let filters = OwnerFilters {
+            organization_id,
+            ..Default::default()
+        };
+
+        let (owners, total) = self
+            .repository
+            .find_all_paginated(page_request, &filters)
+            .await?;
+
+        let dtos = owners.iter().map(|o| self.to_response_dto(o)).collect();
+        Ok((dtos, total))
     }
 
     fn to_response_dto(&self, owner: &Owner) -> OwnerResponseDto {

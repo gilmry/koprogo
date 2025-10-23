@@ -1,4 +1,4 @@
-use crate::application::dto::{CreateExpenseDto, ExpenseResponseDto};
+use crate::application::dto::{CreateExpenseDto, ExpenseFilters, ExpenseResponseDto, PageRequest};
 use crate::application::ports::ExpenseRepository;
 use crate::domain::entities::Expense;
 use chrono::DateTime;
@@ -53,6 +53,25 @@ impl ExpenseUseCases {
     ) -> Result<Vec<ExpenseResponseDto>, String> {
         let expenses = self.repository.find_by_building(building_id).await?;
         Ok(expenses.iter().map(|e| self.to_response_dto(e)).collect())
+    }
+
+    pub async fn list_expenses_paginated(
+        &self,
+        page_request: &PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<ExpenseResponseDto>, i64), String> {
+        let filters = ExpenseFilters {
+            organization_id,
+            ..Default::default()
+        };
+
+        let (expenses, total) = self
+            .repository
+            .find_all_paginated(page_request, &filters)
+            .await?;
+
+        let dtos = expenses.iter().map(|e| self.to_response_dto(e)).collect();
+        Ok((dtos, total))
     }
 
     pub async fn mark_as_paid(&self, id: Uuid) -> Result<ExpenseResponseDto, String> {

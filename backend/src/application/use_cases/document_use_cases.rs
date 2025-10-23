@@ -1,5 +1,5 @@
 use crate::application::dto::{
-    DocumentResponse, LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest,
+    DocumentResponse, LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest, PageRequest,
 };
 use crate::application::ports::DocumentRepository;
 use crate::domain::entities::{Document, DocumentType};
@@ -113,6 +113,21 @@ impl DocumentUseCases {
     ) -> Result<Vec<DocumentResponse>, String> {
         let documents = self.repository.find_by_meeting(meeting_id).await?;
         Ok(documents.into_iter().map(DocumentResponse::from).collect())
+    }
+
+    /// List all documents with pagination
+    pub async fn list_documents_paginated(
+        &self,
+        page_request: &PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<DocumentResponse>, i64), String> {
+        let (documents, total) = self
+            .repository
+            .find_all_paginated(page_request, organization_id)
+            .await?;
+
+        let dtos = documents.into_iter().map(DocumentResponse::from).collect();
+        Ok((dtos, total))
     }
 
     /// Link a document to a meeting
@@ -243,6 +258,31 @@ mod tests {
             } else {
                 Ok(false)
             }
+        }
+
+        async fn find_all_paginated(
+            &self,
+            page_request: &crate::application::dto::PageRequest,
+            organization_id: Option<Uuid>,
+        ) -> Result<(Vec<Document>, i64), String> {
+            let docs = self.documents.lock().unwrap();
+            let filtered: Vec<Document> = docs
+                .iter()
+                .filter(|d| organization_id.is_none() || Some(d.organization_id) == organization_id)
+                .cloned()
+                .collect();
+
+            let total = filtered.len() as i64;
+            let offset = page_request.offset() as usize;
+            let limit = page_request.limit() as usize;
+
+            let paginated = filtered
+                .into_iter()
+                .skip(offset)
+                .take(limit)
+                .collect();
+
+            Ok((paginated, total))
         }
     }
 

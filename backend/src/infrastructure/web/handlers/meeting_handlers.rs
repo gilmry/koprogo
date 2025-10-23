@@ -1,7 +1,8 @@
 use crate::application::dto::{
-    AddAgendaItemRequest, CompleteMeetingRequest, CreateMeetingRequest, UpdateMeetingRequest,
+    AddAgendaItemRequest, CompleteMeetingRequest, CreateMeetingRequest, PageRequest, PageResponse,
+    UpdateMeetingRequest,
 };
-use crate::infrastructure::web::{AppState, OrganizationId};
+use crate::infrastructure::web::{AppState, AuthenticatedUser, OrganizationId};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 
@@ -33,6 +34,34 @@ pub async fn get_meeting(state: web::Data<AppState>, id: web::Path<Uuid>) -> imp
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Meeting not found"
         })),
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+#[get("/meetings")]
+pub async fn list_meetings(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    page_request: web::Query<PageRequest>,
+) -> impl Responder {
+    let organization_id = user.organization_id;
+
+    match state
+        .meeting_use_cases
+        .list_meetings_paginated(&page_request, organization_id)
+        .await
+    {
+        Ok((meetings, total)) => {
+            let response = PageResponse::new(
+                meetings,
+                page_request.page,
+                page_request.per_page,
+                total,
+            );
+            HttpResponse::Ok().json(response)
+        }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),
