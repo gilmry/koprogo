@@ -1,5 +1,6 @@
 use cucumber::{given, then, when, World};
 use koprogo_api::application::dto::{CreateBuildingDto, CreateMeetingRequest, PcnReportRequest, PageRequest, SortOrder, UpdateMeetingRequest, CompleteMeetingRequest};
+use koprogo_api::application::dto::LoginResponse;
 use koprogo_api::application::use_cases::{BuildingUseCases, DocumentUseCases, MeetingUseCases, PcnUseCases, ExpenseUseCases};
 use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository, PostgresMeetingRepository, PostgresUserRepository, PostgresRefreshTokenRepository};
@@ -30,6 +31,7 @@ pub struct BuildingWorld {
     last_meeting_id: Option<Uuid>,
     last_download: Option<(Vec<u8>, String, String)>,
     last_expense_id: Option<Uuid>,
+    last_user_id: Option<Uuid>,
 }
 
 impl std::fmt::Debug for BuildingWorld {
@@ -63,6 +65,7 @@ impl BuildingWorld {
             last_meeting_id: None,
             last_download: None,
             last_expense_id: None,
+            last_user_id: None,
         }
     }
 
@@ -314,6 +317,27 @@ async fn then_download_not_empty(world: &mut BuildingWorld) {
     assert!(!filename.is_empty());
 }
 
+#[when("I delete the last document")]
+async fn when_delete_last_document(world: &mut BuildingWorld) {
+    let doc_id = world.last_document_id.expect("doc id");
+    let uc = world.document_use_cases.as_ref().unwrap();
+    let res = uc.delete_document(doc_id).await.expect("delete doc");
+    assert!(res);
+}
+
+#[when("I try to download the last document")]
+async fn when_try_download_last_document(world: &mut BuildingWorld) {
+    let doc_id = world.last_document_id.expect("doc id");
+    let uc = world.document_use_cases.as_ref().unwrap();
+    let res = uc.download_document(doc_id).await;
+    world.last_result = Some(res.map(|_| String::new()).map_err(|e| e));
+}
+
+#[then("the download should fail")]
+async fn then_download_should_fail(world: &mut BuildingWorld) {
+    assert!(world.last_result.as_ref().map(|r| r.is_err()).unwrap_or(false));
+}
+
 // Meetings lifecycle
 #[when(regex = r#"^I update the last meeting title to "([^"]*)" and location to "([^"]*)"$"#)]
 async fn when_update_last_meeting(world: &mut BuildingWorld, title: String, location: String) {
@@ -457,8 +481,14 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
     };
     let _ = auth.register(reg).await.expect("register");
     let login = LoginRequest { email: email.clone(), password: "Passw0rd!".to_string() };
-    let res = auth.login(login).await;
-    world.last_result = Some(res.map(|r| r.refresh_token).map_err(|e| e));
+    let res: Result<LoginResponse, String> = auth.login(login).await;
+    match res {
+        Ok(r) => {
+            world.last_user_id = Some(r.user.id);
+            world.last_result = Some(Ok(r.refresh_token));
+        }
+        Err(e) => world.last_result = Some(Err(e)),
+    }
 }
 
 #[then("I receive an access token and a refresh token")]
