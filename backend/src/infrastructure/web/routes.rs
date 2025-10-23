@@ -13,6 +13,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // Authentication
             .service(login)
             .service(register)
+            .service(refresh_token)
             .service(get_current_user)
             // Buildings
             .service(create_building)

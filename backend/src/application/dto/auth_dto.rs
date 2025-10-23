@@ -32,7 +32,13 @@ pub struct RegisterRequest {
 #[derive(Debug, Serialize)]
 pub struct LoginResponse {
     pub token: String,
+    pub refresh_token: String,
     pub user: UserResponse,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RefreshTokenRequest {
+    pub refresh_token: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -1,4 +1,4 @@
-use crate::application::dto::{LoginRequest, RegisterRequest};
+use crate::application::dto::{LoginRequest, RefreshTokenRequest, RegisterRequest};
 use crate::infrastructure::web::AppState;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use validator::Validate;
@@ -75,6 +75,19 @@ pub async fn get_current_user(data: web::Data<AppState>, req: HttpRequest) -> im
                 "error": format!("Invalid user ID: {}", e)
             })),
         },
+        Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
+            "error": e
+        })),
+    }
+}
+
+#[post("/auth/refresh")]
+pub async fn refresh_token(
+    data: web::Data<AppState>,
+    request: web::Json<RefreshTokenRequest>,
+) -> impl Responder {
+    match data.auth_use_cases.refresh_token(request.into_inner()).await {
+        Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
             "error": e
         })),

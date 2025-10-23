@@ -57,6 +57,7 @@ async fn main() -> std::io::Result<()> {
 
     // Initialize repositories
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
+    let refresh_token_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
     let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
     let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
@@ -65,7 +66,7 @@ async fn main() -> std::io::Result<()> {
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
 
     // Initialize use cases
-    let auth_use_cases = AuthUseCases::new(user_repo, jwt_secret);
+    let auth_use_cases = AuthUseCases::new(user_repo, refresh_token_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo);
     let unit_use_cases = UnitUseCases::new(unit_repo);
     let owner_use_cases = OwnerUseCases::new(owner_repo);
