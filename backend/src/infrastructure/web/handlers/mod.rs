@@ -1,5 +1,6 @@
 pub mod auth_handlers;
 pub mod building_handlers;
+pub mod document_handlers;
 pub mod expense_handlers;
 pub mod health;
 pub mod meeting_handlers;
@@ -9,6 +10,7 @@ pub mod unit_handlers;
 
 pub use auth_handlers::*;
 pub use building_handlers::*;
+pub use document_handlers::*;
 pub use expense_handlers::*;
 pub use health::*;
 pub use meeting_handlers::*;

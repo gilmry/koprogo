@@ -4,6 +4,7 @@ use dotenvy::dotenv;
 use env_logger::Env;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::*;
+use koprogo_api::infrastructure::storage::FileStorage;
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use std::env;
 use std::sync::Arc;
@@ -40,6 +41,11 @@ async fn main() -> std::io::Result<()> {
         Err(e) => log::error!("Failed to seed superadmin: {}", e),
     }
 
+    // Initialize file storage
+    let upload_dir = env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
+    let file_storage =
+        FileStorage::new(&upload_dir).expect("Failed to initialize file storage");
+
     // Initialize repositories
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
     let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
@@ -47,6 +53,7 @@ async fn main() -> std::io::Result<()> {
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
+    let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
 
     // Initialize use cases
     let auth_use_cases = AuthUseCases::new(user_repo, jwt_secret);
@@ -55,6 +62,7 @@ async fn main() -> std::io::Result<()> {
     let owner_use_cases = OwnerUseCases::new(owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo);
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
+    let document_use_cases = DocumentUseCases::new(document_repo, file_storage);
 
     let app_state = web::Data::new(AppState::new(
         auth_use_cases,
@@ -63,6 +71,7 @@ async fn main() -> std::io::Result<()> {
         owner_use_cases,
         expense_use_cases,
         meeting_use_cases,
+        document_use_cases,
         pool.clone(),
     ));
 

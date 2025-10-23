@@ -38,6 +38,15 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(complete_meeting)
             .service(cancel_meeting)
             .service(delete_meeting)
+            // Documents
+            .service(upload_document)
+            .service(get_document)
+            .service(download_document)
+            .service(list_documents_by_building)
+            .service(list_documents_by_meeting)
+            .service(link_document_to_meeting)
+            .service(link_document_to_expense)
+            .service(delete_document)
             // Seed (SuperAdmin only)
             .service(seed_demo_data)
             .service(clear_demo_data),
