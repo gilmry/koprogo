@@ -1,5 +1,5 @@
 use crate::application::dto::CreateUnitDto;
-use crate::infrastructure::web::AppState;
+use crate::infrastructure::web::{AppState, OrganizationId};
 use actix_web::{get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
@@ -7,8 +7,12 @@ use validator::Validate;
 #[post("/units")]
 pub async fn create_unit(
     state: web::Data<AppState>,
-    dto: web::Json<CreateUnitDto>,
+    organization: OrganizationId, // JWT-extracted organization_id (SECURE!)
+    mut dto: web::Json<CreateUnitDto>,
 ) -> impl Responder {
+    // Override the organization_id from DTO with the one from JWT token
+    dto.organization_id = organization.0.to_string();
+
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Validation failed",

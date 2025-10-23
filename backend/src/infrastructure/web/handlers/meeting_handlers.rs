@@ -1,15 +1,19 @@
 use crate::application::dto::{
     AddAgendaItemRequest, CompleteMeetingRequest, CreateMeetingRequest, UpdateMeetingRequest,
 };
-use crate::infrastructure::web::AppState;
+use crate::infrastructure::web::{AppState, OrganizationId};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 
 #[post("/meetings")]
 pub async fn create_meeting(
     state: web::Data<AppState>,
-    request: web::Json<CreateMeetingRequest>,
+    organization: OrganizationId, // JWT-extracted organization_id (SECURE!)
+    mut request: web::Json<CreateMeetingRequest>,
 ) -> impl Responder {
+    // Override the organization_id from request with the one from JWT token
+    request.organization_id = organization.0;
+
     match state
         .meeting_use_cases
         .create_meeting(request.into_inner())

@@ -1,6 +1,6 @@
 use crate::application::dto::{LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest};
 use crate::domain::entities::DocumentType;
-use crate::infrastructure::web::app_state::AppState;
+use crate::infrastructure::web::{app_state::AppState, OrganizationId};
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
@@ -9,7 +9,6 @@ use uuid::Uuid;
 pub struct UploadForm {
     #[multipart(limit = "50MB")]
     file: TempFile,
-    organization_id: Text<String>,
     building_id: Text<String>,
     document_type: Text<String>,
     title: Text<String>,
@@ -21,13 +20,11 @@ pub struct UploadForm {
 #[post("/documents")]
 pub async fn upload_document(
     app_state: web::Data<AppState>,
+    organization: OrganizationId, // JWT-extracted organization_id (SECURE!)
     MultipartForm(form): MultipartForm<UploadForm>,
 ) -> impl Responder {
-    // Parse organization_id (TODO: This should come from JWT in production!)
-    let organization_id = match Uuid::parse_str(&form.organization_id.0) {
-        Ok(id) => id,
-        Err(_) => return HttpResponse::BadRequest().json("Invalid organization_id"),
-    };
+    // Use organization_id from JWT token (SECURE - cannot be forged!)
+    let organization_id = organization.0;
 
     // Parse building_id
     let building_id = match Uuid::parse_str(&form.building_id.0) {
