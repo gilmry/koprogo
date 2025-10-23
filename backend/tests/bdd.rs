@@ -25,6 +25,9 @@ pub struct BuildingWorld {
     last_count: Option<usize>,
     second_org_id: Option<Uuid>,
     second_building_id: Option<Uuid>,
+    last_document_id: Option<Uuid>,
+    last_meeting_id: Option<Uuid>,
+    last_download: Option<(Vec<u8>, String, String)>,
 }
 
 impl std::fmt::Debug for BuildingWorld {
@@ -53,6 +56,9 @@ impl BuildingWorld {
             last_count: None,
             second_org_id: None,
             second_building_id: None,
+            last_document_id: None,
+            last_meeting_id: None,
+            last_download: None,
         }
     }
 
@@ -200,7 +206,13 @@ async fn when_create_meeting(world: &mut BuildingWorld, title: String) {
     };
     let uc = world.meeting_use_cases.as_ref().unwrap();
     let res = uc.create_meeting(req).await;
-    world.last_result = Some(res.map(|m| m.id.to_string()).map_err(|e| e.to_string()));
+    match res {
+        Ok(m) => {
+            world.last_meeting_id = Some(m.id);
+            world.last_result = Some(Ok(m.id.to_string()));
+        }
+        Err(e) => world.last_result = Some(Err(e)),
+    }
 }
 
 #[then("the meeting should exist")]
@@ -232,7 +244,13 @@ async fn when_upload_document(world: &mut BuildingWorld, name: String) {
             Uuid::new_v4(),
         )
         .await;
-    world.last_result = Some(res.map(|d| d.id.to_string()).map_err(|e| e.to_string()));
+    match res {
+        Ok(d) => {
+            world.last_document_id = Some(d.id);
+            world.last_result = Some(Ok(d.id.to_string()));
+        }
+        Err(e) => world.last_result = Some(Err(e)),
+    }
 }
 
 #[then("the document should be stored")]
@@ -256,6 +274,38 @@ async fn when_generate_pcn(world: &mut BuildingWorld) {
 #[then("the PCN report should be generated")]
 async fn then_pcn_generated(world: &mut BuildingWorld) {
     assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+}
+
+// Document linking + download
+#[when("I link the document to the meeting")]
+async fn when_link_document_to_meeting(world: &mut BuildingWorld) {
+    use koprogo_api::application::dto::LinkDocumentToMeetingRequest;
+    let doc_id = world.last_document_id.expect("uploaded document");
+    let meeting_id = world.last_meeting_id.expect("created meeting");
+    let uc = world.document_use_cases.as_ref().unwrap();
+    let res = uc
+        .link_to_meeting(doc_id, LinkDocumentToMeetingRequest { meeting_id })
+        .await;
+    world.last_result = Some(res.map(|d| d.id.to_string()).map_err(|e| e));
+}
+
+#[when("I download the last document")]
+async fn when_download_last_document(world: &mut BuildingWorld) {
+    let doc_id = world.last_document_id.expect("document id");
+    let uc = world.document_use_cases.as_ref().unwrap();
+    let res = uc.download_document(doc_id).await;
+    match res {
+        Ok(tuple) => world.last_download = Some(tuple),
+        Err(e) => panic!("download error: {}", e),
+    }
+}
+
+#[then("the downloaded content should not be empty")]
+async fn then_download_not_empty(world: &mut BuildingWorld) {
+    let (bytes, mime, filename) = world.last_download.as_ref().expect("downloaded");
+    assert!(!bytes.is_empty());
+    assert!(!mime.is_empty());
+    assert!(!filename.is_empty());
 }
 
 // Auth BDD
