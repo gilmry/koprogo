@@ -1,6 +1,6 @@
 use cucumber::{given, then, when, World};
 use koprogo_api::application::dto::{CreateBuildingDto, CreateMeetingRequest, PcnReportRequest, PageRequest, SortOrder, UpdateMeetingRequest, CompleteMeetingRequest};
-use koprogo_api::application::use_cases::{BuildingUseCases, DocumentUseCases, MeetingUseCases, PcnUseCases};
+use koprogo_api::application::use_cases::{BuildingUseCases, DocumentUseCases, MeetingUseCases, PcnUseCases, ExpenseUseCases};
 use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository, PostgresMeetingRepository, PostgresUserRepository, PostgresRefreshTokenRepository};
 use koprogo_api::infrastructure::storage::FileStorage;
@@ -17,6 +17,7 @@ pub struct BuildingWorld {
     document_use_cases: Option<Arc<DocumentUseCases>>,
     pcn_use_cases: Option<Arc<PcnUseCases>>,
     auth_use_cases: Option<Arc<koprogo_api::application::use_cases::AuthUseCases>>,
+    expense_use_cases: Option<Arc<ExpenseUseCases>>,
     building_dto: Option<CreateBuildingDto>,
     last_result: Option<Result<String, String>>,
     _container: Option<ContainerAsync<Postgres>>,
@@ -28,6 +29,7 @@ pub struct BuildingWorld {
     last_document_id: Option<Uuid>,
     last_meeting_id: Option<Uuid>,
     last_download: Option<(Vec<u8>, String, String)>,
+    last_expense_id: Option<Uuid>,
 }
 
 impl std::fmt::Debug for BuildingWorld {
@@ -48,6 +50,7 @@ impl BuildingWorld {
             document_use_cases: None,
             pcn_use_cases: None,
             auth_use_cases: None,
+            expense_use_cases: None,
             building_dto: None,
             last_result: None,
             _container: None,
@@ -59,6 +62,7 @@ impl BuildingWorld {
             last_document_id: None,
             last_meeting_id: None,
             last_download: None,
+            last_expense_id: None,
         }
     }
 
@@ -109,7 +113,8 @@ impl BuildingWorld {
         let meeting_use_cases = MeetingUseCases::new(meeting_repo);
         let storage = FileStorage::new(std::env::temp_dir().join("koprogo_bdd_uploads")).expect("storage");
         let document_use_cases = DocumentUseCases::new(document_repo, storage);
-        let pcn_use_cases = PcnUseCases::new(expense_repo);
+        let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
+        let expense_use_cases = ExpenseUseCases::new(expense_repo);
         let auth_use_cases = koprogo_api::application::use_cases::AuthUseCases::new(
             user_repo,
             refresh_repo,
@@ -139,6 +144,7 @@ impl BuildingWorld {
         self.document_use_cases = Some(Arc::new(document_use_cases));
         self.pcn_use_cases = Some(Arc::new(pcn_use_cases));
         self.auth_use_cases = Some(Arc::new(auth_use_cases));
+        self.expense_use_cases = Some(Arc::new(expense_use_cases));
         self._container = Some(postgres_container);
         self.org_id = Some(org_id);
         self.building_id = Some(building_id);
@@ -366,6 +372,55 @@ async fn when_list_meetings_for_building(world: &mut BuildingWorld) {
 #[then("I should get at least 1 meeting")]
 async fn then_at_least_one_meeting(world: &mut BuildingWorld) {
     assert!(world.last_count.unwrap_or(0) >= 1);
+}
+
+// Expenses + documents linking
+#[given(regex = r#"^I create an expense of amount ([-+]?[0-9]*\.?[0-9]+)$"#)]
+async fn given_create_expense(world: &mut BuildingWorld, amount: f64) {
+    use koprogo_api::application::dto::CreateExpenseDto;
+    use koprogo_api::domain::entities::ExpenseCategory;
+    let uc = world.expense_use_cases.as_ref().unwrap();
+    let dto = CreateExpenseDto {
+        organization_id: world.org_id.unwrap().to_string(),
+        building_id: world.building_id.unwrap().to_string(),
+        category: ExpenseCategory::Maintenance,
+        description: "BDD Expense".to_string(),
+        amount,
+        expense_date: chrono::Utc::now().to_rfc3339(),
+        supplier: Some("Supplier".to_string()),
+        invoice_number: Some("INV-BDD".to_string()),
+    };
+    let res = uc.create_expense(dto).await.expect("create expense");
+    world.last_expense_id = Some(Uuid::parse_str(&res.id).unwrap());
+}
+
+#[when("I link the document to the expense")]
+async fn when_link_document_to_expense(world: &mut BuildingWorld) {
+    use koprogo_api::application::dto::LinkDocumentToExpenseRequest;
+    let doc_id = world.last_document_id.expect("doc id");
+    let exp_id = world.last_expense_id.expect("expense id");
+    let uc = world.document_use_cases.as_ref().unwrap();
+    let res = uc
+        .link_to_expense(doc_id, LinkDocumentToExpenseRequest { expense_id: exp_id })
+        .await;
+    world.last_result = Some(res.map(|d| d.id.to_string()).map_err(|e| e));
+}
+
+// Documents access control: filter by org
+#[when("I list documents for the second organization")]
+async fn when_list_documents_for_second_org(world: &mut BuildingWorld) {
+    let uc = world.document_use_cases.as_ref().unwrap();
+    let page = koprogo_api::application::dto::PageRequest { page: 1, per_page: 50, sort_by: None, order: SortOrder::Desc };
+    let (docs, _total) = uc
+        .list_documents_paginated(&page, world.second_org_id)
+        .await
+        .expect("list docs second org");
+    world.last_count = Some(docs.len());
+}
+
+#[then(regex = r#"^I should get (\d+) documents$"#)]
+async fn then_documents_count(world: &mut BuildingWorld, expected: i32) {
+    assert_eq!(world.last_count.unwrap_or(0) as i32, expected);
 }
 
 // Auth BDD
