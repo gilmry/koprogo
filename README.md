@@ -481,6 +481,31 @@ make docker-down       # Arrêter Docker
 - [ ] Export comptable
 - [ ] Mobile app (Flutter)
 
+## 📚 Documentation
+
+Documentation complète disponible dans le dossier `docs/` :
+
+### Guides de Déploiement
+- **[VPS Deployment Guide](docs/VPS_DEPLOYMENT.md)** - Déploiement sur VPS low-cost (Hetzner, OVH, DigitalOcean)
+- **[Infrastructure Roadmap](docs/INFRASTRUCTURE_ROADMAP.md)** - Roadmap d'évolution (5€/mois → 270€/mois)
+- **[Infrastructure K3s](infrastructure/README.md)** - Kubernetes sur OVH Cloud
+
+### Monitoring & Opérations
+- **[Monitoring Guide](monitoring/README.md)** - Scripts de monitoring VPS (RAM, CPU, PostgreSQL, capacité)
+- **[Capacity Calculator](monitoring/scripts/capacity_calculator.sh)** - Estimation du nombre de copropriétés supportées
+
+### Business & Marché
+- **[Market Analysis](docs/MARKET_ANALYSIS.md)** - Analyse marché européen (Belgique, France, Espagne, Italie)
+  - Réglementation par pays (syndic obligatoire, seuils)
+  - Concurrence et opportunités
+  - Pricing recommandé
+  - Règles métier à implémenter
+
+### Guides Techniques
+- **[CLAUDE.md](CLAUDE.md)** - Instructions pour développeurs (Architecture, Commandes, TDD)
+- **[E2E Testing Guide](E2E_TESTING_GUIDE.md)** - Tests End-to-End
+- **[Makefile Guide](MAKEFILE_GUIDE.md)** - Commandes disponibles
+
 ## 📝 Contribuer
 
 Contributions bienvenues ! Voir [CONTRIBUTING.md](CONTRIBUTING.md) (à venir).
