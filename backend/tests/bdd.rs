@@ -1,5 +1,5 @@
 use cucumber::{given, then, when, World};
-use koprogo_api::application::dto::{CreateBuildingDto, CreateMeetingRequest, PcnReportRequest};
+use koprogo_api::application::dto::{CreateBuildingDto, CreateMeetingRequest, PcnReportRequest, PageRequest, SortOrder};
 use koprogo_api::application::use_cases::{BuildingUseCases, DocumentUseCases, MeetingUseCases, PcnUseCases};
 use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository, PostgresMeetingRepository};
@@ -21,6 +21,9 @@ pub struct BuildingWorld {
     _container: Option<ContainerAsync<Postgres>>,
     org_id: Option<Uuid>,
     building_id: Option<Uuid>,
+    last_count: Option<usize>,
+    second_org_id: Option<Uuid>,
+    second_building_id: Option<Uuid>,
 }
 
 impl std::fmt::Debug for BuildingWorld {
@@ -45,6 +48,9 @@ impl BuildingWorld {
             _container: None,
             org_id: None,
             building_id: None,
+            last_count: None,
+            second_org_id: None,
+            second_building_id: None,
         }
     }
 
@@ -240,4 +246,81 @@ async fn when_generate_pcn(world: &mut BuildingWorld) {
 #[then("the PCN report should be generated")]
 async fn then_pcn_generated(world: &mut BuildingWorld) {
     assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+}
+
+// Pagination & Filtering BDD
+#[when(regex = r#"^I list buildings page (\d+) with per_page (\d+) sorted by created_at desc$"#)]
+async fn when_list_buildings_paginated(world: &mut BuildingWorld, page: i32, per_page: i32) {
+    let page_req = PageRequest { page: i64::from(page), per_page: i64::from(per_page.min(100)), sort_by: Some("created_at".to_string()), order: SortOrder::Desc };
+    let uc = world.use_cases.as_ref().unwrap();
+    let (items, _total) = uc
+        .list_buildings_paginated(&page_req, world.org_id)
+        .await
+        .expect("paginated list");
+    world.last_count = Some(items.len());
+}
+
+#[then("I should get at least 1 building")]
+async fn then_at_least_one_building(world: &mut BuildingWorld) {
+    assert!(world.last_count.unwrap_or(0) >= 1);
+}
+
+// Multi-tenancy BDD
+#[given("a coproperty management system with two organizations")]
+async fn given_two_orgs(world: &mut BuildingWorld) {
+    world.setup_database().await;
+
+    // reuse same DB pool by re-building connection string
+    let container = world._container.as_ref().unwrap();
+    let host_port = container.get_host_port_ipv4(5432).await.expect("host port");
+    let pool = create_pool(&format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", host_port))
+        .await
+        .expect("pool");
+
+    let second_org_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
+           VALUES ($1, 'Org B', 'org-b', 'b@org.com', 'starter', 10, 10, true, NOW(), NOW())"#
+    )
+    .bind(second_org_id)
+    .execute(&pool)
+    .await
+    .expect("insert second org");
+
+    // Create a building for second org
+    let building_repo = PostgresBuildingRepository::new(pool.clone());
+    use koprogo_api::domain::entities::Building as DomBuilding;
+    let b = DomBuilding::new(
+        second_org_id,
+        "Second Org Building".to_string(),
+        "2 Test St".to_string(),
+        "Namur".to_string(),
+        "5000".to_string(),
+        "Belgique".to_string(),
+        3,
+        Some(2001),
+    ).unwrap();
+    let bid = b.id;
+    building_repo.create(&b).await.expect("create second org building");
+    world.second_org_id = Some(second_org_id);
+    world.second_building_id = Some(bid);
+}
+
+#[when("I list buildings for the first organization")]
+async fn when_list_buildings_for_first_org(world: &mut BuildingWorld) {
+    let page_req = PageRequest { page: 1, per_page: 50, sort_by: Some("created_at".to_string()), order: SortOrder::Desc };
+    let uc = world.use_cases.as_ref().unwrap();
+    let (items, _total) = uc
+        .list_buildings_paginated(&page_req, world.org_id)
+        .await
+        .expect("list first org");
+    // Ensure none belong to second org (by id mismatch)
+    let forbidden_id = world.second_building_id.unwrap();
+    assert!(items.iter().all(|b| b.id != forbidden_id.to_string()));
+}
+
+#[then("I should not see buildings from the second organization")]
+async fn then_no_cross_org(_world: &mut BuildingWorld) {
+    // Assertion already enforced in previous step
+    assert!(true);
 }
