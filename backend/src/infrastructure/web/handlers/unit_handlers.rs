@@ -1,5 +1,6 @@
 use crate::application::dto::{CreateUnitDto, PageRequest, PageResponse};
-use crate::infrastructure::web::{AppState, AuthenticatedUser, OrganizationId};
+use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
@@ -7,11 +8,18 @@ use validator::Validate;
 #[post("/units")]
 pub async fn create_unit(
     state: web::Data<AppState>,
-    organization: OrganizationId, // JWT-extracted organization_id (SECURE!)
+    user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     mut dto: web::Json<CreateUnitDto>,
 ) -> impl Responder {
     // Override the organization_id from DTO with the one from JWT token
-    dto.organization_id = organization.0.to_string();
+    // This prevents users from creating units in other organizations
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({
+            "error": e.to_string()
+        })),
+    };
+    dto.organization_id = organization_id.to_string();
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -21,10 +29,32 @@ pub async fn create_unit(
     }
 
     match state.unit_use_cases.create_unit(dto.into_inner()).await {
-        Ok(unit) => HttpResponse::Created().json(unit),
-        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
-        })),
+        Ok(unit) => {
+            // Audit log: successful unit creation
+            AuditLogEntry::new(
+                AuditEventType::UnitCreated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Unit", Uuid::parse_str(&unit.id).unwrap())
+            .log();
+
+            HttpResponse::Created().json(unit)
+        }
+        Err(err) => {
+            // Audit log: failed unit creation
+            AuditLogEntry::new(
+                AuditEventType::UnitCreated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
     }
 }
 
@@ -89,14 +119,38 @@ pub async fn list_units_by_building(
 #[put("/units/{unit_id}/assign-owner/{owner_id}")]
 pub async fn assign_owner(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
     let (unit_id, owner_id) = path.into_inner();
 
     match state.unit_use_cases.assign_owner(unit_id, owner_id).await {
-        Ok(unit) => HttpResponse::Ok().json(unit),
-        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
-        })),
+        Ok(unit) => {
+            // Audit log: successful unit assignment
+            AuditLogEntry::new(
+                AuditEventType::UnitAssignedToOwner,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Unit", unit_id)
+            .log();
+
+            HttpResponse::Ok().json(unit)
+        }
+        Err(err) => {
+            // Audit log: failed unit assignment
+            AuditLogEntry::new(
+                AuditEventType::UnitAssignedToOwner,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Unit", unit_id)
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
     }
 }

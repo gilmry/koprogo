@@ -2,7 +2,8 @@ use crate::application::dto::{
     LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest, PageRequest, PageResponse,
 };
 use crate::domain::entities::DocumentType;
-use crate::infrastructure::web::{app_state::AppState, AuthenticatedUser, OrganizationId};
+use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::{app_state::AppState, AuthenticatedUser};
 use actix_multipart::form::{tempfile::TempFile, text::Text, MultipartForm};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
@@ -22,11 +23,16 @@ pub struct UploadForm {
 #[post("/documents")]
 pub async fn upload_document(
     app_state: web::Data<AppState>,
-    organization: OrganizationId, // JWT-extracted organization_id (SECURE!)
+    user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     MultipartForm(form): MultipartForm<UploadForm>,
 ) -> impl Responder {
     // Use organization_id from JWT token (SECURE - cannot be forged!)
-    let organization_id = organization.0;
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({
+            "error": e.to_string()
+        })),
+    };
 
     // Parse building_id
     let building_id = match Uuid::parse_str(&form.building_id.0) {
@@ -89,8 +95,30 @@ pub async fn upload_document(
         )
         .await
     {
-        Ok(document) => HttpResponse::Created().json(document),
-        Err(e) => HttpResponse::InternalServerError().json(e),
+        Ok(document) => {
+            // Audit log: successful document upload
+            AuditLogEntry::new(
+                AuditEventType::DocumentUploaded,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Document", document.id)
+            .log();
+
+            HttpResponse::Created().json(document)
+        }
+        Err(e) => {
+            // Audit log: failed document upload
+            AuditLogEntry::new(
+                AuditEventType::DocumentUploaded,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_error(e.clone())
+            .log();
+
+            HttpResponse::InternalServerError().json(e)
+        }
     }
 }
 
@@ -230,13 +258,37 @@ pub async fn link_document_to_expense(
 #[delete("/documents/{id}")]
 pub async fn delete_document(
     app_state: web::Data<AppState>,
+    user: AuthenticatedUser,
     path: web::Path<Uuid>,
 ) -> impl Responder {
     let id = path.into_inner();
 
     match app_state.document_use_cases.delete_document(id).await {
-        Ok(true) => HttpResponse::NoContent().finish(),
+        Ok(true) => {
+            // Audit log: successful document deletion
+            AuditLogEntry::new(
+                AuditEventType::DocumentDeleted,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Document", id)
+            .log();
+
+            HttpResponse::NoContent().finish()
+        }
         Ok(false) => HttpResponse::NotFound().json("Document not found"),
-        Err(e) => HttpResponse::InternalServerError().json(e),
+        Err(e) => {
+            // Audit log: failed document deletion
+            AuditLogEntry::new(
+                AuditEventType::DocumentDeleted,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Document", id)
+            .with_error(e.clone())
+            .log();
+
+            HttpResponse::InternalServerError().json(e)
+        }
     }
 }

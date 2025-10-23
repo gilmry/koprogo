@@ -1,3 +1,4 @@
+pub mod audit_log_repository;
 pub mod building_repository;
 pub mod document_repository;
 pub mod expense_repository;
@@ -8,6 +9,7 @@ pub mod refresh_token_repository;
 pub mod unit_repository;
 pub mod user_repository;
 
+pub use audit_log_repository::{AuditLogFilters, AuditLogRepository};
 pub use building_repository::BuildingRepository;
 pub use document_repository::DocumentRepository;
 pub use expense_repository::ExpenseRepository;

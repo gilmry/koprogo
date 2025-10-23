@@ -2,28 +2,58 @@ use crate::application::dto::{
     AddAgendaItemRequest, CompleteMeetingRequest, CreateMeetingRequest, PageRequest, PageResponse,
     UpdateMeetingRequest,
 };
-use crate::infrastructure::web::{AppState, AuthenticatedUser, OrganizationId};
+use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
+use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 
 #[post("/meetings")]
 pub async fn create_meeting(
     state: web::Data<AppState>,
-    organization: OrganizationId, // JWT-extracted organization_id (SECURE!)
+    user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     mut request: web::Json<CreateMeetingRequest>,
 ) -> impl Responder {
     // Override the organization_id from request with the one from JWT token
-    request.organization_id = organization.0;
+    // This prevents users from creating meetings in other organizations
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({
+            "error": e.to_string()
+        })),
+    };
+    request.organization_id = organization_id;
 
     match state
         .meeting_use_cases
         .create_meeting(request.into_inner())
         .await
     {
-        Ok(meeting) => HttpResponse::Created().json(meeting),
-        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
-        })),
+        Ok(meeting) => {
+            // Audit log: successful meeting creation
+            AuditLogEntry::new(
+                AuditEventType::MeetingCreated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Meeting", meeting.id)
+            .log();
+
+            HttpResponse::Created().json(meeting)
+        }
+        Err(err) => {
+            // Audit log: failed meeting creation
+            AuditLogEntry::new(
+                AuditEventType::MeetingCreated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
     }
 }
 
@@ -124,6 +154,7 @@ pub async fn add_agenda_item(
 #[post("/meetings/{id}/complete")]
 pub async fn complete_meeting(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<CompleteMeetingRequest>,
 ) -> impl Responder {
@@ -132,10 +163,33 @@ pub async fn complete_meeting(
         .complete_meeting(*id, request.into_inner())
         .await
     {
-        Ok(meeting) => HttpResponse::Ok().json(meeting),
-        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
-            "error": err
-        })),
+        Ok(meeting) => {
+            // Audit log: successful meeting completion
+            AuditLogEntry::new(
+                AuditEventType::MeetingCompleted,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Meeting", *id)
+            .log();
+
+            HttpResponse::Ok().json(meeting)
+        }
+        Err(err) => {
+            // Audit log: failed meeting completion
+            AuditLogEntry::new(
+                AuditEventType::MeetingCompleted,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Meeting", *id)
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
     }
 }
 
