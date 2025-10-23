@@ -41,6 +41,12 @@ async-trait = "0.1"
 thiserror = "1.0"
 anyhow = "1.0"
 
+# PDF generation
+printpdf = "0.7"
+
+# Excel generation
+rust_xlsxwriter = "0.76"
+
 [dev-dependencies]
 # Unit & Integration tests
 mockall = "0.13"

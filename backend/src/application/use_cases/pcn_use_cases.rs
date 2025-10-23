@@ -1,6 +1,6 @@
 use crate::application::dto::{PcnReportLineDto, PcnReportRequest, PcnReportResponse};
 use crate::application::ports::ExpenseRepository;
-use crate::domain::services::PcnMapper;
+use crate::domain::services::{PcnExporter, PcnMapper};
 use chrono::Utc;
 use std::sync::Arc;
 
@@ -64,6 +64,60 @@ impl PcnUseCases {
             total_entries,
         })
     }
+
+    /// Export PCN report as PDF bytes
+    pub async fn export_pdf(
+        &self,
+        building_name: &str,
+        request: PcnReportRequest,
+    ) -> Result<Vec<u8>, String> {
+        // Generate report first
+        let report_response = self.generate_report(request).await?;
+
+        // Convert DTOs back to domain entities for export
+        let report_lines: Vec<_> = report_response
+            .lines
+            .iter()
+            .map(|dto| crate::domain::services::PcnReportLine {
+                account: crate::domain::services::PcnAccount {
+                    code: dto.account_code.clone(),
+                    label_fr: dto.account_label_fr.clone(),
+                    label_nl: dto.account_label_nl.clone(),
+                },
+                total_amount: dto.total_amount,
+                entry_count: dto.entry_count,
+            })
+            .collect();
+
+        PcnExporter::export_to_pdf(building_name, &report_lines, report_response.total_amount)
+    }
+
+    /// Export PCN report as Excel bytes
+    pub async fn export_excel(
+        &self,
+        building_name: &str,
+        request: PcnReportRequest,
+    ) -> Result<Vec<u8>, String> {
+        // Generate report first
+        let report_response = self.generate_report(request).await?;
+
+        // Convert DTOs back to domain entities for export
+        let report_lines: Vec<_> = report_response
+            .lines
+            .iter()
+            .map(|dto| crate::domain::services::PcnReportLine {
+                account: crate::domain::services::PcnAccount {
+                    code: dto.account_code.clone(),
+                    label_fr: dto.account_label_fr.clone(),
+                    label_nl: dto.account_label_nl.clone(),
+                },
+                total_amount: dto.total_amount,
+                entry_count: dto.entry_count,
+            })
+            .collect();
+
+        PcnExporter::export_to_excel(building_name, &report_lines, report_response.total_amount)
+    }
 }
 
 #[cfg(test)]
@@ -116,11 +170,7 @@ mod tests {
         }
     }
 
-    fn create_test_expense(
-        building_id: Uuid,
-        category: ExpenseCategory,
-        amount: f64,
-    ) -> Expense {
+    fn create_test_expense(building_id: Uuid, category: ExpenseCategory, amount: f64) -> Expense {
         Expense::new(
             building_id,
             category,
@@ -173,9 +223,7 @@ mod tests {
     #[tokio::test]
     async fn test_generate_report_empty() {
         let building_id = Uuid::new_v4();
-        let repo = Arc::new(MockExpenseRepository {
-            expenses: vec![],
-        });
+        let repo = Arc::new(MockExpenseRepository { expenses: vec![] });
         let use_cases = PcnUseCases::new(repo);
 
         let request = PcnReportRequest {

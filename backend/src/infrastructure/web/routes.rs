@@ -50,6 +50,8 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_document)
             // PCN (Belgian Chart of Accounts)
             .service(generate_pcn_report)
+            .service(export_pcn_pdf)
+            .service(export_pcn_excel)
             // Seed (SuperAdmin only)
             .service(seed_demo_data)
             .service(clear_demo_data),
