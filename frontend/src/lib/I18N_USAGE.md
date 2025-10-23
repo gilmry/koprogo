@@ -3,6 +3,7 @@
 ## Overview
 
 KoproGo supports 4 languages following Belgian requirements:
+
 1. **Nederlands (NL)** - 60% Belgium - Priority #1 🇳🇱
 2. **Français (FR)** - 40% Belgium - Priority #2 🇫🇷
 3. **Deutsch (DE)** - <1% Belgium - Legally required 🇩🇪
@@ -178,16 +179,16 @@ User language preference is automatically saved to `localStorage` and restored o
 When making API calls, you can include the `Accept-Language` header:
 
 ```typescript
-import { locale } from 'svelte-i18n';
-import { get } from 'svelte/store';
+import { locale } from "svelte-i18n";
+import { get } from "svelte/store";
 
 async function fetchData() {
   const currentLocale = get(locale);
 
-  const response = await fetch('/api/v1/buildings', {
+  const response = await fetch("/api/v1/buildings", {
     headers: {
-      'Accept-Language': currentLocale || 'nl',
-      'Content-Type': 'application/json',
+      "Accept-Language": currentLocale || "nl",
+      "Content-Type": "application/json",
     },
   });
 
@@ -200,12 +201,14 @@ The backend will use this to return error messages in the correct language.
 ## PCN Reports - Multilingual
 
 PCN reports now include labels in all 4 languages:
+
 - Account codes remain the same (610, 611, 612, etc.)
 - Labels are provided in NL, FR, DE, EN
 - Excel exports show all 4 language columns
 - JSON API responses include all translations
 
 Example JSON response:
+
 ```json
 {
   "account_code": "611",
@@ -213,7 +216,7 @@ Example JSON response:
   "account_label_fr": "Entretien et petites réparations",
   "account_label_de": "Wartung und kleine Reparaturen",
   "account_label_en": "Maintenance and minor repairs",
-  "total_amount": 1500.00,
+  "total_amount": 1500.0,
   "entry_count": 5
 }
 ```
