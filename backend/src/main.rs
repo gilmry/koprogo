@@ -1,4 +1,5 @@
 use actix_cors::Cors;
+use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
 use env_logger::Env;
@@ -88,6 +89,14 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Starting server at {}:{}", server_host, server_port);
 
+    // Configure rate limiter: 100 requests per minute per IP
+    // Allows bursts up to 100 requests, then refills at 100/60000ms rate
+    let governor_conf = GovernorConfigBuilder::default()
+        .per_millisecond(100 * 60 * 1000) // 100 requests per minute (60,000ms)
+        .burst_size(100) // Allow initial burst of 100 requests
+        .finish()
+        .unwrap();
+
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment
         let mut cors = Cors::default();
@@ -105,6 +114,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .app_data(app_state.clone())
+            .wrap(Governor::new(&governor_conf))
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .configure(configure_routes)
