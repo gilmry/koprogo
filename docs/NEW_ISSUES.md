@@ -71,24 +71,24 @@ POST /api/v1/payments/coda-import
 
 ---
 
-### #019 - Internationalization FR/NL/EN
+### #019 - Internationalization NL/FR/DE/EN
 
-**Besoin**: "La Belgique est bilingue FR/NL. L'interface doit supporter français, néerlandais, anglais pour compétitivité."
+**Besoin**: "La Belgique est **trilingue** (NL/FR/DE - néerlandais 60%, français 40%, allemand <1%). L'interface doit supporter les 3 langues officielles belges + anglais (EN) pour compétitivité internationale."
 
 **Priorité**: 🔴 CRITIQUE (Phase 1)
-**Estimation**: 8-10h
+**Estimation**: 10-12h (ajusté pour 4 langues)
 
 **Specs**:
-- Backend: Enums + messages erreur traduits (FR/NL/EN)
+- Backend: Enums + messages erreur traduits (NL/FR/DE/EN)
 - Frontend: i18n avec `svelte-i18n` ou `@formatjs/intl`
-- Fichiers locales: `locales/fr.json`, `locales/nl.json`, `locales/en.json`
+- Fichiers locales: `locales/nl.json`, `locales/fr.json`, `locales/de.json`, `locales/en.json`
 - Détection langue automatique (header `Accept-Language`)
-- Sélecteur langue UI
+- Sélecteur langue UI avec drapeaux (🇳🇱 🇫🇷 🇩🇪 🇬🇧)
 - Traduction complète:
   - Labels formulaires
   - Messages validation
   - Emails notifications
-  - PDFs rapports
+  - PDFs rapports PCN (déjà NL/FR, ajouter DE/EN)
   - Documentation
 
 **Fichier locale exemple** (`locales/fr.json`):
@@ -101,7 +101,11 @@ POST /api/v1/payments/coda-import
 }
 ```
 
-**Néerlandais prioritaire** pour marché belge flamand (60% population)
+**Priorités linguistiques**:
+1. **Néerlandais (NL)**: Priorité #1 - 60% population (Flandre)
+2. **Français (FR)**: Priorité #2 - 40% population (Wallonie + Bruxelles)
+3. **Allemand (DE)**: Requis légalement - <1% population (Cantons de l'Est)
+4. **Anglais (EN)**: Compétitivité internationale + expatriés Bruxelles
 
 ---
 
