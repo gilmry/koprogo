@@ -46,6 +46,7 @@ async fn main() -> std::io::Result<()> {
     let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
+    let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
 
     // Initialize use cases
     let auth_use_cases = AuthUseCases::new(user_repo, jwt_secret);
@@ -53,6 +54,7 @@ async fn main() -> std::io::Result<()> {
     let unit_use_cases = UnitUseCases::new(unit_repo);
     let owner_use_cases = OwnerUseCases::new(owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo);
+    let meeting_use_cases = MeetingUseCases::new(meeting_repo);
 
     let app_state = web::Data::new(AppState::new(
         auth_use_cases,
@@ -60,6 +62,7 @@ async fn main() -> std::io::Result<()> {
         unit_use_cases,
         owner_use_cases,
         expense_use_cases,
+        meeting_use_cases,
         pool.clone(),
     ));
 

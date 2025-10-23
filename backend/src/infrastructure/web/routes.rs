@@ -29,6 +29,15 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_expense)
             .service(list_expenses_by_building)
             .service(mark_expense_paid)
+            // Meetings
+            .service(create_meeting)
+            .service(get_meeting)
+            .service(list_meetings_by_building)
+            .service(update_meeting)
+            .service(add_agenda_item)
+            .service(complete_meeting)
+            .service(cancel_meeting)
+            .service(delete_meeting)
             // Seed (SuperAdmin only)
             .service(seed_demo_data)
             .service(clear_demo_data),
