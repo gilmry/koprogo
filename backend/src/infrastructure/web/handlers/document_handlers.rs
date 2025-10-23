@@ -29,9 +29,11 @@ pub async fn upload_document(
     // Use organization_id from JWT token (SECURE - cannot be forged!)
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
-        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e.to_string()
-        })),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
     };
 
     // Parse building_id
@@ -148,12 +150,8 @@ pub async fn list_documents(
         .await
     {
         Ok((documents, total)) => {
-            let response = PageResponse::new(
-                documents,
-                page_request.page,
-                page_request.per_page,
-                total,
-            );
+            let response =
+                PageResponse::new(documents, page_request.page, page_request.per_page, total);
             HttpResponse::Ok().json(response)
         }
         Err(e) => HttpResponse::InternalServerError().json(e),

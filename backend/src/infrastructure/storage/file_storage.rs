@@ -90,10 +90,7 @@ impl FileStorage {
     /// Sanitize filename to prevent path traversal attacks
     fn sanitize_filename(&self, filename: &str) -> String {
         // Replace path separators and sanitize the filename
-        filename
-            .replace("..", "_")
-            .replace('/', "_")
-            .replace('\\', "_")
+        filename.replace("..", "_").replace(['/', '\\'], "_")
     }
 }
 

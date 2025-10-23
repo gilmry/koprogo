@@ -140,7 +140,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         };
 
         // Validate sort column (whitelist)
-        let allowed_columns = vec![
+        let allowed_columns = [
             "name",
             "created_at",
             "total_units",

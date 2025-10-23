@@ -222,7 +222,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         };
 
         // Validate sort column (whitelist)
-        let allowed_columns = vec!["expense_date", "amount", "created_at", "payment_status"];
+        let allowed_columns = ["expense_date", "amount", "created_at", "payment_status"];
         let sort_column = page_request.sort_by.as_deref().unwrap_or("expense_date");
 
         if !allowed_columns.contains(&sort_column) {

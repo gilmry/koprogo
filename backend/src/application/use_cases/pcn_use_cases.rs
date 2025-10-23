@@ -174,7 +174,12 @@ mod tests {
         }
     }
 
-    fn create_test_expense(organization_id: Uuid, building_id: Uuid, category: ExpenseCategory, amount: f64) -> Expense {
+    fn create_test_expense(
+        organization_id: Uuid,
+        building_id: Uuid,
+        category: ExpenseCategory,
+        amount: f64,
+    ) -> Expense {
         Expense::new(
             organization_id,
             building_id,

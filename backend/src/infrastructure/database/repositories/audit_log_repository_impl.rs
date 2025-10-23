@@ -176,10 +176,7 @@ impl AuditLogRepository for PostgresAuditLogRepository {
         };
 
         // Count total matching records
-        let count_query = format!(
-            "SELECT COUNT(*) as count FROM audit_logs {}",
-            where_clause
-        );
+        let count_query = format!("SELECT COUNT(*) as count FROM audit_logs {}", where_clause);
         let mut count_query_builder = sqlx::query(&count_query);
 
         // Bind parameters for count query
@@ -265,7 +262,7 @@ impl AuditLogRepository for PostgresAuditLogRepository {
             .await
             .map_err(|e| format!("Database error: {}", e))?;
 
-        let entries: Vec<AuditLogEntry> = rows.iter().map(|r| Self::row_to_entry(r)).collect();
+        let entries: Vec<AuditLogEntry> = rows.iter().map(Self::row_to_entry).collect();
 
         Ok((entries, total))
     }
@@ -286,7 +283,7 @@ impl AuditLogRepository for PostgresAuditLogRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|r| Self::row_to_entry(r)).collect())
+        Ok(rows.iter().map(Self::row_to_entry).collect())
     }
 
     async fn find_failed_operations(
@@ -350,7 +347,7 @@ impl AuditLogRepository for PostgresAuditLogRepository {
                 .map_err(|e| format!("Database error: {}", e))?
         };
 
-        let entries: Vec<AuditLogEntry> = rows.iter().map(|r| Self::row_to_entry(r)).collect();
+        let entries: Vec<AuditLogEntry> = rows.iter().map(Self::row_to_entry).collect();
 
         Ok((entries, total))
     }

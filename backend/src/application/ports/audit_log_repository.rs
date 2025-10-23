@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use uuid::Uuid;
 
 /// Filters for querying audit logs
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct AuditLogFilters {
     pub user_id: Option<Uuid>,
     pub organization_id: Option<Uuid>,
@@ -15,21 +15,6 @@ pub struct AuditLogFilters {
     pub end_date: Option<DateTime<Utc>>,
     pub resource_type: Option<String>,
     pub resource_id: Option<Uuid>,
-}
-
-impl Default for AuditLogFilters {
-    fn default() -> Self {
-        Self {
-            user_id: None,
-            organization_id: None,
-            event_type: None,
-            success: None,
-            start_date: None,
-            end_date: None,
-            resource_type: None,
-            resource_id: None,
-        }
-    }
 }
 
 /// Port (interface) for audit log repository

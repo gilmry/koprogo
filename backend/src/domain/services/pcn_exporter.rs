@@ -27,7 +27,7 @@ impl PcnExporter {
 
         // Title
         current_layer.use_text(
-            format!("Rapport PCN - Plan Comptable Normalisé"),
+            "Rapport PCN - Plan Comptable Normalisé".to_string(),
             24.0,
             Mm(20.0),
             Mm(270.0),
@@ -144,7 +144,7 @@ impl PcnExporter {
             .write_string_with_format(
                 1,
                 0,
-                &format!("Immeuble: {}", building_name),
+                format!("Immeuble: {}", building_name).as_str(),
                 &Format::new(),
             )
             .map_err(|e| e.to_string())?;

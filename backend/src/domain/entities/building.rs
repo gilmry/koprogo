@@ -19,6 +19,7 @@ pub struct Building {
 }
 
 impl Building {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         organization_id: Uuid,
         name: String,

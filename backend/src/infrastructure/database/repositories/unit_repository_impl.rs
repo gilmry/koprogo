@@ -223,7 +223,7 @@ impl UnitRepository for PostgresUnitRepository {
         };
 
         // Validate sort column (whitelist)
-        let allowed_columns = vec!["unit_number", "floor", "surface_area", "created_at"];
+        let allowed_columns = ["unit_number", "floor", "surface_area", "created_at"];
         let sort_column = page_request.sort_by.as_deref().unwrap_or("unit_number");
 
         if !allowed_columns.contains(&sort_column) {

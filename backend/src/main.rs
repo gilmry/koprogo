@@ -92,7 +92,7 @@ async fn main() -> std::io::Result<()> {
     // Configure rate limiter: 100 requests per minute per IP
     // Allows bursts up to 100 requests, then refills at 100/60000ms rate
     let governor_conf = GovernorConfigBuilder::default()
-        .per_millisecond(100 * 60 * 1000) // 100 requests per minute (60,000ms)
+        .milliseconds_per_request(100 * 60 * 1000) // 100 requests per minute (60,000ms)
         .burst_size(100) // Allow initial burst of 100 requests
         .finish()
         .unwrap();

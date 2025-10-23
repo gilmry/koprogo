@@ -21,6 +21,7 @@ impl DocumentUseCases {
     }
 
     /// Upload a document with file content
+    #[allow(clippy::too_many_arguments)]
     pub async fn upload_document(
         &self,
         organization_id: Uuid,
@@ -90,7 +91,7 @@ impl DocumentUseCases {
         let filename = document
             .file_path
             .split('/')
-            .last()
+            .next_back()
             .unwrap_or("download")
             .to_string();
 
@@ -276,11 +277,7 @@ mod tests {
             let offset = page_request.offset() as usize;
             let limit = page_request.limit() as usize;
 
-            let paginated = filtered
-                .into_iter()
-                .skip(offset)
-                .take(limit)
-                .collect();
+            let paginated = filtered.into_iter().skip(offset).take(limit).collect();
 
             Ok((paginated, total))
         }

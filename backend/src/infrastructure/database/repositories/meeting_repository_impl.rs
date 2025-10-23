@@ -35,7 +35,7 @@ impl MeetingRepository for PostgresMeetingRepository {
         sqlx::query(
             r#"
             INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            VALUES ($1, $2, $3, CAST($4 AS meeting_type), $5, $6, $7, $8, CAST($9 AS meeting_status), $10, $11, $12, $13)
             "#,
         )
         .bind(meeting.id)

@@ -1,6 +1,6 @@
 -- Create refresh_tokens table for JWT refresh token management
 CREATE TABLE refresh_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token VARCHAR(512) NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL,

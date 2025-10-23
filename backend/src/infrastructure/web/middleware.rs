@@ -1,7 +1,5 @@
 use crate::infrastructure::web::app_state::AppState;
-use actix_web::{
-    dev::Payload, error::ErrorUnauthorized, web, Error, FromRequest, HttpRequest,
-};
+use actix_web::{dev::Payload, error::ErrorUnauthorized, web, Error, FromRequest, HttpRequest};
 use std::future::{ready, Ready};
 use uuid::Uuid;
 

@@ -44,7 +44,9 @@ ALTER TABLE units ENABLE ROW LEVEL SECURITY;
 ALTER TABLE owners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE documents ENABLE ROW LEVEL SECURICREATE POLICY buildings_isolation ON buildings
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY buildings_isolation ON buildings
 USING (organization_id = current_setting('app.current_organization_id', true)::UUID);
 
 CREATE POLICY units_isolation ON units

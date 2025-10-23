@@ -420,7 +420,15 @@ impl DatabaseSeeder {
             )
             .await?;
 
-        self.create_demo_meeting(building3_id, org2_id, "AG Annuelle 2025", "general", "2025-05-10", "scheduled").await?;
+        self.create_demo_meeting(
+            building3_id,
+            org2_id,
+            "AG Annuelle 2025",
+            "general",
+            "2025-05-10",
+            "scheduled",
+        )
+        .await?;
 
         log::info!("✅ Organization 2 created");
 

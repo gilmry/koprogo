@@ -42,6 +42,7 @@ pub struct Expense {
 }
 
 impl Expense {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         organization_id: Uuid,
         building_id: Uuid,

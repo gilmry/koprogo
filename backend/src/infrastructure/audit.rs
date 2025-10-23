@@ -93,7 +93,11 @@ impl AuditLogEntry {
     }
 
     /// Set client information
-    pub fn with_client_info(mut self, ip_address: Option<String>, user_agent: Option<String>) -> Self {
+    pub fn with_client_info(
+        mut self,
+        ip_address: Option<String>,
+        user_agent: Option<String>,
+    ) -> Self {
         self.ip_address = ip_address;
         self.user_agent = user_agent;
         self
@@ -162,13 +166,10 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let entry = AuditLogEntry::new(
-            AuditEventType::BuildingCreated,
-            Some(user_id),
-            Some(org_id),
-        )
-        .with_resource("Building", building_id)
-        .with_client_info(Some("192.168.1.1".to_string()), None);
+        let entry =
+            AuditLogEntry::new(AuditEventType::BuildingCreated, Some(user_id), Some(org_id))
+                .with_resource("Building", building_id)
+                .with_client_info(Some("192.168.1.1".to_string()), None);
 
         assert_eq!(entry.user_id, Some(user_id));
         assert_eq!(entry.organization_id, Some(org_id));

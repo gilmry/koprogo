@@ -172,7 +172,7 @@ impl OwnerRepository for PostgresOwnerRepository {
         };
 
         // Validate sort column (whitelist)
-        let allowed_columns = vec!["last_name", "first_name", "email", "created_at"];
+        let allowed_columns = ["last_name", "first_name", "email", "created_at"];
         let sort_column = page_request.sort_by.as_deref().unwrap_or("last_name");
 
         if !allowed_columns.contains(&sort_column) {

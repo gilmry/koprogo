@@ -15,9 +15,11 @@ pub async fn create_expense(
     // This prevents users from creating expenses in other organizations
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
-        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e.to_string()
-        })),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
     };
     dto.organization_id = organization_id.to_string();
 
@@ -89,12 +91,8 @@ pub async fn list_expenses(
         .await
     {
         Ok((expenses, total)) => {
-            let response = PageResponse::new(
-                expenses,
-                page_request.page,
-                page_request.per_page,
-                total,
-            );
+            let response =
+                PageResponse::new(expenses, page_request.page, page_request.per_page, total);
             HttpResponse::Ok().json(response)
         }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({

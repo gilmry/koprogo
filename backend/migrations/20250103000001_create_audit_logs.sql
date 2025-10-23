@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     -- Primary key
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY,
 
     -- Event timestamp (when the event occurred)
     timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),

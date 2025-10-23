@@ -31,7 +31,7 @@ impl DocumentRepository for PostgresDocumentRepository {
         sqlx::query(
             r#"
             INSERT INTO documents (id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            VALUES ($1, $2, $3, CAST($4 AS document_type), $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             "#,
         )
         .bind(document.id)
