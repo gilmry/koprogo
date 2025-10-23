@@ -423,6 +423,23 @@ async fn then_documents_count(world: &mut BuildingWorld, expected: i32) {
     assert_eq!(world.last_count.unwrap_or(0) as i32, expected);
 }
 
+// Expenses pagination
+#[when(regex = r#"^I list expenses page (\d+) with per_page (\d+)$"#)]
+async fn when_list_expenses_paginated(world: &mut BuildingWorld, page: i32, per_page: i32) {
+    let uc = world.expense_use_cases.as_ref().unwrap();
+    let page_req = PageRequest { page: i64::from(page), per_page: i64::from(per_page.min(100)), sort_by: Some("expense_date".to_string()), order: SortOrder::Desc };
+    let (items, _total) = uc
+        .list_expenses_paginated(&page_req, world.org_id)
+        .await
+        .expect("list expenses");
+    world.last_count = Some(items.len());
+}
+
+#[then("I should get at least 1 expense")]
+async fn then_at_least_one_expense(world: &mut BuildingWorld) {
+    assert!(world.last_count.unwrap_or(0) >= 1);
+}
+
 // Auth BDD
 #[when("I register a new user and login")]
 async fn when_register_and_login(world: &mut BuildingWorld) {
