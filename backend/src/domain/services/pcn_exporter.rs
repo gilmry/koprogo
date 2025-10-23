@@ -109,16 +109,22 @@ impl PcnExporter {
             .set_column_width(0, 10)
             .map_err(|e| e.to_string())?; // Code
         worksheet
-            .set_column_width(1, 40)
-            .map_err(|e| e.to_string())?; // Libellé FR
+            .set_column_width(1, 35)
+            .map_err(|e| e.to_string())?; // Label NL
         worksheet
-            .set_column_width(2, 40)
-            .map_err(|e| e.to_string())?; // Libellé NL
+            .set_column_width(2, 35)
+            .map_err(|e| e.to_string())?; // Label FR
         worksheet
-            .set_column_width(3, 15)
+            .set_column_width(3, 35)
+            .map_err(|e| e.to_string())?; // Label DE
+        worksheet
+            .set_column_width(4, 35)
+            .map_err(|e| e.to_string())?; // Label EN
+        worksheet
+            .set_column_width(5, 15)
             .map_err(|e| e.to_string())?; // Montant
         worksheet
-            .set_column_width(4, 10)
+            .set_column_width(6, 10)
             .map_err(|e| e.to_string())?; // Nb
 
         // Create formats
@@ -148,16 +154,22 @@ impl PcnExporter {
             .write_string_with_format(3, 0, "Code PCN", &header_format)
             .map_err(|e| e.to_string())?;
         worksheet
-            .write_string_with_format(3, 1, "Libellé (FR)", &header_format)
+            .write_string_with_format(3, 1, "Nederlands (NL)", &header_format)
             .map_err(|e| e.to_string())?;
         worksheet
-            .write_string_with_format(3, 2, "Libellé (NL)", &header_format)
+            .write_string_with_format(3, 2, "Français (FR)", &header_format)
             .map_err(|e| e.to_string())?;
         worksheet
-            .write_string_with_format(3, 3, "Montant", &header_format)
+            .write_string_with_format(3, 3, "Deutsch (DE)", &header_format)
             .map_err(|e| e.to_string())?;
         worksheet
-            .write_string_with_format(3, 4, "Nb Écritures", &header_format)
+            .write_string_with_format(3, 4, "English (EN)", &header_format)
+            .map_err(|e| e.to_string())?;
+        worksheet
+            .write_string_with_format(3, 5, "Montant", &header_format)
+            .map_err(|e| e.to_string())?;
+        worksheet
+            .write_string_with_format(3, 6, "Nb Écritures", &header_format)
             .map_err(|e| e.to_string())?;
 
         // Data rows
@@ -167,16 +179,22 @@ impl PcnExporter {
                 .write_string(row, 0, &line.account.code)
                 .map_err(|e| e.to_string())?;
             worksheet
-                .write_string(row, 1, &line.account.label_fr)
+                .write_string(row, 1, &line.account.label_nl)
                 .map_err(|e| e.to_string())?;
             worksheet
-                .write_string(row, 2, &line.account.label_nl)
+                .write_string(row, 2, &line.account.label_fr)
                 .map_err(|e| e.to_string())?;
             worksheet
-                .write_number_with_format(row, 3, line.total_amount, &currency_format)
+                .write_string(row, 3, &line.account.label_de)
                 .map_err(|e| e.to_string())?;
             worksheet
-                .write_number(row, 4, line.entry_count as f64)
+                .write_string(row, 4, &line.account.label_en)
+                .map_err(|e| e.to_string())?;
+            worksheet
+                .write_number_with_format(row, 5, line.total_amount, &currency_format)
+                .map_err(|e| e.to_string())?;
+            worksheet
+                .write_number(row, 6, line.entry_count as f64)
                 .map_err(|e| e.to_string())?;
             row += 1;
         }
@@ -184,12 +202,12 @@ impl PcnExporter {
         // Total row
         row += 1;
         worksheet
-            .write_string_with_format(row, 2, "TOTAL:", &bold_format)
+            .write_string_with_format(row, 4, "TOTAL:", &bold_format)
             .map_err(|e| e.to_string())?;
         worksheet
             .write_number_with_format(
                 row,
-                3,
+                5,
                 total_amount,
                 &Format::new().set_bold().set_num_format("#,##0.00 €"),
             )

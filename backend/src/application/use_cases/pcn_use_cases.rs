@@ -81,8 +81,10 @@ impl PcnUseCases {
             .map(|dto| crate::domain::services::PcnReportLine {
                 account: crate::domain::services::PcnAccount {
                     code: dto.account_code.clone(),
-                    label_fr: dto.account_label_fr.clone(),
                     label_nl: dto.account_label_nl.clone(),
+                    label_fr: dto.account_label_fr.clone(),
+                    label_de: dto.account_label_de.clone(),
+                    label_en: dto.account_label_en.clone(),
                 },
                 total_amount: dto.total_amount,
                 entry_count: dto.entry_count,
@@ -108,8 +110,10 @@ impl PcnUseCases {
             .map(|dto| crate::domain::services::PcnReportLine {
                 account: crate::domain::services::PcnAccount {
                     code: dto.account_code.clone(),
-                    label_fr: dto.account_label_fr.clone(),
                     label_nl: dto.account_label_nl.clone(),
+                    label_fr: dto.account_label_fr.clone(),
+                    label_de: dto.account_label_de.clone(),
+                    label_en: dto.account_label_en.clone(),
                 },
                 total_amount: dto.total_amount,
                 entry_count: dto.entry_count,

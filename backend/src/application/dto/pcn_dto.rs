@@ -38,10 +38,14 @@ pub struct PcnReportResponse {
 pub struct PcnReportLineDto {
     /// PCN account code (e.g., "611")
     pub account_code: String,
-    /// Account label in French
-    pub account_label_fr: String,
-    /// Account label in Dutch
+    /// Account label in Dutch (Nederlands - 60%)
     pub account_label_nl: String,
+    /// Account label in French (Français - 40%)
+    pub account_label_fr: String,
+    /// Account label in German (Deutsch - <1%)
+    pub account_label_de: String,
+    /// Account label in English (International)
+    pub account_label_en: String,
     /// Total amount for this account
     pub total_amount: f64,
     /// Number of expense entries for this account
@@ -52,8 +56,10 @@ impl From<PcnReportLine> for PcnReportLineDto {
     fn from(line: PcnReportLine) -> Self {
         Self {
             account_code: line.account.code,
-            account_label_fr: line.account.label_fr,
             account_label_nl: line.account.label_nl,
+            account_label_fr: line.account.label_fr,
+            account_label_de: line.account.label_de,
+            account_label_en: line.account.label_en,
             total_amount: line.total_amount,
             entry_count: line.entry_count,
         }
@@ -65,18 +71,24 @@ impl From<PcnReportLine> for PcnReportLineDto {
 pub struct PcnAccountDto {
     /// PCN account code
     pub code: String,
-    /// Account label in French
-    pub label_fr: String,
     /// Account label in Dutch
     pub label_nl: String,
+    /// Account label in French
+    pub label_fr: String,
+    /// Account label in German
+    pub label_de: String,
+    /// Account label in English
+    pub label_en: String,
 }
 
 impl From<PcnAccount> for PcnAccountDto {
     fn from(account: PcnAccount) -> Self {
         Self {
             code: account.code,
-            label_fr: account.label_fr,
             label_nl: account.label_nl,
+            label_fr: account.label_fr,
+            label_de: account.label_de,
+            label_en: account.label_en,
         }
     }
 }

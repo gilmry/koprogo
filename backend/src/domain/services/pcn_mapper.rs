@@ -9,26 +9,35 @@ use std::collections::HashMap;
 /// - Class 7: Income (Produits) - 70x, 71x, 72x
 ///
 /// For co-ownership buildings, we primarily use Class 6 accounts.
+/// Supports 4 languages: NL (Dutch - 60%), FR (French - 40%), DE (German - <1%), EN (English - international)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PcnAccount {
     /// PCN account code (e.g., "611" for maintenance, "615" for utilities)
     pub code: String,
-    /// Account label in French (primary language in Belgium)
-    pub label_fr: String,
-    /// Account label in Dutch (Flemish - second official language in Belgium)
+    /// Account label in Dutch (Nederlands - 60% of Belgium)
     pub label_nl: String,
+    /// Account label in French (Français - 40% of Belgium)
+    pub label_fr: String,
+    /// Account label in German (Deutsch - <1% of Belgium, legally required)
+    pub label_de: String,
+    /// Account label in English (international competitiveness)
+    pub label_en: String,
 }
 
 impl PcnAccount {
     pub fn new(
         code: impl Into<String>,
-        label_fr: impl Into<String>,
         label_nl: impl Into<String>,
+        label_fr: impl Into<String>,
+        label_de: impl Into<String>,
+        label_en: impl Into<String>,
     ) -> Self {
         Self {
             code: code.into(),
-            label_fr: label_fr.into(),
             label_nl: label_nl.into(),
+            label_fr: label_fr.into(),
+            label_de: label_de.into(),
+            label_en: label_en.into(),
         }
     }
 }
@@ -54,36 +63,60 @@ impl PcnMapper {
         match category {
             ExpenseCategory::Works => PcnAccount::new(
                 "610",
-                "Travaux et grosses réparations",
                 "Werken en grote herstellingen",
+                "Travaux et grosses réparations",
+                "Arbeiten und große Reparaturen",
+                "Works and major repairs",
             ),
             ExpenseCategory::Maintenance => PcnAccount::new(
                 "611",
-                "Entretien et petites réparations",
                 "Onderhoud en kleine herstellingen",
+                "Entretien et petites réparations",
+                "Wartung und kleine Reparaturen",
+                "Maintenance and minor repairs",
             ),
-            ExpenseCategory::Repairs => {
-                PcnAccount::new("612", "Réparations ordinaires", "Gewone herstellingen")
-            }
-            ExpenseCategory::Insurance => PcnAccount::new("613", "Assurances", "Verzekeringen"),
+            ExpenseCategory::Repairs => PcnAccount::new(
+                "612",
+                "Gewone herstellingen",
+                "Réparations ordinaires",
+                "Gewöhnliche Reparaturen",
+                "Ordinary repairs",
+            ),
+            ExpenseCategory::Insurance => PcnAccount::new(
+                "613",
+                "Verzekeringen",
+                "Assurances",
+                "Versicherungen",
+                "Insurance",
+            ),
             ExpenseCategory::Cleaning => PcnAccount::new(
                 "614",
-                "Nettoyage et entretien courant",
                 "Schoonmaak en lopend onderhoud",
+                "Nettoyage et entretien courant",
+                "Reinigung und laufende Wartung",
+                "Cleaning and routine maintenance",
             ),
             ExpenseCategory::Utilities => PcnAccount::new(
                 "615",
-                "Eau, énergie et chauffage",
                 "Water, energie en verwarming",
+                "Eau, énergie et chauffage",
+                "Wasser, Energie und Heizung",
+                "Water, energy and heating",
             ),
             ExpenseCategory::Administration => PcnAccount::new(
                 "620",
-                "Frais de gestion et d'administration",
                 "Beheer- en administratiekosten",
+                "Frais de gestion et d'administration",
+                "Verwaltungs- und Verwaltungskosten",
+                "Management and administration costs",
             ),
-            ExpenseCategory::Other => {
-                PcnAccount::new("619", "Autres charges diverses", "Overige diverse kosten")
-            }
+            ExpenseCategory::Other => PcnAccount::new(
+                "619",
+                "Overige diverse kosten",
+                "Autres charges diverses",
+                "Sonstige verschiedene Kosten",
+                "Other miscellaneous expenses",
+            ),
         }
     }
 

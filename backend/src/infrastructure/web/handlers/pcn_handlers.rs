@@ -48,7 +48,10 @@ pub async fn export_pcn_pdf(
     {
         Ok(pdf_bytes) => HttpResponse::Ok()
             .content_type("application/pdf")
-            .append_header(("Content-Disposition", "attachment; filename=\"rapport-pcn.pdf\""))
+            .append_header((
+                "Content-Disposition",
+                "attachment; filename=\"rapport-pcn.pdf\"",
+            ))
             .body(pdf_bytes),
         Err(err) => HttpResponse::InternalServerError().body(err),
     }
@@ -80,7 +83,10 @@ pub async fn export_pcn_excel(
     {
         Ok(excel_bytes) => HttpResponse::Ok()
             .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-            .append_header(("Content-Disposition", "attachment; filename=\"rapport-pcn.xlsx\""))
+            .append_header((
+                "Content-Disposition",
+                "attachment; filename=\"rapport-pcn.xlsx\"",
+            ))
             .body(excel_bytes),
         Err(err) => HttpResponse::InternalServerError().body(err),
     }
