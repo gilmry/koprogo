@@ -2,7 +2,7 @@ use cucumber::{given, then, when, World};
 use koprogo_api::application::dto::{CreateBuildingDto, CreateMeetingRequest, PcnReportRequest, PageRequest, SortOrder};
 use koprogo_api::application::use_cases::{BuildingUseCases, DocumentUseCases, MeetingUseCases, PcnUseCases};
 use koprogo_api::application::ports::BuildingRepository;
-use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository, PostgresMeetingRepository};
+use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository, PostgresMeetingRepository, PostgresUserRepository, PostgresRefreshTokenRepository};
 use koprogo_api::infrastructure::storage::FileStorage;
 use uuid::Uuid;
 use std::sync::Arc;
@@ -16,6 +16,7 @@ pub struct BuildingWorld {
     meeting_use_cases: Option<Arc<MeetingUseCases>>,
     document_use_cases: Option<Arc<DocumentUseCases>>,
     pcn_use_cases: Option<Arc<PcnUseCases>>,
+    auth_use_cases: Option<Arc<koprogo_api::application::use_cases::AuthUseCases>>,
     building_dto: Option<CreateBuildingDto>,
     last_result: Option<Result<String, String>>,
     _container: Option<ContainerAsync<Postgres>>,
@@ -43,6 +44,7 @@ impl BuildingWorld {
             meeting_use_cases: None,
             document_use_cases: None,
             pcn_use_cases: None,
+            auth_use_cases: None,
             building_dto: None,
             last_result: None,
             _container: None,
@@ -94,12 +96,19 @@ impl BuildingWorld {
         let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
         let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
         let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
+        let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
+        let refresh_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
         let meeting_use_cases = MeetingUseCases::new(meeting_repo);
         let storage = FileStorage::new(std::env::temp_dir().join("koprogo_bdd_uploads")).expect("storage");
         let document_use_cases = DocumentUseCases::new(document_repo, storage);
         let pcn_use_cases = PcnUseCases::new(expense_repo);
+        let auth_use_cases = koprogo_api::application::use_cases::AuthUseCases::new(
+            user_repo,
+            refresh_repo,
+            "test-secret-key".to_string(),
+        );
 
         // Create one building for meeting/doc scenarios
         let building_id = {
@@ -123,6 +132,7 @@ impl BuildingWorld {
         self.meeting_use_cases = Some(Arc::new(meeting_use_cases));
         self.document_use_cases = Some(Arc::new(document_use_cases));
         self.pcn_use_cases = Some(Arc::new(pcn_use_cases));
+        self.auth_use_cases = Some(Arc::new(auth_use_cases));
         self._container = Some(postgres_container);
         self.org_id = Some(org_id);
         self.building_id = Some(building_id);
@@ -246,6 +256,57 @@ async fn when_generate_pcn(world: &mut BuildingWorld) {
 #[then("the PCN report should be generated")]
 async fn then_pcn_generated(world: &mut BuildingWorld) {
     assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+}
+
+// Auth BDD
+#[when("I register a new user and login")]
+async fn when_register_and_login(world: &mut BuildingWorld) {
+    use koprogo_api::application::dto::{RegisterRequest, LoginRequest};
+    let auth = world.auth_use_cases.as_ref().unwrap();
+    let email = format!("user+{}@test.com", Uuid::new_v4());
+    let org = world.org_id.unwrap();
+    let reg = RegisterRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+        first_name: "BDD".to_string(),
+        last_name: "User".to_string(),
+        role: "syndic".to_string(),
+        organization_id: org,
+    };
+    let _ = auth.register(reg).await.expect("register");
+    let login = LoginRequest { email: email.clone(), password: "Passw0rd!".to_string() };
+    let res = auth.login(login).await;
+    world.last_result = Some(res.map(|r| r.refresh_token).map_err(|e| e));
+}
+
+#[then("I receive an access token and a refresh token")]
+async fn then_tokens_received(world: &mut BuildingWorld) {
+    let auth = world.auth_use_cases.as_ref().unwrap();
+    let refresh = world.last_result.as_ref().unwrap().as_ref().unwrap();
+    // last_result holds refresh token; verify it's non-empty and decodable via refresh flow
+    assert!(!refresh.is_empty());
+    // Not refreshing here (done in next scenario), just ensure something was returned
+    let _ = auth; // keep for future use
+}
+
+#[given("I have a valid refresh token")]
+async fn given_have_refresh_token(world: &mut BuildingWorld) {
+    when_register_and_login(world).await;
+}
+
+#[when("I refresh my session")]
+async fn when_refresh_session(world: &mut BuildingWorld) {
+    use koprogo_api::application::dto::RefreshTokenRequest;
+    let auth = world.auth_use_cases.as_ref().unwrap();
+    let refresh = world.last_result.as_ref().unwrap().as_ref().unwrap().clone();
+    let res = auth.refresh_token(RefreshTokenRequest { refresh_token: refresh }).await;
+    world.last_result = Some(res.map(|r| r.token).map_err(|e| e));
+}
+
+#[then("I receive a new access token")]
+async fn then_new_access_token(world: &mut BuildingWorld) {
+    let token = world.last_result.as_ref().unwrap().as_ref().unwrap();
+    assert!(!token.is_empty());
 }
 
 // Pagination & Filtering BDD
