@@ -495,6 +495,13 @@ Documentation complète disponible dans le dossier `docs/` :
 - **[Capacity Calculator](monitoring/scripts/capacity_calculator.sh)** - Estimation du nombre de copropriétés supportées
 
 ### Business & Marché
+- **[Business Plan](docs/BUSINESS_PLAN.md)** - Plan d'affaires complet 2025-2028
+  - Executive Summary & Vision
+  - Projections financières détaillées (120 copros → 3,000 copros)
+  - Stratégie commerciale dual-market (Europe + Maghreb)
+  - Modèle économique (LTV/CAC, Unit Economics)
+  - Besoins financement (Seed 50k€, Series A 500k€-1M€)
+  - Roadmap produit, géographique, équipe
 - **[Market Analysis](docs/MARKET_ANALYSIS.md)** - Analyse marché Europe & Afrique du Nord (Belgique, France, Espagne, Italie, Allemagne, Tunisie)
   - Réglementation par pays (syndic obligatoire, seuils)
   - Concurrence et opportunités
