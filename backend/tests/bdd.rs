@@ -1,5 +1,5 @@
 use cucumber::{given, then, when, World};
-use koprogo_api::application::dto::{CreateBuildingDto, CreateMeetingRequest, PcnReportRequest, PageRequest, SortOrder};
+use koprogo_api::application::dto::{CreateBuildingDto, CreateMeetingRequest, PcnReportRequest, PageRequest, SortOrder, UpdateMeetingRequest, CompleteMeetingRequest};
 use koprogo_api::application::use_cases::{BuildingUseCases, DocumentUseCases, MeetingUseCases, PcnUseCases};
 use koprogo_api::application::ports::BuildingRepository;
 use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository, PostgresMeetingRepository, PostgresUserRepository, PostgresRefreshTokenRepository};
@@ -306,6 +306,66 @@ async fn then_download_not_empty(world: &mut BuildingWorld) {
     assert!(!bytes.is_empty());
     assert!(!mime.is_empty());
     assert!(!filename.is_empty());
+}
+
+// Meetings lifecycle
+#[when(regex = r#"^I update the last meeting title to "([^"]*)" and location to "([^"]*)"$"#)]
+async fn when_update_last_meeting(world: &mut BuildingWorld, title: String, location: String) {
+    let id = world.last_meeting_id.expect("meeting id");
+    let uc = world.meeting_use_cases.as_ref().unwrap();
+    let req = UpdateMeetingRequest {
+        title: Some(title),
+        description: None,
+        scheduled_date: None,
+        location: Some(location),
+    };
+    let res = uc.update_meeting(id, req).await;
+    world.last_result = Some(res.map(|m| m.id.to_string()).map_err(|e| e));
+}
+
+#[then("the meeting update should succeed")]
+async fn then_meeting_update_ok(world: &mut BuildingWorld) {
+    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+}
+
+#[when(regex = r#"^I complete the last meeting with (\d+) attendees$"#)]
+async fn when_complete_last_meeting(world: &mut BuildingWorld, attendees: i32) {
+    let id = world.last_meeting_id.expect("meeting id");
+    let uc = world.meeting_use_cases.as_ref().unwrap();
+    let req = CompleteMeetingRequest { attendees_count: attendees };
+    let res = uc.complete_meeting(id, req).await;
+    world.last_result = Some(res.map(|m| m.id.to_string()).map_err(|e| e));
+}
+
+#[then("the meeting completion should succeed")]
+async fn then_meeting_complete_ok(world: &mut BuildingWorld) {
+    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+}
+
+#[when("I cancel the last meeting")]
+async fn when_cancel_last_meeting(world: &mut BuildingWorld) {
+    let id = world.last_meeting_id.expect("meeting id");
+    let uc = world.meeting_use_cases.as_ref().unwrap();
+    let res = uc.cancel_meeting(id).await;
+    world.last_result = Some(res.map(|m| m.id.to_string()).map_err(|e| e));
+}
+
+#[then("the meeting cancellation should succeed")]
+async fn then_meeting_cancel_ok(world: &mut BuildingWorld) {
+    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+}
+
+#[when("I list meetings for the building")]
+async fn when_list_meetings_for_building(world: &mut BuildingWorld) {
+    let bid = world.building_id.unwrap();
+    let uc = world.meeting_use_cases.as_ref().unwrap();
+    let res = uc.list_meetings_by_building(bid).await.expect("list meetings");
+    world.last_count = Some(res.len());
+}
+
+#[then("I should get at least 1 meeting")]
+async fn then_at_least_one_meeting(world: &mut BuildingWorld) {
+    assert!(world.last_count.unwrap_or(0) >= 1);
 }
 
 // Auth BDD
