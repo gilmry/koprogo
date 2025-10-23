@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminDashboard from '../../components/dashboards/AdminDashboard.svelte';
+---
+
+<Layout title="Admin Dashboard - KoproGo">
+	<main class="container mx-auto px-4 py-8">
+		<AdminDashboard client:load />
+	</main>
+</Layout>

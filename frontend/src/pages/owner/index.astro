@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import OwnerDashboard from '../../components/dashboards/OwnerDashboard.svelte';
+---
+
+<Layout title="Mon Espace - KoproGo">
+	<main class="container mx-auto px-4 py-8">
+		<OwnerDashboard client:load />
+	</main>
+</Layout>

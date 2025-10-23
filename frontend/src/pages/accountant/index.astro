@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AccountantDashboard from '../../components/dashboards/AccountantDashboard.svelte';
+---
+
+<Layout title="Dashboard Comptable - KoproGo">
+	<main class="container mx-auto px-4 py-8">
+		<AccountantDashboard client:load />
+	</main>
+</Layout>

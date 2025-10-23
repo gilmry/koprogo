@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE organizations\n            SET name = $2, slug = $3, contact_email = $4, contact_phone = $5,\n                subscription_plan = $6, max_buildings = $7, max_users = $8,\n                is_active = $9, updated_at = $10\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e1f798289613ae89b73cd00ee1ff2cef580962661b104892676238ee06ddd5ba"
+}

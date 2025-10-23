@@ -1,0 +1,107 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Mes Documents - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">Mes Documents</h1>
+
+      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-yellow-700">
+              Cette page est en cours de développement. L'accès à vos documents sera bientôt disponible.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Documents disponibles</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="border-2 border-gray-200 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2">📋 Documents Réglementaires</h3>
+            <ul class="text-sm text-gray-600 space-y-1">
+              <li>• Règlement de copropriété</li>
+              <li>• État descriptif de division</li>
+              <li>• Carnet d'entretien</li>
+            </ul>
+          </div>
+          <div class="border-2 border-gray-200 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2">📄 Procès-Verbaux</h3>
+            <ul class="text-sm text-gray-600 space-y-1">
+              <li>• PV d'assemblées générales</li>
+              <li>• Décisions votées</li>
+              <li>• Convocations</li>
+            </ul>
+          </div>
+          <div class="border-2 border-gray-200 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 mb-2">💰 Documents Financiers</h3>
+            <ul class="text-sm text-gray-600 space-y-1">
+              <li>• Relevés de charges</li>
+              <li>• Appels de fonds</li>
+              <li>• Comptes annuels</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Fonctionnalités à venir</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ul class="space-y-2 text-gray-600">
+            <li class="flex items-center">
+              <span class="mr-2">📁</span>
+              <span>Accès à tous vos documents</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">🔍</span>
+              <span>Recherche de documents</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">📥</span>
+              <span>Téléchargement des documents</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">👁️</span>
+              <span>Prévisualisation en ligne</span>
+            </li>
+          </ul>
+          <ul class="space-y-2 text-gray-600">
+            <li class="flex items-center">
+              <span class="mr-2">📧</span>
+              <span>Notifications nouveaux documents</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">🏷️</span>
+              <span>Organisation par catégorie</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">📅</span>
+              <span>Archivage automatique</span>
+            </li>
+            <li class="flex items-center">
+              <span class="mr-2">🔒</span>
+              <span>Sécurité et confidentialité</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-6">
+        <a href="/owner" class="inline-flex items-center text-primary-600 hover:text-primary-700">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Retour à mon espace
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

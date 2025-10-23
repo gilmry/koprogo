@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: koprogo-postgres
+    environment:
+      POSTGRES_DB: koprogo_db
+      POSTGRES_USER: koprogo
+      POSTGRES_PASSWORD: koprogo123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U koprogo -d koprogo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - koprogo-network
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: koprogo-api
+    environment:
+      DATABASE_URL: postgresql://koprogo:koprogo123@postgres:5432/koprogo_db
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      RUST_LOG: info
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # volumes:
+    #   - ./backend:/app  # Désactivé: écrase le binaire compilé dans l'image
+    #   - cargo_cache:/usr/local/cargo  # Pas nécessaire en production
+    networks:
+      - koprogo-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: koprogo-frontend
+    environment:
+      PUBLIC_API_URL: http://localhost:8080/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    # volumes:
+    #   - ./frontend:/app  # Désactivé: utilise le build de l'image
+    #   - /app/node_modules
+    networks:
+      - koprogo-network
+
+volumes:
+  postgres_data:
+  cargo_cache:
+
+networks:
+  koprogo-network:
+    driver: bridge

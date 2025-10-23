@@ -1,0 +1,74 @@
+[package]
+name = "koprogo-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Web framework
+actix-web = "4.11"
+actix-cors = "0.7"
+actix-rt = "2.11"
+
+# Async runtime
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "time"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "migrate"] }
+
+# Configuration
+dotenvy = "0.15"
+
+# Logging
+env_logger = "0.11"
+log = "0.4"
+
+# Utilities
+uuid = { version = "1.11", features = ["serde", "v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+validator = { version = "0.19", features = ["derive"] }
+bcrypt = "0.15"
+jsonwebtoken = "9.3"
+
+# Async trait support
+async-trait = "0.1"
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+[dev-dependencies]
+# Unit & Integration tests
+mockall = "0.13"
+tokio-test = "0.4"
+testcontainers-modules = { version = "0.11", features = ["postgres"] }
+
+# BDD tests
+cucumber = { version = "0.21", features = ["macros"] }
+
+# E2E tests
+reqwest = { version = "0.12", features = ["json"] }
+
+# Load tests
+criterion = { version = "0.5", features = ["async_tokio", "html_reports"] }
+
+# Test utilities
+serial_test = "3.1"
+fake = { version = "2.9", features = ["derive", "chrono", "uuid"] }
+rand = "0.8"
+
+[[bench]]
+name = "load_tests"
+harness = false
+
+[[test]]
+name = "bdd"
+harness = false
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

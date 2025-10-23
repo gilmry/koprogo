@@ -1,0 +1,21 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import BuildingList from '../../components/BuildingList.svelte';
+---
+
+<Layout title="Immeubles - KoproGo">
+	<main class="container mx-auto px-4 py-8">
+		<div class="mb-8">
+			<h1 class="text-3xl font-bold text-gray-900 mb-2">
+				🏢 Gestion des Immeubles
+			</h1>
+			<p class="text-gray-600">
+				Gérez vos copropriétés en toute simplicité
+			</p>
+		</div>
+
+		<div class="bg-white rounded-lg shadow p-6">
+			<BuildingList client:load />
+		</div>
+	</main>
+</Layout>

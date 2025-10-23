@@ -1,0 +1,35 @@
+---
+import '../styles/global.css';
+import Navigation from '../components/Navigation.svelte';
+
+interface Props {
+	title: string;
+	showNav?: boolean;
+}
+
+const { title, showNav = true } = Astro.props;
+---
+
+<!doctype html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="KoproGo - Plateforme SaaS de Gestion de Copropriété" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body class="bg-gray-50 min-h-screen">
+		{showNav && <Navigation client:load />}
+		<slot />
+		<footer class="bg-white mt-12 border-t">
+			<div class="container mx-auto px-4 py-6 text-center text-gray-600">
+				<p>&copy; 2025 KoproGo - Gestion de Copropriété SaaS</p>
+				<p class="text-sm mt-2">
+					Architecture Hexagonale · Rust · Actix-web · PostgreSQL · GDPR · ISO 27001
+				</p>
+			</div>
+		</footer>
+	</body>
+</html>

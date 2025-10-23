@@ -1,0 +1,41 @@
+# Rust
+target/
+# Cargo.lock should be committed for applications (not libraries)
+# Cargo.lock
+*.rs.bk
+*.pdb
+
+# Node
+node_modules/
+dist/
+.astro/
+.env
+.env.local
+# package-lock.json should be committed for reproducible builds
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Docker
+.dockerignore
+
+# Test coverage
+coverage/
+tarpaulin-report.html
+
+# Benchmarks
+target/criterion/
