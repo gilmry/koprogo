@@ -508,7 +508,7 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
         first_name: "BDD".to_string(),
         last_name: "User".to_string(),
         role: "syndic".to_string(),
-        organization_id: org,
+        organization_id: Some(org),
     };
     let _ = auth.register(reg).await.expect("register");
     let login = LoginRequest { email: email.clone(), password: "Passw0rd!".to_string() };
@@ -567,6 +567,17 @@ async fn when_list_buildings_paginated(world: &mut BuildingWorld, page: i32, per
 #[then("I should get at least 1 building")]
 async fn then_at_least_one_building(world: &mut BuildingWorld) {
     assert!(world.last_count.unwrap_or(0) >= 1);
+}
+
+// Aliases so Gherkin "And" following Given works for these steps
+#[given(regex = r#"^I create a meeting titled \"([^\"]*)\"$"#)]
+async fn given_create_meeting(world: &mut BuildingWorld, title: String) {
+    when_create_meeting(world, title).await;
+}
+
+#[given(regex = r#"^I upload a document named \"([^\"]*)\"$"#)]
+async fn given_upload_document(world: &mut BuildingWorld, name: String) {
+    when_upload_document(world, name).await;
 }
 
 // Multi-tenancy BDD
