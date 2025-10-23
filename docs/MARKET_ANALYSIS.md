@@ -1,6 +1,6 @@
-# KoproGo - Analyse de Marché et Réglementation Européenne
+# KoproGo - Analyse de Marché et Réglementation (Europe & Afrique du Nord)
 
-Document d'analyse du marché de la gestion de copropriété en Europe, avec focus sur la Belgique.
+Document d'analyse du marché de la gestion de copropriété en Europe et Afrique du Nord, avec focus sur la Belgique et la Tunisie.
 
 ## Table des matières
 
@@ -98,6 +98,35 @@ Les copropriétés de ≤ 4 propriétaires peuvent être gérées en indivision 
 
 ---
 
+### 🇹🇳 Tunisie
+
+#### Cadre juridique
+**Règle** : Régi par le **Code des Droits Réels** (héritage juridique français).
+
+> *"Tous les copropriétaires sont regroupés en un Syndicat qui est le 'représentant légal de la collectivité' selon l'article 89 du Code des droits réels."*
+
+#### Organisation
+- **Syndicat des copropriétaires** : Représentant légal de la collectivité
+- **Syndic** : Organe représentant le syndicat, mission de gérer les parties communes
+
+#### Particularités
+- Système inspiré du droit français
+- Code des Droits Réels régit la copropriété
+- Pas de réforme majeure récente identifiée (2024)
+
+#### Digitalisation du secteur
+**Transformation numérique en cours** :
+- **E-gouvernement** : Tunisie classée **1ère en Afrique du Nord** et **3ème au niveau continental** (UN DESA E-Government Survey 2024, index 0.6935/1)
+- **Services en ligne** : 120 services administratifs entièrement transactionnels
+- **Projet TLIS** : Système de gestion de l'information foncière (digitalisation du cadastre en cours)
+
+#### Sources
+- Code des Droits Réels : https://www.jurisitetunisie.com/
+- Managers.tn : Transformation digitale
+- We are Tech Africa : Stratégie numérique
+
+---
+
 ## Comparaison Réglementaire
 
 | Pays | Syndic Obligatoire | Seuil | Type | Conseil Obligatoire |
@@ -107,6 +136,7 @@ Les copropriétés de ≤ 4 propriétaires peuvent être gérées en indivision 
 | 🇪🇸 Espagne | ✅ Oui | > 4 copros | Président obligatoire | Non |
 | 🇮🇹 Italie | ⚠️ Partiel | > 4 copros | Prof. ou bénévole | Non |
 | 🇩🇪 Allemagne | ✅ Oui | Dès création | Prof. ou résident | Optionnel |
+| 🇹🇳 Tunisie | ✅ Oui | Syndicat obligatoire | Prof. ou bénévole | Code Droits Réels |
 
 ---
 
@@ -264,6 +294,76 @@ Les copropriétés de ≤ 4 propriétaires peuvent être gérées en indivision 
 
 ---
 
+### Marché Tunisien (émergent) 🇹🇳
+
+#### Acteurs locaux identifiés
+
+**1. iMMOTECH (PROPTECH)**
+- **Positionnement** : Logiciel immobilier N°1 en Tunisie
+- **Type** : Startup tunisienne spécialisée en PropTech
+- **Offre** : SaaS + CRM pour agences immobilières et promoteurs
+- **Fonctionnalités** :
+  - Site web lié au logiciel multi-transactionnel
+  - Visites virtuelles 360°
+  - Modèles 2D & 3D
+  - Distribution multi-portails
+  - Automatisation des tâches répétitives
+- **Clients** : Centaines d'agences immobilières et promoteurs
+- 🔗 https://www.immotech.tn/
+
+**2. Logis.tn**
+- Solution locale de gestion immobilière
+- 🔗 https://www.logis.tn/
+
+**3. Solutions Françaises**
+**Vilogi** (présence potentielle)
+- Multi-pays : FR, BE, CA, MA, DZ, SN
+- Adaptable à la Tunisie (héritage juridique français)
+
+**Copriciel** (international)
+- Multi-pays configurable
+- Fuseaux horaires et devises personnalisables
+
+#### Observation du marché
+
+**Forces** :
+- 🚀 **Transformation digitale forte** : 1er en Afrique du Nord pour e-gouvernement
+- 📈 **Maturité technologique** : Index e-gov 0.6935/1 (UN DESA 2024)
+- 💻 **120 services administratifs en ligne** transactionnels
+- 🏗️ **Digitalisation du foncier** en cours (projet TLIS)
+
+**Faiblesses** :
+- 📉 **Marché peu développé** pour solutions spécialisées copropriété
+- 🔧 **Solutions généralistes** dominent (gestion immobilière large, pas spécialisé syndic)
+- 🌍 **Dépendance** aux solutions françaises pour copropriété
+
+**Opportunités** :
+- ✅ **Marché émergent** : Peu de solutions spécialisées copropriété/syndic
+- ✅ **Compatibilité juridique** : Code des Droits Réels inspiré du droit français
+- ✅ **Écosystème tech dynamique** : Développement logiciel mature
+- ✅ **Francophonie** : Langue française = barrière linguistique faible
+- ✅ **Prix sensible** : Marché plus sensible au prix que Europe
+- ✅ **Hub Afrique du Nord** : Passerelle vers Algérie, Maroc, Libye
+
+**Menaces** :
+- ⚠️ **Pouvoir d'achat** plus faible qu'Europe (adapter pricing)
+- ⚠️ **Paiements en ligne** : Infrastructure moins développée
+- ⚠️ **Instabilité économique** : Risques macro-économiques
+
+#### Taille du marché (estimations)
+
+**Immobilier tunisien** :
+- Digitalisation en cours (gouvernement pousse transformation)
+- Secteur immobilier dynamique (construction, promotion)
+- Besoin croissant d'outils professionnels
+
+**Positionnement KoproGo** :
+- Prix adapté : **5-10€/mois** (vs 15€ Europe)
+- Solution francophone prête à l'emploi
+- Open-source = transparence (argument fort marchés émergents)
+
+---
+
 ## Opportunités
 
 ### 1. **Marché Belge sous-adressé** 🎯
@@ -326,25 +426,120 @@ Les copropriétés de ≤ 4 propriétaires peuvent être gérées en indivision 
 
 ---
 
-### 5. **Expansion européenne progressive** 🇪🇺
+### 5. **Expansion géographique progressive** 🌍
 
-**Phase 1** : Belgique (marché test)
+**Phase 1** : Belgique (marché test Europe)
 - Moins saturé que France
 - Taille gérable pour MVP
 - Bilinguisme FR/NL (avantage concurrentiel)
 
-**Phase 2** : France
-- Marché mature mais plus gros
-- Après validation en Belgique
-- Argument : "Déjà adopté en Belgique"
+**Phase 1 bis** : Tunisie (marché test Afrique du Nord) 🆕
+- Marché émergent avec faible concurrence
+- Compatibilité juridique (Code des Droits Réels inspiré du droit français)
+- Francophone : barrière linguistique faible
+- Hub régional : passerelle Maghreb
+- **Pricing adapté** : 5-10€/mois (vs 15€ Europe)
+- **Test stratégie low-cost** pour marchés émergents
 
-**Phase 3** : Luxembourg, Pays-Bas
+**Phase 2** : France + Maghreb
+- France : Marché mature mais plus gros
+- Algérie, Maroc : Extension depuis Tunisie
+- Argument : "Déjà adopté en Belgique et Tunisie"
+
+**Phase 3** : Luxembourg, Pays-Bas, Libye
 - Extension naturelle (proximité)
 - Luxembourg : marché premium
+- Libye : opportunité post-stabilisation
 
 **Phase 4** : Espagne, Italie
 - Marchés Sud Europe
 - Adaptation réglementation (> 4 lots)
+
+**Avantage multi-marché** :
+- Validation Europe (BE) + Afrique (TN) en parallèle
+- 2 stratégies pricing testées simultanément
+- Apprentissage marché émergent vs mature
+
+---
+
+### 6. **Tunisie comme marché test low-cost** 🇹🇳 🆕
+
+**Pourquoi la Tunisie ?**
+
+**✅ Avantages stratégiques** :
+1. **Marché émergent non saturé**
+   - Peu de solutions spécialisées copropriété
+   - iMMOTECH domine mais focus agences immobilières (pas syndics)
+   - Opportunité de créer nouvelle catégorie
+
+2. **Compatibilité juridique**
+   - Code des Droits Réels inspiré du droit français
+   - Syndicat de copropriété = même concept qu'en France/Belgique
+   - Pas besoin d'adapter profondément le modèle métier
+
+3. **Infrastructure digitale mature**
+   - 1er Afrique du Nord pour e-gouvernement (index 0.6935)
+   - 120 services administratifs en ligne
+   - Population tech-savvy (écosystème startup dynamique)
+
+4. **Francophonie**
+   - Langue française = 0 barrière
+   - Documentation, support, UI déjà en français
+   - Pas d'investissement localisation
+
+5. **Test stratégie émergents**
+   - **Pricing low-cost** : 5-10€/mois (vs 15€ Europe)
+   - **Modèle freemium adapté** : Plus agressif (3 copros gratuites vs 1)
+   - **Paiement mobile** : Intégration D17 / e-dinar
+   - **Support communautaire** : Forums, tutoriels vidéo (réduire coût support)
+
+**📊 Potentiel de marché** :
+- **Court terme** (Année 1) : 20-50 copropriétés
+- **Moyen terme** (Année 2-3) : 200-500 copropriétés
+- **Long terme** : Hub régional Maghreb (Algérie, Maroc, Libye)
+
+**💰 Business model Tunisie** :
+```
+Plan Gratuit     : 3 copropriétés (vs 1 en Europe)
+Plan Starter     : 5€/mois pour 10 copropriétés = 0.50€/copro
+Plan Pro         : 15€/mois pour 30 copropriétés = 0.50€/copro
+Plan Enterprise  : 50€/mois pour 100+ copropriétés
+```
+
+**Comparaison avec concurrence locale** :
+- iMMOTECH : Focus agences immobilières (pricing inconnu)
+- Solutions françaises : 15-30€/copro (trop cher pour marché tunisien)
+- **KoproGo** : 0.50€/copro = **disruption pricing**
+
+**🎯 Stratégie Go-to-Market Tunisie** :
+
+**Phase 1** : Validation (3-6 mois)
+- 10 clients beta gratuits (syndics professionnels)
+- Feedback produit + adaptation locale
+- Partenariats avec associations de copropriétaires
+
+**Phase 2** : Lancement (6-12 mois)
+- Marketing digital : Facebook Ads (CPC très bas en Tunisie)
+- SEO local : "logiciel syndic Tunisie", "gestion copropriété Tunis"
+- Webinaires en français/arabe
+- Objectif : 50 copropriétés payantes
+
+**Phase 3** : Expansion régionale (12-24 mois)
+- Algérie (40M habitants, même système juridique)
+- Maroc (35M habitants, marché immobilier dynamique)
+- Libye (post-stabilisation)
+
+**⚠️ Risques spécifiques** :
+- Pouvoir d'achat limité → Pricing très agressif requis
+- Paiement en ligne moins répandu → Virement bancaire, mobile money
+- Instabilité économique → Churn potentiellement plus élevé
+- Support client → Besoin de tutoriels vidéo extensifs (réduire tickets)
+
+**✅ Mitigations** :
+- Freemium généreux (fidélisation avant monétisation)
+- Paiement annuel avec réduction (cash flow prédictible)
+- Documentation extensive (réduire coût support)
+- Communauté utilisateurs (peer-to-peer support)
 
 ---
 
@@ -380,6 +575,7 @@ pub enum Country {
     Spain,      // ES
     Italy,      // IT
     Germany,    // DE
+    Tunisia,    // TN - Afrique du Nord
 }
 ```
 
@@ -479,6 +675,11 @@ pub fn get_regulations(country: Country) -> CountryRegulations {
             syndic_mandatory_threshold: 4,  // Par propriétaires, pas lots
             council_mandatory_threshold: None,
             max_syndic_mandate_years: 0,  // Pas de limite
+        },
+        Country::Tunisia => CountryRegulations {
+            syndic_mandatory_threshold: 0,  // Syndicat obligatoire
+            council_mandatory_threshold: None,  // Régi par Code des Droits Réels
+            max_syndic_mandate_years: 0,  // À définir selon pratique locale
         },
         // ... autres pays
     }

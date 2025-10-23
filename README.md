@@ -495,10 +495,11 @@ Documentation complète disponible dans le dossier `docs/` :
 - **[Capacity Calculator](monitoring/scripts/capacity_calculator.sh)** - Estimation du nombre de copropriétés supportées
 
 ### Business & Marché
-- **[Market Analysis](docs/MARKET_ANALYSIS.md)** - Analyse marché européen (Belgique, France, Espagne, Italie)
+- **[Market Analysis](docs/MARKET_ANALYSIS.md)** - Analyse marché Europe & Afrique du Nord (Belgique, France, Espagne, Italie, Allemagne, Tunisie)
   - Réglementation par pays (syndic obligatoire, seuils)
   - Concurrence et opportunités
-  - Pricing recommandé
+  - Pricing recommandé (Europe vs Maghreb)
+  - Stratégie expansion géographique
   - Règles métier à implémenter
 
 ### Guides Techniques
