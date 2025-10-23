@@ -23,6 +23,15 @@ async fn main() -> std::io::Result<()> {
         .parse::<u16>()
         .expect("SERVER_PORT must be a valid number");
 
+    // Parse allowed CORS origins from environment
+    let allowed_origins: Vec<String> = env::var("CORS_ALLOWED_ORIGINS")
+        .unwrap_or_else(|_| "http://localhost:3000".to_string())
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .collect();
+
+    log::info!("CORS allowed origins: {:?}", allowed_origins);
+
     let pool = create_pool(&database_url)
         .await
         .expect("Failed to create database pool");
@@ -78,10 +87,18 @@ async fn main() -> std::io::Result<()> {
     log::info!("Starting server at {}:{}", server_host, server_port);
 
     HttpServer::new(move || {
-        let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header()
+        // Configure CORS with allowed origins from environment
+        let mut cors = Cors::default();
+        for origin in &allowed_origins {
+            cors = cors.allowed_origin(origin);
+        }
+        let cors = cors
+            .allowed_methods(vec!["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+            .allowed_headers(vec![
+                actix_web::http::header::AUTHORIZATION,
+                actix_web::http::header::CONTENT_TYPE,
+                actix_web::http::header::ACCEPT,
+            ])
             .max_age(3600);
 
         App::new()
