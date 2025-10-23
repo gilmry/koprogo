@@ -4,6 +4,7 @@ use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct CreateExpenseDto {
+    pub organization_id: String,
     pub building_id: String,
     pub category: ExpenseCategory,
 

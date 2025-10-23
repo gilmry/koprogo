@@ -21,11 +21,12 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn create(&self, building: &Building) -> Result<Building, String> {
         sqlx::query(
             r#"
-            INSERT INTO buildings (id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             "#,
         )
         .bind(building.id)
+        .bind(building.organization_id)
         .bind(&building.name)
         .bind(&building.address)
         .bind(&building.city)
@@ -45,7 +46,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at
+            SELECT id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at
             FROM buildings
             WHERE id = $1
             "#,
@@ -57,6 +58,7 @@ impl BuildingRepository for PostgresBuildingRepository {
 
         Ok(row.map(|row| Building {
             id: row.get("id"),
+            organization_id: row.get("organization_id"),
             name: row.get("name"),
             address: row.get("address"),
             city: row.get("city"),
@@ -72,7 +74,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_all(&self) -> Result<Vec<Building>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at
+            SELECT id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at
             FROM buildings
             ORDER BY created_at DESC
             "#,
@@ -85,6 +87,7 @@ impl BuildingRepository for PostgresBuildingRepository {
             .iter()
             .map(|row| Building {
                 id: row.get("id"),
+                organization_id: row.get("organization_id"),
                 name: row.get("name"),
                 address: row.get("address"),
                 city: row.get("city"),
@@ -179,7 +182,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at \
+            "SELECT id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at \
              FROM buildings {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -216,6 +219,7 @@ impl BuildingRepository for PostgresBuildingRepository {
             .iter()
             .map(|row| Building {
                 id: row.get("id"),
+                organization_id: row.get("organization_id"),
                 name: row.get("name"),
                 address: row.get("address"),
                 city: row.get("city"),

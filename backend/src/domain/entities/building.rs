@@ -6,6 +6,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Building {
     pub id: Uuid,
+    pub organization_id: Uuid,
     pub name: String,
     pub address: String,
     pub city: String,
@@ -19,6 +20,7 @@ pub struct Building {
 
 impl Building {
     pub fn new(
+        organization_id: Uuid,
         name: String,
         address: String,
         city: String,
@@ -37,6 +39,7 @@ impl Building {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            organization_id,
             name,
             address,
             city,
@@ -70,7 +73,9 @@ mod tests {
 
     #[test]
     fn test_create_building_success() {
+        let org_id = Uuid::new_v4();
         let building = Building::new(
+            org_id,
             "Résidence Les Jardins".to_string(),
             "123 Rue de la Paix".to_string(),
             "Paris".to_string(),
@@ -82,13 +87,16 @@ mod tests {
 
         assert!(building.is_ok());
         let building = building.unwrap();
+        assert_eq!(building.organization_id, org_id);
         assert_eq!(building.name, "Résidence Les Jardins");
         assert_eq!(building.total_units, 50);
     }
 
     #[test]
     fn test_create_building_empty_name_fails() {
+        let org_id = Uuid::new_v4();
         let building = Building::new(
+            org_id,
             "".to_string(),
             "123 Rue de la Paix".to_string(),
             "Paris".to_string(),
@@ -104,7 +112,9 @@ mod tests {
 
     #[test]
     fn test_create_building_zero_units_fails() {
+        let org_id = Uuid::new_v4();
         let building = Building::new(
+            org_id,
             "Résidence Les Jardins".to_string(),
             "123 Rue de la Paix".to_string(),
             "Paris".to_string(),
@@ -120,7 +130,9 @@ mod tests {
 
     #[test]
     fn test_update_building_info() {
+        let org_id = Uuid::new_v4();
         let mut building = Building::new(
+            org_id,
             "Old Name".to_string(),
             "Old Address".to_string(),
             "Old City".to_string(),

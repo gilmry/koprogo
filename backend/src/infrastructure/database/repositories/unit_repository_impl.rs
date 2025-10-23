@@ -29,11 +29,12 @@ impl UnitRepository for PostgresUnitRepository {
 
         sqlx::query(
             r#"
-            INSERT INTO units (id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            INSERT INTO units (id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             "#,
         )
         .bind(unit.id)
+        .bind(unit.organization_id)
         .bind(unit.building_id)
         .bind(&unit.unit_number)
         .bind(unit_type_str)
@@ -53,7 +54,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Unit>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE id = $1
             "#,
@@ -75,6 +76,7 @@ impl UnitRepository for PostgresUnitRepository {
 
             Unit {
                 id: row.get("id"),
+                organization_id: row.get("organization_id"),
                 building_id: row.get("building_id"),
                 unit_number: row.get("unit_number"),
                 unit_type,
@@ -91,7 +93,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Unit>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE building_id = $1
             ORDER BY unit_number
@@ -116,6 +118,7 @@ impl UnitRepository for PostgresUnitRepository {
 
                 Unit {
                     id: row.get("id"),
+                    organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     unit_number: row.get("unit_number"),
                     unit_type,
@@ -133,7 +136,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<Unit>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE owner_id = $1
             ORDER BY unit_number
@@ -158,6 +161,7 @@ impl UnitRepository for PostgresUnitRepository {
 
                 Unit {
                     id: row.get("id"),
+                    organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     unit_number: row.get("unit_number"),
                     unit_type,
@@ -302,6 +306,7 @@ impl UnitRepository for PostgresUnitRepository {
 
                 Unit {
                     id: row.get("id"),
+                    organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     unit_number: row.get("unit_number"),
                     unit_type,

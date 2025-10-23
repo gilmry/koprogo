@@ -9,6 +9,7 @@ use uuid::Uuid;
 pub struct UploadForm {
     #[multipart(limit = "50MB")]
     file: TempFile,
+    organization_id: Text<String>,
     building_id: Text<String>,
     document_type: Text<String>,
     title: Text<String>,
@@ -22,6 +23,12 @@ pub async fn upload_document(
     app_state: web::Data<AppState>,
     MultipartForm(form): MultipartForm<UploadForm>,
 ) -> impl Responder {
+    // Parse organization_id (TODO: This should come from JWT in production!)
+    let organization_id = match Uuid::parse_str(&form.organization_id.0) {
+        Ok(id) => id,
+        Err(_) => return HttpResponse::BadRequest().json("Invalid organization_id"),
+    };
+
     // Parse building_id
     let building_id = match Uuid::parse_str(&form.building_id.0) {
         Ok(id) => id,
@@ -71,6 +78,7 @@ pub async fn upload_document(
     match app_state
         .document_use_cases
         .upload_document(
+            organization_id,
             building_id,
             document_type,
             form.title.0.clone(),

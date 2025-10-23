@@ -42,6 +42,7 @@ impl From<Meeting> for MeetingResponse {
 /// Request DTO for creating a meeting
 #[derive(Debug, Deserialize)]
 pub struct CreateMeetingRequest {
+    pub organization_id: Uuid,
     pub building_id: Uuid,
     pub meeting_type: MeetingType,
     pub title: String,

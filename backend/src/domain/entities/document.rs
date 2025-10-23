@@ -18,6 +18,7 @@ pub enum DocumentType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Document {
     pub id: Uuid,
+    pub organization_id: Uuid,
     pub building_id: Uuid,
     pub document_type: DocumentType,
     pub title: String,
@@ -35,6 +36,7 @@ pub struct Document {
 impl Document {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        organization_id: Uuid,
         building_id: Uuid,
         document_type: DocumentType,
         title: String,
@@ -57,6 +59,7 @@ impl Document {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            organization_id,
             building_id,
             document_type,
             title,
@@ -93,10 +96,12 @@ mod tests {
 
     #[test]
     fn test_create_document_success() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let uploader_id = Uuid::new_v4();
 
         let document = Document::new(
+            org_id,
             building_id,
             DocumentType::MeetingMinutes,
             "PV AGO 2024".to_string(),
@@ -109,15 +114,18 @@ mod tests {
 
         assert!(document.is_ok());
         let document = document.unwrap();
+        assert_eq!(document.organization_id, org_id);
         assert_eq!(document.file_size_mb(), 1.0);
     }
 
     #[test]
     fn test_create_document_empty_title_fails() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let uploader_id = Uuid::new_v4();
 
         let document = Document::new(
+            org_id,
             building_id,
             DocumentType::Invoice,
             "".to_string(),
@@ -133,10 +141,12 @@ mod tests {
 
     #[test]
     fn test_link_document_to_meeting() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let uploader_id = Uuid::new_v4();
 
         let mut document = Document::new(
+            org_id,
             building_id,
             DocumentType::MeetingMinutes,
             "Test".to_string(),

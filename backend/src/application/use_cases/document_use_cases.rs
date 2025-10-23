@@ -23,6 +23,7 @@ impl DocumentUseCases {
     /// Upload a document with file content
     pub async fn upload_document(
         &self,
+        organization_id: Uuid,
         building_id: Uuid,
         document_type: DocumentType,
         title: String,
@@ -50,6 +51,7 @@ impl DocumentUseCases {
 
         // Create document entity
         let document = Document::new(
+            organization_id,
             building_id,
             document_type,
             title,
@@ -251,12 +253,14 @@ mod tests {
         let repo = Arc::new(MockDocumentRepository::new());
         let use_cases = DocumentUseCases::new(repo, storage);
 
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let uploader_id = Uuid::new_v4();
         let content = b"Test PDF content".to_vec();
 
         let result = use_cases
             .upload_document(
+                org_id,
                 building_id,
                 DocumentType::Invoice,
                 "Test Invoice".to_string(),
@@ -284,6 +288,7 @@ mod tests {
         let repo = Arc::new(MockDocumentRepository::new());
         let use_cases = DocumentUseCases::new(repo, storage);
 
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let uploader_id = Uuid::new_v4();
         // Create content larger than 50MB
@@ -291,6 +296,7 @@ mod tests {
 
         let result = use_cases
             .upload_document(
+                org_id,
                 building_id,
                 DocumentType::Invoice,
                 "Large File".to_string(),
@@ -318,6 +324,7 @@ mod tests {
         let repo = Arc::new(MockDocumentRepository::new());
         let use_cases = DocumentUseCases::new(repo, storage);
 
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let uploader_id = Uuid::new_v4();
         let content = b"Test content".to_vec();
@@ -325,6 +332,7 @@ mod tests {
         // Upload document
         let doc = use_cases
             .upload_document(
+                org_id,
                 building_id,
                 DocumentType::MeetingMinutes,
                 "PV AGO".to_string(),

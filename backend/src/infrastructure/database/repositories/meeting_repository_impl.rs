@@ -34,11 +34,12 @@ impl MeetingRepository for PostgresMeetingRepository {
 
         sqlx::query(
             r#"
-            INSERT INTO meetings (id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             "#,
         )
         .bind(meeting.id)
+        .bind(meeting.organization_id)
         .bind(meeting.building_id)
         .bind(meeting_type_str)
         .bind(&meeting.title)
@@ -60,7 +61,7 @@ impl MeetingRepository for PostgresMeetingRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Meeting>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at
+            SELECT id, organization_id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at
             FROM meetings
             WHERE id = $1
             "#,
@@ -89,6 +90,7 @@ impl MeetingRepository for PostgresMeetingRepository {
 
             Meeting {
                 id: row.get("id"),
+                organization_id: row.get("organization_id"),
                 building_id: row.get("building_id"),
                 meeting_type,
                 title: row.get("title"),
@@ -107,7 +109,7 @@ impl MeetingRepository for PostgresMeetingRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Meeting>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at
+            SELECT id, organization_id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at
             FROM meetings
             WHERE building_id = $1
             ORDER BY scheduled_date DESC
@@ -139,6 +141,7 @@ impl MeetingRepository for PostgresMeetingRepository {
 
                 Meeting {
                     id: row.get("id"),
+                    organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     meeting_type,
                     title: row.get("title"),

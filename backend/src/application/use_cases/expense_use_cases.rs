@@ -18,6 +18,8 @@ impl ExpenseUseCases {
         &self,
         dto: CreateExpenseDto,
     ) -> Result<ExpenseResponseDto, String> {
+        let organization_id = Uuid::parse_str(&dto.organization_id)
+            .map_err(|_| "Invalid organization_id format".to_string())?;
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
 
@@ -26,6 +28,7 @@ impl ExpenseUseCases {
             .with_timezone(&chrono::Utc);
 
         let expense = Expense::new(
+            organization_id,
             building_id,
             dto.category,
             dto.description,

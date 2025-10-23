@@ -230,6 +230,7 @@ mod tests {
 
         let description = format!("Test expense for {:?}", category);
         Expense::new(
+            Uuid::new_v4(), // organization_id
             Uuid::new_v4(), // building_id
             category,
             description,

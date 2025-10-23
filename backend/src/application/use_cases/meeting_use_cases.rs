@@ -21,6 +21,7 @@ impl MeetingUseCases {
         request: CreateMeetingRequest,
     ) -> Result<MeetingResponse, String> {
         let meeting = Meeting::new(
+            request.organization_id,
             request.building_id,
             request.meeting_type,
             request.title,

@@ -174,8 +174,9 @@ mod tests {
         }
     }
 
-    fn create_test_expense(building_id: Uuid, category: ExpenseCategory, amount: f64) -> Expense {
+    fn create_test_expense(organization_id: Uuid, building_id: Uuid, category: ExpenseCategory, amount: f64) -> Expense {
         Expense::new(
+            organization_id,
             building_id,
             category,
             "Test expense".to_string(),
@@ -189,11 +190,12 @@ mod tests {
 
     #[tokio::test]
     async fn test_generate_report_success() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expenses = vec![
-            create_test_expense(building_id, ExpenseCategory::Maintenance, 100.0),
-            create_test_expense(building_id, ExpenseCategory::Maintenance, 150.0),
-            create_test_expense(building_id, ExpenseCategory::Utilities, 50.0),
+            create_test_expense(org_id, building_id, ExpenseCategory::Maintenance, 100.0),
+            create_test_expense(org_id, building_id, ExpenseCategory::Maintenance, 150.0),
+            create_test_expense(org_id, building_id, ExpenseCategory::Utilities, 50.0),
         ];
 
         let repo = Arc::new(MockExpenseRepository { expenses });

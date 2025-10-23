@@ -14,10 +14,13 @@ impl UnitUseCases {
     }
 
     pub async fn create_unit(&self, dto: CreateUnitDto) -> Result<UnitResponseDto, String> {
+        let organization_id = Uuid::parse_str(&dto.organization_id)
+            .map_err(|_| "Invalid organization_id format".to_string())?;
         let building_id = Uuid::parse_str(&dto.building_id)
             .map_err(|_| "Invalid building ID format".to_string())?;
 
         let unit = Unit::new(
+            organization_id,
             building_id,
             dto.unit_number,
             dto.unit_type,

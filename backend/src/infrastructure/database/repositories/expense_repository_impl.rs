@@ -39,11 +39,12 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
         sqlx::query(
             r#"
-            INSERT INTO expenses (id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
         )
         .bind(expense.id)
+        .bind(expense.organization_id)
         .bind(expense.building_id)
         .bind(category_str)
         .bind(&expense.description)
@@ -64,7 +65,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Expense>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at
+            SELECT id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at
             FROM expenses
             WHERE id = $1
             "#,
@@ -97,6 +98,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
             Expense {
                 id: row.get("id"),
+                organization_id: row.get("organization_id"),
                 building_id: row.get("building_id"),
                 category,
                 description: row.get("description"),
@@ -114,7 +116,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Expense>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at
+            SELECT id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at
             FROM expenses
             WHERE building_id = $1
             ORDER BY expense_date DESC
@@ -150,6 +152,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
                 Expense {
                     id: row.get("id"),
+                    organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     category,
                     description: row.get("description"),
@@ -331,6 +334,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
                 Expense {
                     id: row.get("id"),
+                    organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     category,
                     description: row.get("description"),

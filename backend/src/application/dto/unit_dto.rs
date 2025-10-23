@@ -4,6 +4,7 @@ use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct CreateUnitDto {
+    pub organization_id: String,
     pub building_id: String,
 
     #[validate(length(min = 1))]

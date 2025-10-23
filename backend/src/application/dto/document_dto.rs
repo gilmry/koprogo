@@ -48,6 +48,7 @@ impl From<Document> for DocumentResponse {
 /// Note: File upload is handled via multipart/form-data, this is for metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UploadDocumentRequest {
+    pub organization_id: Uuid,
     pub building_id: Uuid,
     pub document_type: DocumentType,
     pub title: String,
@@ -75,10 +76,12 @@ mod tests {
 
     #[test]
     fn test_document_response_from_entity() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let uploader_id = Uuid::new_v4();
 
         let document = Document::new(
+            org_id,
             building_id,
             DocumentType::Invoice,
             "Test Invoice".to_string(),
@@ -100,10 +103,12 @@ mod tests {
 
     #[test]
     fn test_upload_request_serialization() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let uploader_id = Uuid::new_v4();
 
         let request = UploadDocumentRequest {
+            organization_id: org_id,
             building_id,
             document_type: DocumentType::Contract,
             title: "Contrat de syndic".to_string(),

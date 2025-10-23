@@ -30,11 +30,12 @@ impl DocumentRepository for PostgresDocumentRepository {
 
         sqlx::query(
             r#"
-            INSERT INTO documents (id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            INSERT INTO documents (id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
             "#,
         )
         .bind(document.id)
+        .bind(document.organization_id)
         .bind(document.building_id)
         .bind(document_type_str)
         .bind(&document.title)
@@ -57,7 +58,7 @@ impl DocumentRepository for PostgresDocumentRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Document>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
+            SELECT id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
             FROM documents
             WHERE id = $1
             "#,
@@ -81,6 +82,7 @@ impl DocumentRepository for PostgresDocumentRepository {
 
             Document {
                 id: row.get("id"),
+                organization_id: row.get("organization_id"),
                 building_id: row.get("building_id"),
                 document_type,
                 title: row.get("title"),
@@ -100,7 +102,7 @@ impl DocumentRepository for PostgresDocumentRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Document>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
+            SELECT id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
             FROM documents
             WHERE building_id = $1
             ORDER BY created_at DESC
@@ -127,6 +129,7 @@ impl DocumentRepository for PostgresDocumentRepository {
 
                 Document {
                     id: row.get("id"),
+                    organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     document_type,
                     title: row.get("title"),
@@ -147,7 +150,7 @@ impl DocumentRepository for PostgresDocumentRepository {
     async fn find_by_meeting(&self, meeting_id: Uuid) -> Result<Vec<Document>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
+            SELECT id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
             FROM documents
             WHERE related_meeting_id = $1
             ORDER BY created_at DESC
@@ -174,6 +177,7 @@ impl DocumentRepository for PostgresDocumentRepository {
 
                 Document {
                     id: row.get("id"),
+                    organization_id: row.get("organization_id"),
                     building_id: row.get("building_id"),
                     document_type,
                     title: row.get("title"),

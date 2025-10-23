@@ -42,9 +42,11 @@ mod tests {
 
     #[test]
     fn test_calculate_unit_share() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
         let expense = Expense::new(
+            org_id,
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
@@ -56,6 +58,7 @@ mod tests {
         .unwrap();
 
         let unit = Unit::new(
+            org_id,
             building_id,
             "A101".to_string(),
             UnitType::Apartment,
@@ -71,10 +74,12 @@ mod tests {
 
     #[test]
     fn test_calculate_total_expenses() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
         let expenses = vec![
             Expense::new(
+                org_id,
                 building_id,
                 ExpenseCategory::Maintenance,
                 "Test 1".to_string(),
@@ -85,6 +90,7 @@ mod tests {
             )
             .unwrap(),
             Expense::new(
+                org_id,
                 building_id,
                 ExpenseCategory::Repairs,
                 "Test 2".to_string(),
@@ -102,9 +108,11 @@ mod tests {
 
     #[test]
     fn test_calculate_paid_and_unpaid() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
         let mut expense1 = Expense::new(
+            org_id,
             building_id,
             ExpenseCategory::Maintenance,
             "Test 1".to_string(),
@@ -117,6 +125,7 @@ mod tests {
         expense1.mark_as_paid();
 
         let expense2 = Expense::new(
+            org_id,
             building_id,
             ExpenseCategory::Repairs,
             "Test 2".to_string(),

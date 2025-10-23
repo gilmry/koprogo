@@ -19,7 +19,11 @@ impl BuildingUseCases {
         &self,
         dto: CreateBuildingDto,
     ) -> Result<BuildingResponseDto, String> {
+        let organization_id = Uuid::parse_str(&dto.organization_id)
+            .map_err(|_| "Invalid organization_id format".to_string())?;
+
         let building = Building::new(
+            organization_id,
             dto.name,
             dto.address,
             dto.city,
@@ -114,6 +118,7 @@ mod tests {
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 
         let dto = CreateBuildingDto {
+            organization_id: Uuid::new_v4().to_string(),
             name: "Test Building".to_string(),
             address: "123 Test St".to_string(),
             city: "Paris".to_string(),
@@ -133,6 +138,7 @@ mod tests {
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 
         let dto = CreateBuildingDto {
+            organization_id: Uuid::new_v4().to_string(),
             name: "".to_string(), // Invalid: empty name
             address: "123 Test St".to_string(),
             city: "Paris".to_string(),

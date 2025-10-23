@@ -6,6 +6,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Owner {
     pub id: Uuid,
+    pub organization_id: Uuid,
     pub first_name: String,
     pub last_name: String,
     pub email: String,
@@ -21,6 +22,7 @@ pub struct Owner {
 impl Owner {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        organization_id: Uuid,
         first_name: String,
         last_name: String,
         email: String,
@@ -43,6 +45,7 @@ impl Owner {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            organization_id,
             first_name,
             last_name,
             email,
@@ -81,7 +84,9 @@ mod tests {
 
     #[test]
     fn test_create_owner_success() {
+        let org_id = Uuid::new_v4();
         let owner = Owner::new(
+            org_id,
             "Jean".to_string(),
             "Dupont".to_string(),
             "jean.dupont@example.com".to_string(),
@@ -94,12 +99,15 @@ mod tests {
 
         assert!(owner.is_ok());
         let owner = owner.unwrap();
+        assert_eq!(owner.organization_id, org_id);
         assert_eq!(owner.full_name(), "Jean Dupont");
     }
 
     #[test]
     fn test_create_owner_invalid_email_fails() {
+        let org_id = Uuid::new_v4();
         let owner = Owner::new(
+            org_id,
             "Jean".to_string(),
             "Dupont".to_string(),
             "invalid-email".to_string(),
@@ -116,7 +124,9 @@ mod tests {
 
     #[test]
     fn test_update_contact() {
+        let org_id = Uuid::new_v4();
         let mut owner = Owner::new(
+            org_id,
             "Jean".to_string(),
             "Dupont".to_string(),
             "jean.dupont@example.com".to_string(),
