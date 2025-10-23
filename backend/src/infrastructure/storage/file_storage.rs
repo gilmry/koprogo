@@ -43,8 +43,8 @@ impl FileStorage {
         let file_path = building_dir.join(&unique_filename);
 
         // Write file to disk
-        let mut file = fs::File::create(&file_path)
-            .map_err(|e| format!("Failed to create file: {}", e))?;
+        let mut file =
+            fs::File::create(&file_path).map_err(|e| format!("Failed to create file: {}", e))?;
 
         file.write_all(content)
             .map_err(|e| format!("Failed to write file: {}", e))?;
@@ -152,10 +152,7 @@ mod tests {
         let temp_dir = env::temp_dir().join("koprogo_test");
         let storage = FileStorage::new(&temp_dir).unwrap();
 
-        assert_eq!(
-            storage.sanitize_filename("../etc/passwd"),
-            "__etc_passwd"
-        );
+        assert_eq!(storage.sanitize_filename("../etc/passwd"), "__etc_passwd");
         assert_eq!(storage.sanitize_filename("normal.pdf"), "normal.pdf");
 
         fs::remove_dir_all(&temp_dir).ok();

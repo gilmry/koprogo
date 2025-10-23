@@ -1,4 +1,6 @@
-use crate::application::dto::{BuildingFilters, BuildingResponseDto, CreateBuildingDto, PageRequest, UpdateBuildingDto};
+use crate::application::dto::{
+    BuildingFilters, BuildingResponseDto, CreateBuildingDto, PageRequest, UpdateBuildingDto,
+};
 use crate::application::ports::BuildingRepository;
 use crate::domain::entities::Building;
 use std::sync::Arc;

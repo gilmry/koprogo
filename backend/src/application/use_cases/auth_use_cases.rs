@@ -1,4 +1,6 @@
-use crate::application::dto::{Claims, LoginRequest, LoginResponse, RefreshTokenRequest, RegisterRequest, UserResponse};
+use crate::application::dto::{
+    Claims, LoginRequest, LoginResponse, RefreshTokenRequest, RegisterRequest, UserResponse,
+};
 use crate::application::ports::{RefreshTokenRepository, UserRepository};
 use crate::domain::entities::{RefreshToken, User, UserRole};
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -154,7 +156,10 @@ impl AuthUseCases {
     }
 
     /// Refresh access token using a refresh token
-    pub async fn refresh_token(&self, request: RefreshTokenRequest) -> Result<LoginResponse, String> {
+    pub async fn refresh_token(
+        &self,
+        request: RefreshTokenRequest,
+    ) -> Result<LoginResponse, String> {
         // Find refresh token in database
         let refresh_token = self
             .refresh_token_repo

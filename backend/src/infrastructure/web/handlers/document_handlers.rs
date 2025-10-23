@@ -47,13 +47,24 @@ pub async fn upload_document(
     };
 
     // Get file metadata
-    let filename = form.file.file_name.clone().unwrap_or_else(|| "unnamed".to_string());
-    let mime_type = form.file.content_type.as_ref().map(|ct| ct.to_string()).unwrap_or_else(|| "application/octet-stream".to_string());
+    let filename = form
+        .file
+        .file_name
+        .clone()
+        .unwrap_or_else(|| "unnamed".to_string());
+    let mime_type = form
+        .file
+        .content_type
+        .as_ref()
+        .map(|ct| ct.to_string())
+        .unwrap_or_else(|| "application/octet-stream".to_string());
 
     // Read file content
     let file_content = match std::fs::read(form.file.file.path()) {
         Ok(content) => content,
-        Err(e) => return HttpResponse::InternalServerError().json(format!("Failed to read file: {}", e)),
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(format!("Failed to read file: {}", e))
+        }
     };
 
     // Upload document
@@ -78,10 +89,7 @@ pub async fn upload_document(
 
 /// Get document metadata by ID
 #[get("/documents/{id}")]
-pub async fn get_document(
-    app_state: web::Data<AppState>,
-    path: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_document(app_state: web::Data<AppState>, path: web::Path<Uuid>) -> impl Responder {
     let id = path.into_inner();
 
     match app_state.document_use_cases.get_document(id).await {
@@ -101,7 +109,10 @@ pub async fn download_document(
     match app_state.document_use_cases.download_document(id).await {
         Ok((content, mime_type, filename)) => HttpResponse::Ok()
             .content_type(mime_type)
-            .insert_header(("Content-Disposition", format!("attachment; filename=\"{}\"", filename)))
+            .insert_header((
+                "Content-Disposition",
+                format!("attachment; filename=\"{}\"", filename),
+            ))
             .body(content),
         Err(e) => HttpResponse::NotFound().json(e),
     }

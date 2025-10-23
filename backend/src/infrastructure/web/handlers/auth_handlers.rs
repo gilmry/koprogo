@@ -86,7 +86,11 @@ pub async fn refresh_token(
     data: web::Data<AppState>,
     request: web::Json<RefreshTokenRequest>,
 ) -> impl Responder {
-    match data.auth_use_cases.refresh_token(request.into_inner()).await {
+    match data
+        .auth_use_cases
+        .refresh_token(request.into_inner())
+        .await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
             "error": e

@@ -137,11 +137,14 @@ impl BuildingRepository for PostgresBuildingRepository {
         };
 
         // Validate sort column (whitelist)
-        let allowed_columns = vec!["name", "created_at", "total_units", "city", "construction_year"];
-        let sort_column = page_request
-            .sort_by
-            .as_deref()
-            .unwrap_or("created_at");
+        let allowed_columns = vec![
+            "name",
+            "created_at",
+            "total_units",
+            "city",
+            "construction_year",
+        ];
+        let sort_column = page_request.sort_by.as_deref().unwrap_or("created_at");
 
         if !allowed_columns.contains(&sort_column) {
             return Err(format!("Invalid sort column: {}", sort_column));
@@ -200,7 +203,9 @@ impl BuildingRepository for PostgresBuildingRepository {
             data_query = data_query.bind(max);
         }
 
-        data_query = data_query.bind(page_request.limit()).bind(page_request.offset());
+        data_query = data_query
+            .bind(page_request.limit())
+            .bind(page_request.offset());
 
         let rows = data_query
             .fetch_all(&self.pool)

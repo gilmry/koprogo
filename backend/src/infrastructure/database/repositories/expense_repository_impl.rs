@@ -297,7 +297,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
             data_query = data_query.bind(max_amount);
         }
 
-        data_query = data_query.bind(page_request.limit()).bind(page_request.offset());
+        data_query = data_query
+            .bind(page_request.limit())
+            .bind(page_request.offset());
 
         let rows = data_query
             .fetch_all(&self.pool)

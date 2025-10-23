@@ -1,4 +1,6 @@
-use crate::application::dto::{DocumentResponse, LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest};
+use crate::application::dto::{
+    DocumentResponse, LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest,
+};
 use crate::application::ports::DocumentRepository;
 use crate::domain::entities::{Document, DocumentType};
 use crate::infrastructure::storage::FileStorage;
@@ -338,10 +340,7 @@ mod tests {
         // Link to meeting
         let meeting_id = Uuid::new_v4();
         let result = use_cases
-            .link_to_meeting(
-                doc.id,
-                LinkDocumentToMeetingRequest { meeting_id },
-            )
+            .link_to_meeting(doc.id, LinkDocumentToMeetingRequest { meeting_id })
             .await;
 
         assert!(result.is_ok());
