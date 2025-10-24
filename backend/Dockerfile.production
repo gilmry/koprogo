@@ -4,7 +4,8 @@
 # ============================================================================
 
 # Stage 1: Build
-FROM rust:1.75-slim-bookworm AS builder
+# Use nightly with Debian Bookworm base to match runtime GLIBC version
+FROM rustlang/rust:nightly-bookworm-slim AS builder
 
 WORKDIR /build
 
@@ -23,10 +24,16 @@ COPY Cargo.toml Cargo.lock ./
 # Copy source code
 COPY src ./src
 COPY migrations ./migrations
+COPY tests ./tests
+COPY benches ./benches
+COPY .sqlx ./.sqlx
+
+# Set SQLx offline mode for Docker builds
+ENV SQLX_OFFLINE=true
 
 # Build with optimizations (matching CLAUDE.md specs)
 RUN cargo build --release && \
-    strip target/release/koprogo-backend
+    strip target/release/koprogo-api
 
 # Stage 2: Runtime
 FROM debian:bookworm-slim
@@ -46,7 +53,7 @@ RUN apt-get update && \
     chown -R koprogo:koprogo /app
 
 # Copy binary from builder
-COPY --from=builder /build/target/release/koprogo-backend /app/koprogo-backend
+COPY --from=builder /build/target/release/koprogo-api /app/koprogo-api
 
 # Copy migrations for runtime
 COPY --from=builder /build/migrations /app/migrations
@@ -72,4 +79,4 @@ ENV RUST_LOG=info \
     SERVER_PORT=8080
 
 # Run the application
-CMD ["/app/koprogo-backend"]
+CMD ["/app/koprogo-api"]

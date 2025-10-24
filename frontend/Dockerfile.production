@@ -1,0 +1,58 @@
+# ============================================================================
+# KoproGo Frontend Production Dockerfile
+# Multi-stage build: Node.js builder + nginx runtime for static files
+# Target size: ~30-50MB (vs 800MB with SSR)
+# ============================================================================
+
+# Stage 1: Build static site
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Accept build argument for API URL
+ARG PUBLIC_API_URL
+ENV PUBLIC_API_URL=${PUBLIC_API_URL}
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (clean install for reproducibility)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Build static site (output to dist/)
+# PUBLIC_API_URL will be baked into the static files
+RUN npm run build
+
+# Stage 2: Serve with nginx
+FROM nginx:alpine
+
+# Remove default nginx config and html
+RUN rm -rf /etc/nginx/nginx.conf /usr/share/nginx/html/*
+
+# Copy custom nginx configuration
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy built static files from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Create non-root user for nginx
+RUN addgroup -g 10001 koprogo && \
+    adduser -u 10001 -G koprogo -s /bin/sh -D koprogo && \
+    chown -R koprogo:koprogo /usr/share/nginx/html && \
+    chown -R koprogo:koprogo /var/cache/nginx && \
+    chown -R koprogo:koprogo /var/log/nginx && \
+    touch /var/run/nginx.pid && \
+    chown -R koprogo:koprogo /var/run/nginx.pid
+
+USER koprogo
+
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

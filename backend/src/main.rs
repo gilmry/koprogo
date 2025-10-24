@@ -24,6 +24,11 @@ async fn main() -> std::io::Result<()> {
         .parse::<u16>()
         .expect("SERVER_PORT must be a valid number");
 
+    let actix_workers = env::var("ACTIX_WORKERS")
+        .unwrap_or_else(|_| "2".to_string())
+        .parse::<usize>()
+        .unwrap_or(2);
+
     // Parse allowed CORS origins from environment
     let allowed_origins: Vec<String> = env::var("CORS_ALLOWED_ORIGINS")
         .unwrap_or_else(|_| "http://localhost:3000".to_string())
@@ -87,7 +92,7 @@ async fn main() -> std::io::Result<()> {
         pool.clone(),
     ));
 
-    log::info!("Starting server at {}:{}", server_host, server_port);
+    log::info!("Starting server at {}:{} with {} workers", server_host, server_port, actix_workers);
 
     // Configure rate limiter: 100 requests per minute per IP
     // Allows bursts up to 100 requests, then refills at 100/60000ms rate
@@ -120,6 +125,7 @@ async fn main() -> std::io::Result<()> {
             .configure(configure_routes)
     })
     .bind((server_host.as_str(), server_port))?
+    .workers(actix_workers)
     .run()
     .await
 }

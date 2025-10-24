@@ -1,7 +1,8 @@
 # Multi-stage build for optimal size and security
 
 # Stage 1: Build
-FROM rustlang/rust:nightly-slim as builder
+# Use nightly with Debian Bookworm base to match runtime GLIBC version
+FROM rustlang/rust:nightly-bookworm-slim as builder
 
 WORKDIR /app
 
@@ -9,6 +10,8 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
+    libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy manifests
@@ -36,6 +39,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
+    libpq5 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 

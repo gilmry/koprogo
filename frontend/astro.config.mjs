@@ -1,14 +1,10 @@
 import { defineConfig } from "astro/config";
 import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
-import node from "@astrojs/node";
 import AstroPWA from "@vite-pwa/astro";
 
 export default defineConfig({
-  output: "server",
-  adapter: node({
-    mode: "standalone",
-  }),
+  output: "static",
   integrations: [
     svelte(),
     AstroPWA({

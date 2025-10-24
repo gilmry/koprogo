@@ -1,5 +1,3 @@
-version: '3.8'
-
 ################################################################################
 # KoproGo VPS Production Deployment with Traefik
 # Optimized for low-resource environments (Hetzner CPX11: 2GB RAM, 2 vCPU)
@@ -7,7 +5,7 @@ version: '3.8'
 
 services:
   traefik:
-    image: traefik:v2.11
+    image: traefik:v3.5.3
     container_name: koprogo-traefik
     restart: unless-stopped
 
@@ -44,9 +42,9 @@ services:
       - traefik_letsencrypt:/letsencrypt
 
     labels:
-      # Dashboard (access via https://your-domain.com/dashboard/)
+      # Dashboard (access via https://traefik.your-domain.com/dashboard/)
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DOMAIN:-api.koprogo.local}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DOMAIN:-api.koprogo.local}`) && PathPrefix(`/dashboard`)"
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
@@ -137,8 +135,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.production
-      args:
-        RUST_VERSION: 1.75
     container_name: koprogo-backend
     restart: unless-stopped
 
@@ -149,6 +145,7 @@ services:
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-0}
       ACTIX_WORKERS: ${ACTIX_WORKERS:-2}
+      CORS_ALLOWED_ORIGINS: ${CORS_ORIGIN:-https://app.koprogo.com}
 
     depends_on:
       postgres:
@@ -177,11 +174,7 @@ services:
       - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
       - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
       - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
-      # CORS (if needed for frontend)
-      - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
-      - "traefik.http.middlewares.cors.headers.accesscontrolalloworigin=${CORS_ORIGIN:-*}"
-      - "traefik.http.middlewares.cors.headers.accesscontrolmaxage=100"
-      - "traefik.http.middlewares.cors.headers.addvaryheader=true"
+      # CORS is handled by the backend application
 
     # Resource limits
     deploy:
@@ -199,6 +192,59 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+    networks:
+      - koprogo-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.production
+      args:
+        PUBLIC_API_URL: https://${API_DOMAIN:-api.koprogo.com}/api/v1
+    container_name: koprogo-frontend
+    restart: unless-stopped
+
+    depends_on:
+      backend:
+        condition: service_healthy
+
+    # NOT exposed externally for security
+    expose:
+      - "80"
+
+    # Traefik labels for routing and SSL
+    labels:
+      - "traefik.enable=true"
+      # HTTPS router
+      - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN:-app.koprogo.com}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      # Security headers (same as backend)
+      - "traefik.http.routers.frontend.middlewares=frontend-security-headers"
+      - "traefik.http.middlewares.frontend-security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.frontend-security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.frontend-security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.frontend-security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.frontend-security-headers.headers.stsIncludeSubdomains=true"
+
+    # Resource limits (frontend is lighter than backend)
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
     networks:
       - koprogo-network
