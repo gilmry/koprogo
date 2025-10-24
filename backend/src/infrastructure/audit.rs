@@ -118,6 +118,10 @@ impl AuditLogEntry {
 
     /// Log this entry (currently to stdout, can be extended to database/file)
     pub fn log(&self) {
+        // Redact sensitive information for logging (GDPR compliance)
+        let redacted_ip = self.ip_address.as_ref().map(|_| "[REDACTED]");
+        let redacted_error = self.error_message.as_ref().map(|_| "[REDACTED]");
+
         let log_message = format!(
             "[AUDIT] {} | {:?} | User: {:?} | Org: {:?} | Resource: {:?}/{:?} | Success: {} | IP: {:?}",
             self.timestamp.format("%Y-%m-%d %H:%M:%S"),
@@ -127,19 +131,21 @@ impl AuditLogEntry {
             self.resource_type,
             self.resource_id,
             self.success,
-            self.ip_address
+            redacted_ip
         );
 
         if self.success {
             log::info!("{}", log_message);
         } else {
-            log::warn!("{} | Error: {:?}", log_message, self.error_message);
+            log::warn!("{} | Error: {:?}", log_message, redacted_error);
         }
 
-        // TODO: In production, write to:
-        // - Database table (audit_logs)
-        // - Rotating log files
+        // TODO: In production, write full (unredacted) audit data to:
+        // - Database table (audit_logs) with encryption at rest
+        // - Rotating log files in secure location with restricted access
         // - SIEM system (Security Information and Event Management)
+        // Note: Full audit data (including IP, error messages) should only be
+        // stored in secure, access-controlled systems for compliance and forensics
     }
 }
 
