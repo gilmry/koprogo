@@ -13,23 +13,12 @@ impl DatabaseSeeder {
         Self { pool }
     }
 
-    /// Create the default superadmin user if it doesn't exist
+    /// Create or update the default superadmin user
     pub async fn seed_superadmin(&self) -> Result<User, String> {
         let superadmin_email = "admin@koprogo.com";
         let superadmin_password = "admin123"; // Change in production!
 
-        // Check if superadmin already exists
-        let existing = sqlx::query!("SELECT id FROM users WHERE email = $1", superadmin_email)
-            .fetch_optional(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to check existing superadmin: {}", e))?;
-
-        if existing.is_some() {
-            log::info!("Superadmin already exists");
-            return Err("Superadmin already exists".to_string());
-        }
-
-        // Create superadmin
+        // Hash password
         let password_hash = hash(superadmin_password, DEFAULT_COST)
             .map_err(|e| format!("Failed to hash password: {}", e))?;
 
@@ -38,10 +27,16 @@ impl DatabaseSeeder {
 
         let now = Utc::now();
 
+        // Upsert superadmin (insert or update if exists)
         sqlx::query!(
             r#"
             INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            ON CONFLICT (email)
+            DO UPDATE SET
+                password_hash = EXCLUDED.password_hash,
+                updated_at = EXCLUDED.updated_at,
+                is_active = true
             "#,
             superadmin_id,
             superadmin_email,
@@ -56,9 +51,9 @@ impl DatabaseSeeder {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| format!("Failed to create superadmin: {}", e))?;
+        .map_err(|e| format!("Failed to upsert superadmin: {}", e))?;
 
-        log::info!("✅ Superadmin created: {}", superadmin_email);
+        log::info!("✅ Superadmin ready: {}", superadmin_email);
 
         Ok(User {
             id: superadmin_id,
