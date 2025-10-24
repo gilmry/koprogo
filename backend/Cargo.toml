@@ -52,7 +52,7 @@ rust_xlsxwriter = "0.76"
 # Unit & Integration tests
 mockall = "0.13"
 tokio-test = "0.4"
-testcontainers-modules = { version = "0.11", features = ["postgres"] }
+testcontainers-modules = { version = "0.13", features = ["postgres"] }
 
 # BDD tests
 cucumber = { version = "0.21", features = ["macros"] }
