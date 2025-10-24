@@ -2316,7 +2316,7 @@ dependencies = [
  "log",
  "mockall",
  "printpdf",
- "rand 0.8.5",
+ "rand 0.9.2",
  "reqwest",
  "rust_xlsxwriter",
  "serde",
