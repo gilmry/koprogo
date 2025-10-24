@@ -1,0 +1,102 @@
+# Docker Compose for load testing
+# Includes wrk container to run load tests against the API
+# IMPORTANT: This configuration disables rate limiting for accurate performance testing
+
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: koprogo-postgres-loadtest
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: koprogo_db
+      POSTGRES_USER: koprogo
+      POSTGRES_PASSWORD: koprogo123
+    volumes:
+      - postgres_loadtest_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    command:
+      - "postgres"
+      # Performance tuning for load testing
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "effective_cache_size=1536MB"
+      - "-c"
+      - "max_connections=50"
+      - "-c"
+      - "work_mem=10MB"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U koprogo -d koprogo_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - koprogo-network
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.production
+    container_name: koprogo-backend-loadtest
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env.loadtest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8080:8080"  # Expose for local testing
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - koprogo-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+
+  # Load testing tool container
+  loadtest:
+    image: williamyeh/wrk
+    container_name: koprogo-loadtest
+    volumes:
+      - ./lua:/scripts:ro
+      - ./results:/results
+    networks:
+      - koprogo-network
+    command: >
+      sh -c "
+      echo '========================================='
+      && echo 'KoproGo Load Test Container Ready'
+      && echo '========================================='
+      && echo ''
+      && echo 'Rate limiting is DISABLED for accurate testing'
+      && echo ''
+      && echo 'Quick test example:'
+      && echo '  docker compose -f docker-compose.loadtest.yml exec loadtest wrk -t2 -c10 -d30s --latency http://backend:8080/api/v1/health'
+      && echo ''
+      && echo 'Or run scripts from host (recommended):'
+      && echo '  export BASE_URL=http://localhost:8080'
+      && echo '  ./scripts/light-load.sh'
+      && echo ''
+      && tail -f /dev/null
+      "
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  koprogo-network:
+    driver: bridge
+
+volumes:
+  postgres_loadtest_data:
+    driver: local

@@ -1,0 +1,12 @@
+# Test results
+results/*.txt
+results/*.log
+results/*.html
+
+# Monitoring logs
+monitoring-results/*.log
+monitoring-results/*.txt
+
+# But keep directories
+!results/.gitkeep
+!monitoring-results/.gitkeep

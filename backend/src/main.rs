@@ -29,6 +29,13 @@ async fn main() -> std::io::Result<()> {
         .parse::<usize>()
         .unwrap_or(2);
 
+    // Rate limiting configuration
+    let enable_rate_limiting = env::var("ENABLE_RATE_LIMITING")
+        .unwrap_or_else(|_| "true".to_string())
+        .to_lowercase()
+        .parse::<bool>()
+        .unwrap_or(true);
+
     // Parse allowed CORS origins from environment
     let allowed_origins: Vec<String> = env::var("CORS_ALLOWED_ORIGINS")
         .unwrap_or_else(|_| "http://localhost:3000".to_string())
@@ -37,6 +44,7 @@ async fn main() -> std::io::Result<()> {
         .collect();
 
     log::info!("CORS allowed origins: {:?}", allowed_origins);
+    log::info!("Rate limiting enabled: {}", enable_rate_limiting);
 
     let pool = create_pool(&database_url)
         .await
@@ -117,10 +125,15 @@ async fn main() -> std::io::Result<()> {
             ])
             .max_age(3600);
 
-        App::new()
-            .app_data(app_state.clone())
-            .wrap(Governor::new(&governor_conf))
-            .wrap(cors)
+        let mut app = App::new()
+            .app_data(app_state.clone());
+
+        // Conditionally apply rate limiting based on environment variable
+        if enable_rate_limiting {
+            app = app.wrap(Governor::new(&governor_conf));
+        }
+
+        app.wrap(cors)
             .wrap(middleware::Logger::default())
             .configure(configure_routes)
     })
