@@ -707,6 +707,8 @@ impl DatabaseSeeder {
                 .map_err(|e| format!("Failed to parse date: {}", e))?
                 .with_timezone(&Utc);
 
+        let agenda_json = serde_json::json!(["Approbation des comptes", "Travaux à prévoir", "Questions diverses"]);
+
         sqlx::query(
             r#"
             INSERT INTO meetings (id, building_id, organization_id, meeting_type, title, description, scheduled_date, location, status, agenda, created_at, updated_at)
@@ -722,7 +724,7 @@ impl DatabaseSeeder {
         .bind(scheduled_date_parsed)
         .bind("Salle polyvalente")
         .bind(status)
-        .bind(vec!["Approbation des comptes", "Travaux à prévoir", "Questions diverses"])
+        .bind(agenda_json)
         .bind(now)
         .bind(now)
         .execute(&self.pool)
