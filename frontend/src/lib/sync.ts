@@ -3,7 +3,7 @@ import { localDB } from "./db";
 import type { Building, Owner, Expense } from "./types";
 import { API_URL } from "./config";
 
-const API_BASE_URL = `${API_URL}/api/v1`;
+const API_BASE_URL = API_URL;
 
 export class SyncService {
   private isOnline: boolean =
@@ -131,14 +131,18 @@ export class SyncService {
         `${API_BASE_URL}/buildings`,
       );
       if (buildingsRes.ok) {
-        const buildings = await buildingsRes.json();
+        const response = await buildingsRes.json();
+        // API returns {data: [...], pagination: {...}}
+        const buildings = response.data || response;
         await localDB.saveBuildings(buildings);
       }
 
       // Fetch owners
       const ownersRes = await this.fetchWithAuth(`${API_BASE_URL}/owners`);
       if (ownersRes.ok) {
-        const owners = await ownersRes.json();
+        const response = await ownersRes.json();
+        // API returns {data: [...], pagination: {...}}
+        const owners = response.data || response;
         await localDB.saveOwners(owners);
       }
 
@@ -154,7 +158,9 @@ export class SyncService {
       try {
         const response = await this.fetchWithAuth(`${API_BASE_URL}/buildings`);
         if (response.ok) {
-          const buildings = await response.json();
+          const result = await response.json();
+          // API returns {data: [...], pagination: {...}}
+          const buildings = result.data || result;
           await localDB.saveBuildings(buildings);
           return buildings;
         }
@@ -204,7 +210,9 @@ export class SyncService {
       try {
         const response = await this.fetchWithAuth(`${API_BASE_URL}/owners`);
         if (response.ok) {
-          const owners = await response.json();
+          const result = await response.json();
+          // API returns {data: [...], pagination: {...}}
+          const owners = result.data || result;
           await localDB.saveOwners(owners);
           return owners;
         }
@@ -228,7 +236,9 @@ export class SyncService {
             `${API_BASE_URL}/buildings/${building.id}/expenses`,
           );
           if (response.ok) {
-            const expenses = await response.json();
+            const result = await response.json();
+            // API returns {data: [...], pagination: {...}}
+            const expenses = result.data || result;
             allExpenses.push(...expenses);
           }
         }

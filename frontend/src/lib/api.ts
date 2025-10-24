@@ -21,7 +21,7 @@ function getCurrentLanguage(): string {
 function getHeaders(
   additionalHeaders: Record<string, string> = {},
 ): HeadersInit {
-  const token = localStorage.getItem("auth_token");
+  const token = localStorage.getItem("koprogo_token");
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

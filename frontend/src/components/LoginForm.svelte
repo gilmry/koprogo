@@ -16,7 +16,7 @@
 
     try {
       // Real API call
-      const response = await fetch(apiEndpoint('/api/v1/auth/login'), {
+      const response = await fetch(apiEndpoint('/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -118,10 +118,31 @@
   </button>
 
   <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-    <p class="text-xs font-semibold text-gray-700 mb-2">Comptes de test:</p>
-    <div class="space-y-1 text-xs text-gray-600">
-      <p>👑 <strong>SuperAdmin:</strong> admin@koprogo.com / admin123</p>
-      <p class="text-gray-500 text-[10px] mt-1">Les données de démonstration peuvent être générées depuis le dashboard SuperAdmin</p>
+    <p class="text-xs font-semibold text-gray-700 mb-2">Comptes de démonstration:</p>
+    <div class="space-y-2 text-xs text-gray-600">
+      <div>
+        <p class="font-semibold text-gray-800">👑 SuperAdmin</p>
+        <p class="text-[11px]">admin@koprogo.com / admin123</p>
+        <p class="text-gray-500 text-[10px] italic">Génère les données de démo depuis le dashboard</p>
+      </div>
+
+      <div class="border-t border-gray-200 pt-2">
+        <p class="font-semibold text-gray-800">🏢 Syndics (Gestionnaires)</p>
+        <p class="text-[11px]">• syndic@grandplace.be / syndic123</p>
+        <p class="text-[11px]">• syndic@copro-bruxelles.be / syndic123</p>
+        <p class="text-[11px]">• syndic@syndic-liege.be / syndic123</p>
+      </div>
+
+      <div class="border-t border-gray-200 pt-2">
+        <p class="font-semibold text-gray-800">📊 Comptable</p>
+        <p class="text-[11px]">comptable@grandplace.be / comptable123</p>
+      </div>
+
+      <div class="border-t border-gray-200 pt-2">
+        <p class="font-semibold text-gray-800">👥 Propriétaires</p>
+        <p class="text-[11px]">• proprietaire1@grandplace.be / owner123</p>
+        <p class="text-[11px]">• proprietaire2@grandplace.be / owner123</p>
+      </div>
     </div>
   </div>
 </form>

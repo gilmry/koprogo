@@ -145,6 +145,11 @@ impl OwnerRepository for PostgresOwnerRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        if filters.organization_id.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("organization_id = ${}", param_count));
+        }
+
         if filters.email.is_some() {
             param_count += 1;
             where_clauses.push(format!("email ILIKE ${}", param_count));
@@ -183,6 +188,9 @@ impl OwnerRepository for PostgresOwnerRepository {
         let count_query = format!("SELECT COUNT(*) FROM owners {}", where_clause);
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
+        if let Some(organization_id) = &filters.organization_id {
+            count_query = count_query.bind(organization_id);
+        }
         if let Some(email) = &filters.email {
             count_query = count_query.bind(format!("%{}%", email));
         }
@@ -208,7 +216,7 @@ impl OwnerRepository for PostgresOwnerRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at \
+            "SELECT id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at \
              FROM owners {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -219,6 +227,9 @@ impl OwnerRepository for PostgresOwnerRepository {
 
         let mut data_query = sqlx::query(&data_query);
 
+        if let Some(organization_id) = &filters.organization_id {
+            data_query = data_query.bind(organization_id);
+        }
         if let Some(email) = &filters.email {
             data_query = data_query.bind(format!("%{}%", email));
         }

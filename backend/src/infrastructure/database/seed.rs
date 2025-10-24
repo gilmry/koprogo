@@ -189,6 +189,7 @@ impl DatabaseSeeder {
         // Create demo owners
         let owner1_db_id = self
             .create_demo_owner(
+                org1_id,
                 "Pierre",
                 "Durand",
                 "pierre.durand@email.be",
@@ -202,6 +203,7 @@ impl DatabaseSeeder {
 
         let owner2_db_id = self
             .create_demo_owner(
+                org1_id,
                 "Sophie",
                 "Bernard",
                 "sophie.bernard@email.be",
@@ -215,6 +217,7 @@ impl DatabaseSeeder {
 
         let owner3_db_id = self
             .create_demo_owner(
+                org1_id,
                 "Michel",
                 "Lefebvre",
                 "michel.lefebvre@email.be",
@@ -574,6 +577,7 @@ impl DatabaseSeeder {
     #[allow(clippy::too_many_arguments)]
     async fn create_demo_owner(
         &self,
+        organization_id: Uuid,
         first_name: &str,
         last_name: &str,
         email: &str,
@@ -588,10 +592,11 @@ impl DatabaseSeeder {
 
         sqlx::query!(
             r#"
-            INSERT INTO owners (id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
             owner_id,
+            organization_id,
             first_name,
             last_name,
             email,
@@ -707,7 +712,11 @@ impl DatabaseSeeder {
                 .map_err(|e| format!("Failed to parse date: {}", e))?
                 .with_timezone(&Utc);
 
-        let agenda_json = serde_json::json!(["Approbation des comptes", "Travaux à prévoir", "Questions diverses"]);
+        let agenda_json = serde_json::json!([
+            "Approbation des comptes",
+            "Travaux à prévoir",
+            "Questions diverses"
+        ]);
 
         sqlx::query(
             r#"

@@ -73,12 +73,18 @@ export interface Expense {
 }
 
 // Pagination types (matches backend PageResponse)
+export interface PaginationMeta {
+  current_page: number;
+  per_page: number;
+  total_items: number;
+  total_pages: number;
+  has_next: boolean;
+  has_previous: boolean;
+}
+
 export interface PageResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  per_page: number;
-  total_pages: number;
+  pagination: PaginationMeta;
 }
 
 export interface PageRequest {

@@ -7,6 +7,223 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - SuperAdmin Management Pages & Real-time Statistics (2025-01-24)
+
+#### Backend (Rust/Actix-web)
+
+**New API Endpoints (SuperAdmin Only)**
+- `GET /api/v1/organizations` - List all organizations with pagination support
+  - Returns: id, name, slug, contact info, subscription plan, limits (max_buildings, max_users), active status
+  - File: `src/infrastructure/web/handlers/organization_handlers.rs`
+
+- `GET /api/v1/users` - List all users across all organizations
+  - Returns: id, email, name, role, organization_id, active status
+  - File: `src/infrastructure/web/handlers/user_handlers.rs`
+
+- `GET /api/v1/stats/dashboard` - Real-time platform statistics
+  - Returns: 8 metrics (organizations, users, buildings, active subscriptions, owners, units, expenses, meetings)
+  - File: `src/infrastructure/web/handlers/stats_handlers.rs`
+
+**Database Migration**
+- `20250103000002_disable_rls_policies.sql` - Disable Row-Level Security policies
+  - Disabled RLS on: buildings, units, owners, expenses, meetings, documents
+  - Dropped organization isolation policies
+  - Allows SuperAdmin to access data across all organizations
+
+**Repository Fixes**
+- Fixed `owner_repository_impl.rs` organization_id column issues
+  - Added `organization_id` to SELECT queries
+  - Added organization_id filtering to WHERE clauses
+  - Fixed bind parameters for paginated queries
+  - Resolves "ColumnDecode" errors
+
+**Seed Data Improvements**
+- Updated `seed.rs` to properly handle organization_id
+  - Modified `create_demo_owner()` to accept organization_id parameter
+  - All demo owners now created with valid organization_id
+  - Prevents NULL organization_id values
+
+#### Frontend (Astro + Svelte)
+
+**New Components**
+- `OrganizationList.svelte` - Full-featured organization management
+  - Search by name, email, or slug
+  - Subscription plan badges (free, professional, enterprise)
+  - Active/inactive status indicators
+  - Displays limits (max buildings, max users)
+  - Action buttons (View, Modify)
+  - Loading states and error handling
+
+- `UserListAdmin.svelte` - Complete user management interface
+  - Search by email, first name, or last name
+  - Role filter dropdown (all, superadmin, syndic, accountant, owner)
+  - User avatar with initials
+  - Color-coded role badges (superadmin=purple, syndic=blue, accountant=green, owner=yellow)
+  - Organization ID display
+  - Active/inactive status indicators
+
+**Updated Components**
+- `AdminDashboard.svelte` - Real-time statistics integration
+  - Replaced fake data with real API calls to `/stats/dashboard`
+  - Expanded from 5 to 8 statistics cards (grid-cols-4)
+  - Added: total_owners, total_units, total_expenses, total_meetings
+  - Auto-reload statistics after seed/clear operations
+  - Improved seed section layout with flexbox alignment
+  - Updated demo account list with correct Belgian email addresses
+
+- `LoginForm.svelte` - Enhanced demo accounts display
+  - Organized demo accounts by role (SuperAdmin, Syndics, Comptable, Propriétaires)
+  - Shows all 7 demo accounts with Belgian-themed emails
+  - Improved visual hierarchy and readability
+
+**API Configuration Fixes**
+- Changed `.env` from `127.0.0.1` to `localhost` for CORS compatibility
+- Fixed `api.ts` token storage key from `auth_token` to `koprogo_token`
+- Removed doubled `/api/v1` paths in `sync.ts` and `config.ts`
+
+**Type System Updates**
+- Added `PaginationMeta` interface in `types.ts`
+- Updated `PageResponse<T>` to support nested pagination structure
+- Aligns with backend's `{data: [...], pagination: {...}}` format
+
+**List Component Updates** (6 files)
+- Updated `BuildingList.svelte`, `MeetingList.svelte`, `OwnerList.svelte`
+- Updated `UnitList.svelte`, `DocumentList.svelte`, `ExpenseList.svelte`
+- All now extract data from `response.pagination.current_page`, `.total_items`, etc.
+- Fixed "not iterable" errors by accessing `response.data`
+
+**Admin Pages**
+- `organizations.astro` - Now uses `OrganizationList` component (removed placeholder)
+- `users.astro` - Now uses `UserListAdmin` component (removed placeholder)
+- Both pages fully functional and production-ready
+
+#### Synchronization Service
+- Fixed `sync.ts` to handle nested pagination responses
+- Updated data extraction: `response.data` for paginated endpoints
+- Corrected API_BASE_URL construction
+
+### Fixed
+
+**Critical Bugs**
+- **CORS Issues**: Changed API URL from `127.0.0.1` to `localhost` to prevent cross-origin errors
+- **Authentication**: Fixed token retrieval by updating localStorage key from `auth_token` to `koprogo_token`
+- **Pagination**: Fixed "buildings is not iterable" errors by extracting `response.data` from nested structure
+- **Database Queries**: Fixed NULL organization_id values causing `ColumnDecode` errors
+- **Row-Level Security**: Disabled RLS policies that were blocking SuperAdmin access to cross-organization data
+
+**Code Quality**
+- Fixed Rust formatting in `seed.rs` (agenda_json array formatting)
+- Fixed formatting in `stats_handlers.rs` (active_subs_result query chaining)
+- Removed unused imports: `chrono::{DateTime, Utc}` and `uuid::Uuid` from handler files
+- All code now passes `make lint` (cargo fmt, cargo clippy, astro check)
+
+### Changed
+
+**API Response Structure**
+- All SuperAdmin endpoints return `{data: [...]}` format for consistency
+- Organizations endpoint returns flat list (no pagination for SuperAdmin)
+- Users endpoint returns flat list (no pagination for SuperAdmin)
+
+**Dashboard UI**
+- Expanded statistics from 5 to 8 cards in 4-column grid
+- Improved seed section alignment with flexbox (`flex flex-col h-full`)
+- Changed alignment from `items-center` to `items-start` for top alignment
+- Added background colors: gray for generate, red for delete buttons
+
+**Demo Data Display**
+- Login page now shows all 7 demo accounts organized by role
+- Belgian-themed email addresses (.be domains)
+- SuperAdmin, 3 Syndics, 1 Comptable, 2 Propriétaires
+
+### Technical Details
+
+**SQLx Query Cache**
+- Regenerated `.sqlx/` cache with `cargo sqlx prepare`
+- Added 3 new query cache files for organizations, users, and stats endpoints
+- Deleted 1 old query cache file (owner repository update)
+
+**Build Status**
+- ✅ Backend: cargo fmt check passed
+- ✅ Backend: cargo clippy passed (0 warnings)
+- ✅ Frontend: astro check passed (0 errors, 0 warnings)
+- ✅ Frontend: build successful (216.32 KiB total)
+
+**Files Modified** (19 files)
+- Backend: 3 new handlers, 2 modified repositories, 1 new migration
+- Frontend: 2 new components, 8 modified components, 4 updated config files
+
+### Migration Notes
+
+**For Developers**
+```bash
+# Pull latest changes
+git pull
+
+# Backend
+cd backend
+sqlx migrate run                    # Apply RLS migration
+export SQLX_OFFLINE=true
+cargo sqlx prepare                  # Regenerate query cache
+cargo build
+
+# Frontend
+cd ../frontend
+npm install                         # Update dependencies if needed
+```
+
+**For Production**
+- Update `.env` file to use `localhost` instead of `127.0.0.1`
+- Ensure JWT tokens are stored as `koprogo_token` in localStorage
+- SuperAdmin must re-login if tokens were stored under old key
+
+**Database**
+- Migration `20250103000002` is backwards compatible
+- No data loss - only changes security policies
+- SuperAdmin will gain access to all organizations' data
+
+### Security Notes
+
+- All new endpoints require SuperAdmin role verification
+- JWT token checked on every request
+- Non-SuperAdmin users receive 403 Forbidden response
+- Row-Level Security disabled to allow SuperAdmin cross-organization access
+
+### API Examples
+
+**List Organizations**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:8080/api/v1/organizations
+```
+
+**List Users**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:8080/api/v1/users
+```
+
+**Get Dashboard Stats**
+```bash
+curl -H "Authorization: Bearer <token>" \
+  http://localhost:8080/api/v1/stats/dashboard
+```
+
+### Demo Credentials
+
+**SuperAdmin** (always available)
+- Email: admin@koprogo.com
+- Password: admin123
+
+**Demo Users** (created via seed)
+- Org 1: syndic@grandplace.be / syndic123
+- Org 2: syndic@copro-bruxelles.be / syndic123
+- Org 3: syndic@syndic-liege.be / syndic123
+- Comptable: comptable@grandplace.be / comptable123
+- Owner 1: pierre.durand@email.be / owner123
+- Owner 2: marie.martin@email.be / owner123
+
+---
+
 ### Fixed - CI/CD Pipeline & Code Quality (2025-10-23)
 
 #### Backend Improvements

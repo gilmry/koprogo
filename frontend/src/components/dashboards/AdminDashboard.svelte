@@ -2,13 +2,17 @@
   import { onMount } from 'svelte';
   import { authStore } from '../../stores/auth';
   import { apiEndpoint } from '../../lib/config';
+  import { api } from '../../lib/api';
 
   interface Stats {
     totalOrganizations: number;
     totalUsers: number;
     totalBuildings: number;
     activeSubscriptions: number;
-    monthlyRevenue: number;
+    totalOwners: number;
+    totalUnits: number;
+    totalExpenses: number;
+    totalMeetings: number;
   }
 
   let stats: Stats = {
@@ -16,9 +20,13 @@
     totalUsers: 0,
     totalBuildings: 0,
     activeSubscriptions: 0,
-    monthlyRevenue: 0,
+    totalOwners: 0,
+    totalUnits: 0,
+    totalExpenses: 0,
+    totalMeetings: 0,
   };
   let loading = true;
+  let statsError = '';
   let seedLoading = false;
   let clearLoading = false;
   let seedMessage = '';
@@ -27,19 +35,41 @@
   $: user = $authStore.user;
 
   onMount(async () => {
-    // TODO: Fetch real stats from API
-    // Simulated data for now
-    setTimeout(() => {
-      stats = {
-        totalOrganizations: 24,
-        totalUsers: 187,
-        totalBuildings: 98,
-        activeSubscriptions: 22,
-        monthlyRevenue: 4580,
-      };
-      loading = false;
-    }, 500);
+    await loadStats();
   });
+
+  async function loadStats() {
+    try {
+      loading = true;
+      statsError = '';
+      const data = await api.get<{
+        total_organizations: number;
+        total_users: number;
+        total_buildings: number;
+        active_subscriptions: number;
+        total_owners: number;
+        total_units: number;
+        total_expenses: number;
+        total_meetings: number;
+      }>('/stats/dashboard');
+
+      stats = {
+        totalOrganizations: data.total_organizations,
+        totalUsers: data.total_users,
+        totalBuildings: data.total_buildings,
+        activeSubscriptions: data.active_subscriptions,
+        totalOwners: data.total_owners,
+        totalUnits: data.total_units,
+        totalExpenses: data.total_expenses,
+        totalMeetings: data.total_meetings,
+      };
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+      statsError = 'Erreur lors du chargement des statistiques';
+    } finally {
+      loading = false;
+    }
+  }
 
   const handleSeedDemoData = async () => {
     seedLoading = true;
@@ -55,11 +85,11 @@
       console.log('LocalStorage Token:', localStorage.getItem('koprogo_token'));
       console.log('LocalStorage User:', localStorage.getItem('koprogo_user'));
     }
-    console.log('API Endpoint:', apiEndpoint('/api/v1/seed/demo'));
+    console.log('API Endpoint:', apiEndpoint('/seed/demo'));
     console.log('============================');
 
     try {
-      const response = await fetch(apiEndpoint('/api/v1/seed/demo'), {
+      const response = await fetch(apiEndpoint('/seed/demo'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${$authStore.token}`,
@@ -71,6 +101,7 @@
       if (response.ok) {
         seedMessage = data.message || 'Données de démonstration créées avec succès!';
         // Reload stats after seeding
+        await loadStats();
         setTimeout(() => seedMessage = '', 5000);
       } else {
         seedError = data.error || 'Erreur lors de la création des données';
@@ -95,7 +126,7 @@
     seedError = '';
 
     try {
-      const response = await fetch(apiEndpoint('/api/v1/seed/clear'), {
+      const response = await fetch(apiEndpoint('/seed/clear'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${$authStore.token}`,
@@ -106,6 +137,8 @@
 
       if (response.ok) {
         seedMessage = data.message || 'Données de démonstration supprimées avec succès!';
+        // Reload stats after clearing
+        await loadStats();
         setTimeout(() => seedMessage = '', 5000);
       } else {
         seedError = data.error || 'Erreur lors de la suppression des données';
@@ -133,7 +166,13 @@
   </div>
 
   <!-- Stats Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+  {#if statsError}
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+      ⚠️ {statsError}
+    </div>
+  {/if}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-white rounded-lg shadow p-6">
       <div class="flex items-center justify-between mb-2">
         <span class="text-gray-600 text-sm font-medium">Organisations</span>
@@ -143,7 +182,7 @@
         <div class="h-8 bg-gray-200 animate-pulse rounded"></div>
       {:else}
         <p class="text-3xl font-bold text-gray-900">{stats.totalOrganizations}</p>
-        <p class="text-sm text-green-600 mt-1">+3 ce mois</p>
+        <p class="text-sm text-gray-500 mt-1">{stats.activeSubscriptions} actives</p>
       {/if}
     </div>
 
@@ -156,7 +195,7 @@
         <div class="h-8 bg-gray-200 animate-pulse rounded"></div>
       {:else}
         <p class="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
-        <p class="text-sm text-green-600 mt-1">+12 ce mois</p>
+        <p class="text-sm text-gray-500 mt-1">Toutes organisations</p>
       {/if}
     </div>
 
@@ -169,13 +208,65 @@
         <div class="h-8 bg-gray-200 animate-pulse rounded"></div>
       {:else}
         <p class="text-3xl font-bold text-gray-900">{stats.totalBuildings}</p>
-        <p class="text-sm text-green-600 mt-1">+5 ce mois</p>
+        <p class="text-sm text-gray-500 mt-1">{stats.totalUnits} lots</p>
       {/if}
     </div>
 
     <div class="bg-white rounded-lg shadow p-6">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-gray-600 text-sm font-medium">Abonnements actifs</span>
+        <span class="text-gray-600 text-sm font-medium">Copropriétaires</span>
+        <span class="text-2xl">👨‍👩‍👧</span>
+      </div>
+      {#if loading}
+        <div class="h-8 bg-gray-200 animate-pulse rounded"></div>
+      {:else}
+        <p class="text-3xl font-bold text-gray-900">{stats.totalOwners}</p>
+        <p class="text-sm text-gray-500 mt-1">Base de données</p>
+      {/if}
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-gray-600 text-sm font-medium">Lots</span>
+        <span class="text-2xl">🏠</span>
+      </div>
+      {#if loading}
+        <div class="h-8 bg-gray-200 animate-pulse rounded"></div>
+      {:else}
+        <p class="text-3xl font-bold text-gray-900">{stats.totalUnits}</p>
+        <p class="text-sm text-gray-500 mt-1">Tous immeubles</p>
+      {/if}
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-gray-600 text-sm font-medium">Charges</span>
+        <span class="text-2xl">💶</span>
+      </div>
+      {#if loading}
+        <div class="h-8 bg-gray-200 animate-pulse rounded"></div>
+      {:else}
+        <p class="text-3xl font-bold text-gray-900">{stats.totalExpenses}</p>
+        <p class="text-sm text-gray-500 mt-1">Total enregistrées</p>
+      {/if}
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-gray-600 text-sm font-medium">Assemblées</span>
+        <span class="text-2xl">📅</span>
+      </div>
+      {#if loading}
+        <div class="h-8 bg-gray-200 animate-pulse rounded"></div>
+      {:else}
+        <p class="text-3xl font-bold text-gray-900">{stats.totalMeetings}</p>
+        <p class="text-sm text-gray-500 mt-1">AG planifiées</p>
+      {/if}
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-gray-600 text-sm font-medium">Abonnements</span>
         <span class="text-2xl">✅</span>
       </div>
       {#if loading}
@@ -183,19 +274,6 @@
       {:else}
         <p class="text-3xl font-bold text-gray-900">{stats.activeSubscriptions}</p>
         <p class="text-sm text-gray-500 mt-1">sur {stats.totalOrganizations} orgs</p>
-      {/if}
-    </div>
-
-    <div class="bg-white rounded-lg shadow p-6">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-gray-600 text-sm font-medium">MRR</span>
-        <span class="text-2xl">💰</span>
-      </div>
-      {#if loading}
-        <div class="h-8 bg-gray-200 animate-pulse rounded"></div>
-      {:else}
-        <p class="text-3xl font-bold text-gray-900">{stats.monthlyRevenue}€</p>
-        <p class="text-sm text-green-600 mt-1">+8.5% ce mois</p>
       {/if}
     </div>
   </div>
@@ -218,12 +296,23 @@
         </div>
       {/if}
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="border-2 border-gray-200 rounded-lg p-6">
-          <div class="flex items-center mb-4">
+        <div class="border-2 border-gray-200 rounded-lg p-6 flex flex-col h-full">
+          <div class="flex items-start mb-4">
             <span class="text-3xl mr-3">🌱</span>
             <div>
               <h3 class="font-semibold text-gray-900">Générer les données de démo</h3>
-              <p class="text-sm text-gray-600">Crée une organisation complète avec utilisateurs, immeubles et charges</p>
+              <p class="text-sm text-gray-600">Crée 3 organisations belges avec utilisateurs, immeubles, copropriétaires et charges</p>
+            </div>
+          </div>
+          <div class="flex-1">
+            <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded mb-4">
+              <p class="font-semibold mb-2">🇧🇪 Comptes créés (Belgique):</p>
+              <ul class="space-y-1 ml-4">
+                <li>• <strong>Org 1:</strong> syndic@grandplace.be / syndic123</li>
+                <li>• <strong>Org 2:</strong> syndic@copro-bruxelles.be / syndic123</li>
+                <li>• <strong>Org 3:</strong> syndic@syndic-liege.be / syndic123</li>
+                <li class="mt-1 text-gray-400">+ Comptables & Propriétaires</li>
+              </ul>
             </div>
           </div>
           <button
@@ -233,22 +322,25 @@
           >
             {seedLoading ? 'Génération en cours...' : 'Générer les données'}
           </button>
-          <div class="mt-3 text-xs text-gray-500">
-            <p class="font-semibold mb-1">Comptes créés:</p>
-            <ul class="space-y-0.5 ml-4">
-              <li>• Syndic: syndic@copro-demo.fr / syndic123</li>
-              <li>• Comptable: comptable@copro-demo.fr / comptable123</li>
-              <li>• Propriétaire 1: proprietaire1@copro-demo.fr / owner123</li>
-              <li>• Propriétaire 2: proprietaire2@copro-demo.fr / owner123</li>
-            </ul>
-          </div>
         </div>
-        <div class="border-2 border-gray-200 rounded-lg p-6">
-          <div class="flex items-center mb-4">
+        <div class="border-2 border-gray-200 rounded-lg p-6 flex flex-col h-full">
+          <div class="flex items-start mb-4">
             <span class="text-3xl mr-3">🗑️</span>
             <div>
               <h3 class="font-semibold text-gray-900">Supprimer les données de démo</h3>
               <p class="text-sm text-gray-600">Supprime toutes les données de démonstration (préserve le SuperAdmin)</p>
+            </div>
+          </div>
+          <div class="flex-1">
+            <div class="text-xs text-gray-500 bg-red-50 p-3 rounded mb-4">
+              <p class="font-semibold mb-2">⚠️ Supprime:</p>
+              <ul class="space-y-1 ml-4">
+                <li>• Toutes les organisations</li>
+                <li>• Tous les utilisateurs (sauf SuperAdmin)</li>
+                <li>• Tous les immeubles</li>
+                <li>• Tous les propriétaires</li>
+                <li>• Toutes les charges et documents</li>
+              </ul>
             </div>
           </div>
           <button
@@ -258,9 +350,6 @@
           >
             {clearLoading ? 'Suppression en cours...' : 'Supprimer les données'}
           </button>
-          <p class="mt-3 text-xs text-gray-500">
-            ⚠️ Cette action supprimera toutes les organisations, utilisateurs, immeubles, propriétaires, lots et charges de démonstration.
-          </p>
         </div>
       </div>
     </div>

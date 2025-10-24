@@ -39,10 +39,10 @@
       );
 
       buildings = response.data;
-      totalItems = response.total;
-      totalPages = response.total_pages;
-      currentPage = response.page;
-      perPage = response.per_page;
+      totalItems = response.pagination.total_items;
+      totalPages = response.pagination.total_pages;
+      currentPage = response.pagination.current_page;
+      perPage = response.pagination.per_page;
       error = '';
     } catch (e) {
       error = e instanceof Error ? e.message : 'Erreur lors du chargement des immeubles';

@@ -6,13 +6,13 @@
  */
 
 // URL de base de l'API backend
-// Fallback: http://127.0.0.1:8080 pour le développement local
+// Fallback: http://127.0.0.1:8080/api/v1 pour le développement local
 const getApiUrl = (): string => {
   // En environnement serveur (SSR), import.meta.env peut ne pas être disponible
   if (typeof import.meta !== "undefined" && import.meta.env) {
-    return import.meta.env.PUBLIC_API_URL || "http://127.0.0.1:8080";
+    return import.meta.env.PUBLIC_API_URL || "http://127.0.0.1:8080/api/v1";
   }
-  return "http://127.0.0.1:8080";
+  return "http://127.0.0.1:8080/api/v1";
 };
 
 export const API_URL = getApiUrl();
@@ -25,5 +25,5 @@ export const apiEndpoint = (path: string): string => {
 };
 
 // Exemples d'utilisation:
-// apiEndpoint('/api/v1/auth/login') => 'http://127.0.0.1:8080/api/v1/auth/login'
-// apiEndpoint('api/v1/buildings') => 'http://127.0.0.1:8080/api/v1/buildings'
+// apiEndpoint('/auth/login') => 'http://127.0.0.1:8080/api/v1/auth/login'
+// apiEndpoint('/buildings') => 'http://127.0.0.1:8080/api/v1/buildings'

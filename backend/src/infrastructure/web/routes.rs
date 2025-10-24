@@ -58,6 +58,12 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(export_pcn_excel)
             // Seed (SuperAdmin only)
             .service(seed_demo_data)
-            .service(clear_demo_data),
+            .service(clear_demo_data)
+            // Stats (SuperAdmin only)
+            .service(get_dashboard_stats)
+            // Organizations (SuperAdmin only)
+            .service(list_organizations)
+            // Users (SuperAdmin only)
+            .service(list_users),
     );
 }
