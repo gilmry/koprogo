@@ -23,6 +23,23 @@ sudo apt-get install -y wrk
 wrk --version
 ```
 
+## 🚨 IMPORTANT : Rate Limiting
+
+**Le rate limiting de l'API (100 req/min) fausse les tests de charge !**
+
+Pour des tests précis, utilisez `docker-compose.loadtest.yml` qui désactive automatiquement le rate limiting :
+
+```bash
+cd load-tests
+docker compose -f docker-compose.loadtest.yml up -d
+export BASE_URL=http://localhost:8080
+./scripts/light-load.sh
+```
+
+Voir [RATE_LIMITING_SOLUTION.md](RATE_LIMITING_SOLUTION.md) pour plus de détails.
+
+---
+
 ## Étape 1 : Démarrer l'application
 
 ```bash
