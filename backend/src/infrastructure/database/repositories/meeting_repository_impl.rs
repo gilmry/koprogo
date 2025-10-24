@@ -171,11 +171,22 @@ impl MeetingRepository for PostgresMeetingRepository {
         sqlx::query(
             r#"
             UPDATE meetings
-            SET status = $2, agenda = $3, attendees_count = $4, updated_at = $5
+            SET title = $2,
+                description = $3,
+                scheduled_date = $4,
+                location = $5,
+                status = CAST($6 AS meeting_status),
+                agenda = $7,
+                attendees_count = $8,
+                updated_at = $9
             WHERE id = $1
             "#,
         )
         .bind(meeting.id)
+        .bind(&meeting.title)
+        .bind(&meeting.description)
+        .bind(meeting.scheduled_date)
+        .bind(&meeting.location)
         .bind(status_str)
         .bind(agenda_json)
         .bind(meeting.attendees_count)

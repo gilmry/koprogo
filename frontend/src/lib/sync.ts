@@ -1,6 +1,6 @@
 // Synchronization service for offline/online data sync
 import { localDB } from "./db";
-import type { User, Building, Owner, Unit, Expense } from "./types";
+import type { Building, Owner, Expense } from "./types";
 import { API_URL } from "./config";
 
 const API_BASE_URL = `${API_URL}/api/v1`;

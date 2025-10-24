@@ -5,9 +5,11 @@ use koprogo_api::domain::services::ExpenseCalculator;
 use uuid::Uuid;
 
 fn benchmark_building_creation(c: &mut Criterion) {
+    let org_id = Uuid::new_v4();
     c.bench_function("create_building", |b| {
         b.iter(|| {
             Building::new(
+                black_box(org_id),
                 black_box("Test Building".to_string()),
                 black_box("123 Test St".to_string()),
                 black_box("Paris".to_string()),
@@ -21,11 +23,13 @@ fn benchmark_building_creation(c: &mut Criterion) {
 }
 
 fn benchmark_unit_creation(c: &mut Criterion) {
+    let org_id = Uuid::new_v4();
     let building_id = Uuid::new_v4();
 
     c.bench_function("create_unit", |b| {
         b.iter(|| {
             Unit::new(
+                black_box(org_id),
                 black_box(building_id),
                 black_box("A101".to_string()),
                 black_box(UnitType::Apartment),
@@ -39,8 +43,10 @@ fn benchmark_unit_creation(c: &mut Criterion) {
 
 fn benchmark_owner_creation(c: &mut Criterion) {
     c.bench_function("create_owner", |b| {
+        let org_id = Uuid::new_v4();
         b.iter(|| {
             Owner::new(
+                black_box(org_id),
                 black_box("Jean".to_string()),
                 black_box("Dupont".to_string()),
                 black_box("jean.dupont@example.com".to_string()),
@@ -58,10 +64,12 @@ fn benchmark_expense_calculation(c: &mut Criterion) {
     let mut group = c.benchmark_group("expense_calculation");
 
     for num_expenses in [10, 100, 1000].iter() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expenses: Vec<Expense> = (0..*num_expenses)
             .map(|i| {
                 Expense::new(
+                    org_id,
                     building_id,
                     ExpenseCategory::Maintenance,
                     format!("Expense {}", i),
@@ -87,8 +95,10 @@ fn benchmark_expense_calculation(c: &mut Criterion) {
 }
 
 fn benchmark_unit_share_calculation(c: &mut Criterion) {
+    let org_id = Uuid::new_v4();
     let building_id = Uuid::new_v4();
     let expense = Expense::new(
+        org_id,
         building_id,
         ExpenseCategory::Maintenance,
         "Test".to_string(),
@@ -100,6 +110,7 @@ fn benchmark_unit_share_calculation(c: &mut Criterion) {
     .unwrap();
 
     let unit = Unit::new(
+        org_id,
         building_id,
         "A101".to_string(),
         UnitType::Apartment,

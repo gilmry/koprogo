@@ -1,10 +1,10 @@
 use actix_web::{test, App};
-use koprogo_api::infrastructure::web::configure_routes;
-use koprogo_api::infrastructure::web::AppState;
+use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;
 use koprogo_api::infrastructure::storage::FileStorage;
-use koprogo_api::application::use_cases::*;
+use koprogo_api::infrastructure::web::configure_routes;
+use koprogo_api::infrastructure::web::AppState;
 use serial_test::serial;
 use std::sync::Arc;
 use testcontainers_modules::postgres::Postgres;
@@ -31,7 +31,10 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
         .await
         .expect("Failed to create pool");
 
-    sqlx::migrate!("./migrations").run(&pool).await.expect("migrate");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("migrate");
 
     // repos
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
@@ -51,7 +54,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let owner_use_cases = OwnerUseCases::new(owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
-    let storage = FileStorage::new(std::env::temp_dir().join("koprogo_e2e_http_uploads")).expect("storage");
+    let storage =
+        FileStorage::new(std::env::temp_dir().join("koprogo_e2e_http_uploads")).expect("storage");
     let document_use_cases = DocumentUseCases::new(document_repo, storage);
     let pcn_use_cases = PcnUseCases::new(expense_repo);
 
@@ -75,10 +79,17 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
 async fn protected_route_requires_jwt() {
     let (app_state, _container) = setup_app().await;
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     // Without Authorization → 401
-    let req = test::TestRequest::get().uri("/api/v1/buildings").to_request();
+    let req = test::TestRequest::get()
+        .uri("/api/v1/buildings")
+        .to_request();
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), 401);
 }
@@ -101,18 +112,40 @@ async fn protected_route_with_valid_jwt_succeeds() {
     .expect("insert org");
 
     // Register + login
-    use koprogo_api::application::dto::{RegisterRequest, LoginRequest};
+    use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
     let email = format!("e2e+{}@test.com", Uuid::new_v4());
-    let reg = RegisterRequest { email: email.clone(), password: "Passw0rd!".to_string(), first_name: "E2E".to_string(), last_name: "User".to_string(), role: "syndic".to_string(), organization_id: Some(org_id) };
-    let _ = app_state.auth_use_cases.register(reg).await.expect("register");
-    let login = LoginRequest { email: email.clone(), password: "Passw0rd!".to_string() };
+    let reg = RegisterRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+        first_name: "E2E".to_string(),
+        last_name: "User".to_string(),
+        role: "syndic".to_string(),
+        organization_id: Some(org_id),
+    };
+    let _ = app_state
+        .auth_use_cases
+        .register(reg)
+        .await
+        .expect("register");
+    let login = LoginRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+    };
     let res = app_state.auth_use_cases.login(login).await.expect("login");
     let token = res.token;
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
     let req = test::TestRequest::get()
         .uri("/api/v1/buildings")
-        .insert_header((actix_web::http::header::AUTHORIZATION, format!("Bearer {}", token)))
+        .insert_header((
+            actix_web::http::header::AUTHORIZATION,
+            format!("Bearer {}", token),
+        ))
         .to_request();
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
@@ -142,17 +175,33 @@ async fn post_building_injects_org_from_jwt() {
     .expect("insert org");
 
     // Register + login for Org A
-    use koprogo_api::application::dto::{RegisterRequest, LoginRequest};
+    use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
     let email = format!("e2e+{}@test.com", Uuid::new_v4());
-    let reg = RegisterRequest { email: email.clone(), password: "Passw0rd!".to_string(), first_name: "E2E".to_string(), last_name: "User".to_string(), role: "syndic".to_string(), organization_id: Some(org_a) };
-    let _ = app_state.auth_use_cases.register(reg).await.expect("register");
-    let login = LoginRequest { email: email.clone(), password: "Passw0rd!".to_string() };
+    let reg = RegisterRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+        first_name: "E2E".to_string(),
+        last_name: "User".to_string(),
+        role: "syndic".to_string(),
+        organization_id: Some(org_a),
+    };
+    let _ = app_state
+        .auth_use_cases
+        .register(reg)
+        .await
+        .expect("register");
+    let login = LoginRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+    };
     let res = app_state.auth_use_cases.login(login).await.expect("login");
     let token = res.token;
 
     // Prepare POST body with a DIFFERENT organization_id to ensure server overrides it
     #[derive(Deserialize)]
-    struct BuildingResp { id: String }
+    struct BuildingResp {
+        id: String,
+    }
 
     let fake_org = Uuid::new_v4().to_string();
     let payload = serde_json::json!({
@@ -166,7 +215,12 @@ async fn post_building_injects_org_from_jwt() {
         "construction_year": 2000
     });
 
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
     let req = test::TestRequest::post()
         .uri("/api/v1/buildings")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))

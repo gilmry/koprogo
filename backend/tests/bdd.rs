@@ -1,15 +1,23 @@
 use cucumber::{given, then, when, World};
-use koprogo_api::application::dto::{CreateBuildingDto, CreateMeetingRequest, PcnReportRequest, PageRequest, SortOrder, UpdateMeetingRequest, CompleteMeetingRequest};
 use koprogo_api::application::dto::LoginResponse;
-use koprogo_api::application::use_cases::{BuildingUseCases, DocumentUseCases, MeetingUseCases, PcnUseCases, ExpenseUseCases};
+use koprogo_api::application::dto::{
+    CompleteMeetingRequest, CreateBuildingDto, CreateMeetingRequest, PageRequest, PcnReportRequest,
+    SortOrder, UpdateMeetingRequest,
+};
 use koprogo_api::application::ports::BuildingRepository;
-use koprogo_api::infrastructure::database::{create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository, PostgresMeetingRepository, PostgresUserRepository, PostgresRefreshTokenRepository};
+use koprogo_api::application::use_cases::{
+    BuildingUseCases, DocumentUseCases, ExpenseUseCases, MeetingUseCases, PcnUseCases,
+};
+use koprogo_api::domain::i18n::{I18n, Language, TranslationKey};
+use koprogo_api::infrastructure::database::{
+    create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository,
+    PostgresMeetingRepository, PostgresRefreshTokenRepository, PostgresUserRepository,
+};
 use koprogo_api::infrastructure::storage::FileStorage;
-use uuid::Uuid;
 use std::sync::Arc;
 use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
-use koprogo_api::domain::i18n::{I18n, TranslationKey, Language};
+use uuid::Uuid;
 
 #[derive(World)]
 #[world(init = Self::new)]
@@ -115,7 +123,8 @@ impl BuildingWorld {
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
         let meeting_use_cases = MeetingUseCases::new(meeting_repo);
-        let storage = FileStorage::new(std::env::temp_dir().join("koprogo_bdd_uploads")).expect("storage");
+        let storage =
+            FileStorage::new(std::env::temp_dir().join("koprogo_bdd_uploads")).expect("storage");
         let document_use_cases = DocumentUseCases::new(document_repo, storage);
         let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
         let expense_use_cases = ExpenseUseCases::new(expense_repo);
@@ -137,7 +146,8 @@ impl BuildingWorld {
                 "Belgique".to_string(),
                 5,
                 Some(1999),
-            ).unwrap();
+            )
+            .unwrap();
             let bid = b.id;
             building_repo.create(&b).await.expect("create building");
             bid
@@ -230,7 +240,11 @@ async fn then_meeting_exists(world: &mut BuildingWorld) {
     if let Some(Err(e)) = world.last_result.as_ref() {
         panic!("meeting creation error: {}", e);
     }
-    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+    assert!(world
+        .last_result
+        .as_ref()
+        .map(|r| r.is_ok())
+        .unwrap_or(false));
 }
 
 // Documents BDD
@@ -268,7 +282,11 @@ async fn then_document_stored(world: &mut BuildingWorld) {
     if let Some(Err(e)) = world.last_result.as_ref() {
         panic!("document upload error: {}", e);
     }
-    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+    assert!(world
+        .last_result
+        .as_ref()
+        .map(|r| r.is_ok())
+        .unwrap_or(false));
 }
 
 // PCN BDD
@@ -276,14 +294,25 @@ async fn then_document_stored(world: &mut BuildingWorld) {
 async fn when_generate_pcn(world: &mut BuildingWorld) {
     let bid = world.building_id.unwrap();
     let uc = world.pcn_use_cases.as_ref().unwrap();
-    let req = PcnReportRequest { building_id: bid, start_date: None, end_date: None };
+    let req = PcnReportRequest {
+        building_id: bid,
+        start_date: None,
+        end_date: None,
+    };
     let res = uc.generate_report(req).await;
-    world.last_result = Some(res.map(|r| r.total_entries.to_string()).map_err(|e| e.to_string()));
+    world.last_result = Some(
+        res.map(|r| r.total_entries.to_string())
+            .map_err(|e| e.to_string()),
+    );
 }
 
 #[then("the PCN report should be generated")]
 async fn then_pcn_generated(world: &mut BuildingWorld) {
-    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+    assert!(world
+        .last_result
+        .as_ref()
+        .map(|r| r.is_ok())
+        .unwrap_or(false));
 }
 
 // Document linking + download
@@ -296,7 +325,7 @@ async fn when_link_document_to_meeting(world: &mut BuildingWorld) {
     let res = uc
         .link_to_meeting(doc_id, LinkDocumentToMeetingRequest { meeting_id })
         .await;
-    world.last_result = Some(res.map(|d| d.id.to_string()).map_err(|e| e));
+    world.last_result = Some(res.map(|d| d.id.to_string()));
 }
 
 #[when("I download the last document")]
@@ -331,12 +360,16 @@ async fn when_try_download_last_document(world: &mut BuildingWorld) {
     let doc_id = world.last_document_id.expect("doc id");
     let uc = world.document_use_cases.as_ref().unwrap();
     let res = uc.download_document(doc_id).await;
-    world.last_result = Some(res.map(|_| String::new()).map_err(|e| e));
+    world.last_result = Some(res.map(|_| String::new()));
 }
 
 #[then("the download should fail")]
 async fn then_download_should_fail(world: &mut BuildingWorld) {
-    assert!(world.last_result.as_ref().map(|r| r.is_err()).unwrap_or(false));
+    assert!(world
+        .last_result
+        .as_ref()
+        .map(|r| r.is_err())
+        .unwrap_or(false));
 }
 
 // i18n
@@ -381,26 +414,42 @@ async fn when_update_last_meeting(world: &mut BuildingWorld, title: String, loca
         location: Some(location),
     };
     let res = uc.update_meeting(id, req).await;
-    world.last_result = Some(res.map(|m| m.id.to_string()).map_err(|e| e));
+    world.last_result = Some(res.map(|m| m.id.to_string()));
 }
 
 #[then("the meeting update should succeed")]
 async fn then_meeting_update_ok(world: &mut BuildingWorld) {
-    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+    if let Some(Err(e)) = world.last_result.as_ref() {
+        panic!("meeting update error: {}", e);
+    }
+    assert!(world
+        .last_result
+        .as_ref()
+        .map(|r| r.is_ok())
+        .unwrap_or(false));
 }
 
 #[when(regex = r#"^I complete the last meeting with (\d+) attendees$"#)]
 async fn when_complete_last_meeting(world: &mut BuildingWorld, attendees: i32) {
     let id = world.last_meeting_id.expect("meeting id");
     let uc = world.meeting_use_cases.as_ref().unwrap();
-    let req = CompleteMeetingRequest { attendees_count: attendees };
+    let req = CompleteMeetingRequest {
+        attendees_count: attendees,
+    };
     let res = uc.complete_meeting(id, req).await;
-    world.last_result = Some(res.map(|m| m.id.to_string()).map_err(|e| e));
+    world.last_result = Some(res.map(|m| m.id.to_string()));
 }
 
 #[then("the meeting completion should succeed")]
 async fn then_meeting_complete_ok(world: &mut BuildingWorld) {
-    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+    if let Some(Err(e)) = world.last_result.as_ref() {
+        panic!("meeting complete error: {}", e);
+    }
+    assert!(world
+        .last_result
+        .as_ref()
+        .map(|r| r.is_ok())
+        .unwrap_or(false));
 }
 
 #[when("I cancel the last meeting")]
@@ -408,19 +457,29 @@ async fn when_cancel_last_meeting(world: &mut BuildingWorld) {
     let id = world.last_meeting_id.expect("meeting id");
     let uc = world.meeting_use_cases.as_ref().unwrap();
     let res = uc.cancel_meeting(id).await;
-    world.last_result = Some(res.map(|m| m.id.to_string()).map_err(|e| e));
+    world.last_result = Some(res.map(|m| m.id.to_string()));
 }
 
 #[then("the meeting cancellation should succeed")]
 async fn then_meeting_cancel_ok(world: &mut BuildingWorld) {
-    assert!(world.last_result.as_ref().map(|r| r.is_ok()).unwrap_or(false));
+    if let Some(Err(e)) = world.last_result.as_ref() {
+        panic!("meeting cancel error: {}", e);
+    }
+    assert!(world
+        .last_result
+        .as_ref()
+        .map(|r| r.is_ok())
+        .unwrap_or(false));
 }
 
 #[when("I list meetings for the building")]
 async fn when_list_meetings_for_building(world: &mut BuildingWorld) {
     let bid = world.building_id.unwrap();
     let uc = world.meeting_use_cases.as_ref().unwrap();
-    let res = uc.list_meetings_by_building(bid).await.expect("list meetings");
+    let res = uc
+        .list_meetings_by_building(bid)
+        .await
+        .expect("list meetings");
     world.last_count = Some(res.len());
 }
 
@@ -458,14 +517,19 @@ async fn when_link_document_to_expense(world: &mut BuildingWorld) {
     let res = uc
         .link_to_expense(doc_id, LinkDocumentToExpenseRequest { expense_id: exp_id })
         .await;
-    world.last_result = Some(res.map(|d| d.id.to_string()).map_err(|e| e));
+    world.last_result = Some(res.map(|d| d.id.to_string()));
 }
 
 // Documents access control: filter by org
 #[when("I list documents for the second organization")]
 async fn when_list_documents_for_second_org(world: &mut BuildingWorld) {
     let uc = world.document_use_cases.as_ref().unwrap();
-    let page = koprogo_api::application::dto::PageRequest { page: 1, per_page: 50, sort_by: None, order: SortOrder::Desc };
+    let page = koprogo_api::application::dto::PageRequest {
+        page: 1,
+        per_page: 50,
+        sort_by: None,
+        order: SortOrder::Desc,
+    };
     let (docs, _total) = uc
         .list_documents_paginated(&page, world.second_org_id)
         .await
@@ -482,7 +546,12 @@ async fn then_documents_count(world: &mut BuildingWorld, expected: i32) {
 #[when(regex = r#"^I list expenses page (\d+) with per_page (\d+)$"#)]
 async fn when_list_expenses_paginated(world: &mut BuildingWorld, page: i32, per_page: i32) {
     let uc = world.expense_use_cases.as_ref().unwrap();
-    let page_req = PageRequest { page: i64::from(page), per_page: i64::from(per_page.min(100)), sort_by: Some("expense_date".to_string()), order: SortOrder::Desc };
+    let page_req = PageRequest {
+        page: i64::from(page),
+        per_page: i64::from(per_page.min(100)),
+        sort_by: Some("expense_date".to_string()),
+        order: SortOrder::Desc,
+    };
     let (items, _total) = uc
         .list_expenses_paginated(&page_req, world.org_id)
         .await
@@ -498,7 +567,7 @@ async fn then_at_least_one_expense(world: &mut BuildingWorld) {
 // Auth BDD
 #[when("I register a new user and login")]
 async fn when_register_and_login(world: &mut BuildingWorld) {
-    use koprogo_api::application::dto::{RegisterRequest, LoginRequest};
+    use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
     let auth = world.auth_use_cases.as_ref().unwrap();
     let email = format!("user+{}@test.com", Uuid::new_v4());
     let org = world.org_id.unwrap();
@@ -511,7 +580,10 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
         organization_id: Some(org),
     };
     let _ = auth.register(reg).await.expect("register");
-    let login = LoginRequest { email: email.clone(), password: "Passw0rd!".to_string() };
+    let login = LoginRequest {
+        email: email.clone(),
+        password: "Passw0rd!".to_string(),
+    };
     let res: Result<LoginResponse, String> = auth.login(login).await;
     match res {
         Ok(r) => {
@@ -541,9 +613,19 @@ async fn given_have_refresh_token(world: &mut BuildingWorld) {
 async fn when_refresh_session(world: &mut BuildingWorld) {
     use koprogo_api::application::dto::RefreshTokenRequest;
     let auth = world.auth_use_cases.as_ref().unwrap();
-    let refresh = world.last_result.as_ref().unwrap().as_ref().unwrap().clone();
-    let res = auth.refresh_token(RefreshTokenRequest { refresh_token: refresh }).await;
-    world.last_result = Some(res.map(|r| r.token).map_err(|e| e));
+    let refresh = world
+        .last_result
+        .as_ref()
+        .unwrap()
+        .as_ref()
+        .unwrap()
+        .clone();
+    let res = auth
+        .refresh_token(RefreshTokenRequest {
+            refresh_token: refresh,
+        })
+        .await;
+    world.last_result = Some(res.map(|r| r.token));
 }
 
 #[then("I receive a new access token")]
@@ -555,7 +637,12 @@ async fn then_new_access_token(world: &mut BuildingWorld) {
 // Pagination & Filtering BDD
 #[when(regex = r#"^I list buildings page (\d+) with per_page (\d+) sorted by created_at desc$"#)]
 async fn when_list_buildings_paginated(world: &mut BuildingWorld, page: i32, per_page: i32) {
-    let page_req = PageRequest { page: i64::from(page), per_page: i64::from(per_page.min(100)), sort_by: Some("created_at".to_string()), order: SortOrder::Desc };
+    let page_req = PageRequest {
+        page: i64::from(page),
+        per_page: i64::from(per_page.min(100)),
+        sort_by: Some("created_at".to_string()),
+        order: SortOrder::Desc,
+    };
     let uc = world.use_cases.as_ref().unwrap();
     let (items, _total) = uc
         .list_buildings_paginated(&page_req, world.org_id)
@@ -588,9 +675,12 @@ async fn given_two_orgs(world: &mut BuildingWorld) {
     // reuse same DB pool by re-building connection string
     let container = world._container.as_ref().unwrap();
     let host_port = container.get_host_port_ipv4(5432).await.expect("host port");
-    let pool = create_pool(&format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", host_port))
-        .await
-        .expect("pool");
+    let pool = create_pool(&format!(
+        "postgres://postgres:postgres@127.0.0.1:{}/postgres",
+        host_port
+    ))
+    .await
+    .expect("pool");
 
     let second_org_id = Uuid::new_v4();
     sqlx::query(
@@ -614,16 +704,25 @@ async fn given_two_orgs(world: &mut BuildingWorld) {
         "Belgique".to_string(),
         3,
         Some(2001),
-    ).unwrap();
+    )
+    .unwrap();
     let bid = b.id;
-    building_repo.create(&b).await.expect("create second org building");
+    building_repo
+        .create(&b)
+        .await
+        .expect("create second org building");
     world.second_org_id = Some(second_org_id);
     world.second_building_id = Some(bid);
 }
 
 #[when("I list buildings for the first organization")]
 async fn when_list_buildings_for_first_org(world: &mut BuildingWorld) {
-    let page_req = PageRequest { page: 1, per_page: 50, sort_by: Some("created_at".to_string()), order: SortOrder::Desc };
+    let page_req = PageRequest {
+        page: 1,
+        per_page: 50,
+        sort_by: Some("created_at".to_string()),
+        order: SortOrder::Desc,
+    };
     let uc = world.use_cases.as_ref().unwrap();
     let (items, _total) = uc
         .list_buildings_paginated(&page_req, world.org_id)
@@ -635,7 +734,4 @@ async fn when_list_buildings_for_first_org(world: &mut BuildingWorld) {
 }
 
 #[then("I should not see buildings from the second organization")]
-async fn then_no_cross_org(_world: &mut BuildingWorld) {
-    // Assertion already enforced in previous step
-    assert!(true);
-}
+async fn then_no_cross_org(_world: &mut BuildingWorld) {}

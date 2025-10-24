@@ -32,17 +32,17 @@ The frontend now uses JWT-only authentication for all API requests. The `organiz
 
 ```typescript
 // ❌ BAD - Don't do this anymore!
-await api.post('/buildings', {
+await api.post("/buildings", {
   organization_id: user.organizationId, // REMOVED!
-  name: 'My Building',
-  address: '123 Main St',
+  name: "My Building",
+  address: "123 Main St",
   // ...
 });
 
 // ✅ GOOD - Organization comes from JWT automatically
-await api.post('/buildings', {
-  name: 'My Building',
-  address: '123 Main St',
+await api.post("/buildings", {
+  name: "My Building",
+  address: "123 Main St",
   // ... (no organization_id needed)
 });
 ```
@@ -51,14 +51,14 @@ await api.post('/buildings', {
 
 All create endpoints now extract `organization_id` from JWT token:
 
-| Endpoint | Method | Organization Source |
-|----------|--------|-------------------|
-| `/buildings` | POST | JWT token only |
-| `/units` | POST | JWT token only |
-| `/owners` | POST | JWT token only |
-| `/expenses` | POST | JWT token only |
-| `/meetings` | POST | JWT token only |
-| `/documents` | POST | JWT token only (not in multipart form) |
+| Endpoint     | Method | Organization Source                    |
+| ------------ | ------ | -------------------------------------- |
+| `/buildings` | POST   | JWT token only                         |
+| `/units`     | POST   | JWT token only                         |
+| `/owners`    | POST   | JWT token only                         |
+| `/expenses`  | POST   | JWT token only                         |
+| `/meetings`  | POST   | JWT token only                         |
+| `/documents` | POST   | JWT token only (not in multipart form) |
 
 ## Frontend Implementation Example
 
@@ -101,17 +101,17 @@ async function uploadDocument(file: File, buildingId: string, title: string) {
   // formData.append('organization_id', user.organizationId);
 
   // ✅ Only include these fields
-  formData.append('file', file);
-  formData.append('building_id', buildingId);
-  formData.append('document_type', 'invoice');
-  formData.append('title', title);
-  formData.append('uploaded_by', user.id);
+  formData.append("file", file);
+  formData.append("building_id", buildingId);
+  formData.append("document_type", "invoice");
+  formData.append("title", title);
+  formData.append("uploaded_by", user.id);
 
   const response = await fetch(`${API_BASE_URL}/documents`, {
-    method: 'POST',
+    method: "POST",
     headers: {
       // JWT token is added automatically by getHeaders()
-      'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+      Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
     },
     body: formData,
   });
@@ -123,16 +123,18 @@ async function uploadDocument(file: File, buildingId: string, title: string) {
 ## Security Benefits
 
 ### Server-Side Validation
+
 - Backend validates JWT signature
 - Extracts `organization_id` from cryptographic claims
 - Ignores any `organization_id` sent in request body
 
 ### Attack Prevention
+
 ```typescript
 // Even if a malicious user tries this:
-await api.post('/buildings', {
-  organization_id: 'other-org-uuid', // ← This is IGNORED!
-  name: 'Evil Building',
+await api.post("/buildings", {
+  organization_id: "other-org-uuid", // ← This is IGNORED!
+  name: "Evil Building",
 });
 
 // The backend will:
@@ -147,9 +149,10 @@ await api.post('/buildings', {
 ### Manual Testing with Browser DevTools
 
 1. **Login**
+
    ```javascript
    // Check token is stored
-   localStorage.getItem('auth_token')
+   localStorage.getItem("auth_token");
    ```
 
 2. **Check Request Headers**
@@ -160,9 +163,9 @@ await api.post('/buildings', {
 3. **Attempt to Forge organization_id**
    ```javascript
    // Try to create building in different org (should fail)
-   await api.post('/buildings', {
-     organization_id: 'fake-uuid', // Will be ignored
-     name: 'Test Building',
+   await api.post("/buildings", {
+     organization_id: "fake-uuid", // Will be ignored
+     name: "Test Building",
    });
    // Backend uses JWT organization_id, not the fake one!
    ```
@@ -171,27 +174,27 @@ await api.post('/buildings', {
 
 ```typescript
 // tests/security.spec.ts
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('Cannot create building in another organization', async ({ page }) => {
+test("Cannot create building in another organization", async ({ page }) => {
   // Login as user A
-  await page.goto('/login');
-  await page.fill('input[type="email"]', 'userA@example.com');
-  await page.fill('input[type="password"]', 'password123');
+  await page.goto("/login");
+  await page.fill('input[type="email"]', "userA@example.com");
+  await page.fill('input[type="password"]', "password123");
   await page.click('button[type="submit"]');
 
   // Try to create building with different org_id in payload
-  const response = await page.request.post('/api/v1/buildings', {
+  const response = await page.request.post("/api/v1/buildings", {
     headers: {
-      'Authorization': `Bearer ${await page.evaluate(() => localStorage.getItem('auth_token'))}`,
+      Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem("auth_token"))}`,
     },
     data: {
-      organization_id: 'other-org-uuid', // Attempt to forge
-      name: 'Evil Building',
-      address: '123 Hack St',
-      city: 'Brussels',
-      postal_code: '1000',
-      country: 'Belgium',
+      organization_id: "other-org-uuid", // Attempt to forge
+      name: "Evil Building",
+      address: "123 Hack St",
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
       total_units: 10,
     },
   });
@@ -200,12 +203,12 @@ test('Cannot create building in another organization', async ({ page }) => {
 
   // Verify building was created in user A's org, not the forged one
   const building = await response.json();
-  const userOrg = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem('user')).organizationId
+  const userOrg = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("user")).organizationId,
   );
 
   expect(building.organization_id).toBe(userOrg);
-  expect(building.organization_id).not.toBe('other-org-uuid');
+  expect(building.organization_id).not.toBe("other-org-uuid");
 });
 ```
 
@@ -223,18 +226,23 @@ If you have existing frontend code that sends `organization_id`:
 ## Troubleshooting
 
 ### Error: "Missing authorization header"
+
 **Solution**: Ensure token is stored in localStorage and api.ts is being used
 
 ### Error: "User does not belong to an organization"
+
 **Solution**: User needs to be assigned to an organization during registration
 
 ### Error: 401 Unauthorized
+
 **Solutions**:
+
 - Check token hasn't expired (15 minute lifetime)
 - Use refresh token to get new access token
 - Re-login if refresh token also expired
 
 ### Organization mismatch in responses
+
 **Not possible anymore!** Backend enforces organization from JWT token only.
 
 ## References
