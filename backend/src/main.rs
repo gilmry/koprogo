@@ -104,9 +104,21 @@ async fn main() -> std::io::Result<()> {
 
     // Configure rate limiter: 100 requests per minute per IP
     // Allows bursts up to 100 requests, then refills at 100/60000ms rate
+    // When rate limiting is disabled, set a very high limit (effectively unlimited)
+    let rate_limit_ms = if enable_rate_limiting {
+        100 * 60 * 1000 // 100 requests per minute (60,000ms)
+    } else {
+        1 // 1ms = 1000 requests per second (effectively unlimited)
+    };
+    let burst_size = if enable_rate_limiting {
+        100
+    } else {
+        u32::MAX // Effectively unlimited burst
+    };
+
     let governor_conf = GovernorConfigBuilder::default()
-        .milliseconds_per_request(100 * 60 * 1000) // 100 requests per minute (60,000ms)
-        .burst_size(100) // Allow initial burst of 100 requests
+        .milliseconds_per_request(rate_limit_ms)
+        .burst_size(burst_size)
         .finish()
         .unwrap();
 
@@ -125,15 +137,10 @@ async fn main() -> std::io::Result<()> {
             ])
             .max_age(3600);
 
-        let mut app = App::new()
-            .app_data(app_state.clone());
-
-        // Conditionally apply rate limiting based on environment variable
-        if enable_rate_limiting {
-            app = app.wrap(Governor::new(&governor_conf));
-        }
-
-        app.wrap(cors)
+        App::new()
+            .app_data(app_state.clone())
+            .wrap(Governor::new(&governor_conf))
+            .wrap(cors)
             .wrap(middleware::Logger::default())
             .configure(configure_routes)
     })
