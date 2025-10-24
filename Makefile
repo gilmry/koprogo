@@ -1,4 +1,4 @@
-.PHONY: help dev dev-all dev-frontend test test-unit test-integration test-bdd test-e2e-backend test-e2e-install test-e2e-full test-e2e-ui test-e2e-headed test-e2e-debug test-e2e-report bench coverage lint format build clean install install-all setup docker-up docker-down docker-build docker-logs migrate seed docs docs-build docs-serve docs-clean audit ci-local ci-check
+.PHONY: help dev dev-all dev-frontend test test-unit test-integration test-bdd test-e2e-backend test-e2e-install test-e2e-full test-e2e-ui test-e2e-headed test-e2e-debug test-e2e-report bench coverage lint format build clean install install-all setup docker-up docker-down docker-build docker-logs migrate reset-db seed docs docs-build docs-serve docs-clean audit ci-local ci-check
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -113,6 +113,24 @@ docker-logs: ## Show Docker logs
 
 migrate: ## Run database migrations
 	cd backend && sqlx migrate run
+
+reset-db: ## Reset database (WARNING: deletes all data)
+	@echo "⚠️  WARNING: This will delete ALL database data!"
+	@read -p "Are you sure? (type 'yes' to confirm): " confirm; \
+	if [ "$$confirm" = "yes" ]; then \
+		echo "🗑️  Stopping PostgreSQL..."; \
+		docker-compose down postgres; \
+		echo "🧹 Removing database volume..."; \
+		docker volume rm koprogo_postgres_data 2>/dev/null || true; \
+		echo "🚀 Starting fresh PostgreSQL..."; \
+		docker-compose up -d postgres; \
+		sleep 5; \
+		echo "📊 Running migrations..."; \
+		cd backend && sqlx migrate run; \
+		echo "✅ Database reset complete! Restart server to create superadmin."; \
+	else \
+		echo "❌ Cancelled."; \
+	fi
 
 seed: ## Seed database with test data
 	cd backend && cargo run --bin seed
