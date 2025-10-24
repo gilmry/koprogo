@@ -28,6 +28,7 @@ services:
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8080
       RUST_LOG: info
+      ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-true}
     ports:
       - "8080:8080"
     depends_on:

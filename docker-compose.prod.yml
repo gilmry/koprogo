@@ -44,6 +44,7 @@ services:
       RUST_LOG: warn
       # En production, changer JWT_SECRET via variable d'environnement
       JWT_SECRET: ${JWT_SECRET:-super-secret-change-in-production}
+      ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-false}
     depends_on:
       postgres:
         condition: service_healthy

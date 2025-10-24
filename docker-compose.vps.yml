@@ -148,6 +148,7 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ORIGIN:-https://app.koprogo.com}
       DB_POOL_MAX_CONNECTIONS: ${DB_POOL_MAX_CONNECTIONS:-8}
       DB_POOL_MIN_CONNECTIONS: ${DB_POOL_MIN_CONNECTIONS:-2}
+      ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-false}
 
     depends_on:
       postgres:
