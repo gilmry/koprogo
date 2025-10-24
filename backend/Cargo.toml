@@ -32,7 +32,7 @@ log = "0.4"
 uuid = { version = "1.11", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 validator = { version = "0.19", features = ["derive"] }
-bcrypt = "0.15"
+bcrypt = "0.17"
 jsonwebtoken = { version = "10.1", default-features = false, features = ["aws_lc_rs"] }
 
 # Async trait support
