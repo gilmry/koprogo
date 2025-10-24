@@ -18,7 +18,7 @@ test.describe("PWA Capabilities", () => {
     await page.goto("/");
 
     // Vérifier que le manifest est lié
-    const manifestLink = await page.locator('link[rel="manifest"]');
+    const manifestLink = page.locator('link[rel="manifest"]');
     await expect(manifestLink).toHaveCount(1);
 
     // Fetch le manifest et vérifier son contenu

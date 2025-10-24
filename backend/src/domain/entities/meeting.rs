@@ -21,6 +21,7 @@ pub enum MeetingStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Meeting {
     pub id: Uuid,
+    pub organization_id: Uuid,
     pub building_id: Uuid,
     pub meeting_type: MeetingType,
     pub title: String,
@@ -36,6 +37,7 @@ pub struct Meeting {
 
 impl Meeting {
     pub fn new(
+        organization_id: Uuid,
         building_id: Uuid,
         meeting_type: MeetingType,
         title: String,
@@ -53,6 +55,7 @@ impl Meeting {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            organization_id,
             building_id,
             meeting_type,
             title,
@@ -99,10 +102,12 @@ mod tests {
 
     #[test]
     fn test_create_meeting_success() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let future_date = Utc::now() + Duration::days(30);
 
         let meeting = Meeting::new(
+            org_id,
             building_id,
             MeetingType::Ordinary,
             "AGO 2024".to_string(),
@@ -113,16 +118,19 @@ mod tests {
 
         assert!(meeting.is_ok());
         let meeting = meeting.unwrap();
+        assert_eq!(meeting.organization_id, org_id);
         assert_eq!(meeting.status, MeetingStatus::Scheduled);
         assert!(meeting.is_upcoming());
     }
 
     #[test]
     fn test_add_agenda_item() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            org_id,
             building_id,
             MeetingType::Ordinary,
             "AGO 2024".to_string(),
@@ -139,10 +147,12 @@ mod tests {
 
     #[test]
     fn test_complete_meeting() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let future_date = Utc::now() + Duration::days(30);
 
         let mut meeting = Meeting::new(
+            org_id,
             building_id,
             MeetingType::Ordinary,
             "AGO 2024".to_string(),

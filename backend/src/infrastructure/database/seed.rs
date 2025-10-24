@@ -88,8 +88,8 @@ impl DatabaseSeeder {
             return Err("Demo data already exists. Please clean the database first.".to_string());
         }
 
-        // Create demo organization
-        let org_id = Uuid::new_v4();
+        // ORGANIZATION 1
+        let org1_id = Uuid::new_v4();
         let now = Utc::now();
 
         sqlx::query!(
@@ -97,11 +97,11 @@ impl DatabaseSeeder {
             INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             "#,
-            org_id,
-            "Copropriété Démo SAS",
-            "copro-demo",
-            "contact@copro-demo.fr",
-            "+33 1 23 45 67 89",
+            org1_id,
+            "Résidence Grand Place SPRL",
+            "residence-grand-place",
+            "contact@grandplace.be",
+            "+32 2 501 23 45",
             "professional",
             20,
             50,
@@ -111,66 +111,66 @@ impl DatabaseSeeder {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| format!("Failed to create demo organization: {}", e))?;
+        .map_err(|e| format!("Failed to create demo organization 1: {}", e))?;
 
-        log::info!("✅ Organization created: Copropriété Démo SAS");
+        log::info!("✅ Organization 1 created: Résidence Grand Place SPRL");
 
-        // Create demo users
-        let _syndic_id = self
+        // Create demo users ORG 1
+        let syndic1_id = self
             .create_demo_user(
-                "syndic@copro-demo.fr",
+                "syndic@grandplace.be",
                 "syndic123",
                 "Jean",
                 "Dupont",
                 "syndic",
-                Some(org_id),
+                Some(org1_id),
             )
             .await?;
 
         let _accountant_id = self
             .create_demo_user(
-                "comptable@copro-demo.fr",
+                "comptable@grandplace.be",
                 "comptable123",
                 "Marie",
                 "Martin",
                 "accountant",
-                Some(org_id),
+                Some(org1_id),
             )
             .await?;
 
         let _owner1_id = self
             .create_demo_user(
-                "proprietaire1@copro-demo.fr",
+                "proprietaire1@grandplace.be",
                 "owner123",
                 "Pierre",
                 "Durand",
                 "owner",
-                Some(org_id),
+                Some(org1_id),
             )
             .await?;
 
         let _owner2_id = self
             .create_demo_user(
-                "proprietaire2@copro-demo.fr",
+                "proprietaire2@grandplace.be",
                 "owner123",
                 "Sophie",
                 "Bernard",
                 "owner",
-                Some(org_id),
+                Some(org1_id),
             )
             .await?;
 
         log::info!("✅ Demo users created");
 
-        // Create demo buildings
+        // Create demo buildings ORG 1
         let building1_id = self
             .create_demo_building(
-                org_id,
-                "Résidence Les Champs",
-                "12 Avenue des Champs-Élysées",
-                "Paris",
-                "75008",
-                "France",
+                org1_id,
+                "Résidence Grand Place",
+                "Grand Place 15",
+                "Bruxelles",
+                "1000",
+                "Belgique",
                 15,
                 1995,
             )
@@ -178,12 +178,12 @@ impl DatabaseSeeder {
 
         let building2_id = self
             .create_demo_building(
-                org_id,
-                "Le Jardin Fleuri",
-                "45 Rue du Jardin",
-                "Lyon",
-                "69003",
-                "France",
+                org1_id,
+                "Les Jardins d'Ixelles",
+                "Rue du Trône 85",
+                "Bruxelles",
+                "1050",
+                "Belgique",
                 8,
                 2010,
             )
@@ -196,12 +196,12 @@ impl DatabaseSeeder {
             .create_demo_owner(
                 "Pierre",
                 "Durand",
-                "pierre.durand@email.fr",
-                "+33 6 12 34 56 78",
-                "15 rue Victor Hugo",
-                "Paris",
-                "75015",
-                "France",
+                "pierre.durand@email.be",
+                "+32 476 12 34 56",
+                "Avenue Louise 15",
+                "Bruxelles",
+                "1050",
+                "Belgique",
             )
             .await?;
 
@@ -209,12 +209,12 @@ impl DatabaseSeeder {
             .create_demo_owner(
                 "Sophie",
                 "Bernard",
-                "sophie.bernard@email.fr",
-                "+33 6 98 76 54 32",
-                "28 avenue des Champs",
-                "Paris",
-                "75008",
-                "France",
+                "sophie.bernard@email.be",
+                "+32 495 98 76 54",
+                "Rue Royale 28",
+                "Bruxelles",
+                "1000",
+                "Belgique",
             )
             .await?;
 
@@ -222,12 +222,12 @@ impl DatabaseSeeder {
             .create_demo_owner(
                 "Michel",
                 "Lefebvre",
-                "michel.lefebvre@email.fr",
-                "+33 6 11 22 33 44",
-                "42 boulevard Saint-Germain",
-                "Lyon",
-                "69003",
-                "France",
+                "michel.lefebvre@email.be",
+                "+32 477 11 22 33",
+                "Boulevard d'Avroy 42",
+                "Liège",
+                "4000",
+                "Belgique",
             )
             .await?;
 
@@ -327,19 +327,174 @@ impl DatabaseSeeder {
 
         log::info!("✅ Demo expenses created");
 
+        // Create meetings ORG 1
+        self.create_demo_meeting(
+            building1_id,
+            org1_id,
+            "Assemblée Générale Ordinaire 2025",
+            "general",
+            "2025-03-15",
+            "scheduled",
+        )
+        .await?;
+
+        self.create_demo_meeting(
+            building2_id,
+            org1_id,
+            "Assemblée Générale Extraordinaire - Travaux",
+            "extraordinary",
+            "2025-04-20",
+            "scheduled",
+        )
+        .await?;
+
+        log::info!("✅ Demo meetings created");
+
+        // Create documents ORG 1
+        self.create_demo_document(
+            building1_id,
+            org1_id,
+            "Procès-Verbal AG 2024",
+            "meeting_minutes",
+            "/uploads/demo/pv-ag-2024.pdf",
+            syndic1_id,
+        )
+        .await?;
+
+        self.create_demo_document(
+            building1_id,
+            org1_id,
+            "Règlement de copropriété",
+            "regulation",
+            "/uploads/demo/reglement.pdf",
+            syndic1_id,
+        )
+        .await?;
+
+        log::info!("✅ Demo documents created");
+
+        // ORGANIZATION 2 - Bruxelles
+        let org2_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            "#,
+            org2_id,
+            "Copropriété Bruxelles SPRL",
+            "copro-bruxelles",
+            "info@copro-bruxelles.be",
+            "+32 2 123 45 67",
+            "starter",
+            5,
+            10,
+            true,
+            now,
+            now
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create demo organization 2: {}", e))?;
+
+        let _syndic2_id = self
+            .create_demo_user(
+                "syndic@copro-bruxelles.be",
+                "syndic123",
+                "Marc",
+                "Dubois",
+                "syndic",
+                Some(org2_id),
+            )
+            .await?;
+
+        let building3_id = self
+            .create_demo_building(
+                org2_id,
+                "Résidence Européenne",
+                "Avenue Louise 123",
+                "Bruxelles",
+                "1050",
+                "Belgique",
+                12,
+                2005,
+            )
+            .await?;
+
+        self.create_demo_meeting(
+            building3_id,
+            org2_id,
+            "AG Annuelle 2025",
+            "general",
+            "2025-05-10",
+            "scheduled",
+        )
+        .await?;
+
+        log::info!("✅ Organization 2 created");
+
+        // ORGANIZATION 3 - Liège
+        let org3_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            "#,
+            org3_id,
+            "Syndic Liège SA",
+            "syndic-liege",
+            "contact@syndic-liege.be",
+            "+32 4 222 33 44",
+            "enterprise",
+            50,
+            100,
+            true,
+            now,
+            now
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create demo organization 3: {}", e))?;
+
+        let _syndic3_id = self
+            .create_demo_user(
+                "syndic@syndic-liege.be",
+                "syndic123",
+                "Sophie",
+                "Lambert",
+                "syndic",
+                Some(org3_id),
+            )
+            .await?;
+
+        let _building4_id = self
+            .create_demo_building(
+                org3_id,
+                "Les Terrasses de Liège",
+                "Boulevard de la Sauvenière 45",
+                "Liège",
+                "4000",
+                "Belgique",
+                8,
+                2018,
+            )
+            .await?;
+
+        log::info!("✅ Organization 3 created");
+
         Ok("✅ Demo data seeded successfully!\n\n\
             📊 Summary:\n\
-            - 1 Organization: Copropriété Démo SAS\n\
-            - 4 Users: 1 Syndic, 1 Accountant, 2 Owners\n\
-            - 2 Buildings: Résidence Les Champs, Le Jardin Fleuri\n\
-            - 3 Owners\n\
+            - 3 Organizations: Grand Place (Bruxelles), Bruxelles Louise, Liège\n\
+            - 6+ Users: 3 Syndics, 1 Accountant, 2+ Owners\n\
+            - 4 Buildings across Belgium\n\
+            - 3 Owners (database records)\n\
             - 4 Units\n\
-            - 4 Expenses\n\n\
-            🔐 Demo credentials:\n\
-            - Syndic: syndic@copro-demo.fr / syndic123\n\
-            - Comptable: comptable@copro-demo.fr / comptable123\n\
-            - Propriétaire 1: proprietaire1@copro-demo.fr / owner123\n\
-            - Propriétaire 2: proprietaire2@copro-demo.fr / owner123\n\
+            - 4 Expenses\n\
+            - 3 Meetings\n\
+            - 2 Documents\n\n\
+            🇧🇪 Belgian Demo - Credentials:\n\
+            - Org 1 (Grand Place): syndic@grandplace.be / syndic123\n\
+            - Org 2 (Bruxelles): syndic@copro-bruxelles.be / syndic123\n\
+            - Org 3 (Liège): syndic@syndic-liege.be / syndic123\n\
             - SuperAdmin: admin@koprogo.com / admin123"
             .to_string())
     }
@@ -540,11 +695,102 @@ impl DatabaseSeeder {
         Ok(expense_id)
     }
 
+    #[allow(clippy::too_many_arguments)]
+    async fn create_demo_meeting(
+        &self,
+        building_id: Uuid,
+        org_id: Uuid,
+        title: &str,
+        meeting_type: &str,
+        scheduled_date: &str,
+        status: &str,
+    ) -> Result<Uuid, String> {
+        let meeting_id = Uuid::new_v4();
+        let now = Utc::now();
+        let scheduled_date_parsed =
+            chrono::DateTime::parse_from_rfc3339(&format!("{}T10:00:00Z", scheduled_date))
+                .map_err(|e| format!("Failed to parse date: {}", e))?
+                .with_timezone(&Utc);
+
+        sqlx::query(
+            r#"
+            INSERT INTO meetings (id, building_id, organization_id, meeting_type, title, description, scheduled_date, location, status, agenda, minutes, created_at, updated_at)
+            VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, $8, $9::meeting_status, $10, $11, $12, $13)
+            "#
+        )
+        .bind(meeting_id)
+        .bind(building_id)
+        .bind(org_id)
+        .bind(meeting_type)
+        .bind(title)
+        .bind(Some("Assemblée générale annuelle"))
+        .bind(scheduled_date_parsed)
+        .bind("Salle polyvalente")
+        .bind(status)
+        .bind(vec!["Approbation des comptes", "Travaux à prévoir", "Questions diverses"])
+        .bind(None::<String>)
+        .bind(now)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create meeting: {}", e))?;
+
+        Ok(meeting_id)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn create_demo_document(
+        &self,
+        building_id: Uuid,
+        org_id: Uuid,
+        title: &str,
+        document_type: &str,
+        file_path: &str,
+        uploaded_by: Uuid,
+    ) -> Result<Uuid, String> {
+        let document_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        sqlx::query(
+            r#"
+            INSERT INTO documents (id, building_id, organization_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, created_at, updated_at)
+            VALUES ($1, $2, $3, $4::document_type, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#
+        )
+        .bind(document_id)
+        .bind(building_id)
+        .bind(org_id)
+        .bind(document_type)
+        .bind(title)
+        .bind(Some("Document de démonstration"))
+        .bind(file_path)
+        .bind(1024_i64)
+        .bind("application/pdf")
+        .bind(uploaded_by)
+        .bind(now)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create document: {}", e))?;
+
+        Ok(document_id)
+    }
+
     /// Clear all data (DANGEROUS - use with caution!)
     pub async fn clear_demo_data(&self) -> Result<String, String> {
         log::warn!("⚠️  Clearing all demo data...");
 
         // Delete in correct order due to foreign key constraints
+        sqlx::query("DELETE FROM documents")
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete documents: {}", e))?;
+
+        sqlx::query("DELETE FROM meetings")
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete meetings: {}", e))?;
+
         sqlx::query!("DELETE FROM expenses")
             .execute(&self.pool)
             .await

@@ -145,7 +145,7 @@ test.describe("Role-Based Access", () => {
       },
     );
 
-    const { token, user } = await response.json();
+    const { user } = await response.json();
 
     // Login avec ce compte
     await page.goto("/login");
@@ -175,7 +175,7 @@ test.describe("Role-Based Access", () => {
       },
     );
 
-    const { token, user } = await response.json();
+    const { user } = await response.json();
 
     await page.goto("/login");
     await page.fill('input[type="email"]', user.email);

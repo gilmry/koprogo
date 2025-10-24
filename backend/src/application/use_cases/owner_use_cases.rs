@@ -1,4 +1,4 @@
-use crate::application::dto::{CreateOwnerDto, OwnerResponseDto};
+use crate::application::dto::{CreateOwnerDto, OwnerFilters, OwnerResponseDto, PageRequest};
 use crate::application::ports::OwnerRepository;
 use crate::domain::entities::Owner;
 use std::sync::Arc;
@@ -14,12 +14,16 @@ impl OwnerUseCases {
     }
 
     pub async fn create_owner(&self, dto: CreateOwnerDto) -> Result<OwnerResponseDto, String> {
+        let organization_id = Uuid::parse_str(&dto.organization_id)
+            .map_err(|_| "Invalid organization_id format".to_string())?;
+
         // Vérifier si l'email existe déjà
         if (self.repository.find_by_email(&dto.email).await?).is_some() {
             return Err("Email already exists".to_string());
         }
 
         let owner = Owner::new(
+            organization_id,
             dto.first_name,
             dto.last_name,
             dto.email,
@@ -42,6 +46,25 @@ impl OwnerUseCases {
     pub async fn list_owners(&self) -> Result<Vec<OwnerResponseDto>, String> {
         let owners = self.repository.find_all().await?;
         Ok(owners.iter().map(|o| self.to_response_dto(o)).collect())
+    }
+
+    pub async fn list_owners_paginated(
+        &self,
+        page_request: &PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<OwnerResponseDto>, i64), String> {
+        let filters = OwnerFilters {
+            organization_id,
+            ..Default::default()
+        };
+
+        let (owners, total) = self
+            .repository
+            .find_all_paginated(page_request, &filters)
+            .await?;
+
+        let dtos = owners.iter().map(|o| self.to_response_dto(o)).collect();
+        Ok((dtos, total))
     }
 
     fn to_response_dto(&self, owner: &Owner) -> OwnerResponseDto {

@@ -8,6 +8,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // Authentication
             .service(login)
             .service(register)
+            .service(refresh_token)
             .service(get_current_user)
             // Buildings
             .service(create_building)
@@ -17,6 +18,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_building)
             // Units
             .service(create_unit)
+            .service(list_units)
             .service(get_unit)
             .service(list_units_by_building)
             .service(assign_owner)
@@ -26,9 +28,34 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_owner)
             // Expenses
             .service(create_expense)
+            .service(list_expenses)
             .service(get_expense)
             .service(list_expenses_by_building)
             .service(mark_expense_paid)
+            // Meetings
+            .service(create_meeting)
+            .service(list_meetings)
+            .service(get_meeting)
+            .service(list_meetings_by_building)
+            .service(update_meeting)
+            .service(add_agenda_item)
+            .service(complete_meeting)
+            .service(cancel_meeting)
+            .service(delete_meeting)
+            // Documents
+            .service(upload_document)
+            .service(list_documents)
+            .service(get_document)
+            .service(download_document)
+            .service(list_documents_by_building)
+            .service(list_documents_by_meeting)
+            .service(link_document_to_meeting)
+            .service(link_document_to_expense)
+            .service(delete_document)
+            // PCN (Belgian Chart of Accounts)
+            .service(generate_pcn_report)
+            .service(export_pcn_pdf)
+            .service(export_pcn_excel)
             // Seed (SuperAdmin only)
             .service(seed_demo_data)
             .service(clear_demo_data),

@@ -1,31 +1,29 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { apiEndpoint } from '../lib/config';
-
-  interface Building {
-    id: string;
-    name: string;
-    address: string;
-    city: string;
-    postal_code: string;
-    country: string;
-    total_units: number;
-    construction_year?: number;
-  }
+  import { api } from '../lib/api';
+  import type { Building, PageResponse } from '../lib/types';
+  import Pagination from './Pagination.svelte';
 
   let buildings: Building[] = [];
   let loading = true;
   let error = '';
   let showForm = false;
 
+  // Pagination state
+  let currentPage = 1;
+  let perPage = 20;
+  let totalItems = 0;
+  let totalPages = 0;
+
   let newBuilding = {
     name: '',
     address: '',
     city: '',
     postal_code: '',
-    country: 'France',
+    country: 'Belgique',
     total_units: 0,
-    construction_year: null as number | null
+    construction_year: null as number | null,
+    organization_id: '' // Will be overridden by backend from JWT
   };
 
   onMount(async () => {
@@ -35,12 +33,20 @@
   async function loadBuildings() {
     try {
       loading = true;
-      const response = await fetch(apiEndpoint('/api/v1/buildings'));
-      if (!response.ok) throw new Error('Failed to load buildings');
-      buildings = await response.json();
+      // Use the new paginated endpoint with JWT authentication
+      const response = await api.get<PageResponse<Building>>(
+        `/buildings?page=${currentPage}&per_page=${perPage}`
+      );
+
+      buildings = response.data;
+      totalItems = response.total;
+      totalPages = response.total_pages;
+      currentPage = response.page;
+      perPage = response.per_page;
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'An error occurred';
+      error = e instanceof Error ? e.message : 'Erreur lors du chargement des immeubles';
+      console.error('Error loading buildings:', e);
     } finally {
       loading = false;
     }
@@ -49,19 +55,17 @@
   async function createBuilding(e: Event) {
     e.preventDefault();
     try {
-      const response = await fetch(apiEndpoint('/api/v1/buildings'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newBuilding)
-      });
-
-      if (!response.ok) throw new Error('Failed to create building');
+      // Use api.post with JWT authentication
+      // Note: organization_id will be overridden by backend from JWT token (secure!)
+      await api.post('/buildings', newBuilding);
 
       await loadBuildings();
       showForm = false;
       resetForm();
+      error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to create building';
+      error = e instanceof Error ? e.message : 'Échec de la création de l\'immeuble';
+      console.error('Error creating building:', e);
     }
   }
 
@@ -71,17 +75,23 @@
       address: '',
       city: '',
       postal_code: '',
-      country: 'France',
+      country: 'Belgique',
       total_units: 0,
-      construction_year: null
+      construction_year: null,
+      organization_id: ''
     };
+  }
+
+  async function handlePageChange(page: number) {
+    currentPage = page;
+    await loadBuildings();
   }
 </script>
 
 <div class="space-y-4">
   <div class="flex justify-between items-center">
     <p class="text-gray-600">
-      {buildings.length} immeuble(s)
+      {totalItems} immeuble{totalItems !== 1 ? 's' : ''}
     </p>
     <button
       on:click={() => showForm = !showForm}
@@ -190,7 +200,7 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600">Chargement...</p>
+    <p class="text-center text-gray-600 py-8">Chargement...</p>
   {:else if buildings.length === 0}
     <p class="text-center text-gray-600 py-8">
       Aucun immeuble enregistré. Créez-en un pour commencer !
@@ -219,5 +229,16 @@
         </div>
       {/each}
     </div>
+
+    <!-- Pagination component -->
+    {#if totalPages > 1}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        perPage={perPage}
+        onPageChange={handlePageChange}
+      />
+    {/if}
   {/if}
 </div>

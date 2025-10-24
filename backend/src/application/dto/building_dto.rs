@@ -3,6 +3,8 @@ use validator::Validate;
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 pub struct CreateBuildingDto {
+    pub organization_id: String,
+
     #[validate(length(min = 1, message = "Name cannot be empty"))]
     pub name: String,
 

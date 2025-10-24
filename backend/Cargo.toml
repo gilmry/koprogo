@@ -8,6 +8,8 @@ edition = "2021"
 actix-web = "4.11"
 actix-cors = "0.7"
 actix-rt = "2.11"
+actix-multipart = "0.7"
+actix-governor = "0.6"
 
 # Async runtime
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "time"] }
@@ -39,6 +41,12 @@ async-trait = "0.1"
 # Error handling
 thiserror = "1.0"
 anyhow = "1.0"
+
+# PDF generation
+printpdf = "0.7"
+
+# Excel generation
+rust_xlsxwriter = "0.76"
 
 [dev-dependencies]
 # Unit & Integration tests

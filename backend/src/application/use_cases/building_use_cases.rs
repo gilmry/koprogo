@@ -1,4 +1,6 @@
-use crate::application::dto::{BuildingResponseDto, CreateBuildingDto, UpdateBuildingDto};
+use crate::application::dto::{
+    BuildingFilters, BuildingResponseDto, CreateBuildingDto, PageRequest, UpdateBuildingDto,
+};
 use crate::application::ports::BuildingRepository;
 use crate::domain::entities::Building;
 use std::sync::Arc;
@@ -17,7 +19,11 @@ impl BuildingUseCases {
         &self,
         dto: CreateBuildingDto,
     ) -> Result<BuildingResponseDto, String> {
+        let organization_id = Uuid::parse_str(&dto.organization_id)
+            .map_err(|_| "Invalid organization_id format".to_string())?;
+
         let building = Building::new(
+            organization_id,
             dto.name,
             dto.address,
             dto.city,
@@ -39,6 +45,25 @@ impl BuildingUseCases {
     pub async fn list_buildings(&self) -> Result<Vec<BuildingResponseDto>, String> {
         let buildings = self.repository.find_all().await?;
         Ok(buildings.iter().map(|b| self.to_response_dto(b)).collect())
+    }
+
+    pub async fn list_buildings_paginated(
+        &self,
+        page_request: &PageRequest,
+        organization_id: Option<Uuid>,
+    ) -> Result<(Vec<BuildingResponseDto>, i64), String> {
+        let filters = BuildingFilters {
+            organization_id,
+            ..Default::default()
+        };
+
+        let (buildings, total) = self
+            .repository
+            .find_all_paginated(page_request, &filters)
+            .await?;
+
+        let dtos = buildings.iter().map(|b| self.to_response_dto(b)).collect();
+        Ok((dtos, total))
     }
 
     pub async fn update_building(
@@ -93,6 +118,11 @@ mod tests {
             async fn create(&self, building: &Building) -> Result<Building, String>;
             async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String>;
             async fn find_all(&self) -> Result<Vec<Building>, String>;
+            async fn find_all_paginated(
+                &self,
+                page_request: &PageRequest,
+                filters: &BuildingFilters,
+            ) -> Result<(Vec<Building>, i64), String>;
             async fn update(&self, building: &Building) -> Result<Building, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
         }
@@ -107,6 +137,7 @@ mod tests {
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 
         let dto = CreateBuildingDto {
+            organization_id: Uuid::new_v4().to_string(),
             name: "Test Building".to_string(),
             address: "123 Test St".to_string(),
             city: "Paris".to_string(),
@@ -126,6 +157,7 @@ mod tests {
         let use_cases = BuildingUseCases::new(Arc::new(mock_repo));
 
         let dto = CreateBuildingDto {
+            organization_id: Uuid::new_v4().to_string(),
             name: "".to_string(), // Invalid: empty name
             address: "123 Test St".to_string(),
             city: "Paris".to_string(),

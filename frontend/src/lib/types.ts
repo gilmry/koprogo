@@ -72,6 +72,20 @@ export interface Expense {
   paid_date?: string;
 }
 
+// Pagination types (matches backend PageResponse)
+export interface PageResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+export interface PageRequest {
+  page?: number;
+  per_page?: number;
+}
+
 // Permission helpers
 export const hasPermission = (
   user: User | null,

@@ -1,20 +1,29 @@
-use crate::application::dto::{Claims, LoginRequest, LoginResponse, RegisterRequest, UserResponse};
-use crate::application::ports::UserRepository;
-use crate::domain::entities::{User, UserRole};
+use crate::application::dto::{
+    Claims, LoginRequest, LoginResponse, RefreshTokenRequest, RegisterRequest, UserResponse,
+};
+use crate::application::ports::{RefreshTokenRepository, UserRepository};
+use crate::domain::entities::{RefreshToken, User, UserRole};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::Utc;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use std::sync::Arc;
+use uuid::Uuid;
 
 pub struct AuthUseCases {
     user_repo: Arc<dyn UserRepository>,
+    refresh_token_repo: Arc<dyn RefreshTokenRepository>,
     jwt_secret: String,
 }
 
 impl AuthUseCases {
-    pub fn new(user_repo: Arc<dyn UserRepository>, jwt_secret: String) -> Self {
+    pub fn new(
+        user_repo: Arc<dyn UserRepository>,
+        refresh_token_repo: Arc<dyn RefreshTokenRepository>,
+        jwt_secret: String,
+    ) -> Self {
         Self {
             user_repo,
+            refresh_token_repo,
             jwt_secret,
         }
     }
@@ -40,11 +49,17 @@ impl AuthUseCases {
             return Err("Invalid email or password".to_string());
         }
 
-        // Generate JWT token
+        // Generate JWT access token (15 minutes)
         let token = self.generate_token(&user)?;
+
+        // Generate refresh token (7 days)
+        let refresh_token_string = self.generate_refresh_token_string(&user);
+        let refresh_token = RefreshToken::new(user.id, refresh_token_string.clone());
+        self.refresh_token_repo.create(&refresh_token).await?;
 
         Ok(LoginResponse {
             token,
+            refresh_token: refresh_token_string,
             user: UserResponse {
                 id: user.id,
                 email: user.email,
@@ -86,11 +101,17 @@ impl AuthUseCases {
         // Save user
         let created_user = self.user_repo.create(&user).await?;
 
-        // Generate JWT token
+        // Generate JWT access token (15 minutes)
         let token = self.generate_token(&created_user)?;
+
+        // Generate refresh token (7 days)
+        let refresh_token_string = self.generate_refresh_token_string(&created_user);
+        let refresh_token = RefreshToken::new(created_user.id, refresh_token_string.clone());
+        self.refresh_token_repo.create(&refresh_token).await?;
 
         Ok(LoginResponse {
             token,
+            refresh_token: refresh_token_string,
             user: UserResponse {
                 id: created_user.id,
                 email: created_user.email,
@@ -134,9 +155,70 @@ impl AuthUseCases {
         Ok(token_data.claims)
     }
 
+    /// Refresh access token using a refresh token
+    pub async fn refresh_token(
+        &self,
+        request: RefreshTokenRequest,
+    ) -> Result<LoginResponse, String> {
+        // Find refresh token in database
+        let refresh_token = self
+            .refresh_token_repo
+            .find_by_token(&request.refresh_token)
+            .await?
+            .ok_or("Invalid refresh token")?;
+
+        // Check if token is valid
+        if !refresh_token.is_valid() {
+            return Err("Refresh token expired or revoked".to_string());
+        }
+
+        // Get user
+        let user = self
+            .user_repo
+            .find_by_id(refresh_token.user_id)
+            .await?
+            .ok_or("User not found")?;
+
+        // Check if user is active
+        if !user.is_active {
+            return Err("User account is deactivated".to_string());
+        }
+
+        // Generate new access token (15 minutes)
+        let token = self.generate_token(&user)?;
+
+        // Generate new refresh token (7 days) and revoke old one
+        self.refresh_token_repo
+            .revoke(&request.refresh_token)
+            .await?;
+
+        let new_refresh_token_string = self.generate_refresh_token_string(&user);
+        let new_refresh_token = RefreshToken::new(user.id, new_refresh_token_string.clone());
+        self.refresh_token_repo.create(&new_refresh_token).await?;
+
+        Ok(LoginResponse {
+            token,
+            refresh_token: new_refresh_token_string,
+            user: UserResponse {
+                id: user.id,
+                email: user.email.clone(),
+                first_name: user.first_name.clone(),
+                last_name: user.last_name.clone(),
+                role: user.role.to_string(),
+                organization_id: user.organization_id,
+                is_active: user.is_active,
+            },
+        })
+    }
+
+    /// Revoke all refresh tokens for a user (logout from all devices)
+    pub async fn revoke_all_refresh_tokens(&self, user_id: Uuid) -> Result<u64, String> {
+        self.refresh_token_repo.revoke_all_for_user(user_id).await
+    }
+
     fn generate_token(&self, user: &User) -> Result<String, String> {
         let now = Utc::now().timestamp();
-        let expiration = now + (24 * 3600); // 24 hours
+        let expiration = now + (15 * 60); // 15 minutes
 
         let claims = Claims {
             sub: user.id.to_string(),
@@ -153,5 +235,11 @@ impl AuthUseCases {
             &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
         )
         .map_err(|e| format!("Failed to generate token: {}", e))
+    }
+
+    fn generate_refresh_token_string(&self, user: &User) -> String {
+        let now = Utc::now().timestamp();
+        let random_suffix = Uuid::new_v4();
+        format!("{}:{}:{}", user.id, now, random_suffix)
     }
 }

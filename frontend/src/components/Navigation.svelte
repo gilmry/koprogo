@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { authStore } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import SyncStatus from './SyncStatus.svelte';
+  import LanguageSelector from './LanguageSelector.svelte';
 
   let showUserMenu = false;
 
@@ -19,17 +21,17 @@
     window.location.href = '/login';
   };
 
-  const getNavItems = (role: UserRole | undefined) => {
+  const getNavItems = (role: UserRole | undefined, t: any) => {
     if (!role) return [];
 
     const commonItems = [
-      { href: '/buildings', label: 'Immeubles', icon: '🏢' },
+      { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
     ];
 
     switch (role) {
       case UserRole.SUPERADMIN:
         return [
-          { href: '/admin', label: 'Admin Dashboard', icon: '⚙️' },
+          { href: '/admin', label: t('navigation.admin'), icon: '⚙️' },
           ...commonItems,
           { href: '/admin/organizations', label: 'Organisations', icon: '🏛️' },
           { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
@@ -37,29 +39,29 @@
 
       case UserRole.SYNDIC:
         return [
-          { href: '/syndic', label: 'Dashboard', icon: '📊' },
+          { href: '/syndic', label: t('navigation.dashboard'), icon: '📊' },
           ...commonItems,
-          { href: '/owners', label: 'Copropriétaires', icon: '👤' },
-          { href: '/units', label: 'Lots', icon: '🚪' },
-          { href: '/expenses', label: 'Charges', icon: '💰' },
-          { href: '/meetings', label: 'Assemblées', icon: '📅' },
-          { href: '/documents', label: 'Documents', icon: '📄' },
+          { href: '/owners', label: t('navigation.owners'), icon: '👤' },
+          { href: '/units', label: t('navigation.units'), icon: '🚪' },
+          { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
+          { href: '/meetings', label: t('navigation.meetings'), icon: '📅' },
+          { href: '/documents', label: t('navigation.documents'), icon: '📄' },
         ];
 
       case UserRole.ACCOUNTANT:
         return [
-          { href: '/accountant', label: 'Dashboard', icon: '📊' },
+          { href: '/accountant', label: t('navigation.dashboard'), icon: '📊' },
           ...commonItems,
-          { href: '/expenses', label: 'Charges', icon: '💰' },
-          { href: '/reports', label: 'Rapports', icon: '📈' },
+          { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
+          { href: '/reports', label: t('navigation.reports'), icon: '📈' },
         ];
 
       case UserRole.OWNER:
         return [
-          { href: '/owner', label: 'Mon Espace', icon: '🏠' },
-          { href: '/owner/units', label: 'Mes Lots', icon: '🚪' },
-          { href: '/owner/expenses', label: 'Mes Charges', icon: '💰' },
-          { href: '/owner/documents', label: 'Documents', icon: '📄' },
+          { href: '/owner', label: t('navigation.dashboard'), icon: '🏠' },
+          { href: '/owner/units', label: t('navigation.units'), icon: '🚪' },
+          { href: '/owner/expenses', label: t('navigation.expenses'), icon: '💰' },
+          { href: '/owner/documents', label: t('navigation.documents'), icon: '📄' },
         ];
 
       default:
@@ -67,7 +69,7 @@
     }
   };
 
-  $: navItems = getNavItems(user?.role);
+  $: navItems = getNavItems(user?.role, $_);
 </script>
 
 <nav class="bg-white shadow-sm border-b border-gray-200">
@@ -99,8 +101,9 @@
           {/each}
         </div>
 
-        <!-- Right side: Sync Status + User Menu -->
+        <!-- Right side: Language Selector + Sync Status + User Menu -->
         <div class="flex items-center gap-4">
+          <LanguageSelector />
           <SyncStatus />
 
         <!-- User Menu -->
@@ -127,7 +130,7 @@
                 on:click|stopPropagation
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
-                👤 Profil
+                👤 {$_('navigation.profile')}
               </a>
               <a
                 href="/settings"
@@ -141,19 +144,22 @@
                 on:click|stopPropagation={logout}
                 class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
               >
-                🚪 Déconnexion
+                🚪 {$_('navigation.logout')}
               </button>
             </div>
           {/if}
         </div>
         </div>
       {:else}
-        <a
-          href="/login"
-          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
-        >
-          Connexion
-        </a>
+        <div class="flex items-center gap-4">
+          <LanguageSelector />
+          <a
+            href="/login"
+            class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
+          >
+            Connexion
+          </a>
+        </div>
       {/if}
     </div>
 

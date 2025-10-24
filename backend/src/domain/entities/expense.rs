@@ -28,6 +28,7 @@ pub enum PaymentStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Expense {
     pub id: Uuid,
+    pub organization_id: Uuid,
     pub building_id: Uuid,
     pub category: ExpenseCategory,
     pub description: String,
@@ -41,7 +42,9 @@ pub struct Expense {
 }
 
 impl Expense {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
+        organization_id: Uuid,
         building_id: Uuid,
         category: ExpenseCategory,
         description: String,
@@ -60,6 +63,7 @@ impl Expense {
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
+            organization_id,
             building_id,
             category,
             description,
@@ -99,8 +103,10 @@ mod tests {
 
     #[test]
     fn test_create_expense_success() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expense = Expense::new(
+            org_id,
             building_id,
             ExpenseCategory::Maintenance,
             "Entretien ascenseur".to_string(),
@@ -112,14 +118,17 @@ mod tests {
 
         assert!(expense.is_ok());
         let expense = expense.unwrap();
+        assert_eq!(expense.organization_id, org_id);
         assert_eq!(expense.amount, 500.0);
         assert_eq!(expense.payment_status, PaymentStatus::Pending);
     }
 
     #[test]
     fn test_create_expense_negative_amount_fails() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let expense = Expense::new(
+            org_id,
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
@@ -134,8 +143,10 @@ mod tests {
 
     #[test]
     fn test_mark_expense_as_paid() {
+        let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
         let mut expense = Expense::new(
+            org_id,
             building_id,
             ExpenseCategory::Maintenance,
             "Test".to_string(),
