@@ -1,7 +1,8 @@
 use chrono::Utc;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use koprogo_api::domain::entities::{Building, Expense, ExpenseCategory, Owner, Unit, UnitType};
 use koprogo_api::domain::services::ExpenseCalculator;
+use std::hint::black_box;
 use uuid::Uuid;
 
 fn benchmark_building_creation(c: &mut Criterion) {
