@@ -39,7 +39,7 @@ jsonwebtoken = "9.3"
 async-trait = "0.1"
 
 # Error handling
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 
 # PDF generation
