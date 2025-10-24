@@ -327,7 +327,7 @@ impl DatabaseSeeder {
             building1_id,
             org1_id,
             "Assemblée Générale Ordinaire 2025",
-            "general",
+            "ordinary",
             "2025-03-15",
             "scheduled",
         )
@@ -419,7 +419,7 @@ impl DatabaseSeeder {
             building3_id,
             org2_id,
             "AG Annuelle 2025",
-            "general",
+            "ordinary",
             "2025-05-10",
             "scheduled",
         )
