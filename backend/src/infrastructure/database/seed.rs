@@ -709,8 +709,8 @@ impl DatabaseSeeder {
 
         sqlx::query(
             r#"
-            INSERT INTO meetings (id, building_id, organization_id, meeting_type, title, description, scheduled_date, location, status, agenda, minutes, created_at, updated_at)
-            VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, $8, $9::meeting_status, $10, $11, $12, $13)
+            INSERT INTO meetings (id, building_id, organization_id, meeting_type, title, description, scheduled_date, location, status, agenda, created_at, updated_at)
+            VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, $8, $9::meeting_status, $10, $11, $12)
             "#
         )
         .bind(meeting_id)
@@ -723,7 +723,6 @@ impl DatabaseSeeder {
         .bind("Salle polyvalente")
         .bind(status)
         .bind(vec!["Approbation des comptes", "Travaux à prévoir", "Questions diverses"])
-        .bind(None::<String>)
         .bind(now)
         .bind(now)
         .execute(&self.pool)
