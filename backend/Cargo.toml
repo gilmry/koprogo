@@ -39,7 +39,7 @@ jsonwebtoken = { version = "10.1", default-features = false, features = ["aws_lc
 async-trait = "0.1"
 
 # Error handling
-thiserror = "1.0"
+thiserror = "2.0"
 anyhow = "1.0"
 
 # PDF generation
