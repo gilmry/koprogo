@@ -144,8 +144,6 @@
     - name: Configure git safe directory for koprogo user
       shell: |
         su - {{ koprogo_user }} -c "git config --global --add safe.directory {{ koprogo_dir }}"
-      args:
-        warn: false
 
     # ==========================================
     # 7. Configuration environnement
