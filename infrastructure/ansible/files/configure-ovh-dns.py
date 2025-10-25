@@ -21,15 +21,20 @@ def extract_zone_and_subdomain(domain):
     Exemples:
     - koprogo.com -> zone: koprogo.com, subdomain: ''
     - api.koprogo.com -> zone: koprogo.com, subdomain: 'api'
-    - test.api.koprogo.com -> zone: koprogo.com, subdomain: 'test.api'
+    - qa.koprogo.com -> zone: koprogo.com, subdomain: 'qa'
+    - api.qa.koprogo.com -> zone: koprogo.com, subdomain: 'api.qa'
+
+    Note: Pour les sous-domaines multi-niveaux comme api.qa.koprogo.com,
+    on assume que la zone racine est toujours les 2 derniers segments (koprogo.com),
+    et tout le reste devient le sous-domaine (api.qa).
     """
     parts = domain.split('.')
 
     if len(parts) < 2:
         raise ValueError(f"Invalid domain format: {domain}")
 
-    # Essayer différentes combinaisons pour trouver la zone racine
-    # On commence par les 2 derniers éléments (ex: example.com)
+    # La zone DNS est TOUJOURS les 2 derniers segments (ex: koprogo.com)
+    # Tout ce qui précède devient le sous-domaine
     zone = '.'.join(parts[-2:])
     subdomain = '.'.join(parts[:-2]) if len(parts) > 2 else ''
 

@@ -201,9 +201,10 @@ echo -e "${YELLOW}📋 Instructions:${NC}"
 echo "  1. Dans OVH Manager > Project Management > Users & Roles"
 echo "  2. Cliquez sur le bouton '...' à côté de votre utilisateur"
 echo "  3. Sélectionnez 'Download OpenStack's RC file'"
-echo "  4. Ouvrez le fichier téléchargé et trouvez la ligne:"
+echo "  4. Ouvrez le fichier téléchargé et trouvez les lignes:"
 echo "     export OS_REGION_NAME=\"GRAxx\""
-echo "  5. Notez la région (ex: GRA9, GRA11, SBG5, etc.)"
+echo "     export OS_TENANT_NAME=\"xxxxxxxxxxxxx\""
+echo "  5. Notez la région et le tenant name"
 echo ""
 
 read -p "Appuyez sur Entrée quand vous avez le fichier OpenRC..."
@@ -219,9 +220,11 @@ echo "  - DE1 (Frankfurt, Allemagne)"
 echo ""
 
 read -p "Région depuis le fichier OpenRC (ex: GRA9): " OS_REGION_NAME
+read -p "OS_TENANT_NAME depuis le fichier OpenRC: " OS_TENANT_NAME
 
 echo ""
 echo -e "${GREEN}✅ Région configurée: $OS_REGION_NAME${NC}"
+echo -e "${GREEN}✅ Tenant configuré: $OS_TENANT_NAME${NC}"
 echo ""
 
 # ============================================================================
@@ -235,18 +238,32 @@ echo ""
 
 echo "Voulez-vous configurer un domaine pour votre application?"
 echo "Si oui, le DNS sera automatiquement configuré pour pointer vers votre VPS."
+echo "Le frontend sera accessible sur: votre-domaine.com"
+echo "L'API sera accessible sur: api.votre-domaine.com"
 echo ""
 
 read -p "Configurer un domaine? (y/N): " CONFIGURE_DOMAIN
 
-DOMAIN=""
+KOPROGO_DOMAIN=""
+KOPROGO_FRONTEND_DOMAIN=""
+KOPROGO_API_DOMAIN=""
 ACME_EMAIL=""
 CONFIGURE_DNS_AUTO="no"
 
 if [[ "$CONFIGURE_DOMAIN" =~ ^[Yy]$ ]]; then
     echo ""
-    read -p "Nom de domaine (ex: koprogo.example.com): " DOMAIN
+    read -p "Nom de domaine principal (ex: koprogo.com): " KOPROGO_DOMAIN
     read -p "Email pour certificat SSL (Let's Encrypt): " ACME_EMAIL
+
+    # Extrapoler automatiquement les sous-domaines
+    KOPROGO_FRONTEND_DOMAIN="$KOPROGO_DOMAIN"
+    KOPROGO_API_DOMAIN="api.$KOPROGO_DOMAIN"
+
+    echo ""
+    echo -e "${GREEN}✅ Configuration domaines:${NC}"
+    echo "   Frontend: https://$KOPROGO_FRONTEND_DOMAIN"
+    echo "   API:      https://$KOPROGO_API_DOMAIN"
+    echo ""
 
     echo ""
     echo "Le domaine est-il géré chez OVH?"
@@ -257,15 +274,19 @@ if [[ "$CONFIGURE_DOMAIN" =~ ^[Yy]$ ]]; then
         CONFIGURE_DNS_AUTO="yes"
         echo ""
         echo -e "${YELLOW}⚠️  Le DNS sera configuré automatiquement après le déploiement${NC}"
+        echo "   - $KOPROGO_FRONTEND_DOMAIN → VPS IP"
+        echo "   - $KOPROGO_API_DOMAIN → VPS IP"
     else
         echo ""
         echo -e "${YELLOW}⚠️  Vous devrez configurer manuellement le DNS:${NC}"
-        echo "  1. Créez un enregistrement A pour $DOMAIN"
-        echo "  2. Pointez-le vers l'IP du VPS (affichée après le déploiement)"
+        echo "  1. Créez deux enregistrements A:"
+        echo "     - $KOPROGO_FRONTEND_DOMAIN → VPS IP"
+        echo "     - $KOPROGO_API_DOMAIN → VPS IP"
+        echo "  2. L'IP du VPS sera affichée après le déploiement"
     fi
 
     echo ""
-    echo -e "${GREEN}✅ Domaine configuré: $DOMAIN${NC}"
+    echo -e "${GREEN}✅ Domaines configurés${NC}"
 fi
 
 echo ""
@@ -314,7 +335,7 @@ OS_PROJECT_DOMAIN_NAME=Default
 # OpenStack Project (from OpenRC file)
 OS_PROJECT_ID=$OVH_SERVICE_NAME
 OS_TENANT_ID=$OVH_SERVICE_NAME
-OS_TENANT_NAME=$(echo $OVH_SERVICE_NAME | cut -c1-16)
+OS_TENANT_NAME=$OS_TENANT_NAME
 
 # OpenStack User Credentials
 OS_USERNAME=$OS_USERNAME
@@ -327,7 +348,9 @@ OS_REGION_NAME=$OS_REGION_NAME
 # Domain Configuration (Optional)
 # ═══════════════════════════════════════════════════════════
 
-KOPROGO_DOMAIN=$DOMAIN
+KOPROGO_DOMAIN=$KOPROGO_DOMAIN
+KOPROGO_FRONTEND_DOMAIN=$KOPROGO_FRONTEND_DOMAIN
+KOPROGO_API_DOMAIN=$KOPROGO_API_DOMAIN
 ACME_EMAIL=$ACME_EMAIL
 CONFIGURE_DNS_AUTO=$CONFIGURE_DNS_AUTO
 EOF
@@ -447,78 +470,19 @@ echo ""
 # Étape 9: Configuration DNS (si demandé)
 # ============================================================================
 
-if [ "$CONFIGURE_DNS_AUTO" = "yes" ] && [ -n "$DOMAIN" ]; then
+if [ "$CONFIGURE_DNS_AUTO" = "yes" ] && [ -n "$KOPROGO_DOMAIN" ]; then
     echo -e "${BLUE}┌─────────────────────────────────────────────────────────┐${NC}"
     echo -e "${BLUE}│ Étape 9: Configuration DNS automatique                 │${NC}"
     echo -e "${BLUE}└─────────────────────────────────────────────────────────┘${NC}"
     echo ""
 
-    echo "Configuration du DNS pour $DOMAIN -> $VPS_IP"
+    echo "Configuration du DNS pour:"
+    echo "  - $KOPROGO_FRONTEND_DOMAIN -> $VPS_IP"
+    echo "  - $KOPROGO_API_DOMAIN -> $VPS_IP"
+    echo ""
 
-    # Créer un script Python pour configurer le DNS via l'API OVH
-    cat > /tmp/configure-dns.py <<'PYEOF'
-#!/usr/bin/env python3
-import ovh
-import sys
-import os
-
-domain = os.environ.get('DOMAIN')
-vps_ip = os.environ.get('VPS_IP')
-
-# Extract zone and subdomain
-if '.' in domain:
-    parts = domain.split('.')
-    if len(parts) > 2:
-        subdomain = parts[0]
-        zone = '.'.join(parts[1:])
-    else:
-        subdomain = ''
-        zone = domain
-else:
-    print("Invalid domain format")
-    sys.exit(1)
-
-client = ovh.Client(
-    endpoint='ovh-eu',
-    application_key=os.environ['OVH_APPLICATION_KEY'],
-    application_secret=os.environ['OVH_APPLICATION_SECRET'],
-    consumer_key=os.environ['OVH_CONSUMER_KEY'],
-)
-
-print(f"Configuring DNS: {domain} -> {vps_ip}")
-print(f"  Zone: {zone}")
-print(f"  Subdomain: {subdomain or '@'}")
-
-try:
-    # Check if record exists
-    records = client.get(f'/domain/zone/{zone}/record',
-                        fieldType='A',
-                        subDomain=subdomain or None)
-
-    if records:
-        # Update existing record
-        record_id = records[0]
-        client.put(f'/domain/zone/{zone}/record/{record_id}',
-                  target=vps_ip)
-        print(f"✅ Updated existing A record (ID: {record_id})")
-    else:
-        # Create new record
-        client.post(f'/domain/zone/{zone}/record',
-                   fieldType='A',
-                   subDomain=subdomain,
-                   target=vps_ip,
-                   ttl=60)
-        print(f"✅ Created new A record")
-
-    # Refresh zone
-    client.post(f'/domain/zone/{zone}/refresh')
-    print(f"✅ DNS zone refreshed")
-
-except Exception as e:
-    print(f"❌ Error: {e}")
-    sys.exit(1)
-PYEOF
-
+    # Copier le script DNS Python depuis ansible/files
+    cp "$SCRIPT_DIR/ansible/files/configure-ovh-dns.py" /tmp/configure-dns.py
     chmod +x /tmp/configure-dns.py
 
     # Installer python3-ovh si nécessaire
@@ -527,17 +491,35 @@ PYEOF
         pip3 install ovh 2>/dev/null || sudo pip3 install ovh
     fi
 
-    # Exécuter la configuration DNS
-    export DOMAIN="$DOMAIN"
-    export VPS_IP="$VPS_IP"
+    # Exécuter la configuration DNS pour les deux domaines
+    export TARGET_IP="$VPS_IP"
+    export OVH_ENDPOINT="${OVH_ENDPOINT:-ovh-eu}"
+    DNS_SUCCESS=true
 
-    if python3 /tmp/configure-dns.py; then
-        echo ""
-        echo -e "${GREEN}✅ DNS configuré automatiquement${NC}"
+    # Configuration du domaine frontend
+    echo "Configuration de $KOPROGO_FRONTEND_DOMAIN..."
+    export DOMAIN="$KOPROGO_FRONTEND_DOMAIN"
+    if ! python3 /tmp/configure-dns.py; then
+        DNS_SUCCESS=false
+    fi
+
+    echo ""
+
+    # Configuration du domaine API
+    echo "Configuration de $KOPROGO_API_DOMAIN..."
+    export DOMAIN="$KOPROGO_API_DOMAIN"
+    if ! python3 /tmp/configure-dns.py; then
+        DNS_SUCCESS=false
+    fi
+
+    echo ""
+    if [ "$DNS_SUCCESS" = "true" ]; then
+        echo -e "${GREEN}✅ DNS configuré automatiquement pour les deux domaines${NC}"
         echo ""
         echo "Propagation DNS:"
         echo "  - Peut prendre 1-60 minutes"
-        echo "  - Vérifier: dig $DOMAIN"
+        echo "  - Vérifier: dig $KOPROGO_FRONTEND_DOMAIN"
+        echo "  - Vérifier: dig $KOPROGO_API_DOMAIN"
         echo ""
     else
         echo ""
@@ -545,9 +527,10 @@ PYEOF
         echo ""
         echo "Configuration manuelle requise:"
         echo "  1. Connectez-vous à votre gestionnaire DNS OVH"
-        echo "  2. Créez un enregistrement A pour: $DOMAIN"
-        echo "  3. Pointez vers: $VPS_IP"
-        echo "  4. TTL: 60 seconds (ou minimum disponible)"
+        echo "  2. Créez deux enregistrements A:"
+        echo "     - $KOPROGO_FRONTEND_DOMAIN -> $VPS_IP"
+        echo "     - $KOPROGO_API_DOMAIN -> $VPS_IP"
+        echo "  3. TTL: 60 seconds (ou minimum disponible)"
         echo ""
     fi
 
@@ -580,8 +563,10 @@ koprogo-vps ansible_host=$VPS_IP ansible_user=ubuntu ansible_ssh_private_key_fil
 # Domain configuration
 EOF
 
-if [ -n "$DOMAIN" ]; then
-    echo "domain=$DOMAIN" >> inventory.ini
+if [ -n "$KOPROGO_DOMAIN" ]; then
+    echo "domain=$KOPROGO_DOMAIN" >> inventory.ini
+    echo "frontend_domain=$KOPROGO_FRONTEND_DOMAIN" >> inventory.ini
+    echo "api_domain=$KOPROGO_API_DOMAIN" >> inventory.ini
     echo "acme_email=$ACME_EMAIL" >> inventory.ini
 fi
 
@@ -621,7 +606,9 @@ echo "(Cela peut prendre 10-20 minutes)"
 echo ""
 
 # Exporter les variables pour Ansible
-export KOPROGO_DOMAIN="$DOMAIN"
+export KOPROGO_DOMAIN="$KOPROGO_DOMAIN"
+export KOPROGO_FRONTEND_DOMAIN="$KOPROGO_FRONTEND_DOMAIN"
+export KOPROGO_API_DOMAIN="$KOPROGO_API_DOMAIN"
 export ACME_EMAIL="$ACME_EMAIL"
 
 ansible-playbook -i inventory.ini playbook.yml

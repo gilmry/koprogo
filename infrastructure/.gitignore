@@ -13,3 +13,4 @@ ansible/*.retry
 *.pem
 *.key
 .env
+.env.local

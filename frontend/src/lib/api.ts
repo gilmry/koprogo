@@ -2,10 +2,13 @@ import { get } from "svelte/store";
 import { locale } from "svelte-i18n";
 
 /**
- * API base URL - from environment or default to localhost
+ * API base URL - from runtime config, build-time env, or default to localhost
+ * Priority: window.__ENV__.API_URL > import.meta.env.PUBLIC_API_URL > default
  */
 const API_BASE_URL =
-  import.meta.env.PUBLIC_API_URL || "http://localhost:8080/api/v1";
+  (typeof window !== "undefined" && (window as any).__ENV__?.API_URL) ||
+  import.meta.env.PUBLIC_API_URL ||
+  "http://localhost:8080/api/v1";
 
 /**
  * Get current language code for API headers

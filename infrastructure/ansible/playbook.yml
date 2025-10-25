@@ -10,8 +10,10 @@
     koprogo_repo: https://github.com/gilmry/koprogo.git
     koprogo_branch: main
     koprogo_dir: /home/{{ koprogo_user }}/koprogo
-    domain: "{{ lookup('env', 'KOPROGO_DOMAIN') | default('', true) }}"
-    enable_ssl: "{{ domain != '' }}"
+    koprogo_domain: "{{ lookup('env', 'KOPROGO_DOMAIN') | default('', true) }}"
+    frontend_domain: "{{ lookup('env', 'KOPROGO_FRONTEND_DOMAIN') | default('', true) }}"
+    api_domain: "{{ lookup('env', 'KOPROGO_API_DOMAIN') | default('', true) }}"
+    enable_ssl: "{{ koprogo_domain != '' }}"
     acme_email: "{{ lookup('env', 'ACME_EMAIL') | default('admin@example.com', true) }}"
 
   tasks:
@@ -149,36 +151,60 @@
     # ==========================================
     # 8. Configuration DNS OVH (si domaine fourni)
     # ==========================================
+    - name: Install Python3 pip
+      apt:
+        name: python3-pip
+        state: present
+      when: koprogo_domain != '' and koprogo_domain is defined
+
     - name: Install Python OVH module
       pip:
         name: ovh
         state: present
-      when: domain != '' and domain is defined
+      when: koprogo_domain != '' and koprogo_domain is defined
 
     - name: Copy OVH DNS configuration script
       copy:
         src: configure-ovh-dns.py
         dest: /tmp/configure-ovh-dns.py
         mode: '0755'
-      when: domain != '' and domain is defined
+      when: koprogo_domain != '' and koprogo_domain is defined
 
-    - name: Configure OVH DNS
+    - name: Configure OVH DNS for frontend domain
       command: python3 /tmp/configure-ovh-dns.py
       environment:
-        DOMAIN: "{{ domain }}"
+        DOMAIN: "{{ frontend_domain }}"
         TARGET_IP: "{{ ansible_host }}"
         OVH_ENDPOINT: "{{ lookup('env', 'OVH_ENDPOINT') | default('ovh-eu', true) }}"
         OVH_APPLICATION_KEY: "{{ lookup('env', 'OVH_APPLICATION_KEY') }}"
         OVH_APPLICATION_SECRET: "{{ lookup('env', 'OVH_APPLICATION_SECRET') }}"
         OVH_CONSUMER_KEY: "{{ lookup('env', 'OVH_CONSUMER_KEY') }}"
-      when: domain != '' and domain is defined and lookup('env', 'OVH_APPLICATION_KEY') != ''
-      register: dns_config
+      when: koprogo_domain != '' and koprogo_domain is defined and lookup('env', 'OVH_APPLICATION_KEY') != ''
+      register: dns_config_frontend
       failed_when: false
 
-    - name: Display DNS configuration result
+    - name: Configure OVH DNS for API domain
+      command: python3 /tmp/configure-ovh-dns.py
+      environment:
+        DOMAIN: "{{ api_domain }}"
+        TARGET_IP: "{{ ansible_host }}"
+        OVH_ENDPOINT: "{{ lookup('env', 'OVH_ENDPOINT') | default('ovh-eu', true) }}"
+        OVH_APPLICATION_KEY: "{{ lookup('env', 'OVH_APPLICATION_KEY') }}"
+        OVH_APPLICATION_SECRET: "{{ lookup('env', 'OVH_APPLICATION_SECRET') }}"
+        OVH_CONSUMER_KEY: "{{ lookup('env', 'OVH_CONSUMER_KEY') }}"
+      when: koprogo_domain != '' and koprogo_domain is defined and lookup('env', 'OVH_APPLICATION_KEY') != ''
+      register: dns_config_api
+      failed_when: false
+
+    - name: Display DNS configuration result (frontend)
       debug:
-        var: dns_config.stdout_lines
-      when: dns_config is defined and dns_config.stdout_lines is defined
+        var: dns_config_frontend.stdout_lines
+      when: dns_config_frontend is defined and dns_config_frontend.stdout_lines is defined
+
+    - name: Display DNS configuration result (API)
+      debug:
+        var: dns_config_api.stdout_lines
+      when: dns_config_api is defined and dns_config_api.stdout_lines is defined
 
     # ==========================================
     # 9. Déploiement Docker Compose (Production)
@@ -202,6 +228,14 @@
     # ==========================================
     # 10. Configuration GitOps Auto-Update
     # ==========================================
+    - name: Create scripts directory
+      file:
+        path: "{{ koprogo_dir }}/scripts"
+        state: directory
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0755'
+
     - name: Create auto-update script
       template:
         src: auto-update.sh.j2
@@ -278,8 +312,9 @@
           - "=========================================="
           - "KoproGo déployé avec succès !"
           - "=========================================="
-          - "URL API: {{ 'https://' if enable_ssl else 'http://' }}{{ domain if domain else ansible_host }}/api/v1"
-          - "Health check: {{ 'https://' if enable_ssl else 'http://' }}{{ domain if domain else ansible_host }}/api/v1/health"
+          - "URL Frontend: {{ 'https://' if enable_ssl else 'http://' }}{{ frontend_domain if frontend_domain else ansible_host }}"
+          - "URL API: {{ 'https://' if enable_ssl else 'http://' }}{{ api_domain if api_domain else ansible_host }}/api/v1"
+          - "Health check: {{ 'https://' if enable_ssl else 'http://' }}{{ api_domain if api_domain else ansible_host }}/api/v1/health"
           - "Logs: docker compose logs -f (dans {{ koprogo_dir }})"
           - "Auto-update: Tous les jours à 3h (cron)"
           - "Backups: Tous les jours à 2h (cron)"
