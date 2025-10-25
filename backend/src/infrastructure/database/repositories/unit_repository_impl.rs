@@ -30,7 +30,7 @@ impl UnitRepository for PostgresUnitRepository {
         sqlx::query(
             r#"
             INSERT INTO units (id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            VALUES ($1, $2, $3, $4, $5::unit_type, $6, $7, $8, $9, $10, $11)
             "#,
         )
         .bind(unit.id)
