@@ -16,6 +16,12 @@ CREATE TYPE unit_type AS ENUM ('apartment', 'parking', 'cellar', 'commercial', '
 CREATE TYPE expense_category AS ENUM ('maintenance', 'repairs', 'insurance', 'utilities', 'cleaning', 'administration', 'works', 'other');
 ```
 
+### payment_status
+**Values**: `pending`, `paid`, `overdue`, `cancelled`
+```sql
+CREATE TYPE payment_status AS ENUM ('pending', 'paid', 'overdue', 'cancelled');
+```
+
 ### document_type
 **Values**: `meeting_minutes`, `financial_statement`, `invoice`, `contract`, `regulation`, `works_quote`, `other`
 ```sql
@@ -37,6 +43,17 @@ role VARCHAR(20) NOT NULL CHECK (role IN ('superadmin', 'syndic', 'accountant', 
 ```
 
 ## NOT NULL Constraints
+
+### expenses table
+**Required fields**:
+- `building_id` UUID NOT NULL
+- `category` expense_category NOT NULL
+- `description` TEXT NOT NULL
+- `amount` DOUBLE PRECISION NOT NULL CHECK (amount > 0)
+- `expense_date` TIMESTAMPTZ NOT NULL
+- `payment_status` payment_status NOT NULL DEFAULT 'pending'
+
+**Note**: There is NO `due_date`, `is_paid`, or `organization_id` column. Use `payment_status` instead of `is_paid`.
 
 ### owners table
 **Required fields**:

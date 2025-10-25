@@ -1019,18 +1019,24 @@ impl DatabaseSeeder {
                     let days_ago = rng.random_range(0..90);
                     let expense_date = Utc::now() - chrono::Duration::days(days_ago);
 
+                    // Valid expense_category ENUM: maintenance, repairs, insurance, utilities, cleaning, administration, works, other
+                    let categories = vec!["maintenance", "repairs", "insurance", "utilities", "cleaning", "administration", "works"];
+                    let category = categories[rng.random_range(0..categories.len())];
+
+                    // Valid payment_status ENUM: pending, paid, overdue, cancelled
+                    let payment_status = if rng.random_bool(0.7) { "paid" } else { "pending" };
+
                     sqlx::query(
-                        "INSERT INTO expenses (id, organization_id, building_id, description, amount, expense_date, due_date, is_paid, created_at, updated_at)
-                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+                        "INSERT INTO expenses (id, building_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+                         VALUES ($1, $2, $3::expense_category, $4, $5, $6, $7::payment_status, $8, $9)"
                     )
                     .bind(Uuid::new_v4())
-                    .bind(org_id)
                     .bind(building_id)
+                    .bind(category)
                     .bind(desc)
                     .bind(amount)
                     .bind(expense_date)
-                    .bind(expense_date + chrono::Duration::days(30))
-                    .bind(rng.random_bool(0.7)) // 70% paid
+                    .bind(payment_status)
                     .bind(now)
                     .bind(now)
                     .execute(&self.pool)
