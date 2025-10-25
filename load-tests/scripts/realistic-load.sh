@@ -73,7 +73,9 @@ echo "✅ Found building IDs: ${BUILDING_IDS:0:80}..."
 # Create wrk2 Lua script for realistic mixed workload with dynamic ORG_ID and real building IDs
 cat > /tmp/realistic_workload.lua << LUA_SCRIPT
 -- Realistic workload: 70% reads (GET), 30% writes (POST/PUT)
-math.randomseed(os.time())
+-- Counter for uniqueness within thread
+local request_counter = 0
+local thread = nil  -- Will be set in setup()
 
 -- Track user's organization context
 local org_id = nil
@@ -137,22 +139,31 @@ function generate_building_data()
 end
 
 function generate_unit_data(building_id)
-    -- Use lowercase for unit_type ENUM (apartment, parking, cellar, commercial, other)
-    local types = {"apartment", "apartment", "apartment", "parking", "cellar"}
+    request_counter = request_counter + 1
+    -- Use PascalCase for unit_type (API expects Rust enum format)
+    local types = {"Apartment", "Apartment", "Apartment", "Parking", "Cellar"}
     -- If no building_id provided, get a random real one
     local bid = building_id or get_random_building_id()
+    -- Generate unique unit_number with high-res timestamp + thread + counter
+    local timestamp_ms = os.time() * 1000 + math.random(0, 999)
+    local thread_id = (thread and thread.id or 0)
+    local unique_suffix = string.format("%d-T%d-C%d-%04x",
+        timestamp_ms,
+        thread_id,
+        request_counter,
+        math.random(0, 0xffff)
+    )
     return string.format([[{
         "organization_id": "$ORG_ID",
         "building_id": "%s",
-        "unit_number": "%d.%d",
+        "unit_number": "UNIT-%s",
         "unit_type": "%s",
         "floor": %d,
         "surface_area": %.2f,
         "quota": %d
     }]],
         bid,
-        math.random(0, 10),
-        math.random(1, 4),
+        unique_suffix,
         types[math.random(#types)],
         math.random(0, 10),
         math.random(45, 150) + math.random(),
@@ -161,17 +172,26 @@ function generate_unit_data(building_id)
 end
 
 function generate_owner_data()
+    request_counter = request_counter + 1
     local first_names = {"Pierre", "Marie", "Jean", "Sophie", "Luc"}
     local last_names = {"Dupont", "Martin", "Bernard", "Dubois", "Laurent"}
     local cities = {"Bruxelles", "Anvers", "Gand", "Liège"}
     local streets = {"Rue de la Paix", "Avenue Louise", "Boulevard du Roi"}
-    -- Add timestamp to email for uniqueness
-    local timestamp = os.time() + math.random(0, 999999)
+    -- Generate UUID with high-resolution timestamp + thread ID + counter + random
+    local timestamp_ms = os.time() * 1000 + math.random(0, 999)
+    local thread_id = (thread and thread.id or 0)
+    local uuid = string.format("%08x-%04x-%04x-%04x-%08x",
+        timestamp_ms,
+        thread_id,
+        request_counter,
+        math.random(0, 0xffff),
+        math.random(0, 0xffffffff)
+    )
     return string.format([[{
         "organization_id": "$ORG_ID",
         "first_name": "%s",
         "last_name": "%s",
-        "email": "test%d_%d@example.be",
+        "email": "owner-%s@example.be",
         "phone": "+32 2 %d %d %d",
         "address": "%s %d",
         "city": "%s",
@@ -180,8 +200,7 @@ function generate_owner_data()
     }]],
         first_names[math.random(#first_names)],
         last_names[math.random(#last_names)],
-        math.random(1000, 9999),
-        timestamp,
+        uuid,
         math.random(100, 999),
         math.random(10, 99),
         math.random(10, 99),
@@ -238,12 +257,17 @@ function weighted_choice(operations)
 end
 
 -- Setup function
-function setup(thread)
-    thread:set("id", thread.id)
+function setup(thread_obj)
+    thread_obj:set("id", thread_obj.id)
+    thread = thread_obj  -- Store thread for later use
 end
 
 function init(args)
     token = args[1]  -- JWT token passed as argument
+    -- Re-seed with thread ID for uniqueness
+    if thread then
+        math.randomseed(os.time() * 1000 + thread.id)
+    end
 end
 
 -- Main request function (70% GET, 30% POST)

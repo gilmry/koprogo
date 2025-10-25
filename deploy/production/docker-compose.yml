@@ -59,7 +59,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 80M
+          memory: 128M
           cpus: '0.25'
 
   postgres:
