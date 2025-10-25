@@ -977,7 +977,8 @@ impl DatabaseSeeder {
                         None
                     };
 
-                    let unit_types = vec!["apartment", "studio", "duplex", "penthouse"];
+                    // Valid unit_type ENUM values: apartment, parking, cellar, commercial, other
+                    let unit_types = vec!["apartment", "apartment", "apartment", "parking", "cellar"];
                     let unit_type = unit_types[rng.random_range(0..unit_types.len())];
 
                     sqlx::query(
