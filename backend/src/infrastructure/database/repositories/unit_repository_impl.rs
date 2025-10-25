@@ -259,7 +259,7 @@ impl UnitRepository for PostgresUnitRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at \
+            "SELECT id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at \
              FROM units {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
