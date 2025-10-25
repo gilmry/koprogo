@@ -1,8 +1,9 @@
 use crate::domain::entities::{User, UserRole};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
+use rand::Rng;
 
 pub struct DatabaseSeeder {
     pool: PgPool,
@@ -790,6 +791,262 @@ impl DatabaseSeeder {
         .map_err(|e| format!("Failed to create document: {}", e))?;
 
         Ok(document_id)
+    }
+
+    /// Seed realistic data for load testing (optimized for 1 vCPU / 2GB RAM)
+    /// Generates: 3 orgs, ~23 buildings, ~190 units, ~127 owners, ~60 expenses
+    pub async fn seed_realistic_data(&self) -> Result<String, String> {
+        log::info!("🌱 Starting realistic data seeding...");
+
+        // Check if data already exists
+        let existing_orgs = sqlx::query("SELECT COUNT(*) as count FROM organizations")
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to count organizations: {}", e))?;
+
+        let count: i64 = existing_orgs.try_get("count")
+            .map_err(|e| format!("Failed to get count: {}", e))?;
+        if count > 0 {
+            return Err("Data already exists. Please clear the database first.".to_string());
+        }
+
+        let mut rng = rand::thread_rng();
+
+        // Belgian cities for variety
+        let cities = vec!["Bruxelles", "Anvers", "Gand", "Charleroi", "Liège", "Bruges", "Namur", "Louvain"];
+        let street_types = vec!["Rue", "Avenue", "Boulevard", "Place", "Chaussée"];
+        let street_names = vec![
+            "des Fleurs", "du Parc", "de la Gare", "Royale", "de l'Église",
+            "du Commerce", "de la Liberté", "des Arts", "Victor Hugo", "Louise"
+        ];
+
+        // Create 3 organizations with different sizes
+        let org_configs = vec![
+            ("Petite Copropriété SPRL", "small", 5, 30),      // 5 buildings, ~30 units
+            ("Copropriété Moyenne SA", "medium", 8, 60),       // 8 buildings, ~60 units
+            ("Grande Résidence NV", "large", 10, 100),         // 10 buildings, ~100 units
+        ];
+
+        let mut total_buildings = 0;
+        let mut total_units = 0;
+        let mut total_owners = 0;
+        let mut total_expenses = 0;
+
+        for (idx, (org_name, size, num_buildings, target_units)) in org_configs.iter().enumerate() {
+            let org_id = Uuid::new_v4();
+            let now = Utc::now();
+
+            log::info!("📍 Organization {}: {} ({} buildings, ~{} units)", idx + 1, org_name, num_buildings, target_units);
+
+            // Create organization
+            sqlx::query(
+                "INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+            )
+            .bind(org_id)
+            .bind(*org_name)
+            .bind(format!("{}-{}", size, idx))
+            .bind(format!("contact@{}.be", size))
+            .bind(format!("+32 2 {} {} {}", rng.gen_range(100..999), rng.gen_range(10..99), rng.gen_range(10..99)))
+            .bind(if *size == "large" { "enterprise" } else if *size == "medium" { "professional" } else { "basic" })
+            .bind(*num_buildings as i32)
+            .bind(if *size == "large" { 50 } else if *size == "medium" { 20 } else { 10 })
+            .bind(true)
+            .bind(now)
+            .bind(now)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to create organization: {}", e))?;
+
+            // Create admin user for this org
+            let user_id = Uuid::new_v4();
+            let password_hash = hash("admin123", DEFAULT_COST)
+                .map_err(|e| format!("Failed to hash password: {}", e))?;
+
+            sqlx::query(
+                "INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+            )
+            .bind(user_id)
+            .bind(format!("admin@{}.be", size))
+            .bind(&password_hash)
+            .bind("Admin")
+            .bind(org_name.split_whitespace().next().unwrap_or("User"))
+            .bind("admin")
+            .bind(Some(org_id))
+            .bind(true)
+            .bind(now)
+            .bind(now)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to create user: {}", e))?;
+
+            // Create owners pool for this org
+            let num_owners = (target_units * 2 / 3) as usize; // ~66% occupancy
+            let mut owner_ids = Vec::new();
+
+            for o in 0..num_owners {
+                let owner_id = Uuid::new_v4();
+                let first_names = vec!["Pierre", "Marie", "Jean", "Sophie", "Luc", "Anne", "François", "Julie", "Thomas", "Emma"];
+                let last_names = vec!["Dupont", "Martin", "Bernard", "Dubois", "Laurent", "Simon", "Michel", "Lefebvre", "Moreau", "Garcia"];
+
+                sqlx::query(
+                    "INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+                )
+                .bind(owner_id)
+                .bind(org_id)
+                .bind(first_names[rng.gen_range(0..first_names.len())])
+                .bind(last_names[rng.gen_range(0..last_names.len())])
+                .bind(format!("owner{}@{}.be", o + 1, size))
+                .bind(format!("+32 {} {} {} {}",
+                    if rng.gen_bool(0.5) { "2" } else { "4" },
+                    rng.gen_range(100..999),
+                    rng.gen_range(10..99),
+                    rng.gen_range(10..99)
+                ))
+                .bind(now)
+                .bind(now)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to create owner: {}", e))?;
+
+                owner_ids.push(owner_id);
+            }
+
+            total_owners += num_owners;
+
+            // Create buildings for this org
+            let units_per_building = target_units / num_buildings;
+            let mut org_units = 0;
+
+            for b in 0..*num_buildings {
+                let building_id = Uuid::new_v4();
+                let city = cities[rng.gen_range(0..cities.len())];
+                let street_type = street_types[rng.gen_range(0..street_types.len())];
+                let street_name = street_names[rng.gen_range(0..street_names.len())];
+                let building_name = format!("Résidence {}", street_name);
+
+                sqlx::query(
+                    "INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+                )
+                .bind(building_id)
+                .bind(org_id)
+                .bind(&building_name)
+                .bind(format!("{} {} {}", street_type, street_name, rng.gen_range(1..200)))
+                .bind(city)
+                .bind(format!("{}", rng.gen_range(1000..9999)))
+                .bind("Belgium")
+                .bind(units_per_building as i32)
+                .bind(rng.gen_range(1960..2024))
+                .bind(now)
+                .bind(now)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to create building: {}", e))?;
+
+                // Create units for this building
+                let units_this_building = if b == num_buildings - 1 {
+                    // Last building gets remainder
+                    target_units - org_units
+                } else {
+                    units_per_building
+                };
+
+                for u in 0..units_this_building {
+                    let floor = (u / 4) as i32; // 4 units per floor
+                    let unit_number = format!("{}.{}", floor, (u % 4) + 1);
+
+                    // 66% chance to have an owner
+                    let owner_id = if rng.gen_bool(0.66) && !owner_ids.is_empty() {
+                        Some(owner_ids[rng.gen_range(0..owner_ids.len())])
+                    } else {
+                        None
+                    };
+
+                    let unit_types = vec!["apartment", "studio", "duplex", "penthouse"];
+                    let unit_type = unit_types[rng.gen_range(0..unit_types.len())];
+
+                    sqlx::query(
+                        "INSERT INTO units (id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, $5::unit_type, $6, $7, $8, $9, $10, $11)"
+                    )
+                    .bind(Uuid::new_v4())
+                    .bind(org_id)
+                    .bind(building_id)
+                    .bind(&unit_number)
+                    .bind(unit_type)
+                    .bind(floor)
+                    .bind(rng.gen_range(45.0..150.0))
+                    .bind(rng.gen_range(50..200) as i32)
+                    .bind(owner_id)
+                    .bind(now)
+                    .bind(now)
+                    .execute(&self.pool)
+                    .await
+                    .map_err(|e| format!("Failed to create unit: {}", e))?;
+                }
+
+                org_units += units_this_building;
+
+                // Create 2-3 expenses per building
+                let num_expenses = rng.gen_range(2..=3);
+                let expense_types = vec![
+                    ("Entretien ascenseur", 450.0, 800.0),
+                    ("Nettoyage parties communes", 300.0, 600.0),
+                    ("Chauffage collectif", 1500.0, 3000.0),
+                    ("Assurance immeuble", 800.0, 1500.0),
+                    ("Travaux façade", 5000.0, 15000.0),
+                ];
+
+                for _ in 0..num_expenses {
+                    let (desc, min_amount, max_amount) = expense_types[rng.gen_range(0..expense_types.len())];
+                    let amount = rng.gen_range(min_amount..max_amount);
+                    let days_ago = rng.gen_range(0..90);
+                    let expense_date = Utc::now() - chrono::Duration::days(days_ago);
+
+                    sqlx::query(
+                        "INSERT INTO expenses (id, organization_id, building_id, description, amount, expense_date, due_date, is_paid, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+                    )
+                    .bind(Uuid::new_v4())
+                    .bind(org_id)
+                    .bind(building_id)
+                    .bind(desc)
+                    .bind(amount)
+                    .bind(expense_date)
+                    .bind(expense_date + chrono::Duration::days(30))
+                    .bind(rng.gen_bool(0.7)) // 70% paid
+                    .bind(now)
+                    .bind(now)
+                    .execute(&self.pool)
+                    .await
+                    .map_err(|e| format!("Failed to create expense: {}", e))?;
+
+                    total_expenses += 1;
+                }
+            }
+
+            total_buildings += num_buildings;
+            total_units += org_units as usize;
+
+            log::info!("  ✅ Created {} buildings, {} units, {} owners", num_buildings, org_units, num_owners);
+        }
+
+        Ok(format!(
+            "✅ Realistic seed data created successfully!\n\
+             Total: {} orgs, {} buildings, {} units, {} owners, {} expenses\n\
+             \nTest credentials:\n\
+             - Small org:  admin@small.be / admin123\n\
+             - Medium org: admin@medium.be / admin123\n\
+             - Large org:  admin@large.be / admin123",
+            org_configs.len(),
+            total_buildings,
+            total_units,
+            total_owners,
+            total_expenses
+        ))
     }
 
     /// Clear all data (DANGEROUS - use with caution!)

@@ -100,3 +100,50 @@ pub async fn clear_demo_data(data: web::Data<AppState>, req: HttpRequest) -> imp
         })),
     }
 }
+
+/// Seed realistic data for load testing (SuperAdmin only)
+#[post("/seed/realistic")]
+pub async fn seed_realistic_data(data: web::Data<AppState>, req: HttpRequest) -> impl Responder {
+    let auth_header = match req.headers().get("Authorization") {
+        Some(header) => match header.to_str() {
+            Ok(s) => s,
+            Err(_) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": "Invalid authorization header"
+                }))
+            }
+        },
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": "Missing authorization header"
+            }))
+        }
+    };
+
+    let token = auth_header.trim_start_matches("Bearer ").trim();
+
+    match data.auth_use_cases.verify_token(token) {
+        Ok(claims) => {
+            if claims.role != "superadmin" {
+                return HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": "Only SuperAdmin can seed realistic data"
+                }));
+            }
+
+            let seeder = DatabaseSeeder::new(data.pool.clone());
+
+            match seeder.seed_realistic_data().await {
+                Ok(message) => HttpResponse::Ok().json(serde_json::json!({
+                    "success": true,
+                    "message": message
+                })),
+                Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": e
+                })),
+            }
+        }
+        Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
+            "error": e
+        })),
+    }
+}
