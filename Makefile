@@ -91,7 +91,7 @@ coverage: ## 📊 Génération rapport de couverture
 
 lint: ## 🔍 Linter (clippy + prettier)
 	@echo "$(GREEN)🔍 Linting backend...$(NC)"
-	cd backend && cargo clippy --all-targets --all-features -- -D warnings
+	cd backend && SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings
 	@echo "$(GREEN)🔍 Linting frontend...$(NC)"
 	cd frontend && npx prettier --check .
 

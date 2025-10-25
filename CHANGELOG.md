@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Claude Code Development Infrastructure (2025-10-25)
+
+#### Claude Code Configuration
+
+**`.claude/` Structure**
+- Created comprehensive `.claude/` directory structure for guiding development with Claude Code
+- Added `.claude/README.md` with quick start guide and structure overview
+- Created `.claude/settings.local.json` with pre-approved permissions for common operations
+
+**Development Workflow Guides**
+- **Feature Workflow** (`.claude/guides/feature-workflow.md`): Complete step-by-step guide for developing new features with TDD, hexagonal architecture, pre-commit/pre-push checks, and PR creation
+- **Bugfix Workflow** (`.claude/guides/bugfix-workflow.md`): Guide for reproducing, investigating, fixing, and validating bugs
+- **Architecture Guide** (`.claude/guides/architecture-guide.md`): Hexagonal architecture and DDD patterns reference
+- **Hooks** (`.claude/hooks.md`): Documentation on pre-commit, post-commit, and pre-push hooks for automated doc generation and validation
+
+**Automation Scripts**
+- **Documentation Sync** (`.claude/scripts/sync-docs-structure.sh`): Automatically synchronizes `docs/backend/` structure with real backend codebase
+  - Generates RST mirror files for all entities, services, use cases, ports, DTOs, repositories, and handlers
+  - Creates/updates `docs/PROJECT_STRUCTURE.md` with current project tree
+  - Synced 63 files (9 entities, 3 services, 8 use cases, 10 ports, 10 DTOs, 10 repositories, 13 handlers)
+
+#### Documentation Structure Sync
+
+**Backend Documentation Mirror**
+- Created complete RST documentation structure mirroring backend source code
+- **Domain Layer**:
+  - 9 entities (including new `refresh_token.rst`)
+  - 3 services (`expense_calculator`, `pcn_exporter`, `pcn_mapper`)
+- **Application Layer**:
+  - 8 use cases (all CRUD operations documented)
+  - 10 ports (repository interfaces)
+  - 10 DTOs (data transfer objects)
+- **Infrastructure Layer**:
+  - 10 repository implementations
+  - 13 HTTP handlers
+
+**Project Structure Documentation**
+- Added `docs/PROJECT_STRUCTURE.md` with automatically generated project tree
+- Shows complete backend hexagonal architecture structure
+- Includes frontend and test structure
+- Auto-updated by sync script
+
+#### Security Policy
+
+**SECURITY.md**
+- Added comprehensive security policy with vulnerability reporting process
+- Contact email: gilmry+koprogo@gmail.com
+- Response time commitment: within 48 hours
+- Security best practices for contributors:
+  - Authentication & authorization guidelines
+  - Data protection (GDPR compliance)
+  - Input validation patterns
+  - Dependency management
+  - Secure development workflow (pre-commit/pre-push checks)
+- Common vulnerabilities to avoid with code examples (SQL injection, auth bypass, sensitive data exposure, path traversal)
+- Security testing guidelines (unit and integration tests)
+- Security checklist for reviews
+
+#### Code Quality Improvements
+
+**Clippy Fixes**
+- Fixed useless vec! warnings by replacing with array literals in seed files
+- Added `SQLX_OFFLINE=true` to `make lint` target for offline compilation
+- All clippy warnings resolved
+
+**Makefile Enhancements**
+- Updated `lint` target to use `SQLX_OFFLINE=true` for compilation without database
+- Pre-commit and pre-push targets now work reliably in offline mode
+
 ### Added - Documentation Setup with Sphinx & Rust API Docs (2025-10-25)
 
 #### Documentation Infrastructure

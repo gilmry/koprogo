@@ -1,12 +1,12 @@
 use crate::domain::entities::{User, UserRole};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Utc;
-use sqlx::{PgPool, Row};
-use uuid::Uuid;
-use rand::Rng;
-use fake::Fake;
 use fake::faker::address::en::*;
 use fake::faker::name::en::*;
+use fake::Fake;
+use rand::Rng;
+use sqlx::{PgPool, Row};
+use uuid::Uuid;
 
 pub struct DatabaseSeeder {
     pool: PgPool,
@@ -263,7 +263,16 @@ impl DatabaseSeeder {
             .await?;
 
         let _unit3_id = self
-            .create_demo_unit(org1_id, building1_id, None, "103", "apartment", Some(1), 85.0, 300.0)
+            .create_demo_unit(
+                org1_id,
+                building1_id,
+                None,
+                "103",
+                "apartment",
+                Some(1),
+                85.0,
+                300.0,
+            )
             .await?;
 
         let _unit4_id = self
@@ -807,7 +816,8 @@ impl DatabaseSeeder {
             .await
             .map_err(|e| format!("Failed to count organizations: {}", e))?;
 
-        let count: i64 = existing_orgs.try_get("count")
+        let count: i64 = existing_orgs
+            .try_get("count")
             .map_err(|e| format!("Failed to get count: {}", e))?;
         if count > 0 {
             return Err("Data already exists. Please clear the database first.".to_string());
@@ -816,18 +826,35 @@ impl DatabaseSeeder {
         let mut rng = rand::rng();
 
         // Belgian cities for variety
-        let cities = vec!["Bruxelles", "Anvers", "Gand", "Charleroi", "Liège", "Bruges", "Namur", "Louvain"];
-        let street_types = vec!["Rue", "Avenue", "Boulevard", "Place", "Chaussée"];
-        let street_names = vec![
-            "des Fleurs", "du Parc", "de la Gare", "Royale", "de l'Église",
-            "du Commerce", "de la Liberté", "des Arts", "Victor Hugo", "Louise"
+        let cities = [
+            "Bruxelles",
+            "Anvers",
+            "Gand",
+            "Charleroi",
+            "Liège",
+            "Bruges",
+            "Namur",
+            "Louvain",
+        ];
+        let street_types = ["Rue", "Avenue", "Boulevard", "Place", "Chaussée"];
+        let street_names = [
+            "des Fleurs",
+            "du Parc",
+            "de la Gare",
+            "Royale",
+            "de l'Église",
+            "du Commerce",
+            "de la Liberté",
+            "des Arts",
+            "Victor Hugo",
+            "Louise",
         ];
 
         // Create 3 organizations with different sizes
-        let org_configs = vec![
-            ("Petite Copropriété SPRL", "small", 5, 30),      // 5 buildings, ~30 units
-            ("Copropriété Moyenne SA", "medium", 8, 60),       // 8 buildings, ~60 units
-            ("Grande Résidence NV", "large", 10, 100),         // 10 buildings, ~100 units
+        let org_configs = [
+            ("Petite Copropriété SPRL", "small", 5, 30), // 5 buildings, ~30 units
+            ("Copropriété Moyenne SA", "medium", 8, 60), // 8 buildings, ~60 units
+            ("Grande Résidence NV", "large", 10, 100),   // 10 buildings, ~100 units
         ];
 
         let mut total_buildings = 0;
@@ -839,7 +866,13 @@ impl DatabaseSeeder {
             let org_id = Uuid::new_v4();
             let now = Utc::now();
 
-            log::info!("📍 Organization {}: {} ({} buildings, ~{} units)", idx + 1, org_name, num_buildings, target_units);
+            log::info!(
+                "📍 Organization {}: {} ({} buildings, ~{} units)",
+                idx + 1,
+                org_name,
+                num_buildings,
+                target_units
+            );
 
             // Create organization
             sqlx::query(
@@ -852,7 +885,7 @@ impl DatabaseSeeder {
             .bind(format!("contact@{}.be", size))
             .bind(format!("+32 2 {} {} {}", rng.random_range(100..999), rng.random_range(10..99), rng.random_range(10..99)))
             .bind(if *size == "large" { "enterprise" } else if *size == "medium" { "professional" } else { "starter" })
-            .bind(*num_buildings as i32)
+            .bind(*num_buildings)
             .bind(if *size == "large" { 50 } else if *size == "medium" { 20 } else { 10 })
             .bind(true)
             .bind(now)
@@ -950,7 +983,7 @@ impl DatabaseSeeder {
                 .bind(city)
                 .bind(format!("{}", rng.random_range(1000..9999)))
                 .bind("Belgium")
-                .bind(units_per_building as i32)
+                .bind(units_per_building)
                 .bind(rng.random_range(1960..2024))
                 .bind(now)
                 .bind(now)
@@ -967,7 +1000,7 @@ impl DatabaseSeeder {
                 };
 
                 for u in 0..units_this_building {
-                    let floor = (u / 4) as i32; // 4 units per floor
+                    let floor = u / 4; // 4 units per floor
                     let unit_number = format!("{}.{}", floor, (u % 4) + 1);
 
                     // 66% chance to have an owner
@@ -978,7 +1011,7 @@ impl DatabaseSeeder {
                     };
 
                     // Valid unit_type ENUM values: apartment, parking, cellar, commercial, other
-                    let unit_types = vec!["apartment", "apartment", "apartment", "parking", "cellar"];
+                    let unit_types = ["apartment", "apartment", "apartment", "parking", "cellar"];
                     let unit_type = unit_types[rng.random_range(0..unit_types.len())];
 
                     sqlx::query(
@@ -1005,7 +1038,7 @@ impl DatabaseSeeder {
 
                 // Create 2-3 expenses per building
                 let num_expenses = rng.random_range(2..=3);
-                let expense_types = vec![
+                let expense_types = [
                     ("Entretien ascenseur", 450.0, 800.0),
                     ("Nettoyage parties communes", 300.0, 600.0),
                     ("Chauffage collectif", 1500.0, 3000.0),
@@ -1014,17 +1047,30 @@ impl DatabaseSeeder {
                 ];
 
                 for _ in 0..num_expenses {
-                    let (desc, min_amount, max_amount) = expense_types[rng.random_range(0..expense_types.len())];
+                    let (desc, min_amount, max_amount) =
+                        expense_types[rng.random_range(0..expense_types.len())];
                     let amount = rng.random_range(min_amount..max_amount);
                     let days_ago = rng.random_range(0..90);
                     let expense_date = Utc::now() - chrono::Duration::days(days_ago);
 
                     // Valid expense_category ENUM: maintenance, repairs, insurance, utilities, cleaning, administration, works, other
-                    let categories = vec!["maintenance", "repairs", "insurance", "utilities", "cleaning", "administration", "works"];
+                    let categories = [
+                        "maintenance",
+                        "repairs",
+                        "insurance",
+                        "utilities",
+                        "cleaning",
+                        "administration",
+                        "works",
+                    ];
                     let category = categories[rng.random_range(0..categories.len())];
 
                     // Valid payment_status ENUM: pending, paid, overdue, cancelled
-                    let payment_status = if rng.random_bool(0.7) { "paid" } else { "pending" };
+                    let payment_status = if rng.random_bool(0.7) {
+                        "paid"
+                    } else {
+                        "pending"
+                    };
 
                     sqlx::query(
                         "INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
@@ -1051,7 +1097,12 @@ impl DatabaseSeeder {
             total_buildings += num_buildings;
             total_units += org_units as usize;
 
-            log::info!("  ✅ Created {} buildings, {} units, {} owners", num_buildings, org_units, num_owners);
+            log::info!(
+                "  ✅ Created {} buildings, {} units, {} owners",
+                num_buildings,
+                org_units,
+                num_owners
+            );
         }
 
         Ok(format!(

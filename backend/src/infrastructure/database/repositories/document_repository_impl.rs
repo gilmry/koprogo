@@ -263,7 +263,8 @@ impl DocumentRepository for PostgresDocumentRepository {
         let documents: Vec<Document> = rows
             .iter()
             .map(|row| {
-                let document_type_str: String = row.try_get("document_type")
+                let document_type_str: String = row
+                    .try_get("document_type")
                     .unwrap_or_else(|_| "other".to_string());
                 let document_type = match document_type_str.as_str() {
                     "meeting_minutes" => DocumentType::MeetingMinutes,

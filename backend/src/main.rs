@@ -100,7 +100,12 @@ async fn main() -> std::io::Result<()> {
         pool.clone(),
     ));
 
-    log::info!("Starting server at {}:{} with {} workers", server_host, server_port, actix_workers);
+    log::info!(
+        "Starting server at {}:{} with {} workers",
+        server_host,
+        server_port,
+        actix_workers
+    );
 
     // Configure rate limiter: 100 requests per minute per IP
     // Allows bursts up to 100 requests, then refills at 100/60000ms rate

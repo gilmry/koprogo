@@ -247,14 +247,16 @@ impl MeetingRepository for PostgresMeetingRepository {
         let meetings: Vec<Meeting> = rows
             .iter()
             .map(|row| {
-                let meeting_type_str: String = row.try_get("meeting_type")
+                let meeting_type_str: String = row
+                    .try_get("meeting_type")
                     .unwrap_or_else(|_| "ordinary".to_string());
                 let meeting_type = match meeting_type_str.as_str() {
                     "extraordinary" => crate::domain::entities::MeetingType::Extraordinary,
                     _ => crate::domain::entities::MeetingType::Ordinary,
                 };
 
-                let status_str: String = row.try_get("status")
+                let status_str: String = row
+                    .try_get("status")
                     .unwrap_or_else(|_| "scheduled".to_string());
                 let status = match status_str.as_str() {
                     "completed" => crate::domain::entities::MeetingStatus::Completed,

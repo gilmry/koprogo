@@ -1,15 +1,16 @@
 use chrono::Utc;
+use rand::Rng;
 use sqlx::PgPool;
 use std::env;
 use uuid::Uuid;
-use rand::Rng;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
 
-    let database_url = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgresql://koprogo:koprogo123@localhost:5432/koprogo_db".to_string());
+    let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| {
+        "postgresql://koprogo:koprogo123@localhost:5432/koprogo_db".to_string()
+    });
 
     println!("🌱 Connecting to database...");
     let pool = PgPool::connect(&database_url).await?;
@@ -23,25 +24,48 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::rng();
 
     // Belgian cities for variety
-    let cities = vec!["Bruxelles", "Anvers", "Gand", "Charleroi", "Liège", "Bruges", "Namur", "Louvain"];
-    let street_types = vec!["Rue", "Avenue", "Boulevard", "Place", "Chaussée"];
-    let street_names = vec![
-        "des Fleurs", "du Parc", "de la Gare", "Royale", "de l'Église",
-        "du Commerce", "de la Liberté", "des Arts", "Victor Hugo", "Louise"
+    let cities = [
+        "Bruxelles",
+        "Anvers",
+        "Gand",
+        "Charleroi",
+        "Liège",
+        "Bruges",
+        "Namur",
+        "Louvain",
+    ];
+    let street_types = ["Rue", "Avenue", "Boulevard", "Place", "Chaussée"];
+    let street_names = [
+        "des Fleurs",
+        "du Parc",
+        "de la Gare",
+        "Royale",
+        "de l'Église",
+        "du Commerce",
+        "de la Liberté",
+        "des Arts",
+        "Victor Hugo",
+        "Louise",
     ];
 
     // Create 3 organizations with different sizes
-    let org_configs = vec![
-        ("Petite Copropriété SPRL", "small", 5, 30),      // 5 buildings, ~30 units
-        ("Copropriété Moyenne SA", "medium", 8, 60),       // 8 buildings, ~60 units
-        ("Grande Résidence NV", "large", 10, 100),         // 10 buildings, ~100 units
+    let org_configs = [
+        ("Petite Copropriété SPRL", "small", 5, 30), // 5 buildings, ~30 units
+        ("Copropriété Moyenne SA", "medium", 8, 60), // 8 buildings, ~60 units
+        ("Grande Résidence NV", "large", 10, 100),   // 10 buildings, ~100 units
     ];
 
     for (idx, (org_name, size, num_buildings, target_units)) in org_configs.iter().enumerate() {
         let org_id = Uuid::new_v4();
         let now = Utc::now();
 
-        println!("📍 Organization {}: {} ({} buildings, ~{} units)", idx + 1, org_name, num_buildings, target_units);
+        println!(
+            "📍 Organization {}: {} ({} buildings, ~{} units)",
+            idx + 1,
+            org_name,
+            num_buildings,
+            target_units
+        );
 
         // Create organization
         sqlx::query(
@@ -54,7 +78,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .bind(format!("contact@{}.be", size))
         .bind(format!("+32 2 {} {} {}", rng.random_range(100..999), rng.random_range(10..99), rng.random_range(10..99)))
         .bind(if *size == "large" { "enterprise" } else if *size == "medium" { "professional" } else { "basic" })
-        .bind(*num_buildings as i32)
+        .bind(*num_buildings)
         .bind(if *size == "large" { 50 } else if *size == "medium" { 20 } else { 10 })
         .bind(true)
         .bind(now)
@@ -89,8 +113,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         for o in 0..num_owners {
             let owner_id = Uuid::new_v4();
-            let first_names = vec!["Pierre", "Marie", "Jean", "Sophie", "Luc", "Anne", "François", "Julie", "Thomas", "Emma"];
-            let last_names = vec!["Dupont", "Martin", "Bernard", "Dubois", "Laurent", "Simon", "Michel", "Lefebvre", "Moreau", "Garcia"];
+            let first_names = [
+                "Pierre",
+                "Marie",
+                "Jean",
+                "Sophie",
+                "Luc",
+                "Anne",
+                "François",
+                "Julie",
+                "Thomas",
+                "Emma",
+            ];
+            let last_names = [
+                "Dupont", "Martin", "Bernard", "Dubois", "Laurent", "Simon", "Michel", "Lefebvre",
+                "Moreau", "Garcia",
+            ];
 
             sqlx::query(
                 "INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, created_at, updated_at)
@@ -137,7 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .bind(city)
             .bind(format!("{}", rng.random_range(1000..9999)))
             .bind("Belgium")
-            .bind(units_per_building as i32)
+            .bind(units_per_building)
             .bind(rng.random_range(1960..2024))
             .bind(now)
             .bind(now)
@@ -153,7 +191,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             for u in 0..units_this_building {
-                let floor = (u / 4) as i32; // 4 units per floor
+                let floor = u / 4; // 4 units per floor
                 let unit_number = format!("{}.{}", floor, (u % 4) + 1);
 
                 // 66% chance to have an owner
@@ -164,7 +202,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 // Valid unit_type ENUM values: apartment, parking, cellar, commercial, other
-                let unit_types = vec!["apartment", "apartment", "apartment", "parking", "cellar"];
+                let unit_types = ["apartment", "apartment", "apartment", "parking", "cellar"];
                 let unit_type = unit_types[rng.random_range(0..unit_types.len())];
 
                 sqlx::query(
@@ -190,7 +228,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             // Create 2-3 expenses per building
             let num_expenses = rng.random_range(2..=3);
-            let expense_types = vec![
+            let expense_types = [
                 ("Entretien ascenseur", 450.0, 800.0),
                 ("Nettoyage parties communes", 300.0, 600.0),
                 ("Chauffage collectif", 1500.0, 3000.0),
@@ -199,17 +237,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             ];
 
             for _ in 0..num_expenses {
-                let (desc, min_amount, max_amount) = expense_types[rng.random_range(0..expense_types.len())];
+                let (desc, min_amount, max_amount) =
+                    expense_types[rng.random_range(0..expense_types.len())];
                 let amount = rng.random_range(min_amount..max_amount);
                 let days_ago = rng.random_range(0..90);
                 let expense_date = Utc::now() - chrono::Duration::days(days_ago);
 
                 // Valid expense_category ENUM: maintenance, repairs, insurance, utilities, cleaning, administration, works, other
-                let categories = vec!["maintenance", "repairs", "insurance", "utilities", "cleaning", "administration", "works"];
+                let categories = [
+                    "maintenance",
+                    "repairs",
+                    "insurance",
+                    "utilities",
+                    "cleaning",
+                    "administration",
+                    "works",
+                ];
                 let category = categories[rng.random_range(0..categories.len())];
 
                 // Valid payment_status ENUM: pending, paid, overdue, cancelled
-                let payment_status = if rng.random_bool(0.7) { "paid" } else { "pending" };
+                let payment_status = if rng.random_bool(0.7) {
+                    "paid"
+                } else {
+                    "pending"
+                };
 
                 sqlx::query(
                     "INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
@@ -230,7 +281,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        println!("  ✅ Created {} buildings, {} units, {} owners", num_buildings, total_units, num_owners);
+        println!(
+            "  ✅ Created {} buildings, {} units, {} owners",
+            num_buildings, total_units, num_owners
+        );
     }
 
     println!("\n✅ Realistic seed data created successfully!");
@@ -249,8 +303,12 @@ async fn clear_demo_data(pool: &PgPool) -> Result<(), Box<dyn std::error::Error>
     sqlx::query("DELETE FROM units").execute(pool).await?;
     sqlx::query("DELETE FROM owners").execute(pool).await?;
     sqlx::query("DELETE FROM buildings").execute(pool).await?;
-    sqlx::query("DELETE FROM users WHERE role != 'superadmin'").execute(pool).await?;
-    sqlx::query("DELETE FROM organizations").execute(pool).await?;
+    sqlx::query("DELETE FROM users WHERE role != 'superadmin'")
+        .execute(pool)
+        .await?;
+    sqlx::query("DELETE FROM organizations")
+        .execute(pool)
+        .await?;
 
     Ok(())
 }
