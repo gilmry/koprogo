@@ -43,7 +43,7 @@ thiserror = "2.0"
 anyhow = "1.0"
 
 # PDF generation
-printpdf = "0.7"
+printpdf = "0.8"
 
 # Excel generation
 rust_xlsxwriter = "0.76"
