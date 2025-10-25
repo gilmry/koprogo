@@ -234,6 +234,7 @@ impl DatabaseSeeder {
         // Create demo units
         let _unit1_id = self
             .create_demo_unit(
+                org1_id,
                 building1_id,
                 Some(owner1_db_id),
                 "101",
@@ -246,6 +247,7 @@ impl DatabaseSeeder {
 
         let _unit2_id = self
             .create_demo_unit(
+                org1_id,
                 building1_id,
                 Some(owner2_db_id),
                 "102",
@@ -257,11 +259,12 @@ impl DatabaseSeeder {
             .await?;
 
         let _unit3_id = self
-            .create_demo_unit(building1_id, None, "103", "apartment", Some(1), 85.0, 300.0)
+            .create_demo_unit(org1_id, building1_id, None, "103", "apartment", Some(1), 85.0, 300.0)
             .await?;
 
         let _unit4_id = self
             .create_demo_unit(
+                org1_id,
                 building2_id,
                 Some(owner3_db_id),
                 "201",
@@ -622,6 +625,7 @@ impl DatabaseSeeder {
     #[allow(clippy::too_many_arguments)]
     async fn create_demo_unit(
         &self,
+        organization_id: Uuid,
         building_id: Uuid,
         owner_id: Option<Uuid>,
         unit_number: &str,
@@ -635,11 +639,12 @@ impl DatabaseSeeder {
 
         sqlx::query(
             r#"
-            INSERT INTO units (id, building_id, owner_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5::unit_type, $6, $7, $8, $9, $10)
+            INSERT INTO units (id, organization_id, building_id, owner_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6::unit_type, $7, $8, $9, $10, $11)
             "#
         )
         .bind(unit_id)
+        .bind(organization_id)
         .bind(building_id)
         .bind(owner_id)
         .bind(unit_number)
