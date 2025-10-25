@@ -16,16 +16,35 @@ Le nouveau seed `seed_realistic` génère des données proportionnelles à la ca
 
 ### Utilisation
 
+**Option 1: Via l'interface Superadmin (recommandé)**
+
+```bash
+# Se connecter en tant que superadmin
+curl -X POST https://api2.koprogo.com/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@koprogo.com","password":"admin123"}'
+
+# Utiliser le token reçu pour lancer le seed
+curl -X POST https://api2.koprogo.com/api/v1/seed/realistic \
+  -H "Authorization: Bearer <TOKEN>"
+```
+
+**Option 2: Via script bash (nécessite SSH sur le VPS)**
+
 ```bash
 cd backend
 
-# Option 1: Script automatisé (recommandé)
+# Script automatisé
 ./run-realistic-seed.sh
 
-# Option 2: Manuelle
+# Ou manuelle
 SQLX_OFFLINE=true cargo build --bin seed_realistic --release
 cargo run --bin seed_realistic --release
 ```
+
+**Option 3: Depuis l'interface web**
+
+Une fois connecté en tant que superadmin dans l'interface web, accéder à la section "Seed Data" et cliquer sur "Generate Realistic Data".
 
 ### Credentials de Test
 
