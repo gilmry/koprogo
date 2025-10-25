@@ -201,6 +201,11 @@ ci: lint test audit ## ✅ Vérifications CI locales (avant push)
 pre-commit: format lint ## 🎯 Pre-commit hook (format + lint)
 	@echo "$(GREEN)✅ Pre-commit OK$(NC)"
 
+setup-infra: ## 🏗️  Setup complet infrastructure OVH (Terraform + Ansible)
+	@echo "$(GREEN)🏗️  Setup Infrastructure OVH Cloud...$(NC)"
+	@echo ""
+	@./infrastructure/setup-infra.sh
+
 deploy-prod: ## 🚀 Déployer en production (via GitOps)
 	@echo "$(GREEN)🚀 Déploiement production...$(NC)"
 	@echo "$(YELLOW)⚠️  Assurez-vous d'avoir push sur main$(NC)"

@@ -1,20 +1,23 @@
 # KoproGo - Déploiement VPS Automatisé (Terraform + Ansible)
 
-Déploiement automatique de KoproGo sur OVH Cloud avec Terraform + Ansible + GitOps.
+Déploiement automatique de KoproGo sur OVH Public Cloud avec Terraform + Ansible + GitOps.
 
-**Pour qui ?** Geeks qui veulent déployer KoproGo en 5 minutes avec auto-update automatique.
+**Pour qui ?** Geeks qui veulent déployer KoproGo en production avec une commande.
 
 ---
 
 ## 🎯 Ce que fait ce déploiement
 
-1. **Terraform** : Provisionne un VPS OVH (1 vCPU, 2GB RAM, ~7€/mois)
-2. **Ansible** : Configure le serveur (Docker, firewall, sécurité)
-3. **GitOps** : Déploie KoproGo avec auto-update quotidien depuis GitHub
-4. **Backups** : Backups PostgreSQL quotidiens automatiques
-5. **Monitoring** : Health checks toutes les 5 minutes
+1. **Terraform** : Provisionne un VPS OVH (2 vCPU, 4GB RAM, ~14€/mois)
+2. **Ansible** : Configure le serveur (Docker, Git, Firewall, Fail2ban)
+3. **Traefik** : Reverse proxy avec SSL automatique (Let's Encrypt)
+4. **Docker Compose** : Déploie Backend + Frontend + PostgreSQL
+5. **DNS** : Configuration automatique via API OVH (optionnel)
+6. **GitOps** : Auto-update quotidien depuis GitHub (3h du matin)
+7. **Backups** : Backups PostgreSQL quotidiens (2h du matin)
+8. **Monitoring** : Health checks toutes les 5 minutes
 
-**Résultat** : KoproGo tourne sur votre VPS et se met à jour automatiquement chaque nuit.
+**Résultat** : KoproGo tourne sur votre VPS avec HTTPS et se met à jour automatiquement.
 
 ---
 
@@ -31,120 +34,202 @@ ansible --version
 
 # Clé SSH générée
 ls ~/.ssh/id_rsa.pub
+
+# Si pas de clé SSH
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
 ```
 
 ### Compte OVH Cloud
 
-1. Créer un compte : https://www.ovh.com/manager/public-cloud/
-2. Créer un projet Public Cloud
-3. Obtenir credentials API :
-   - Endpoint : `ovh-eu`
-   - Application Key
-   - Application Secret
-   - Consumer Key
+1. **Créer un compte** : https://www.ovh.com/manager/public-cloud/
+2. **Créer un projet Public Cloud**
+3. **Créer un utilisateur OpenStack** (requis pour Terraform)
+4. **Obtenir credentials OVH API** (optionnel, pour DNS automatique)
 
-**Obtenir credentials OVH** :
+---
+
+## 🚀 Déploiement Ultra-Rapide (1 commande)
+
+### Déploiement complet automatisé
+
+Depuis la racine du projet :
+
 ```bash
-# Aller sur : https://api.ovh.com/createToken/
-# Droits requis : GET/POST/PUT/DELETE sur /cloud/*
-# Récupérer : Application Key, Application Secret, Consumer Key
+make setup-infra
+```
+
+Le script interactif vous guide à travers toutes les étapes :
+1. Création des credentials OVH API (optionnel, pour DNS)
+2. Création de l'utilisateur OpenStack avec les bons rôles
+3. Téléchargement du fichier OpenRC (région GRA9)
+4. Configuration du domaine (optionnel)
+5. Déploiement Terraform (provisionne le VPS)
+6. Configuration DNS automatique (si domaine configuré)
+7. Déploiement Ansible (configure et déploie l'application)
+
+**Durée totale** : ~20-30 minutes (dont 15-20 min d'attente automatique)
+
+---
+
+## 📖 Guide Détaillé Pas-à-Pas
+
+Si vous préférez suivre le processus étape par étape :
+
+### Étape 1 : Créer un utilisateur OpenStack (REQUIS)
+
+1. **OVH Manager** → **Public Cloud** → **Projet Management** → **Users & Roles**
+2. Cliquer sur **Créer un utilisateur OpenStack**
+3. **Choisir TOUS les rôles suivants** (IMPORTANT !) :
+   - ☑ **Administrator** (CRITIQUE pour Terraform)
+   - ☑ Compute Operator
+   - ☑ Network Operator
+   - ☑ Network Security Operator
+   - ☑ Image Operator
+   - ☑ Volume Operator
+   - ☑ ObjectStore Operator
+   - ☑ LoadBalancer Operator
+   - ☑ Backup Operator
+   - ☑ Infrastructure Supervisor
+   - ☑ KeyManager Operator
+   - ☑ KeyManager Read
+
+4. Créer l'utilisateur et **noter** :
+   - `OS_USERNAME` (format: `user-XXXXXXXXXXXX`)
+   - `OS_PASSWORD` (généré automatiquement, à copier immédiatement)
+
+### Étape 2 : Télécharger le fichier OpenRC (REQUIS)
+
+1. **OVH Manager** → **Public Cloud** → **Users & Roles**
+2. Cliquer sur **...** à côté de votre utilisateur
+3. Sélectionner **Download OpenStack's RC file**
+4. **Ouvrir le fichier** et trouver la ligne :
+   ```bash
+   export OS_REGION_NAME="GRA9"
+   ```
+5. **Noter la région** (exemple: GRA9, GRA11, SBG5, etc.)
+
+> **IMPORTANT** : Utilisez toujours la région exacte du fichier OpenRC !
+
+### Étape 3 : Créer credentials OVH API (OPTIONNEL, pour DNS automatique)
+
+**Seulement si vous voulez configurer automatiquement le DNS**
+
+1. Aller sur : https://www.ovh.com/auth/api/createToken
+2. **Application name** : `KoproGo Infrastructure`
+3. **Application description** : `Terraform + Ansible deployment`
+4. **Validity** : `Unlimited`
+5. **Rights** :
+   - `GET /domain/*`
+   - `POST /domain/*`
+   - `PUT /domain/*`
+   - `DELETE /domain/*`
+6. Cliquer sur **Create keys**
+7. **Noter** :
+   - `OVH_APPLICATION_KEY`
+   - `OVH_APPLICATION_SECRET`
+   - `OVH_CONSUMER_KEY`
+
+### Étape 4 : Lancer le déploiement
+
+```bash
+# Depuis la racine du projet
+make setup-infra
+```
+
+Le script vous demandera :
+- Credentials OVH API (si DNS automatique souhaité)
+- ID du projet OVH Cloud
+- Username et password OpenStack
+- Région OpenRC (ex: GRA9)
+- Domaine (optionnel)
+- Email pour SSL (si domaine configuré)
+
+### Étape 5 : Vérifier le déploiement
+
+Après le déploiement :
+
+```bash
+# Si vous avez configuré un domaine
+curl https://votre-domaine.com/api/v1/health
+
+# Sinon, utiliser l'IP du VPS
+curl http://51.210.XXX.XXX:8080/api/v1/health
+
+# Devrait retourner : {"status":"healthy","timestamp":"..."}
+```
+
+Se connecter au VPS :
+
+```bash
+# Récupérer l'IP
+cd infrastructure/terraform
+terraform output vps_ip
+
+# SSH
+ssh ubuntu@51.210.XXX.XXX
+
+# Sur le VPS
+sudo su - koprogo
+cd ~/koprogo/deploy/production
+docker compose ps
+docker compose logs -f
 ```
 
 ---
 
-## 🚀 Déploiement Rapide (5 minutes)
+## 🏗️ Architecture de Déploiement
 
-### Étape 1 : Configurer credentials OVH
+Le déploiement utilise une stack complète avec reverse proxy et SSL automatique :
 
-```bash
-cd infrastructure/simple-vps
-
-# Exporter credentials OVH
-export OVH_ENDPOINT="ovh-eu"
-export OVH_APPLICATION_KEY="votre_application_key"
-export OVH_APPLICATION_SECRET="votre_application_secret"
-export OVH_CONSUMER_KEY="votre_consumer_key"
-
-# (Optionnel) Domaine pour SSL automatique
-export KOPROGO_DOMAIN="koprogo.com"  # Laissez vide si pas de domaine
-export ACME_EMAIL="admin@koprogo.com"
+```
+Internet (HTTPS)
+      ↓
+Traefik (Reverse Proxy + SSL Let's Encrypt)
+      ↓
+   ┌──────────────────────────────────────┐
+   │         Docker Compose               │
+   │                                      │
+   │  ┌──────────┐  ┌──────────┐        │
+   │  │ Frontend │  │ Backend  │        │
+   │  │  (Astro  │  │  (Rust   │        │
+   │  │  Svelte) │  │  Actix)  │        │
+   │  └─────┬────┘  └────┬─────┘        │
+   │        │            │               │
+   │        └────────────┼──────────┐    │
+   │                     │          │    │
+   │              ┌──────▼──────┐   │    │
+   │              │  PostgreSQL │   │    │
+   │              │     15      │   │    │
+   │              └─────────────┘   │    │
+   └──────────────────────────────────────┘
 ```
 
-### Étape 2 : Configurer Terraform
+**Composants** :
 
-```bash
-cd terraform
+1. **Traefik** (Port 80/443)
+   - Reverse proxy automatique
+   - Gestion SSL Let's Encrypt
+   - Redirection HTTP → HTTPS
+   - Headers de sécurité
 
-# Copier et éditer variables
-cp terraform.tfvars.example terraform.tfvars
-nano terraform.tfvars
+2. **Backend Rust** (Port interne 8080)
+   - API REST (Actix-web)
+   - Connexion PostgreSQL via pool
+   - CORS configuré pour frontend
 
-# Remplir :
-# - ovh_service_name = "ID_DE_VOTRE_PROJET_OVH"
-# - ssh_public_key_path = "~/.ssh/id_rsa.pub"
-```
+3. **Frontend Astro/Svelte** (Port interne 3000)
+   - SSG (Static Site Generation)
+   - Islands Architecture
+   - Appels API vers backend
 
-### Étape 3 : Provisionner VPS avec Terraform
+4. **PostgreSQL 15** (Port interne 5432)
+   - Base de données persistante
+   - Volume Docker monté
+   - Backups quotidiens automatiques
 
-```bash
-# Initialiser Terraform
-terraform init
+**Fichiers déployés depuis** : `github.com/gilmry/koprogo/deploy/production`
 
-# Voir ce qui va être créé
-terraform plan
-
-# Créer le VPS (prend ~2 minutes)
-terraform apply
-
-# Récupérer l'IP du VPS
-terraform output vps_ip
-# Exemple output: 51.75.xxx.xxx
-```
-
-### Étape 4 : Configurer Ansible
-
-```bash
-cd ../ansible
-
-# Copier et éditer inventory
-cp inventory.ini.example inventory.ini
-nano inventory.ini
-
-# Remplacer YOUR_VPS_IP par l'IP obtenue via terraform output
-```
-
-### Étape 5 : Déployer KoproGo avec Ansible
-
-```bash
-# Tester connexion SSH
-ansible -i inventory.ini koprogo -m ping
-
-# Déployer KoproGo (prend ~5-10 minutes)
-ansible-playbook -i inventory.ini playbook.yml
-
-# Si vous avez un domaine, ajouter variables :
-ansible-playbook -i inventory.ini playbook.yml \
-  -e "domain=koprogo.com" \
-  -e "acme_email=admin@koprogo.com"
-```
-
-### Étape 6 : Vérifier déploiement
-
-```bash
-# Health check API
-curl http://$(terraform -chdir=../terraform output -raw vps_ip)/api/v1/health
-
-# Devrait retourner : {"status":"healthy"}
-
-# Se connecter au VPS
-ssh ubuntu@$(terraform -chdir=../terraform output -raw vps_ip)
-
-# Sur le VPS, vérifier services
-sudo su - koprogo
-cd ~/koprogo
-docker compose ps
-docker compose logs -f
-```
+**Variables d'environnement** : Générées automatiquement par Ansible via `env-production.j2`
 
 ---
 
@@ -295,12 +380,21 @@ docker system prune -a
 
 | Composant | Prix |
 |-----------|------|
-| VPS OVH Value (1 vCPU, 2GB RAM) | **7€ TTC/mois** |
+| VPS OVH d2-2 (2 vCPU, 4GB RAM, 25GB SSD) | **14€ TTC/mois** |
 | Domaine (optionnel) | ~12€/an (~1€/mois) |
 | SSL Let's Encrypt | **0€** |
-| **TOTAL** | **~7-8€/mois** |
+| Bande passante | **0€** (250 Mbit/s inclus) |
+| **TOTAL** | **~14-15€/mois** |
 
-**Capacité** : 1,000-1,500 copropriétés (validé par tests de charge)
+**Capacité estimée** :
+- 2,000-3,000 copropriétés
+- ~10,000-15,000 utilisateurs actifs
+- P99 latency < 5ms (testé en charge)
+
+**Pourquoi d2-2 ?**
+- Production-ready (haute disponibilité)
+- Performance adaptée au backend Rust + PostgreSQL
+- Marge pour pics de charge
 
 ---
 
@@ -328,54 +422,178 @@ unset OVH_APPLICATION_KEY OVH_APPLICATION_SECRET OVH_CONSUMER_KEY
 
 ## 🆘 Troubleshooting
 
-### Terraform : "Error creating instance"
+### Terraform : "No suitable endpoint could be found"
 
-**Cause** : Credentials OVH incorrects ou quota dépassé.
+**Symptôme** :
+```
+Error: No suitable endpoint could be found in the service catalog
+```
+
+**Cause** : Région incorrecte ou non compatible avec votre fichier OpenRC
 
 **Fix** :
-```bash
-# Vérifier credentials
-env | grep OVH
+1. **TOUJOURS** télécharger le fichier OpenRC depuis OVH Manager
+2. Ouvrir le fichier et trouver : `export OS_REGION_NAME="GRA9"`
+3. Utiliser EXACTEMENT cette région (GRA9, GRA11, SBG5, etc.)
+4. Ne PAS deviner ou utiliser des régions aléatoires
 
-# Vérifier quota projet OVH
-# https://www.ovh.com/manager/public-cloud/ → Quotas
+```bash
+# Vérifier le fichier OpenRC
+grep OS_REGION_NAME openrc.sh
+# export OS_REGION_NAME="GRA9"
+
+# Utiliser cette région exacte dans setup-infra.sh
+```
+
+### Terraform : "Insufficient permissions"
+
+**Symptôme** :
+```
+Error creating openstack_compute_instance_v2: Forbidden
+```
+
+**Cause** : Utilisateur OpenStack sans le rôle **Administrator**
+
+**Fix** :
+1. OVH Manager → Public Cloud → Users & Roles
+2. Supprimer l'utilisateur actuel
+3. Créer un nouvel utilisateur avec **TOUS** les rôles listés ci-dessus
+4. **Surtout** : Cocher **Administrator** (CRITIQUE !)
+
+### Terraform : "Variables not loaded"
+
+**Symptôme** :
+```
+Error: Missing required argument
+```
+
+**Cause** : Variables d'environnement non chargées
+
+**Fix** : Utiliser `source` pour charger les variables
+```bash
+# ✅ CORRECT
+source ./load-env.sh
+
+# ❌ FAUX (crée une nouvelle sous-shell)
+./load-env.sh
+
+# Ou utiliser le script de déploiement
+cd infrastructure/terraform
+./deploy.sh
 ```
 
 ### Ansible : "SSH connection failed"
 
-**Cause** : VPS pas encore prêt ou IP incorrecte.
+**Cause** : VPS pas encore prêt ou clé SSH incorrecte
 
 **Fix** :
 ```bash
 # Attendre 1-2 minutes après terraform apply
-sleep 60
+sleep 120
 
 # Tester SSH manuel
-ssh ubuntu@$(cd terraform && terraform output -raw vps_ip)
+ssh -o StrictHostKeyChecking=no ubuntu@51.210.XXX.XXX
+
+# Vérifier clé SSH
+ls -la ~/.ssh/id_rsa.pub
+```
+
+### Ansible : "Failed to set permissions" (become_user error)
+
+**Symptôme** :
+```
+Failed to set permissions on the temporary files Ansible needs to create
+chmod: invalid mode: 'A+user:koprogo:rx:allow'
+```
+
+**Cause** : Problème d'ACL avec Ansible 2.16+ sur Ubuntu
+
+**Fix** : Ce problème est déjà corrigé dans le playbook avec `become_method: su`
+
+### DNS : Propagation lente
+
+**Symptôme** : Le domaine ne pointe pas vers le VPS immédiatement
+
+**Cause** : Propagation DNS normale (1-60 minutes)
+
+**Fix** :
+```bash
+# Vérifier la configuration DNS (peut montrer ancienne IP)
+nslookup votre-domaine.com
+
+# Forcer requête vers les DNS OVH
+nslookup votre-domaine.com dns200.anycast.me
+
+# Attendre 5-10 minutes et retester
 ```
 
 ### Health check échoue
 
-**Cause** : Services Docker pas encore démarrés.
+**Cause** : Services Docker pas encore démarrés ou erreur de déploiement
 
 **Fix** :
 ```bash
-# Attendre 30 secondes
-sleep 30
+# Se connecter au VPS
+ssh ubuntu@VPS_IP
 
-# Vérifier logs
+# Vérifier les services
+sudo su - koprogo
+cd ~/koprogo/deploy/production
+docker compose ps
+
+# Vérifier les logs
 docker compose logs backend
+docker compose logs frontend
+docker compose logs postgres
+
+# Redémarrer si nécessaire
+docker compose restart
+
+# Si problème de build, forcer le rebuild
+docker compose down
+docker compose up -d --force-recreate
+```
+
+### Traefik : Certificat SSL pas généré
+
+**Symptôme** : HTTPS ne fonctionne pas, erreur de certificat
+
+**Cause** : DNS pas encore propagé ou domaine incorrect
+
+**Fix** :
+```bash
+# Vérifier que le DNS pointe vers le VPS
+nslookup votre-domaine.com
+
+# Vérifier les logs Traefik
+docker compose logs traefik
+
+# Vérifier le fichier acme.json
+ls -la /home/koprogo/koprogo/deploy/production/letsencrypt/acme.json
+
+# Si vide, attendre propagation DNS puis redémarrer Traefik
+docker compose restart traefik
 ```
 
 ---
 
 ## 📚 Ressources
 
-- **Guide complet déploiement** : [docs/VPS_DEPLOYMENT.md](../../docs/VPS_DEPLOYMENT.md)
+### Documentation KoproGo
+
+- **Lessons Learned** : [LESSONS-LEARNED.md](./LESSONS-LEARNED.md) - Tous les problèmes rencontrés et solutions
+- **Guide Terraform** : [terraform/README.md](./terraform/README.md)
+- **Guide Ansible** : [ansible/README.md](./ansible/README.md)
 - **GitOps manuel** : [docs/DEPLOY_GITOPS.md](../../docs/DEPLOY_GITOPS.md)
 - **Business plan** : [docs/BUSINESS_PLAN_BOOTSTRAP.md](../../docs/BUSINESS_PLAN_BOOTSTRAP.md)
-- **Terraform OVH** : https://registry.terraform.io/providers/ovh/ovh/latest/docs
-- **Ansible** : https://docs.ansible.com/
+
+### Documentation externe
+
+- **Terraform OpenStack Provider** : https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs
+- **OVH Public Cloud** : https://help.ovhcloud.com/csm/en-public-cloud-compute-getting-started
+- **Ansible** : https://docs.ansible.com/ansible/latest/
+- **Traefik** : https://doc.traefik.io/traefik/
+- **Let's Encrypt** : https://letsencrypt.org/docs/
 
 ---
 

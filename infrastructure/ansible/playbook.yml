@@ -127,36 +127,80 @@
         dest: "{{ koprogo_dir }}"
         version: "{{ koprogo_branch }}"
         force: yes
-      become_user: "{{ koprogo_user }}"
+
+    - name: Set ownership of KoproGo directory
+      file:
+        path: "{{ koprogo_dir }}"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        recurse: yes
 
     # ==========================================
     # 7. Configuration environnement
     # ==========================================
-    - name: Create .env file from template
+    - name: Create .env file for production deployment
       template:
-        src: env.j2
-        dest: "{{ koprogo_dir }}/.env"
+        src: env-production.j2
+        dest: "{{ koprogo_dir }}/deploy/production/.env"
         owner: "{{ koprogo_user }}"
         group: "{{ koprogo_user }}"
         mode: '0600'
 
     # ==========================================
-    # 8. Déploiement Docker Compose
+    # 8. Configuration DNS OVH (si domaine fourni)
     # ==========================================
-    - name: Pull Docker images
+    - name: Install Python OVH module
+      pip:
+        name: ovh
+        state: present
+      when: domain != '' and domain is defined
+
+    - name: Copy OVH DNS configuration script
+      copy:
+        src: configure-ovh-dns.py
+        dest: /tmp/configure-ovh-dns.py
+        mode: '0755'
+      when: domain != '' and domain is defined
+
+    - name: Configure OVH DNS
+      command: python3 /tmp/configure-ovh-dns.py
+      environment:
+        DOMAIN: "{{ domain }}"
+        TARGET_IP: "{{ ansible_host }}"
+        OVH_ENDPOINT: "{{ lookup('env', 'OVH_ENDPOINT') | default('ovh-eu', true) }}"
+        OVH_APPLICATION_KEY: "{{ lookup('env', 'OVH_APPLICATION_KEY') }}"
+        OVH_APPLICATION_SECRET: "{{ lookup('env', 'OVH_APPLICATION_SECRET') }}"
+        OVH_CONSUMER_KEY: "{{ lookup('env', 'OVH_CONSUMER_KEY') }}"
+      when: domain != '' and domain is defined and lookup('env', 'OVH_APPLICATION_KEY') != ''
+      register: dns_config
+      failed_when: false
+
+    - name: Display DNS configuration result
+      debug:
+        var: dns_config.stdout_lines
+      when: dns_config is defined and dns_config.stdout_lines is defined
+
+    # ==========================================
+    # 9. Déploiement Docker Compose (Production)
+    # ==========================================
+    - name: Pull Docker images from deploy/production
       command: docker compose pull
       args:
-        chdir: "{{ koprogo_dir }}"
-      become_user: "{{ koprogo_user }}"
+        chdir: "{{ koprogo_dir }}/deploy/production"
+      become: yes
+      become_user: root
+      failed_when: false
+      register: docker_pull
 
-    - name: Start KoproGo services
-      command: docker compose up -d --build
+    - name: Start KoproGo services from deploy/production
+      command: docker compose up -d
       args:
-        chdir: "{{ koprogo_dir }}"
-      become_user: "{{ koprogo_user }}"
+        chdir: "{{ koprogo_dir }}/deploy/production"
+      become: yes
+      become_user: root
 
     # ==========================================
-    # 9. Configuration GitOps Auto-Update
+    # 10. Configuration GitOps Auto-Update
     # ==========================================
     - name: Create auto-update script
       template:

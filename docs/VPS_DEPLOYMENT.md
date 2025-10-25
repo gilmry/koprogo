@@ -1,6 +1,10 @@
 # KoproGo VPS Deployment Guide
 
-Complete guide to deploying KoproGo on OVH Cloud France (low-cost, GDPR-native, ultra-low carbon footprint).
+**Guide complet de déploiement de KoproGo sur OVH Public Cloud avec Terraform + Ansible**
+
+Déploiement automatisé avec GitOps, SSL automatique, DNS automatique, backups et monitoring.
+
+---
 
 ## 🎯 Qui utilise ce guide ?
 
@@ -12,588 +16,641 @@ L'ASBL KoproGo utilise ce guide pour maintenir son infrastructure cloud multi-te
 ### 2. **Self-Hosting (Gratuit)** 🔓
 Copropriétés ou syndics qui veulent héberger leur propre instance KoproGo.
 
-**💡 Vous préférez l'auto-update automatique ?** Consultez plutôt **[DEPLOY_GITOPS.md](DEPLOY_GITOPS.md)** pour installation 1-click avec mises à jour GitHub automatiques.
+---
+
+## 🚀 TL;DR - Déploiement en 1 Commande
+
+Depuis la racine du projet KoproGo :
+
+```bash
+make setup-infra
+```
+
+Le script interactif vous guide à travers :
+1. ✅ Création credentials OVH API (optionnel, pour DNS automatique)
+2. ✅ Création utilisateur OpenStack avec tous les rôles nécessaires
+3. ✅ Téléchargement fichier OpenRC (région GRA9)
+4. ✅ Configuration domaine (optionnel)
+5. ✅ Déploiement Terraform (provisionne le VPS)
+6. ✅ Configuration DNS automatique via API OVH
+7. ✅ Déploiement Ansible (Docker, Traefik, KoproGo, PostgreSQL)
+
+**Durée totale** : ~20-30 minutes (dont 15-20 min d'attente automatique)
 
 ---
 
-## Architecture Overview
+## 🏗️ Architecture de Déploiement
 
 ```
-┌──────────────┐
-│ Users        │
-└──────┬───────┘
-       │
-   ┌───┴────┐
-   │        │
-   ▼        ▼
-┌─────────┐  ┌────────────────────────┐
-│ Vercel  │  │  VPS OVH Cloud France  │
-│ (Astro) │  │  1 vCPU / 2GB RAM     │
-│ Frontend│  │  ┌──────────────────┐  │
-│ Static  │──▶  │ Traefik (reverse │  │
-│ CDN     │     │ proxy + SSL)     │  │
-└─────────┘     └─────────┬────────┘  │
- Gratuit                  │           │
-                          ▼           │
-                  ┌──────────────┐    │
-                  │ Backend      │    │
-                  │ (Rust/Actix) │    │
-                  │ Docker       │    │
-                  └───────┬──────┘    │
-                          │           │
-                          ▼           │
-                  ┌──────────────┐    │
-                  │ PostgreSQL   │    │
-                  │ 16-alpine    │    │
-                  │ Docker       │    │
-                  └──────────────┘    │
-                                      │
-   Datacenter France                 │
-   60g CO₂/kWh (nucléaire)           │
-   0.12g CO₂/requête                 │
-└────────────────────────────────────┘
-   5€/mois
+Internet (HTTPS)
+      ↓
+Traefik (Reverse Proxy + SSL Let's Encrypt)
+      ↓
+   ┌──────────────────────────────────────┐
+   │     Docker Compose (VPS OVH)         │
+   │                                      │
+   │  ┌──────────┐  ┌──────────┐        │
+   │  │ Frontend │  │ Backend  │        │
+   │  │  (Astro  │  │  (Rust   │        │
+   │  │  Svelte) │  │  Actix)  │        │
+   │  └─────┬────┘  └────┬─────┘        │
+   │        │            │               │
+   │        └────────────┼──────────┐    │
+   │                     │          │    │
+   │              ┌──────▼──────┐   │    │
+   │              │  PostgreSQL │   │    │
+   │              │     15      │   │    │
+   │              └─────────────┘   │    │
+   └──────────────────────────────────────┘
+
+   Datacenter France (Gravelines GRA9)
+   60g CO₂/kWh (nucléaire 70% + renouvelables 25%)
+   0.12g CO₂/requête
 ```
 
-## Cost Breakdown
+### Composants Déployés
 
-### Recommended Setup (Production-Validated 2025)
+1. **Traefik** (Port 80/443)
+   - Reverse proxy automatique
+   - Gestion SSL Let's Encrypt
+   - Redirection HTTP → HTTPS
+   - Headers de sécurité
 
-| Component | Provider | Cost |
-|-----------|----------|------|
-| Backend VPS | OVH Cloud France VPS Value | **7€/mois TTC** (5.80€ HT) |
-| Frontend | Vercel (Free tier) | 0€ |
-| Database | Same VPS | 0€ |
-| Domain | koprogo.com | ~12€/an (~1€/mois) |
-| SSL Certificate | Let's Encrypt (via Traefik) | 0€ |
-| **TOTAL** | | **~8€/mois** (96€/an) |
+2. **Backend Rust** (Port interne 8080)
+   - API REST (Actix-web)
+   - Connexion PostgreSQL via pool
+   - CORS configuré pour frontend
 
-**Note prix 2025** : OVH a ajusté ses tarifs. Le VPS Value (1 vCore, 2GB RAM, 40GB NVMe) est maintenant à **5.80€ HT/mois = 7.02€ TTC** avec TVA belge 21%.
+3. **Frontend Astro/Svelte** (Port interne 3000)
+   - SSG (Static Site Generation)
+   - Islands Architecture
+   - Appels API vers backend
 
-### Why OVH Cloud France?
+4. **PostgreSQL 15** (Port interne 5432)
+   - Base de données persistante
+   - Volume Docker monté
+   - Backups quotidiens automatiques
 
-**✅ Performance Validée (Tests Réels)** :
-- 1 vCPU / 2GB RAM
-- **1,000-1,500 copropriétés** supportées
-- **287 req/s** soutenus, 99.74% uptime
-- P50: 69ms, P90: 130ms, P99: 752ms
-- 40GB SSD NVMe
+5. **GitOps Auto-Update**
+   - Pull automatique depuis GitHub (3h du matin)
+   - Rebuild et redémarrage automatique
+   - Rollback automatique si health check échoue
 
-**✅ Écologie Exceptionnelle** :
-- Datacenter France (mix énergétique 60g CO₂/kWh)
+---
+
+## 💰 Coûts
+
+| Composant | Prix |
+|-----------|------|
+| VPS OVH d2-2 (2 vCPU, 4GB RAM, 25GB SSD) | **14€ TTC/mois** |
+| Domaine (optionnel) | ~12€/an (~1€/mois) |
+| SSL Let's Encrypt | **0€** |
+| Bande passante | **0€** (250 Mbit/s inclus) |
+| **TOTAL** | **~14-15€/mois** |
+
+**Capacité estimée** :
+- 2,000-3,000 copropriétés
+- ~10,000-15,000 utilisateurs actifs
+- P99 latency < 5ms (testé en charge)
+
+**Pourquoi d2-2 ?**
+- Production-ready (haute disponibilité)
+- Performance adaptée au backend Rust + PostgreSQL
+- Marge pour pics de charge
+
+---
+
+## 🌍 Pourquoi OVH Cloud France ?
+
+### ✅ Écologie Exceptionnelle
+- Datacenter France (mix énergétique **60g CO₂/kWh**)
 - **0.12g CO₂/requête** (7-25x mieux que AWS/Azure)
 - Nucléaire (70%) + Renouvelables (25%)
+- **Champion mondial** de l'écologie cloud
 
-**✅ Souveraineté & GDPR** :
+### ✅ Souveraineté & GDPR
 - Données hébergées en France
 - GDPR-native, conformité totale
 - Pas de CLOUD Act américain
 - Support en français
 
-**✅ Infrastructure** :
-- 40GB SSD NVMe
-- 1 Gbps network
+### ✅ Performance Validée (Tests Réels)
+- **287 req/s** soutenus, 99.74% uptime
+- P50: 69ms, P90: 130ms, P99: 752ms
 - Anti-DDoS inclus
-- Cost: **5€/mois**
-
-### Alternative Providers (Not Recommended)
-
-Nous recommandons **exclusivement OVH France** pour les avantages écologiques, GDPR et souveraineté. Alternatives si nécessaire :
-
-1. **Hetzner Germany** (alternative acceptable)
-   - Mix énergétique allemand : 350g CO₂/kWh (**5.8x plus** que France)
-   - GDPR OK mais datacenter DE
-   - Cost: 4,15€/mois
-
-2. **DigitalOcean** (Non recommandé)
-   - Datacenters USA = CLOUD Act
-   - Mix énergétique 400g+ CO₂/kWh
-   - Cost: $6/mois
-
-## Step-by-Step Deployment
-
-### 1. Provision VPS
-
-#### Hetzner Example
-
-1. Create account at https://www.hetzner.com
-2. Choose: Cloud → Create Server
-3. Select:
-   - **Location**: Nuremberg (Germany) or Falkenstein
-   - **Image**: Ubuntu 22.04 LTS
-   - **Type**: CPX11 (Shared vCPU, 2GB RAM)
-   - **Networking**: IPv4 + IPv6
-   - **SSH Key**: Upload your public key
-4. Create server
-
-**Initial login:**
-```bash
-ssh root@<vps-ip-address>
-```
-
-### 2. Initial Server Setup
-
-```bash
-# Update system
-apt update && apt upgrade -y
-
-# Set timezone
-timedatectl set-timezone Europe/Brussels
-
-# Set hostname
-hostnamectl set-hostname koprogo-vps
-
-# Create non-root user
-adduser koprogo
-usermod -aG sudo koprogo
-usermod -aG docker koprogo  # (after Docker install)
-
-# Copy SSH keys to new user
-rsync --archive --chown=koprogo:koprogo ~/.ssh /home/koprogo
-```
-
-### 3. Install Dependencies
-
-```bash
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
-
-# Install Docker Compose
-apt install docker-compose-plugin -y
-
-# Install utilities
-apt install -y git curl wget htop ufw postgresql-client
-
-# Verify installations
-docker --version
-docker compose version
-```
-
-### 4. Configure Firewall
-
-```bash
-# Enable UFW
-ufw default deny incoming
-ufw default allow outgoing
-
-# Allow SSH
-ufw allow 22/tcp
-
-# Allow HTTP/HTTPS
-ufw allow 80/tcp
-ufw allow 443/tcp
-
-# Enable firewall
-ufw enable
-
-# Check status
-ufw status
-```
-
-### 5. Clone and Configure KoproGo
-
-```bash
-# Switch to koprogo user
-su - koprogo
-
-# Clone repository
-cd ~
-git clone https://github.com/your-org/koprogo.git
-cd koprogo
-
-# Create .env file
-cat > backend/.env << EOF
-DATABASE_URL=postgresql://koprogo:CHANGE_THIS_PASSWORD@postgres:5432/koprogo_db
-SERVER_HOST=0.0.0.0
-SERVER_PORT=8080
-RUST_LOG=info
-ACTIX_WORKERS=2
-EOF
-
-# Set secure PostgreSQL password
-nano backend/.env  # Change CHANGE_THIS_PASSWORD
-
-# Create nginx directories
-mkdir -p nginx/ssl nginx/logs
-```
-
-### 6. Deploy with Docker Compose
-
-```bash
-# Build and start services
-docker compose -f docker-compose.vps.yml up -d --build
-
-# Check status
-docker compose -f docker-compose.vps.yml ps
-
-# View logs
-docker compose -f docker-compose.vps.yml logs -f
-```
-
-### 7. Run Database Migrations
-
-```bash
-# Execute migrations
-docker exec -it koprogo-backend /app/koprogo-backend migrate
-
-# Or manually with psql
-docker exec -it koprogo-postgres psql -U koprogo -d koprogo_db -f /docker-entrypoint-initdb.d/migrations/001_initial_schema.sql
-```
-
-### 8. Verify Deployment
-
-```bash
-# Check health endpoint
-curl http://localhost:8080/api/v1/health
-
-# Expected output: {"status":"healthy"}
-
-# Test from outside
-curl http://<vps-ip-address>/api/v1/health
-```
-
-### 9. Setup SSL with Let's Encrypt
-
-```bash
-# Install Certbot
-apt install certbot python3-certbot-nginx -y
-
-# Stop nginx temporarily
-docker compose -f docker-compose.vps.yml stop nginx
-
-# Obtain certificate (replace your-domain.com)
-certbot certonly --standalone -d api.koprogo.be
-
-# Certificates stored in: /etc/letsencrypt/live/api.koprogo.be/
-
-# Copy to nginx directory
-cp -r /etc/letsencrypt/live /home/koprogo/koprogo/nginx/ssl/
-cp -r /etc/letsencrypt/archive /home/koprogo/koprogo/nginx/ssl/
-
-# Update nginx/conf.d/koprogo.conf (uncomment HTTPS section)
-nano nginx/conf.d/koprogo.conf
-
-# Restart nginx
-docker compose -f docker-compose.vps.yml up -d nginx
-
-# Auto-renewal (cron)
-crontab -e
-# Add: 0 0 * * * certbot renew --quiet && docker compose -f /home/koprogo/koprogo/docker-compose.vps.yml restart nginx
-```
-
-### 10. Setup Monitoring
-
-```bash
-# Make scripts executable
-chmod +x monitoring/scripts/*.sh
-
-# Test monitoring
-./monitoring/scripts/vps_metrics.sh
-./monitoring/scripts/postgres_metrics.sh
-./monitoring/scripts/capacity_calculator.sh
-
-# Setup cron jobs
-crontab -e
-```
-
-Add these lines:
-```cron
-# System metrics every 5 minutes
-*/5 * * * * /home/koprogo/koprogo/monitoring/scripts/vps_metrics.sh >> /var/log/koprogo/vps.log 2>&1
-
-# PostgreSQL metrics hourly
-0 * * * * /home/koprogo/koprogo/monitoring/scripts/postgres_metrics.sh >> /var/log/koprogo/postgres.log 2>&1
-
-# Daily capacity report at 9am
-0 9 * * * /home/koprogo/koprogo/monitoring/scripts/capacity_calculator.sh >> /var/log/koprogo/capacity.log 2>&1
-
-# Weekly cleanup (logs older than 7 days)
-0 2 * * 0 find /home/koprogo/koprogo/monitoring/logs -name "*.json" -mtime +7 -delete
-```
-
-## Frontend Deployment (Vercel)
-
-### 1. Prepare Frontend
-
-```bash
-# In frontend directory
-cd frontend
-
-# Update .env for production
-cat > .env.production << EOF
-PUBLIC_API_URL=https://api.koprogo.be/api/v1
-EOF
-```
-
-### 2. Deploy to Vercel
-
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Login
-vercel login
-
-# Deploy
-cd frontend
-vercel --prod
-
-# Follow prompts:
-# - Link to existing project: No
-# - Project name: koprogo-frontend
-# - Framework: Astro
-# - Build command: npm run build
-# - Output directory: dist
-```
-
-### 3. Configure Domain (Optional)
-
-In Vercel dashboard:
-1. Go to Project → Settings → Domains
-2. Add custom domain: `app.koprogo.be`
-3. Configure DNS (A/CNAME records)
-
-## DNS Configuration
-
-### Example DNS Records
-
-```
-# At your domain registrar (Namecheap, Gandi, etc.)
-
-# Backend API
-api.koprogo.be.    A       <vps-ip-address>
-
-# Frontend (if using custom domain with Vercel)
-app.koprogo.be.    CNAME   cname.vercel-dns.com.
-
-# Root domain (optional redirect to app)
-koprogo.be.        A       <vps-ip-address>
-```
-
-## Database Backups
-
-### Automated Backups
-
-```bash
-# Create backup script
-cat > ~/backup-db.sh << 'EOF'
-#!/bin/bash
-BACKUP_DIR="/home/koprogo/backups"
-DATE=$(date +%Y%m%d_%H%M%S)
-mkdir -p $BACKUP_DIR
-
-docker exec koprogo-postgres pg_dump -U koprogo koprogo_db | gzip > $BACKUP_DIR/koprogo_db_$DATE.sql.gz
-
-# Keep only last 7 days
-find $BACKUP_DIR -name "*.sql.gz" -mtime +7 -delete
-
-echo "Backup completed: $BACKUP_DIR/koprogo_db_$DATE.sql.gz"
-EOF
-
-chmod +x ~/backup-db.sh
-
-# Schedule daily backups at 2am
-crontab -e
-# Add: 0 2 * * * /home/koprogo/backup-db.sh >> /var/log/koprogo/backup.log 2>&1
-```
-
-### Restore from Backup
-
-```bash
-# Stop backend
-docker compose -f docker-compose.vps.yml stop backend
-
-# Restore
-gunzip -c /home/koprogo/backups/koprogo_db_YYYYMMDD_HHMMSS.sql.gz | \
-  docker exec -i koprogo-postgres psql -U koprogo -d koprogo_db
-
-# Restart backend
-docker compose -f docker-compose.vps.yml start backend
-```
-
-## Maintenance
-
-### View Logs
-
-```bash
-# All services
-docker compose -f docker-compose.vps.yml logs -f
-
-# Specific service
-docker compose -f docker-compose.vps.yml logs -f backend
-
-# Last 100 lines
-docker compose -f docker-compose.vps.yml logs --tail=100 backend
-```
-
-### Restart Services
-
-```bash
-# All services
-docker compose -f docker-compose.vps.yml restart
-
-# Specific service
-docker compose -f docker-compose.vps.yml restart backend
-```
-
-### Update Application
-
-```bash
-cd ~/koprogo
-
-# Pull latest code
-git pull origin main
-
-# Rebuild and restart
-docker compose -f docker-compose.vps.yml up -d --build
-
-# Run migrations if needed
-docker exec -it koprogo-backend /app/koprogo-backend migrate
-```
-
-### Clean Docker
-
-```bash
-# Remove unused images/containers
-docker system prune -a
-
-# View disk usage
-docker system df
-```
-
-## Scaling Up
-
-### When to Upgrade
-
-Use `monitoring/scripts/capacity_calculator.sh` to determine when to upgrade.
-
-**Signals:**
-- RAM usage > 85% consistently
-- CPU load > 2.0 on 2-core system
-- Disk usage > 80%
-- Query latency P99 > 50ms
-
-### Upgrade Path
-
-**100-500 copropriétés → Hetzner CPX21**
-```bash
-# In Hetzner Cloud Console
-# 1. Create snapshot of current server
-# 2. Resize to CPX21 (4GB RAM, 80GB SSD)
-# 3. Or create new server from snapshot
-
-# Update Docker resource limits in docker-compose.vps.yml
-# backend: memory: 500M
-# postgres: shared_buffers=1GB, effective_cache_size=3GB
-```
-
-**500-2000 copropriétés → Separate Database**
-```bash
-# 1. Provision dedicated PostgreSQL server (Hetzner CPX21)
-# 2. Migrate database
-# 3. Update DATABASE_URL in backend .env
-# 4. Use backend VPS only for application
-```
-
-## Troubleshooting
-
-### Service Won't Start
-
-```bash
-# Check logs
-docker compose -f docker-compose.vps.yml logs backend
-
-# Common issues:
-# - DATABASE_URL incorrect
-# - Port 8080 already in use
-# - Insufficient disk space
-```
-
-### Out of Memory
-
-```bash
-# Check memory usage
-free -h
-docker stats
-
-# Quick fix: restart services
-docker compose -f docker-compose.vps.yml restart
-
-# Long-term: upgrade VPS or optimize
-```
-
-### Database Connection Errors
-
-```bash
-# Check PostgreSQL is running
-docker compose -f docker-compose.vps.yml ps postgres
-
-# Test connection
-docker exec -it koprogo-postgres psql -U koprogo -d koprogo_db -c "SELECT 1;"
-
-# Check DATABASE_URL
-cat backend/.env | grep DATABASE_URL
-```
-
-### SSL Certificate Issues
-
-```bash
-# Renew manually
-certbot renew --force-renewal
-
-# Check expiry
-certbot certificates
-
-# Test auto-renewal
-certbot renew --dry-run
-```
-
-## Security Checklist
-
-- [ ] Changed default PostgreSQL password
-- [ ] UFW firewall enabled
-- [ ] SSH key authentication only (disable password auth)
-- [ ] Regular backups configured
-- [ ] SSL/TLS enabled (HTTPS)
-- [ ] Docker containers run as non-root users
-- [ ] Rate limiting enabled in Nginx
-- [ ] Monitoring and alerting setup
-- [ ] System updates scheduled
-
-```bash
-# Disable SSH password authentication
-sudo nano /etc/ssh/sshd_config
-# Set: PasswordAuthentication no
-sudo systemctl restart sshd
-
-# Auto-updates
-sudo apt install unattended-upgrades
-sudo dpkg-reconfigure --priority=low unattended-upgrades
-```
-
-## Cost Optimization
-
-### Current costs (~5€/mois)
-- VPS: 4,15€
-- Domain: 0,83€ (~10€/year)
-- Frontend: 0€ (Vercel free)
-- SSL: 0€ (Let's Encrypt)
-
-### Revenue projections
-With pricing model:
-- Starter (5 copropriétés): 15€/mois
-- Pro (20 copropriétés): 49€/mois
-
-**Break-even: 1 paying customer**
-**10 customers: ~300€/mois revenue, 5€ costs = 98% margin**
-
-## Support
-
-- Monitoring: `monitoring/README.md`
-- Architecture: `CLAUDE.md`
-- Issues: GitHub Issues
+- 1 Gbps network
 
 ---
 
-Last updated: 2024-10-23
+## 📋 Prérequis
+
+### Sur Votre Machine
+
+```bash
+# Terraform 1.0+
+terraform --version
+
+# Ansible 2.9+
+ansible --version
+
+# Clé SSH générée
+ls ~/.ssh/id_rsa.pub
+
+# Si pas de clé SSH
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
+
+### Compte OVH Cloud
+
+1. **Créer un compte** : https://www.ovh.com/manager/public-cloud/
+2. **Créer un projet Public Cloud**
+3. **Créer un utilisateur OpenStack** (requis pour Terraform)
+4. **Obtenir credentials OVH API** (optionnel, pour DNS automatique)
+
+---
+
+## 📖 Guide Détaillé Pas-à-Pas
+
+### Étape 1 : Créer un Utilisateur OpenStack (REQUIS)
+
+1. **OVH Manager** → **Public Cloud** → **Projet Management** → **Users & Roles**
+2. Cliquer sur **Créer un utilisateur OpenStack**
+3. **Choisir TOUS les rôles suivants** (IMPORTANT !) :
+   - ☑ **Administrator** (CRITIQUE pour Terraform)
+   - ☑ Compute Operator
+   - ☑ Network Operator
+   - ☑ Network Security Operator
+   - ☑ Image Operator
+   - ☑ Volume Operator
+   - ☑ ObjectStore Operator
+   - ☑ LoadBalancer Operator
+   - ☑ Backup Operator
+   - ☑ Infrastructure Supervisor
+   - ☑ KeyManager Operator
+   - ☑ KeyManager Read
+
+4. Créer l'utilisateur et **noter** :
+   - `OS_USERNAME` (format: `user-XXXXXXXXXXXX`)
+   - `OS_PASSWORD` (généré automatiquement, à copier immédiatement)
+
+> **⚠️ CRITIQUE** : Le rôle **Administrator** est absolument nécessaire pour que Terraform puisse créer des ressources !
+
+### Étape 2 : Télécharger le Fichier OpenRC (REQUIS)
+
+1. **OVH Manager** → **Public Cloud** → **Users & Roles**
+2. Cliquer sur **...** à côté de votre utilisateur
+3. Sélectionner **Download OpenStack's RC file**
+4. **Ouvrir le fichier** et trouver la ligne :
+   ```bash
+   export OS_REGION_NAME="GRA9"
+   ```
+5. **Noter la région** (exemple: GRA9, GRA11, SBG5, etc.)
+
+> **⚠️ IMPORTANT** : Utilisez toujours la région exacte du fichier OpenRC ! Ne PAS deviner.
+
+### Étape 3 : Créer Credentials OVH API (OPTIONNEL, pour DNS automatique)
+
+**Seulement si vous voulez configurer automatiquement le DNS**
+
+1. Aller sur : https://www.ovh.com/auth/api/createToken
+2. **Application name** : `KoproGo Infrastructure`
+3. **Application description** : `Terraform + Ansible deployment`
+4. **Validity** : `Unlimited`
+5. **Rights** :
+   - `GET /domain/*`
+   - `POST /domain/*`
+   - `PUT /domain/*`
+   - `DELETE /domain/*`
+6. Cliquer sur **Create keys**
+7. **Noter** :
+   - `OVH_APPLICATION_KEY`
+   - `OVH_APPLICATION_SECRET`
+   - `OVH_CONSUMER_KEY`
+
+### Étape 4 : Lancer le Déploiement
+
+```bash
+# Depuis la racine du projet
+make setup-infra
+```
+
+Le script vous demandera :
+- Credentials OVH API (si DNS automatique souhaité)
+- ID du projet OVH Cloud
+- Username et password OpenStack
+- Région OpenRC (ex: GRA9)
+- Domaine (optionnel)
+- Email pour SSL (si domaine configuré)
+
+### Étape 5 : Vérifier le Déploiement
+
+Après le déploiement :
+
+```bash
+# Si vous avez configuré un domaine
+curl https://votre-domaine.com/api/v1/health
+
+# Sinon, utiliser l'IP du VPS
+curl http://51.210.XXX.XXX:8080/api/v1/health
+
+# Devrait retourner : {"status":"healthy","timestamp":"..."}
+```
+
+Se connecter au VPS :
+
+```bash
+# Récupérer l'IP
+cd infrastructure/terraform
+terraform output vps_ip
+
+# SSH
+ssh ubuntu@51.210.XXX.XXX
+
+# Sur le VPS
+sudo su - koprogo
+cd ~/koprogo/deploy/production
+docker compose ps
+docker compose logs -f
+```
+
+---
+
+## 🔄 GitOps Auto-Update
+
+KoproGo se met à jour automatiquement tous les jours à **3h du matin** depuis GitHub.
+
+### Comment ça marche ?
+
+1. **Cron job** : Exécute `~/koprogo/scripts/auto-update.sh` quotidiennement
+2. **Backup** : Sauvegarde la DB avant update
+3. **Pull GitHub** : `git pull origin main`
+4. **Rebuild** : `docker compose up -d --build`
+5. **Health check** : Vérifie `/api/v1/health`
+6. **Rollback automatique** : Si health check échoue
+
+### Logs auto-update
+
+```bash
+# Sur le VPS
+tail -f /var/log/koprogo-update.log
+```
+
+### Désactiver auto-update
+
+```bash
+# Supprimer cron job
+crontab -e -u koprogo
+# Commenter ou supprimer la ligne : 0 3 * * * ...
+```
+
+---
+
+## 💾 Backups
+
+Backups PostgreSQL **quotidiens à 2h du matin**.
+
+### Localisation backups
+
+```bash
+# Sur le VPS
+ls -lh ~/koprogo/backups/
+# koprogo_20250125_020000.sql.gz
+# koprogo_20250126_020000.sql.gz
+```
+
+### Restaurer backup
+
+```bash
+cd ~/koprogo/deploy/production
+
+# Restaurer le dernier backup
+gunzip -c ../../backups/koprogo_YYYYMMDD_HHMMSS.sql.gz | \
+  docker compose exec -T postgres psql -U koprogo -d koprogo_db
+```
+
+### Rétention backups
+
+Par défaut : **7 jours** (configurable dans `ansible/templates/backup.sh.j2`)
+
+---
+
+## 🔒 Sécurité
+
+### Firewall UFW
+
+- ✅ Port 22 (SSH)
+- ✅ Port 80 (HTTP)
+- ✅ Port 443 (HTTPS)
+- ❌ Tout le reste bloqué
+
+### Fail2ban
+
+Protection contre brute-force SSH (installé automatiquement).
+
+### SSL/TLS (HTTPS)
+
+Si vous avez configuré un domaine, Traefik génère automatiquement certificat Let's Encrypt.
+
+```bash
+# Vérifier HTTPS
+curl https://votre-domaine.com/api/v1/health
+
+# Vérifier certificat
+openssl s_client -connect votre-domaine.com:443 -servername votre-domaine.com
+```
+
+---
+
+## 📊 Monitoring
+
+### Health checks
+
+Toutes les **5 minutes** : `curl http://localhost:8080/api/v1/health`
+
+```bash
+# Voir logs health checks
+tail -f /var/log/koprogo-health.log
+```
+
+### Métriques système
+
+```bash
+# Sur le VPS
+docker stats
+htop
+df -h
+```
+
+---
+
+## 🛠️ Maintenance
+
+### Restart services
+
+```bash
+cd ~/koprogo/deploy/production
+docker compose restart
+```
+
+### Update manuel (sans attendre cron)
+
+```bash
+cd ~/koprogo
+./scripts/auto-update.sh
+```
+
+### Voir logs
+
+```bash
+# Tous les services
+docker compose logs -f
+
+# Backend uniquement
+docker compose logs -f backend
+
+# Frontend uniquement
+docker compose logs -f frontend
+
+# PostgreSQL uniquement
+docker compose logs -f postgres
+
+# Traefik uniquement
+docker compose logs -f traefik
+```
+
+### Cleanup Docker
+
+```bash
+# Supprimer images inutilisées
+docker system prune -a
+
+# Voir utilisation disque
+docker system df
+```
+
+---
+
+## 🆘 Troubleshooting
+
+### Terraform : "No suitable endpoint could be found"
+
+**Symptôme** :
+```
+Error: No suitable endpoint could be found in the service catalog
+```
+
+**Cause** : Région incorrecte ou non compatible avec votre fichier OpenRC
+
+**Fix** :
+1. **TOUJOURS** télécharger le fichier OpenRC depuis OVH Manager
+2. Ouvrir le fichier et trouver : `export OS_REGION_NAME="GRA9"`
+3. Utiliser EXACTEMENT cette région (GRA9, GRA11, SBG5, etc.)
+4. Ne PAS deviner ou utiliser des régions aléatoires
+
+```bash
+# Vérifier le fichier OpenRC
+grep OS_REGION_NAME openrc.sh
+# export OS_REGION_NAME="GRA9"
+
+# Utiliser cette région exacte dans setup-infra.sh
+```
+
+### Terraform : "Insufficient permissions"
+
+**Symptôme** :
+```
+Error creating openstack_compute_instance_v2: Forbidden
+```
+
+**Cause** : Utilisateur OpenStack sans le rôle **Administrator**
+
+**Fix** :
+1. OVH Manager → Public Cloud → Users & Roles
+2. Supprimer l'utilisateur actuel
+3. Créer un nouvel utilisateur avec **TOUS** les rôles listés ci-dessus
+4. **Surtout** : Cocher **Administrator** (CRITIQUE !)
+
+### Terraform : "Variables not loaded"
+
+**Symptôme** :
+```
+Error: Missing required argument
+```
+
+**Cause** : Variables d'environnement non chargées
+
+**Fix** : Utiliser `source` pour charger les variables
+```bash
+# ✅ CORRECT
+source ./load-env.sh
+
+# ❌ FAUX (crée une nouvelle sous-shell)
+./load-env.sh
+
+# Ou utiliser le script de déploiement
+cd infrastructure/terraform
+./deploy.sh
+```
+
+### Ansible : "SSH connection failed"
+
+**Cause** : VPS pas encore prêt ou clé SSH incorrecte
+
+**Fix** :
+```bash
+# Attendre 1-2 minutes après terraform apply
+sleep 120
+
+# Tester SSH manuel
+ssh -o StrictHostKeyChecking=no ubuntu@51.210.XXX.XXX
+
+# Vérifier clé SSH
+ls -la ~/.ssh/id_rsa.pub
+```
+
+### Ansible : "Failed to set permissions" (become_user error)
+
+**Symptôme** :
+```
+Failed to set permissions on the temporary files Ansible needs to create
+chmod: invalid mode: 'A+user:koprogo:rx:allow'
+```
+
+**Cause** : Problème d'ACL avec Ansible 2.16+ sur Ubuntu
+
+**Fix** : Ce problème est déjà corrigé dans le playbook avec `become_method: su`
+
+### DNS : Propagation lente
+
+**Symptôme** : Le domaine ne pointe pas vers le VPS immédiatement
+
+**Cause** : Propagation DNS normale (1-60 minutes)
+
+**Fix** :
+```bash
+# Vérifier la configuration DNS (peut montrer ancienne IP)
+nslookup votre-domaine.com
+
+# Forcer requête vers les DNS OVH
+nslookup votre-domaine.com dns200.anycast.me
+
+# Attendre 5-10 minutes et retester
+```
+
+### Health check échoue
+
+**Cause** : Services Docker pas encore démarrés ou erreur de déploiement
+
+**Fix** :
+```bash
+# Se connecter au VPS
+ssh ubuntu@VPS_IP
+
+# Vérifier les services
+sudo su - koprogo
+cd ~/koprogo/deploy/production
+docker compose ps
+
+# Vérifier les logs
+docker compose logs backend
+docker compose logs frontend
+docker compose logs postgres
+
+# Redémarrer si nécessaire
+docker compose restart
+
+# Si problème de build, forcer le rebuild
+docker compose down
+docker compose up -d --force-recreate
+```
+
+### Traefik : Certificat SSL pas généré
+
+**Symptôme** : HTTPS ne fonctionne pas, erreur de certificat
+
+**Cause** : DNS pas encore propagé ou domaine incorrect
+
+**Fix** :
+```bash
+# Vérifier que le DNS pointe vers le VPS
+nslookup votre-domaine.com
+
+# Vérifier les logs Traefik
+docker compose logs traefik
+
+# Vérifier le fichier acme.json
+ls -la /home/koprogo/koprogo/deploy/production/letsencrypt/acme.json
+
+# Si vide, attendre propagation DNS puis redémarrer Traefik
+docker compose restart traefik
+```
+
+---
+
+## 🧹 Désinstallation
+
+```bash
+# 1. Détruire VPS Terraform
+cd infrastructure/terraform
+terraform destroy
+
+# 2. (Optionnel) Cleanup credentials
+unset OVH_APPLICATION_KEY OVH_APPLICATION_SECRET OVH_CONSUMER_KEY
+unset OS_USERNAME OS_PASSWORD
+
+# 3. (Optionnel) Supprimer fichiers locaux
+rm -f .env terraform.tfvars
+cd ../ansible
+rm -f inventory.ini
+```
+
+---
+
+## 📚 Ressources
+
+### Documentation KoproGo
+
+- **Infrastructure README** : [`infrastructure/README.md`](../infrastructure/README.md)
+- **Lessons Learned** : [`infrastructure/LESSONS-LEARNED.md`](../infrastructure/LESSONS-LEARNED.md) - Tous les problèmes rencontrés et solutions
+- **GitOps manuel** : [DEPLOY_GITOPS.md](./DEPLOY_GITOPS.md)
+- **Business plan** : [BUSINESS_PLAN_BOOTSTRAP.md](./BUSINESS_PLAN_BOOTSTRAP.md)
+
+### Documentation externe
+
+- **Terraform OpenStack Provider** : https://registry.terraform.io/providers/terraform-provider-openstack/openstack/latest/docs
+- **OVH Public Cloud** : https://help.ovhcloud.com/csm/en-public-cloud-compute-getting-started
+- **Ansible** : https://docs.ansible.com/ansible/latest/
+- **Traefik** : https://doc.traefik.io/traefik/
+- **Let's Encrypt** : https://letsencrypt.org/docs/
+
+---
+
+## 🤝 Support
+
+**Problème de déploiement ?**
+
+1. Consulter **Troubleshooting** ci-dessus
+2. Consulter [`infrastructure/LESSONS-LEARNED.md`](../infrastructure/LESSONS-LEARNED.md)
+3. GitHub Issues : https://github.com/gilmry/koprogo/issues
+
+---
+
+## 🎓 Leçons Clés
+
+1. **TOUJOURS télécharger le fichier OpenRC** - C'est la source de vérité pour la région
+2. **Utiliser le provider OpenStack** - Plus stable que le provider OVH natif
+3. **Rôle Administrator requis** - Pour l'utilisateur OpenStack
+4. **Source vs Execute** - `source ./load-env.sh` pas `./load-env.sh`
+5. **Automation complète** - Le script `setup-infra.sh` réduit drastiquement les erreurs
+6. **Documentation visuelle** - Screenshots + guide interactif = succès
+7. **Validation préalable** - Vérifier les prérequis avant de commencer
+8. **Become method** - Toujours utiliser `become_method: su` avec Ansible
+
+---
+
+**Dernière mise à jour** : Octobre 2025
+**Version** : 2.0 (Terraform + Ansible automatisé)
+
+---
+
+**KoproGo ASBL** - Déploiement automatisé pour les geeks 🚀
