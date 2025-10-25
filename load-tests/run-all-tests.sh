@@ -6,7 +6,19 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RESULTS_DIR="${SCRIPT_DIR}/results"
-BASE_URL="${BASE_URL:-http://localhost:8080}"
+
+# Default to api.koprogo.com for remote testing
+if [ -z "$BASE_URL" ]; then
+    BASE_URL="https://api.koprogo.com"
+    echo "ℹ️  Using default URL: $BASE_URL"
+    echo ""
+    echo "💡 For api2: export BASE_URL=https://api2.koprogo.com"
+    echo "💡 For local: export BASE_URL=http://localhost:8080"
+    echo ""
+fi
+
+# Export BASE_URL so child scripts inherit it
+export BASE_URL
 
 mkdir -p "$RESULTS_DIR"
 

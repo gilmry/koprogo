@@ -73,7 +73,7 @@ sleep 3
 
 wrk -t4 -c100 -d3m \
     --latency \
-    -s "${SCRIPT_DIR}/../lua/mixed.lua" \
+    -s "${SCRIPT_DIR}/../lua/authenticated-mixed.lua" \
     "$BASE_URL" \
     | tee "$RESULT_FILE"
 

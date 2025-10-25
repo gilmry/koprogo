@@ -295,7 +295,9 @@ impl UnitRepository for PostgresUnitRepository {
         let units: Vec<Unit> = rows
             .iter()
             .map(|row| {
-                let unit_type_str: String = row.get("unit_type");
+                // Try to get as String first (for enum types from PostgreSQL)
+                let unit_type_str: String = row.try_get("unit_type")
+                    .unwrap_or_else(|_| "apartment".to_string());
                 let unit_type = match unit_type_str.as_str() {
                     "apartment" => UnitType::Apartment,
                     "parking" => UnitType::Parking,

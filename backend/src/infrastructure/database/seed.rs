@@ -277,6 +277,7 @@ impl DatabaseSeeder {
         // Create demo expenses
         self.create_demo_expense(
             building1_id,
+            org1_id,
             "Charges de copropriété Q1 2025 - Charges trimestrielles incluant eau, chauffage, entretien",
             5000.0,
             "2025-01-15",
@@ -289,6 +290,7 @@ impl DatabaseSeeder {
 
         self.create_demo_expense(
             building1_id,
+            org1_id,
             "Réparation ascenseur - Maintenance et réparation de l'ascenseur principal",
             2500.0,
             "2025-02-10",
@@ -301,6 +303,7 @@ impl DatabaseSeeder {
 
         self.create_demo_expense(
             building2_id,
+            org1_id,
             "Charges de copropriété Q1 2025 - Charges trimestrielles",
             3000.0,
             "2025-01-15",
@@ -313,6 +316,7 @@ impl DatabaseSeeder {
 
         self.create_demo_expense(
             building2_id,
+            org1_id,
             "Nettoyage des parties communes - Contrat annuel de nettoyage",
             1200.0,
             "2025-01-01",
@@ -656,6 +660,7 @@ impl DatabaseSeeder {
     async fn create_demo_expense(
         &self,
         building_id: Uuid,
+        organization_id: Uuid,
         description: &str,
         amount: f64,
         expense_date: &str,
@@ -673,11 +678,12 @@ impl DatabaseSeeder {
 
         sqlx::query(
             r#"
-            INSERT INTO expenses (id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at)
-            VALUES ($1, $2, $3::expense_category, $4, $5, $6, $7::payment_status, $8, $9, $10, $11)
+            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at)
+            VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9, $10, $11, $12)
             "#
         )
         .bind(expense_id)
+        .bind(organization_id)
         .bind(building_id)
         .bind(category)
         .bind(description)

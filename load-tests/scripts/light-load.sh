@@ -53,7 +53,7 @@ echo ""
 
 wrk -t2 -c10 -d2m \
     --latency \
-    -s "${SCRIPT_DIR}/../lua/mixed.lua" \
+    -s "${SCRIPT_DIR}/../lua/authenticated-mixed.lua" \
     "$BASE_URL" \
     | tee "$RESULT_FILE"
 
