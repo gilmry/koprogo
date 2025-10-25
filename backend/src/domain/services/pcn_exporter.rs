@@ -7,7 +7,7 @@ pub struct PcnExporter;
 
 impl PcnExporter {
     /// Export PCN report to PDF bytes
-    /// Returns PDF document as Vec<u8>
+    /// Returns PDF document as `Vec<u8>`
     pub fn export_to_pdf(
         building_name: &str,
         report_lines: &[PcnReportLine],
@@ -92,7 +92,7 @@ impl PcnExporter {
     }
 
     /// Export PCN report to Excel bytes
-    /// Returns Excel workbook as Vec<u8>
+    /// Returns Excel workbook as `Vec<u8>`
     pub fn export_to_excel(
         building_name: &str,
         report_lines: &[PcnReportLine],

@@ -805,5 +805,72 @@ Statut de la documentation
 
 ---
 
+Guides et Documentation Détaillée
+==================================
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Documentation Projet
+
+   README
+   changelog
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Business & Roadmap
+
+   BUSINESS_PLAN_BOOTSTRAP
+   INFRASTRUCTURE_ROADMAP
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Guides de Déploiement
+
+   VPS_DEPLOYMENT
+   DEPLOY_GITOPS
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Guides de Développement
+
+   MAKEFILE_GUIDE
+   E2E_TESTING_GUIDE
+   PERFORMANCE_TESTING
+   PERFORMANCE_REPORT
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Archives
+
+   archive/BUSINESS_PLAN
+   archive/MARKET_ANALYSIS
+   archive/ROADMAP
+   archive/ANALYSIS
+   archive/SESSION_SUMMARY
+   archive/NEW_ISSUES
+   archive/PRIORITIES_TABLE
+   archive/ISSUE_004_COMPLETION_GUIDE
+   archive/load-tests-troubleshooting/PANIC_FIXES
+   archive/load-tests-troubleshooting/IMPLEMENTATION_SUMMARY
+   archive/load-tests-troubleshooting/TROUBLESHOOTING_401
+   archive/load-tests-troubleshooting/CHANGELOG_RATE_LIMITING
+   archive/root-md/DEPLOYMENT_VPS
+   archive/root-md/infrastructure
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Entités du Domaine
+
+   backend/src/domain/entities/building
+   backend/src/domain/entities/user
+   backend/src/domain/entities/organization
+   backend/src/domain/entities/unit
+   backend/src/domain/entities/owner
+   backend/src/domain/entities/expense
+   backend/src/domain/entities/meeting
+   backend/src/domain/entities/document
+
+---
+
 *Cette documentation est générée et maintenue pour le projet Koprogo.*
-*Dernière mise à jour: 2025-10-22*
+*Dernière mise à jour: 2025-10-25*

@@ -1,370 +1,391 @@
-# KoproGo Infrastructure
+# KoproGo - Déploiement VPS Automatisé (Terraform + Ansible)
 
-Infrastructure as Code (IaC) pour KoproGo - Plateforme SaaS de gestion de copropriété.
+Déploiement automatique de KoproGo sur OVH Cloud avec Terraform + Ansible + GitOps.
 
-## 🎯 Vue d'ensemble
+**Pour qui ?** Geeks qui veulent déployer KoproGo en 5 minutes avec auto-update automatique.
 
-Cette infrastructure déploie un cluster Kubernetes (K3s) hautement disponible sur OVH Cloud avec :
+---
 
-- **Terraform** : Provisioning de l'infrastructure OVH
-- **Ansible** : Configuration des serveurs et installation K3s
-- **Helm** : Déploiement des applications
-- **K3s** : Distribution Kubernetes légère
+## 🎯 Ce que fait ce déploiement
 
-## 📁 Structure
+1. **Terraform** : Provisionne un VPS OVH (1 vCPU, 2GB RAM, ~7€/mois)
+2. **Ansible** : Configure le serveur (Docker, firewall, sécurité)
+3. **GitOps** : Déploie KoproGo avec auto-update quotidien depuis GitHub
+4. **Backups** : Backups PostgreSQL quotidiens automatiques
+5. **Monitoring** : Health checks toutes les 5 minutes
 
-```
-infrastructure/
-├── terraform/              # Infrastructure provisioning
-│   ├── modules/           # Modules réutilisables
-│   │   ├── ovh-instances/ # Compute instances
-│   │   ├── networking/    # vRack, firewall, load balancer
-│   │   ├── storage/       # Object storage (backups)
-│   │   └── dns/           # DNS records
-│   └── environments/      # Configurations par environnement
-│       ├── dev/           # Développement (1 CP + 1 worker)
-│       ├── staging/       # Staging (1 CP + 2 workers)
-│       └── prod/          # Production (3 CP + 3 workers)
-│
-├── ansible/               # Configuration management
-│   ├── roles/            # Rôles Ansible
-│   │   ├── common/       # Configuration système de base
-│   │   ├── security/     # Hardening sécurité
-│   │   ├── k3s-server/   # Control plane K3s
-│   │   └── k3s-agent/    # Workers K3s
-│   ├── playbooks/        # Playbooks d'orchestration
-│   └── inventory/        # Inventaires (générés par Terraform)
-│
-├── helm/                 # Charts Helm
-│   ├── koprogo-api/     # API Backend Rust
-│   ├── koprogo-frontend/# Frontend Astro
-│   ├── postgresql-ha/   # PostgreSQL HA
-│   ├── dragonfly/       # Cache DragonflyDB
-│   ├── minio/           # Object storage
-│   └── monitoring/      # Stack Prometheus/Grafana
-│
-└── scripts/             # Scripts d'automatisation
-    ├── deploy.sh        # Déploiement complet
-    ├── destroy.sh       # Destruction infrastructure
-    ├── backup.sh        # Backup cluster
-    └── rollback.sh      # Rollback applications
-```
+**Résultat** : KoproGo tourne sur votre VPS et se met à jour automatiquement chaque nuit.
 
-## 🚀 Démarrage Rapide
+---
 
-### Prérequis
+## 📋 Prérequis
 
-- **Terraform** >= 1.5
-- **Ansible** >= 2.15
-- **kubectl** >= 1.28
-- **Helm** >= 3.13
-- Compte **OVH Cloud** avec API credentials
-
-### 1. Configuration OVH
-
-Obtenez vos credentials API OVH depuis https://api.ovh.com/createToken/
+### Outils installés sur votre machine
 
 ```bash
+# Terraform 1.0+
+terraform --version
+
+# Ansible 2.9+
+ansible --version
+
+# Clé SSH générée
+ls ~/.ssh/id_rsa.pub
+```
+
+### Compte OVH Cloud
+
+1. Créer un compte : https://www.ovh.com/manager/public-cloud/
+2. Créer un projet Public Cloud
+3. Obtenir credentials API :
+   - Endpoint : `ovh-eu`
+   - Application Key
+   - Application Secret
+   - Consumer Key
+
+**Obtenir credentials OVH** :
+```bash
+# Aller sur : https://api.ovh.com/createToken/
+# Droits requis : GET/POST/PUT/DELETE sur /cloud/*
+# Récupérer : Application Key, Application Secret, Consumer Key
+```
+
+---
+
+## 🚀 Déploiement Rapide (5 minutes)
+
+### Étape 1 : Configurer credentials OVH
+
+```bash
+cd infrastructure/simple-vps
+
+# Exporter credentials OVH
 export OVH_ENDPOINT="ovh-eu"
-export OVH_APPLICATION_KEY="your_app_key"
-export OVH_APPLICATION_SECRET="your_app_secret"
-export OVH_CONSUMER_KEY="your_consumer_key"
+export OVH_APPLICATION_KEY="votre_application_key"
+export OVH_APPLICATION_SECRET="votre_application_secret"
+export OVH_CONSUMER_KEY="votre_consumer_key"
+
+# (Optionnel) Domaine pour SSL automatique
+export KOPROGO_DOMAIN="koprogo.com"  # Laissez vide si pas de domaine
+export ACME_EMAIL="admin@koprogo.com"
 ```
 
-### 2. Configuration SSH
-
-Générez une clé SSH pour les instances :
+### Étape 2 : Configurer Terraform
 
 ```bash
-ssh-keygen -t rsa -b 4096 -f ~/.ssh/koprogo-dev -C "koprogo-dev"
-```
+cd terraform
 
-### 3. Configuration Terraform
-
-Copiez et personnalisez les variables :
-
-```bash
-cd terraform/environments/dev
+# Copier et éditer variables
 cp terraform.tfvars.example terraform.tfvars
-# Éditez terraform.tfvars avec vos valeurs
-vim terraform.tfvars
+nano terraform.tfvars
+
+# Remplir :
+# - ovh_service_name = "ID_DE_VOTRE_PROJET_OVH"
+# - ssh_public_key_path = "~/.ssh/id_rsa.pub"
 ```
 
-### 4. Déploiement Automatique
-
-Utilisez le script de déploiement automatique :
+### Étape 3 : Provisionner VPS avec Terraform
 
 ```bash
-cd infrastructure
-./scripts/deploy.sh dev
-```
-
-Ou déploiement manuel étape par étape :
-
-```bash
-# 1. Terraform
-cd terraform/environments/dev
+# Initialiser Terraform
 terraform init
+
+# Voir ce qui va être créé
 terraform plan
+
+# Créer le VPS (prend ~2 minutes)
 terraform apply
 
-# 2. Ansible
-cd ../../ansible
-ansible-playbook -i inventory/dev.yml playbooks/site.yml
-
-# 3. Helm
-cd ../helm
-export KUBECONFIG=~/.kube/koprogo-dev
-helm upgrade --install koprogo-api ./koprogo-api \
-  --namespace koprogo \
-  --create-namespace \
-  --values ./koprogo-api/values-dev.yaml
+# Récupérer l'IP du VPS
+terraform output vps_ip
+# Exemple output: 51.75.xxx.xxx
 ```
 
-### 5. Vérification
+### Étape 4 : Configurer Ansible
 
 ```bash
-export KUBECONFIG=~/.kube/koprogo-dev
+cd ../ansible
 
-# Vérifier les nodes
-kubectl get nodes
+# Copier et éditer inventory
+cp inventory.ini.example inventory.ini
+nano inventory.ini
 
-# Vérifier les pods
-kubectl get pods -A
-
-# Tester l'API
-kubectl port-forward -n koprogo svc/koprogo-api 8080:8080
-curl http://localhost:8080/api/v1/health
+# Remplacer YOUR_VPS_IP par l'IP obtenue via terraform output
 ```
 
-## 🏗️ Environnements
-
-### Development (dev)
-
-- **Coût** : ~30€/mois
-- **Configuration** :
-  - 1 control plane : b2-7 (2 vCPU, 7GB RAM)
-  - 1 worker : b2-15 (4 vCPU, 15GB RAM)
-- **Usage** : Tests et développement
+### Étape 5 : Déployer KoproGo avec Ansible
 
 ```bash
-./scripts/deploy.sh dev
+# Tester connexion SSH
+ansible -i inventory.ini koprogo -m ping
+
+# Déployer KoproGo (prend ~5-10 minutes)
+ansible-playbook -i inventory.ini playbook.yml
+
+# Si vous avez un domaine, ajouter variables :
+ansible-playbook -i inventory.ini playbook.yml \
+  -e "domain=koprogo.com" \
+  -e "acme_email=admin@koprogo.com"
 ```
 
-### Staging (staging)
-
-- **Coût** : ~90€/mois
-- **Configuration** :
-  - 1 control plane : b2-15 (4 vCPU, 15GB RAM)
-  - 2 workers : b2-15 (4 vCPU, 15GB RAM)
-- **Usage** : Pre-production testing
+### Étape 6 : Vérifier déploiement
 
 ```bash
-./scripts/deploy.sh staging
+# Health check API
+curl http://$(terraform -chdir=../terraform output -raw vps_ip)/api/v1/health
+
+# Devrait retourner : {"status":"healthy"}
+
+# Se connecter au VPS
+ssh ubuntu@$(terraform -chdir=../terraform output -raw vps_ip)
+
+# Sur le VPS, vérifier services
+sudo su - koprogo
+cd ~/koprogo
+docker compose ps
+docker compose logs -f
 ```
 
-### Production (prod)
+---
 
-- **Coût** : ~270€/mois
-- **Configuration** :
-  - 3 control plane : b2-15 (4 vCPU, 15GB RAM) - HA
-  - 3 workers : b2-30 (8 vCPU, 30GB RAM)
-- **Usage** : Production avec haute disponibilité
+## 🔄 GitOps Auto-Update
+
+KoproGo se met à jour automatiquement tous les jours à **3h du matin** depuis GitHub.
+
+### Comment ça marche ?
+
+1. **Cron job** : Exécute `~/koprogo/scripts/auto-update.sh` quotidiennement
+2. **Backup** : Sauvegarde la DB avant update
+3. **Pull GitHub** : `git pull origin main`
+4. **Rebuild** : `docker compose up -d --build`
+5. **Health check** : Vérifie `/api/v1/health`
+6. **Rollback automatique** : Si health check échoue
+
+### Logs auto-update
 
 ```bash
-./scripts/deploy.sh prod
+# Sur le VPS
+tail -f /var/log/koprogo-update.log
 ```
 
-## 📊 Architecture
+### Désactiver auto-update
 
-### High Availability (Production)
-
-```
-┌─────────────────────────────────────────────┐
-│           Load Balancer (OVH)               │
-│         (HTTP/HTTPS Traffic)                │
-└────────────────┬────────────────────────────┘
-                 │
-         ┌───────┴───────┐
-         │               │
-    ┌────▼────┐    ┌────▼────┐    ┌─────────┐
-    │ Control │    │ Control │    │ Control │
-    │ Plane 1 │◄──►│ Plane 2 │◄──►│ Plane 3 │
-    │ (etcd)  │    │ (etcd)  │    │ (etcd)  │
-    └─────────┘    └─────────┘    └─────────┘
-         │               │              │
-    ┌────┴───────────────┴──────────────┴────┐
-    │                                         │
-┌───▼────┐        ┌─────────┐        ┌──────▼──┐
-│Worker 1│        │Worker 2 │        │Worker 3 │
-│        │        │         │        │         │
-│Longhorn│◄──────►│Longhorn │◄──────►│Longhorn │
-└────────┘        └─────────┘        └─────────┘
+```bash
+# Supprimer cron job
+crontab -e -u koprogo
+# Commenter ou supprimer la ligne : 0 3 * * * ...
 ```
 
-### Network Architecture
+---
 
-- **Private Network** : vRack 10.0.0.0/24
-- **Cluster CIDR** : 10.42.0.0/16
-- **Service CIDR** : 10.43.0.0/16
-- **Firewall** : UFW avec règles strictes
-- **Load Balancer** : OVH LB pour ingress
+## 💾 Backups
+
+Backups PostgreSQL **quotidiens à 2h du matin**.
+
+### Localisation backups
+
+```bash
+# Sur le VPS
+ls -lh ~/koprogo/backups/
+# koprogo_20250125_020000.sql.gz
+# koprogo_20250126_020000.sql.gz
+```
+
+### Restaurer backup
+
+```bash
+cd ~/koprogo
+
+# Restaurer le dernier backup
+gunzip -c backups/koprogo_YYYYMMDD_HHMMSS.sql.gz | \
+  docker compose exec -T postgres psql -U koprogo -d koprogo_db
+```
+
+### Rétention backups
+
+Par défaut : **7 jours** (configurable dans `ansible/templates/backup.sh.j2`)
+
+---
 
 ## 🔒 Sécurité
 
-### Implémentations
+### Firewall UFW
 
-- ✅ SSH key-only authentication
-- ✅ Fail2ban pour protection brute-force
-- ✅ UFW firewall avec règles strictes
-- ✅ TLS/SSL avec Let's Encrypt
-- ✅ Network policies Kubernetes
-- ✅ Pod Security Standards
-- ✅ RBAC strict
-- ✅ Secrets chiffrés
-- ✅ Audit logging (auditd)
+- ✅ Port 22 (SSH)
+- ✅ Port 80 (HTTP)
+- ✅ Port 443 (HTTPS)
+- ❌ Tout le reste bloqué
 
-### Best Practices
+### Fail2ban
 
-1. **Rotation des secrets** : Changer les tokens K3s régulièrement
-2. **Updates** : Unattended upgrades activé
-3. **Backups** : Automatiques quotidiens
-4. **Monitoring** : Prometheus + Alertmanager
-5. **Logs centralisés** : Loki + Grafana
+Protection contre brute-force SSH (installé automatiquement).
 
-## 📈 Monitoring & Observabilité
+### SSL/TLS (HTTPS)
 
-### Stack Monitoring
-
-- **Prometheus** : Métriques
-- **Grafana** : Dashboards
-- **Loki** : Logs centralisés
-- **Kepler** : Métriques CO2
-- **Alertmanager** : Alertes
-
-### Dashboards Inclus
-
-- Cluster Overview
-- Node Metrics
-- Pod Resources
-- API Performance
-- Database Metrics
-- CO2 Footprint
-
-## 🔄 Backup & Disaster Recovery
-
-### Stratégie de Backup
-
-- **Etcd** : Backup automatique toutes les 6h
-- **PostgreSQL** : Backup quotidien avec rétention 30 jours
-- **Persistent Volumes** : Snapshots Longhorn quotidiens
-- **Configuration** : GitOps avec versioning
-
-### Restoration
+Si vous avez configuré un domaine, Traefik génère automatiquement certificat Let's Encrypt.
 
 ```bash
-# Restore depuis backup
-./scripts/restore.sh prod 2024-01-15-backup
-
-# Rollback application
-./scripts/rollback.sh koprogo-api v1.2.0
+# Vérifier HTTPS
+curl https://votre-domaine.com/api/v1/health
 ```
 
-## 🛠️ Commandes Utiles
+---
+
+## 📊 Monitoring
+
+### Health checks
+
+Toutes les **5 minutes** : `curl http://localhost:8080/api/v1/health`
 
 ```bash
-# Déploiement
-./scripts/deploy.sh [env]
-
-# Destruction (ATTENTION!)
-./scripts/destroy.sh [env]
-
-# Backup manuel
-./scripts/backup.sh [env]
-
-# Mise à jour application
-cd helm
-helm upgrade koprogo-api ./koprogo-api \
-  --namespace koprogo \
-  --values ./koprogo-api/values-prod.yaml
-
-# Scaling manuel
-kubectl scale deployment koprogo-api \
-  -n koprogo \
-  --replicas=10
-
-# Logs
-kubectl logs -n koprogo -l app.kubernetes.io/name=koprogo-api -f
-
-# Shell dans pod
-kubectl exec -it -n koprogo <pod-name> -- /bin/bash
+# Voir logs health checks
+tail -f /var/log/koprogo-health.log
 ```
 
-## 🐛 Troubleshooting
-
-### Problèmes Courants
-
-**1. Terraform apply échoue**
+### Métriques système
 
 ```bash
-# Vérifier les credentials OVH
-echo $OVH_APPLICATION_KEY
-
-# Réinitialiser l'état
-terraform init -reconfigure
+# Sur le VPS
+docker stats
+htop
+df -h
 ```
 
-**2. Ansible ne peut pas se connecter**
+---
+
+## 🛠️ Maintenance
+
+### Restart services
 
 ```bash
-# Tester connectivité SSH
-ansible all -i inventory/dev.yml -m ping
-
-# Vérifier la clé SSH
-ssh -i ~/.ssh/koprogo-dev ubuntu@<ip>
+cd ~/koprogo
+docker compose restart
 ```
 
-**3. Pods en CrashLoopBackOff**
+### Update manuel (sans attendre cron)
 
 ```bash
-# Voir les logs
-kubectl logs -n koprogo <pod-name>
-
-# Décrire le pod
-kubectl describe pod -n koprogo <pod-name>
-
-# Vérifier les events
-kubectl get events -n koprogo --sort-by='.lastTimestamp'
+cd ~/koprogo
+./scripts/auto-update.sh
 ```
 
-**4. Performance dégradée**
+### Voir logs
 
 ```bash
-# Vérifier les ressources
-kubectl top nodes
-kubectl top pods -A
+# Tous les services
+docker compose logs -f
 
-# Vérifier le HPA
-kubectl get hpa -n koprogo
+# Backend uniquement
+docker compose logs -f backend
 
-# Forcer un scale up
-kubectl scale deployment koprogo-api -n koprogo --replicas=5
+# PostgreSQL uniquement
+docker compose logs -f postgres
 ```
 
-## 📚 Documentation Additionnelle
+### Cleanup Docker
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Architecture détaillée
-- [SECURITY.md](./SECURITY.md) - Politiques de sécurité (TODO)
-- [RUNBOOK.md](./RUNBOOK.md) - Procédures opérationnelles (TODO)
+```bash
+# Supprimer images inutilisées
+docker system prune -a
+```
+
+---
+
+## 💰 Coûts
+
+| Composant | Prix |
+|-----------|------|
+| VPS OVH Value (1 vCPU, 2GB RAM) | **7€ TTC/mois** |
+| Domaine (optionnel) | ~12€/an (~1€/mois) |
+| SSL Let's Encrypt | **0€** |
+| **TOTAL** | **~7-8€/mois** |
+
+**Capacité** : 1,000-1,500 copropriétés (validé par tests de charge)
+
+---
+
+## 🌍 Écologie
+
+**OVH Cloud France (Gravelines)** :
+- Mix énergétique : **60g CO₂/kWh** (nucléaire 70% + renouvelables 25%)
+- **7-25x moins de CO₂** qu'AWS/Azure (400-500g CO₂/kWh)
+- Empreinte carbone : **0.12g CO₂/requête**
+
+---
+
+## 🧹 Désinstallation
+
+```bash
+# 1. Détruire VPS Terraform
+cd terraform
+terraform destroy
+
+# 2. (Optionnel) Cleanup credentials
+unset OVH_APPLICATION_KEY OVH_APPLICATION_SECRET OVH_CONSUMER_KEY
+```
+
+---
+
+## 🆘 Troubleshooting
+
+### Terraform : "Error creating instance"
+
+**Cause** : Credentials OVH incorrects ou quota dépassé.
+
+**Fix** :
+```bash
+# Vérifier credentials
+env | grep OVH
+
+# Vérifier quota projet OVH
+# https://www.ovh.com/manager/public-cloud/ → Quotas
+```
+
+### Ansible : "SSH connection failed"
+
+**Cause** : VPS pas encore prêt ou IP incorrecte.
+
+**Fix** :
+```bash
+# Attendre 1-2 minutes après terraform apply
+sleep 60
+
+# Tester SSH manuel
+ssh ubuntu@$(cd terraform && terraform output -raw vps_ip)
+```
+
+### Health check échoue
+
+**Cause** : Services Docker pas encore démarrés.
+
+**Fix** :
+```bash
+# Attendre 30 secondes
+sleep 30
+
+# Vérifier logs
+docker compose logs backend
+```
+
+---
+
+## 📚 Ressources
+
+- **Guide complet déploiement** : [docs/VPS_DEPLOYMENT.md](../../docs/VPS_DEPLOYMENT.md)
+- **GitOps manuel** : [docs/DEPLOY_GITOPS.md](../../docs/DEPLOY_GITOPS.md)
+- **Business plan** : [docs/BUSINESS_PLAN_BOOTSTRAP.md](../../docs/BUSINESS_PLAN_BOOTSTRAP.md)
+- **Terraform OVH** : https://registry.terraform.io/providers/ovh/ovh/latest/docs
+- **Ansible** : https://docs.ansible.com/
+
+---
 
 ## 🤝 Support
 
-Pour toute question ou problème :
+**Problème de déploiement ?**
 
-- **Email** : ops@koprogo.io
-- **Issues** : GitHub Issues
-- **Slack** : #infrastructure (interne)
+1. GitHub Issues : https://github.com/gilmry/koprogo/issues
+2. Discord : [à créer]
 
-## 📄 Licence
+---
 
-MIT License - Voir [LICENSE](../LICENSE)
+**KoproGo ASBL** - Déploiement automatisé pour les geeks 🚀

@@ -1,0 +1,27 @@
+# Development Dockerfile with hot reload (cargo-watch)
+FROM rust:1.83-slim
+
+WORKDIR /app
+
+# Install cargo-watch for hot reload
+RUN cargo install cargo-watch
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Cargo files for dependency caching
+COPY Cargo.toml Cargo.lock ./
+
+# Create dummy main to cache dependencies
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build && \
+    rm -rf src
+
+# Source code will be mounted via volume
+
+# Hot reload command: watch for changes and rebuild
+CMD ["cargo", "watch", "-x", "run"]

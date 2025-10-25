@@ -11,8 +11,8 @@ services:
     restart: unless-stopped
 
     command:
-      # API and dashboard
-      - "--api.dashboard=true"
+      # API and dashboard - DÉSACTIVÉ EN PRODUCTION
+      - "--api.dashboard=false"
       - "--api.insecure=false"
       # Docker provider
       - "--providers.docker=true"
@@ -42,16 +42,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_letsencrypt:/letsencrypt
 
-    labels:
-      # Dashboard (access via https://traefik.domain.com/dashboard/)
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DOMAIN:-traefik.koprogo.com}`) && PathPrefix(`/dashboard`)"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      # Dashboard auth (default: admin/admin - CHANGE THIS!)
-      - "traefik.http.routers.traefik.middlewares=dashboard-auth"
-      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_AUTH:-admin:$$apr1$$8EVjn/nj$$GiLUZqcbueTFeD23SuB6x0}"
+    # Dashboard désactivé en production pour sécurité
 
     networks:
       - koprogo-network

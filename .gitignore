@@ -39,3 +39,11 @@ tarpaulin-report.html
 
 # Benchmarks
 target/criterion/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Sphinx docs
+docs/_build/

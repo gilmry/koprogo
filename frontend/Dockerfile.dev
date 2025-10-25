@@ -1,18 +1,18 @@
-# Dockerfile.dev pour développement
-FROM node:20-alpine
+# Development Dockerfile with hot reload (Astro dev server)
+FROM node:20-slim
 
 WORKDIR /app
 
-# Copier package files
-COPY package*.json ./
+# Copy package files for dependency caching
+COPY package.json package-lock.json* ./
 
-# Installer les dépendances
-RUN npm ci
+# Install dependencies
+RUN npm install
 
-# Le code source sera monté via volume
-# Pas de COPY . . ici
+# Source code will be mounted via volume
 
+# Expose Astro dev server port
 EXPOSE 3000
 
-# Commande par défaut (peut être overridée)
+# Hot reload command: Astro dev server with HMR
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

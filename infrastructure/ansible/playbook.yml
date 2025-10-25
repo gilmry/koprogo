@@ -1,0 +1,242 @@
+---
+# Playbook Ansible pour configurer un VPS OVH pour KoproGo
+# Installe Docker, Git, configure firewall, et déploie KoproGo avec GitOps
+
+- name: Configure KoproGo VPS with GitOps Auto-Update
+  hosts: koprogo
+  become: yes
+  vars:
+    koprogo_user: koprogo
+    koprogo_repo: https://github.com/gilmry/koprogo.git
+    koprogo_branch: main
+    koprogo_dir: /home/{{ koprogo_user }}/koprogo
+    domain: "{{ lookup('env', 'KOPROGO_DOMAIN') | default('', true) }}"
+    enable_ssl: "{{ domain != '' }}"
+    acme_email: "{{ lookup('env', 'ACME_EMAIL') | default('admin@example.com', true) }}"
+
+  tasks:
+    # ==========================================
+    # 1. Mise à jour système
+    # ==========================================
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Upgrade all packages
+      apt:
+        upgrade: dist
+        autoremove: yes
+
+    # ==========================================
+    # 2. Installation dépendances
+    # ==========================================
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - git
+          - ufw
+          - fail2ban
+          - htop
+          - ncdu
+        state: present
+
+    # ==========================================
+    # 3. Installation Docker
+    # ==========================================
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    # ==========================================
+    # 4. Création utilisateur KoproGo
+    # ==========================================
+    - name: Create koprogo user
+      user:
+        name: "{{ koprogo_user }}"
+        shell: /bin/bash
+        create_home: yes
+        groups: docker
+        append: yes
+
+    # ==========================================
+    # 5. Configuration Firewall
+    # ==========================================
+    - name: Configure UFW defaults
+      ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { direction: 'incoming', policy: 'deny' }
+        - { direction: 'outgoing', policy: 'allow' }
+
+    - name: Allow SSH
+      ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
+    - name: Allow HTTP
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+    - name: Allow HTTPS
+      ufw:
+        rule: allow
+        port: '443'
+        proto: tcp
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+
+    # ==========================================
+    # 6. Clone du dépôt KoproGo
+    # ==========================================
+    - name: Clone KoproGo repository
+      git:
+        repo: "{{ koprogo_repo }}"
+        dest: "{{ koprogo_dir }}"
+        version: "{{ koprogo_branch }}"
+        force: yes
+      become_user: "{{ koprogo_user }}"
+
+    # ==========================================
+    # 7. Configuration environnement
+    # ==========================================
+    - name: Create .env file from template
+      template:
+        src: env.j2
+        dest: "{{ koprogo_dir }}/.env"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0600'
+
+    # ==========================================
+    # 8. Déploiement Docker Compose
+    # ==========================================
+    - name: Pull Docker images
+      command: docker compose pull
+      args:
+        chdir: "{{ koprogo_dir }}"
+      become_user: "{{ koprogo_user }}"
+
+    - name: Start KoproGo services
+      command: docker compose up -d --build
+      args:
+        chdir: "{{ koprogo_dir }}"
+      become_user: "{{ koprogo_user }}"
+
+    # ==========================================
+    # 9. Configuration GitOps Auto-Update
+    # ==========================================
+    - name: Create auto-update script
+      template:
+        src: auto-update.sh.j2
+        dest: "{{ koprogo_dir }}/scripts/auto-update.sh"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0755'
+
+    - name: Setup daily auto-update cron job
+      cron:
+        name: "KoproGo GitOps Auto-Update"
+        minute: "0"
+        hour: "3"
+        job: "{{ koprogo_dir }}/scripts/auto-update.sh >> /var/log/koprogo-update.log 2>&1"
+        user: "{{ koprogo_user }}"
+
+    # ==========================================
+    # 10. Configuration backups
+    # ==========================================
+    - name: Create backup script
+      template:
+        src: backup.sh.j2
+        dest: "{{ koprogo_dir }}/scripts/backup.sh"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0755'
+
+    - name: Setup daily backup cron job
+      cron:
+        name: "KoproGo Daily Backup"
+        minute: "0"
+        hour: "2"
+        job: "{{ koprogo_dir }}/scripts/backup.sh >> /var/log/koprogo-backup.log 2>&1"
+        user: "{{ koprogo_user }}"
+
+    # ==========================================
+    # 11. Monitoring basique
+    # ==========================================
+    - name: Create monitoring script
+      template:
+        src: health-check.sh.j2
+        dest: "{{ koprogo_dir }}/scripts/health-check.sh"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0755'
+
+    - name: Setup health check cron job (every 5 min)
+      cron:
+        name: "KoproGo Health Check"
+        minute: "*/5"
+        job: "{{ koprogo_dir }}/scripts/health-check.sh >> /var/log/koprogo-health.log 2>&1"
+        user: "{{ koprogo_user }}"
+
+    # ==========================================
+    # 12. Outputs et vérifications
+    # ==========================================
+    - name: Wait for services to start
+      pause:
+        seconds: 10
+
+    - name: Check API health
+      uri:
+        url: "http://localhost:8080/api/v1/health"
+        method: GET
+        status_code: 200
+      register: health_check
+      retries: 5
+      delay: 5
+      until: health_check.status == 200
+
+    - name: Display deployment info
+      debug:
+        msg:
+          - "=========================================="
+          - "KoproGo déployé avec succès !"
+          - "=========================================="
+          - "URL API: {{ 'https://' if enable_ssl else 'http://' }}{{ domain if domain else ansible_host }}/api/v1"
+          - "Health check: {{ 'https://' if enable_ssl else 'http://' }}{{ domain if domain else ansible_host }}/api/v1/health"
+          - "Logs: docker compose logs -f (dans {{ koprogo_dir }})"
+          - "Auto-update: Tous les jours à 3h (cron)"
+          - "Backups: Tous les jours à 2h (cron)"
+          - "=========================================="

@@ -1,0 +1,17 @@
+# Copier ce fichier vers terraform.tfvars et remplir les valeurs
+
+# ID du projet OVH Cloud
+# Obtenir via: https://www.ovh.com/manager/public-cloud/
+ovh_service_name = "YOUR_OVH_PROJECT_ID"
+
+# Nom de l'instance
+instance_name = "koprogo-production"
+
+# Région (GRA11 = Gravelines France, bas carbone)
+region = "GRA11"
+
+# Chemin vers votre clé SSH publique
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+
+# (Optionnel) Domaine pour SSL automatique via Traefik
+# domain = "koprogo.com"

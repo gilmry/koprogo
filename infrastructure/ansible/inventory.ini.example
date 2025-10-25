@@ -1,0 +1,10 @@
+# Copier ce fichier vers inventory.ini et remplir l'IP de votre VPS
+
+[koprogo]
+# Remplacer par l'IP obtenue après terraform apply
+koprogo-vps ansible_host=YOUR_VPS_IP ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+
+[koprogo:vars]
+# Variables optionnelles (peuvent être définies dans playbook.yml)
+# domain=koprogo.com
+# acme_email=admin@koprogo.com

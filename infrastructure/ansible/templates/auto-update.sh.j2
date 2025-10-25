@@ -1,0 +1,75 @@
+#!/bin/bash
+# KoproGo GitOps Auto-Update Script
+# Pulls latest code from GitHub and redeploys
+
+set -e
+
+KOPROGO_DIR="{{ koprogo_dir }}"
+BRANCH="{{ koprogo_branch }}"
+LOG_FILE="/var/log/koprogo-update.log"
+
+echo "=================================================="
+echo "KoproGo Auto-Update - $(date)"
+echo "=================================================="
+
+cd "$KOPROGO_DIR"
+
+# Fetch latest changes
+echo "Fetching latest changes from GitHub..."
+git fetch --tags origin "$BRANCH"
+
+# Check if updates available
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse origin/"$BRANCH")
+
+if [ "$LOCAL" = "$REMOTE" ]; then
+    echo "✅ Already up to date (commit: $LOCAL)"
+    exit 0
+fi
+
+echo "🔄 Updates available:"
+echo "  Current:  $LOCAL"
+echo "  Latest:   $REMOTE"
+
+# Backup database before update
+echo "📦 Creating pre-update backup..."
+BACKUP_DIR="$KOPROGO_DIR/backups"
+mkdir -p "$BACKUP_DIR"
+BACKUP_FILE="$BACKUP_DIR/pre-update-$(date +%Y%m%d_%H%M%S).sql.gz"
+
+docker compose exec -T postgres pg_dump -U koprogo koprogo_db | gzip > "$BACKUP_FILE"
+echo "✅ Backup created: $BACKUP_FILE"
+
+# Pull latest code
+echo "📥 Pulling latest code..."
+git pull origin "$BRANCH"
+
+# Rebuild and restart services
+echo "🔨 Rebuilding and restarting services..."
+docker compose pull
+docker compose up -d --build
+
+# Wait for services to be ready
+echo "⏳ Waiting for services to start..."
+sleep 15
+
+# Health check
+echo "🏥 Running health check..."
+if curl -f http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+    echo "✅ Health check passed!"
+    echo "✅ Update completed successfully to $REMOTE"
+
+    # Cleanup old backups (keep last 7 days)
+    find "$BACKUP_DIR" -name "pre-update-*.sql.gz" -mtime +7 -delete
+else
+    echo "❌ Health check failed! Rolling back..."
+
+    # Rollback to previous version
+    git reset --hard "$LOCAL"
+    docker compose up -d --build
+
+    echo "⚠️  Rollback completed. Please check logs."
+    exit 1
+fi
+
+echo "=================================================="

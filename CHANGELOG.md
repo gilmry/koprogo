@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Documentation Setup with Sphinx & Rust API Docs (2025-10-25)
+
+#### Documentation Infrastructure
+
+**Sphinx Documentation**
+- Setup complete Sphinx documentation system with myst-parser for Markdown support
+- Created Python virtual environment in `docs/.venv/` for isolated dependencies
+- Added comprehensive toctree structure with organized sections:
+  - Documentation Projet (README, Changelog)
+  - Business & Roadmap (Business Plan, Infrastructure Roadmap)
+  - Guides de Déploiement (VPS Deployment, GitOps)
+  - Guides de Développement (Makefile, E2E Testing, Performance)
+  - Archives (historical documentation)
+  - Entités du Domaine (backend entity documentation)
+- Excluded `.venv` directories from Sphinx processing to avoid build warnings
+
+**Rust API Documentation**
+- Fixed `make docs` command to use `SQLX_OFFLINE=true` for cargo doc compilation
+- Fixed rustdoc warnings by properly escaping `Vec<u8>` type in documentation comments
+- Added automatic venv creation in Makefile for Sphinx commands
+
+**GitHub Pages Deployment**
+- Created GitHub Actions workflow (`.github/workflows/docs.yml`) that:
+  - Builds both Rust API docs and Sphinx documentation
+  - Combines them into unified structure: `/docs/` (Sphinx) and `/rust/` (API)
+  - Creates custom landing page with cards linking to both documentation types
+  - Auto-deploys to GitHub Pages on push to main
+- Triggers on changes to: `docs/**`, `backend/src/**`, `backend/Cargo.toml`
+
+**Makefile Improvements**
+- Updated `docs` target with SQLX_OFFLINE mode
+- Updated `docs-sphinx` target with automatic venv setup
+- Updated `docs-serve` target for live-reload development server
+
+**Configuration Updates**
+- Updated `.gitignore` to exclude Python artifacts (`.venv/`, `__pycache__/`, `docs/_build/`)
+- Created `docs/_static/` directory for Sphinx static assets
+- Updated `docs/conf.py` to exclude virtual environment from documentation build
+
 ### Added - SuperAdmin Management Pages & Real-time Statistics (2025-01-24)
 
 #### Backend (Rust/Actix-web)

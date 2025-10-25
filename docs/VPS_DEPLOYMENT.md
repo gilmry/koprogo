@@ -1,6 +1,20 @@
 # KoproGo VPS Deployment Guide
 
-Complete guide to deploying KoproGo on a low-cost VPS (Hetzner, OVH, DigitalOcean).
+Complete guide to deploying KoproGo on OVH Cloud France (low-cost, GDPR-native, ultra-low carbon footprint).
+
+## 🎯 Qui utilise ce guide ?
+
+Ce guide est pour **deux cas d'usage** :
+
+### 1. **Cloud ASBL (Hébergement Géré)** ☁️
+L'ASBL KoproGo utilise ce guide pour maintenir son infrastructure cloud multi-tenant (1€/copro/mois).
+
+### 2. **Self-Hosting (Gratuit)** 🔓
+Copropriétés ou syndics qui veulent héberger leur propre instance KoproGo.
+
+**💡 Vous préférez l'auto-update automatique ?** Consultez plutôt **[DEPLOY_GITOPS.md](DEPLOY_GITOPS.md)** pour installation 1-click avec mises à jour GitHub automatiques.
+
+---
 
 ## Architecture Overview
 
@@ -13,13 +27,14 @@ Complete guide to deploying KoproGo on a low-cost VPS (Hetzner, OVH, DigitalOcea
    │        │
    ▼        ▼
 ┌─────────┐  ┌────────────────────────┐
-│ Vercel  │  │  VPS (Hetzner CPX11)   │
-│ (Astro) │  │  ┌──────────────────┐  │
-│ Frontend│──▶  │ Nginx (reverse   │  │
-│ Static  │     │ proxy + SSL)     │  │
-│ CDN     │     └─────────┬────────┘  │
-└─────────┘               │           │
- Gratuit                  ▼           │
+│ Vercel  │  │  VPS OVH Cloud France  │
+│ (Astro) │  │  1 vCPU / 2GB RAM     │
+│ Frontend│  │  ┌──────────────────┐  │
+│ Static  │──▶  │ Traefik (reverse │  │
+│ CDN     │     │ proxy + SSL)     │  │
+└─────────┘     └─────────┬────────┘  │
+ Gratuit                  │           │
+                          ▼           │
                   ┌──────────────┐    │
                   │ Backend      │    │
                   │ (Rust/Actix) │    │
@@ -29,48 +44,71 @@ Complete guide to deploying KoproGo on a low-cost VPS (Hetzner, OVH, DigitalOcea
                           ▼           │
                   ┌──────────────┐    │
                   │ PostgreSQL   │    │
-                  │ 15-alpine    │    │
+                  │ 16-alpine    │    │
                   │ Docker       │    │
                   └──────────────┘    │
-└────────────────────────┘
-   4,15€/mois
+                                      │
+   Datacenter France                 │
+   60g CO₂/kWh (nucléaire)           │
+   0.12g CO₂/requête                 │
+└────────────────────────────────────┘
+   5€/mois
 ```
 
 ## Cost Breakdown
 
-### Recommended Setup
+### Recommended Setup (Production-Validated 2025)
 
 | Component | Provider | Cost |
 |-----------|----------|------|
-| Backend VPS | Hetzner CPX11 | 4,15€/mois |
+| Backend VPS | OVH Cloud France VPS Value | **7€/mois TTC** (5.80€ HT) |
 | Frontend | Vercel (Free tier) | 0€ |
 | Database | Same VPS | 0€ |
-| Domain | Namecheap (.be) | ~10€/an |
-| SSL Certificate | Let's Encrypt | 0€ |
-| **TOTAL** | | **~5€/mois** |
+| Domain | koprogo.com | ~12€/an (~1€/mois) |
+| SSL Certificate | Let's Encrypt (via Traefik) | 0€ |
+| **TOTAL** | | **~8€/mois** (96€/an) |
 
-### Alternative VPS Providers
+**Note prix 2025** : OVH a ajusté ses tarifs. Le VPS Value (1 vCore, 2GB RAM, 40GB NVMe) est maintenant à **5.80€ HT/mois = 7.02€ TTC** avec TVA belge 21%.
 
-1. **Hetzner CPX11** (RECOMMENDED)
-   - 2 vCPU, 2GB RAM, 40GB SSD
-   - Location: Germany (GDPR-friendly)
-   - 20TB traffic
-   - Cost: **4,15€/mois**
+### Why OVH Cloud France?
 
-2. **OVH VPS Starter**
-   - 1 vCPU, 2GB RAM, 40GB SSD
-   - Location: France/Belgium
-   - Cost: **3,50€/mois**
+**✅ Performance Validée (Tests Réels)** :
+- 1 vCPU / 2GB RAM
+- **1,000-1,500 copropriétés** supportées
+- **287 req/s** soutenus, 99.74% uptime
+- P50: 69ms, P90: 130ms, P99: 752ms
+- 40GB SSD NVMe
 
-3. **DigitalOcean Basic**
-   - 1 vCPU, 1GB RAM, 25GB SSD
-   - Global locations
-   - Cost: **$6/mois** (~5,50€)
+**✅ Écologie Exceptionnelle** :
+- Datacenter France (mix énergétique 60g CO₂/kWh)
+- **0.12g CO₂/requête** (7-25x mieux que AWS/Azure)
+- Nucléaire (70%) + Renouvelables (25%)
 
-4. **Contabo VPS S**
-   - 4 vCPU, 6GB RAM, 200GB SSD
-   - Best price/performance
-   - Cost: **4,50€/mois**
+**✅ Souveraineté & GDPR** :
+- Données hébergées en France
+- GDPR-native, conformité totale
+- Pas de CLOUD Act américain
+- Support en français
+
+**✅ Infrastructure** :
+- 40GB SSD NVMe
+- 1 Gbps network
+- Anti-DDoS inclus
+- Cost: **5€/mois**
+
+### Alternative Providers (Not Recommended)
+
+Nous recommandons **exclusivement OVH France** pour les avantages écologiques, GDPR et souveraineté. Alternatives si nécessaire :
+
+1. **Hetzner Germany** (alternative acceptable)
+   - Mix énergétique allemand : 350g CO₂/kWh (**5.8x plus** que France)
+   - GDPR OK mais datacenter DE
+   - Cost: 4,15€/mois
+
+2. **DigitalOcean** (Non recommandé)
+   - Datacenters USA = CLOUD Act
+   - Mix énergétique 400g+ CO₂/kWh
+   - Cost: $6/mois
 
 ## Step-by-Step Deployment
 

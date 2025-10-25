@@ -1,8 +1,9 @@
-# KoproGo - Business Plan Bootstrap 2025-2028
+# KoproGo - Business Plan ASBL 2025-2028
 
-**Version** : 2.0 - Bootstrap / OpenCore Strategy
+**Version** : 3.0 - ASBL Non-Lucrative / OpenCore
 **Date** : Janvier 2025
-**Stratégie** : Croissance organique, rentabilité immédiate, pas de financement externe
+**Statut** : ASBL Belge (Association Sans But Lucratif)
+**Philosophie** : Side-project durable, qualité avant vitesse, impact social
 
 ---
 
@@ -23,80 +24,361 @@
 
 ## Executive Summary
 
-### Philosophie Bootstrap
+### Philosophie ASBL Side-Project
 
-**Principe fondamental** : Rentabilité dès le jour 1, croissance organique durable, pas de dépendance externe.
+**Principe fondamental** : Impact social avant profit, qualité avant vitesse, durabilité avant croissance.
 
-> "Nous construisons pour durer, pas pour lever."
+> "Nous construisons un bien commun, pas une licorne."
 
-### L'Équipe (0€ coût)
+### Statut Juridique : ASBL Belge
 
-**3 personnes, 2 FTE (Full-Time Equivalent)** :
+**Association Sans But Lucratif** (loi belge 1921) :
+- ✅ **Non-lucratif** : Tous les bénéfices réinvestis dans le projet
+- ✅ **Exonération TVA** : Activités à caractère social
+- ✅ **Transparence** : Assemblée générale annuelle, comptes publiés
+- ✅ **Gouvernance** : Conseil d'administration bénévole
+- ✅ **Mission sociale** : Démocratiser l'accès à la gestion de copropriété
 
-1. **Architecte Tech** (1.0 FTE)
-   - Indépendant, complémentaire
-   - Architecture + développement core
-   - Gère infrastructure
+### L'Équipe (Bénévole jusqu'à viabilité)
 
-2. **Solopreneur Belgique** (0.5 FTE)
-   - Commercial + support BE
-   - Community management
-   - Content creation
+**2 personnes, 0.25 FTE équivalent** :
 
-3. **Solopreneur Tunisie** (0.5 FTE)
-   - Commercial + support TN
-   - Adaptation locale
-   - Communauté Maghreb
+1. **Architecte Logiciel** (10-20h/semaine en side-project)
+   - Emploi temps plein ailleurs (sécurité financière)
+   - Architecture + développement core Rust
+   - DevOps + infrastructure OVH
+   - Vision produit long-terme
+   - **Rythme** : Qualité > Vitesse, pas de burnout
 
-**Modèle de rémunération** :
-- Phase 1 (0-6 mois) : 0€ (bootstrap pur, revenus externes)
-- Phase 2 (6-12 mois) : Répartition 50% revenus (après coûts infra)
-- Phase 3 (12+ mois) : Salaires fixes + % revenus
+2. **Étudiante en Informatique** (5-10h/semaine bénévole)
+   - Formation pratique sur projet réel
+   - Maintenance, documentation, tests
+   - Community management GitHub
+   - Contribution au CV professionnel
+   - **Objectif** : Apprentissage + impact social
 
-### Modèle OpenCore
+**Modèle de financement ASBL** :
+- **Phase 1 (An 1-10)** : **100% bénévole** - Aucun service cloud payant
+- **Financement futur** : Dons volontaires, subventions, sponsoring éthique (si besoin)
+- **Pas de modèle SaaS** : 100% self-hosted, gratuité totale
 
-**Core Open-Source (MIT License)** :
-- Gestion immeubles, lots, copropriétaires
-- Charges, paiements basiques
-- Assemblées générales
-- Documents
-- API REST complète
-- Self-hosted possible
+**Principe** : L'ASBL ne distribue JAMAIS de dividendes. Tous les dons/subventions servent :
+1. Infrastructure ASBL (domaine, services gratuits pour communauté)
+2. Développement produit (bounties pour features prioritaires)
+3. Événements communauté (meetups, conf annuelle)
+4. Indemnités contributeurs réguliers (si budget suffisant)
 
-**Features Premium (Payantes)** :
-- Cloud hosting géré (haute disponibilité)
-- Paiements en ligne (Stripe/PayPal)
-- Génération documents automatique (PDF)
-- Mobile app
-- Support prioritaire
-- Intégrations tierces (comptabilité)
-- White-label
-- Analytics avancé
+### Modèle OpenCore ASBL (Hybride)
 
-**Avantage** : Communauté contribue, adoption large, monétisation services.
+**Tout le code est MIT License** :
+- ✅ Gestion immeubles, lots, copropriétaires
+- ✅ Charges, paiements, comptabilité
+- ✅ Assemblées générales (convocations, PV, votes)
+- ✅ Gestion documents (upload, versioning)
+- ✅ API REST complète
+- ✅ Frontend complet (Astro + Svelte)
+- ✅ Infrastructure as Code (Docker Compose, Traefik, CI/CD)
+- ✅ **Aucune feature fermée, aucun code propriétaire**
 
-### Stratégie de Croissance
+**Option 1 : Self-Hosted GitOps (Gratuit)** 🔓
+- ✅ **Installation 1-click** : Script automatique fourni
+- ✅ **GitOps automatique** : GitHub Actions pour auto-déploiement
+- ✅ **Updates automatiques** : Pull depuis dépôt GitHub à chaque release
+- ✅ **Versioning géré** : Tags git = versions stables
+- ✅ **Rollback facile** : Revenir à version précédente en 1 commande
+- ✅ **100% gratuit** : Coût = VPS perso (~5-7€/mois) ou machine locale (0€)
+- ✅ **Autonomie totale** : Vous contrôlez 100% de l'infrastructure
+- ✅ **Données souveraines** : Sur VOTRE serveur
 
-**0€ marketing paid** (au début) :
-- ✅ **Communauté open-source** : GitHub, contributions
-- ✅ **SEO organique** : Blog, documentation excellente
-- ✅ **Bouche-à-oreille** : Produit exceptionnel = NPS élevé
-- ✅ **Réseaux sociaux** : LinkedIn, Twitter, Reddit (gratuit)
-- ✅ **Partenariats** : Associations copropriétaires
+**Pour qui ?**
+- Copropriétés avec un résident informaticien/DevOps
+- Syndics ayant déjà un VPS/serveur
+- Geeks qui veulent contrôle total
 
-**Ads (plus tard, quand rentable)** :
-- Google Ads : 100-200€/mois (micro-budget)
-- Facebook Tunisie : 50€/mois (CPC très bas)
+**Option 2 : Cloud ASBL (1€/copro/mois)** ☁️
+- ✅ **Hébergement géré** : Infrastructure maintenue par l'ASBL bénévole
+- ✅ **0 maintenance** : Mises à jour automatiques, backups, monitoring
+- ✅ **Support email** : Réponse 48-72h (bénévole)
+- ✅ **SSL/HTTPS** : Certificats gérés automatiquement
+- ✅ **Uptime 99.7%+** : Infrastructure OVH France (datacenter bas carbone)
+- ✅ **Même features** : 100% identique à self-hosted (code MIT)
+- 💰 **Prix : 1€/copropriété/mois**
 
-### Projections Réalistes (3 ans)
+**Pour qui ?**
+- Copropriétés sans compétences techniques
+- Syndics qui veulent simplicité
+- Petites copropriétés (< 20 lots) où VPS dédié = trop cher
 
-| Année | Copros | Clients | MRR | Coûts | Profit | Équipe |
-|-------|--------|---------|-----|-------|--------|--------|
-| **2025** | 50 | 10 | 200€ | 60€ | 1,680€/an | 3 (2 FTE) |
-| **2026** | 300 | 50 | 1,200€ | 180€ | 12,240€/an | 3 (2 FTE) |
-| **2027** | 1,000 | 150 | 4,000€ | 360€ | 43,680€/an | 3 (2.5 FTE) |
+**Principe ASBL Hybride** :
+- ✅ **Code 100% ouvert** : Aucune feature premium fermée
+- ✅ **Pas de lock-in** : Migration cloud → self-hosted en 1 commande
+- ✅ **Prix coûtant** : 1€/copro couvre juste infra + 0€ bénévole
+- ✅ **Transparence** : Comptes ASBL publiés annuellement
+- ✅ **Revenus cloud → ASBL** : Finance développement, pas de profit privé
 
-**Philosophie** : Croissance organique 20-30%/mois (vs 50%+ avec ads), mais **durable** et **profitable dès le début**.
+### Stratégie de Croissance (Ultra-Lente, Durable)
+
+**0€ marketing** - 100% organique :
+- ✅ **Open-source first** : GitHub, qualité du code exemplaire
+- ✅ **Documentation exceptionnelle** : Tutorials, guides, vidéos
+- ✅ **Bouche-à-oreille** : Produit excellent = recommandations naturelles
+- ✅ **SEO long-terme** : Blog technique, cas d'usage
+- ✅ **Communauté** : Discord/Matrix, support entraide
+
+**Pas de publicité payante** : L'ASBL n'a pas les moyens, et ce n'est pas nécessaire.
+
+### Projections Réalistes Side-Project (5 ans) - Modèle Hybride
+
+**Hypothèse** : 10-20h/semaine, 2 bénévoles, croissance 5-10 copros cloud/mois
+
+| Année | Cloud (1€/copro) | Self-hosted | Total Copros | MRR | Coûts | Excédent | Trésorerie | Équipe |
+|-------|------------------|-------------|--------------|-----|-------|----------|------------|--------|
+| **2025** | 20 | 80 | 100 | 20€ | 462€ (const.) + 8€/mois | -442€ | -442€ | 2 bénévoles |
+| **2026** | 80 | 320 | 400 | 80€ | 8€/mois | 72€/mois | +422€ | 2 bénévoles |
+| **2027** | 200 | 800 | 1,000 | 200€ | 8€/mois | 192€/mois | +2,726€ | 2 bénévoles |
+| **2028** | 400 | 1,600 | 2,000 | 400€ | 16€/mois | 384€/mois | +7,334€ | 2 bénévoles |
+| **2029** | 700 | 2,800 | 3,500 | 700€ | 16€/mois | 684€/mois | +15,542€ | **Indemnités possibles** |
+
+**Détails projections** :
+
+**Ratio cloud/self-hosted** : 20/80 (conservateur)
+- 20% copros cloud (sans compétences tech)
+- 80% self-hosted (avec informaticien ou VPS existant)
+- Ratio inspiré Nextcloud, Plausible Analytics, Mastodon
+
+**Revenus MRR** :
+- 1€/copro/mois sur instances cloud uniquement
+- Self-hosted = 0€ revenu (autonome)
+
+**Coûts infrastructure** :
+- An 1-3 : VPS Value OVH 7€ + domaine 1€ = 8€/mois (96€/an)
+- An 4-5 : VPS Essential OVH 15€ + domaine 1€ = 16€/mois (192€/an)
+- 1 vCPU suffit jusqu'à ~500 copros cloud (tests validés)
+
+**Philosophie hybride** :
+- **Cloud 1€/copro** : Viable économiquement, couvre juste infra
+- **Self-hosted gratuit** : Adoption massive, communauté tech forte
+- **Pas de pression** : Break-even Mois 12 An 2, rentabilité progressive
+- **0€ salaires An 1-4** : Bénévolat pur, indemnités An 5 si trésorerie > 10k€
+- **Impact social** : Des milliers de copros aidées (cloud + self-hosted)
+
+---
+
+## Structure Juridique : ASBL Belge
+
+### Qu'est-ce qu'une ASBL ?
+
+**ASBL** = Association Sans But Lucratif (loi belge du 27 juin 1921, réformée en 2019)
+
+**Définition légale** : Une ASBL est une personne morale qui ne cherche pas à procurer un gain matériel à ses membres. Tous les bénéfices doivent être réinvestis dans l'objet social de l'association.
+
+### Constitution de l'ASBL KoproGo
+
+**Étapes de création** :
+
+1. **Statuts** : Rédaction des statuts (objet social, gouvernance, membres)
+   - Coût : 0€ (modèle standard adapté)
+   - Temps : 1 semaine
+
+2. **Acte authentique** : Passage devant notaire (obligatoire)
+   - Coût : ~250€ (frais notaire réduits pour ASBL)
+   - Temps : 1 journée
+
+3. **Publication Moniteur** : Annonce légale au Moniteur belge
+   - Coût : ~200€ (publication obligatoire)
+   - Temps : 2-4 semaines
+
+4. **Numéro d'entreprise** : BCE (Banque-Carrefour des Entreprises)
+   - Coût : 0€ (automatique)
+   - Temps : Immédiat après publication
+
+5. **Compte bancaire ASBL** : Ouverture compte dédié
+   - Coût : 0-10€/mois selon banque
+   - Temps : 1 semaine
+
+**Total création ASBL** : ~450-500€ + 1-2 mois
+
+### Objet Social ASBL KoproGo
+
+**Article 3 des Statuts** :
+
+> "L'association a pour objet la **promotion de l'accès démocratique aux outils numériques de gestion de copropriété**, par le développement, la maintenance et la diffusion de logiciels libres et open-source, ainsi que la fourniture de services d'hébergement et de support à prix coûtant.
+>
+> L'ASBL poursuit un but d'**intérêt général** et d'**éducation populaire** en :
+> - Rendant accessible la technologie de gestion immobilière à tous, sans discrimination économique
+> - Favorisant la transparence et l'auditabilité par l'open-source
+> - Formant des bénévoles et étudiants aux pratiques de développement logiciel professionnel
+> - Réduisant l'empreinte écologique de l'hébergement numérique par des choix d'infrastructure responsables"
+
+### Gouvernance ASBL
+
+#### Assemblée Générale (AG)
+
+**Composition** : Tous les membres de l'ASBL
+
+**Membres fondateurs** :
+- Architecte logiciel (fondateur)
+- Étudiante informatique (fondatrice)
+- +1 membre externe (pour diversité, ex: juriste ou comptable bénévole)
+
+**Cotisation membres** : 0€ (pas de cotisation, ASBL accessible)
+
+**Pouvoirs de l'AG** :
+- Modification des statuts
+- Nomination/révocation administrateurs
+- Approbation comptes annuels
+- Dissolution de l'ASBL
+
+**Fréquence** : 1x/an minimum (obligatoire), + AG extraordinaires si besoin
+
+#### Conseil d'Administration (CA)
+
+**Composition** : 3 administrateurs minimum (loi belge)
+
+**Administrateurs KoproGo** :
+- Architecte logiciel (Président)
+- Étudiante informatique (Secrétaire)
+- Membre externe (Trésorier)
+
+**Mandat** : 4 ans renouvelables
+
+**Rémunération** : **0€** (bénévolat pur)
+
+**Pouvoirs du CA** :
+- Gestion quotidienne de l'ASBL
+- Décisions stratégiques (roadmap, investissements)
+- Recrutement/indemnisation contributeurs (si trésorerie suffisante)
+- Représentation de l'ASBL
+
+**Fréquence réunions** : Trimestrielles (4x/an) + ad-hoc si urgent
+
+#### Gestion Journalière
+
+**Délégation possible** : Le CA peut déléguer la gestion journalière à un ou plusieurs gestionnaires
+
+**KoproGo** : Architecte logiciel = gestionnaire journalier délégué
+- Décisions opérationnelles (infrastructure, déploiements)
+- Engagement dépenses < 500€ (au-delà : validation CA)
+- Représentation ASBL (contrats fournisseurs, partenariats)
+
+### Obligations Légales ASBL
+
+#### Comptabilité
+
+**Comptabilité simplifiée** (si revenus < 500k€/an) :
+- Livre journal des recettes/dépenses
+- Inventaire annuel actifs/passifs
+- Budget prévisionnel annuel
+
+**Comptabilité double** (si revenus > 500k€/an) :
+- Plan comptable normalisé
+- Bilan + compte de résultats
+- Expert-comptable recommandé
+
+**KoproGo Phase 1-5** : Comptabilité simplifiée (revenus < 50k€/an)
+
+**Coût** : 0€ (géré en interne) ou 300-500€/an si comptable externe
+
+#### Comptes Annuels
+
+**Publication obligatoire** :
+- Dépôt à la Banque Nationale de Belgique (BNB)
+- Délai : 6 mois après clôture exercice
+- Accessibles au public (transparence)
+
+**Approbation** : Assemblée Générale annuelle
+
+#### TVA
+
+**Exonération TVA possible** si activités à caractère **social, éducatif ou culturel**
+
+**KoproGo** : Exonération probable pour :
+- Fourniture logiciel open-source (gratuit)
+- Hébergement à prix coûtant (non lucratif)
+
+**Si exonération refusée** : TVA 21% sur services cloud (prix TTC ajustés)
+
+#### Impôt sur les Sociétés (ISOC)
+
+**Principe ASBL** : Exonération ISOC si :
+- Activités conformes à l'objet social (non lucratif)
+- Pas de distribution de bénéfices
+- Activités principalement désintéressées
+
+**KoproGo** : Exonération probable (mission sociale prédominante)
+
+**Si activités commerciales significatives** : ISOC sur profits commerciaux uniquement (revenus cloud)
+
+### Transparence Financière ASBL
+
+**Engagement KoproGo** :
+
+1. **Comptes publics annuels** : Publiés sur GitHub + site web
+2. **Budget prévisionnel** : Partagé avec communauté en début d'année
+3. **Rapport d'activité** : Annuel, détaillant usage des fonds
+4. **Dashboard temps réel** : Revenus, coûts, trésorerie (mise à jour trimestrielle)
+
+**Exemple de transparence** :
+- Mozilla Foundation : Publie budget complet + salaires dirigeants
+- Wikimedia : Dashboard financier public temps réel
+- Document Foundation : Comptes annuels + rapports activité détaillés
+
+### Rémunération dans l'ASBL
+
+**Principes légaux belges** :
+
+1. **Administrateurs** : Pas de rémunération (sauf remboursement frais réels)
+2. **Bénévoles** : Indemnités forfaitaires autorisées (max ~40€/jour, 2,000€/an, plafonds 2025)
+3. **Salariés** : Rémunération normale possible si :
+   - Liée à l'exécution de l'objet social
+   - Justifiée par travail effectif
+   - Approuvée par AG
+   - Proportionnée aux capacités financières ASBL
+
+**KoproGo Timeline** :
+
+**Années 1-3** : **0€ rémunération**
+- Administrateurs bénévoles
+- Pas d'indemnités
+- Chacun a activité externe pour vivre
+
+**Année 4** : **Indemnités forfaitaires** (si trésorerie > 10k€)
+- 500€/mois max par contributeur actif (dans limites légales)
+- Non soumis cotisations sociales (statut indemnité bénévole)
+- Décision AG + validation CA
+
+**Année 5+** : **Salaires partiels** (si trésorerie > 30k€)
+- Contrats de travail ASBL (temps partiel)
+- 1,500€/mois brut (mi-temps)
+- Cotisations sociales classiques
+- Décision AG + approbation budget
+
+### Avantages Fiscaux Donateurs
+
+**Si reconnaissance "établissement d'utilité publique"** (après 3-5 ans d'activité) :
+
+**Donateurs particuliers** :
+- Déduction fiscale 45% du don (min 40€/an)
+- Exemple : Don 100€ = 45€ réduction impôt
+
+**Donateurs entreprises** :
+- Déduction à 120% du don (sponsoring déductible)
+- Exemple : Don 1,000€ = 1,200€ déduction bénéfice imposable
+
+**KoproGo Phase 1-3** : Pas encore de reconnaissance, donc pas de déductions fiscales.
+
+**KoproGo Phase 4+** : Demande reconnaissance utilité publique (si activité prouvée)
+
+### Dissolution ASBL
+
+**En cas d'échec ou fin de mission** :
+
+1. **Décision AG** : Dissolution votée à majorité qualifiée (2/3)
+2. **Liquidation** : Remboursement dettes, vente actifs
+3. **Boni de liquidation** : **Interdit de distribuer aux membres**
+4. **Attribution** : Actifs restants donnés à ASBL similaire ou d'utilité publique
+
+**KoproGo** : En cas de dissolution, code source reste MIT (open-source perpétuel), infrastructure donnée à autre ASBL tech sociale (ex: Framasoft).
 
 ---
 
@@ -104,33 +386,51 @@
 
 ### Vision
 
-Devenir **la référence open-source** pour la gestion de copropriété en Europe et Afrique du Nord, construite par et pour la communauté.
+Créer un **bien commun numérique** pour la gestion de copropriété, accessible à tous, maintenu par une communauté, libre et pérenne.
 
 ### Mission
 
-**Démocratiser la gestion de copropriété** via l'open-source, en prouvant qu'un modèle **OpenCore + Bootstrap** peut concurrencer les géants propriétaires.
+**Démocratiser l'accès à la gestion de copropriété** en prouvant qu'un modèle **ASBL + OpenCore + Side-Project** peut :
+1. Servir l'intérêt général plutôt que des actionnaires
+2. Offrir une qualité exceptionnelle sans course à la croissance
+3. Être viable économiquement sans exploitation
+4. Créer de la valeur sociale plutôt que boursière
 
-### Valeurs
+### Valeurs ASBL
 
-1. **🔓 Open First** : Core open-source, communauté avant tout
-2. **💰 Bootstrap** : Rentabilité immédiate, pas de dépendance externe
-3. **🌱 Sustainable** : Croissance organique, long-terme
-4. **⚡ Excellence** : Performance technique exceptionnelle
-5. **🤝 Community** : Co-construction avec utilisateurs
+1. **🏛️ Intérêt Général** : Mission sociale avant profit privé
+2. **🔓 Open Source** : Code MIT, transparence totale, auditabilité
+3. **🐢 Durabilité** : Lent mais solide, 10+ ans de vision
+4. **⚡ Excellence** : Qualité technique sans compromis
+5. **🤝 Communauté** : Gouvernance partagée, décisions collectives
+6. **🌱 Écologie** : Infrastructure bas carbone (OVH France, 0.12g CO₂/req)
+7. **💚 Bénévolat** : Contribution par passion, pas par obligation
 
 ---
 
-## Modèle OpenCore
+## Modèle OpenCore ASBL
 
-### Qu'est-ce qu'OpenCore ?
+### Qu'est-ce qu'OpenCore pour une ASBL ?
 
-**Définition** : Business model où le **core** du produit est **open-source**, et les **services/features avancées** sont **payantes**.
+**Définition** : Le **core** du produit est **100% open-source (MIT)**, et les **services d'hébergement cloud** sont **payants** pour financer l'ASBL.
 
-**Exemples réussis** :
-- GitLab : Core OSS, Enterprise payant (valorisation $10B+)
-- Sentry : OSS monitoring, Cloud payant ($3B valorisation)
-- Plausible Analytics : OSS analytics, hosting payant (rentable, bootstrap)
-- PostHog : Product analytics OSS, cloud payant ($560M valorisation)
+**Différence ASBL vs Startup** :
+| Aspect | Startup OpenCore | ASBL OpenCore (KoproGo) |
+|--------|------------------|-------------------------|
+| **Code** | Core OSS, Premium fermé | **100% open-source MIT** |
+| **Profits** | Actionnaires, dividendes | **100% réinvestis mission sociale** |
+| **Objectif** | Valorisation, exit IPO | **Pérennité, impact social** |
+| **Gouvernance** | VC board, CEO | **AG démocratique, CA bénévole** |
+| **Vitesse** | Hypercroissance obligée | **Croissance durable side-project** |
+| **Salaires** | Dès J0 (funding) | **Après 3-4 ans (si trésorerie)** |
+| **Marketing** | Ads, sales force | **100% organique, communauté** |
+
+**Exemples ASBL/Non-Profit tech réussis** :
+- **Mozilla Foundation** : Firefox, Thunderbird (~$500M/an budget, rentable depuis 20+ ans)
+- **Wikimedia** : Wikipedia (~$150M/an, dons + services, 300M+ utilisateurs)
+- **Document Foundation** : LibreOffice (communauté 700+ devs, certifications payantes)
+- **Blender Foundation** : Logiciel 3D (cloud rendering payant, industrie Hollywood)
+- **Framasoft** : Suite outils open-source France (dons + services, 0 pub)
 
 ### KoproGo Core (Open-Source)
 
@@ -157,66 +457,53 @@ Devenir **la référence open-source** pour la gestion de copropriété en Europ
 - ✅ Anti-lock-in (USP majeur vs concurrence)
 - ✅ SEO/Visibilité (GitHub stars, HackerNews)
 
-### KoproGo Premium (Payant)
+### KoproGo Cloud (Payant pour financer l'ASBL)
 
-**Modèle SaaS Cloud** :
+**Modèle ASBL : Service à prix coûtant**
 
-**Features Premium** :
+**Services Cloud inclus** :
 ```
-💰 Cloud hosting géré (99.9% uptime, backups auto)
-💰 Paiements en ligne (Stripe/PayPal intégration)
-💰 Génération documents auto (PDF contrats, quittances, bilans)
-💰 Mobile app (iOS + Android)
-💰 Support prioritaire (email, chat)
-💰 Intégrations comptables (Odoo, Sage, Exact)
-💰 White-label (votre marque)
-💰 Analytics avancé (dashboards, BI)
-💰 Multi-utilisateurs avec rôles avancés
-💰 SSO/SAML (Enterprise)
+✅ Hébergement géré OVH France (datacenter bas carbone)
+✅ Sauvegardes quotidiennes automatiques
+✅ Mises à jour gratuites (rolling updates sans downtime)
+✅ Support email (délai 48-72h)
+✅ SSL/TLS inclus (sécurité)
+✅ Monitoring uptime (99.7%+ garanti)
+✅ Exports données (CSV, JSON, SQL)
+✅ GDPR compliance (données EU)
 ```
 
-**Pourquoi payer ?**
-- Gain de temps (pas de gestion infra)
-- Sécurité/Backups gérés
-- Features avancées (dev coûteux)
-- Support humain
+**Pourquoi payer l'hébergement ASBL ?**
+- ✅ **Gain de temps** : 0 gestion serveur, 0 maintenance
+- ✅ **Sécurité** : Backups + SSL + monitoring professionnels
+- ✅ **Écologie** : Infrastructure bas carbone (0.12g CO₂/req)
+- ✅ **Soutien ASBL** : Financer développement open-source
+- ✅ **Éthique** : Prix coûtant, transparence financière totale
 
-### Pricing OpenCore
+### Pricing ASBL (Unique et Simple)
 
-**Free Forever (Self-Hosted)** :
-- Core complet open-source
-- Support communauté (GitHub, forum)
-- Updates régulières
-- **Prix : 0€**
+**Self-Hosted (Gratuit à vie)** :
+- ✅ Core complet MIT open-source
+- ✅ Docker Compose fourni (déploiement 1-click)
+- ✅ Documentation complète
+- ✅ Support communauté (Discord, GitHub Issues)
+- ✅ Updates régulières (pull git)
+- ✅ **Aucune limitation fonctionnelle**
+- **Prix : 0€ pour toujours**
 
-**Cloud Starter** :
-- Hosting géré
-- 5 copropriétés
-- Backups automatiques
-- Support email
-- **Prix : 10€/mois** (2€/copro)
+**Cloud ASBL (Prix coûtant)** :
+- ✅ Hébergement géré + tous services cloud ci-dessus
+- ✅ Toutes les fonctionnalités (100% des features)
+- ✅ Nombre illimité de copropriétés
+- ✅ Utilisateurs illimités
+- **Prix : 1€/copropriété/mois**
 
-**Cloud Pro** :
-- 20 copropriétés
-- Paiements en ligne
-- Génération documents
-- Support prioritaire
-- Intégrations
-- **Prix : 35€/mois** (1.75€/copro)
+**Exemples pricing** :
+- 5 copropriétés : **5€/mois** (60€/an)
+- 20 copropriétés : **20€/mois** (240€/an)
+- 100 copropriétés : **100€/mois** (1,200€/an)
 
-**Cloud Enterprise** :
-- Copropriétés illimitées
-- White-label
-- SSO/SAML
-- SLA garanti
-- Support dédié
-- **Prix : 150€/mois**
-
-**On-Premise Enterprise** :
-- License core + premium on-premise
-- Support installation
-- Updates garanties
-- **Prix : 500€/an**
+**Pas de paliers, pas de premium, pas de surprises** : Philosophie ASBL = équité et transparence.
 
 ### Avantages OpenCore
 
@@ -232,115 +519,6 @@ Devenir **la référence open-source** pour la gestion de copropriété en Europ
 - ✅ Contributions gratuites (PRs)
 - ✅ Crédibilité (anti-vendor lock-in)
 - ✅ Différenciation unique vs concurrence
-
----
-
-## Équipe Bootstrap
-
-### Structure 3 Personnes (2 FTE)
-
-#### 1. Architecte Tech (1.0 FTE)
-
-**Profil** :
-- Indépendant avec activité complémentaire
-- Expert Rust, architecture hexagonale
-- Connaissance DevOps (K3s, Traefik)
-
-**Responsabilités** :
-- Architecture système
-- Développement core (50% temps)
-- Review PRs communauté
-- Infrastructure (VPS, CI/CD)
-- Documentation technique
-
-**Temps** : 40h/semaine
-- 20h dev core
-- 10h review community PRs
-- 5h infra/ops
-- 5h doc/support tech
-
-#### 2. Solopreneur Belgique (0.5 FTE)
-
-**Profil** :
-- Expérience immobilier/syndic (bonus)
-- Bon communicant
-- Bilingue FR/NL
-
-**Responsabilités** :
-- Commercial Belgique
-- Support clients BE
-- Community management (forum, Discord)
-- Content creation (blog, vidéos)
-- Partenariats associations
-
-**Temps** : 20h/semaine
-- 8h commercial (démos, onboarding)
-- 6h support clients
-- 4h content/community
-- 2h admin/ops
-
-#### 3. Solopreneur Tunisie (0.5 FTE)
-
-**Profil** :
-- Connaissance marché tunisien
-- Réseau local
-- Bilingue FR/AR (bonus)
-
-**Responsabilités** :
-- Commercial Tunisie/Maghreb
-- Support clients TN
-- Adaptation locale (langue, paiements)
-- Communauté Maghreb
-- Partenariats locaux
-
-**Temps** : 20h/semaine
-- 8h commercial (démos, onboarding)
-- 6h support clients
-- 4h communauté locale
-- 2h admin/ops
-
-### Gouvernance
-
-**Décisions produit** : Les 3 (consensus)
-
-**Roadmap** :
-- Issues GitHub votées par communauté
-- Décision finale : Les 3 core maintainers
-
-**Support commercial** :
-- BE : Solopreneur BE
-- TN : Solopreneur TN
-- Tech : Architecte (escalade)
-
-**Répartition revenus** :
-
-**Phase 1 (0-6 mois)** :
-- Revenus : 0€ (bootstrap)
-- Chacun a activité externe
-
-**Phase 2 (6-18 mois)** :
-```
-Revenus bruts : X€/mois
-- Coûts infra : -5€
-= Revenus nets : (X - 5)€
-
-Répartition :
-- 40% Architecte (FTE)
-- 30% Solopreneur BE
-- 30% Solopreneur TN
-```
-
-**Phase 3 (18+ mois)** :
-```
-Si revenus nets > 3,000€/mois :
-- Salaires fixes :
-  - Architecte : 1,500€/mois
-  - Solo BE : 750€/mois
-  - Solo TN : 750€/mois
-- Reste : Réparti 40/30/30
-```
-
-**Objectif Année 3** : Chacun peut vivre à temps plein de KoproGo.
 
 ---
 
@@ -489,88 +667,105 @@ vs Business Plan v1 : 75€ CAC
 
 ---
 
-## Modèle Économique Bootstrap
+## Modèle Économique ASBL (Hybride Cloud + Self-Hosted)
 
-### Structure de Coûts (Ultra-Lean)
+### Structure de Coûts (Ultra-Minimale)
 
-#### Coûts Fixes Mensuels
+**Coûts Fixes ASBL** :
 
-**Infrastructure** :
-- Année 1 : VPS Hetzner CPX11 = 5€/mois
-- Année 2 : VPS Hetzner CPX21 = 15€/mois
-- Année 3 : VPS Hetzner CPX31 = 30€/mois
+| Année | Constitution | VPS OVH | Domaine | Compte banque | Total |
+|-------|--------------|---------|---------|---------------|-------|
+| **2025** | 450€ | 84€ (7€×12) | 12€ | 0€ | **546€** |
+| **2026** | 0€ | 84€ | 12€ | 0-120€ | **96-216€** |
+| **2027** | 0€ | 84€ | 12€ | 120€ | **216€** |
+| **2028** | 0€ | 180€ (15€×12) | 12€ | 120€ | **312€** |
+| **2029** | 0€ | 180€ | 12€ | 120€ | **312€** |
 
-**Services** :
-- Frontend : Vercel (gratuit)
-- Domain : 1€/mois
-- Email : SendGrid (gratuit)
-- GitHub : Gratuit (open-source)
-- Monitoring : UptimeRobot (gratuit)
+**Détails** :
+- **VPS OVH France** :
+  - An 1-3 : VPS Value 7€ TTC/mois (1 vCore, 2GB, 40GB NVMe)
+  - An 4-5 : VPS Essential 15€ TTC/mois (2 vCore, 4GB, 80GB NVMe)
+  - Héberge instances cloud multi-tenant
+- **Domaine** : koprogo.com ~12€/an
+- **Compte bancaire ASBL** : 0-10€/mois selon banque
+- **Marketing** : 0€ (100% organique)
+- **Salaires** : 0€ An 1-4 (bénévolat), indemnités An 5 si trésorerie > 10k€
 
-**Total Infrastructure** :
-- Année 1 : **5€/mois** (60€/an)
-- Année 2 : **15€/mois** (180€/an)
-- Année 3 : **30€/mois** (360€/an)
+**Infrastructure self-hosted** : 0€ coût ASBL (chaque utilisateur gère son VPS/serveur)
 
-**Marketing** :
-- Année 1 : **0€/mois**
-- Année 2 : **150€/mois** (1,800€/an)
-- Année 3 : **500€/mois** (6,000€/an)
+### Revenus ASBL
 
-**Salaires** :
-- Année 1-2 : **0€** (revenus externes, répartition profits)
-- Année 3 : **3,000€/mois** (36,000€/an) si revenus suffisants
+**Source 1 : Cloud ASBL (1€/copro/mois)** :
+- Uniquement copros qui choisissent hébergement géré ASBL
+- Prix coûtant : couvre juste infra + buffer incidents
+- Pas de profit privé : excédents réinvestis ASBL
 
-#### Total Coûts
+**Source 2 : Dons volontaires** :
+- GitHub Sponsors, Open Collective, Liberapay
+- Utilisateurs self-hosted satisfaits peuvent donner
+- 0€ attendu, bonus bienvenu
 
-| Année | Infra | Marketing | Salaires | Total |
-|-------|-------|-----------|----------|-------|
-| **2025** | 60€ | 0€ | 0€ | **60€** |
-| **2026** | 180€ | 1,800€ | 0€ | **1,980€** |
-| **2027** | 360€ | 6,000€ | 36,000€ | **42,360€** |
+**Source 3 : Subventions (An 3+)** :
+- Horizon Europe (EU) : 10-50k€/projet si éligible
+- Digital Wallonia (BE) : 5-20k€/an
+- Fondations open-source : Mozilla, Sloan, etc.
 
-### Revenus
+### Unit Economics Cloud ASBL
 
-**Mix Clients** :
-- 70% Cloud Starter (10€/mois)
-- 25% Cloud Pro (35€/mois)
-- 5% Cloud Enterprise (150€/mois)
-
-**ARPU moyen** : ~20€/mois
-
-**Self-Hosted** : 0€ (conversion cloud : 10-15%)
-
-### Métriques Clés
-
-**Lifetime Value (LTV)** :
+**LTV (Lifetime Value)** :
 ```
-Cloud Starter (10€/mois) :
-- Churn : 5%/an (0.42%/mois)
-- LTV = 10€ × 0.95 / 0.0042 = 2,262€
+1€/copro/mois × durée vie moyenne
+- Churn : 5%/an (très faible, besoin réel)
+- Durée vie = 1 / 0.05 = 20 ans
+- LTV = 1€ × 12 mois × 20 ans = 240€ par copro
 
-Cloud Pro (35€/mois) :
-- Churn : 3%/an (0.25%/mois)
-- LTV = 35€ × 0.95 / 0.0025 = 13,300€
+Conservateur (10 ans) : LTV = 120€
 ```
 
-**CAC (Organique)** :
-- Année 1 : 10€
-- Année 2 : 15€
-- Année 3 : 25€
+**CAC (Customer Acquisition Cost)** :
+```
+0€ marketing → CAC = 0€
+
+Temps bénévole si compté :
+- 1h onboarding/copro × 0€ (bénévole) = 0€
+- CAC réaliste = ~5€ (si on valorise temps)
+```
 
 **LTV/CAC** :
-- Starter : 2,262€ / 10€ = **226:1** 🚀
-- Pro : 13,300€ / 10€ = **1,330:1** 🚀
+```
+240€ / 5€ = 48:1 (exceptionnel)
+Ou 240€ / 0€ = ∞ (théorique)
 
-vs Marché SaaS : Target >3:1
+Target SaaS classique : 3:1
+KoproGo ASBL : 48:1 ✅
+```
 
 **Payback Period** :
-- Starter : 10€ / (10€ × 0.95) = **1.05 mois**
-- Pro : 10€ / (35€ × 0.95) = **0.3 mois**
+```
+CAC / MRR par copro = 5€ / 1€ = 5 mois
+Target SaaS : < 12 mois
+KoproGo : 5 mois ✅
+```
 
-vs Marché : Target <12 mois
+**Gross Margin** :
+```
+Revenus 1€/copro/mois
+Coûts variables : ~0.01€/copro (compute)
+Marge brute : 99% ✅
+```
 
-**Conclusion** : Unit economics **exceptionnels** grâce à acquisition organique.
+**Churn** :
+```
+Année 1 : 10% (early adopters, tests)
+Année 2+ : 5%/an (produit mature)
+Target SaaS : < 10%/an
+KoproGo : 5% ✅
+```
+
+**Conclusion Unit Economics** :
+- ✅ **Très sains** même à 1€/copro (prix coûtant)
+- ✅ **Scalabilité** : 1 vCPU = 1,000-1,500 copros (marge énorme)
+- ✅ **Pas de pression** : Break-even An 2, croissance lente OK
 
 ---
 
@@ -710,77 +905,108 @@ vs Business Plan v1 : 30-50%/mois (avec ads)
 
 ---
 
-## Roadmap Produit OpenCore
+## Roadmap Produit Side-Project
 
-### Année 1 (2025) - Core Open-Source
+### Philosophie Roadmap ASBL
 
-**Q1 : Foundation**
-- ✅ Core complet open-source (GitHub public)
-- Documentation exhaustive (setup, API, archi)
-- Self-hosting facile (Docker Compose 1-click)
-- API REST complète + Swagger
+**Principe** : Qualité > Vitesse, Features essentielles > Gadgets, Stabilité > Innovation à tout prix
 
-**Q2 : Cloud MVP**
-- Plateforme cloud (signup, hosting géré)
-- Paiements Stripe (Cloud plans)
-- Backups automatiques
-- Monitoring basique
+**Rythme** : 10-20h/semaine (side-project durable, pas de burnout)
 
-**Q3 : Features Premium**
-- Paiements en ligne copropriétaires (Stripe Connect)
-- Génération documents PDF (quittances, PV)
+**Priorités** :
+1. **Fiabilité** : Code testé, production-ready
+2. **Documentation** : Tout est documenté (self-service)
+3. **Communauté** : Contributions externes encouragées
+4. **Simplicité** : Fonctionnalités core, pas de bloatware
+
+### Année 1 (2025) - Core Open-Source Solide
+
+**Trimestre 1-2 (6 mois) : Foundation**
+- ✅ Core complet open-source MIT (GitHub public)
+- ✅ CRUD complet : Immeubles, Lots, Copropriétaires, Charges, AG
+- ✅ API REST complète + documentation Swagger
+- ✅ Tests : Unitaires (100% couverture domain) + intégration + E2E
+- ✅ Docker Compose 1-click (self-hosting facile)
+- ✅ Documentation exhaustive (architecture, setup, contribution)
+- ✅ CI/CD GitHub Actions (tests auto, release automatique)
+
+**Trimestre 3-4 (6 mois) : Cloud MVP**
+- Plateforme cloud basique (inscription, login, multi-tenant)
+- Paiements Stripe simple (1€/copro/mois)
+- Backups automatiques quotidiens (PostgreSQL dump)
+- Monitoring uptime (UptimeRobot gratuit)
+- Support email basique (réponse 48-72h)
+
+**Objectif Année 1** : Produit **utilisable et stable**, prêt pour early adopters
+
+**Features NON prioritaires An 1** : Mobile app, intégrations, AI, analytics avancé
+
+### Année 2 (2026) - Stabilité & Communauté
+
+**Semestre 1 : Polish & UX**
+- Amélioration UX frontend (feedback early adopters)
+- Génération documents PDF (quittances, PV assemblées)
 - Exports comptables (CSV, Excel)
-- Support prioritaire (email)
+- Notifications email (paiements, échéances)
+- Traductions (NL, EN) - contributeurs communauté
 
-**Q4 : Mobile + API**
-- Mobile app MVP (React Native)
-- Webhooks
-- API rate limiting
-- Intégrations Zapier
+**Semestre 2 : Features Utilisateurs**
+- Multi-utilisateurs avec rôles simples (admin, membre, lecteur)
+- Gestion documents (upload, versioning)
+- Calendrier assemblées générales
+- Amélioration reporting (tableaux de bord)
 
-**Core OSS Contributions (communauté)** :
-- Traductions (NL, DE, ES, AR)
-- Themes/UI improvements
-- Bugfixes
-- Tests
+**Communauté Année 2** :
+- 20+ contributors externes (bugfixes, traductions, features)
+- GitHub : 3,000 stars, 50+ PRs mergées
+- Discord : 500+ membres actifs
 
-### Année 2 (2026) - Scale Features
+**Objectif Année 2** : Produit **mature et complet** pour marché Belgique/France
 
-**H1 : Advanced**
-- Mobile app complète (iOS + Android stores)
-- Génération documents avancée (contrats, bilans)
-- Reporting financier
-- Multi-utilisateurs avec rôles (RBAC)
+### Année 3 (2027) - Scale Qualité
 
-**H2 : Integrations**
-- Intégrations comptables (Odoo, Sage, Exact)
-- White-label (marque personnalisée)
-- Analytics avancé (dashboards)
-- SSO/SAML (Enterprise)
+**Semestre 1 : Advanced Features**
+- Mobile app (Progressive Web App d'abord, puis React Native si demande)
+- Intégrations comptables basiques (exports formats Odoo, Sage)
+- Webhooks API (events pour intégrations tierces)
+- Amélioration performance (DragonflyDB cache si besoin)
 
-**Core OSS** :
-- Plugin system
-- Marketplace contributions
-- 50+ contributors
+**Semestre 2 : Enterprise Light**
+- White-label basique (logo personnalisé, domaine custom)
+- SSO simple (Google OAuth, Microsoft)
+- API v2 améliorée (GraphQL optionnel)
+- Advanced reporting (dashboards personnalisables)
 
-### Année 3 (2027) - Enterprise
-
-**H1 : Enterprise Features**
-- On-premise license
-- Advanced compliance (GDPR automation)
-- Multi-tenant architecture
-- API v2 (GraphQL)
-
-**H2 : AI & Advanced**
-- AI predictions (charges, anomalies)
-- Chatbot support
-- IoT integration (smart buildings)
-- Blockchain proof-of-ownership (exploration)
-
-**Core OSS** :
+**Communauté Année 3** :
 - 100+ contributors
-- Ecosystem plugins
-- Community meetups
+- Plugin system communautaire (extensions)
+- Meetup annuel KoproGo (si budget)
+
+**Objectif Année 3** : Produit **enterprise-ready** pour grands syndics et bailleurs
+
+### Année 4-5 (2028-2029) - Maturité & Expansion
+
+**Possible features (si demande marché)** :
+- AI predictions (détection anomalies charges)
+- IoT integration (compteurs intelligents)
+- Mobile apps natives (iOS + Android stores)
+- Multi-régions (datacenters EU multiples)
+- Compliance avancée (certifications ISO)
+
+**Principe** : Les features Années 4-5 seront **dictées par les utilisateurs**, pas par une roadmap imposée.
+
+### Comparaison Side-Project vs Startup
+
+| Aspect | Startup (Année 1) | Side-Project ASBL (Année 1) |
+|--------|-------------------|----------------------------|
+| **Features livrées** | 50+ features MVP | 10-15 features core **solides** |
+| **Vélocité** | Rapide mais bugs | **Lente mais stable** |
+| **Dette technique** | Élevée (rush) | **Minimale (qualité)** |
+| **Tests** | Partiels | **100% couverture critique** |
+| **Documentation** | Minimale | **Exhaustive** |
+| **Burnout risque** | Élevé | **Faible** |
+
+**Choix ASBL** : **Moins de features, mais qualité irréprochable** = Meilleure rétention, moins de churn, communauté fidèle.
 
 ---
 
@@ -898,261 +1124,439 @@ vs Business Plan v1 : 30-50%/mois (avec ads)
 
 ---
 
-## Risques et Opportunités
+## Risques et Opportunités ASBL
 
-### Risques Bootstrap
+### Risques Side-Project ASBL
 
-#### 1. Croissance Lente
+#### 1. Croissance Ultra-Lente
 
-**Risque** : Croissance organique 10-20%/mois vs 30-50% avec ads
+**Risque** : Croissance 5-10 copros/mois (vs 50-100 pour startup avec marketing)
 
-**Impact** : Moyen (revenues plus bas)
-
-**Mitigation** :
-- Excellence produit (NPS > 60 = bouche-à-oreille)
-- SEO long-terme (blog 2x/semaine)
-- Communauté forte (contributions = croissance)
-- Patience (rentable dès Mois 2, pas de pression)
-
-#### 2. Temps Équipe Limité
-
-**Risque** : 2 FTE pour tout (dev + commercial + support)
-
-**Impact** : Moyen (vélocité réduite)
+**Impact** : Faible (acceptable pour ASBL side-project)
 
 **Mitigation** :
-- Communauté OSS (contributions externes)
-- Automation maximum (CI/CD, self-service)
-- Focus ruthless (80/20)
-- Micro-scope MVP (features essentielles)
+- ✅ **Pas de stress** : Aucune pression investisseurs, croissance naturelle
+- ✅ **Qualité > Quantité** : Meilleure rétention (churn 3-5% vs 10-15%)
+- ✅ **Excellence produit** : NPS > 60 = bouche-à-oreille naturel
+- ✅ **SEO long-terme** : Blog technique, documentation exemplaire
+- ✅ **Rentable immédiatement** : Break-even Mois 2, pas besoin de croissance rapide
 
-#### 3. Concurrence Agressive
+**Conclusion** : Risque transformé en **avantage** (durabilité vs burn-out)
+
+#### 2. Temps Équipe Limité (0.25 FTE)
+
+**Risque** : 10-20h/semaine = vélocité 4x plus lente qu'une startup
+
+**Impact** : Moyen (features livrées lentement)
+
+**Mitigation** :
+- ✅ **Communauté OSS** : Contributors externes (traductions, bugfixes, features)
+- ✅ **Automation maximum** : CI/CD, tests auto, déploiements sans intervention
+- ✅ **Focus ruthless** : 20% features = 80% valeur (Pareto)
+- ✅ **Documentation self-service** : Réduit support, utilisateurs autonomes
+- ✅ **Roadmap communautaire** : Utilisateurs votent features prioritaires
+
+**Conclusion** : Side-project **viable** si scope contrôlé et communauté active
+
+#### 3. Bénévolat Non Rémunéré (3-4 ans)
+
+**Risque** : Démotivation contributeurs si pas de rémunération
+
+**Impact** : Moyen (risque abandon)
+
+**Mitigation** :
+- ✅ **Passion intrinsèque** : Contributeurs motivés par mission sociale, pas argent
+- ✅ **Apprentissage** : Étudiante informatique = formation pratique sur CV
+- ✅ **Flexibilité** : Chacun a job externe, KoproGo = passion side
+- ✅ **Transparence** : Comptes publics, promesse rémunération si trésorerie suffisante
+- ✅ **Reconnaissance** : Visibilité GitHub, conférences, blog posts
+
+**Conclusion** : Modèle **Mozilla/Wikipedia** prouve que bénévolat tech fonctionne si mission claire
+
+#### 4. Monétisation Faible (1€/copro)
+
+**Risque** : Prix trop bas = revenus insuffisants pour viabilité
+
+**Impact** : Faible (déjà validé par projections)
+
+**Mitigation** :
+- ✅ **Unit economics validés** : 1€/copro × 700 copros An 5 = 8,400€/an excédent
+- ✅ **Coûts ultra-bas** : 96-192€/an infrastructure, 0€ marketing, 0€ salaires An 1-3
+- ✅ **Conversion self-hosted** : 20-30% passent cloud (acquisition gratuite)
+- ✅ **Churn faible** : 3-5%/an (besoin réel, produit qualité)
+- ✅ **Scaling facile** : 1 vCPU = 1,500 copros (marge énorme)
+
+**Conclusion** : Pricing 1€ = **équitable et viable**, pas besoin d'augmenter
+
+#### 5. Concurrence Agressive
 
 **Risque** : Vilogi/Septeo baissent prix ou copient OpenCore
 
-**Impact** : Faible (improbable pour gros acteurs)
+**Impact** : Très faible (incompatible avec leur modèle)
 
 **Mitigation** :
-- License MIT (peuvent fork mais pas kill communauté)
-- Performance tech (difficile à copier)
-- Crédibilité OSS (authentique vs washing)
-- First-mover OpenCore copropriété
+- ✅ **License MIT** : Peuvent fork mais pas tuer communauté
+- ✅ **Impossible à copier** : Authenticity ASBL vs greenwashing corporate
+- ✅ **First-mover** : Première solution OpenCore copropriété
+- ✅ **Performance tech** : Rust, 0.12g CO₂/req, difficile à égaler
+- ✅ **Communauté loyale** : Open-source = confiance > marque
 
-#### 4. Monétisation Insuffisante
+**Conclusion** : ASBL = **moat** que les startups ne peuvent pas copier
 
-**Risque** : Trop de self-hosted, pas assez cloud payant
+### Opportunités ASBL
 
-**Impact** : Moyen
+#### 1. Communauté Open-Source = Croissance Gratuite
 
-**Mitigation** :
-- Value proposition cloud claire (gain temps, sécurité)
-- Prix accessibles (10-35€/mois vs 50-100€ concurrent)
-- Freemium généreux mais limité (5-20 copros max)
-- Upsell in-app (subtil)
+**Trigger** : 1,000+ stars GitHub, 50+ contributors actifs
 
-### Opportunités Bootstrap
-
-#### 1. Communauté Forte = Moat
-
-**Trigger** : 1,000+ stars, 50+ contributors
-
-**Impact** : Communauté devient barrière concurrentielle
+**Impact** : Communauté devient moteur de croissance autonome
 
 **Upside** :
-- Features gratuites (community contributions)
-- Evangelists (word-of-mouth scale)
-- Crédibilité (trust open-source)
-- Acquisition low-cost
+- ✅ **Features gratuites** : Contributors externes développent fonctionnalités
+- ✅ **Evangelists** : Ambassadeurs open-source promeuvent KoproGo naturellement
+- ✅ **Crédibilité** : GitHub stars = preuve sociale (trust > marketing)
+- ✅ **Acquisition $0** : Bouche-à-oreille tech, SEO organique
+- ✅ **Talent** : Attire étudiants/devs qui veulent contribuer (CV, learning)
 
-#### 2. OpenCore Trend
+**Exemple** : Plausible Analytics (bootstrap, OSS) : 15k stars → 10k+ clients sans marketing
 
-**Trigger** : Succès GitLab, Plausible, PostHog
+#### 2. Tendance Anti-Vendor Lock-In
 
-**Impact** : Modèle validé, confiance marché
+**Trigger** : 2025-2030 = décennie décentralisation, souveraineté numérique
 
-**Upside** :
-- Investors intéressés (si on veut lever plus tard)
-- Talent attraction (devs aiment OSS)
-- Press coverage (alternative OSS unique)
-
-#### 3. Acquisition Strategic
-
-**Trigger** : 10k+ stars, 100k+ ARR
-
-**Impact** : Acteurs établis veulent acheter tech/communauté
+**Impact** : Marché favorable aux solutions open-source et ASBL
 
 **Upside** :
-- Exit possible (si souhaité)
-- Partenariats stratégiques
-- Distribution large
+- ✅ **GDPR natif** : Données EU, conformité totale (vs cloud US)
+- ✅ **Souveraineté** : OVH France, pas de CLOUD Act
+- ✅ **Écologie** : 0.12g CO₂/req, mix français bas carbone
+- ✅ **Éthique** : ASBL non-profit vs SaaS profit-driven
+- ✅ **Presse** : Médias tech aiment histoires ASBL vs Big Tech
 
-#### 4. Enterprise Adoption
+**Exemple** : Framasoft (ASBL FR) : +1M utilisateurs, 0€ pub, financement dons + services
 
-**Trigger** : Product-market fit validé
+#### 3. Subventions & Dons (Si Utilité Publique)
 
-**Impact** : Grands syndics/bailleurs veulent on-premise
+**Trigger** : Reconnaissance "établissement d'utilité publique" Année 3-4
+
+**Impact** : Accès subventions publiques + dons déductibles fiscalement
 
 **Upside** :
-- Deals 5-10k€/an (license on-premise)
-- ARPU augmente significativement
-- Crédibilité market
+- ✅ **Subventions EU** : Horizon Europe, Digital Europe Programme (€€€ R&D)
+- ✅ **Subventions BE** : Innoviris, Digital Wallonia, Fonds Stratégiques
+- ✅ **Dons particuliers** : Déduction fiscale 45% → attire donateurs engagés
+- ✅ **Dons entreprises** : Déduction 120% → sponsoring RSE
+- ✅ **Fondations** : Mozilla Foundation, Sloan Foundation (grants open-source)
+
+**Exemple** : Blender Foundation : $1M/an en dons + $2M subventions → 50+ devs
+
+#### 4. Partenariats Institutionnels
+
+**Trigger** : Product-market fit validé, communauté mature
+
+**Impact** : Institutions publiques adoptent KoproGo (légitimité ASBL)
+
+**Upside** :
+- ✅ **Bailleurs sociaux** : Logements publics Belgique/France (milliers copros)
+- ✅ **Associations copropriétaires** : ARC, UNPI (recommandations membres)
+- ✅ **Universités** : Cas d'étude, projets étudiants, contributions
+- ✅ **Open Data** : Intégrations cadastre, données publiques
+- ✅ **Certifications** : Labels open-source, B Corp, ESS
+
+**Exemple** : LibreOffice utilisé par administrations EU (millions postes) → légitimité
+
+#### 5. Exit Éthique (Si Souhaité An 10+)
+
+**Trigger** : ASBL mature, 50k+ copros, 10k+ stars, communauté forte
+
+**Impact** : Acteurs établis intéressés par acquisition ASBL
+
+**Upside** :
+- ✅ **Acquisition stratégique** : Grands groupes immobiliers/tech veulent communauté
+- ✅ **Fusion ASBL** : Avec autre ASBL tech (ex: Framasoft) pour scale
+- ✅ **Fondation** : Transformer en fondation d'entreprise (modèle Mozilla)
+- ✅ **Legacy** : Code MIT reste libre, communauté préservée
+
+**Principe ASBL** : Exit uniquement si **préserve mission sociale** et **communauté**
+
+### Matrice Risques vs Startup
+
+| Risque | Startup | ASBL Side-Project | Avantage |
+|--------|---------|-------------------|----------|
+| **Burn-out** | ⚠️ Élevé (80h/semaine) | ✅ Faible (10-20h flexible) | ASBL |
+| **Burn rate** | ⚠️ -10k€/mois | ✅ -8€/mois | ASBL |
+| **Pression croissance** | ⚠️ VCs exigent 10x | ✅ Aucune | ASBL |
+| **Dilution** | ⚠️ 30-50% (levées) | ✅ 0% (pas d'actionnaires) | ASBL |
+| **Pivot forcé** | ⚠️ Si VCs insatisfaits | ✅ Liberté totale | ASBL |
+| **Dette** | ⚠️ Possible (growth at all costs) | ✅ Impossible (auto-financé) | ASBL |
+| **Échec = faillite** | ⚠️ Oui (dettes) | ✅ Non (0€ perdu) | ASBL |
+
+**Conclusion** : ASBL side-project = **Risques minimaux, opportunités maximales**
 
 ---
 
-## Comparaison Bootstrap vs VC-Backed
+## Comparaison ASBL Side-Project vs Startup
 
-| Aspect | Bootstrap (notre plan) | VC-Backed (plan v1) |
-|--------|-------------------------|----------------------|
-| **Financement** | 0€ externe | 50k€ seed |
-| **Pression** | 0 (croissance durable) | Élevée (10x growth) |
-| **Dilution** | 0% | 10-15% (seed) + 20-25% (Series A) |
-| **Break-even** | Mois 2 | Mois 18 |
-| **Profit Y1** | +1,680€ | -9,395€ |
-| **Profit Y3** | +39,865€ | +160,575€ |
-| **Croissance** | 20%/mois (organique) | 50%/mois (ads) |
-| **CAC** | 10€ (organique) | 75€ (ads) |
-| **Équipe Y3** | 3 (2.5 FTE) | 10 |
-| **Revenus Y3** | 84k€ ARR | 174k€ ARR |
-| **Contrôle** | 100% founders | 60-70% founders |
-| **Stress** | Faible (rentable) | Élevé (burn rate) |
-| **Exit pression** | Aucune | Forte (ROI investisseurs) |
+| Aspect | ASBL Side-Project (KoproGo) | Startup VC-Backed |
+|--------|----------------------------|-------------------|
+| **Financement** | **0€ externe** | 50-200k€ seed |
+| **Équipe An 1** | **2 bénévoles (0.25 FTE)** | 3-5 salariés (3-5 FTE) |
+| **Salaires An 1-3** | **0€** | 120-300k€/an |
+| **Marketing** | **0€ (100% organique)** | 20-50k€/an (ads) |
+| **Pression croissance** | **0 (naturelle)** | Élevée (10x/an requis) |
+| **Dilution** | **0%** | 20-40% (seed + Series A) |
+| **Break-even** | **Mois 2** | Mois 18-24 |
+| **Profit An 1** | **+156€** | -50k€ (burn) |
+| **Profit An 3** | **+3,348€** | -100k€ ou +50k€ (si scale) |
+| **Copros An 5** | **700** | 2,000-5,000 (si survie) |
+| **MRR An 5** | **700€** | 50-100k€ (si succès) |
+| **Croissance/mois** | **5-10 copros** | 100-500 copros |
+| **CAC** | **0€ (organique)** | 50-100€ (ads) |
+| **Churn** | **3-5%/an** | 10-20%/an |
+| **Contrôle** | **100% ASBL** | 50-70% founders |
+| **Stress** | **Faible** | Très élevé |
+| **Burn-out risque** | **Très faible** | Élevé |
+| **Exit pression** | **Aucune** | Forte (ROI VCs) |
+| **Mission sociale** | **Priorité #1** | Secondaire |
+| **Survie si échec** | **0€ perdu** | Faillite, dettes |
 
-**Notre choix** : Bootstrap = **liberté + durabilité + contrôle**
+**Choix ASBL Side-Project** :
+- ✅ **Durabilité** : Viable 10+ ans sans stress
+- ✅ **Impact social** : Mission avant profit
+- ✅ **Liberté** : Aucune pression externe
+- ✅ **Éthique** : Transparence, open-source, GDPR
+- ✅ **Risque 0** : Aucun investissement, aucune dette
+
+**Pourquoi pas startup ?**
+- ⚠️ Pression VCs incompatible avec qualité long-terme
+- ⚠️ Burn-out garanti (80h/semaine)
+- ⚠️ Dilution = perte contrôle mission sociale
+- ⚠️ Pivot forcé si VCs insatisfaits
+- ⚠️ Exit obligatoire (incompatible avec pérennité open-source)
 
 ---
 
 ## Conclusion
 
-### Philosophie Bootstrap
+### Philosophie ASBL Side-Project
 
-> "Slow is smooth, smooth is fast."
+> "Lentement mais sûrement. Bien plutôt que vite. Pérenne plutôt que profitable."
 
-Nous choisissons **croissance organique durable** vs **croissance à tout prix**.
+Nous choisissons **impact social durable** plutôt que **croissance à tout prix**.
 
-### Pourquoi ça va marcher
+### Pourquoi ce modèle ASBL va fonctionner
 
-**1. Modèle validé**
-- GitLab : $10B+ (OpenCore)
-- Plausible : Rentable, bootstrap
-- PostHog : $560M (OpenCore)
-- Sentry : $3B (OpenCore)
+**1. Modèles ASBL/Non-Profit tech validés**
+- **Mozilla Foundation** : 20+ ans, Firefox, $500M/an budget, rentable sans actionnaires
+- **Wikimedia** : Wikipedia, 300M+ utilisateurs, $150M/an, 100% dons + services
+- **Blender Foundation** : Logiciel 3D industrie, $3M/an, 50+ devs salariés
+- **Framasoft (ASBL FR)** : +1M utilisateurs, 0€ pub, 100% dons + services
+- **Document Foundation** : LibreOffice, 700+ contributors, certifications payantes
 
-**2. Unit economics exceptionnels**
-- LTV/CAC : 226:1 (vs 3:1 target)
-- Payback : 1 mois (vs 12 mois target)
-- Gross margin : 95%+
-- Churn : 5%/an (excellent)
+**2. Unit economics ASBL exceptionnels**
+- **LTV** : 20€/copro (churn 5%/an)
+- **CAC** : 0€ (organique, communauté)
+- **LTV/CAC** : ∞ (théorique) ou 4:1 (réaliste si on compte temps bénévole)
+- **Payback** : Immédiat (0€ investissement)
+- **Gross margin** : 98%+ (coûts ultra-bas)
+- **Churn** : 3-5%/an (excellent, besoin réel)
+- **Break-even** : **Mois 2** (vs 18-24 mois startup)
 
-**3. Marché sous-adressé**
-- 5.5M copropriétés EU+Maghreb
-- 0 solution OpenCore copropriété
-- Pain point #1 : Lock-in (on résout)
+**3. Marché sous-adressé + USP unique**
+- **5.5M copropriétés** EU+Maghreb non digitalisées
+- **0 solution OpenCore** dans ce marché
+- **Pain point #1** : Vendor lock-in (on résout avec MIT license)
+- **Différenciation** : ASBL = confiance, éthique, souveraineté numérique
 
-**4. Équipe lean & focus**
-- 2 FTE = haute vélocité décision
-- 0 overhead investisseurs
-- Passion > pression
+**4. Équipe lean, flexible, durable**
+- **2 bénévoles** = haute vélocité décision (vs 10 personnes startup = lenteur)
+- **0 overhead** investisseurs, board, reporting
+- **Passion > pression** = qualité code, rétention long-terme
+- **Side-project** = sécurité financière (jobs externes), 0 stress burn-rate
 
-**5. Timing optimal**
-- Open-source SaaS en croissance
-- Digitalisation copropriétés
-- Anti-vendor lock-in trend
+**5. Timing 2025 optimal**
+- **Open-source SaaS** en croissance (GitLab, Plausible, PostHog succès)
+- **Anti-vendor lock-in** trend fort (GDPR, souveraineté, décentralisation)
+- **Digitalisation copropriétés** accélérée post-COVID
+- **ASBL/ESS** valorisées (RSE, dons, subventions accessibles)
 
-### Prochaines Étapes (0€ required)
+**6. Risque 0, upside illimité**
+- **0€ investissement** : Aucun capital perdu si échec
+- **0€ dette** : Auto-financé, rentable Mois 2
+- **Liberté totale** : Aucune pression externe, aucune dilution
+- **Mission sociale** : Impact positif garanti, même si croissance lente
+- **Exit éthique possible** : Si mature, acquisition/fusion préservant mission
 
-**Semaine 1-2** :
-1. Finaliser core open-source
-2. Publier GitHub (README exceptionnel)
-3. Setup Discord community
+### Prochaines Étapes ASBL (0€ investissement)
 
-**Mois 1** :
-4. Launch HackerNews ("Show HN: KoproGo - OpenCore copropriété")
-5. Post Dev.to, Reddit
-6. 10 blog posts préparés
+**Trimestre 1 (Mois 1-3) : Constitution ASBL + Core MVP**
+1. **Rédiger statuts ASBL** (objet social, gouvernance) - 1 semaine
+2. **Notaire + Publication Moniteur** (~450€, seul investissement) - 1 mois
+3. **Finaliser core open-source** (CRUD complet, tests 100%) - 2 mois
+4. **Documentation exemplaire** (README, architecture, contribution guide)
+5. **Docker Compose 1-click** (self-hosting facile)
 
-**Mois 2-3** :
-7. Première instance cloud payante
-8. 100 stars GitHub
-9. 5 contributors externes
+**Trimestre 2 (Mois 4-6) : Launch Open-Source**
+6. **Publier GitHub** (MIT license, README pro)
+7. **Launch HackerNews** : "Show HN: KoproGo - Open-Source Property Management (ASBL)"
+8. **Dev.to, Reddit, LinkedIn** posts
+9. **Discord communauté** (support, feedback)
+10. **10 blog posts** techniques (SEO, communauté)
 
-**Mois 4-6** :
-10. 10 clients cloud
-11. 1,000 stars
-12. 50 self-hosted instances
+**Semestre 2 (Mois 7-12) : Cloud MVP + Early Adopters**
+11. **Plateforme cloud** (signup, multi-tenant, Stripe 1€/copro)
+12. **5-10 early adopters** cloud payants
+13. **100-200 self-hosted** instances
+14. **GitHub** : 1,000 stars, 10+ contributors
+15. **Rentabilité** : **156€ profit Année 1** ✅
 
-**Mois 7-12** :
-13. SEO Top 10 (5 keywords)
-14. 50 clients cloud
-15. **1,680€ profit Année 1** ✅
+**Année 2 : Stabilité**
+16. **20-50 clients cloud** (80 copros)
+17. **GitHub** : 3,000 stars, 30+ contributors
+18. **Profit** : **1,032€ Année 2** ✅
+
+**Année 3 : Viabilité**
+19. **100-200 clients cloud** (200 copros)
+20. **Indemnités bénévoles** si trésorerie > 10k€
+21. **Produit mature** : Features complètes, communauté active
+
+**Année 5 : Pérennité**
+22. **700 copros** cloud
+23. **Salaires partiels** si trésorerie > 30k€
+24. **ASBL autonome** : Mission sociale accomplie ✅
 
 ---
 
 ## Annexes
 
-### A. Pricing Calculator
+### A. Coûts Détaillés ASBL (Années 1-5)
 
-**Self-Host** :
-- Core : 0€
-- VPS (5€/mois) : À leur charge
-- Support : Communauté
+| Poste | An 1 | An 2 | An 3 | An 4 | An 5 |
+|-------|------|------|------|------|------|
+| **VPS OVH** | 84€ | 84€ | 84€ | 180€ | 180€ |
+| **Domaine (.com)** | 12€ | 12€ | 12€ | 12€ | 12€ |
+| **Compte bancaire ASBL** | 0-120€ | 120€ | 120€ | 120€ | 120€ |
+| **Comptabilité** | 0€ | 0€ | 0€ | 300€ | 300€ |
+| **Indemnités bénévoles** | 0€ | 0€ | 0€ | 0€ | 6,000€ |
+| **Marketing** | 0€ | 0€ | 0€ | 0€ | 0€ |
+| **Total** | **96-216€** | **216€** | **216€** | **612€** | **6,612€** |
 
-**Cloud Starter (5 copros)** :
-- Hosting : 2€
-- Support : 3€
-- Features premium : 3€
-- Marge : 2€
-- **Prix : 10€/mois**
+**Note** : Constitution ASBL initiale = ~450€ one-time (notaire + Moniteur)
 
-**Cloud Pro (20 copros)** :
-- Hosting : 5€
-- Support : 8€
-- Features premium : 12€
-- Marge : 10€
-- **Prix : 35€/mois**
-
-### B. Community Metrics
+### B. Métriques Communauté (Objectifs)
 
 **Année 1** :
-- GitHub stars : 1,000
-- Self-hosted : 100
-- Contributors : 10
-- PRs merged : 50
-- Discord : 200 membres
+- GitHub stars : **1,000**
+- Self-hosted instances : **100-200**
+- Contributors actifs : **10+**
+- PRs mergées : **50+**
+- Discord : **200 membres**
+- Clients cloud : **10**
 
 **Année 2** :
-- GitHub stars : 3,000
-- Self-hosted : 300
-- Contributors : 30
-- PRs merged : 200
-- Discord : 800 membres
+- GitHub stars : **3,000**
+- Self-hosted instances : **300-500**
+- Contributors actifs : **30+**
+- PRs mergées : **200+**
+- Discord : **500 membres**
+- Clients cloud : **20-50**
 
 **Année 3** :
-- GitHub stars : 10,000
-- Self-hosted : 1,000
-- Contributors : 100
-- PRs merged : 500
-- Discord : 2,500 membres
+- GitHub stars : **5,000-10,000**
+- Self-hosted instances : **500-1,000**
+- Contributors actifs : **50-100**
+- PRs mergées : **300-500**
+- Discord : **1,000 membres**
+- Clients cloud : **100-200**
 
-### C. Tech Stack (Confirmed)
+**Année 5** :
+- GitHub stars : **15,000+**
+- Self-hosted instances : **2,000+**
+- Contributors actifs : **150+**
+- PRs mergées : **1,000+**
+- Discord : **3,000 membres**
+- Clients cloud : **300-500**
 
-**Backend** : Rust + Actix-web + PostgreSQL
-**Frontend** : Astro + Svelte + Tailwind
-**Infrastructure** : Docker + Traefik + Hetzner VPS
-**CI/CD** : GitHub Actions
-**Monitoring** : Prometheus + Grafana
-**License** : MIT (core), Proprietary (premium features code)
+### C. Tech Stack Confirmé (Production-Ready)
+
+**Backend** :
+- Rust 1.85+ + Actix-web 4.9
+- PostgreSQL 15-alpine
+- SQLx (compile-time query verification)
+
+**Frontend** :
+- Astro 4.x (SSG)
+- Svelte 4.x (islands)
+- Tailwind CSS 3.x
+
+**Infrastructure** :
+- Docker + Docker Compose
+- Traefik (reverse proxy + SSL auto Let's Encrypt)
+- OVH Cloud France (datacenter Strasbourg/Gravelines)
+- Vercel (frontend CDN gratuit)
+
+**CI/CD** :
+- GitHub Actions (tests, lint, build)
+- GitOps (déploiements automatisés)
+
+**Monitoring** :
+- UptimeRobot (gratuit, monitoring externe)
+- Scripts custom VPS (métriques système)
+
+**License** :
+- MIT (100% du code)
+- Pas de code propriétaire (philosophie ASBL)
+
+**Performance Validée** :
+- 99.74% uptime (tests charge)
+- 287 req/s soutenus sur 1 vCPU
+- Latence P50: 69ms, P90: 130ms, P99: 752ms
+- RAM: 128MB / 2GB (6.3% usage)
+- Capacité: 1,000-1,500 copros par vCPU
+
+**Écologie** :
+- 0.12g CO₂/req (OVH France, mix 60g CO₂/kWh)
+- 5.8x moins d'émissions que Hetzner DE
+- 7-25x moins que AWS/Azure US
+
+### D. Ressources Constitution ASBL
+
+**Liens utiles** :
+- Loi belge ASBL : https://www.ejustice.just.fgov.be (Code des sociétés et des associations)
+- Guichet Entreprises (BCE) : https://economie.fgov.be/fr/guichet-entreprises
+- Moniteur belge : https://www.moniteur.be
+- Modèles statuts ASBL : https://www.notaire.be
+
+**Coûts constitution** :
+- Notaire : 200-300€ (tarif réduit ASBL)
+- Publication Moniteur : 180-220€
+- Total : ~450-500€
+
+**Délai** : 1-2 mois (rédaction → notaire → publication → BCE)
+
+### E. Contact & Liens
+
+**ASBL KoproGo** (en cours de constitution)
+
+📧 **Email** : contact@koprogo.com (à créer)
+🌐 **GitHub** : https://github.com/gilmry/koprogo
+🌐 **Site web** : https://koprogo.com (à créer)
+💬 **Discord** : [communauté à créer après launch]
+📱 **LinkedIn** : [page ASBL à créer]
+
+**Membres fondateurs** :
+- Architecte logiciel (Président CA)
+- Étudiante informatique (Secrétaire CA)
+- [Trésorier CA à recruter - bénévole comptable/juriste]
 
 ---
 
-**Contact** :
+**Transparence ASBL** : Ce document est public. Les comptes annuels de l'ASBL KoproGo seront publiés sur GitHub et le site web, conformément aux obligations légales belges et à notre engagement de transparence radicale.
 
-📧 Email : [votre-email]
-🌐 GitHub : https://github.com/gilmry/koprogo
-💬 Discord : [à créer]
-📱 LinkedIn : [profil]
+**License document** : CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)
 
 ---
 
-*Document confidentiel - Stratégie Bootstrap*
+**KoproGo ASBL** - Un bien commun numérique pour la gestion de copropriété 🏛️🔓🌱
 
-**KoproGo** - Built in public, owned by the community 🚀🔓
+*"Impact social avant profit. Qualité avant vitesse. Pérennité avant croissance."*
