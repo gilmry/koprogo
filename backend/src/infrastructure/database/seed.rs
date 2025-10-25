@@ -872,7 +872,7 @@ impl DatabaseSeeder {
             .bind(&password_hash)
             .bind("Admin")
             .bind(org_name.split_whitespace().next().unwrap_or("User"))
-            .bind("admin")
+            .bind("syndic")
             .bind(Some(org_id))
             .bind(true)
             .bind(now)
