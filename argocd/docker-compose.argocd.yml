@@ -1,0 +1,91 @@
+version: '3.8'
+
+# Argo CD Stack for VPS
+# GitOps continuous delivery tool
+# UI available at http://localhost:8080
+
+services:
+  argocd-server:
+    image: quay.io/argoproj/argocd:v2.9.3
+    container_name: argocd-server
+    restart: unless-stopped
+    command:
+      - argocd-server
+      - --insecure
+      - --staticassets
+      - /shared/app
+    ports:
+      - "8080:8080"
+      - "8083:8083"
+    environment:
+      - ARGOCD_SERVER_INSECURE=true
+    volumes:
+      - argocd-config:/app/config
+      - argocd-tls:/app/config/tls
+    networks:
+      - argocd
+    depends_on:
+      - argocd-redis
+      - argocd-repo-server
+      - argocd-application-controller
+
+  argocd-repo-server:
+    image: quay.io/argoproj/argocd:v2.9.3
+    container_name: argocd-repo-server
+    restart: unless-stopped
+    command:
+      - argocd-repo-server
+    volumes:
+      - argocd-repo:/app/config/ssh
+      - argocd-config:/app/config
+    networks:
+      - argocd
+
+  argocd-application-controller:
+    image: quay.io/argoproj/argocd:v2.9.3
+    container_name: argocd-application-controller
+    restart: unless-stopped
+    command:
+      - argocd-application-controller
+      - --status-processors
+      - "20"
+      - --operation-processors
+      - "10"
+    volumes:
+      - argocd-config:/app/config
+    networks:
+      - argocd
+    depends_on:
+      - argocd-redis
+
+  argocd-redis:
+    image: redis:7-alpine
+    container_name: argocd-redis
+    restart: unless-stopped
+    networks:
+      - argocd
+    volumes:
+      - argocd-redis-data:/data
+
+  argocd-dex-server:
+    image: quay.io/argoproj/argocd:v2.9.3
+    container_name: argocd-dex-server
+    restart: unless-stopped
+    command:
+      - argocd-dex-server
+    networks:
+      - argocd
+
+volumes:
+  argocd-config:
+    driver: local
+  argocd-tls:
+    driver: local
+  argocd-repo:
+    driver: local
+  argocd-redis-data:
+    driver: local
+
+networks:
+  argocd:
+    driver: bridge

@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: koprogo-production
+  namespace: argocd
+  # Finalizer ensures proper cleanup
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Project name
+  project: default
+
+  # Source repository
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/koprogo.git
+    targetRevision: main
+    path: deploy/production
+
+  # Destination
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: koprogo-production
+
+  # Sync policy
+  syncPolicy:
+    automated:
+      # Auto-sync enabled
+      prune: true        # Delete resources that are no longer in Git
+      selfHeal: true     # Force sync if cluster state differs from Git
+      allowEmpty: false  # Don't sync if target is empty
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Health assessment
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+  # Notification preferences
+  revisionHistoryLimit: 10
