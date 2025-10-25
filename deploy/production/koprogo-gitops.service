@@ -1,0 +1,25 @@
+[Unit]
+Description=KoproGo GitOps Deployment Service
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=debian
+Group=debian
+WorkingDirectory=/home/debian/koprogo
+ExecStart=/home/debian/koprogo/deploy/production/gitops-deploy.sh watch
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=koprogo-gitops
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
