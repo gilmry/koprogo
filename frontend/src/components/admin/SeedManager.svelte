@@ -1,18 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { api } from '../../lib/api';
 
-	const API_URL = import.meta.env.PUBLIC_API_URL;
-
-	let token = '';
 	let loading = false;
 	let message = '';
 	let messageType: 'success' | 'error' | 'info' = 'info';
 	let seedAccounts: Array<{org: string, email: string, password: string}> = [];
 	let showAccounts = false;
-
-	onMount(() => {
-		token = localStorage.getItem('token') || '';
-	});
 
 	async function seedDemo() {
 		await executeSeed('/seed/demo', 'Demo Data');
@@ -32,18 +25,10 @@
 		showAccounts = false;
 
 		try {
-			const response = await fetch(`${API_URL}/seed/clear`, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				}
-			});
+			const data = await api.post<{success: boolean, message?: string, error?: string}>('/seed/clear');
 
-			const data = await response.json();
-
-			if (response.ok && data.success) {
-				message = data.message;
+			if (data.success) {
+				message = data.message || 'Data cleared successfully';
 				messageType = 'success';
 			} else {
 				message = data.error || 'Failed to clear data';
@@ -63,18 +48,10 @@
 		showAccounts = false;
 
 		try {
-			const response = await fetch(`${API_URL}${endpoint}`, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				}
-			});
+			const data = await api.post<{success: boolean, message?: string, error?: string}>(endpoint);
 
-			const data = await response.json();
-
-			if (response.ok && data.success) {
-				message = data.message;
+			if (data.success) {
+				message = data.message || `${seedType} generated successfully`;
 				messageType = 'success';
 
 				// Parse accounts from message
