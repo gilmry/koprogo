@@ -4,6 +4,9 @@ use chrono::Utc;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 use rand::Rng;
+use fake::Fake;
+use fake::faker::address::en::*;
+use fake::faker::name::en::*;
 
 pub struct DatabaseSeeder {
     pool: PgPool,
@@ -887,24 +890,33 @@ impl DatabaseSeeder {
 
             for o in 0..num_owners {
                 let owner_id = Uuid::new_v4();
-                let first_names = vec!["Pierre", "Marie", "Jean", "Sophie", "Luc", "Anne", "François", "Julie", "Thomas", "Emma"];
-                let last_names = vec!["Dupont", "Martin", "Bernard", "Dubois", "Laurent", "Simon", "Michel", "Lefebvre", "Moreau", "Garcia"];
+
+                // Use faker for realistic Belgian data
+                let first_name: String = FirstName().fake();
+                let last_name: String = LastName().fake();
+                let street: String = StreetName().fake();
+                let city_idx = rng.random_range(0..cities.len());
+                let owner_city = cities[city_idx];
 
                 sqlx::query(
-                    "INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, created_at, updated_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+                    "INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
                 )
                 .bind(owner_id)
                 .bind(org_id)
-                .bind(first_names[rng.random_range(0..first_names.len())])
-                .bind(last_names[rng.random_range(0..last_names.len())])
-                .bind(format!("owner{}@{}.be", o + 1, size))
+                .bind(&first_name)
+                .bind(&last_name)
+                .bind(format!("{}. {}{}@{}.be", first_name.chars().next().unwrap_or('x'), last_name.to_lowercase(), o + 1, size))
                 .bind(format!("+32 {} {} {} {}",
                     if rng.random_bool(0.5) { "2" } else { "4" },
                     rng.random_range(100..999),
                     rng.random_range(10..99),
                     rng.random_range(10..99)
                 ))
+                .bind(format!("{} {}", street, rng.random_range(1..200)))
+                .bind(owner_city)
+                .bind(format!("{}", rng.random_range(1000..9999)))
+                .bind("Belgium")
                 .bind(now)
                 .bind(now)
                 .execute(&self.pool)
