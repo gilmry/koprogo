@@ -7,7 +7,9 @@
 set -e
 
 # Configuration
-REPO_DIR="/home/debian/koprogo"
+# Auto-detect repository directory (can be overridden by REPO_DIR env var)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="${REPO_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 COMPOSE_FILE="deploy/production/docker-compose.yml"
 ENV_FILE="deploy/production/.env"
 BRANCH="main"

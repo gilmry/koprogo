@@ -1,0 +1,51 @@
+---
+# Playbook minimal pour regénérer le fichier .env avec JWT_SECRET corrigé
+- name: Fix .env file with corrected JWT_SECRET
+  hosts: koprogo
+  become: yes
+  vars:
+    koprogo_user: koprogo
+    koprogo_dir: /home/{{ koprogo_user }}/koprogo
+    koprogo_domain: "{{ lookup('env', 'KOPROGO_DOMAIN') | default('', true) }}"
+    frontend_domain: "{{ lookup('env', 'KOPROGO_FRONTEND_DOMAIN') | default('', true) }}"
+    api_domain: "{{ lookup('env', 'KOPROGO_API_DOMAIN') | default('', true) }}"
+    acme_email: "{{ lookup('env', 'ACME_EMAIL') | default('admin@example.com', true) }}"
+
+  tasks:
+    - name: Create .env file for production deployment
+      template:
+        src: env-production.j2
+        dest: "{{ koprogo_dir }}/deploy/production/.env"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0600'
+
+    - name: Restart Docker Compose services
+      command: docker compose restart
+      args:
+        chdir: "{{ koprogo_dir }}/deploy/production"
+      become: yes
+      become_user: root
+
+    - name: Wait for services to start
+      pause:
+        seconds: 10
+
+    - name: Check API health
+      uri:
+        url: "http://localhost:8080/api/v1/health"
+        method: GET
+        status_code: 200
+      register: health_check
+      retries: 5
+      delay: 5
+      until: health_check.status == 200
+
+    - name: Display success message
+      debug:
+        msg:
+          - "✅ .env file regenerated with corrected JWT_SECRET"
+          - "✅ Services restarted successfully"
+          - "✅ API health check passed"
+          - "Frontend: https://{{ frontend_domain }}"
+          - "API: https://{{ api_domain }}"
