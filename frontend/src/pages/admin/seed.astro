@@ -1,0 +1,10 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SeedManager from '../../components/admin/SeedManager.svelte';
+---
+
+<Layout title="Seed Data Management - KoproGo">
+	<main class="container mx-auto px-4 py-8">
+		<SeedManager client:load />
+	</main>
+</Layout>

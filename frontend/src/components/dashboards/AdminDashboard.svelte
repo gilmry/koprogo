@@ -427,6 +427,13 @@
             <span class="text-4xl mb-2 group-hover:scale-110 transition">💳</span>
             <span class="text-sm font-medium text-gray-700">Abonnements</span>
           </a>
+          <a
+            href="/admin/seed"
+            class="flex flex-col items-center justify-center p-6 border-2 border-green-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition group"
+          >
+            <span class="text-4xl mb-2 group-hover:scale-110 transition">🌱</span>
+            <span class="text-sm font-medium text-gray-700">Seed Data</span>
+          </a>
         </div>
       </div>
     </div>
