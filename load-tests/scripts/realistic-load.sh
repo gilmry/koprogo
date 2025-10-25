@@ -54,16 +54,47 @@ fi
 echo "✅ JWT token acquired: ${TOKEN:0:30}..."
 echo "✅ Organization ID: $ORG_ID"
 
-# Create wrk2 Lua script for realistic mixed workload with dynamic ORG_ID
+# Fetch 10 real building IDs to use in POST requests
+echo "🔍 Fetching real building IDs..."
+BUILDINGS_JSON=$(curl -s -X GET "$BASE_URL/api/v1/buildings" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json")
+
+# Extract up to 10 building IDs
+BUILDING_IDS=$(echo "$BUILDINGS_JSON" | jq -r '.data[0:10][].id' | tr '\n' ',' | sed 's/,$//')
+
+if [ -z "$BUILDING_IDS" ] || [ "$BUILDING_IDS" == "null" ]; then
+    echo "⚠️  No existing buildings found - POST operations for units/expenses will be limited"
+    BUILDING_IDS="00000000-0000-0000-0000-000000000001"
+fi
+
+echo "✅ Found building IDs: ${BUILDING_IDS:0:80}..."
+
+# Create wrk2 Lua script for realistic mixed workload with dynamic ORG_ID and real building IDs
 cat > /tmp/realistic_workload.lua << LUA_SCRIPT
 -- Realistic workload: 70% reads (GET), 30% writes (POST/PUT)
 math.randomseed(os.time())
 
 -- Track user's organization context
 local org_id = nil
-local building_ids = {}
 local unit_ids = {}
 local owner_ids = {}
+
+-- Real building IDs fetched from API (comma-separated string converted to Lua table)
+local building_ids_str = "$BUILDING_IDS"
+local building_ids = {}
+for id in string.gmatch(building_ids_str, "[^,]+") do
+    table.insert(building_ids, id)
+end
+
+-- Helper function to get a random building ID from real buildings
+function get_random_building_id()
+    if #building_ids > 0 then
+        return building_ids[math.random(#building_ids)]
+    else
+        return "00000000-0000-0000-0000-000000000001"  -- Fallback
+    end
+end
 
 -- API endpoints with realistic distribution
 local read_operations = {
@@ -106,7 +137,10 @@ function generate_building_data()
 end
 
 function generate_unit_data(building_id)
-    local types = {"Apartment", "Apartment", "Apartment", "Parking", "Cellar"}
+    -- Use lowercase for unit_type ENUM (apartment, parking, cellar, commercial, other)
+    local types = {"apartment", "apartment", "apartment", "parking", "cellar"}
+    -- If no building_id provided, get a random real one
+    local bid = building_id or get_random_building_id()
     return string.format([[{
         "organization_id": "$ORG_ID",
         "building_id": "%s",
@@ -116,7 +150,7 @@ function generate_unit_data(building_id)
         "surface_area": %.2f,
         "quota": %d
     }]],
-        building_id or "00000000-0000-0000-0000-000000000001",
+        bid,
         math.random(0, 10),
         math.random(1, 4),
         types[math.random(#types)],
@@ -166,6 +200,8 @@ function generate_expense_data(building_id)
         "Assurance immeuble"
     }
     local categories = {"Maintenance", "Repairs", "Insurance", "Utilities", "Cleaning"}
+    -- If no building_id provided, get a random real one
+    local bid = building_id or get_random_building_id()
     return string.format([[{
         "organization_id": "$ORG_ID",
         "building_id": "%s",
@@ -174,7 +210,7 @@ function generate_expense_data(building_id)
         "amount": %.2f,
         "expense_date": "%s"
     }]],
-        building_id or "00000000-0000-0000-0000-000000000001",
+        bid,
         categories[math.random(#categories)],
         descriptions[math.random(#descriptions)],
         math.random(300, 5000) + math.random(),
