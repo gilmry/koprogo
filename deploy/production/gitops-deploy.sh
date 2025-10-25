@@ -91,9 +91,9 @@ function deploy() {
         return 1
     fi
 
-    # Get current commit SHA (short version)
-    local current_sha=$(git rev-parse --short HEAD)
-    local image_tag="main-sha-${current_sha}"
+    # Get current commit SHA (short version - 7 chars like GitHub Actions)
+    local current_sha=$(git rev-parse --short=7 HEAD)
+    local image_tag="main-${current_sha}"
 
     log_info "Current commit: $current_sha"
     log_info "Target image tag: $image_tag"
