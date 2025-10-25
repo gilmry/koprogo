@@ -103,15 +103,29 @@ while [ $(date +%s) -lt $END_TIME ]; do
         # Database connections
         echo "PostgreSQL Connections:"
         echo "-------------------"
-        docker compose -f docker-compose.vps.yml exec -T postgres \
-            psql -U koprogo -d koprogo_db -t -c "
-            SELECT
-                'Total: ' || count(*) ||
-                ' | Active: ' || count(*) FILTER (WHERE state = 'active') ||
-                ' | Idle: ' || count(*) FILTER (WHERE state = 'idle')
-            FROM pg_stat_activity
-            WHERE datname = 'koprogo_db';
-            " 2>/dev/null || echo "Unable to connect to PostgreSQL"
+        # Try both locations for docker-compose file
+        COMPOSE_FILE=""
+        if [ -f "docker-compose.vps.yml" ]; then
+            COMPOSE_FILE="docker-compose.vps.yml"
+        elif [ -f "../deploy/production/docker-compose.yml" ]; then
+            COMPOSE_FILE="../deploy/production/docker-compose.yml"
+        elif [ -f "/root/koprogo/deploy/production/docker-compose.yml" ]; then
+            COMPOSE_FILE="/root/koprogo/deploy/production/docker-compose.yml"
+        fi
+
+        if [ -n "$COMPOSE_FILE" ]; then
+            docker compose -f "$COMPOSE_FILE" exec -T postgres \
+                psql -U koprogo -d koprogo_db -t -c "
+                SELECT
+                    'Total: ' || count(*) ||
+                    ' | Active: ' || count(*) FILTER (WHERE state = 'active') ||
+                    ' | Idle: ' || count(*) FILTER (WHERE state = 'idle')
+                FROM pg_stat_activity
+                WHERE datname = 'koprogo_db';
+                " 2>/dev/null || echo "Unable to connect to PostgreSQL"
+        else
+            echo "Docker compose file not found"
+        fi
         echo ""
 
         # Recent errors in logs (last 10 seconds)
@@ -129,9 +143,13 @@ while [ $(date +%s) -lt $END_TIME ]; do
         # Network connections
         echo "Network Connections:"
         echo "-------------------"
-        ESTABLISHED=$(ss -tan | grep ESTAB | grep :8080 | wc -l)
-        TIME_WAIT=$(ss -tan | grep TIME-WAIT | grep :8080 | wc -l)
-        echo "Established: $ESTABLISHED | Time-Wait: $TIME_WAIT"
+        # Check both Traefik (443) and Backend (8080) ports
+        TRAEFIK_ESTAB=$(ss -tan | grep ESTAB | grep :443 | wc -l)
+        BACKEND_ESTAB=$(ss -tan | grep ESTAB | grep :8080 | wc -l)
+        TRAEFIK_TW=$(ss -tan | grep TIME-WAIT | grep :443 | wc -l)
+        BACKEND_TW=$(ss -tan | grep TIME-WAIT | grep :8080 | wc -l)
+        echo "Traefik :443  - Established: $TRAEFIK_ESTAB | Time-Wait: $TRAEFIK_TW"
+        echo "Backend :8080 - Established: $BACKEND_ESTAB | Time-Wait: $BACKEND_TW"
         echo ""
 
     } | tee -a "$OUTPUT_FILE"

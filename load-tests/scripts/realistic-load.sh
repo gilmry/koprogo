@@ -33,20 +33,29 @@ echo ""
 # Create results directory
 mkdir -p "$RESULTS_DIR"
 
-# Test login endpoint to get token
-TOKEN=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
+# Test login endpoint to get token and organization_id
+AUTH_RESPONSE=$(curl -s -X POST "$BASE_URL/api/v1/auth/login" \
     -H "Content-Type: application/json" \
-    -d '{"email":"admin@small.be","password":"admin123"}' | jq -r '.access_token')
+    -d '{"email":"admin@small.be","password":"admin123"}')
+
+TOKEN=$(echo "$AUTH_RESPONSE" | jq -r '.token')
+ORG_ID=$(echo "$AUTH_RESPONSE" | jq -r '.user.organization_id')
 
 if [ -z "$TOKEN" ] || [ "$TOKEN" == "null" ]; then
     echo "❌ Authentication: FAILED - No token received"
     exit 1
 fi
 
-echo "✅ JWT token acquired: ${TOKEN:0:30}..."
+if [ -z "$ORG_ID" ] || [ "$ORG_ID" == "null" ]; then
+    echo "❌ Authentication: FAILED - No organization_id received"
+    exit 1
+fi
 
-# Create wrk2 Lua script for realistic mixed workload
-cat > /tmp/realistic_workload.lua << 'LUA_SCRIPT'
+echo "✅ JWT token acquired: ${TOKEN:0:30}..."
+echo "✅ Organization ID: $ORG_ID"
+
+# Create wrk2 Lua script for realistic mixed workload with dynamic ORG_ID
+cat > /tmp/realistic_workload.lua << LUA_SCRIPT
 -- Realistic workload: 70% reads (GET), 30% writes (POST/PUT)
 math.randomseed(os.time())
 
@@ -58,11 +67,10 @@ local owner_ids = {}
 
 -- API endpoints with realistic distribution
 local read_operations = {
-    { method = "GET", path = "/api/v1/buildings", weight = 25 },
+    { method = "GET", path = "/api/v1/buildings", weight = 30 },
     { method = "GET", path = "/api/v1/units", weight = 25 },
-    { method = "GET", path = "/api/v1/owners", weight = 15 },
-    { method = "GET", path = "/api/v1/expenses", weight = 15 },
-    { method = "GET", path = "/api/v1/users", weight = 5 },
+    { method = "GET", path = "/api/v1/owners", weight = 20 },
+    { method = "GET", path = "/api/v1/expenses", weight = 20 },
     { method = "GET", path = "/api/v1/auth/me", weight = 5 },
 }
 
@@ -78,6 +86,7 @@ function generate_building_data()
     local streets = {"Rue de la Paix", "Avenue Louise", "Boulevard du Roi", "Place du Marché"}
     local cities = {"Bruxelles", "Anvers", "Gand", "Liège"}
     return string.format([[{
+        "organization_id": "$ORG_ID",
         "name": "Résidence Test %d",
         "address": "%s %d",
         "city": "%s",
@@ -97,8 +106,9 @@ function generate_building_data()
 end
 
 function generate_unit_data(building_id)
-    local types = {"apartment", "studio", "duplex", "penthouse"}
+    local types = {"Apartment", "Apartment", "Apartment", "Parking", "Cellar"}
     return string.format([[{
+        "organization_id": "$ORG_ID",
         "building_id": "%s",
         "unit_number": "%d.%d",
         "unit_type": "%s",
@@ -119,18 +129,32 @@ end
 function generate_owner_data()
     local first_names = {"Pierre", "Marie", "Jean", "Sophie", "Luc"}
     local last_names = {"Dupont", "Martin", "Bernard", "Dubois", "Laurent"}
+    local cities = {"Bruxelles", "Anvers", "Gand", "Liège"}
+    local streets = {"Rue de la Paix", "Avenue Louise", "Boulevard du Roi"}
+    -- Add timestamp to email for uniqueness
+    local timestamp = os.time() + math.random(0, 999999)
     return string.format([[{
+        "organization_id": "$ORG_ID",
         "first_name": "%s",
         "last_name": "%s",
-        "email": "test%d@example.be",
-        "phone": "+32 2 %d %d %d"
+        "email": "test%d_%d@example.be",
+        "phone": "+32 2 %d %d %d",
+        "address": "%s %d",
+        "city": "%s",
+        "postal_code": "%d",
+        "country": "Belgium"
     }]],
         first_names[math.random(#first_names)],
         last_names[math.random(#last_names)],
         math.random(1000, 9999),
+        timestamp,
         math.random(100, 999),
         math.random(10, 99),
-        math.random(10, 99)
+        math.random(10, 99),
+        streets[math.random(#streets)],
+        math.random(1, 200),
+        cities[math.random(#cities)],
+        math.random(1000, 9999)
     )
 end
 
@@ -141,18 +165,20 @@ function generate_expense_data(building_id)
         "Chauffage collectif",
         "Assurance immeuble"
     }
+    local categories = {"Maintenance", "Repairs", "Insurance", "Utilities", "Cleaning"}
     return string.format([[{
+        "organization_id": "$ORG_ID",
         "building_id": "%s",
+        "category": "%s",
         "description": "%s",
         "amount": %.2f,
-        "expense_date": "%s",
-        "due_date": "%s"
+        "expense_date": "%s"
     }]],
         building_id or "00000000-0000-0000-0000-000000000001",
+        categories[math.random(#categories)],
         descriptions[math.random(#descriptions)],
         math.random(300, 5000) + math.random(),
-        os.date("%Y-%m-%d"),
-        os.date("%Y-%m-%d", os.time() + 30*24*60*60)
+        os.date("%Y-%m-%d")
     )
 end
 
