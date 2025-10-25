@@ -48,6 +48,9 @@ printpdf = "0.7"
 # Excel generation
 rust_xlsxwriter = "0.76"
 
+# Random data generation (for seed scripts)
+rand = "0.9"
+
 [dev-dependencies]
 # Unit & Integration tests
 mockall = "0.13"
@@ -66,7 +69,6 @@ criterion = { version = "0.7", features = ["async_tokio", "html_reports"] }
 # Test utilities
 serial_test = "3.1"
 fake = { version = "4.4", features = ["derive", "chrono", "uuid"] }
-rand = "0.9"
 
 [[bench]]
 name = "load_tests"
