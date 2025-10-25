@@ -7,9 +7,11 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![Astro](https://img.shields.io/badge/Astro-4.0-purple.svg)](https://astro.build/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-gilmry.github.io%2Fkoprogo-blue)](https://gilmry.github.io/koprogo)
 
 ![CI Pipeline](https://github.com/gilmry/koprogo/actions/workflows/ci.yml/badge.svg)
 ![Security Audit](https://github.com/gilmry/koprogo/actions/workflows/security.yml/badge.svg)
+![Documentation](https://github.com/gilmry/koprogo/actions/workflows/docs.yml/badge.svg)
 
 **Performance validée** (1 vCPU / 2GB RAM) :
 [![Success Rate](https://img.shields.io/badge/Success%20Rate-99.74%25-success)](docs/PERFORMANCE_REPORT.md)
@@ -21,6 +23,10 @@
 ## 🎯 Vue d'ensemble
 
 KoproGo est une solution complète de gestion de copropriété construite avec une **architecture hexagonale** (Ports & Adapters) et une approche **Domain-Driven Design (DDD)**. Le projet met l'accent sur la performance, la testabilité, la sécurité et la conformité.
+
+📚 **Documentation complète disponible sur [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)**
+- Documentation Sphinx (guides, architecture, déploiement)
+- Documentation Rust API (documentation technique du backend)
 
 ### Caractéristiques Principales
 
