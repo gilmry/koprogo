@@ -217,6 +217,11 @@
     # ==========================================
     # 9. Déploiement avec GitOps (Standard)
     # ==========================================
+    - name: Make gitops-deploy.sh executable
+      file:
+        path: "{{ koprogo_dir }}/deploy/production/gitops-deploy.sh"
+        mode: '0755'
+
     - name: Deploy KoproGo using gitops-deploy.sh
       command: "{{ koprogo_dir }}/deploy/production/gitops-deploy.sh deploy"
       args:
