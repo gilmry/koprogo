@@ -178,7 +178,7 @@ function generate_expense_data(building_id)
         categories[math.random(#categories)],
         descriptions[math.random(#descriptions)],
         math.random(300, 5000) + math.random(),
-        os.date("%Y-%m-%d")
+        os.date("!%Y-%m-%dT%H:%M:%SZ")
     )
 end
 
