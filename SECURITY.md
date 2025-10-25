@@ -8,6 +8,63 @@ We release patches for security vulnerabilities for the following versions:
 | ------- | ------------------ |
 | 0.1.x   | :white_check_mark: |
 
+## Known Security Advisories
+
+The following security advisories are known and have been assessed for risk:
+
+### RUSTSEC-2023-0071: rsa 0.9.8 - Marvin Attack
+
+**Status**: Accepted Risk (Low Impact)
+**Severity**: 5.9 (Medium)
+**Date**: 2023-11-22
+**Affected**: `rsa 0.9.8` via `sqlx-mysql`
+
+**Assessment**:
+- This vulnerability is in the `rsa` crate used by `sqlx-mysql`
+- KoproGo uses **PostgreSQL only** (not MySQL), so this dependency path is not active in production
+- The `mysql` feature is NOT enabled in our sqlx configuration
+- **Impact**: None in production environment
+- **Mitigation**: Monitor for updates to sqlx that will resolve this transitive dependency
+
+**Why Accepted**:
+- No fixed upgrade available yet
+- Not used in our production code path
+- Waiting for upstream fix in sqlx
+
+### RUSTSEC-2025-0111: tokio-tar 0.3.1 - PAX Headers Parsing
+
+**Status**: Accepted Risk (Test Only)
+**Severity**: Not Critical
+**Date**: 2025-10-21
+**Affected**: `tokio-tar 0.3.1` via `testcontainers`
+
+**Assessment**:
+- This vulnerability is in `tokio-tar` used by `testcontainers`
+- `testcontainers` is used **only in test/development environment**
+- Never included in production builds
+- **Impact**: Test environment only
+- **Mitigation**: Monitor for updates to testcontainers
+
+**Why Accepted**:
+- No fixed upgrade available yet
+- Only affects test infrastructure, not production code
+- Test containers run in isolated Docker environments
+- Waiting for upstream fix in testcontainers
+
+### Monitoring
+
+We actively monitor these advisories and will update dependencies as soon as fixes become available. You can check the current status:
+
+```bash
+cd backend && cargo audit
+```
+
+To verify these advisories are ignored in CI:
+
+```bash
+cat backend/.cargo/audit.toml
+```
+
 ## Reporting a Vulnerability
 
 The KoproGo team takes security bugs seriously. We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.

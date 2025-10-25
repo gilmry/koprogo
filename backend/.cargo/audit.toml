@@ -1,0 +1,27 @@
+# Cargo Audit Configuration
+# This file configures which security advisories to ignore in CI/CD
+
+[advisories]
+# List of advisory IDs to ignore
+ignore = [
+    # RUSTSEC-2023-0071: rsa 0.9.8 - Marvin Attack
+    # Status: Accepted Risk (Low Impact)
+    # Reason: Used by sqlx-mysql which is not enabled (we use PostgreSQL only)
+    # Impact: None in production environment
+    # Mitigation: Monitor for sqlx updates
+    # See: SECURITY.md for full assessment
+    "RUSTSEC-2023-0071",
+
+    # RUSTSEC-2025-0111: tokio-tar 0.3.1 - PAX Headers Parsing
+    # Status: Accepted Risk (Test Only)
+    # Reason: Used only by testcontainers in test environment
+    # Impact: Test environment only, never in production
+    # Mitigation: Monitor for testcontainers updates
+    # See: SECURITY.md for full assessment
+    "RUSTSEC-2025-0111",
+]
+
+# Optionally set a threshold for advisory severity
+# Advisories with a severity below this will be ignored
+# Options: "none", "low", "medium", "high", "critical"
+# severity_threshold = "medium"
