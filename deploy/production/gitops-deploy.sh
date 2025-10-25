@@ -91,9 +91,40 @@ function deploy() {
         return 1
     fi
 
-    # Pull latest images
-    log_info "Pulling Docker images..."
-    docker compose -f "$COMPOSE_FILE" pull 2>&1 | tee -a "$LOG_FILE"
+    # Get current commit SHA (short version)
+    local current_sha=$(git rev-parse --short HEAD)
+    local image_tag="main-sha-${current_sha}"
+
+    log_info "Current commit: $current_sha"
+    log_info "Target image tag: $image_tag"
+
+    # Update IMAGE_TAG in .env temporarily for this deployment
+    export IMAGE_TAG="$image_tag"
+
+    # Pull latest images with retry logic (wait for GitHub Actions)
+    log_info "Pulling Docker images with tag $image_tag..."
+
+    local max_retries=10
+    local retry_delay=90  # 90 seconds between retries (total: 15 minutes)
+    local retry_count=0
+
+    while [ $retry_count -lt $max_retries ]; do
+        if docker compose -f "$COMPOSE_FILE" pull 2>&1 | tee -a "$LOG_FILE"; then
+            log "✅ Images pulled successfully"
+            break
+        else
+            retry_count=$((retry_count + 1))
+            if [ $retry_count -lt $max_retries ]; then
+                log_warning "Image not yet available (attempt $retry_count/$max_retries). Waiting ${retry_delay}s for GitHub Actions to finish building..."
+                sleep $retry_delay
+            else
+                log_error "Image $image_tag still not available after $max_retries attempts. GitHub Actions may have failed."
+                log_warning "Falling back to 'latest' tag"
+                export IMAGE_TAG="latest"
+                docker compose -f "$COMPOSE_FILE" pull 2>&1 | tee -a "$LOG_FILE"
+            fi
+        fi
+    done
 
     # Deploy with Docker Compose
     log_info "Deploying services..."
@@ -115,20 +146,57 @@ function deploy() {
 }
 
 function rollback() {
-    log_warning "🔄 Rolling back to previous commit..."
+    log_warning "🔄 Starting rollback process..."
 
     cd "$REPO_DIR"
 
-    # Get previous commit
-    PREVIOUS=$(git rev-parse HEAD~1)
+    # Show recent commits
+    echo ""
+    echo "Recent deployments (last 10 commits):"
+    echo "========================================"
+    git log --oneline --decorate -10
+    echo ""
 
-    # Checkout previous commit
-    git checkout "$PREVIOUS" 2>&1 | tee -a "$LOG_FILE"
+    # Ask for target commit
+    read -p "Enter commit SHA to rollback to (or press Enter for previous commit): " TARGET_COMMIT
 
-    # Redeploy
+    if [ -z "$TARGET_COMMIT" ]; then
+        # Default to previous commit
+        TARGET_COMMIT=$(git rev-parse HEAD~1)
+        log_info "No commit specified, using previous commit: $TARGET_COMMIT"
+    fi
+
+    # Verify commit exists
+    if ! git rev-parse --verify "$TARGET_COMMIT" >/dev/null 2>&1; then
+        log_error "Invalid commit: $TARGET_COMMIT"
+        return 1
+    fi
+
+    # Get short SHA for display
+    TARGET_SHA=$(git rev-parse --short "$TARGET_COMMIT")
+    CURRENT_SHA=$(git rev-parse --short HEAD)
+
+    log_warning "Rolling back from $CURRENT_SHA to $TARGET_SHA"
+
+    # Confirm
+    read -p "Are you sure? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log "Rollback cancelled"
+        return 0
+    fi
+
+    # Checkout target commit
+    git checkout "$TARGET_COMMIT" 2>&1 | tee -a "$LOG_FILE"
+
+    # Redeploy with the target commit's image
     deploy
 
-    log "✅ Rollback complete"
+    log "✅ Rollback complete to commit $TARGET_SHA"
+    log_warning "Note: You are now in detached HEAD state"
+    log_info "To make this permanent, create a new branch or reset main:"
+    log_info "  git checkout -b rollback-to-$TARGET_SHA"
+    log_info "  OR: git checkout main && git reset --hard $TARGET_COMMIT && git push --force"
 }
 
 function cleanup_old_images() {

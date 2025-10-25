@@ -135,47 +135,48 @@ Oct 25 10:03:01 koprogo-gitops[1234]: [2025-10-25 10:03:01] INFO: Next check in 
 ### Déploiement automatique
 
 1. **Push code** vers `main`
-2. **GitHub Actions** build les images → push vers `ghcr.io`
-3. **Optionnel** : Mettre à jour `IMAGE_TAG` dans `deploy/production/.env`
-4. **Commit + Push** le changement (si IMAGE_TAG modifié)
-5. **GitOps script** détecte le changement (< 3min)
-6. **Auto-deploy** tire les nouvelles images
-7. **Redémarrage** automatique des containers
+2. **GitHub Actions** build les images → push vers `ghcr.io` avec tag `main-sha-<commit>`
+3. **GitOps script** détecte le changement (< 3min)
+4. **Calcul du tag** : Détermine automatiquement le tag d'image basé sur le commit SHA
+5. **Attente intelligente** : Réessaie toutes les 90s pendant 15 minutes pour attendre que GitHub Actions finisse le build
+6. **Auto-deploy** : Dès que l'image est disponible, tire et déploie
+7. **Redémarrage** automatique des containers avec la version exacte du commit
 
-### Exemple : Déployer v1.2.3
+**Avantages** :
+- ✅ Déploie toujours l'image correspondant au commit exact (traçabilité)
+- ✅ Attend automatiquement que le build soit terminé (pas de déploiement prématuré)
+- ✅ Fallback sur `latest` si le build échoue après 15 minutes
 
-**Option 1 : Via tag d'image**
+### Déploiement standard (automatique)
+
+Le déploiement est **entièrement automatique** :
 
 ```bash
-cd ~/koprogo/deploy/production
-
-# Mettre à jour le tag
-sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=v1.2.3/' .env
-
-# Commit et push
-git add .env
-git commit -m "deploy: update to v1.2.3"
+# 1. Développer et commit
+git add .
+git commit -m "feat: nouvelle fonctionnalité"
 git push
 
-# Le script GitOps détectera le changement et déploiera automatiquement
-# dans les 3 prochaines minutes
+# 2. C'est tout ! Le reste est automatique :
+# - GitHub Actions build l'image (5-10 min)
+# - GitOps détecte le commit (< 3 min)
+# - GitOps attend que l'image soit prête (jusqu'à 15 min)
+# - GitOps déploie automatiquement
 ```
 
-**Option 2 : Déploiement manuel immédiat**
+### Déploiement manuel (si nécessaire)
+
+Si tu veux déployer immédiatement sans attendre le cycle automatique :
 
 ```bash
 cd ~/koprogo/deploy/production
 
-# Mettre à jour le tag localement
-sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=v1.2.3/' .env
-
-# Déployer immédiatement
+# Déployer la version actuelle
 ./gitops-deploy.sh deploy
 
-# Puis commit pour garder Git à jour
-git add .env
-git commit -m "deploy: update to v1.2.3"
-git push
+# Ou déployer une version spécifique
+export IMAGE_TAG=v1.2.3
+./gitops-deploy.sh deploy
 ```
 
 ## 📊 Commandes disponibles
@@ -225,8 +226,49 @@ docker compose -f docker-compose.yml logs -f
 
 ### Rollback
 
+Le rollback permet de revenir à une version précédente en un seul clic :
+
 ```bash
 ./gitops-deploy.sh rollback
+```
+
+**Ce qui se passe** :
+1. Affiche les 10 derniers commits avec leurs SHA
+2. Demande le commit cible (ou utilise le précédent par défaut)
+3. Demande confirmation
+4. Checkout le commit cible
+5. Déploie automatiquement l'image `main-sha-<commit>` correspondante
+6. Donne des instructions pour rendre le rollback permanent
+
+**Exemple d'utilisation** :
+
+```bash
+$ ./gitops-deploy.sh rollback
+
+Recent deployments (last 10 commits):
+========================================
+abc1234 (HEAD -> main) fix: correction bug critique
+def5678 feat: nouvelle fonctionnalité
+ghi9012 chore: mise à jour dépendances
+
+Enter commit SHA to rollback to (or press Enter for previous commit): def5678
+Rolling back from abc1234 to def5678
+Are you sure? (y/N) y
+
+✅ Rollback complete to commit def5678
+```
+
+**Rendre le rollback permanent** :
+
+```bash
+# Option 1: Créer une branche de rollback
+git checkout -b rollback-to-def5678
+git push origin rollback-to-def5678
+
+# Option 2: Forcer main à revenir en arrière (ATTENTION: destructif!)
+git checkout main
+git reset --hard def5678
+git push --force
 ```
 
 ## 🛠️ Dépannage
