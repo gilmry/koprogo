@@ -1027,10 +1027,11 @@ impl DatabaseSeeder {
                     let payment_status = if rng.random_bool(0.7) { "paid" } else { "pending" };
 
                     sqlx::query(
-                        "INSERT INTO expenses (id, building_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-                         VALUES ($1, $2, $3::expense_category, $4, $5, $6, $7::payment_status, $8, $9)"
+                        "INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9, $10)"
                     )
                     .bind(Uuid::new_v4())
+                    .bind(org_id)
                     .bind(building_id)
                     .bind(category)
                     .bind(desc)
