@@ -12,7 +12,7 @@ COMPOSE_FILE="deploy/production/docker-compose.yml"
 ENV_FILE="deploy/production/.env"
 BRANCH="main"
 CHECK_INTERVAL=180  # 3 minutes (like Argo CD)
-LOG_FILE="/var/log/koprogo-gitops.log"
+LOG_FILE="${HOME}/koprogo-gitops.log"
 
 # Colors
 RED='\033[0;31m'
