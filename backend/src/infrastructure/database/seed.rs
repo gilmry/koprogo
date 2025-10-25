@@ -810,7 +810,7 @@ impl DatabaseSeeder {
             return Err("Data already exists. Please clear the database first.".to_string());
         }
 
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
 
         // Belgian cities for variety
         let cities = vec!["Bruxelles", "Anvers", "Gand", "Charleroi", "Liège", "Bruges", "Namur", "Louvain"];
@@ -847,8 +847,8 @@ impl DatabaseSeeder {
             .bind(*org_name)
             .bind(format!("{}-{}", size, idx))
             .bind(format!("contact@{}.be", size))
-            .bind(format!("+32 2 {} {} {}", rng.gen_range(100..999), rng.gen_range(10..99), rng.gen_range(10..99)))
-            .bind(if *size == "large" { "enterprise" } else if *size == "medium" { "professional" } else { "basic" })
+            .bind(format!("+32 2 {} {} {}", rng.random_range(100..999), rng.random_range(10..99), rng.random_range(10..99)))
+            .bind(if *size == "large" { "enterprise" } else if *size == "medium" { "professional" } else { "starter" })
             .bind(*num_buildings as i32)
             .bind(if *size == "large" { 50 } else if *size == "medium" { 20 } else { 10 })
             .bind(true)
@@ -896,14 +896,14 @@ impl DatabaseSeeder {
                 )
                 .bind(owner_id)
                 .bind(org_id)
-                .bind(first_names[rng.gen_range(0..first_names.len())])
-                .bind(last_names[rng.gen_range(0..last_names.len())])
+                .bind(first_names[rng.random_range(0..first_names.len())])
+                .bind(last_names[rng.random_range(0..last_names.len())])
                 .bind(format!("owner{}@{}.be", o + 1, size))
                 .bind(format!("+32 {} {} {} {}",
-                    if rng.gen_bool(0.5) { "2" } else { "4" },
-                    rng.gen_range(100..999),
-                    rng.gen_range(10..99),
-                    rng.gen_range(10..99)
+                    if rng.random_bool(0.5) { "2" } else { "4" },
+                    rng.random_range(100..999),
+                    rng.random_range(10..99),
+                    rng.random_range(10..99)
                 ))
                 .bind(now)
                 .bind(now)
@@ -922,9 +922,9 @@ impl DatabaseSeeder {
 
             for b in 0..*num_buildings {
                 let building_id = Uuid::new_v4();
-                let city = cities[rng.gen_range(0..cities.len())];
-                let street_type = street_types[rng.gen_range(0..street_types.len())];
-                let street_name = street_names[rng.gen_range(0..street_names.len())];
+                let city = cities[rng.random_range(0..cities.len())];
+                let street_type = street_types[rng.random_range(0..street_types.len())];
+                let street_name = street_names[rng.random_range(0..street_names.len())];
                 let building_name = format!("Résidence {}", street_name);
 
                 sqlx::query(
@@ -934,12 +934,12 @@ impl DatabaseSeeder {
                 .bind(building_id)
                 .bind(org_id)
                 .bind(&building_name)
-                .bind(format!("{} {} {}", street_type, street_name, rng.gen_range(1..200)))
+                .bind(format!("{} {} {}", street_type, street_name, rng.random_range(1..200)))
                 .bind(city)
-                .bind(format!("{}", rng.gen_range(1000..9999)))
+                .bind(format!("{}", rng.random_range(1000..9999)))
                 .bind("Belgium")
                 .bind(units_per_building as i32)
-                .bind(rng.gen_range(1960..2024))
+                .bind(rng.random_range(1960..2024))
                 .bind(now)
                 .bind(now)
                 .execute(&self.pool)
@@ -959,14 +959,14 @@ impl DatabaseSeeder {
                     let unit_number = format!("{}.{}", floor, (u % 4) + 1);
 
                     // 66% chance to have an owner
-                    let owner_id = if rng.gen_bool(0.66) && !owner_ids.is_empty() {
-                        Some(owner_ids[rng.gen_range(0..owner_ids.len())])
+                    let owner_id = if rng.random_bool(0.66) && !owner_ids.is_empty() {
+                        Some(owner_ids[rng.random_range(0..owner_ids.len())])
                     } else {
                         None
                     };
 
                     let unit_types = vec!["apartment", "studio", "duplex", "penthouse"];
-                    let unit_type = unit_types[rng.gen_range(0..unit_types.len())];
+                    let unit_type = unit_types[rng.random_range(0..unit_types.len())];
 
                     sqlx::query(
                         "INSERT INTO units (id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at)
@@ -978,8 +978,8 @@ impl DatabaseSeeder {
                     .bind(&unit_number)
                     .bind(unit_type)
                     .bind(floor)
-                    .bind(rng.gen_range(45.0..150.0))
-                    .bind(rng.gen_range(50..200) as i32)
+                    .bind(rng.random_range(45.0..150.0))
+                    .bind(rng.random_range(50..200) as i32)
                     .bind(owner_id)
                     .bind(now)
                     .bind(now)
@@ -991,7 +991,7 @@ impl DatabaseSeeder {
                 org_units += units_this_building;
 
                 // Create 2-3 expenses per building
-                let num_expenses = rng.gen_range(2..=3);
+                let num_expenses = rng.random_range(2..=3);
                 let expense_types = vec![
                     ("Entretien ascenseur", 450.0, 800.0),
                     ("Nettoyage parties communes", 300.0, 600.0),
@@ -1001,9 +1001,9 @@ impl DatabaseSeeder {
                 ];
 
                 for _ in 0..num_expenses {
-                    let (desc, min_amount, max_amount) = expense_types[rng.gen_range(0..expense_types.len())];
-                    let amount = rng.gen_range(min_amount..max_amount);
-                    let days_ago = rng.gen_range(0..90);
+                    let (desc, min_amount, max_amount) = expense_types[rng.random_range(0..expense_types.len())];
+                    let amount = rng.random_range(min_amount..max_amount);
+                    let days_ago = rng.random_range(0..90);
                     let expense_date = Utc::now() - chrono::Duration::days(days_ago);
 
                     sqlx::query(
@@ -1017,7 +1017,7 @@ impl DatabaseSeeder {
                     .bind(amount)
                     .bind(expense_date)
                     .bind(expense_date + chrono::Duration::days(30))
-                    .bind(rng.gen_bool(0.7)) // 70% paid
+                    .bind(rng.random_bool(0.7)) // 70% paid
                     .bind(now)
                     .bind(now)
                     .execute(&self.pool)
