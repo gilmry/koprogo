@@ -56,19 +56,19 @@ clean: ## 🧹 Nettoyer artifacts et volumes Docker
 ## ✅ Tests
 ##
 
-test: test-unit test-int test-bdd ## 🧪 Lancer tous les tests
+test: test-unit test-e2e-backend test-bdd ## 🧪 Lancer tous les tests
 
 test-unit: ## 🎯 Tests unitaires (backend)
 	@echo "$(GREEN)🧪 Tests unitaires...$(NC)"
-	cd backend && cargo test --lib
+	cd backend && SQLX_OFFLINE=true cargo test --lib
 
-test-int: ## 🔗 Tests d'intégration (backend)
-	@echo "$(GREEN)🔗 Tests d'intégration...$(NC)"
-	cd backend && cargo test --tests integration
+test-e2e-backend: ## 🔗 Tests E2E backend (e2e.rs, e2e_auth.rs, e2e_http.rs)
+	@echo "$(GREEN)🔗 Tests E2E backend...$(NC)"
+	cd backend && SQLX_OFFLINE=true cargo test --test e2e --test e2e_auth --test e2e_http
 
 test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 	@echo "$(GREEN)🥒 Tests BDD...$(NC)"
-	cd backend && cargo test --test bdd
+	cd backend && SQLX_OFFLINE=true cargo test --test bdd
 
 test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
