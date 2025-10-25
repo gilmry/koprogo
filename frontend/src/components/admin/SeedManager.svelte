@@ -63,10 +63,11 @@
 					];
 					showAccounts = true;
 				} else if (endpoint === '/seed/demo') {
-					// Demo seed creates different accounts - extract from message
+					// Demo seed creates Belgian organizations
 					seedAccounts = [
-						{ org: 'Demo Org 1', email: 'admin@demo1.be', password: 'admin123' },
-						{ org: 'Demo Org 2', email: 'admin@demo2.be', password: 'admin123' }
+						{ org: 'Grand Place (Bruxelles)', email: 'syndic@grandplace.be', password: 'syndic123' },
+						{ org: 'Bruxelles Louise', email: 'syndic@copro-bruxelles.be', password: 'syndic123' },
+						{ org: 'Liège', email: 'syndic@syndic-liege.be', password: 'syndic123' }
 					];
 					showAccounts = true;
 				}
@@ -111,10 +112,12 @@
 					Small dataset for quick demos and testing basic features.
 				</p>
 				<ul class="text-xs text-gray-500 mb-4 list-disc list-inside">
-					<li>3 organizations</li>
-					<li>~10 buildings</li>
-					<li>~30 units</li>
-					<li>Fast generation (~5s)</li>
+					<li>3 Belgian organizations</li>
+					<li>4 buildings</li>
+					<li>4 units</li>
+					<li>3 owners, 4 expenses</li>
+					<li>3 meetings, 2 documents</li>
+					<li>Fast generation (~3s)</li>
 				</ul>
 				<button
 					on:click={seedDemo}
