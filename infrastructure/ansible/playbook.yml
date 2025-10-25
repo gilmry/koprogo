@@ -128,13 +128,11 @@
         path: "{{ koprogo_dir }}"
         state: absent
 
-    - name: Clone KoproGo repository
+    - name: Clone KoproGo repository as root
       git:
         repo: "{{ koprogo_repo }}"
         dest: "{{ koprogo_dir }}"
         version: "{{ koprogo_branch }}"
-      become: yes
-      become_user: "{{ koprogo_user }}"
 
     - name: Set ownership of KoproGo directory
       file:
@@ -142,6 +140,11 @@
         owner: "{{ koprogo_user }}"
         group: "{{ koprogo_user }}"
         recurse: yes
+
+    - name: Configure git safe directory
+      command: git config --global --add safe.directory {{ koprogo_dir }}
+      become: yes
+      become_user: "{{ koprogo_user }}"
 
     # ==========================================
     # 7. Configuration environnement
