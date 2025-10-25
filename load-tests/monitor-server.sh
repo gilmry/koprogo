@@ -109,8 +109,10 @@ while [ $(date +%s) -lt $END_TIME ]; do
             COMPOSE_FILE="docker-compose.vps.yml"
         elif [ -f "../deploy/production/docker-compose.yml" ]; then
             COMPOSE_FILE="../deploy/production/docker-compose.yml"
-        elif [ -f "/root/koprogo/deploy/production/docker-compose.yml" ]; then
-            COMPOSE_FILE="/root/koprogo/deploy/production/docker-compose.yml"
+        elif [ -f "/home/debian/koprogo/deploy/production/docker-compose.yml" ]; then
+            COMPOSE_FILE="/home/debian/koprogo/deploy/production/docker-compose.yml"
+        elif [ -f "$HOME/koprogo/deploy/production/docker-compose.yml" ]; then
+            COMPOSE_FILE="$HOME/koprogo/deploy/production/docker-compose.yml"
         fi
 
         if [ -n "$COMPOSE_FILE" ]; then
