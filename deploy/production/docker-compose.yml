@@ -165,9 +165,9 @@ services:
       - "traefik.http.services.backend.loadbalancer.server.port=8080"
       # Middlewares
       - "traefik.http.routers.backend.middlewares=rate-limit,security-headers"
-      # Rate limiting (100 req/s average, burst 200)
-      - "traefik.http.middlewares.rate-limit.ratelimit.average=100"
-      - "traefik.http.middlewares.rate-limit.ratelimit.burst=200"
+      # Rate limiting (500 req/s average, burst 1000)
+      - "traefik.http.middlewares.rate-limit.ratelimit.average=500"
+      - "traefik.http.middlewares.rate-limit.ratelimit.burst=1000"
       # Security headers
       - "traefik.http.middlewares.security-headers.headers.frameDeny=true"
       - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
