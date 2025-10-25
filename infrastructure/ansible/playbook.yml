@@ -207,50 +207,45 @@
       when: dns_config_api is defined and dns_config_api.stdout_lines is defined
 
     # ==========================================
-    # 9. Déploiement Docker Compose (Production)
+    # 9. Déploiement avec GitOps (Standard)
     # ==========================================
-    - name: Pull Docker images from deploy/production
-      command: docker compose pull
+    - name: Deploy KoproGo using gitops-deploy.sh
+      command: "{{ koprogo_dir }}/deploy/production/gitops-deploy.sh deploy"
       args:
-        chdir: "{{ koprogo_dir }}/deploy/production"
+        chdir: "{{ koprogo_dir }}"
       become: yes
       become_user: root
-      failed_when: false
-      register: docker_pull
-
-    - name: Start KoproGo services from deploy/production
-      command: docker compose up -d
-      args:
-        chdir: "{{ koprogo_dir }}/deploy/production"
-      become: yes
-      become_user: root
+      environment:
+        REPO_DIR: "{{ koprogo_dir }}"
 
     # ==========================================
-    # 10. Configuration GitOps Auto-Update
+    # 10. Configuration GitOps Auto-Update (Systemd Service)
     # ==========================================
-    - name: Create scripts directory
-      file:
-        path: "{{ koprogo_dir }}/scripts"
-        state: directory
-        owner: "{{ koprogo_user }}"
-        group: "{{ koprogo_user }}"
-        mode: '0755'
-
-    - name: Create auto-update script
+    - name: Install GitOps systemd service
       template:
-        src: auto-update.sh.j2
-        dest: "{{ koprogo_dir }}/scripts/auto-update.sh"
+        src: koprogo-gitops.service.j2
+        dest: /etc/systemd/system/koprogo-gitops.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Create log file with correct permissions
+      file:
+        path: /var/log/koprogo-gitops.log
+        state: touch
         owner: "{{ koprogo_user }}"
         group: "{{ koprogo_user }}"
-        mode: '0755'
+        mode: '0644'
 
-    - name: Setup daily auto-update cron job
-      cron:
-        name: "KoproGo GitOps Auto-Update"
-        minute: "0"
-        hour: "3"
-        job: "{{ koprogo_dir }}/scripts/auto-update.sh >> /var/log/koprogo-update.log 2>&1"
-        user: "{{ koprogo_user }}"
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable and start GitOps service
+      systemd:
+        name: koprogo-gitops
+        enabled: yes
+        state: started
 
     # ==========================================
     # 10. Configuration backups
@@ -315,7 +310,9 @@
           - "URL Frontend: {{ 'https://' if enable_ssl else 'http://' }}{{ frontend_domain if frontend_domain else ansible_host }}"
           - "URL API: {{ 'https://' if enable_ssl else 'http://' }}{{ api_domain if api_domain else ansible_host }}/api/v1"
           - "Health check: {{ 'https://' if enable_ssl else 'http://' }}{{ api_domain if api_domain else ansible_host }}/api/v1/health"
-          - "Logs: docker compose logs -f (dans {{ koprogo_dir }})"
-          - "Auto-update: Tous les jours à 3h (cron)"
+          - "Logs Docker: docker compose logs -f (dans {{ koprogo_dir }}/deploy/production)"
+          - "GitOps Service: systemctl status koprogo-gitops"
+          - "GitOps Logs: tail -f /var/log/koprogo-gitops.log"
+          - "Auto-update: Continuous (checks every 3 minutes)"
           - "Backups: Tous les jours à 2h (cron)"
           - "=========================================="

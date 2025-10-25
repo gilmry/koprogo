@@ -1,0 +1,24 @@
+[Unit]
+Description=KoproGo GitOps Auto-Update Service
+After=docker.service
+Requires=docker.service
+Documentation=https://github.com/gilmry/koprogo
+
+[Service]
+Type=simple
+User={{ koprogo_user }}
+Group={{ koprogo_user }}
+WorkingDirectory={{ koprogo_dir }}
+Environment="REPO_DIR={{ koprogo_dir }}"
+ExecStart={{ koprogo_dir }}/deploy/production/gitops-deploy.sh watch
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/koprogo-gitops.log
+StandardError=append:/var/log/koprogo-gitops.log
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
