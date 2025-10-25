@@ -109,20 +109,25 @@ function deploy() {
     local retry_count=0
 
     while [ $retry_count -lt $max_retries ]; do
-        if docker compose -f "$COMPOSE_FILE" pull 2>&1 | tee -a "$LOG_FILE"; then
-            log "✅ Images pulled successfully"
-            break
-        else
+        # Capture output to check for errors
+        pull_output=$(docker compose -f "$COMPOSE_FILE" pull 2>&1 | tee -a "$LOG_FILE")
+
+        # Check if pull was successful (no "manifest unknown" error)
+        if echo "$pull_output" | grep -q "manifest unknown"; then
             retry_count=$((retry_count + 1))
             if [ $retry_count -lt $max_retries ]; then
-                log_warning "Image not yet available (attempt $retry_count/$max_retries). Waiting ${retry_delay}s for GitHub Actions to finish building..."
+                log_warning "Image $image_tag not yet available (attempt $retry_count/$max_retries). Waiting ${retry_delay}s for GitHub Actions to finish building..."
                 sleep $retry_delay
             else
                 log_error "Image $image_tag still not available after $max_retries attempts. GitHub Actions may have failed."
                 log_warning "Falling back to 'latest' tag"
                 export IMAGE_TAG="latest"
                 docker compose -f "$COMPOSE_FILE" pull 2>&1 | tee -a "$LOG_FILE"
+                break
             fi
+        else
+            log "✅ Images pulled successfully"
+            break
         fi
     done
 
