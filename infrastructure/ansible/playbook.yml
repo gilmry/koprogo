@@ -266,6 +266,14 @@
     # ==========================================
     # 10. Configuration backups
     # ==========================================
+    - name: Create scripts directory
+      file:
+        path: "{{ koprogo_dir }}/scripts"
+        state: directory
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0755'
+
     - name: Create backup script
       template:
         src: backup.sh.j2
