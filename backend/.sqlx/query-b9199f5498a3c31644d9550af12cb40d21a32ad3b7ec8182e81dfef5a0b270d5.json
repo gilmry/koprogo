@@ -1,0 +1,76 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE organizations\n        SET is_active = false, updated_at = NOW()\n        WHERE id = $1\n        RETURNING id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "contact_email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "contact_phone",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "subscription_plan",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "max_buildings",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "max_users",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "b9199f5498a3c31644d9550af12cb40d21a32ad3b7ec8182e81dfef5a0b270d5"
+}

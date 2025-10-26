@@ -1,0 +1,83 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE organizations\n        SET name = $1, slug = $2, contact_email = $3, contact_phone = $4, subscription_plan = $5, max_buildings = $6, max_users = $7, updated_at = NOW()\n        WHERE id = $8\n        RETURNING id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "slug",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "contact_email",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "contact_phone",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "subscription_plan",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "max_buildings",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "max_users",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "is_active",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6ddc1a27cc47a573ee4e6996efe104bee697e1c1ed44ddb9012cc270fce682b3"
+}
