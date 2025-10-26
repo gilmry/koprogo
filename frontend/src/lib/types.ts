@@ -121,7 +121,12 @@ export interface Document {
   file_path: string;
   file_type: string;
   file_size: number;
-  document_type: "Invoice" | "Contract" | "Report" | "Meeting_Minutes" | "Other";
+  document_type:
+    | "Invoice"
+    | "Contract"
+    | "Report"
+    | "Meeting_Minutes"
+    | "Other";
   meeting_id?: string;
   expense_id?: string;
   uploaded_at: string;

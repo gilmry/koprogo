@@ -1,8 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import BuildingDetail from '../components/BuildingDetail.svelte';
+import BuildingDetailComponent from '../components/BuildingDetail.svelte';
 ---
 
 <Layout title="Détail Immeuble" showNav={true} requireAuth={true}>
-  <BuildingDetail client:load />
+  <BuildingDetailComponent client:load />
 </Layout>

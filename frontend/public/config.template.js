@@ -1,10 +1,10 @@
 // Runtime configuration for KoproGo Frontend
 // Automatically detects API URL based on current domain
-(function() {
+(function () {
   const hostname = window.location.hostname;
 
   // Development: use localhost backend
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
     window.__ENV__ = {
       API_URL: "http://localhost:8080/api/v1",
     };

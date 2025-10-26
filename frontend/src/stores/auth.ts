@@ -54,7 +54,9 @@ const createAuthStore = () => {
       if (typeof window !== "undefined") {
         const storedUser = localStorage.getItem("koprogo_user");
         const storedToken = localStorage.getItem("koprogo_token");
-        const storedRefreshToken = localStorage.getItem("koprogo_refresh_token");
+        const storedRefreshToken = localStorage.getItem(
+          "koprogo_refresh_token",
+        );
 
         if (storedUser && storedToken && storedRefreshToken) {
           try {
@@ -118,7 +120,13 @@ const createAuthStore = () => {
         startTokenRefresh();
       }
 
-      set({ user, isAuthenticated: true, isLoading: false, token, refreshToken });
+      set({
+        user,
+        isAuthenticated: true,
+        isLoading: false,
+        token,
+        refreshToken,
+      });
     },
 
     // Logout
@@ -171,7 +179,11 @@ const createAuthStore = () => {
 
         if (response.ok) {
           const data = await response.json();
-          const { token: newToken, refresh_token: newRefreshToken, user } = data;
+          const {
+            token: newToken,
+            refresh_token: newRefreshToken,
+            user,
+          } = data;
 
           // Update stored tokens
           if (typeof window !== "undefined") {

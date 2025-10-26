@@ -53,6 +53,7 @@ impl Building {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn update_info(
         &mut self,
         name: String,

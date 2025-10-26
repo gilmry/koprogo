@@ -250,11 +250,9 @@ pub async fn update_user(
             is_active: row.is_active,
             created_at: row.created_at,
         }),
-        Err(sqlx::Error::RowNotFound) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "error": "User not found"
-            }))
-        }
+        Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "User not found"
+        })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to update user: {}", e)
         })),
@@ -300,11 +298,9 @@ pub async fn activate_user(
             is_active: row.is_active,
             created_at: row.created_at,
         }),
-        Err(sqlx::Error::RowNotFound) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "error": "User not found"
-            }))
-        }
+        Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "User not found"
+        })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to activate user: {}", e)
         })),
@@ -350,11 +346,9 @@ pub async fn deactivate_user(
             is_active: row.is_active,
             created_at: row.created_at,
         }),
-        Err(sqlx::Error::RowNotFound) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "error": "User not found"
-            }))
-        }
+        Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "User not found"
+        })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to deactivate user: {}", e)
         })),

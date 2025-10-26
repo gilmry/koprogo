@@ -124,7 +124,11 @@ pub async fn create_organization(
     }
 
     // Validate slug format (lowercase alphanumeric and hyphens only)
-    if !req.slug.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
+    if !req
+        .slug
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Slug must contain only lowercase letters, numbers, and hyphens"
         }));
@@ -230,7 +234,11 @@ pub async fn update_organization(
     }
 
     // Validate slug format
-    if !req.slug.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
+    if !req
+        .slug
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Slug must contain only lowercase letters, numbers, and hyphens"
         }));
@@ -277,11 +285,9 @@ pub async fn update_organization(
             is_active: row.is_active,
             created_at: row.created_at,
         }),
-        Err(sqlx::Error::RowNotFound) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "error": "Organization not found"
-            }))
-        }
+        Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Organization not found"
+        })),
         Err(sqlx::Error::Database(db_err)) => {
             if db_err.is_unique_violation() {
                 HttpResponse::BadRequest().json(serde_json::json!({
@@ -340,11 +346,9 @@ pub async fn activate_organization(
             is_active: row.is_active,
             created_at: row.created_at,
         }),
-        Err(sqlx::Error::RowNotFound) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "error": "Organization not found"
-            }))
-        }
+        Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Organization not found"
+        })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to activate organization: {}", e)
         })),
@@ -392,11 +396,9 @@ pub async fn suspend_organization(
             is_active: row.is_active,
             created_at: row.created_at,
         }),
-        Err(sqlx::Error::RowNotFound) => {
-            HttpResponse::NotFound().json(serde_json::json!({
-                "error": "Organization not found"
-            }))
-        }
+        Err(sqlx::Error::RowNotFound) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Organization not found"
+        })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to suspend organization: {}", e)
         })),
