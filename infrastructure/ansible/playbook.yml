@@ -323,15 +323,15 @@
       pause:
         seconds: 10
 
-    - name: Check API health (via Traefik)
+    - name: Check API health (public HTTPS endpoint)
       uri:
-        url: "http://localhost/api/v1/health"
+        url: "https://{{ api_domain }}/api/v1/health"
         method: GET
         status_code: 200
-        follow_redirects: none
+        validate_certs: no
       register: health_check
-      retries: 5
-      delay: 5
+      retries: 10
+      delay: 10
       until: health_check.status == 200
 
     - name: Display deployment info
