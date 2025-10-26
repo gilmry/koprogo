@@ -145,6 +145,9 @@
       shell: |
         su - {{ koprogo_user }} -c "git config --global --add safe.directory {{ koprogo_dir }}"
 
+    - name: Configure git safe directory for root
+      command: git config --global --add safe.directory {{ koprogo_dir }}
+
     # ==========================================
     # 7. Configuration environnement
     # ==========================================
