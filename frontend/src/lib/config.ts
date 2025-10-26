@@ -5,13 +5,28 @@
  * pour le développement local.
  */
 
+// Extend window interface to include __ENV__
+declare global {
+  interface Window {
+    __ENV__?: {
+      API_URL?: string;
+    };
+  }
+}
+
 // URL de base de l'API backend
-// Fallback: http://127.0.0.1:8080/api/v1 pour le développement local
+// Priorité: window.__ENV__.API_URL (runtime) > import.meta.env.PUBLIC_API_URL (build-time) > fallback local
 const getApiUrl = (): string => {
-  // En environnement serveur (SSR), import.meta.env peut ne pas être disponible
+  // En environnement browser, utiliser window.__ENV__ si disponible
+  if (typeof window !== "undefined" && window.__ENV__?.API_URL) {
+    return window.__ENV__.API_URL;
+  }
+
+  // Sinon, utiliser la variable d'environnement de build
   if (typeof import.meta !== "undefined" && import.meta.env) {
     return import.meta.env.PUBLIC_API_URL || "http://127.0.0.1:8080/api/v1";
   }
+
   return "http://127.0.0.1:8080/api/v1";
 };
 
@@ -21,7 +36,9 @@ export const API_URL = getApiUrl();
 export const apiEndpoint = (path: string): string => {
   // S'assurer que le path commence par /
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${API_URL}${normalizedPath}`;
+  // Toujours récupérer l'URL la plus récente au moment de l'appel
+  const apiUrl = getApiUrl();
+  return `${apiUrl}${normalizedPath}`;
 };
 
 // Exemples d'utilisation:
