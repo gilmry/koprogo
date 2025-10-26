@@ -250,15 +250,19 @@ impl BuildingRepository for PostgresBuildingRepository {
         sqlx::query(
             r#"
             UPDATE buildings
-            SET name = $2, address = $3, city = $4, postal_code = $5, updated_at = $6
+            SET organization_id = $2, name = $3, address = $4, city = $5, postal_code = $6, country = $7, total_units = $8, construction_year = $9, updated_at = $10
             WHERE id = $1
             "#,
         )
         .bind(building.id)
+        .bind(building.organization_id)
         .bind(&building.name)
         .bind(&building.address)
         .bind(&building.city)
         .bind(&building.postal_code)
+        .bind(&building.country)
+        .bind(building.total_units)
+        .bind(building.construction_year)
         .bind(building.updated_at)
         .execute(&self.pool)
         .await

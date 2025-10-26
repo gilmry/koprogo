@@ -59,11 +59,17 @@ impl Building {
         address: String,
         city: String,
         postal_code: String,
+        country: String,
+        total_units: i32,
+        construction_year: Option<i32>,
     ) {
         self.name = name;
         self.address = address;
         self.city = city;
         self.postal_code = postal_code;
+        self.country = country;
+        self.total_units = total_units;
+        self.construction_year = construction_year;
         self.updated_at = Utc::now();
     }
 }
@@ -151,6 +157,9 @@ mod tests {
             "New Address".to_string(),
             "New City".to_string(),
             "11111".to_string(),
+            "France".to_string(),
+            10,
+            None,
         );
 
         assert_eq!(building.name, "New Name");

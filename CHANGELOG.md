@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed - Frontend Modal Behavior (2025-01-26)
+
+#### Modal Closing Issues
+- **All form modals not closing after successful save** (`OrganizationForm`, `UserForm`, `BuildingForm`)
+  - **Root cause**: `loading` state remained `true` when `handleClose()` was called, blocking the close operation due to `if (!loading)` guard
+  - **Solution**: Set `loading = false` before calling `handleClose()` in success path, also set in catch block for errors
+  - **Impact**: All create/edit modals now close immediately after successful save and trigger parent component data reload
+  - Files modified:
+    - `frontend/src/components/admin/OrganizationForm.svelte`
+    - `frontend/src/components/admin/UserForm.svelte`
+    - `frontend/src/components/admin/BuildingForm.svelte`
+
+- **Organizations not loading when editing building from list**
+  - **Root cause**: Organizations only loaded in `onMount()` hook which doesn't re-execute when modal reopens
+  - **Solution**: Replaced `onMount()` with reactive statement `$: if (isOpen && isSuperAdmin && organizations.length === 0)` to load on modal open
+  - **Impact**: Organization selector now works reliably when clicking edit button directly from building list
+  - File modified: `frontend/src/components/admin/BuildingForm.svelte` (line 40-42)
+
+### Added - Buildings CRUD Complete (Phase 3) (2025-01-26)
+
+#### Backend - Building Management
+- **SuperAdmin organization management for buildings**
+  - SuperAdmins can now change building `organization_id` during update
+  - Regular users restricted to updating only buildings in their own organization
+  - Authorization checks in `update_building` handler
+  - File: `backend/src/infrastructure/web/handlers/building_handlers.rs`
+
+- **Extended Building DTOs**
+  - `UpdateBuildingDto`: Added `organization_id: Option<String>`, `country`, `total_units`, `construction_year`
+  - `BuildingResponseDto`: Added `organization_id` field
+  - File: `backend/src/application/dto/building_dto.rs`
+
+- **Building entity updates**
+  - `update_info()` method now accepts all updateable fields: name, address, city, postal_code, country, total_units, construction_year
+  - File: `backend/src/domain/entities/building.rs`
+
+- **Building repository fix**
+  - **Critical fix**: UPDATE query now persists ALL fields including `organization_id`, `country`, `total_units`, `construction_year`
+  - Previously only updated 4 fields (name, address, city, postal_code)
+  - File: `backend/src/infrastructure/database/repositories/building_repository_impl.rs`
+
+#### Frontend - Building UI Components
+- **Building detail page** (static, Vercel-compatible)
+  - Route: `/building-detail?id={id}` using query params instead of dynamic route
+  - Displays building info with organization name lookup
+  - Edit modal with automatic reload after save
+  - Files:
+    - `frontend/src/pages/building-detail.astro`
+    - `frontend/src/components/BuildingDetail.svelte`
+
+- **Building form modal**
+  - SuperAdmin organization selector for create/edit modes
+  - Regular users automatically use JWT organization_id
+  - Form validation with error display
+  - NaN fix for optional `construction_year` field (empty string → null)
+  - File: `frontend/src/components/admin/BuildingForm.svelte`
+
+- **Building list component**
+  - Grid view with search functionality
+  - Pagination support
+  - Quick edit and delete buttons
+  - Link to detail page
+  - File: `frontend/src/components/BuildingList.svelte`
+
+- **Type updates**
+  - Added `organization_id` to Building interface
+  - File: `frontend/src/lib/types.ts`
+
+### Added - Dynamic API Configuration (2025-01-26)
+
+#### Runtime API URL Detection
+- **Automatic environment detection** based on `window.location.hostname` and `port`
+  - **Localhost with Traefik proxy** (port 80 or no port): `http://localhost/api/v1`
+  - **Localhost Astro dev server** (port 3000): `http://localhost:8080/api/v1`
+  - **Production domains**: `https://api.{domain}/api/v1`
+
+- **Build-time config generation**
+  - New script: `frontend/scripts/generate-config.js` generates `public/config.js` during build
+  - Runs automatically before `dev` and `build` commands
+  - Eliminates need for post-build configuration
+  - Files:
+    - `frontend/scripts/generate-config.js` (new)
+    - `frontend/public/config.js` (generated)
+    - `frontend/public/config.template.js` (reference)
+    - `frontend/package.json` (updated scripts)
+
+- **Layout integration**
+  - `config.js` loaded via inline script tag in main layout
+  - Exposes `window.__ENV__.API_URL` for use in API client
+  - File: `frontend/src/layouts/Layout.astro`
+
 ### Added - Documentation Restructuring & Sphinx Integration (2025-10-26)
 
 #### Documentation Reorganization

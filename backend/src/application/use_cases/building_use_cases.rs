@@ -77,7 +77,22 @@ impl BuildingUseCases {
             .await?
             .ok_or_else(|| "Building not found".to_string())?;
 
-        building.update_info(dto.name, dto.address, dto.city, dto.postal_code);
+        // Update organization if provided (SuperAdmin feature)
+        if let Some(org_id_str) = dto.organization_id {
+            let org_id = Uuid::parse_str(&org_id_str)
+                .map_err(|_| "Invalid organization_id format".to_string())?;
+            building.organization_id = org_id;
+        }
+
+        building.update_info(
+            dto.name,
+            dto.address,
+            dto.city,
+            dto.postal_code,
+            dto.country,
+            dto.total_units,
+            dto.construction_year,
+        );
 
         let updated = self.repository.update(&building).await?;
         Ok(self.to_response_dto(&updated))
@@ -90,6 +105,7 @@ impl BuildingUseCases {
     fn to_response_dto(&self, building: &Building) -> BuildingResponseDto {
         BuildingResponseDto {
             id: building.id.to_string(),
+            organization_id: building.organization_id.to_string(),
             name: building.name.clone(),
             address: building.address.clone(),
             city: building.city.clone(),

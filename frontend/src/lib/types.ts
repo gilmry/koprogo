@@ -15,11 +15,37 @@ export interface User {
   role: UserRole;
   organizationId?: string; // For multi-tenant support
   buildingIds?: string[]; // Buildings the user has access to
+  is_active?: boolean;
+  created_at?: string;
+}
+
+// Organization subscription plans
+export enum SubscriptionPlan {
+  FREE = "free",
+  STARTER = "starter",
+  PROFESSIONAL = "professional",
+  ENTERPRISE = "enterprise",
+}
+
+// Organization interface
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  contact_email: string;
+  contact_phone?: string;
+  subscription_plan: SubscriptionPlan;
+  max_buildings: number;
+  max_users: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 // Building interface
 export interface Building {
   id: string;
+  organization_id: string;
   name: string;
   address: string;
   city: string;
@@ -70,6 +96,35 @@ export interface Expense {
     | "Other";
   payment_status: "Pending" | "Paid" | "Overdue" | "Cancelled";
   paid_date?: string;
+  created_at?: string;
+}
+
+// Meeting interface
+export interface Meeting {
+  id: string;
+  building_id: string;
+  title: string;
+  meeting_date: string;
+  location?: string;
+  agenda: string;
+  minutes?: string;
+  status: "Scheduled" | "Completed" | "Cancelled";
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Document interface
+export interface Document {
+  id: string;
+  building_id: string;
+  title: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  document_type: "Invoice" | "Contract" | "Report" | "Meeting_Minutes" | "Other";
+  meeting_id?: string;
+  expense_id?: string;
+  uploaded_at: string;
 }
 
 // Pagination types (matches backend PageResponse)

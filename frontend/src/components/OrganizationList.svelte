@@ -1,24 +1,21 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
-
-  interface Organization {
-    id: string;
-    name: string;
-    slug: string;
-    contact_email: string;
-    contact_phone?: string;
-    subscription_plan: string;
-    max_buildings: number;
-    max_users: number;
-    is_active: boolean;
-    created_at: string;
-  }
+  import { toast } from '../stores/toast';
+  import type { Organization } from '../lib/types';
+  import OrganizationForm from './admin/OrganizationForm.svelte';
+  import ConfirmDialog from './ui/ConfirmDialog.svelte';
+  import Button from './ui/Button.svelte';
 
   let organizations: Organization[] = [];
   let loading = true;
   let error = '';
   let searchTerm = '';
+  let showFormModal = false;
+  let showConfirmDialog = false;
+  let selectedOrganization: Organization | null = null;
+  let formMode: 'create' | 'edit' = 'create';
+  let actionLoading = false;
 
   onMount(async () => {
     await loadOrganizations();
@@ -56,12 +53,74 @@
 
   function formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('fr-BE', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   }
+
+  const handleCreate = () => {
+    selectedOrganization = null;
+    formMode = 'create';
+    showFormModal = true;
+  };
+
+  const handleEdit = (org: Organization) => {
+    selectedOrganization = org;
+    formMode = 'edit';
+    showFormModal = true;
+  };
+
+  const handleToggleActive = async (org: Organization) => {
+    actionLoading = true;
+    try {
+      const endpoint = org.is_active
+        ? `/organizations/${org.id}/suspend`
+        : `/organizations/${org.id}/activate`;
+
+      await api.put(endpoint, {});
+
+      toast.show(
+        `Organisation ${org.is_active ? 'désactivée' : 'activée'} avec succès`,
+        'success'
+      );
+
+      await loadOrganizations();
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
+      toast.show(errorMessage, 'error');
+    } finally {
+      actionLoading = false;
+    }
+  };
+
+  const handleDeleteClick = (org: Organization) => {
+    selectedOrganization = org;
+    showConfirmDialog = true;
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedOrganization) return;
+
+    actionLoading = true;
+    try {
+      await api.delete(`/organizations/${selectedOrganization.id}`);
+      toast.show('Organisation supprimée avec succès', 'success');
+      showConfirmDialog = false;
+      selectedOrganization = null;
+      await loadOrganizations();
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
+      toast.show(errorMessage, 'error');
+    } finally {
+      actionLoading = false;
+    }
+  };
+
+  const handleFormSuccess = async () => {
+    await loadOrganizations();
+  };
 </script>
 
 <div class="space-y-6">
@@ -73,9 +132,9 @@
         Gérer toutes les organisations de la plateforme
       </p>
     </div>
-    <button class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">
+    <Button variant="primary" on:click={handleCreate}>
       ➕ Nouvelle organisation
-    </button>
+    </Button>
   </div>
 
   <!-- Search Bar -->
@@ -176,12 +235,32 @@
                   {formatDate(org.created_at)}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button class="text-primary-600 hover:text-primary-900 mr-3">
-                    👁️ Voir
-                  </button>
-                  <button class="text-gray-600 hover:text-gray-900">
-                    ✏️ Modifier
-                  </button>
+                  <div class="flex justify-end space-x-2">
+                    <button
+                      on:click={() => handleEdit(org)}
+                      class="text-primary-600 hover:text-primary-900"
+                      title="Modifier"
+                      disabled={actionLoading}
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      on:click={() => handleToggleActive(org)}
+                      class={org.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
+                      title={org.is_active ? 'Désactiver' : 'Activer'}
+                      disabled={actionLoading}
+                    >
+                      {org.is_active ? '⏸️' : '▶️'}
+                    </button>
+                    <button
+                      on:click={() => handleDeleteClick(org)}
+                      class="text-red-600 hover:text-red-900"
+                      title="Supprimer"
+                      disabled={actionLoading}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </td>
               </tr>
             {/each}
@@ -200,3 +279,31 @@
     {/if}
   </div>
 </div>
+
+<!-- Organization Form Modal -->
+<OrganizationForm
+  bind:isOpen={showFormModal}
+  organization={selectedOrganization}
+  mode={formMode}
+  on:success={handleFormSuccess}
+  on:close={() => {
+    showFormModal = false;
+    selectedOrganization = null;
+  }}
+/>
+
+<!-- Delete Confirmation Dialog -->
+<ConfirmDialog
+  bind:isOpen={showConfirmDialog}
+  title="Confirmer la suppression"
+  message="Êtes-vous sûr de vouloir supprimer l'organisation '{selectedOrganization?.name}' ? Cette action est irréversible et supprimera également tous les utilisateurs, immeubles et données associés."
+  confirmText="Supprimer"
+  cancelText="Annuler"
+  variant="danger"
+  loading={actionLoading}
+  on:confirm={handleDeleteConfirm}
+  on:cancel={() => {
+    showConfirmDialog = false;
+    selectedOrganization = null;
+  }}
+/>

@@ -1,8 +1,14 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { toast } from '../stores/toast';
+  import type { User } from '../lib/types';
+  import UserForm from './admin/UserForm.svelte';
+  import ConfirmDialog from './ui/ConfirmDialog.svelte';
+  import Button from './ui/Button.svelte';
 
-  interface User {
+  // Backend user format (snake_case)
+  interface BackendUser {
     id: string;
     email: string;
     first_name: string;
@@ -18,6 +24,11 @@
   let error = '';
   let searchTerm = '';
   let roleFilter = 'all';
+  let showFormModal = false;
+  let showConfirmDialog = false;
+  let selectedUser: User | null = null;
+  let formMode: 'create' | 'edit' = 'create';
+  let actionLoading = false;
 
   onMount(async () => {
     await loadUsers();
@@ -27,10 +38,19 @@
     try {
       loading = true;
       error = '';
-      // TODO: Créer un endpoint /admin/users pour le SuperAdmin
-      // Pour l'instant, on utilise l'endpoint /users existant
-      const response = await api.get<{data: User[]}>('/users?per_page=1000');
-      users = response.data;
+      const response = await api.get<{ data: BackendUser[] }>('/users?per_page=1000');
+
+      // Map backend format to frontend format
+      users = response.data.map((u) => ({
+        id: u.id,
+        email: u.email,
+        firstName: u.first_name,
+        lastName: u.last_name,
+        role: u.role as any,
+        organizationId: u.organization_id,
+        is_active: u.is_active,
+        created_at: u.created_at,
+      }));
     } catch (e) {
       error = e instanceof Error ? e.message : 'Erreur lors du chargement des utilisateurs';
       console.error('Error loading users:', e);
@@ -39,14 +59,14 @@
     }
   }
 
-  $: filteredUsers = users.filter(user => {
-    const matchesSearch = 
+  $: filteredUsers = users.filter((user) => {
+    const matchesSearch =
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.last_name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.lastName.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    
+
     return matchesSearch && matchesRole;
   });
 
@@ -72,12 +92,74 @@
 
   function formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('fr-BE', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   }
+
+  const handleCreate = () => {
+    selectedUser = null;
+    formMode = 'create';
+    showFormModal = true;
+  };
+
+  const handleEdit = (user: User) => {
+    selectedUser = user;
+    formMode = 'edit';
+    showFormModal = true;
+  };
+
+  const handleToggleActive = async (user: User) => {
+    actionLoading = true;
+    try {
+      const endpoint = user.is_active
+        ? `/users/${user.id}/deactivate`
+        : `/users/${user.id}/activate`;
+
+      await api.put(endpoint, {});
+
+      toast.show(
+        `Utilisateur ${user.is_active ? 'désactivé' : 'activé'} avec succès`,
+        'success'
+      );
+
+      await loadUsers();
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
+      toast.show(errorMessage, 'error');
+    } finally {
+      actionLoading = false;
+    }
+  };
+
+  const handleDeleteClick = (user: User) => {
+    selectedUser = user;
+    showConfirmDialog = true;
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedUser) return;
+
+    actionLoading = true;
+    try {
+      await api.delete(`/users/${selectedUser.id}`);
+      toast.show('Utilisateur supprimé avec succès', 'success');
+      showConfirmDialog = false;
+      selectedUser = null;
+      await loadUsers();
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
+      toast.show(errorMessage, 'error');
+    } finally {
+      actionLoading = false;
+    }
+  };
+
+  const handleFormSuccess = async () => {
+    await loadUsers();
+  };
 </script>
 
 <div class="space-y-6">
@@ -89,9 +171,9 @@
         Gérer tous les utilisateurs de la plateforme
       </p>
     </div>
-    <button class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">
+    <Button variant="primary" on:click={handleCreate}>
       ➕ Nouvel utilisateur
-    </button>
+    </Button>
   </div>
 
   <!-- Search and Filters -->
@@ -174,12 +256,12 @@
                   <div class="flex items-center">
                     <div class="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
                       <span class="text-primary-600 font-semibold">
-                        {user.first_name[0]}{user.last_name[0]}
+                        {user.firstName[0]}{user.lastName[0]}
                       </span>
                     </div>
                     <div class="ml-4">
                       <div class="text-sm font-medium text-gray-900">
-                        {user.first_name} {user.last_name}
+                        {user.firstName} {user.lastName}
                       </div>
                     </div>
                   </div>
@@ -193,7 +275,7 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.organization_id ? user.organization_id.substring(0, 8) + '...' : '-'}
+                  {user.organizationId ? user.organizationId.substring(0, 8) + '...' : '-'}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   {#if user.is_active}
@@ -210,12 +292,32 @@
                   {formatDate(user.created_at)}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button class="text-primary-600 hover:text-primary-900 mr-3">
-                    👁️ Voir
-                  </button>
-                  <button class="text-gray-600 hover:text-gray-900">
-                    ✏️ Modifier
-                  </button>
+                  <div class="flex justify-end space-x-2">
+                    <button
+                      on:click={() => handleEdit(user)}
+                      class="text-primary-600 hover:text-primary-900"
+                      title="Modifier"
+                      disabled={actionLoading}
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      on:click={() => handleToggleActive(user)}
+                      class={user.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
+                      title={user.is_active ? 'Désactiver' : 'Activer'}
+                      disabled={actionLoading}
+                    >
+                      {user.is_active ? '⏸️' : '▶️'}
+                    </button>
+                    <button
+                      on:click={() => handleDeleteClick(user)}
+                      class="text-red-600 hover:text-red-900"
+                      title="Supprimer"
+                      disabled={actionLoading}
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </td>
               </tr>
             {/each}
@@ -234,3 +336,31 @@
     {/if}
   </div>
 </div>
+
+<!-- User Form Modal -->
+<UserForm
+  bind:isOpen={showFormModal}
+  user={selectedUser}
+  mode={formMode}
+  on:success={handleFormSuccess}
+  on:close={() => {
+    showFormModal = false;
+    selectedUser = null;
+  }}
+/>
+
+<!-- Delete Confirmation Dialog -->
+<ConfirmDialog
+  bind:isOpen={showConfirmDialog}
+  title="Confirmer la suppression"
+  message="Êtes-vous sûr de vouloir supprimer l'utilisateur '{selectedUser?.firstName} {selectedUser?.lastName}' ? Cette action est irréversible."
+  confirmText="Supprimer"
+  cancelText="Annuler"
+  variant="danger"
+  loading={actionLoading}
+  on:confirm={handleDeleteConfirm}
+  on:cancel={() => {
+    showConfirmDialog = false;
+    selectedUser = null;
+  }}
+/>

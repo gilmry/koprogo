@@ -11,17 +11,39 @@ pub async fn create_building(
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     mut dto: web::Json<CreateBuildingDto>,
 ) -> impl Responder {
-    // Override the organization_id from DTO with the one from JWT token
-    // This prevents users from creating buildings in other organizations
-    let organization_id = match user.require_organization() {
-        Ok(org_id) => org_id,
-        Err(e) => {
-            return HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": e.to_string()
-            }))
+    // SuperAdmin can create buildings for any organization
+    // Regular users can only create for their own organization
+    let organization_id: Uuid;
+
+    if user.role == "superadmin" {
+        // SuperAdmin: organization_id must be provided in DTO
+        if dto.organization_id.is_empty() {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "SuperAdmin must specify organization_id"
+            }));
         }
-    };
-    dto.organization_id = organization_id.to_string();
+        // Parse the organization_id from DTO
+        organization_id = match Uuid::parse_str(&dto.organization_id) {
+            Ok(id) => id,
+            Err(_) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": "Invalid organization_id format"
+                }));
+            }
+        };
+    } else {
+        // Regular user: override organization_id from JWT token
+        // This prevents users from creating buildings in other organizations
+        organization_id = match user.require_organization() {
+            Ok(org_id) => org_id,
+            Err(e) => {
+                return HttpResponse::Unauthorized().json(serde_json::json!({
+                    "error": e.to_string()
+                }))
+            }
+        };
+        dto.organization_id = organization_id.to_string();
+    }
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -114,6 +136,54 @@ pub async fn update_building(
             "error": "Validation failed",
             "details": errors.to_string()
         }));
+    }
+
+    // Only SuperAdmin can change organization_id
+    if dto.organization_id.is_some() && user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmins can change building organization"
+        }));
+    }
+
+    // For non-SuperAdmins, verify they own the building
+    if user.role != "superadmin" {
+        match state.building_use_cases.get_building(*id).await {
+            Ok(Some(building)) => {
+                let building_org_id = match Uuid::parse_str(&building.organization_id) {
+                    Ok(id) => id,
+                    Err(_) => {
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "error": "Invalid building organization_id"
+                        }));
+                    }
+                };
+
+                let user_org_id = match user.require_organization() {
+                    Ok(id) => id,
+                    Err(e) => {
+                        return HttpResponse::Unauthorized().json(serde_json::json!({
+                            "error": e.to_string()
+                        }));
+                    }
+                };
+
+                if building_org_id != user_org_id {
+                    return HttpResponse::Forbidden().json(serde_json::json!({
+                        "error": "You can only update buildings in your own organization"
+                    }));
+                }
+            }
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "Building not found"
+                }));
+            }
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": err
+                }));
+            }
+        }
     }
 
     match state

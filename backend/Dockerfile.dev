@@ -1,27 +1,32 @@
 # Development Dockerfile with hot reload (cargo-watch)
-FROM rust:1.83-slim
+# Use nightly to match production build
+FROM rustlang/rust:nightly-bookworm-slim
 
 WORKDIR /app
 
 # Install cargo-watch for hot reload
 RUN cargo install cargo-watch
 
-# Install system dependencies
+# Install system dependencies (aligned with production)
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
+    libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Cargo files for dependency caching
 COPY Cargo.toml Cargo.lock ./
 
-# Create dummy main to cache dependencies
-RUN mkdir src && \
+# Create dummy main and test files to cache dependencies
+RUN mkdir -p src tests benches && \
     echo "fn main() {}" > src/main.rs && \
+    echo "fn main() {}" > tests/bdd.rs && \
+    echo "fn main() {}" > benches/load_tests.rs && \
     cargo build && \
-    rm -rf src
+    rm -rf src tests benches
 
 # Source code will be mounted via volume
 
 # Hot reload command: watch for changes and rebuild
-CMD ["cargo", "watch", "-x", "run"]
+CMD cargo watch -x "run --bin koprogo-api"

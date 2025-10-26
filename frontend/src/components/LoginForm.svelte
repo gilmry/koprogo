@@ -24,7 +24,7 @@
 
       if (response.ok) {
         const data = await response.json();
-        const { token, user } = data;
+        const { token, refresh_token, user } = data;
 
         // Map backend user format to frontend format
         const mappedUser: User = {
@@ -37,8 +37,8 @@
           buildingIds: [], // Will be populated from backend later
         };
 
-        // Login with token and initialize sync
-        await authStore.login(mappedUser, token);
+        // Login with token, refresh token and initialize sync
+        await authStore.login(mappedUser, token, refresh_token);
 
         // Redirect based on role
         const redirectMap = {

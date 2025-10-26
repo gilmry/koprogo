@@ -2,13 +2,16 @@
 import '../styles/global.css';
 import '../lib/i18n';
 import Navigation from '../components/Navigation.svelte';
+import ToastContainer from '../components/ui/ToastContainer.svelte';
+import SessionManager from '../components/SessionManager.svelte';
 
 interface Props {
 	title: string;
 	showNav?: boolean;
+	requireAuth?: boolean;
 }
 
-const { title, showNav = true } = Astro.props;
+const { title, showNav = true, requireAuth = false } = Astro.props;
 ---
 
 <!doctype html>
@@ -20,12 +23,14 @@ const { title, showNav = true } = Astro.props;
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
-		<!-- Runtime configuration -->
+		<!-- Runtime configuration - loaded from external file for post-build configuration -->
 		<script is:inline src="/config.js"></script>
 	</head>
 	<body class="bg-gray-50 min-h-screen">
 		{showNav && <Navigation client:load />}
+		{requireAuth && <SessionManager client:load />}
 		<slot />
+		<ToastContainer client:load />
 		<footer class="bg-white mt-12 border-t">
 			<div class="container mx-auto px-4 py-6 text-center text-gray-600">
 				<p>&copy; 2025 KoproGo - Gestion de Copropriété SaaS</p>

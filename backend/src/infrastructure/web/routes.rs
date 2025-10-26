@@ -64,7 +64,17 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_dashboard_stats)
             // Organizations (SuperAdmin only)
             .service(list_organizations)
+            .service(create_organization)
+            .service(update_organization)
+            .service(activate_organization)
+            .service(suspend_organization)
+            .service(delete_organization)
             // Users (SuperAdmin only)
-            .service(list_users),
+            .service(list_users)
+            .service(create_user)
+            .service(update_user)
+            .service(activate_user)
+            .service(deactivate_user)
+            .service(delete_user),
     );
 }

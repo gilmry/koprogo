@@ -28,6 +28,8 @@ pub struct CreateBuildingDto {
 
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 pub struct UpdateBuildingDto {
+    pub organization_id: Option<String>, // SuperAdmin can change organization
+
     #[validate(length(min = 1))]
     pub name: String,
 
@@ -39,11 +41,20 @@ pub struct UpdateBuildingDto {
 
     #[validate(length(min = 1))]
     pub postal_code: String,
+
+    #[validate(length(min = 1))]
+    pub country: String,
+
+    #[validate(range(min = 1, message = "Total units must be greater than 0"))]
+    pub total_units: i32,
+
+    pub construction_year: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]
 pub struct BuildingResponseDto {
     pub id: String,
+    pub organization_id: String,
     pub name: String,
     pub address: String,
     pub city: String,
