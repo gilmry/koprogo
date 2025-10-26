@@ -2,6 +2,24 @@
 
 # Script pour charger les variables d'environnement depuis .env
 # Usage: source ./load-env.sh
+# ⚠️  IMPORTANT: Utilisez "source" et non "./" pour que les variables soient exportées
+
+# Vérifier si le script est sourcé
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "❌ Erreur: Ce script doit être sourcé, pas exécuté directement!"
+    echo ""
+    echo "Utilisation correcte:"
+    echo "  source ./load-env.sh"
+    echo "  # ou"
+    echo "  . ./load-env.sh"
+    echo ""
+    echo "Puis vous pouvez utiliser:"
+    echo "  terraform plan"
+    echo "  terraform apply"
+    echo "  terraform destroy"
+    echo ""
+    exit 1
+fi
 
 set -a  # Export automatiquement toutes les variables
 
