@@ -59,15 +59,34 @@ make setup-infra
 ```
 
 Le script interactif vous guide à travers toutes les étapes :
-1. Création des credentials OVH API (optionnel, pour DNS)
-2. Création de l'utilisateur OpenStack avec les bons rôles
-3. Téléchargement du fichier OpenRC (région GRA9)
-4. Configuration du domaine (optionnel)
-5. Déploiement Terraform (provisionne le VPS)
-6. Configuration DNS automatique (si domaine configuré)
-7. Déploiement Ansible (configure et déploie l'application)
+1. **Détection automatique** : Si configuration existe déjà, propose de la réutiliser
+2. Création des credentials OVH API (optionnel, pour DNS)
+3. Création de l'utilisateur OpenStack avec les bons rôles
+4. Téléchargement du fichier OpenRC (région GRA9)
+5. Configuration du domaine (optionnel)
+6. Déploiement Terraform (provisionne le VPS)
+7. Configuration DNS automatique (si domaine configuré)
+8. Déploiement Ansible (configure et déploie l'application)
 
-**Durée totale** : ~20-30 minutes (dont 15-20 min d'attente automatique)
+**Durée totale** :
+- Premier déploiement : ~20-30 minutes (dont 15-20 min d'attente automatique)
+- Redéploiements suivants : ~15-20 minutes (config existante réutilisée)
+
+### Réutilisation de configuration existante
+
+Si vous avez déjà déployé une fois, le script détecte automatiquement votre fichier `.env` et propose de le réutiliser :
+
+```bash
+⚠️  Configuration existante détectée: infrastructure/terraform/.env
+
+Voulez-vous:
+  1) Utiliser la configuration existante (recommandé)
+  2) Reconfigurer depuis le début
+
+Votre choix (1/2): 1
+```
+
+Cela vous évite de re-saisir tous vos credentials OVH et OpenStack !
 
 ---
 
@@ -235,30 +254,43 @@ Traefik (Reverse Proxy + SSL Let's Encrypt)
 
 ## 🔄 GitOps Auto-Update
 
-KoproGo se met à jour automatiquement tous les jours à **3h du matin** depuis GitHub.
+KoproGo se met à jour automatiquement depuis GitHub grâce à un service systemd qui vérifie les nouveaux commits **toutes les 3 minutes**.
 
 ### Comment ça marche ?
 
-1. **Cron job** : Exécute `~/koprogo/scripts/auto-update.sh` quotidiennement
-2. **Backup** : Sauvegarde la DB avant update
-3. **Pull GitHub** : `git pull origin main`
-4. **Rebuild** : `docker compose up -d --build`
-5. **Health check** : Vérifie `/api/v1/health`
-6. **Rollback automatique** : Si health check échoue
+1. **Service systemd** : `koprogo-gitops.service` tourne en continu
+2. **Vérification** : Check `git fetch` toutes les 3 minutes
+3. **Détection** : Si nouveau commit détecté sur `main`
+4. **Pull GitHub** : `git pull origin main`
+5. **Pull Images** : Pull des nouvelles images Docker depuis GitHub Container Registry
+6. **Rebuild** : `docker compose up -d --pull always`
+7. **Health check** : Vérifie l'API sur l'URL publique HTTPS
+8. **Permissions Git** : Correction automatique des permissions pour éviter les erreurs
 
-### Logs auto-update
+### Logs GitOps
 
 ```bash
 # Sur le VPS
-tail -f /var/log/koprogo-update.log
+tail -f /var/log/koprogo-gitops.log
+
+# Status du service
+sudo systemctl status koprogo-gitops
 ```
 
 ### Désactiver auto-update
 
 ```bash
-# Supprimer cron job
-crontab -e -u koprogo
-# Commenter ou supprimer la ligne : 0 3 * * * ...
+# Arrêter le service
+sudo systemctl stop koprogo-gitops
+sudo systemctl disable koprogo-gitops
+```
+
+### Forcer une mise à jour manuelle
+
+```bash
+# Sur le VPS
+cd /home/koprogo/koprogo
+sudo -u koprogo ./deploy/production/gitops-deploy.sh deploy
 ```
 
 ---
@@ -460,26 +492,43 @@ Error creating openstack_compute_instance_v2: Forbidden
 3. Créer un nouvel utilisateur avec **TOUS** les rôles listés ci-dessus
 4. **Surtout** : Cocher **Administrator** (CRITIQUE !)
 
-### Terraform : "Variables not loaded"
+### Terraform : "One of 'auth_url' or 'cloud' must be specified"
 
 **Symptôme** :
 ```
-Error: Missing required argument
+Error: One of 'auth_url' or 'cloud' must be specified
+
+  with provider["registry.terraform.io/terraform-provider-openstack/openstack"].ovh
 ```
 
-**Cause** : Variables d'environnement non chargées
+**Cause** : Variables d'environnement OpenStack non chargées dans le shell
 
-**Fix** : Utiliser `source` pour charger les variables
+**Fix** : Utiliser `source` pour charger les variables (PAS `./`)
 ```bash
-# ✅ CORRECT
-source ./load-env.sh
-
-# ❌ FAUX (crée une nouvelle sous-shell)
-./load-env.sh
-
-# Ou utiliser le script de déploiement
 cd infrastructure/terraform
-./deploy.sh
+
+# ✅ CORRECT - Les variables sont exportées dans votre shell
+source ./load-env.sh
+terraform plan
+
+# ✅ CORRECT - Raccourci avec "."
+. ./load-env.sh
+terraform apply
+
+# ❌ FAUX - Crée un sous-shell, les variables sont perdues
+./load-env.sh
+terraform plan  # ❌ Erreur: variables non disponibles
+```
+
+Le script détecte maintenant si vous l'exécutez incorrectement :
+```bash
+$ ./load-env.sh
+❌ Erreur: Ce script doit être sourcé, pas exécuté directement!
+
+Utilisation correcte:
+  source ./load-env.sh
+  # ou
+  . ./load-env.sh
 ```
 
 ### Ansible : "SSH connection failed"
@@ -527,7 +576,43 @@ nslookup votre-domaine.com dns200.anycast.me
 # Attendre 5-10 minutes et retester
 ```
 
-### Health check échoue
+### Ansible : Health check échoue pendant le déploiement
+
+**Symptôme** :
+```
+TASK [Check API health (public HTTPS endpoint)] ****************************
+FAILED - RETRYING: [koprogo-vps]: Check API health (10 retries left).
+fatal: [koprogo-vps]: FAILED! => {"status": -1, "msg": "SSL certificate problem"}
+```
+
+**Cause** :
+- Certificat Let's Encrypt pas encore généré (DNS pas propagé)
+- Services Docker pas encore prêts
+- Configuration Traefik incorrecte
+
+**Fix** :
+Le playbook Ansible utilise maintenant l'URL publique HTTPS avec jusqu'à 10 retries (100 secondes).
+Si ça échoue quand même :
+
+```bash
+# 1. Vérifier que le DNS pointe vers le VPS
+dig your-domain.com
+
+# 2. Se connecter au VPS et vérifier les services
+ssh ubuntu@VPS_IP
+sudo docker ps -a
+
+# 3. Vérifier les logs Traefik pour le certificat SSL
+sudo docker logs koprogo-traefik | grep -i "cert"
+
+# 4. Tester le health check manuellement
+curl -k https://api.your-domain.com/api/v1/health
+
+# 5. Si tout fonctionne manuellement, le déploiement Ansible a réussi
+# Le health check peut juste avoir échoué pour timeout
+```
+
+### Health check échoue après déploiement
 
 **Cause** : Services Docker pas encore démarrés ou erreur de déploiement
 
@@ -545,6 +630,7 @@ docker compose ps
 docker compose logs backend
 docker compose logs frontend
 docker compose logs postgres
+docker compose logs traefik
 
 # Redémarrer si nécessaire
 docker compose restart
