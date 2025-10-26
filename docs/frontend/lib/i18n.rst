@@ -1,0 +1,376 @@
+i18n.ts - Internationalisation
+================================
+
+**Localisation** : ``frontend/src/lib/i18n.ts``
+
+Configuration de l'internationalisation (i18n) avec support 4 langues : néerlandais, français, allemand, anglais.
+
+Configuration
+-------------
+
+**Bibliothèque** : ``svelte-i18n``
+
+.. code-block:: typescript
+
+   import { addMessages, init, getLocaleFromNavigator } from "svelte-i18n";
+
+   import nl from "../locales/nl.json";
+   import fr from "../locales/fr.json";
+   import de from "../locales/de.json";
+   import en from "../locales/en.json";
+
+   // Enregistrer toutes les traductions
+   addMessages("nl", nl);
+   addMessages("fr", fr);
+   addMessages("de", de);
+   addMessages("en", en);
+
+   // Initialiser avec détection navigateur
+   init({
+     fallbackLocale: "nl",                 // Néerlandais par défaut
+     initialLocale: getLocaleFromNavigator()
+   });
+
+**Fallback Logic** :
+
+1. Détecter langue navigateur (``getLocaleFromNavigator()``)
+2. Si non supportée, fallback sur ``nl`` (néerlandais)
+
+Langues Supportées
+------------------
+
+.. code-block:: typescript
+
+   export const languages = [
+     { code: "nl", name: "Nederlands", flag: "🇳🇱", priority: 1 },
+     { code: "fr", name: "Français", flag: "🇫🇷", priority: 2 },
+     { code: "de", name: "Deutsch", flag: "🇩🇪", priority: 3 },
+     { code: "en", name: "English", flag: "🇬🇧", priority: 4 }
+   ] as const;
+
+   export type LanguageCode = (typeof languages)[number]["code"];
+
+**Priorités** :
+
+1. **Nederlands (nl)** : 60% de la Belgique (Flandre)
+2. **Français (fr)** : 40% de la Belgique (Wallonie + Bruxelles)
+3. **Deutsch (de)** : Communauté germanophone de Belgique
+4. **English (en)** : International (syndics multinationales)
+
+**Statistiques Belgique** :
+
+- 🇳🇱 Néerlandais : 60% (Flandre)
+- 🇫🇷 Français : 40% (Wallonie + Bruxelles bilingue)
+- 🇩🇪 Allemand : < 1% (Communauté germanophone)
+
+Structure Fichiers Traduction
+------------------------------
+
+**Localisation** : ``frontend/src/locales/``
+
+.. code-block:: text
+
+   locales/
+   ├── nl.json  # Néerlandais (référence)
+   ├── fr.json  # Français
+   ├── de.json  # Allemand
+   └── en.json  # Anglais
+
+**Format JSON plat** :
+
+.. code-block:: json
+
+   {
+     "nav.dashboard": "Dashboard",
+     "nav.buildings": "Immeubles",
+     "nav.owners": "Copropriétaires",
+     "nav.expenses": "Charges",
+     "nav.meetings": "Assemblées",
+     "nav.documents": "Documents",
+     "nav.reports": "Rapports",
+     "nav.settings": "Paramètres",
+
+     "building.create": "Créer un immeuble",
+     "building.name": "Nom de l'immeuble",
+     "building.address": "Adresse",
+     "building.city": "Ville",
+     "building.total_units": "Nombre de lots",
+
+     "error.network": "Erreur réseau",
+     "error.unauthorized": "Non autorisé",
+     "success.saved": "Enregistré avec succès"
+   }
+
+**Conventions de Nommage** :
+
+- ``[section].[clé]`` : ex: ``nav.dashboard``, ``building.create``
+- Utiliser snake_case pour les clés : ``total_units`` pas ``totalUnits``
+- Préfixes communs : ``nav.*``, ``error.*``, ``success.*``, ``button.*``
+
+Utilisation dans Components
+----------------------------
+
+**Import** :
+
+.. code-block:: svelte
+
+   <script lang="ts">
+     import { _ } from 'svelte-i18n';
+   </script>
+
+**Dans le Template** :
+
+.. code-block:: svelte
+
+   <h1>{$_('nav.dashboard')}</h1>
+   <button>{$_('building.create')}</button>
+   <p>{$_('error.network')}</p>
+
+**Avec Paramètres** :
+
+.. code-block:: json
+
+   {
+     "welcome.message": "Bienvenue, {name}!",
+     "building.units_count": "{count} lot(s)"
+   }
+
+.. code-block:: svelte
+
+   <h1>{$_('welcome.message', { values: { name: user.firstName } })}</h1>
+   <p>{$_('building.units_count', { values: { count: building.total_units } })}</p>
+
+**Pluralisation** :
+
+.. code-block:: json
+
+   {
+     "building.units": "{count, plural, =0 {aucun lot} one {1 lot} other {# lots}}"
+   }
+
+.. code-block:: svelte
+
+   <p>{$_('building.units', { values: { count: totalUnits } })}</p>
+
+**Format Dates/Nombres** :
+
+.. code-block:: svelte
+
+   <script>
+     import { date, number } from 'svelte-i18n';
+   </script>
+
+   <p>{$date(new Date(), { format: 'short' })}</p>
+   <p>{$number(1234.56, { style: 'currency', currency: 'EUR' })}</p>
+
+Changement de Langue
+--------------------
+
+**LanguageSelector Component** :
+
+.. code-block:: svelte
+
+   <script lang="ts">
+     import { locale } from 'svelte-i18n';
+     import { languages } from '../lib/i18n';
+
+     function changeLanguage(code: string) {
+       $locale = code;
+       localStorage.setItem('koprogo_locale', code);
+     }
+   </script>
+
+   <select bind:value={$locale} on:change={(e) => changeLanguage(e.target.value)}>
+     {#each languages as lang}
+       <option value={lang.code}>
+         {lang.flag} {lang.name}
+       </option>
+     {/each}
+   </select>
+
+**Persistance** :
+
+.. code-block:: typescript
+
+   // Sauvegarder préférence
+   locale.subscribe(value => {
+     if (value) {
+       localStorage.setItem('koprogo_locale', value);
+     }
+   });
+
+   // Restaurer au chargement
+   const savedLocale = localStorage.getItem('koprogo_locale');
+   if (savedLocale) {
+     locale.set(savedLocale);
+   }
+
+Intégration Backend
+-------------------
+
+Le header ``Accept-Language`` est automatiquement envoyé dans ``api.ts`` :
+
+.. code-block:: typescript
+
+   // frontend/src/lib/api.ts
+   function getCurrentLanguage(): string {
+     const currentLocale = get(locale);
+     return currentLocale || "nl";
+   }
+
+   function getHeaders(): HeadersInit {
+     return {
+       "Accept-Language": getCurrentLanguage(),
+       // ...
+     };
+   }
+
+Le backend peut lire ce header pour renvoyer messages d'erreur localisés :
+
+.. code-block:: rust
+
+   // backend/src/infrastructure/web/handlers/
+   use actix_web::HttpRequest;
+
+   fn get_language(req: &HttpRequest) -> String {
+       req.headers()
+           .get("accept-language")
+           .and_then(|v| v.to_str().ok())
+           .unwrap_or("nl")
+           .to_string()
+   }
+
+Maintenance Traductions
+-----------------------
+
+**Workflow** :
+
+1. **Ajouter clé dans nl.json** (langue référence)
+2. **Traduire dans fr.json, de.json, en.json**
+3. **Utiliser dans composants** : ``$_('nouvelle.cle')``
+4. **Tester changement de langue** : Sélecteur de langue
+
+**Script de Vérification** :
+
+.. code-block:: bash
+
+   # Trouver clés manquantes
+   npm run check-i18n
+
+   # Générer rapport différences
+   npm run i18n-diff
+
+**Outil Recommandé** : ``i18n-ally`` (VS Code extension)
+
+- Visualisation inline des traductions
+- Détection clés manquantes
+- Édition multi-langues simultanée
+
+Clés Manquantes
+---------------
+
+Si une clé n'existe pas, ``svelte-i18n`` affiche la clé elle-même :
+
+.. code-block:: svelte
+
+   {$_('cle.inexistante')}
+   <!-- Affiche: "cle.inexistante" -->
+
+**En développement** : Ajouter warning console
+
+.. code-block:: typescript
+
+   init({
+     fallbackLocale: "nl",
+     warnOnMissingMessages: true  // Warning si clé manquante
+   });
+
+Tests i18n
+----------
+
+.. code-block:: typescript
+
+   // tests/unit/i18n.test.ts
+   import { get } from 'svelte/store';
+   import { _, locale } from 'svelte-i18n';
+   import '../src/lib/i18n';
+
+   describe('i18n', () => {
+     it('should load French translations', async () => {
+       locale.set('fr');
+       await new Promise(resolve => setTimeout(resolve, 100));
+
+       const translation = get(_)('nav.dashboard');
+       expect(translation).toBe('Tableau de bord');
+     });
+
+     it('should fallback to Dutch if key missing', async () => {
+       locale.set('en');
+       await new Promise(resolve => setTimeout(resolve, 100));
+
+       const translation = get(_)('some.missing.key');
+       expect(translation).toBeTruthy();
+     });
+   });
+
+SEO et HTML lang
+----------------
+
+Le frontend doit mettre à jour ``<html lang="...">`` :
+
+.. code-block:: astro
+
+   ---
+   // layouts/Layout.astro
+   import { locale } from 'svelte-i18n';
+
+   const currentLocale = locale.get() || 'nl';
+   ---
+   <html lang={currentLocale}>
+
+**Pour SEO multilingue** :
+
+.. code-block:: astro
+
+   <head>
+     <link rel="alternate" hreflang="nl" href="https://koprogo.be/nl" />
+     <link rel="alternate" hreflang="fr" href="https://koprogo.be/fr" />
+     <link rel="alternate" hreflang="de" href="https://koprogo.be/de" />
+     <link rel="alternate" hreflang="en" href="https://koprogo.be/en" />
+   </head>
+
+Extensions Futures
+------------------
+
+1. **Routes localisées** :
+
+   - ``/nl/dashboard`` → Nederlands
+   - ``/fr/tableau-de-bord`` → Français
+
+2. **Traduction dynamique** :
+
+   Charger traductions depuis API (CMS, base de données).
+
+3. **Traduction automatique** :
+
+   Utiliser DeepL API pour générer traductions initiales.
+
+4. **Format de dates régional** :
+
+   - nl : dd/mm/yyyy
+   - fr : dd/mm/yyyy
+   - de : dd.mm.yyyy
+   - en : mm/dd/yyyy
+
+5. **Devise régionale** :
+
+   - Belgique : EUR (€)
+   - Format : 1.234,56 € (nl/fr/de) vs 1,234.56 € (en)
+
+Références
+----------
+
+- Documentation svelte-i18n : https://github.com/kaisermann/svelte-i18n
+- Traductions : ``frontend/src/locales/``
+- LanguageSelector : ``frontend/src/components/LanguageSelector.svelte``
+- API Integration : ``frontend/src/lib/api.ts``

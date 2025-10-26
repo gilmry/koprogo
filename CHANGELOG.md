@@ -7,6 +7,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Documentation Restructuring & Sphinx Integration (2025-10-26)
+
+#### Documentation Reorganization
+
+**New Structured Documentation**
+- **Mission & Vision Documents**:
+  - `docs/MISSION.md` - Core mission statement and project purpose
+  - `docs/VISION.md` - Long-term vision and strategic goals
+
+- **Deployment Documentation Consolidation**:
+  - Merged deployment guides into `docs/deployment/` directory
+  - `docs/deployment/index.md` - Deployment overview
+  - `docs/deployment/gitops.md` - GitOps workflow and automation
+  - `docs/deployment/ovh-setup.md` - OVH cloud setup guide
+  - `docs/deployment/terraform-ansible.md` - IaC deployment guide
+  - `docs/deployment/troubleshooting.md` - Common deployment issues
+  - Removed redundant `docs/DEPLOY_GITOPS.md`, `docs/VPS_DEPLOYMENT.md`, `docs/INFRASTRUCTURE_ROADMAP.md`
+
+**Sphinx/RST Documentation Structure**
+- Complete RST structure mirroring codebase architecture:
+
+  - **Backend Documentation** (`docs/backend/`):
+    - `docs/backend/index.rst` - Backend overview
+    - `docs/backend/src/domain/index.rst` - Domain layer documentation
+    - `docs/backend/src/application/index.rst` - Application layer documentation
+    - `docs/backend/src/infrastructure/index.rst` - Infrastructure layer documentation
+    - `docs/backend/tests/index.rst` - Test suite documentation
+    - `docs/backend/benches/index.rst` - Benchmarking documentation
+
+  - **Frontend Documentation** (`docs/frontend/`):
+    - `docs/frontend/index.rst` - Frontend overview
+    - `docs/frontend/components/index.rst` - Svelte components
+    - `docs/frontend/layouts/index.rst` - Astro layouts
+    - `docs/frontend/pages/index.rst` - Page components
+    - `docs/frontend/stores/index.rst` - State management
+    - `docs/frontend/locales/index.rst` - Internationalization
+    - Library documentation: `api.rst`, `config.rst`, `db.rst`, `i18n.rst`, `sync.rst`, `types.rst`
+
+  - **Infrastructure Documentation** (`docs/infrastructure/`):
+    - `docs/infrastructure/index.rst` - Infrastructure overview
+    - `docs/infrastructure/terraform/index.rst` - Terraform configuration
+    - `docs/infrastructure/ansible/index.rst` - Ansible playbooks
+
+- **Deployment RST Structure**:
+  - `docs/deployment/index.rst` - Deployment documentation index
+  - Integrates Markdown guides with RST hierarchy
+
+**Documentation Index Updates**
+- Updated `docs/index.rst` to reference new structure
+- Organized toctree with logical sections
+- Improved navigation between documentation types
+
+**Updated Guides**
+- `docs/README.md` - Updated with new documentation structure
+- `docs/MAKEFILE_GUIDE.md` - Updated with latest make commands
+- `docs/BUSINESS_PLAN_BOOTSTRAP.md` - Updated business context
+- `docs/PERFORMANCE_REPORT.md` - Updated performance metrics
+- `infrastructure/README.md` - Infrastructure documentation improvements
+
+**Statistics**
+- Added: 31 new RST files for structured documentation
+- Added: 2 vision/mission documents
+- Added: 5 deployment markdown guides
+- Removed: 3 redundant deployment documents
+- Modified: 5 existing documentation files
+- Total: 38 files changed (31 added, 3 deleted, 5 modified)
+
+**Benefits**
+- Clearer separation between code documentation (RST) and guides (Markdown)
+- Better organization for Sphinx documentation generation
+- Aligned documentation structure with hexagonal architecture
+- Centralized deployment knowledge in single directory
+- Enhanced searchability and navigation
+
 ### Added - Infrastructure Deployment Automation v2.0 (2025-10-25)
 
 #### 🚀 Complete Infrastructure Deployment Overhaul

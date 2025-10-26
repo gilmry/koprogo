@@ -156,6 +156,35 @@ make docker-logs       # Affiche les logs Docker
 
 ---
 
+## 🏗️ Infrastructure (Déploiement VPS)
+
+### Déploiement automatisé
+
+```bash
+make setup-infra       # Déploiement complet VPS OVH (Terraform + Ansible + GitOps)
+make ci                # Pipeline CI complet (format, lint, tests, audit)
+```
+
+**`make setup-infra`** déploie automatiquement :
+- ✅ Provisionne VPS OVH avec Terraform
+- ✅ Configure serveur avec Ansible (Docker, Firewall, Fail2ban)
+- ✅ Déploie Docker Compose (Traefik + Backend + Frontend + PostgreSQL)
+- ✅ Configure DNS automatique (optionnel)
+- ✅ Active GitOps (auto-update toutes les 3 minutes)
+- ✅ Configure backups PostgreSQL (quotidiens)
+
+**Durée** : ~20-30 minutes
+
+**`make ci`** exécute :
+- ✅ `make format` - Formate le code (Rust + Frontend)
+- ✅ `make lint` - Vérifie la qualité (clippy + checks)
+- ✅ `make test` - Lance tous les tests
+- ✅ `make audit` - Audit de sécurité (Cargo + npm)
+
+**Documentation complète** : [docs/deployment/](deployment/)
+
+---
+
 ## 🗄️ Base de Données
 
 ```bash

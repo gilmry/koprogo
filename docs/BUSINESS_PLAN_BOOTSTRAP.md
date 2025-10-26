@@ -82,13 +82,18 @@
 
 **Option 1 : Self-Hosted GitOps (Gratuit)** 🔓
 - ✅ **Installation 1-click** : Script automatique fourni
-- ✅ **GitOps automatique** : GitHub Actions pour auto-déploiement
-- ✅ **Updates automatiques** : Pull depuis dépôt GitHub à chaque release
+- ✅ **GitOps automatique** : Service systemd vérifie GitHub toutes les 3 minutes
+- ✅ **Updates automatiques** : Pull depuis dépôt GitHub officiel + images Docker
 - ✅ **Versioning géré** : Tags git = versions stables
 - ✅ **Rollback facile** : Revenir à version précédente en 1 commande
+- ✅ **Sécurité centralisée** : Patches de sécurité distribués instantanément via GitHub
+- ✅ **0 fragmentation** : Tout le monde utilise le même code source officiel
 - ✅ **100% gratuit** : Coût = VPS perso (~5-7€/mois) ou machine locale (0€)
 - ✅ **Autonomie totale** : Vous contrôlez 100% de l'infrastructure
 - ✅ **Données souveraines** : Sur VOTRE serveur
+
+**🔒 Avantage Sécurité GitOps** :
+Contrairement aux self-hosted traditionnels où chaque instance est isolée, KoproGo GitOps garantit que **toutes les instances self-hosted reçoivent les patches de sécurité en moins de 3 minutes** après publication sur GitHub. Cela élimine le problème majeur des logiciels self-hosted : la fragmentation et les versions obsolètes non patchées.
 
 **Pour qui ?**
 - Copropriétés avec un résident informaticien/DevOps
