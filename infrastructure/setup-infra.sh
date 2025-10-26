@@ -69,8 +69,68 @@ echo -e "${GREEN}✅ Ansible installé: $(ansible --version | head -n1)${NC}"
 echo ""
 
 # ============================================================================
+# Vérifier si configuration existante
+# ============================================================================
+
+ENV_FILE="$TERRAFORM_DIR/.env"
+if [ -f "$ENV_FILE" ]; then
+    echo -e "${YELLOW}⚠️  Configuration existante détectée: $ENV_FILE${NC}"
+    echo ""
+    echo "Voulez-vous:"
+    echo "  1) Utiliser la configuration existante (recommandé)"
+    echo "  2) Reconfigurer depuis le début"
+    echo ""
+    read -p "Votre choix (1/2): " CONFIG_CHOICE
+    echo ""
+
+    if [ "$CONFIG_CHOICE" = "1" ]; then
+        echo -e "${GREEN}✅ Utilisation de la configuration existante${NC}"
+        echo ""
+
+        # Charger les variables du fichier .env
+        set -a
+        source "$ENV_FILE"
+        set +a
+
+        echo -e "${BLUE}Configuration chargée:${NC}"
+        echo "  OVH Application Key: ${OVH_APPLICATION_KEY:0:10}***"
+        echo "  OVH Project ID: $OVH_SERVICE_NAME"
+        echo "  OpenStack User: $OS_USERNAME"
+        echo "  Region: $OS_REGION_NAME"
+        if [ -n "$KOPROGO_DOMAIN" ]; then
+            echo "  Frontend Domain: $KOPROGO_FRONTEND_DOMAIN"
+            echo "  API Domain: $KOPROGO_API_DOMAIN"
+        fi
+        echo ""
+
+        read -p "Confirmer et passer au déploiement? (y/N): " CONFIRM_EXISTING
+        echo ""
+
+        if [ "$CONFIRM_EXISTING" != "y" ] && [ "$CONFIRM_EXISTING" != "Y" ]; then
+            echo -e "${YELLOW}⚠️  Déploiement annulé${NC}"
+            exit 0
+        fi
+
+        # Passer directement au déploiement Terraform (étape 8)
+        SKIP_CONFIG=true
+    else
+        echo -e "${YELLOW}⚠️  Reconfiguration depuis le début...${NC}"
+        echo ""
+        SKIP_CONFIG=false
+    fi
+else
+    SKIP_CONFIG=false
+fi
+
+# ============================================================================
 # Étape 1: Credentials OVH API
 # ============================================================================
+
+if [ "$SKIP_CONFIG" = "true" ]; then
+    echo -e "${BLUE}Passage à l'étape 8: Déploiement Infrastructure...${NC}"
+    echo ""
+else
+    # Configuration normale si pas de skip
 
 echo -e "${BLUE}┌─────────────────────────────────────────────────────────┐${NC}"
 echo -e "${BLUE}│ Étape 1: Configuration OVH API Credentials             │${NC}"
@@ -428,6 +488,8 @@ if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
 fi
 
 echo ""
+
+fi # Fin du bloc if SKIP_CONFIG
 
 # ============================================================================
 # Étape 8: Déploiement Terraform
