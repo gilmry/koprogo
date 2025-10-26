@@ -234,6 +234,14 @@
       environment:
         REPO_DIR: "{{ koprogo_dir }}"
 
+    - name: Fix Git directory permissions for GitOps service
+      file:
+        path: "{{ koprogo_dir }}/.git"
+        owner: koprogo
+        group: koprogo
+        recurse: yes
+      become: yes
+
     # ==========================================
     # 10. Configuration GitOps Auto-Update (Systemd Service)
     # ==========================================
