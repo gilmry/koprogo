@@ -46,7 +46,7 @@ anyhow = "1.0"
 printpdf = "0.7"
 
 # Excel generation
-rust_xlsxwriter = "0.76"
+rust_xlsxwriter = "0.90"
 
 # Random data generation (for seed scripts)
 rand = "0.9"
