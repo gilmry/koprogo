@@ -395,7 +395,7 @@ async fn test_add_multiple_owners_to_unit() {
     let building_id = Uuid::new_v4();
     let unit = create_test_unit(org_id, building_id);
 
-    let mut owner1 = create_test_owner(org_id);
+    let owner1 = create_test_owner(org_id);
     let mut owner2 = create_test_owner(org_id);
     owner2.id = Uuid::new_v4();
     owner2.email = "marie@example.com".to_string();

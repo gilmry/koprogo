@@ -3,8 +3,8 @@ use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository,
-    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitRepository,
-    PostgresUserRepository,
+    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
+    PostgresUnitRepository, PostgresUserRepository,
 };
 use koprogo_api::infrastructure::storage::FileStorage;
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
@@ -46,6 +46,7 @@ async fn setup_test_db() -> (
     let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
     let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
+    let unit_owner_repo = Arc::new(PostgresUnitOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
     let refresh_token_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
@@ -59,8 +60,9 @@ async fn setup_test_db() -> (
     let jwt_secret = "test-secret-key".to_string();
     let auth_use_cases = AuthUseCases::new(user_repo, refresh_token_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo);
-    let unit_use_cases = UnitUseCases::new(unit_repo);
-    let owner_use_cases = OwnerUseCases::new(owner_repo);
+    let unit_use_cases = UnitUseCases::new(unit_repo.clone());
+    let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
+    let unit_owner_use_cases = UnitOwnerUseCases::new(unit_owner_repo, unit_repo, owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
     let storage =
@@ -84,6 +86,7 @@ async fn setup_test_db() -> (
         building_use_cases,
         unit_use_cases,
         owner_use_cases,
+        unit_owner_use_cases,
         expense_use_cases,
         meeting_use_cases,
         document_use_cases,
