@@ -64,7 +64,7 @@ Les copropriétés représentent un défi sociétal majeur qui touche des millio
 - Empreinte carbone élevée : 100+ kg CO2/an par copropriété
 - Aucune transparence sur l'impact environnemental
 
-### Notre Vision : Technologie au Service de l'Humain
+### Notre Vision : Technologie au Service de l'Humain et du Lien Social
 
 #### 🎯 Objectif Principal
 
@@ -75,6 +75,7 @@ Les copropriétés représentent un défi sociétal majeur qui touche des millio
 - ✅ **Écologique** : < 0.5g CO2/requête (96% de réduction)
 - ✅ **Sécurisé** : RGPD, chiffrement, patches automatiques
 - ✅ **Performant** : Latence P99 < 5ms
+- ✅ **Communautaire** : Outils optionnels de cohésion sociale
 
 #### 🌍 Impact Sociétal
 
@@ -93,6 +94,17 @@ Les copropriétés représentent un défi sociétal majeur qui touche des millio
 - Historique complet et accessible
 - Égalité d'accès (riches et modestes)
 - Réduction des litiges
+
+**Lien social et dynamique communautaire** *(optionnel par immeuble)* :
+- **Isolement urbain** : Nombreux habitants ne connaissent pas leurs voisins
+- **Ressources inexploitées** : Compétences et objets non partagés
+- **Manque d'entraide** : Chacun résout ses problèmes seul
+- **Solutions KoproGo** (activables par copropriété) :
+  - SEL (Système d'Échange Local) : Troc de compétences entre voisins
+  - Bazar de troc : Échange/don d'objets entre habitants
+  - Prêt d'objets : Partage outils, équipements
+  - Annuaire de compétences : Qui sait faire quoi dans l'immeuble
+  - Tableau d'affichage numérique : Petites annonces locales
 
 **Souveraineté numérique** :
 - Hébergement local possible (self-hosted)
@@ -183,12 +195,17 @@ KoproGo utilise les technologies les plus avancées pour servir l'intérêt gén
 - 2025 : -10 tonnes CO2/an (vs solutions actuelles)
 - 2030 : -500 tonnes CO2/an
 
+**Impact Communautaire** *(features optionnelles)* :
+- 2026 : 20% des copropriétés activent modules communautaires
+- 2028 : 100+ échanges SEL/mois entre voisins
+- 2030 : 500+ objets partagés, réduction consommation
+
 **Contribution Opensource** :
 - 2025 : 10 contributeurs
 - 2030 : 100 contributeurs
 - Écosystème de plugins communautaires
 
-### Conclusion : Technologie Éthique
+### Conclusion : Technologie Éthique et Humaniste
 
 KoproGo démontre qu'il est possible de :
 
@@ -197,8 +214,9 @@ KoproGo démontre qu'il est possible de :
 ✅ **Respecter l'environnement** (< 0.5g CO2/requête)
 ✅ **Être transparent et éthique** (opensource, ASBL)
 ✅ **Former la prochaine génération** (documentation pédagogique)
+✅ **Recréer du lien social** (modules communautaires optionnels)
 
-**Notre conviction** : La technologie doit servir l'intérêt général, pas les actionnaires.
+**Notre conviction** : La technologie doit servir l'intérêt général, pas les actionnaires. Au-delà de la gestion administrative, KoproGo propose des outils *(optionnels et activables par chaque copropriété)* pour recréer du lien social et combattre l'isolement urbain, alignés avec la mission ASBL de résolution de phénomènes de société.
 
 ---
 

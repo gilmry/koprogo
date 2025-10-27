@@ -2,7 +2,9 @@
 
 ## Notre Raison d'Être
 
-La mission de KoproGo ASBL est de **résoudre les problèmes de société liés à la gestion des copropriétés** tout en adoptant des **pratiques technologiques à la pointe de l'écologie, de la sécurité, et du développement collaboratif**, alignées avec les standards du monde opensource.
+La mission de KoproGo ASBL est de **résoudre les problèmes de société liés à la gestion des copropriétés et à l'isolement urbain** tout en adoptant des **pratiques technologiques à la pointe de l'écologie, de la sécurité, et du développement collaboratif**, alignées avec les standards du monde opensource.
+
+Au-delà de la simple gestion administrative, KoproGo vise à **recréer du lien social** entre habitants d'un même immeuble via des modules communautaires optionnels, activables par chaque copropriété selon ses besoins.
 
 ## Piliers de la Mission
 
@@ -22,6 +24,31 @@ La mission de KoproGo ASBL est de **résoudre les problèmes de société liés 
 - Confiance restaurée entre syndics et copropriétaires
 - Réduction de 50% des contestations de charges
 - Gain de temps : 10h/mois par syndic
+
+#### Lien Social et Dynamique Communautaire *(Modules Optionnels)*
+
+**Objectif** : Combattre l'isolement urbain et recréer du lien entre voisins.
+
+**Problème identifié** :
+- 70% des habitants ne connaissent pas leurs voisins
+- Ressources inexploitées (compétences, objets)
+- Manque d'entraide locale
+- Consommation individuelle excessive
+
+**Actions** *(activables par copropriété)* :
+- ✅ **SEL (Système d'Échange Local)** : Troc de compétences entre voisins (jardinage, bricolage, cours)
+- ✅ **Bazar de troc** : Échange ou don d'objets entre habitants
+- ✅ **Prêt d'objets** : Partage outils, échelles, tondeuse, etc.
+- ✅ **Annuaire de compétences** : Qui sait faire quoi dans l'immeuble
+- ✅ **Tableau d'affichage numérique** : Petites annonces locales, covoiturage, garde d'enfants
+
+**Impact** :
+- Réduction isolement urbain : +30% de voisins connus
+- Économie circulaire locale : 50+ objets partagés par immeuble
+- Réduction consommation : -20% achats neufs (outils partagés)
+- Entraide renforcée : 10+ échanges SEL/mois par immeuble actif
+
+**Note importante** : Ces modules sont **totalement optionnels** et configurables par le conseil de copropriété. Chaque immeuble décide librement d'activer ou non ces fonctionnalités selon sa culture et ses besoins.
 
 #### Économie et Accessibilité
 
@@ -337,10 +364,17 @@ Avec l'IA :
 - Réduction litiges : -50%
 - Satisfaction : > 90%
 
+**Lien Social** *(modules communautaires optionnels)* :
+- 2026 : 20% copropriétés activent modules communautaires
+- 2028 : 100+ échanges SEL/mois, 500+ objets partagés
+- 2030 : 1,000 copropriétés utilisent fonctions communautaires
+- Impact isolement : 30% habitants connaissent plus de voisins
+
 **Écologique** :
 - 2025 : -10 tonnes CO2/an
 - 2030 : -500 tonnes CO2/an
 - Consommation : < 10W par instance
+- Économie circulaire : -20% consommation via partage
 
 **Économique** :
 - 2025 : 160,000€ économisés
@@ -368,15 +402,16 @@ Avec l'IA :
 
 KoproGo ne se contente pas de fournir un logiciel. Notre mission est **holistique** :
 
-✅ **Résoudre un problème sociétal** (copropriétés)
+✅ **Résoudre un problème sociétal** (copropriétés + isolement urbain)
 ✅ **Adopter pratiques écologiques** (< 0.5g CO2/requête)
 ✅ **Garantir sécurité et conformité** (RGPD, GitOps)
 ✅ **Promouvoir opensource** (AGPL-3.0, communauté)
 ✅ **Former aux pratiques IA** (partage recettes)
 ✅ **Pédagogie et onboarding** (documentation exhaustive)
 ✅ **Standards éthiques** (ASBL, gouvernance transparente)
+✅ **Recréer du lien social** (modules communautaires optionnels par immeuble)
 
-**Notre engagement** : La technologie doit servir l'humain, la planète, et l'intérêt général.
+**Notre engagement** : La technologie doit servir l'humain, la planète, et l'intérêt général. Les modules communautaires (SEL, bazar de troc, prêt d'objets) sont **optionnels** et permettent à chaque copropriété de créer sa propre dynamique sociale selon ses besoins et sa culture.
 
 ---
 
