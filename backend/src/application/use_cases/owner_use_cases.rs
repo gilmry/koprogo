@@ -67,6 +67,41 @@ impl OwnerUseCases {
         Ok((dtos, total))
     }
 
+    pub async fn update_owner(
+        &self,
+        id: Uuid,
+        first_name: String,
+        last_name: String,
+        email: String,
+        phone: Option<String>,
+    ) -> Result<OwnerResponseDto, String> {
+        // Get existing owner
+        let mut owner = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or("Owner not found".to_string())?;
+
+        // Check if email is being changed and if the new email already exists
+        if owner.email != email {
+            if let Some(existing) = self.repository.find_by_email(&email).await? {
+                if existing.id != id {
+                    return Err("Email already exists".to_string());
+                }
+            }
+        }
+
+        // Update owner fields
+        owner.first_name = first_name;
+        owner.last_name = last_name;
+        owner.email = email;
+        owner.phone = phone;
+
+        // Save updated owner
+        let updated = self.repository.update(&owner).await?;
+        Ok(self.to_response_dto(&updated))
+    }
+
     fn to_response_dto(&self, owner: &Owner) -> OwnerResponseDto {
         OwnerResponseDto {
             id: owner.id.to_string(),

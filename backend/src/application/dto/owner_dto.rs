@@ -3,6 +3,7 @@ use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct CreateOwnerDto {
+    #[serde(default)]
     pub organization_id: String,
 
     #[validate(length(min = 1))]

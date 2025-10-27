@@ -77,37 +77,38 @@ impl DatabaseSeeder {
     pub async fn seed_demo_data(&self) -> Result<String, String> {
         log::info!("🌱 Starting demo data seeding...");
 
-        // Check if demo data already exists
-        let existing_orgs = sqlx::query!("SELECT COUNT(*) as count FROM organizations")
+        // Check if seed data already exists (only check for seed organizations, not all)
+        let existing_seed_orgs = sqlx::query!("SELECT COUNT(*) as count FROM organizations WHERE is_seed_data = true")
             .fetch_one(&self.pool)
             .await
-            .map_err(|e| format!("Failed to count organizations: {}", e))?;
+            .map_err(|e| format!("Failed to count seed organizations: {}", e))?;
 
-        if existing_orgs.count.unwrap_or(0) > 0 {
-            return Err("Demo data already exists. Please clean the database first.".to_string());
+        if existing_seed_orgs.count.unwrap_or(0) > 0 {
+            return Err("Seed data already exists. Please use 'Clear Seed Data' first.".to_string());
         }
 
         // ORGANIZATION 1
         let org1_id = Uuid::new_v4();
         let now = Utc::now();
 
-        sqlx::query!(
+        sqlx::query(
             r#"
-            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            "#,
-            org1_id,
-            "Résidence Grand Place SPRL",
-            "residence-grand-place",
-            "contact@grandplace.be",
-            "+32 2 501 23 45",
-            "professional",
-            20,
-            50,
-            true,
-            now,
-            now
+            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, is_seed_data, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#
         )
+        .bind(org1_id)
+        .bind("Résidence Grand Place SPRL")
+        .bind("residence-grand-place")
+        .bind("contact@grandplace.be")
+        .bind("+32 2 501 23 45")
+        .bind("professional")
+        .bind(20)
+        .bind(50)
+        .bind(true) // is_active
+        .bind(true) // is_seed_data
+        .bind(now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to create demo organization 1: {}", e))?;
@@ -235,12 +236,12 @@ impl DatabaseSeeder {
 
         log::info!("✅ Demo owners created");
 
-        // Create demo units
-        let _unit1_id = self
+        // Create demo units (owner_id is now deprecated, set to None)
+        let unit1_id = self
             .create_demo_unit(
                 org1_id,
                 building1_id,
-                Some(owner1_db_id),
+                None, // owner_id deprecated
                 "101",
                 "apartment",
                 Some(1),
@@ -249,11 +250,11 @@ impl DatabaseSeeder {
             )
             .await?;
 
-        let _unit2_id = self
+        let unit2_id = self
             .create_demo_unit(
                 org1_id,
                 building1_id,
-                Some(owner2_db_id),
+                None, // owner_id deprecated
                 "102",
                 "apartment",
                 Some(1),
@@ -262,11 +263,11 @@ impl DatabaseSeeder {
             )
             .await?;
 
-        let _unit3_id = self
+        let unit3_id = self
             .create_demo_unit(
                 org1_id,
                 building1_id,
-                None,
+                None, // owner_id deprecated
                 "103",
                 "apartment",
                 Some(1),
@@ -275,11 +276,11 @@ impl DatabaseSeeder {
             )
             .await?;
 
-        let _unit4_id = self
+        let unit4_id = self
             .create_demo_unit(
                 org1_id,
                 building2_id,
-                Some(owner3_db_id),
+                None, // owner_id deprecated
                 "201",
                 "apartment",
                 Some(2),
@@ -289,6 +290,76 @@ impl DatabaseSeeder {
             .await?;
 
         log::info!("✅ Demo units created");
+
+        // Create unit_owners relationships
+        // Scenario 1: Unit 101 - Single owner (Pierre Durand 100%)
+        self.create_demo_unit_owner(
+            unit1_id,
+            owner1_db_id,
+            1.0, // 100%
+            true, // primary contact
+            None, // no end_date (active)
+        )
+        .await?;
+
+        // Scenario 2: Unit 102 - Co-ownership (Sophie Bernard 60%, Michel Lefebvre 40%)
+        self.create_demo_unit_owner(
+            unit2_id,
+            owner2_db_id,
+            0.6, // 60%
+            true, // primary contact
+            None,
+        )
+        .await?;
+
+        self.create_demo_unit_owner(
+            unit2_id,
+            owner3_db_id,
+            0.4, // 40%
+            false, // not primary contact
+            None,
+        )
+        .await?;
+
+        // Scenario 3: Unit 103 - Co-ownership with 3 owners (50%, 30%, 20%)
+        self.create_demo_unit_owner(
+            unit3_id,
+            owner1_db_id,
+            0.5, // 50%
+            true, // primary contact
+            None,
+        )
+        .await?;
+
+        self.create_demo_unit_owner(
+            unit3_id,
+            owner2_db_id,
+            0.3, // 30%
+            false,
+            None,
+        )
+        .await?;
+
+        self.create_demo_unit_owner(
+            unit3_id,
+            owner3_db_id,
+            0.2, // 20%
+            false,
+            None,
+        )
+        .await?;
+
+        // Scenario 4: Unit 201 - Michel Lefebvre owns multiple units (100% of this one)
+        self.create_demo_unit_owner(
+            unit4_id,
+            owner3_db_id,
+            1.0, // 100%
+            true, // primary contact
+            None,
+        )
+        .await?;
+
+        log::info!("✅ Demo unit_owners relationships created");
 
         // Create demo expenses
         self.create_demo_expense(
@@ -393,23 +464,24 @@ impl DatabaseSeeder {
 
         // ORGANIZATION 2 - Bruxelles
         let org2_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
-            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            "#,
-            org2_id,
-            "Copropriété Bruxelles SPRL",
-            "copro-bruxelles",
-            "info@copro-bruxelles.be",
-            "+32 2 123 45 67",
-            "starter",
-            5,
-            10,
-            true,
-            now,
-            now
+            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, is_seed_data, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#
         )
+        .bind(org2_id)
+        .bind("Copropriété Bruxelles SPRL")
+        .bind("copro-bruxelles")
+        .bind("info@copro-bruxelles.be")
+        .bind("+32 2 123 45 67")
+        .bind("starter")
+        .bind(5)
+        .bind(10)
+        .bind(true) // is_active
+        .bind(true) // is_seed_data
+        .bind(now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to create demo organization 2: {}", e))?;
@@ -452,23 +524,24 @@ impl DatabaseSeeder {
 
         // ORGANIZATION 3 - Liège
         let org3_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
-            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            "#,
-            org3_id,
-            "Syndic Liège SA",
-            "syndic-liege",
-            "contact@syndic-liege.be",
-            "+32 4 222 33 44",
-            "enterprise",
-            50,
-            100,
-            true,
-            now,
-            now
+            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, is_seed_data, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#
         )
+        .bind(org3_id)
+        .bind("Syndic Liège SA")
+        .bind("syndic-liege")
+        .bind("contact@syndic-liege.be")
+        .bind("+32 4 222 33 44")
+        .bind("enterprise")
+        .bind(50)
+        .bind(100)
+        .bind(true) // is_active
+        .bind(true) // is_seed_data
+        .bind(now)
+        .bind(now)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to create demo organization 3: {}", e))?;
@@ -672,6 +745,39 @@ impl DatabaseSeeder {
         .map_err(|e| format!("Failed to create unit {}: {}", unit_number, e))?;
 
         Ok(unit_id)
+    }
+
+    async fn create_demo_unit_owner(
+        &self,
+        unit_id: Uuid,
+        owner_id: Uuid,
+        ownership_percentage: f64,
+        is_primary_contact: bool,
+        end_date: Option<chrono::DateTime<Utc>>,
+    ) -> Result<Uuid, String> {
+        let unit_owner_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        sqlx::query!(
+            r#"
+            INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, start_date, end_date, is_primary_contact, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            "#,
+            unit_owner_id,
+            unit_id,
+            owner_id,
+            ownership_percentage,
+            now, // start_date
+            end_date,
+            is_primary_contact,
+            now, // created_at
+            now  // updated_at
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create unit_owner relationship: {}", e))?;
+
+        Ok(unit_owner_id)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1122,51 +1228,105 @@ impl DatabaseSeeder {
 
     /// Clear all data (DANGEROUS - use with caution!)
     pub async fn clear_demo_data(&self) -> Result<String, String> {
-        log::warn!("⚠️  Clearing all demo data...");
+        log::warn!("⚠️  Clearing seed data only (preserving production data)...");
+
+        // Get seed organization IDs
+        let seed_org_ids: Vec<Uuid> = sqlx::query_scalar!(
+            "SELECT id FROM organizations WHERE is_seed_data = true"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to fetch seed organizations: {}", e))?;
+
+        if seed_org_ids.is_empty() {
+            return Ok("ℹ️  No seed data found to clear.".to_string());
+        }
+
+        log::info!("Found {} seed organizations to clean", seed_org_ids.len());
 
         // Delete in correct order due to foreign key constraints
-        sqlx::query("DELETE FROM documents")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to delete documents: {}", e))?;
+        // Documents linked to buildings
+        sqlx::query!(
+            "DELETE FROM documents WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete documents: {}", e))?;
 
-        sqlx::query("DELETE FROM meetings")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to delete meetings: {}", e))?;
+        // Meetings
+        sqlx::query!(
+            "DELETE FROM meetings WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete meetings: {}", e))?;
 
-        sqlx::query!("DELETE FROM expenses")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to delete expenses: {}", e))?;
+        // Expenses
+        sqlx::query!(
+            "DELETE FROM expenses WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete expenses: {}", e))?;
 
-        sqlx::query!("DELETE FROM units")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to delete units: {}", e))?;
+        // Unit owners (junction table)
+        sqlx::query(
+            "DELETE FROM unit_owners WHERE unit_id IN (SELECT u.id FROM units u INNER JOIN buildings b ON u.building_id = b.id WHERE b.organization_id = ANY($1))"
+        )
+        .bind(&seed_org_ids)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete unit_owners: {}", e))?;
 
-        sqlx::query!("DELETE FROM owners")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to delete owners: {}", e))?;
+        // Units
+        sqlx::query!(
+            "DELETE FROM units WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete units: {}", e))?;
 
-        sqlx::query!("DELETE FROM buildings")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to delete buildings: {}", e))?;
+        // Owners (only those linked to seed organizations through unit_owners)
+        sqlx::query!(
+            "DELETE FROM owners WHERE organization_id = ANY($1)",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete owners: {}", e))?;
 
-        sqlx::query!("DELETE FROM users WHERE role != 'superadmin'")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to delete users: {}", e))?;
+        // Buildings
+        sqlx::query!(
+            "DELETE FROM buildings WHERE organization_id = ANY($1)",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete buildings: {}", e))?;
 
-        sqlx::query!("DELETE FROM organizations")
-            .execute(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to delete organizations: {}", e))?;
+        // Users (except superadmin)
+        sqlx::query!(
+            "DELETE FROM users WHERE organization_id = ANY($1) AND role != 'superadmin'",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete users: {}", e))?;
 
-        log::info!("✅ Demo data cleared (superadmin preserved)");
+        // Finally, delete seed organizations
+        sqlx::query!(
+            "DELETE FROM organizations WHERE is_seed_data = true"
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete organizations: {}", e))?;
 
-        Ok("✅ Demo data cleared successfully!".to_string())
+        log::info!("✅ Seed data cleared (production data and superadmin preserved)");
+
+        Ok(format!("✅ Seed data cleared successfully! ({} organizations removed)", seed_org_ids.len()))
     }
 }
