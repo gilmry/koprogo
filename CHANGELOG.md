@@ -7,6 +7,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Comprehensive Roadmap & Economic Model Documentation (2024-10-27)
+
+#### Roadmap (Nov 2025 - Aug 2026)
+
+**New File**: `docs/ROADMAP.md` - Complete development roadmap with 3 phases:
+
+- **Phase 1: VPS MVP** (Nov 2025 - Feb 2026, 9-13 weeks)
+  - 9 critical/high priority issues:
+    - #39: LUKS encryption at rest (3-5 days)
+    - #40: Encrypted backups GPG + S3 (5-7 days)
+    - #41: Monitoring stack Prometheus/Grafana/Loki (5-7 days)
+    - #43: Security hardening (fail2ban, CrowdSec, Suricata) (3-5 days)
+    - #44: Document storage strategy decision (local/MinIO/S3) (2-3 days)
+    - #45: File upload UI with drag-drop (3-5 days)
+    - #48: Strong authentication (itsme®/eID for voting) (8-10 days + 2-4 weeks registration)
+    - #42: GDPR data export & deletion (5-7 days)
+    - #51: Board of directors tools (polls, tasks, issues, decision log) (8-10 days)
+
+- **Phase 2: K3s** (Mar - May 2026, 6-8 weeks)
+  - Infrastructure: K3s cluster + ArgoCD + Cert-manager
+  - 4 feature issues:
+    - #47: PDF generation extended (PCN, meeting minutes, voting results) (5-7 days)
+    - #46: Meeting voting system with strong auth (8-10 days)
+    - #49: Community features (SEL, swap shop, object sharing, skills directory, notice board) (10-12 days)
+    - #52: Contractor backoffice (work reports, photos, payment validation) (8-10 days)
+
+- **Phase 3: K8s Production** (Jun - Aug 2026, 6-8 weeks)
+  - Multi-node K8s with HA PostgreSQL
+  - Advanced features: ScyllaDB, real-time notifications, analytics, mobile app
+
+**Timeline**: Total 21-29 weeks (6-7 months), starting November 2025
+**Dependencies**: #44 blocks #45, #48 blocks #46
+**Tracking**: GitHub Projects #2 (Software) and #3 (Infrastructure)
+
+#### Economic Model with Transparent Pricing
+
+**New File**: `docs/ECONOMIC_MODEL.md` - Detailed economic model with solidarity-based pricing:
+
+- **SaaS Cloud Pricing**: 1€/month entry price
+  - Standard quotas: 500 MB storage, 50 users, 100k requests/month
+  - Sufficient for 90% of condominiums
+  - Overages at **actual cost mutualized across community**:
+    - Storage: 0.001€/GB/month (diluted infrastructure cost)
+    - Users & API requests: **Free** (no marginal cost)
+    - Bandwidth: 0.002€/GB
+
+- **Pricing Examples**:
+  - 10-unit building (light usage): 1.00€/month
+  - 50-unit building (normal usage, 800 MB): 1.30€/month
+  - 100-unit building (intensive, 2 GB + 12 GB bandwidth): 2.64€/month
+  - **vs. Proprietary solutions**: 200-500€/month (95-99% savings)
+
+- **Self-Hosted Option**: Free forever with full sovereignty
+  - 1 VPS at 7€/month can host 1,000-1,500 condominiums
+  - Cost per condo: 0.07€/month (93% cheaper than cloud)
+
+- **Transparency**: Monthly public financial reports
+  - Infrastructure costs detailed
+  - Cost calculation formula published
+  - Budget allocation transparent (reserves, development, infrastructure)
+
+- **20/80 Hybrid Model**: 20% cloud, 80% self-hosted
+- **ASBL Viability**: Budget forecast 2025-2030 with 6-12 month reserves
+
+#### Vision & Mission with Community Features
+
+**Updated `docs/VISION.md`**:
+- Add "Communautaire" objective (optional social cohesion tools)
+- New "Lien social et dynamique communautaire" section:
+  - Problem: Urban isolation (70% don't know neighbors), unused resources
+  - Solutions: SEL (Local Exchange System), swap shop, object sharing, skills directory, notice board
+  - **Emphasis**: Optional per building, activated by condominium council
+- Community impact KPIs 2025-2030: 20% adoption, 100+ exchanges/month, 500+ objects shared
+- Update conclusion: "Éthique et Humaniste" with social link recreation
+
+**Updated `docs/MISSION.md`**:
+- Expand mission: "copropriétés et isolement urbain"
+- New "Lien Social et Dynamique Communautaire (Modules Optionnels)" subsection:
+  - 5 optional features with measurable impact (+30% neighbors known, -20% consumption)
+  - Important note: Totally optional, configurable by each building's council
+- Add "Lien Social" indicators in impact measurement
+- 8th mission pillar: "Recréer du lien social"
+
+Community modules combat urban isolation, aligned with ASBL's mission of addressing societal phenomena. Each condominium freely decides whether to activate these features.
+
+#### Sphinx Documentation Restructure
+
+**Simplified `docs/index.rst`**: Reduced from 760 to 105 lines (7x shorter)
+- Remove embedded content (Architecture, Stack, API REST) → cleaner structure
+- Save old content to `docs/index_old.rst` for reference
+- Reorganize toctrees by logical sections:
+  1. 🎯 Vision et Mission
+  2. 🗺️ Roadmap (new position after vision/mission)
+  3. 💼 Modèle Économique (ECONOMIC_MODEL + BUSINESS_PLAN_BOOTSTRAP)
+  4. 🦀 Backend Rust (6 subsections)
+  5. 🎨 Frontend Astro + Svelte (7 subsections)
+  6. 🏗️ Infrastructure (3 subsections)
+  7. 🚀 Déploiement et GitOps (5 guides)
+  8. 🛠️ Guides Développeurs (5 guides)
+- All toctrees at maxdepth: 2 for consistent navigation
+
+**Updated `docs/conf.py`**:
+- Increase `navigation_depth` to 5 (was 4)
+- Add `prev_next_buttons_location: 'bottom'`
+- Add `style_external_links: False`
+- Maintain `collapse_navigation: False` for stable sidebar
+
+Fixes issue where sidebar sections would disappear during navigation.
+
+#### Documentation References
+
+**Updated `CLAUDE.md`**:
+- Add "Roadmap" section at top with 3-phase summary
+- Link to `docs/ROADMAP.md` and GitHub Projects
+
+**Updated `README.md`**:
+- Add "Roadmap" subsection in "Vue d'ensemble"
+- Include phase descriptions and GitHub Projects links
+
+**Updated `docs/README.md`**:
+- Add "Roadmap" section at top before "Structure Documentation"
+- 3-phase summary with dates and project links
+
+All documentation files now have consistent roadmap references for easy contributor access.
+
 ### Added - Multi-Owner Support & Seed System Improvements (2025-10-27)
 
 #### Multi-Owner Functionality
