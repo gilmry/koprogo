@@ -67,6 +67,23 @@ export interface Owner {
   created_at?: string;
 }
 
+// UnitOwner interface (junction table for many-to-many relationship)
+export interface UnitOwner {
+  id: string;
+  unit_id: string;
+  owner_id: string;
+  ownership_percentage: number;
+  start_date: string;
+  end_date?: string;
+  is_primary_contact: boolean;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+  // Populated fields (when joined)
+  owner?: Owner;
+  unit?: Unit;
+}
+
 // Unit interface
 export interface Unit {
   id: string;
@@ -76,7 +93,9 @@ export interface Unit {
   surface_area: number;
   ownership_share: number;
   unit_type: "Apartment" | "Parking" | "Storage";
-  owner_id?: string;
+  owner_id?: string; // Deprecated - use unit_owners instead
+  // Optional: populated owners list
+  owners?: UnitOwner[];
 }
 
 // Expense interface

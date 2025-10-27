@@ -3,6 +3,7 @@
   import { api } from '../lib/api';
   import type { Unit, PageResponse } from '../lib/types';
   import Pagination from './Pagination.svelte';
+  import UnitOwners from './UnitOwners.svelte';
 
   let units: Unit[] = [];
   let loading = true;
@@ -13,6 +14,9 @@
   let perPage = 20;
   let totalItems = 0;
   let totalPages = 0;
+
+  // Expanded units (to show owners)
+  let expandedUnits: Set<string> = new Set();
 
   onMount(async () => {
     await loadUnits();
@@ -43,6 +47,33 @@
     currentPage = page;
     await loadUnits();
   }
+
+  function toggleUnitExpanded(unitId: string) {
+    if (expandedUnits.has(unitId)) {
+      expandedUnits.delete(unitId);
+    } else {
+      expandedUnits.add(unitId);
+    }
+    expandedUnits = expandedUnits; // Trigger reactivity
+  }
+
+  function getUnitTypeLabel(type: string): string {
+    const labels: Record<string, string> = {
+      'Apartment': 'Appartement',
+      'Parking': 'Parking',
+      'Storage': 'Cave'
+    };
+    return labels[type] || type;
+  }
+
+  function getUnitTypeIcon(type: string): string {
+    const icons: Record<string, string> = {
+      'Apartment': '🏠',
+      'Parking': '🚗',
+      'Storage': '📦'
+    };
+    return icons[type] || '📋';
+  }
 </script>
 
 <div class="space-y-4">
@@ -67,32 +98,40 @@
   {:else}
     <div class="grid gap-4">
       {#each units as unit}
-        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="text-lg font-semibold text-gray-900">
-                Lot {unit.unit_number}
-              </h3>
-              <p class="text-gray-600 text-sm mt-1">
-                🏢 Étage {unit.floor} · {unit.unit_type}
-              </p>
-              <p class="text-gray-500 text-sm">
-                📐 {unit.surface_area}m² · Quote-part: {unit.ownership_share}%
-              </p>
-              {#if unit.owner_id}
-                <p class="text-green-600 text-sm font-medium mt-1">
-                  ✓ Propriétaire assigné
-                </p>
-              {:else}
-                <p class="text-gray-400 text-sm mt-1">
-                  ○ Non assigné
-                </p>
-              {/if}
+        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
+          <div class="p-4">
+            <div class="flex justify-between items-start">
+              <div class="flex items-start gap-3 flex-1">
+                <span class="text-3xl">{getUnitTypeIcon(unit.unit_type)}</span>
+                <div class="flex-1">
+                  <h3 class="text-lg font-semibold text-gray-900">
+                    Lot {unit.unit_number}
+                  </h3>
+                  <p class="text-gray-600 text-sm mt-1">
+                    {getUnitTypeLabel(unit.unit_type)} - Étage {unit.floor}
+                  </p>
+                  <div class="flex gap-4 mt-2 text-sm text-gray-500">
+                    <span>📐 {unit.surface_area} m²</span>
+                    <span>🔢 {(unit.ownership_share * 1000).toFixed(0)}/1000èmes</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                on:click={() => toggleUnitExpanded(unit.id)}
+                class="ml-4 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                title={expandedUnits.has(unit.id) ? 'Masquer les copropriétaires' : 'Voir les copropriétaires'}
+              >
+                {expandedUnits.has(unit.id) ? '▼' : '▶'} Copropriétaires
+              </button>
             </div>
-            <button class="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              Détails →
-            </button>
           </div>
+
+          <!-- Expanded section showing owners -->
+          {#if expandedUnits.has(unit.id)}
+            <div class="border-t border-gray-200 bg-gray-50 p-4">
+              <UnitOwners unitId={unit.id} />
+            </div>
+          {/if}
         </div>
       {/each}
     </div>
