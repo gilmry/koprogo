@@ -6,6 +6,7 @@ pub mod meeting_repository;
 pub mod organization_repository;
 pub mod owner_repository;
 pub mod refresh_token_repository;
+pub mod unit_owner_repository;
 pub mod unit_repository;
 pub mod user_repository;
 
@@ -17,5 +18,6 @@ pub use meeting_repository::MeetingRepository;
 pub use organization_repository::OrganizationRepository;
 pub use owner_repository::OwnerRepository;
 pub use refresh_token_repository::RefreshTokenRepository;
+pub use unit_owner_repository::UnitOwnerRepository;
 pub use unit_repository::UnitRepository;
 pub use user_repository::UserRepository;

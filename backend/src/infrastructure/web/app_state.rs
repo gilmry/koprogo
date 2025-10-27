@@ -1,6 +1,6 @@
 use crate::application::use_cases::{
     AuthUseCases, BuildingUseCases, DocumentUseCases, ExpenseUseCases, MeetingUseCases,
-    OwnerUseCases, PcnUseCases, UnitUseCases,
+    OwnerUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
 };
 use crate::infrastructure::pool::DbPool;
 use std::sync::Arc;
@@ -10,6 +10,7 @@ pub struct AppState {
     pub building_use_cases: Arc<BuildingUseCases>,
     pub unit_use_cases: Arc<UnitUseCases>,
     pub owner_use_cases: Arc<OwnerUseCases>,
+    pub unit_owner_use_cases: Arc<UnitOwnerUseCases>,
     pub expense_use_cases: Arc<ExpenseUseCases>,
     pub meeting_use_cases: Arc<MeetingUseCases>,
     pub document_use_cases: Arc<DocumentUseCases>,
@@ -24,6 +25,7 @@ impl AppState {
         building_use_cases: BuildingUseCases,
         unit_use_cases: UnitUseCases,
         owner_use_cases: OwnerUseCases,
+        unit_owner_use_cases: UnitOwnerUseCases,
         expense_use_cases: ExpenseUseCases,
         meeting_use_cases: MeetingUseCases,
         document_use_cases: DocumentUseCases,
@@ -35,6 +37,7 @@ impl AppState {
             building_use_cases: Arc::new(building_use_cases),
             unit_use_cases: Arc::new(unit_use_cases),
             owner_use_cases: Arc::new(owner_use_cases),
+            unit_owner_use_cases: Arc::new(unit_owner_use_cases),
             expense_use_cases: Arc::new(expense_use_cases),
             meeting_use_cases: Arc::new(meeting_use_cases),
             document_use_cases: Arc::new(document_use_cases),

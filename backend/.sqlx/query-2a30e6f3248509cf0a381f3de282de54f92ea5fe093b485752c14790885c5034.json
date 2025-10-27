@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT m.id, m.scheduled_date, b.name as building_name\n         FROM meetings m\n         INNER JOIN buildings b ON m.building_id = b.id\n         WHERE b.organization_id = $1 AND m.scheduled_date > NOW() AND m.status = 'scheduled'\n         ORDER BY m.scheduled_date ASC\n         LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "scheduled_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "building_name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "2a30e6f3248509cf0a381f3de282de54f92ea5fe093b485752c14790885c5034"
+}

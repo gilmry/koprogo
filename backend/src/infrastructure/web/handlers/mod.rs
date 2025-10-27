@@ -10,6 +10,7 @@ pub mod pcn_handlers;
 pub mod seed_handlers;
 pub mod stats_handlers;
 pub mod unit_handlers;
+pub mod unit_owner_handlers;
 pub mod user_handlers;
 
 pub use auth_handlers::*;
@@ -24,4 +25,5 @@ pub use pcn_handlers::*;
 pub use seed_handlers::*;
 pub use stats_handlers::*;
 pub use unit_handlers::*;
+pub use unit_owner_handlers::*;
 pub use user_handlers::*;

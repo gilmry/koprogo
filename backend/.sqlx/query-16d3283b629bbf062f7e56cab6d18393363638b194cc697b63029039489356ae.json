@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT COALESCE(SUM(ownership_percentage), 0) as \"total!\"\n            FROM unit_owners\n            WHERE unit_id = $1 AND end_date IS NULL\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total!",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "16d3283b629bbf062f7e56cab6d18393363638b194cc697b63029039489356ae"
+}

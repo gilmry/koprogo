@@ -6,6 +6,7 @@ pub mod meeting_repository_impl;
 pub mod organization_repository_impl;
 pub mod owner_repository_impl;
 pub mod refresh_token_repository_impl;
+pub mod unit_owner_repository_impl;
 pub mod unit_repository_impl;
 pub mod user_repository_impl;
 
@@ -17,5 +18,6 @@ pub use meeting_repository_impl::PostgresMeetingRepository;
 pub use organization_repository_impl::PostgresOrganizationRepository;
 pub use owner_repository_impl::PostgresOwnerRepository;
 pub use refresh_token_repository_impl::PostgresRefreshTokenRepository;
+pub use unit_owner_repository_impl::PostgresUnitOwnerRepository;
 pub use unit_repository_impl::PostgresUnitRepository;
 pub use user_repository_impl::PostgresUserRepository;

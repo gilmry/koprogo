@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT e.id, e.description, e.amount, b.name as building_name, e.expense_date\n         FROM expenses e\n         INNER JOIN buildings b ON e.building_id = b.id\n         WHERE b.organization_id = $1\n         AND e.payment_status = 'overdue'\n         ORDER BY e.expense_date ASC\n         LIMIT 5",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "amount",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "building_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "expense_date",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0a916a309ea6a1e0776d4971209ed0af73a0b8b1ba2b99896f61562747a7908f"
+}

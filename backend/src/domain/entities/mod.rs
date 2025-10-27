@@ -6,6 +6,7 @@ pub mod organization;
 pub mod owner;
 pub mod refresh_token;
 pub mod unit;
+pub mod unit_owner;
 pub mod user;
 
 pub use building::Building;
@@ -16,4 +17,5 @@ pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
 pub use refresh_token::RefreshToken;
 pub use unit::{Unit, UnitType};
+pub use unit_owner::UnitOwner;
 pub use user::{User, UserRole};

@@ -8,6 +8,7 @@ pub mod owner_dto;
 pub mod pagination;
 pub mod pcn_dto;
 pub mod unit_dto;
+pub mod unit_owner_dto;
 
 pub use auth_dto::*;
 pub use building_dto::*;
@@ -19,3 +20,4 @@ pub use owner_dto::*;
 pub use pagination::*;
 pub use pcn_dto::*;
 pub use unit_dto::*;
+pub use unit_owner_dto::*;

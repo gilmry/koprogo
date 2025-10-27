@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total\n         FROM expenses e\n         INNER JOIN buildings b ON e.building_id = b.id\n         WHERE b.organization_id = $1 AND e.payment_status = 'pending'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "total",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "9d83adfb73e72c6e7a1834424a08c58ff2279b5fa3ad2a5e09185157e8201ed8"
+}
