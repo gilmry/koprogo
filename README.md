@@ -6,7 +6,7 @@
 [![Actix-web](https://img.shields.io/badge/Actix--web-4.9-blue.svg)](https://actix.rs/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
 [![Astro](https://img.shields.io/badge/Astro-4.0-purple.svg)](https://astro.build/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-gilmry.github.io%2Fkoprogo-blue)](https://gilmry.github.io/koprogo)
 
 ![CI Pipeline](https://github.com/gilmry/koprogo/actions/workflows/ci.yml/badge.svg)
@@ -605,7 +605,9 @@ Contributions bienvenues ! Voir [CONTRIBUTING.md](CONTRIBUTING.md) (à venir).
 
 ## 📄 Licence
 
-Ce projet est sous licence MIT. Voir [LICENSE](LICENSE) pour plus de détails.
+Ce projet est sous licence AGPL 3.0 (GNU Affero General Public License v3.0). Voir [LICENSE](LICENSE) pour plus de détails.
+
+Cette licence copyleft forte garantit que toute modification du code source, y compris les versions utilisées pour fournir des services réseau, doit être rendue disponible sous la même licence.
 
 ## 👥 Auteurs
 
