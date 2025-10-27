@@ -96,10 +96,7 @@ async fn setup_test_db() -> (
     (app_state, postgres_container, org_id)
 }
 
-async fn authenticate_user(
-    state: &actix_web::web::Data<AppState>,
-    org_id: Uuid,
-) -> String {
+async fn authenticate_user(state: &actix_web::web::Data<AppState>, org_id: Uuid) -> String {
     let email = format!("e2e+{}@test.com", Uuid::new_v4());
     let reg = koprogo_api::application::dto::RegisterRequest {
         email: email.clone(),

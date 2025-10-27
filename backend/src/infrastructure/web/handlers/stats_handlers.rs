@@ -165,7 +165,7 @@ pub async fn get_syndic_stats(
     // Count buildings in user's organization
     let buildings_result =
         sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM buildings WHERE organization_id = $1")
-            .bind(&user.organization_id)
+            .bind(user.organization_id)
             .fetch_one(&state.pool)
             .await;
 
@@ -175,7 +175,7 @@ pub async fn get_syndic_stats(
          INNER JOIN buildings b ON u.building_id = b.id
          WHERE b.organization_id = $1",
     )
-    .bind(&user.organization_id)
+    .bind(user.organization_id)
     .fetch_one(&state.pool)
     .await;
 
@@ -187,7 +187,7 @@ pub async fn get_syndic_stats(
          INNER JOIN buildings b ON u.building_id = b.id
          WHERE b.organization_id = $1 AND uo.end_date IS NULL",
     )
-    .bind(&user.organization_id)
+    .bind(user.organization_id)
     .fetch_one(&state.pool)
     .await;
 
@@ -383,14 +383,14 @@ pub async fn get_seed_data_stats(
 
     // Count seed organizations
     let seed_orgs_result = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM organizations WHERE is_seed_data = true"
+        "SELECT COUNT(*) FROM organizations WHERE is_seed_data = true",
     )
     .fetch_one(&state.pool)
     .await;
 
     // Count production organizations
     let prod_orgs_result = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM organizations WHERE is_seed_data = false"
+        "SELECT COUNT(*) FROM organizations WHERE is_seed_data = false",
     )
     .fetch_one(&state.pool)
     .await;
@@ -399,7 +399,7 @@ pub async fn get_seed_data_stats(
     let seed_buildings_result = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM buildings b
          INNER JOIN organizations o ON b.organization_id = o.id
-         WHERE o.is_seed_data = true"
+         WHERE o.is_seed_data = true",
     )
     .fetch_one(&state.pool)
     .await;
@@ -409,7 +409,7 @@ pub async fn get_seed_data_stats(
         "SELECT COUNT(*) FROM units u
          INNER JOIN buildings b ON u.building_id = b.id
          INNER JOIN organizations o ON b.organization_id = o.id
-         WHERE o.is_seed_data = true"
+         WHERE o.is_seed_data = true",
     )
     .fetch_one(&state.pool)
     .await;
@@ -421,7 +421,7 @@ pub async fn get_seed_data_stats(
          INNER JOIN units u ON uo.unit_id = u.id
          INNER JOIN buildings b ON u.building_id = b.id
          INNER JOIN organizations org ON b.organization_id = org.id
-         WHERE org.is_seed_data = true"
+         WHERE org.is_seed_data = true",
     )
     .fetch_one(&state.pool)
     .await;
@@ -432,7 +432,7 @@ pub async fn get_seed_data_stats(
          INNER JOIN units u ON uo.unit_id = u.id
          INNER JOIN buildings b ON u.building_id = b.id
          INNER JOIN organizations o ON b.organization_id = o.id
-         WHERE o.is_seed_data = true"
+         WHERE o.is_seed_data = true",
     )
     .fetch_one(&state.pool)
     .await;
@@ -442,7 +442,7 @@ pub async fn get_seed_data_stats(
         "SELECT COUNT(*) FROM expenses e
          INNER JOIN buildings b ON e.building_id = b.id
          INNER JOIN organizations o ON b.organization_id = o.id
-         WHERE o.is_seed_data = true"
+         WHERE o.is_seed_data = true",
     )
     .fetch_one(&state.pool)
     .await;
@@ -452,7 +452,7 @@ pub async fn get_seed_data_stats(
         "SELECT COUNT(*) FROM meetings m
          INNER JOIN buildings b ON m.building_id = b.id
          INNER JOIN organizations o ON b.organization_id = o.id
-         WHERE o.is_seed_data = true"
+         WHERE o.is_seed_data = true",
     )
     .fetch_one(&state.pool)
     .await;
@@ -461,7 +461,7 @@ pub async fn get_seed_data_stats(
     let seed_users_result = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM users u
          INNER JOIN organizations o ON u.organization_id = o.id
-         WHERE o.is_seed_data = true"
+         WHERE o.is_seed_data = true",
     )
     .fetch_one(&state.pool)
     .await;

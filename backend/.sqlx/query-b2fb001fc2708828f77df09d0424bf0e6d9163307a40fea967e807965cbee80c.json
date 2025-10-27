@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT COUNT(*) as count FROM organizations",
+  "query": "SELECT COUNT(*) as count FROM organizations WHERE is_seed_data = true",
   "describe": {
     "columns": [
       {
@@ -16,5 +16,5 @@
       null
     ]
   },
-  "hash": "1e2a35a0c535b137b78d2edd4e7d25d37b1ebed408352c43c0c38906f259dcba"
+  "hash": "b2fb001fc2708828f77df09d0424bf0e6d9163307a40fea967e807965cbee80c"
 }

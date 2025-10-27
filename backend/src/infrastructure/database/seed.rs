@@ -78,13 +78,16 @@ impl DatabaseSeeder {
         log::info!("🌱 Starting demo data seeding...");
 
         // Check if seed data already exists (only check for seed organizations, not all)
-        let existing_seed_orgs = sqlx::query!("SELECT COUNT(*) as count FROM organizations WHERE is_seed_data = true")
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to count seed organizations: {}", e))?;
+        let existing_seed_orgs =
+            sqlx::query!("SELECT COUNT(*) as count FROM organizations WHERE is_seed_data = true")
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to count seed organizations: {}", e))?;
 
         if existing_seed_orgs.count.unwrap_or(0) > 0 {
-            return Err("Seed data already exists. Please use 'Clear Seed Data' first.".to_string());
+            return Err(
+                "Seed data already exists. Please use 'Clear Seed Data' first.".to_string(),
+            );
         }
 
         // ORGANIZATION 1
@@ -296,7 +299,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit1_id,
             owner1_db_id,
-            1.0, // 100%
+            1.0,  // 100%
             true, // primary contact
             None, // no end_date (active)
         )
@@ -306,7 +309,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit2_id,
             owner2_db_id,
-            0.6, // 60%
+            0.6,  // 60%
             true, // primary contact
             None,
         )
@@ -315,7 +318,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit2_id,
             owner3_db_id,
-            0.4, // 40%
+            0.4,   // 40%
             false, // not primary contact
             None,
         )
@@ -325,7 +328,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit3_id,
             owner1_db_id,
-            0.5, // 50%
+            0.5,  // 50%
             true, // primary contact
             None,
         )
@@ -353,7 +356,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit4_id,
             owner3_db_id,
-            1.0, // 100%
+            1.0,  // 100%
             true, // primary contact
             None,
         )
@@ -1231,12 +1234,11 @@ impl DatabaseSeeder {
         log::warn!("⚠️  Clearing seed data only (preserving production data)...");
 
         // Get seed organization IDs
-        let seed_org_ids: Vec<Uuid> = sqlx::query_scalar!(
-            "SELECT id FROM organizations WHERE is_seed_data = true"
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to fetch seed organizations: {}", e))?;
+        let seed_org_ids: Vec<Uuid> =
+            sqlx::query_scalar!("SELECT id FROM organizations WHERE is_seed_data = true")
+                .fetch_all(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to fetch seed organizations: {}", e))?;
 
         if seed_org_ids.is_empty() {
             return Ok("ℹ️  No seed data found to clear.".to_string());
@@ -1318,15 +1320,16 @@ impl DatabaseSeeder {
         .map_err(|e| format!("Failed to delete users: {}", e))?;
 
         // Finally, delete seed organizations
-        sqlx::query!(
-            "DELETE FROM organizations WHERE is_seed_data = true"
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to delete organizations: {}", e))?;
+        sqlx::query!("DELETE FROM organizations WHERE is_seed_data = true")
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete organizations: {}", e))?;
 
         log::info!("✅ Seed data cleared (production data and superadmin preserved)");
 
-        Ok(format!("✅ Seed data cleared successfully! ({} organizations removed)", seed_org_ids.len()))
+        Ok(format!(
+            "✅ Seed data cleared successfully! ({} organizations removed)",
+            seed_org_ids.len()
+        ))
     }
 }

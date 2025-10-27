@@ -235,9 +235,7 @@ async fn test_end_ownership() {
 
     // End ownership
     unit_owner.id = created.id;
-    unit_owner
-        .end_ownership(chrono::Utc::now())
-        .unwrap();
+    unit_owner.end_ownership(chrono::Utc::now()).unwrap();
 
     let updated = repo.update(&unit_owner).await.unwrap();
     assert!(!updated.is_active());

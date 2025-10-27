@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM users WHERE organization_id = ANY($1) AND role != 'superadmin'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a1b22c56aaa56ddfd54f3f4a145fa44e168196fe75c84db80df1450e64f6d6a5"
+}

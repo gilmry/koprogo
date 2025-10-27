@@ -107,6 +107,10 @@ audit: ## 🔒 Audit sécurité (cargo-audit + npm audit)
 	@echo "$(GREEN)🔒 Audit frontend...$(NC)"
 	cd frontend && npm audit --audit-level=moderate
 
+install-hooks: ## 🪝 Installer les Git hooks (pre-commit, pre-push)
+	@echo "$(GREEN)🪝 Installation des Git hooks...$(NC)"
+	./scripts/install-hooks.sh
+
 ##
 ## 📦 Setup & Installation
 ##
@@ -134,6 +138,9 @@ setup: ## 🚀 Setup complet du projet (first time)
 	@echo ""
 	@echo "4️⃣ Migrations DB..."
 	cd backend && sqlx migrate run || echo "$(YELLOW)⚠️  Migrations échouées (normal si DB vide)$(NC)"
+	@echo ""
+	@echo "5️⃣ Installation des Git hooks..."
+	./scripts/install-hooks.sh
 	@echo ""
 	@echo "$(GREEN)✅ Setup terminé!$(NC)"
 	@echo ""

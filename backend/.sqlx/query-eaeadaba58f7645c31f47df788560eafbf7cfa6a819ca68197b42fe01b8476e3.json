@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM organizations WHERE is_seed_data = true",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "eaeadaba58f7645c31f47df788560eafbf7cfa6a819ca68197b42fe01b8476e3"
+}

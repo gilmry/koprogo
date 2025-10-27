@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM documents WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f845ce655644fb2cc74cc297c9e2dd135d4d90e8733fe5ae66be727b3dd16662"
+}
