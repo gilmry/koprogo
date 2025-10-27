@@ -281,8 +281,19 @@
   <!-- Database Management -->
   <div class="bg-white rounded-lg shadow mb-8">
     <div class="p-6 border-b border-gray-200">
-      <h2 class="text-lg font-semibold text-gray-900">Gestion de la base de données</h2>
-      <p class="text-sm text-gray-600 mt-1">Gérer les données de démonstration pour les tests et la présentation</p>
+      <div class="flex justify-between items-start">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900">Gestion du Seed</h2>
+          <p class="text-sm text-gray-600 mt-1">Données de test pour le développement et les démonstrations</p>
+        </div>
+        <a
+          href="/admin/seed"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-medium"
+        >
+          <span>⚙️</span>
+          Gestion avancée
+        </a>
+      </div>
     </div>
     <div class="p-6">
       {#if seedMessage}
@@ -295,62 +306,88 @@
           ✗ {seedError}
         </div>
       {/if}
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="border-2 border-gray-200 rounded-lg p-6 flex flex-col h-full">
-          <div class="flex items-start mb-4">
-            <span class="text-3xl mr-3">🌱</span>
+
+      <!-- Info Banner -->
+      <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+        <p class="text-sm text-blue-900">
+          <strong>ℹ️ Un seul seed complet</strong> - Génère 3 organisations belges avec immeubles, lots, copropriétaires (avec copropriété multiple), charges et assemblées.
+          Marqué automatiquement comme <code class="bg-blue-100 px-1 rounded font-mono text-xs">is_seed_data=true</code> pour protection des données production.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Generate Seed -->
+        <div class="border-2 border-green-200 rounded-lg p-6 bg-green-50">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">🌱</span>
             <div>
-              <h3 class="font-semibold text-gray-900">Générer les données de démo</h3>
-              <p class="text-sm text-gray-600">Crée 3 organisations belges avec utilisateurs, immeubles, copropriétaires et charges</p>
+              <h3 class="font-semibold text-lg text-green-900">Générer le Seed</h3>
+              <p class="text-xs text-green-700">Action rapide depuis le dashboard</p>
             </div>
           </div>
-          <div class="flex-1">
-            <div class="text-xs text-gray-500 bg-gray-50 p-3 rounded mb-4">
-              <p class="font-semibold mb-2">🇧🇪 Comptes créés (Belgique):</p>
-              <ul class="space-y-1 ml-4">
-                <li>• <strong>Org 1:</strong> syndic@grandplace.be / syndic123</li>
-                <li>• <strong>Org 2:</strong> syndic@copro-bruxelles.be / syndic123</li>
-                <li>• <strong>Org 3:</strong> syndic@syndic-liege.be / syndic123</li>
-                <li class="mt-1 text-gray-400">+ Comptables & Propriétaires</li>
-              </ul>
-            </div>
-          </div>
+          <ul class="text-sm text-gray-700 mb-4 space-y-2">
+            <li class="flex items-start gap-2">
+              <span class="text-green-600 font-bold">✓</span>
+              <span>3 organisations belges</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-green-600 font-bold">✓</span>
+              <span>Copropriété multiple (unit_owners)</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-green-600 font-bold">✓</span>
+              <span>Comptes: Syndics, Comptables, Propriétaires</span>
+            </li>
+          </ul>
           <button
             on:click={handleSeedDemoData}
             disabled={seedLoading || clearLoading}
-            class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
-            {seedLoading ? 'Génération en cours...' : 'Générer les données'}
+            {seedLoading ? '⏳ Génération...' : '🚀 Générer le Seed'}
           </button>
         </div>
-        <div class="border-2 border-gray-200 rounded-lg p-6 flex flex-col h-full">
-          <div class="flex items-start mb-4">
-            <span class="text-3xl mr-3">🗑️</span>
+
+        <!-- Clear Seed -->
+        <div class="border-2 border-red-200 rounded-lg p-6 bg-red-50">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-4xl">🗑️</span>
             <div>
-              <h3 class="font-semibold text-gray-900">Supprimer les données de démo</h3>
-              <p class="text-sm text-gray-600">Supprime toutes les données de démonstration (préserve le SuperAdmin)</p>
+              <h3 class="font-semibold text-lg text-red-900">Supprimer le Seed</h3>
+              <p class="text-xs text-red-700">Suppression sélective et sécurisée</p>
             </div>
           </div>
-          <div class="flex-1">
-            <div class="text-xs text-gray-500 bg-red-50 p-3 rounded mb-4">
-              <p class="font-semibold mb-2">⚠️ Supprime:</p>
-              <ul class="space-y-1 ml-4">
-                <li>• Toutes les organisations</li>
-                <li>• Tous les utilisateurs (sauf SuperAdmin)</li>
-                <li>• Tous les immeubles</li>
-                <li>• Tous les propriétaires</li>
-                <li>• Toutes les charges et documents</li>
-              </ul>
-            </div>
-          </div>
+          <ul class="text-sm text-gray-700 mb-4 space-y-2">
+            <li class="flex items-start gap-2">
+              <span class="text-blue-600 font-bold">🛡️</span>
+              <span><strong>Préserve</strong> données production</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-red-600 font-bold">🗑️</span>
+              <span>Supprime uniquement <code class="bg-red-100 px-1 rounded text-xs">is_seed_data=true</code></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-blue-600 font-bold">🔒</span>
+              <span>SuperAdmin toujours préservé</span>
+            </li>
+          </ul>
           <button
             on:click={handleClearDemoData}
             disabled={seedLoading || clearLoading}
-            class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
-            {clearLoading ? 'Suppression en cours...' : 'Supprimer les données'}
+            {clearLoading ? '⏳ Suppression...' : '🗑️ Supprimer le Seed'}
           </button>
         </div>
+      </div>
+
+      <!-- Link to advanced management -->
+      <div class="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+        <p class="text-sm text-gray-600">
+          💡 <strong>Besoin de plus de détails ?</strong> Consultez la
+          <a href="/admin/seed" class="text-blue-600 hover:text-blue-800 underline font-medium">page de gestion avancée du seed</a>
+          pour voir les statistiques détaillées, l'état de la base de données, et les comptes générés.
+        </p>
       </div>
     </div>
   </div>
