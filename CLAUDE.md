@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🗺️ Roadmap
+
+**📅 For the complete development roadmap (Nov 2025 - Aug 2026), see [ROADMAP.md](docs/ROADMAP.md)**
+
+The roadmap covers:
+- **Phase 1 (VPS MVP)**: Security, GDPR, Backups, Board Tools (Nov 2025 - Feb 2026)
+- **Phase 2 (K3s)**: Voting, Community Features, Contractor Backoffice (Mar - May 2026)
+- **Phase 3 (K8s)**: Performance, Real-time, Mobile App (Jun - Aug 2026)
+- Infrastructure progression: VPS (Docker Compose) → K3s → K8s
+- All issues tracked in [GitHub Projects](https://github.com/users/gilmry/projects)
+
 ## Project Overview
 
 KoproGo is a SaaS property management platform built with **Hexagonal Architecture** (Ports & Adapters) and **Domain-Driven Design (DDD)**. The system emphasizes performance (P99 < 5ms latency), testability, security (GDPR compliant), and ecological sustainability (< 0.5g CO2/request target).

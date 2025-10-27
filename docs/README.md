@@ -4,6 +4,21 @@ Documentation complète du projet KoproGo ASBL.
 
 ---
 
+## 🗺️ Roadmap
+
+**📅 [ROADMAP.md](ROADMAP.md)** - Plan de développement Nov 2025 - Août 2026
+
+Phases:
+- **Phase 1 (VPS MVP)**: Sécurité, GDPR, Backups, Board Tools (Nov 2025 - Fév 2026)
+- **Phase 2 (K3s)**: Voting, Community Features, Contractor Backoffice (Mar - Mai 2026)
+- **Phase 3 (K8s)**: Performance, Real-time, Mobile App (Jun - Août 2026)
+
+Voir aussi:
+- [Software Roadmap (GitHub Project #2)](https://github.com/users/gilmry/projects/2)
+- [Infrastructure Roadmap (GitHub Project #3)](https://github.com/users/gilmry/projects/3)
+
+---
+
 ## 📚 Structure Documentation
 
 ### 🎯 Guides Principaux

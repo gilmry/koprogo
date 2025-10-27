@@ -24,9 +24,22 @@
 
 KoproGo est une solution complète de gestion de copropriété construite avec une **architecture hexagonale** (Ports & Adapters) et une approche **Domain-Driven Design (DDD)**. Le projet met l'accent sur la performance, la testabilité, la sécurité et la conformité.
 
-📚 **Documentation complète disponible sur [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)**
+### 🗺️ Roadmap
+
+**📅 [Plan de développement Nov 2025 - Août 2026](docs/ROADMAP.md)**
+
+- **Phase 1 (VPS MVP)**: Sécurité, GDPR, Backups, Board Tools (Nov 2025 - Fév 2026)
+- **Phase 2 (K3s)**: Voting, Community Features, Contractor Backoffice (Mar - Mai 2026)
+- **Phase 3 (K8s)**: Performance, Real-time, Mobile App (Jun - Août 2026)
+
+Projets GitHub: [Software (#2)](https://github.com/users/gilmry/projects/2) | [Infrastructure (#3)](https://github.com/users/gilmry/projects/3)
+
+### 📚 Documentation
+
+**Documentation complète disponible sur [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)**
 - Documentation Sphinx (guides, architecture, déploiement)
 - Documentation Rust API (documentation technique du backend)
+- [Guide de documentation complète](docs/README.md)
 
 ### Caractéristiques Principales
 
