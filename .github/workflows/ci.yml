@@ -270,7 +270,7 @@ jobs:
           cargo build --release
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: koprogo-api
           path: backend/target/release/koprogo-api
