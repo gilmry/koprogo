@@ -70,7 +70,7 @@
 
 ### Modèle OpenCore ASBL (Hybride)
 
-**Tout le code est MIT License** :
+**Tout le code est AGPL 3.0 License** :
 - ✅ Gestion immeubles, lots, copropriétaires
 - ✅ Charges, paiements, comptabilité
 - ✅ Assemblées générales (convocations, PV, votes)
@@ -439,7 +439,7 @@ Créer un **bien commun numérique** pour la gestion de copropriété, accessibl
 
 ### KoproGo Core (Open-Source)
 
-**License** : MIT (permissive)
+**License** : AGPL 3.0 (copyleft fort)
 
 **Fonctionnalités Core** :
 ```
@@ -536,7 +536,7 @@ Créer un **bien commun numérique** pour la gestion de copropriété, accessibl
 **Actions** :
 
 **Open-Source Launch** :
-1. Publier code GitHub (license MIT)
+1. Publier code GitHub (license AGPL 3.0)
 2. README exceptionnel (captures, démo live)
 3. Documentation complète (setup, API, contribution)
 4. Issues templates (bugs, features)
@@ -1200,7 +1200,7 @@ vs Business Plan v1 : 30-50%/mois (avec ads)
 **Impact** : Très faible (incompatible avec leur modèle)
 
 **Mitigation** :
-- ✅ **License MIT** : Peuvent fork mais pas tuer communauté
+- ✅ **License AGPL 3.0** : Forks doivent rester open-source (même en SaaS), protection communauté
 - ✅ **Impossible à copier** : Authenticity ASBL vs greenwashing corporate
 - ✅ **First-mover** : Première solution OpenCore copropriété
 - ✅ **Performance tech** : Rust, 0.12g CO₂/req, difficile à égaler
@@ -1370,7 +1370,7 @@ Nous choisissons **impact social durable** plutôt que **croissance à tout prix
 **3. Marché sous-adressé + USP unique**
 - **5.5M copropriétés** EU+Maghreb non digitalisées
 - **0 solution OpenCore** dans ce marché
-- **Pain point #1** : Vendor lock-in (on résout avec MIT license)
+- **Pain point #1** : Vendor lock-in (on résout avec AGPL 3.0 license, copyleft fort)
 - **Différenciation** : ASBL = confiance, éthique, souveraineté numérique
 
 **4. Équipe lean, flexible, durable**
@@ -1402,7 +1402,7 @@ Nous choisissons **impact social durable** plutôt que **croissance à tout prix
 5. **Docker Compose 1-click** (self-hosting facile)
 
 **Trimestre 2 (Mois 4-6) : Launch Open-Source**
-6. **Publier GitHub** (MIT license, README pro)
+6. **Publier GitHub** (AGPL 3.0 license, README pro)
 7. **Launch HackerNews** : "Show HN: KoproGo - Open-Source Property Management (ASBL)"
 8. **Dev.to, Reddit, LinkedIn** posts
 9. **Discord communauté** (support, feedback)
