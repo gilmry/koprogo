@@ -7,6 +7,189 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Multi-Owner Support & Seed System Improvements (2025-10-27)
+
+#### Multi-Owner Functionality
+
+**Database Schema**
+- New `unit_owners` junction table for many-to-many unit-owner relationships
+- Fields: `ownership_percentage` (DECIMAL 0-1), `start_date`, `end_date`, `is_primary_contact`, `is_active`
+- Temporal ownership history tracking with start/end dates
+- Migration `20250127000000_refactor_owners_multitenancy.sql`
+- Backward compatible: `units.owner_id` deprecated but maintained
+
+**Backend - Domain & Application Layers**
+- `UnitOwner` entity with business validation rules
+- `UnitOwnerUseCases` with complete CRUD operations
+- `UnitOwnerRepository` port and PostgreSQL implementation
+- DTOs: `CreateUnitOwnerDto`, `UpdateUnitOwnerDto`, `UnitOwnerResponseDto`
+- 9 new API endpoints:
+  - `POST /api/v1/units/:id/owners` - Add owner to unit
+  - `DELETE /api/v1/units/:unit_id/owners/:owner_id` - Remove owner from unit
+  - `PUT /api/v1/unit-owners/:id` - Update ownership relationship
+  - `GET /api/v1/units/:id/owners` - List unit's co-owners
+  - `GET /api/v1/owners/:id/units` - List owner's units
+  - `GET /api/v1/units/:id/ownership-history` - Historical ownership
+  - `GET /api/v1/owners/:id/ownership-history` - Owner's history
+  - `POST /api/v1/units/:id/transfer-ownership` - Transfer between owners
+  - `GET /api/v1/units/:id/total-ownership` - Validate 100% total
+
+**Frontend - UI Components**
+- **New Components**:
+  - `UnitOwners.svelte` - Display co-owners with ownership percentages
+    - Active owners list with primary contact badges
+    - Total percentage calculation with validation (warns if ≠ 100%)
+    - Optional ownership history view
+  - `OwnerUnits.svelte` - Display units owned by an owner
+    - Unit type icons (🏠, 🚗, 📦)
+    - Ownership percentage per unit
+  - `OwnerCreateModal.svelte` - Create new owner
+  - `OwnerEditModal.svelte` - Edit existing owner
+
+- **Updated Components**:
+  - `UnitList.svelte` - Added expandable co-owners section
+  - `OwnerList.svelte` - Added expandable units section
+  - Both with toggle buttons (▶/▼) for show/hide
+
+- **TypeScript Types**:
+  - `UnitOwner` interface with all relationship fields
+  - Updated `Unit` and `Owner` interfaces for multi-owner support
+
+**Testing**
+- Integration tests with testcontainers (PostgreSQL)
+- E2E tests for full API workflow
+- BDD tests with Gherkin scenarios (`unit_ownership.feature`):
+  - Add owner to unit (100% ownership)
+  - Multiple co-owners validation
+  - Ownership transfer between owners
+
+**Demo Data**
+- 4 multi-owner scenarios in seed:
+  - Unit 101: Single owner (Pierre Durand 100%)
+  - Unit 102: Two co-owners (Sophie 60% + Michel 40%)
+  - Unit 103: Three co-owners (Pierre 50% + Sophie 30% + Michel 20%)
+  - Unit 201: Single owner (Michel Lefebvre 100%)
+
+#### Seed System Improvements
+
+**Selective Data Deletion**
+- Migration `20251027114912_add_is_seed_data_to_organizations.sql`
+- New `is_seed_data` BOOLEAN column on organizations table
+- Indexed for query optimization
+- `clear_demo_data()` now preserves production data
+- Only deletes WHERE `is_seed_data = true`
+- Proper FK cascade order (unit_owners → units → owners → buildings → users → organizations)
+
+**Seed Statistics Endpoint**
+- `GET /api/v1/stats/seed-data` (SuperAdmin only)
+- Returns counts for:
+  - Seed vs production organizations
+  - Seed buildings, units, owners, unit_owners
+  - Seed expenses, meetings, users
+- Real-time metrics for dashboard display
+
+**Seed Validation**
+- Fixed validation to check only `is_seed_data=true` organizations
+- Allows seed generation even with production organizations present
+- Prevents "data already exists" false positives
+
+**Test Accounts Management**
+- **SeedManager.svelte** (major update):
+  - Permanent display of all 7 test accounts (no longer temporary)
+  - Auto-show when `seed_organizations > 0`
+  - Accounts list:
+    - 👑 SuperAdmin: admin@koprogo.com / admin123
+    - 🏢 Syndic Grand Place: syndic@grandplace.be / syndic123
+    - 🏢 Syndic Bruxelles: syndic@copro-bruxelles.be / syndic123
+    - 🏢 Syndic Liège: syndic@syndic-liege.be / syndic123
+    - 📊 Comptable: comptable@grandplace.be / comptable123
+    - 👤 Propriétaire 1: proprietaire1@grandplace.be / owner123
+    - 👤 Propriétaire 2: proprietaire2@grandplace.be / owner123
+  - Improved UI with role badges, copy buttons
+  - Stats-driven visibility (auto-reload after seed/clear)
+
+- **LoginForm.svelte**:
+  - Removed hardcoded test accounts display
+  - Cleaner authentication-focused UI
+
+- **AdminDashboard.svelte**:
+  - Revised seed section for clarity
+  - Link to advanced seed management page
+  - Updated messaging emphasizing "ONE seed" approach
+
+#### Owner Management Updates
+
+**Backend**
+- Updated `OwnerDto` to include `organization_id`
+- Fixed owner handlers for proper organization context
+- Enhanced audit logging for owner operations
+- Updated stats queries to use unit_owners relationships
+
+**Frontend**
+- Organization-aware owner creation and editing
+- Proper multi-tenancy support in owner components
+
+#### Documentation
+
+- `UNIT_OWNER_IMPLEMENTATION_STATUS.md` - Complete implementation checklist
+- `docs/OWNER_MODEL_REFACTORING.md` - Technical architecture documentation
+- GitHub Issues created:
+  - #28: Multi-roles support for users (future feature)
+  - #29: Ownership percentage validation (total = 100%)
+  - #30: Test accounts display improvements (completed)
+
+#### Technical Details
+
+**SQLx Query Cache**
+- 16 new query cache files generated
+- All unit_owners queries pre-compiled
+- SQLX_OFFLINE mode compatible
+
+**Files Modified**
+- Backend: 40 files (20 new, 20 modified)
+  - Domain: 1 new entity
+  - Application: 3 new use cases, 3 new DTOs, 1 new port
+  - Infrastructure: 1 new repository, 1 new handler, seed refactoring
+  - Tests: 3 new test files (integration, E2E, BDD)
+- Frontend: 11 files (4 new components, 7 modified)
+- Documentation: 2 new files
+- Migrations: 2 new SQL files
+
+**Breaking Changes**
+- None - Fully backward compatible
+- `units.owner_id` deprecated but functional
+- Existing single-owner relationships preserved
+
+**Migration Path**
+```bash
+# Pull latest changes
+git pull
+
+# Backend
+cd backend
+sqlx migrate run                    # Apply 2 new migrations
+export SQLX_OFFLINE=true
+cargo build
+
+# Frontend (no changes needed)
+cd ../frontend
+npm install
+```
+
+**Security & Performance**
+- All new endpoints require authentication
+- Organization isolation maintained
+- Selective deletion protects production data
+- Optimized queries with proper indexes
+- 7 unit_owners relationships created in < 100ms
+
+**Future Improvements**
+- Issue #28: Multi-roles per user (syndic + owner)
+- Issue #29: Automatic validation of 100% ownership total
+- Enhanced UI for ownership percentage editing
+- Bulk ownership transfer operations
+- Advanced ownership history visualization
+
 ### Fixed - Frontend Modal Behavior (2025-01-26)
 
 #### Modal Closing Issues
