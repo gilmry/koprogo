@@ -24,7 +24,7 @@
     "@astrojs/svelte": "^7.2.0",
     "@tailwindcss/vite": "^4.1.16",
     "astro": "^5.15.1",
-    "svelte": "^5.41.3",
+    "svelte": "^5.42.2",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.1.16",
     "typescript": "^5.9.3"
