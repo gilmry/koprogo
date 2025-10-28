@@ -219,6 +219,28 @@ Rôle 6 : **Configuration Application**
      FRONTEND_URL=https://${APP_DOMAIN}
      CORS_ALLOWED_ORIGINS=https://${APP_DOMAIN}
      JWT_SECRET=${JWT_SECRET}
+     UPLOAD_DIR=/home/koprogo/uploads
+     STORAGE_PROVIDER=s3
+     # Pour revenir au stockage local, positionner STORAGE_PROVIDER=local
+     S3_BUCKET=
+     S3_REGION=
+     S3_ENDPOINT=https://s3.gra.io.cloud.ovh.net
+     S3_ACCESS_KEY=
+     S3_SECRET_KEY=
+     S3_FORCE_PATH_STYLE=true
+     S3_KEY_PREFIX=documents
+     ENABLE_MINIO_BOOTSTRAP=true
+     METRICS_AUTH_TOKEN=
+
+  Par défaut, le backend écrit les fichiers dans ``UPLOAD_DIR`` (stockage local). Pour basculer sur
+  MinIO ou un bucket S3, positionner ``STORAGE_PROVIDER`` à ``s3`` ou ``minio`` et renseigner les
+  variables ``S3_*`` correspondantes. Les credentials ne sont nécessaires que dans ce mode.
+  Pour un bucket entièrement géré (AWS S3, OVH Object Storage), positionner ``ENABLE_MINIO_BOOTSTRAP``
+  à ``false`` afin de désactiver le conteneur d'initialisation ``mc``. Pensez à renseigner vos propres
+  clés ``S3_ACCESS_KEY`` et ``S3_SECRET_KEY`` : les défauts sont laissés vides pour éviter toute fuite.
+  ``METRICS_AUTH_TOKEN`` permet de protéger l'endpoint ``/metrics`` (à présenter sous la forme
+  ``Authorization: Bearer <token>``). Toutes ces variables peuvent être surchargées via ``inventory.ini``
+  (section ``koprogo:vars``) ou ajoutées en ``--extra-vars`` lors du ``ansible-playbook``.
 
 Rôle 7 : **Docker Compose**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -227,13 +249,25 @@ Rôle 7 : **Docker Compose**
 * Déploiement stack complète
 * Services :
 
-  * ``traefik`` : Reverse proxy + SSL
-  * ``postgres`` : Base de données
-  * ``backend`` : API Rust
-  * ``frontend`` : Application Astro/Svelte
+* ``traefik`` : Reverse proxy + SSL
+* ``postgres`` : Base de données
+* ``backend`` : API Rust
+* ``frontend`` : Application Astro/Svelte
+* ``minio`` : Stockage objet S3-compatible (documents)
+* ``minio-bootstrap`` : Initialisation du bucket + politique d'accès via ``mc``
 
 * Réseaux Docker privés
 * Volumes persistants
+
+Astuce : MinIO n'est jamais exposé directement sur Internet. Pour consulter la console d'administration
+depuis l'extérieur, établissez un tunnel SSH vers votre serveur, par exemple :
+
+.. code-block:: bash
+
+   ssh -L 9000:localhost:9000 -L 9001:localhost:9001 user@votre-serveur
+
+Vous pourrez ensuite accéder à l'API S3 via ``http://localhost:9000`` et à la console via
+``http://localhost:9001`` depuis votre machine locale.
 
 Rôle 8 : **GitOps**
 ~~~~~~~~~~~~~~~~~~~~~~~

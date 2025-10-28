@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Pluggable Document Storage & Frontend Workflows
+
+- **Backend**
+  - Introduced a `StorageProvider` abstraction with a new S3/MinIO implementation and metrics instrumentation.
+  - Added `/metrics` endpoint with optional bearer-token protection (`METRICS_AUTH_TOKEN`).
+  - Delivered MinIO-backed integration tests via `testcontainers` to ensure upload/read/delete parity.
+- **DevOps**
+  - Docker Compose (dev & prod) now defaults to MinIO, exposes ports only on loopback, and documents how to disable bootstrap for managed S3.
+  - Ansible templates accept storage credentials and metrics token to keep secrets immutable during redeploys.
+- **Frontend**
+  - Syndics/SuperAdmins can upload and delete documents directly from `/documents` with feedback and building selection.
+  - Owners get a read-only `/owner/documents` page fetching live data (no more hard-coded placeholders).
+  - Added `/admin/monitoring` to visualise Prometheus storage metrics.
+
+### Security
+
+- `/metrics` can now be gated by `METRICS_AUTH_TOKEN` (Authorization: Bearer).
+- Default S3 access keys in provisioning templates removed; deployers must supply their own secrets.
+
 ### Changed - Full RST Conversion for Sphinx Documentation (2025-11-28)
 
 **Conversion**: Converted all Markdown files in docs/ to RST for better Sphinx integration

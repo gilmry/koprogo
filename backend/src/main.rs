@@ -5,7 +5,9 @@ use dotenvy::dotenv;
 use env_logger::Env;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::*;
-use koprogo_api::infrastructure::storage::FileStorage;
+use koprogo_api::infrastructure::storage::{
+    FileStorage, S3Storage, S3StorageConfig, StorageProvider,
+};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use std::env;
 use std::sync::Arc;
@@ -64,9 +66,10 @@ async fn main() -> std::io::Result<()> {
         Err(e) => log::error!("Failed to seed superadmin: {}", e),
     }
 
-    // Initialize file storage
-    let upload_dir = env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
-    let file_storage = FileStorage::new(&upload_dir).expect("Failed to initialize file storage");
+    // Initialize storage provider (local filesystem by default)
+    let file_storage = initialize_storage_provider()
+        .await
+        .map_err(std::io::Error::other)?;
 
     // Initialize repositories
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
@@ -88,7 +91,7 @@ async fn main() -> std::io::Result<()> {
         UnitOwnerUseCases::new(unit_owner_repo, unit_repo.clone(), owner_repo.clone());
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
-    let document_use_cases = DocumentUseCases::new(document_repo, file_storage);
+    let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo);
 
     let app_state = web::Data::new(AppState::new(
@@ -157,4 +160,23 @@ async fn main() -> std::io::Result<()> {
     .workers(actix_workers)
     .run()
     .await
+}
+
+async fn initialize_storage_provider() -> Result<Arc<dyn StorageProvider>, String> {
+    let provider = env::var("STORAGE_PROVIDER")
+        .unwrap_or_else(|_| "local".to_string())
+        .to_lowercase();
+
+    match provider.as_str() {
+        "s3" | "minio" => {
+            let config = S3StorageConfig::from_env()?;
+            let storage = S3Storage::from_config(config).await?;
+            Ok(Arc::new(storage))
+        }
+        _ => {
+            let upload_dir = env::var("UPLOAD_DIR").unwrap_or_else(|_| "./uploads".to_string());
+            let storage = FileStorage::new(&upload_dir)?;
+            Ok(Arc::new(storage))
+        }
+    }
 }

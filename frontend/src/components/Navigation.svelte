@@ -32,6 +32,7 @@
       case UserRole.SUPERADMIN:
         return [
           { href: '/admin', label: t('navigation.admin'), icon: '⚙️' },
+          { href: '/admin/monitoring', label: t('navigation.monitoring'), icon: '📈' },
           ...commonItems,
           { href: '/admin/organizations', label: 'Organisations', icon: '🏛️' },
           { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },

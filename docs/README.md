@@ -68,6 +68,11 @@ Voir aussi:
   - Organisation du code backend Rust
   - Organisation du code frontend Astro/Svelte
 
+#### Architecture
+- **[adr/](adr/)** ⭐ **NOUVEAU**
+  - Architecture Decision Records (ADR)
+  - ADR 0044 — stratégie de stockage des documents
+
 ---
 
 ## 📖 Guide de Lecture Recommandé

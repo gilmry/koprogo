@@ -13,7 +13,7 @@ use koprogo_api::infrastructure::database::{
     create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository,
     PostgresMeetingRepository, PostgresRefreshTokenRepository, PostgresUserRepository,
 };
-use koprogo_api::infrastructure::storage::FileStorage;
+use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use std::sync::Arc;
 use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
@@ -123,9 +123,10 @@ impl BuildingWorld {
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
         let meeting_use_cases = MeetingUseCases::new(meeting_repo);
-        let storage =
-            FileStorage::new(std::env::temp_dir().join("koprogo_bdd_uploads")).expect("storage");
-        let document_use_cases = DocumentUseCases::new(document_repo, storage);
+        let storage_root = std::env::temp_dir().join("koprogo_bdd_uploads");
+        let storage: Arc<dyn StorageProvider> =
+            Arc::new(FileStorage::new(&storage_root).expect("storage"));
+        let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
         let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
         let expense_use_cases = ExpenseUseCases::new(expense_repo);
         let auth_use_cases = koprogo_api::application::use_cases::AuthUseCases::new(

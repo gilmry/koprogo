@@ -1,11 +1,12 @@
 import { get } from "svelte/store";
 import { locale } from "svelte-i18n";
+import type { Document, DocumentUploadPayload } from "./types";
 
 /**
  * API base URL - from runtime config, build-time env, or default to localhost
  * Priority: window.__ENV__.API_URL > import.meta.env.PUBLIC_API_URL > default
  */
-const API_BASE_URL =
+export const API_BASE_URL =
   (typeof window !== "undefined" && (window as any).__ENV__?.API_URL) ||
   import.meta.env.PUBLIC_API_URL ||
   "http://localhost:8080/api/v1";
@@ -18,22 +19,36 @@ function getCurrentLanguage(): string {
   return currentLocale || "nl"; // Default to Dutch
 }
 
-/**
- * Get common headers with authentication and language
- */
-function getHeaders(
-  additionalHeaders: Record<string, string> = {},
-): HeadersInit {
-  const token = localStorage.getItem("koprogo_token");
+function buildHeaders(
+  additional?: HeadersInit,
+  includeJsonContentType: boolean = true,
+): Headers {
+  const headers = new Headers();
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "Accept-Language": getCurrentLanguage(),
-    ...additionalHeaders,
-  };
+  if (includeJsonContentType) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  headers.set("Accept-Language", getCurrentLanguage());
+
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("koprogo_token")
+      : null;
 
   if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  if (additional) {
+    const extra = new Headers(additional);
+    extra.forEach((value, key) => {
+      if (value === undefined || value === null) {
+        headers.delete(key);
+      } else {
+        headers.set(key, value);
+      }
+    });
   }
 
   return headers;
@@ -52,7 +67,7 @@ export async function apiFetch<T = any>(
 
   const response = await fetch(url, {
     ...options,
-    headers: getHeaders(options.headers as Record<string, string>),
+    headers: buildHeaders(options.headers as HeadersInit | undefined, true),
   });
 
   if (!response.ok) {
@@ -120,7 +135,7 @@ export const api = {
       : `${API_BASE_URL}${endpoint}`;
 
     const response = await fetch(url, {
-      headers: getHeaders(),
+      headers: buildHeaders(undefined, false),
     });
 
     if (!response.ok) {
@@ -137,7 +152,56 @@ export const api = {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(downloadUrl);
   },
+
+  uploadDocument: async (payload: DocumentUploadPayload): Promise<Document> => {
+    const url = `${API_BASE_URL}/documents`;
+    const formData = new FormData();
+    formData.append("file", payload.file);
+    formData.append("building_id", payload.buildingId);
+    formData.append("document_type", payload.documentType);
+    formData.append("title", payload.title);
+    if (payload.description) {
+      formData.append("description", payload.description);
+    }
+    formData.append("uploaded_by", payload.uploadedBy);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: buildHeaders(undefined, false),
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `Upload failed: ${response.status}`);
+    }
+
+    return response.json();
+  },
+
+  deleteDocument: async (id: string): Promise<void> => {
+    const url = `${API_BASE_URL}/documents/${id}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: buildHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || `Delete failed: ${response.status}`);
+    }
+  },
 };
+
+export { buildHeaders };
+
+/**
+ * Return the absolute URL for the metrics endpoint.
+ */
+export function getMetricsUrl(): string {
+  const metricsBase = API_BASE_URL.replace(/\/api\/v1\/?$/, "");
+  return `${metricsBase}/metrics`;
+}
 
 /**
  * Example usage:

@@ -2,7 +2,7 @@ use actix_web::{test, App};
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;
-use koprogo_api::infrastructure::storage::FileStorage;
+use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::configure_routes;
 use koprogo_api::infrastructure::web::AppState;
 use serial_test::serial;
@@ -56,9 +56,10 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let unit_owner_use_cases = UnitOwnerUseCases::new(unit_owner_repo, unit_repo, owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
-    let storage =
-        FileStorage::new(std::env::temp_dir().join("koprogo_e2e_http_uploads")).expect("storage");
-    let document_use_cases = DocumentUseCases::new(document_repo, storage);
+    let storage_root = std::env::temp_dir().join("koprogo_e2e_http_uploads");
+    let storage: Arc<dyn StorageProvider> =
+        Arc::new(FileStorage::new(&storage_root).expect("storage"));
+    let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo);
 
     let app_state = actix_web::web::Data::new(AppState::new(

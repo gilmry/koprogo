@@ -6,7 +6,7 @@ use koprogo_api::infrastructure::database::{
     PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
     PostgresUnitRepository, PostgresUserRepository,
 };
-use koprogo_api::infrastructure::storage::FileStorage;
+use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use serial_test::serial;
 use std::sync::Arc;
@@ -65,9 +65,10 @@ async fn setup_test_db() -> (
     let unit_owner_use_cases = UnitOwnerUseCases::new(unit_owner_repo, unit_repo, owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
-    let storage =
-        FileStorage::new(std::env::temp_dir().join("koprogo_e2e_uploads")).expect("storage");
-    let document_use_cases = DocumentUseCases::new(document_repo, storage);
+    let storage_root = std::env::temp_dir().join("koprogo_e2e_uploads");
+    let storage: Arc<dyn StorageProvider> =
+        Arc::new(FileStorage::new(&storage_root).expect("storage"));
+    let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo);
 
     // Create an organization for FK references

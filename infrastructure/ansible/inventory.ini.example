@@ -8,3 +8,14 @@ koprogo-vps ansible_host=YOUR_VPS_IP ansible_user=ubuntu ansible_ssh_private_key
 # Variables optionnelles (peuvent être définies dans playbook.yml)
 # domain=koprogo.com
 # acme_email=admin@koprogo.com
+# S3 / MinIO configuration
+# storage_provider=s3               # s3 (par défaut) ou local
+# s3_bucket=koprogo-documents
+# s3_region=eu-west-0
+# s3_endpoint=https://s3.gra.io.cloud.ovh.net
+# s3_access_key=CHANGE_ME
+# s3_secret_key=CHANGE_ME
+# s3_force_path_style=true
+# s3_key_prefix=documents
+# enable_minio_bootstrap=true       # false si bucket géré externe
+# metrics_auth_token=CHANGE_ME      # Protège /metrics via Authorization: Bearer

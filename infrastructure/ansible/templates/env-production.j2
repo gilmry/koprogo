@@ -48,3 +48,18 @@ PUBLIC_API_URL=https://{{ api_domain }}/api/v1
 {% else %}
 PUBLIC_API_URL=http://{{ ansible_host }}:8080/api/v1
 {% endif %}
+
+# Storage configuration
+STORAGE_PROVIDER={{ storage_provider | default('s3') }}
+UPLOAD_DIR={{ upload_dir | default('/app/uploads') }}
+S3_BUCKET={{ s3_bucket | default('koprogo-documents') }}
+S3_REGION={{ s3_region | default('eu-west-0') }}
+S3_ENDPOINT={{ s3_endpoint | default('http://minio:9000') }}
+S3_ACCESS_KEY={{ s3_access_key | default('') }}
+S3_SECRET_KEY={{ s3_secret_key | default('') }}
+S3_FORCE_PATH_STYLE={{ s3_force_path_style | default('true') }}
+S3_KEY_PREFIX={{ s3_key_prefix | default('documents') }}
+ENABLE_MINIO_BOOTSTRAP={{ enable_minio_bootstrap | default('true') }}
+
+# Metrics endpoint protection (optional)
+METRICS_AUTH_TOKEN={{ metrics_auth_token | default('') }}

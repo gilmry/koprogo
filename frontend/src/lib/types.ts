@@ -133,23 +133,52 @@ export interface Meeting {
 }
 
 // Document interface
+export type DocumentType =
+  | "MeetingMinutes"
+  | "FinancialStatement"
+  | "Invoice"
+  | "Contract"
+  | "Regulation"
+  | "WorksQuote"
+  | "Other";
+
 export interface Document {
   id: string;
   building_id: string;
+  document_type: DocumentType;
   title: string;
+  description?: string | null;
   file_path: string;
-  file_type: string;
   file_size: number;
-  document_type:
-    | "Invoice"
-    | "Contract"
-    | "Report"
-    | "Meeting_Minutes"
-    | "Other";
-  meeting_id?: string;
-  expense_id?: string;
-  uploaded_at: string;
+  mime_type: string;
+  uploaded_by: string;
+  related_meeting_id?: string | null;
+  related_expense_id?: string | null;
+  created_at: string;
+  updated_at: string;
 }
+
+export interface DocumentUploadPayload {
+  buildingId: string;
+  documentType: DocumentType;
+  title: string;
+  description?: string;
+  file: File;
+  uploadedBy: string;
+}
+
+export const DOCUMENT_TYPE_OPTIONS: {
+  value: DocumentType;
+  label: string;
+}[] = [
+  { value: "MeetingMinutes", label: "Procès-verbal" },
+  { value: "FinancialStatement", label: "Bilan financier" },
+  { value: "Invoice", label: "Facture" },
+  { value: "Contract", label: "Contrat" },
+  { value: "Regulation", label: "Règlement" },
+  { value: "WorksQuote", label: "Devis travaux" },
+  { value: "Other", label: "Autre" },
+];
 
 // Pagination types (matches backend PageResponse)
 export interface PaginationMeta {

@@ -2,6 +2,8 @@ use crate::infrastructure::web::handlers::*;
 use actix_web::web;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
+    cfg.service(metrics_endpoint);
+
     cfg.service(
         web::scope("/api/v1")
             .service(health_check)

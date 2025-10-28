@@ -1,6 +1,9 @@
+use super::{metrics::record_storage_operation, StorageProvider};
+use async_trait::async_trait;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 use uuid::Uuid;
 
 /// File storage service for managing document uploads
@@ -91,6 +94,57 @@ impl FileStorage {
     fn sanitize_filename(&self, filename: &str) -> String {
         // Replace path separators and sanitize the filename
         filename.replace("..", "_").replace(['/', '\\'], "_")
+    }
+}
+
+#[async_trait]
+impl StorageProvider for FileStorage {
+    async fn save_file(
+        &self,
+        building_id: Uuid,
+        filename: &str,
+        content: &[u8],
+    ) -> Result<String, String> {
+        let start = Instant::now();
+        let result = FileStorage::save_file(self, building_id, filename, content).await;
+        record_storage_operation(
+            "local",
+            "save_file",
+            start.elapsed(),
+            result.as_ref().map(|_| ()).map_err(|e| e.as_str()),
+        );
+        result
+    }
+
+    async fn read_file(&self, relative_path: &str) -> Result<Vec<u8>, String> {
+        let start = Instant::now();
+        let result = FileStorage::read_file(self, relative_path).await;
+        record_storage_operation(
+            "local",
+            "read_file",
+            start.elapsed(),
+            result.as_ref().map(|_| ()).map_err(|e| e.as_str()),
+        );
+        result
+    }
+
+    async fn delete_file(&self, relative_path: &str) -> Result<(), String> {
+        let start = Instant::now();
+        let result = FileStorage::delete_file(self, relative_path).await;
+        record_storage_operation(
+            "local",
+            "delete_file",
+            start.elapsed(),
+            result.as_ref().map(|_| ()).map_err(|e| e.as_str()),
+        );
+        result
+    }
+
+    async fn file_exists(&self, relative_path: &str) -> bool {
+        let start = Instant::now();
+        let exists = FileStorage::file_exists(self, relative_path).await;
+        record_storage_operation("local", "file_exists", start.elapsed(), Ok(()));
+        exists
     }
 }
 

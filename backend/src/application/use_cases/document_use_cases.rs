@@ -3,17 +3,20 @@ use crate::application::dto::{
 };
 use crate::application::ports::DocumentRepository;
 use crate::domain::entities::{Document, DocumentType};
-use crate::infrastructure::storage::FileStorage;
+use crate::infrastructure::storage::StorageProvider;
 use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct DocumentUseCases {
     repository: Arc<dyn DocumentRepository>,
-    file_storage: FileStorage,
+    file_storage: Arc<dyn StorageProvider>,
 }
 
 impl DocumentUseCases {
-    pub fn new(repository: Arc<dyn DocumentRepository>, file_storage: FileStorage) -> Self {
+    pub fn new(
+        repository: Arc<dyn DocumentRepository>,
+        file_storage: Arc<dyn StorageProvider>,
+    ) -> Self {
         Self {
             repository,
             file_storage,
@@ -193,9 +196,10 @@ mod tests {
     use super::*;
     use crate::application::ports::DocumentRepository;
     use crate::domain::entities::{Document, DocumentType};
+    use crate::infrastructure::storage::{FileStorage, StorageProvider};
     use async_trait::async_trait;
     use std::env;
-    use std::sync::Mutex;
+    use std::sync::{Arc, Mutex};
 
     // Mock repository for testing
     struct MockDocumentRepository {
@@ -286,9 +290,9 @@ mod tests {
     #[tokio::test]
     async fn test_upload_document() {
         let temp_dir = env::temp_dir().join("koprogo_test_upload");
-        let storage = FileStorage::new(&temp_dir).unwrap();
+        let storage: Arc<dyn StorageProvider> = Arc::new(FileStorage::new(&temp_dir).unwrap());
         let repo = Arc::new(MockDocumentRepository::new());
-        let use_cases = DocumentUseCases::new(repo, storage);
+        let use_cases = DocumentUseCases::new(repo, storage.clone());
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
@@ -321,9 +325,9 @@ mod tests {
     #[tokio::test]
     async fn test_upload_document_too_large() {
         let temp_dir = env::temp_dir().join("koprogo_test_large");
-        let storage = FileStorage::new(&temp_dir).unwrap();
+        let storage: Arc<dyn StorageProvider> = Arc::new(FileStorage::new(&temp_dir).unwrap());
         let repo = Arc::new(MockDocumentRepository::new());
-        let use_cases = DocumentUseCases::new(repo, storage);
+        let use_cases = DocumentUseCases::new(repo, storage.clone());
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
@@ -357,9 +361,9 @@ mod tests {
     #[tokio::test]
     async fn test_link_document_to_meeting() {
         let temp_dir = env::temp_dir().join("koprogo_test_link");
-        let storage = FileStorage::new(&temp_dir).unwrap();
+        let storage: Arc<dyn StorageProvider> = Arc::new(FileStorage::new(&temp_dir).unwrap());
         let repo = Arc::new(MockDocumentRepository::new());
-        let use_cases = DocumentUseCases::new(repo, storage);
+        let use_cases = DocumentUseCases::new(repo, storage.clone());
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
