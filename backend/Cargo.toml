@@ -45,7 +45,7 @@ anyhow = "1.0"
 
 # Monitoring
 once_cell = "1.19"
-prometheus = "0.13"
+prometheus = "0.14"
 
 # Cloud storage
 aws-config = { version = "1", features = ["behavior-version-latest"] }
