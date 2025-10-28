@@ -13,7 +13,7 @@ import DocumentList from '../components/DocumentList.svelte';
         </p>
       </div>
 
-      <DocumentList client:load />
+      <DocumentList client:load allowUpload={true} allowDelete={true} />
 
       <div class="mt-6">
         <a href="/syndic" class="inline-flex items-center text-primary-600 hover:text-primary-700">

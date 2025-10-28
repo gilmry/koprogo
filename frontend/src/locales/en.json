@@ -28,6 +28,7 @@
     "reports": "Reports",
     "profile": "Profile",
     "admin": "Administration",
+    "monitoring": "Monitoring",
     "logout": "Logout"
   },
   "buildings": {

@@ -1,0 +1,20 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import StorageMetrics from '../../components/admin/StorageMetrics.svelte';
+---
+
+<Layout title="Monitoring - KoproGo">
+  <main class="container mx-auto px-4 py-10 space-y-6">
+    <div class="flex flex-col gap-2">
+      <a href="/admin" class="text-sm text-primary-600 hover:text-primary-700">← Retour à l'administration</a>
+      <h1 class="text-3xl font-bold text-gray-900">Monitoring du stockage</h1>
+      <p class="text-gray-600 max-w-3xl">
+        Suivez en temps réel les opérations réalisées par les différents fournisseurs de stockage
+        (local, S3/MinIO). Les métriques sont exposées via Prometheus et permettent de vérifier le bon
+        déroulement des uploads, lectures et suppressions de documents.
+      </p>
+    </div>
+
+    <StorageMetrics client:load />
+  </main>
+</Layout>
