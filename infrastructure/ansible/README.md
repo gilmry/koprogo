@@ -182,6 +182,19 @@ ansible-playbook -i inventory.ini playbook.yml -vvv
 ansible-playbook -i inventory.ini playbook.yml \
   -e "domain=koprogo.example.com" \
   -e "acme_email=admin@example.com"
+
+# Exemple : configuration S3 externe
+ansible-playbook -i inventory.ini playbook.yml \
+  -e "storage_provider=s3" \
+  -e "s3_bucket=mon-bucket" \
+  -e "s3_endpoint=https://s3.eu-west-1.amazonaws.com" \
+  -e "s3_access_key=AKIA..." \
+  -e "s3_secret_key=********" \
+  -e "enable_minio_bootstrap=false"
+
+# Exemple : protection de l'endpoint /metrics
+ansible-playbook -i inventory.ini playbook.yml \
+  -e "metrics_auth_token=token-super-secret"
 ```
 
 ## ✅ Vérification post-déploiement
