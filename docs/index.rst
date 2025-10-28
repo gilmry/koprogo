@@ -46,6 +46,7 @@ Documentation
 
    ECONOMIC_MODEL
    BUSINESS_PLAN_BOOTSTRAP
+   STAKEHOLDER_GUIDE
 
 .. toctree::
    :maxdepth: 2
