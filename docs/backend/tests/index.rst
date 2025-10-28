@@ -24,6 +24,42 @@ Pyramide des Tests
 
 **Objectif Coverage** : 80%+ global (100% domaine, 80% application, 60% infrastructure)
 
+Cycle TDD Red → Green → Blue
+----------------------------
+
+1. **Red (Test qui échoue)**  
+   - Écrire le test au bon niveau de la pyramide (unitaire, intégration, BDD ou E2E).  
+   - Lancer uniquement la couche concernée pour voir l'échec :
+
+     .. code-block:: bash
+
+        make test-unit            # Logique pure (RED rapide)
+        make test-e2e-backend     # Scénarios API bout en bout
+        make test-bdd             # Scénarios Cucumber
+        make test-e2e             # Playwright (frontend + backend)
+
+2. **Green (Test qui passe)**  
+   - Implémenter la solution minimale.  
+   - Relancer le ou les tests ciblés jusqu'au passage au vert.  
+   - Consolider avec la suite complète si la fonctionnalité touche plusieurs couches :
+
+     .. code-block:: bash
+
+        make test                 # Agrège unit + e2e backend + BDD
+
+3. **Blue (Refactor / Qualité)**  
+   - Nettoyer le code, extraire les abstractions et s'assurer du respect des standards.  
+   - Utiliser les outils qualité fournis par `make` :
+
+     .. code-block:: bash
+
+        make format               # rustfmt + prettier
+        make lint                 # cargo clippy + prettier --check
+        make audit                # cargo audit + npm audit
+        make coverage             # (optionnel) rapport tarpaulin
+
+   - Terminer par un `make test` pour vérifier que la refactorisation n'a rien cassé.
+
 Structure
 ---------
 
@@ -286,6 +322,24 @@ Tests d'Intégration
 
    # Test spécifique
    cargo test --test integration test_create_and_find_building
+
+Stockage S3/MinIO
+~~~~~~~~~~~~~~~~~
+
+Le test ``backend/tests/storage_s3.rs`` démarre un conteneur MinIO via ``testcontainers-modules`` et
+valide l'implémentation ``S3Storage`` (upload → lecture → suppression). Il vérifie également la
+création automatique du bucket lorsqu'il n'existe pas encore.
+
+.. code-block:: bash
+
+   cargo test --test storage_s3
+
+Monitoring Prometheus
+~~~~~~~~~~~~~~~~~~~~~
+
+Le backend expose un endpoint ``GET /metrics`` (format Prometheus) agrégé par défaut. Les opérations
+de stockage sont instrumentées via des compteurs/histogrammes, ce qui permet de suivre les succès,
+échecs et latences depuis la stack de monitoring (Prometheus/Grafana).
 
 Tests BDD (Cucumber)
 --------------------

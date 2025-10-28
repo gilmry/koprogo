@@ -137,9 +137,20 @@ services:
       DB_POOL_MIN_CONNECTIONS: ${DB_POOL_MIN_CONNECTIONS:-2}
       ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-false}
       JWT_SECRET: ${JWT_SECRET}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3} # Pour repasser sur le stockage local: STORAGE_PROVIDER=local
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      S3_BUCKET: ${S3_BUCKET:-koprogo-documents} # Renseignez votre bucket S3 externe si besoin
+      S3_REGION: ${S3_REGION:-eu-west-0}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-koprogo123}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      S3_KEY_PREFIX: ${S3_KEY_PREFIX:-documents}
 
     depends_on:
       postgres:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
     volumes:
@@ -238,6 +249,65 @@ services:
     networks:
       - koprogo-network
 
+  minio:
+    image: minio/minio:latest
+    container_name: koprogo-minio
+    restart: unless-stopped
+
+    command: server /data --console-address :9001
+
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-koprogo}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-koprogo123}
+      MINIO_BROWSER_REDIRECT_URL: ${MINIO_CONSOLE_PUBLIC_URL:-http://minio:9001}
+      MINIO_SERVER_URL: ${S3_PUBLIC_ENDPOINT:-http://minio:9000}
+
+    # Pas de publication de port : MinIO reste privé au réseau interne.
+    expose:
+      - "9000"
+      - "9001"
+
+    volumes:
+      - minio_data:/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+    networks:
+      - koprogo-network
+
+  minio-bootstrap:
+    image: minio/mc:latest
+    container_name: koprogo-minio-bootstrap
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-koprogo123}
+      ENABLE_MINIO_BOOTSTRAP: ${ENABLE_MINIO_BOOTSTRAP:-true} # Mettre à false si vous utilisez un S3 externe géré
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      set -e;
+      if [ "${ENABLE_MINIO_BOOTSTRAP:-true}" != "true" ]; then
+        echo "Skipping MinIO bootstrap";
+        exit 0;
+      fi;
+      until mc alias set local "$${S3_ENDPOINT}" "$${S3_ACCESS_KEY}" "$${S3_SECRET_KEY}"; do
+        echo "Waiting for MinIO...";
+        sleep 2;
+      done;
+      mc mb --ignore-existing "local/$${S3_BUCKET}";
+      mc anonymous set private "local/$${S3_BUCKET}" >/dev/null 2>&1 || true;
+      echo "MinIO bucket $${S3_BUCKET} ready.";
+    networks:
+      - koprogo-network
+
 networks:
   koprogo-network:
     driver: bridge
@@ -250,4 +320,6 @@ volumes:
   backend_uploads:
     driver: local
   backend_logs:
+    driver: local
+  minio_data:
     driver: local

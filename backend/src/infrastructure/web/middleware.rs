@@ -8,7 +8,10 @@ use uuid::Uuid;
 /// This struct automatically extracts and validates JWT tokens from the Authorization header.
 /// Use it as a parameter in your handler functions to require authentication:
 ///
-/// ```rust
+/// ```rust,ignore
+/// use actix_web::Responder;
+/// use koprogo_api::infrastructure::web::middleware::AuthenticatedUser;
+///
 /// async fn protected_handler(claims: AuthenticatedUser) -> impl Responder {
 ///     // claims.user_id and claims.organization_id are now available
 /// }
@@ -76,7 +79,11 @@ impl FromRequest for AuthenticatedUser {
 /// This extractor requires that the user belongs to an organization.
 /// Use it when you need to enforce organization-scoped operations:
 ///
-/// ```rust
+/// ```rust,ignore
+/// use actix_web::{Responder, web};
+/// use koprogo_api::application::dto::CreateBuildingDto;
+/// use koprogo_api::infrastructure::web::middleware::OrganizationId;
+///
 /// async fn create_building(
 ///     organization: OrganizationId,
 ///     dto: web::Json<CreateBuildingDto>
