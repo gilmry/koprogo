@@ -7,7 +7,7 @@
 services:
   # Traefik Reverse Proxy (HTTP only for dev)
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3.4.5
     container_name: koprogo-traefik
     command:
       - "--api.dashboard=true"
