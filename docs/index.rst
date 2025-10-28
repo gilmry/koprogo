@@ -45,49 +45,30 @@ Documentation
    :caption: 💼 Modèle Économique
 
    ECONOMIC_MODEL
-   BUSINESS_PLAN_BOOTSTRAP
-   STAKEHOLDER_GUIDE
 
 .. toctree::
    :maxdepth: 2
    :caption: 🦀 Backend Rust
 
    backend/index
-   backend/src/domain/index
-   backend/src/application/index
-   backend/src/infrastructure/index
-   backend/tests/index
-   backend/benches/index
 
 .. toctree::
    :maxdepth: 2
    :caption: 🎨 Frontend Astro + Svelte
 
    frontend/index
-   frontend/lib/index
-   frontend/components/index
-   frontend/pages/index
-   frontend/layouts/index
-   frontend/stores/index
-   frontend/locales/index
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🏗️ Infrastructure (Terraform + Ansible)
+   :caption: 🏗️ Infrastructure
 
    infrastructure/index
-   infrastructure/terraform/index
-   infrastructure/ansible/index
 
 .. toctree::
    :maxdepth: 2
    :caption: 🚀 Déploiement et GitOps
 
    deployment/index
-   deployment/ovh-setup
-   deployment/terraform-ansible
-   deployment/gitops
-   deployment/troubleshooting
 
 .. toctree::
    :maxdepth: 2
@@ -98,9 +79,11 @@ Documentation
    PERFORMANCE_TESTING
    PERFORMANCE_REPORT
    PROJECT_STRUCTURE
+   GIT_HOOKS
+   OWNER_MODEL_REFACTORING
 
 =====================================
 
 *Documentation maintenue par la communauté KoproGo ASBL*
 
-*Dernière mise à jour : Octobre 2025*
+*Dernière mise à jour : Novembre 2025*

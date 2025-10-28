@@ -32,10 +32,12 @@ Voir aussi:
   - [Troubleshooting](deployment/troubleshooting.md) - Résolution de problèmes
 
 #### Business & Stratégie
-- **[BUSINESS_PLAN_BOOTSTRAP.md](BUSINESS_PLAN_BOOTSTRAP.md)** ⭐
-  - Business plan officiel ASBL 2025-2028
+- **[ECONOMIC_MODEL.md](ECONOMIC_MODEL.md)** ⭐
+  - Modèle économique complet ASBL 2025-2030
+  - Structure juridique ASBL belge et gouvernance
   - Modèle hybride OpenCore (Cloud 1€/copro + Self-hosted gratuit)
-  - Projections, team, roadmap, unit economics
+  - Projections, viabilité financière, transparence comptable
+  - Exemples open source réussis et opportunités de soutien
 
 #### Performance & Tests
 - **[PERFORMANCE_REPORT.md](PERFORMANCE_REPORT.md)** ⭐
@@ -72,12 +74,12 @@ Voir aussi:
 
 ### Pour Nouveaux Contributeurs
 1. **README.md** (racine) : Vue d'ensemble projet
-2. **BUSINESS_PLAN_BOOTSTRAP.md** : Comprendre le modèle ASBL
+2. **ECONOMIC_MODEL.md** : Comprendre le modèle ASBL
 3. **deployment/** : Déployer sa propre instance
 4. **CLAUDE.md** (racine) : Architecture technique hexagonale
 
 ### Pour ASBL / Admins
-1. **BUSINESS_PLAN_BOOTSTRAP.md** : Stratégie et finances
+1. **ECONOMIC_MODEL.md** : Stratégie, finances et gouvernance
 2. **deployment/** : Maintenir infra cloud
 3. **PERFORMANCE_REPORT.md** : Benchmarks et capacités
 
@@ -90,7 +92,7 @@ Voir aussi:
 ## 🔄 Maintenance Documentation
 
 **Fréquence updates** :
-- **BUSINESS_PLAN_BOOTSTRAP.md** : Annuel (ou si changement majeur)
+- **ECONOMIC_MODEL.md** : Annuel (ou si changement majeur)
 - **PERFORMANCE_REPORT.md** : Après chaque test de charge
 - **deployment/** : Quand nouvelle version infrastructure
 - **MAKEFILE_GUIDE.md** : Quand nouvelles commandes make
@@ -105,7 +107,7 @@ Voir aussi:
 | Fichier | Description | Status |
 |---------|-------------|--------|
 | **deployment/** | Guide déploiement VPS complet | ✅ À jour |
-| **BUSINESS_PLAN_BOOTSTRAP.md** | Business plan ASBL 2025-2028 | ✅ À jour |
+| **ECONOMIC_MODEL.md** | Modèle économique ASBL 2025-2030 | ✅ À jour |
 | **PERFORMANCE_REPORT.md** | Tests de charge officiels | ✅ À jour |
 | **MAKEFILE_GUIDE.md** | Commandes make | ✅ À jour |
 | **E2E_TESTING_GUIDE.md** | Tests E2E Playwright | ✅ À jour |

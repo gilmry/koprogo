@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed - Full RST Conversion for Sphinx Documentation (2025-11-28)
+
+**Conversion**: Converted all Markdown files in docs/ to RST for better Sphinx integration
+
+- **Converted Files** (11 files):
+  - `VISION.md` → `VISION.rst`
+  - `MISSION.md` → `MISSION.rst`
+  - `ROADMAP.md` → `ROADMAP.rst`
+  - `ECONOMIC_MODEL.md` → `ECONOMIC_MODEL.rst`
+  - `PERFORMANCE_REPORT.md` → `PERFORMANCE_REPORT.rst`
+  - `PERFORMANCE_TESTING.md` → `PERFORMANCE_TESTING.rst`
+  - `MAKEFILE_GUIDE.md` → `MAKEFILE_GUIDE.rst`
+  - `E2E_TESTING_GUIDE.md` → `E2E_TESTING_GUIDE.rst`
+  - `PROJECT_STRUCTURE.md` → `PROJECT_STRUCTURE.rst`
+  - `GIT_HOOKS.md` → `GIT_HOOKS.rst`
+  - `OWNER_MODEL_REFACTORING.md` → `OWNER_MODEL_REFACTORING.rst`
+  - `deployment/*.md` → `deployment/*.rst` (5 files)
+
+- **Updated Structure**:
+  - `docs/index.rst` - Updated toctree with new RST files
+  - `deployment/index.rst` - Added toctree for deployment guides
+  - `docs/conf.py` - Improved navigation settings:
+    - `navigation_depth`: 5 → 1 (only show toctree entries)
+    - `collapse_navigation`: False → True (collapsible sections)
+    - `titles_only`: False → True (no sub-sections in navigation)
+    - Added `html_sidebars`: Use global TOC only (no local page TOC)
+  - All cross-references now work correctly in Sphinx navigation
+  - Preserved `README.md` in docs/ (for GitHub navigation)
+
+- **Benefits**:
+  - ✅ Proper Sphinx cross-references with `:doc:` role
+  - ✅ Consistent navigation across all pages
+  - ✅ No more broken backlinks from sidebar navigation
+  - ✅ Better table of contents generation
+  - ✅ Successful build with 296 warnings (only Svelte/Astro highlighting)
+
+- **Removed**:
+  - All .md files from docs/ (except README.md)
+  - `docs/index_old.rst` (archive file)
+
+### Changed - Merged Economic Model Documentation (2025-11-28)
+
+**Consolidation**: Merged 3 economic model documents into one comprehensive guide
+
+- **Merged Files**:
+  - `docs/ECONOMIC_MODEL.md` (original)
+  - `docs/BUSINESS_PLAN_BOOTSTRAP.md` (removed)
+  - `docs/STAKEHOLDER_GUIDE.md` (removed)
+
+- **New Structure** (`docs/ECONOMIC_MODEL.md` v4.0):
+  - Vision et Philosophie
+  - Structure Juridique ASBL
+  - Modèle OpenCore
+  - Structure Tarifaire (Cloud 1€/mois + Self-hosted gratuit)
+  - Transparence Comptable
+  - Économies d'Échelle
+  - Viabilité Financière (projections 2025-2030)
+  - Impact Écologique (96% réduction CO₂)
+  - Comparaison Concurrence
+  - Exemples Open Source Réussis (Red Hat, GitLab, Mozilla, etc.)
+  - Gouvernance ASBL (AG, CA, obligations légales)
+  - Opportunités de Soutien (partenariats, subventions, sponsoring)
+  - Risques et Opportunités
+
+- **Updated References**:
+  - `README.md` - Updated business section links
+  - `docs/README.md` - Updated all references
+  - `docs/index.rst` - Removed redundant toctree entries
+  - `docs/VISION.md` - Updated next section link
+  - `docs/PERFORMANCE_REPORT.md` - Updated ASBL projection reference
+  - `docs/PROJECT_STRUCTURE.md` - Updated file tree
+  - `CHANGELOG.md` - Updated documentation references
+
+- **Benefits**:
+  - ✅ Single source of truth for economic model
+  - ✅ All information preserved (no data loss)
+  - ✅ Better structure and navigation
+  - ✅ Eliminated redundancies
+  - ✅ Easier maintenance
+
 ### Added - Comprehensive Roadmap & Economic Model Documentation (2024-10-27)
 
 #### Roadmap (Nov 2025 - Aug 2026)
@@ -96,11 +176,10 @@ Community modules combat urban isolation, aligned with ASBL's mission of address
 
 **Simplified `docs/index.rst`**: Reduced from 760 to 105 lines (7x shorter)
 - Remove embedded content (Architecture, Stack, API REST) → cleaner structure
-- Save old content to `docs/index_old.rst` for reference
 - Reorganize toctrees by logical sections:
   1. 🎯 Vision et Mission
   2. 🗺️ Roadmap (new position after vision/mission)
-  3. 💼 Modèle Économique (ECONOMIC_MODEL + BUSINESS_PLAN_BOOTSTRAP)
+  3. 💼 Modèle Économique (ECONOMIC_MODEL fusionné complet)
   4. 🦀 Backend Rust (6 subsections)
   5. 🎨 Frontend Astro + Svelte (7 subsections)
   6. 🏗️ Infrastructure (3 subsections)
@@ -461,7 +540,7 @@ npm install
 **Updated Guides**
 - `docs/README.md` - Updated with new documentation structure
 - `docs/MAKEFILE_GUIDE.md` - Updated with latest make commands
-- `docs/BUSINESS_PLAN_BOOTSTRAP.md` - Updated business context
+- `docs/ECONOMIC_MODEL.md` - Merged economic model documentation
 - `docs/PERFORMANCE_REPORT.md` - Updated performance metrics
 - `infrastructure/README.md` - Infrastructure documentation improvements
 

@@ -48,13 +48,19 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 html_theme_options = {
-    'navigation_depth': 5,
-    'collapse_navigation': False,
+    'navigation_depth': 1,
+    'collapse_navigation': True,
     'sticky_navigation': True,
     'includehidden': True,
-    'titles_only': False,
+    'titles_only': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
+    'display_version': False,
+}
+
+# Disable local TOC in sidebar
+html_sidebars = {
+    '**': ['globaltoc.html', 'searchbox.html']
 }
 
 # -- Extension configuration -------------------------------------------------
