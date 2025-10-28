@@ -122,17 +122,21 @@ impl AuditLogEntry {
     /// Log this entry (currently to stdout, can be extended to database/file)
     pub fn log(&self) {
         // Redact sensitive information for logging (GDPR compliance)
-        let redacted_ip = self.ip_address.as_ref().map(|_| "[REDACTED]");
+        let redact_presence = |present| if present { "[REDACTED]" } else { "None" };
+        let redacted_user = redact_presence(self.user_id.is_some());
+        let redacted_org = redact_presence(self.organization_id.is_some());
+        let redacted_resource_id = redact_presence(self.resource_id.is_some());
+        let redacted_ip = redact_presence(self.ip_address.is_some());
         let redacted_error = self.error_message.as_ref().map(|_| "[REDACTED]");
 
         let log_message = format!(
-            "[AUDIT] {} | {:?} | User: {:?} | Org: {:?} | Resource: {:?}/{:?} | Success: {} | IP: {:?}",
+            "[AUDIT] {} | {:?} | User: {} | Org: {} | Resource: {}/{} | Success: {} | IP: {}",
             self.timestamp.format("%Y-%m-%d %H:%M:%S"),
             self.event_type,
-            self.user_id,
-            self.organization_id,
-            self.resource_type,
-            self.resource_id,
+            redacted_user,
+            redacted_org,
+            self.resource_type.as_deref().unwrap_or("None"),
+            redacted_resource_id,
             self.success,
             redacted_ip
         );
@@ -140,7 +144,11 @@ impl AuditLogEntry {
         if self.success {
             log::info!("{}", log_message);
         } else {
-            log::warn!("{} | Error: {:?}", log_message, redacted_error);
+            log::warn!(
+                "{} | Error: {}",
+                log_message,
+                redacted_error.unwrap_or("None")
+            );
         }
 
         // TODO: In production, write full (unredacted) audit data to:
