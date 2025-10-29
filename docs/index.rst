@@ -81,6 +81,7 @@ Documentation
    PROJECT_STRUCTURE
    GIT_HOOKS
    MULTI_OWNER_SUPPORT
+   MULTI_ROLE_SUPPORT
    OWNER_MODEL_REFACTORING
 
 =====================================

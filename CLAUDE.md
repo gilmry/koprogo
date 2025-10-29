@@ -201,6 +201,10 @@ Base URL: `http://localhost:8080/api/v1`
    - `POST /units/:id/owners`, `DELETE /units/:unit_id/owners/:owner_id`
    - `PUT /unit-owners/:relationship_id` (quote-part ou contact principal)
    - `POST /units/:unit_id/owners/transfer`
+**User roles**:
+   - `POST /auth/login` (retourne `roles[]`, `active_role`)
+   - `POST /auth/switch-role` (sélectionne le rôle actif)
+   - `GET /auth/me` (profil enrichi)
 **Owners**: `/owners` (GET, POST), `/owners/:id` (GET), `/owners/:id/units`, `/owners/:id/units/history`
 **Expenses**: `/expenses` (GET, POST), `/buildings/:id/expenses` (GET), `/expenses/:id/mark-paid` (PUT)
 **Health**: `/health` (GET)
@@ -213,6 +217,7 @@ The system models property management with these aggregates:
 - **Unit**: Lots within buildings (unit_number, floor, area, liens `unit_owners`)
 - **Owner**: Co-owners (name, email, phone, GDPR-sensitive data)
 - **UnitOwner**: Relation d'appartenance (pourcentage, temporalité, contact principal)
+- **UserRoleAssignment**: Rôle utilisateur/Organisation (multi-rôles, rôle actif)
 - **Expense**: Charges (amount, description, due_date, paid status)
 - **Meeting**: General assemblies (date, agenda, minutes)
 - **Document**: File storage (title, file_path, document_type)
@@ -228,6 +233,20 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 - Tests : `backend/tests/integration_unit_owner.rs` (PostgreSQL) + BDD multi-tenant.
 - Frontend Svelte : `frontend/src/components/UnitOwners.svelte`, `OwnerList.svelte`, `OwnerCreateModal.svelte`, `OwnerEditModal.svelte`.
 - Documentation produit : `docs/MULTI_OWNER_SUPPORT.md`.
+
+### Multi-role support
+
+- Table `user_roles` (migration `20250130000000_add_user_roles.sql`).
+- Domain entity: `backend/src/domain/entities/user_role_assignment.rs`.
+- Repository: `PostgresUserRoleRepository` (création, switch primary, liste).
+- Use cases: `AuthUseCases::login`, `AuthUseCases::switch_active_role`, `AuthUseCases::refresh_token`.
+- Middleware `AuthenticatedUser` expose `role_id`.
+- Endpoints `/auth/login`, `/auth/switch-role`, `/auth/me` (JWT avec rôle actif).
+- Frontend: `authStore.switchRole`, `Navigation.svelte` (sélecteur multi-rôle).
+- Tests:
+  - E2E: `tests/e2e_auth.rs` (scénario multi-rôles).
+  - BDD: `features/auth.feature` (issue #28).
+  - Docs: `docs/MULTI_ROLE_SUPPORT.md`.
 
 ## Performance Targets
 
