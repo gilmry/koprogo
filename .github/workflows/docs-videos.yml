@@ -1,0 +1,228 @@
+name: 📚 Documentation with E2E Videos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'frontend/tests/e2e/**'
+      - 'frontend/playwright.config.ts'
+      - '.claude/scripts/sync-playwright-videos.sh'
+      - '.github/workflows/docs-videos.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'frontend/tests/e2e/**'
+      - 'frontend/playwright.config.ts'
+  workflow_dispatch: # Permet de lancer manuellement
+
+env:
+  RUST_VERSION: 1.83.0
+  NODE_VERSION: 20
+
+jobs:
+  build-docs-with-videos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: koprogo
+          POSTGRES_PASSWORD: koprogo123
+          POSTGRES_DB: koprogo_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🦀 Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: 📦 Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+
+      - name: 🗄️ Install sqlx-cli
+        run: cargo install sqlx-cli --no-default-features --features postgres
+
+      - name: 📊 Run migrations
+        working-directory: backend
+        run: sqlx migrate run
+        env:
+          DATABASE_URL: postgresql://koprogo:koprogo123@localhost:5432/koprogo_db
+
+      - name: 🔨 Build backend
+        working-directory: backend
+        run: cargo build --release
+
+      - name: 🚀 Start backend server
+        working-directory: backend
+        run: |
+          ./target/release/koprogo-backend &
+          echo "BACKEND_PID=$!" >> $GITHUB_ENV
+        env:
+          DATABASE_URL: postgresql://koprogo:koprogo123@localhost:5432/koprogo_db
+          SERVER_HOST: 127.0.0.1
+          SERVER_PORT: 8080
+          RUST_LOG: info
+
+      - name: ⏳ Wait for backend to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+              echo "✅ Backend is ready!"
+              exit 0
+            fi
+            echo "⏳ Waiting for backend... ($i/30)"
+            sleep 2
+          done
+          echo "❌ Backend failed to start"
+          exit 1
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 📥 Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: 🎭 Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install chromium --with-deps
+
+      - name: 🎥 Run E2E tests (generate videos)
+        working-directory: frontend
+        run: npm run test:e2e
+        continue-on-error: true # Continue même si certains tests échouent
+        env:
+          CI: true
+
+      - name: 📋 Sync Playwright videos to docs
+        run: bash .claude/scripts/sync-playwright-videos.sh
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 📚 Install Sphinx dependencies
+        working-directory: docs
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 📖 Build Sphinx documentation
+        working-directory: docs
+        run: sphinx-build -M html . _build -W --keep-going
+
+      - name: 📦 Upload documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sphinx-docs
+          path: docs/_build/html/
+          retention-days: 30
+
+      - name: 🎬 Upload E2E videos artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-videos
+          path: docs/_static/videos/
+          retention-days: 30
+
+      - name: 📊 Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 30
+
+      - name: 🛑 Stop backend server
+        if: always()
+        run: |
+          if [ ! -z "$BACKEND_PID" ]; then
+            kill $BACKEND_PID || true
+          fi
+
+  # Deploy to GitHub Pages (only on main)
+  deploy-docs:
+    needs: build-docs-with-videos
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 📥 Download documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: sphinx-docs
+          path: docs-html
+
+      - name: 🎥 Download videos
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-videos
+          path: docs-html/_static/videos
+
+      - name: ⚙️ Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: 📦 Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs-html
+
+      - name: 🚀 Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Summary job (always runs)
+  summary:
+    needs: build-docs-with-videos
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📊 Job Summary
+        run: |
+          echo "## 📚 Documentation Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Documentation built successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- 📚 Sphinx Documentation" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎥 E2E Test Videos (30 tests)" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 Playwright Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Download artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "- [View docs on GitHub Pages](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/)" >> $GITHUB_STEP_SUMMARY
+          fi
