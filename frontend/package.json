@@ -16,7 +16,9 @@
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "test:install": "playwright install chromium --with-deps"
+    "test:install": "playwright install chromium --with-deps",
+    "docs:videos": "bash ../.claude/scripts/sync-playwright-videos.sh",
+    "test:docs": "npm run test:e2e && npm run docs:videos"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.5",

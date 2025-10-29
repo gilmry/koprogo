@@ -200,6 +200,30 @@ docs-serve: ## 🔄 Servir docs Sphinx avec live reload
 	fi
 	cd docs && .venv/bin/sphinx-autobuild . _build/html --port 8000 --open-browser
 
+docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E
+	@echo "$(GREEN)🎥 Génération docs avec vidéos E2E...$(NC)"
+	@echo ""
+	@echo "1️⃣ Lancement tests E2E..."
+	cd frontend && npm run test:e2e || (echo "$(YELLOW)⚠️  Certains tests ont échoué, mais on continue...$(NC)")
+	@echo ""
+	@echo "2️⃣ Synchronisation vidéos..."
+	bash .claude/scripts/sync-playwright-videos.sh
+	@echo ""
+	@echo "3️⃣ Build docs Sphinx..."
+	@if [ ! -d docs/.venv ]; then \
+		echo "$(YELLOW)⚠️  Creating Python venv...$(NC)"; \
+		cd docs && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt; \
+	fi
+	cd docs && .venv/bin/sphinx-build -M html . _build
+	@echo ""
+	@echo "$(GREEN)✅ Docs générées: docs/_build/html/index.html$(NC)"
+	@echo "$(GREEN)🎥 Vidéos E2E: docs/_build/html/e2e-videos.html$(NC)"
+
+docs-serve-videos: docs-with-videos ## 🌐 Servir docs avec vidéos sur http://localhost:8000
+	@echo "$(GREEN)🌐 Serveur docs: http://localhost:8000$(NC)"
+	@echo "$(GREEN)🎥 Page vidéos: http://localhost:8000/e2e-videos.html$(NC)"
+	cd docs/_build/html && python3 -m http.server 8000
+
 ##
 ## 🚀 CI/CD & Déploiement
 ##
