@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n        UPDATE users\n        SET is_active = false, updated_at = NOW()\n        WHERE id = $1\n        RETURNING id, email, first_name, last_name, role, organization_id, is_active, created_at\n        ",
+  "query": "\n        SELECT id, email, first_name, last_name, role, organization_id, is_active, created_at\n        FROM users\n        WHERE id = $1\n        ",
   "describe": {
     "columns": [
       {
@@ -60,5 +60,5 @@
       false
     ]
   },
-  "hash": "3600312dcfd2e541e053acefa0559f85f47abc5bc3e4e1ee36f36c60b09c811f"
+  "hash": "2b28d108be67e847b066aed4c4af8d2df90289e9c8a72c980066e652d8d8a542"
 }

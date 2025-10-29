@@ -49,6 +49,7 @@ Projets GitHub: [Software (#2)](https://github.com/users/gilmry/projects/2) | [I
 - 🏗️ **Architecture Hexagonale** : Séparation stricte des couches (Domain, Application, Infrastructure)
 - 🧪 **Tests Complets** : Unitaires, Intégration, BDD (Cucumber), E2E, Load tests
 - 🧑‍🤝‍🧑 **Multi-propriété native** : quote-parts cumulées, contact principal, historique complet des copropriétaires
+- 🧠 **Multi-rôles utilisateurs** : syndic/comptable/superadmin sur un seul compte, switch rôle instantané
 - 🔒 **Sécurité** : Conforme GDPR, ISO 27001 ready
 - 📦 **Stack Moderne** : Rust + Actix-web + Astro + PostgreSQL
 
@@ -594,6 +595,7 @@ Documentation complète disponible dans le dossier `docs/` :
 ### Guides Techniques
 - **[CLAUDE.md](CLAUDE.md)** - Instructions pour développeurs (Architecture, Commandes, TDD)
 - **[Multi-owner Support](docs/MULTI_OWNER_SUPPORT.md)** - Fonctionnement des quotes-parts et API multi-copropriétaires
+- **[Multi-role Support](docs/MULTI_ROLE_SUPPORT.md)** - Gestion des utilisateurs multi-rôles (issue #28)
 - **[E2E Testing Guide](E2E_TESTING_GUIDE.md)** - Tests End-to-End
 - **[Makefile Guide](MAKEFILE_GUIDE.md)** - Commandes disponibles
 

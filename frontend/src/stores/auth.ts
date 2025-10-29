@@ -1,5 +1,6 @@
-import { writable } from "svelte/store";
-import type { User } from "../lib/types";
+import { writable, get } from "svelte/store";
+import type { User, UserRoleSummary } from "../lib/types";
+import { UserRole } from "../lib/types";
 import { syncService } from "../lib/sync";
 import { localDB } from "../lib/db";
 import { apiEndpoint } from "../lib/config";
@@ -16,6 +17,108 @@ interface AuthState {
 // Refresh token 5 minutes before expiry (access token expires in 15 minutes)
 const TOKEN_REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
 let refreshTimer: number | null = null;
+
+const normalizeRole = (role: string | undefined | null): UserRole => {
+  switch (role) {
+    case UserRole.SUPERADMIN:
+    case "superadmin":
+      return UserRole.SUPERADMIN;
+    case UserRole.SYNDIC:
+    case "syndic":
+      return UserRole.SYNDIC;
+    case UserRole.ACCOUNTANT:
+    case "accountant":
+      return UserRole.ACCOUNTANT;
+    case UserRole.OWNER:
+    case "owner":
+      return UserRole.OWNER;
+    default:
+      return UserRole.OWNER;
+  }
+};
+
+const mapRoleSummaryFromAny = (role: any): UserRoleSummary => {
+  const rawOrg =
+    role?.organizationId ?? role?.organization_id ?? role?.organization ?? null;
+  const organizationId =
+    rawOrg === null || rawOrg === undefined || rawOrg === ""
+      ? undefined
+      : String(rawOrg);
+
+  return {
+    id: String(role?.id ?? role?.role_id ?? ""),
+    role: normalizeRole(role?.role ?? role?.name),
+    organizationId,
+    isPrimary: Boolean(role?.isPrimary ?? role?.is_primary),
+  };
+};
+
+const mapBackendUser = (user: any): User => {
+  let roles = (user.roles ?? []).map(mapRoleSummaryFromAny);
+  let activeRole = user.active_role
+    ? mapRoleSummaryFromAny(user.active_role)
+    : undefined;
+
+  if (roles.length === 0) {
+    const fallbackRole = normalizeRole(user.role ?? user.active_role?.role);
+    roles = [
+      {
+        id: String(user.active_role?.id ?? ""),
+        role: fallbackRole,
+        organizationId:
+          user.organization_id ??
+          user.organizationId ??
+          user.active_role?.organization_id ??
+          user.active_role?.organizationId ??
+          undefined,
+        isPrimary: true,
+      },
+    ];
+  }
+
+  if (!activeRole) {
+    activeRole = roles.find((role) => role.isPrimary) ?? roles[0];
+  }
+
+  roles.sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
+
+  return {
+    id: user.id,
+    email: user.email,
+    firstName: user.first_name ?? user.firstName ?? "",
+    lastName: user.last_name ?? user.lastName ?? "",
+    role: activeRole?.role ?? normalizeRole(user.role),
+    organizationId:
+      activeRole?.organizationId ??
+      user.organization_id ??
+      user.organizationId ??
+      undefined,
+    buildingIds: user.buildingIds ?? [],
+    is_active: user.is_active ?? true,
+    created_at: user.created_at,
+    roles,
+    activeRole,
+  };
+};
+
+const ensureUserShape = (user: any): User => {
+  try {
+    return mapBackendUser(user);
+  } catch (error) {
+    console.error("Failed to normalize stored user", error);
+    return {
+      id: user.id ?? "",
+      email: user.email ?? "",
+      firstName: user.firstName ?? "",
+      lastName: user.lastName ?? "",
+      role: normalizeRole(user.role),
+      organizationId: user.organizationId,
+      buildingIds: user.buildingIds ?? [],
+      roles: user.roles ?? [],
+      activeRole: user.activeRole,
+    } as User;
+  }
+};
 
 const createAuthStore = () => {
   const { subscribe, set, update } = writable<AuthState>({
@@ -60,7 +163,7 @@ const createAuthStore = () => {
 
         if (storedUser && storedToken && storedRefreshToken) {
           try {
-            const user = JSON.parse(storedUser);
+            const user = ensureUserShape(JSON.parse(storedUser));
 
             // Initialize local database
             await localDB.init();
@@ -182,7 +285,7 @@ const createAuthStore = () => {
           const {
             token: newToken,
             refresh_token: newRefreshToken,
-            user,
+            user: userPayload,
           } = data;
 
           // Update stored tokens
@@ -195,15 +298,12 @@ const createAuthStore = () => {
           }
 
           // Map backend user format to frontend format
-          const mappedUser: User = {
-            id: user.id,
-            email: user.email,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            role: user.role,
-            organizationId: user.organization_id,
-            buildingIds: [],
-          };
+          const mappedUser: User = mapBackendUser(userPayload);
+
+          if (typeof window !== "undefined") {
+            localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
+          }
+          await localDB.saveUser(mappedUser);
 
           update((state) => ({
             ...state,
@@ -232,6 +332,68 @@ const createAuthStore = () => {
       }
     },
 
+    switchRole: async (roleId: string): Promise<boolean> => {
+      const currentState = get(authStore);
+      const currentUser = currentState.user;
+      if (!currentUser) {
+        return false;
+      }
+
+      const token = currentState.token ?? authStore.getToken();
+      if (!token) {
+        return false;
+      }
+
+      try {
+        const response = await fetch(apiEndpoint("/auth/switch-role"), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ role_id: roleId }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error("Switch role failed", errorData);
+          return false;
+        }
+
+        const data = await response.json();
+        const {
+          token: newToken,
+          refresh_token: newRefreshToken,
+          user: userPayload,
+        } = data;
+
+        const mappedUser: User = mapBackendUser(userPayload);
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem("koprogo_token", newToken);
+          localStorage.setItem("koprogo_refresh_token", newRefreshToken);
+          localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
+        }
+
+        await syncService.setToken(newToken);
+        await localDB.saveUser(mappedUser);
+
+        startTokenRefresh();
+
+        update((state) => ({
+          ...state,
+          token: newToken,
+          refreshToken: newRefreshToken,
+          user: mappedUser,
+        }));
+
+        return true;
+      } catch (error) {
+        console.error("Switch role error", error);
+        return false;
+      }
+    },
+
     // Validate current session
     validateSession: async (): Promise<boolean> => {
       const token = authStore.getToken();
@@ -247,18 +409,13 @@ const createAuthStore = () => {
         });
 
         if (response.ok) {
-          const user = await response.json();
+          const userPayload = await response.json();
+          const mappedUser: User = mapBackendUser(userPayload);
 
-          // Map backend user format to frontend format
-          const mappedUser: User = {
-            id: user.id,
-            email: user.email,
-            firstName: user.first_name,
-            lastName: user.last_name,
-            role: user.role,
-            organizationId: user.organization_id,
-            buildingIds: [],
-          };
+          if (typeof window !== "undefined") {
+            localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
+          }
+          await localDB.saveUser(mappedUser);
 
           update((state) => ({
             ...state,
@@ -267,20 +424,30 @@ const createAuthStore = () => {
           }));
 
           return true;
-        } else {
-          // Try to refresh token
+        }
+
+        if (response.status === 401) {
           const refreshToken = localStorage.getItem("koprogo_refresh_token");
           if (refreshToken) {
-            return await authStore.refreshAccessToken(refreshToken);
+            const refreshed = await authStore.refreshAccessToken(refreshToken);
+            if (refreshed) {
+              return true;
+            }
           }
 
-          // No refresh token, logout
           await authStore.logout();
           return false;
         }
+
+        console.warn(
+          "Session validation received non-OK response",
+          response.status,
+        );
+
+        return true;
       } catch (error) {
         console.error("Session validation error:", error);
-        return false;
+        return true;
       }
     },
   };
@@ -289,3 +456,5 @@ const createAuthStore = () => {
 };
 
 export const authStore = createAuthStore();
+export const mapUserFromBackend = mapBackendUser;
+export const mapRoleSummary = mapRoleSummaryFromAny;

@@ -1,22 +1,28 @@
 use cucumber::{given, then, when, World};
-use koprogo_api::application::dto::LoginResponse;
 use koprogo_api::application::dto::{
-    CompleteMeetingRequest, CreateBuildingDto, CreateMeetingRequest, PageRequest, PcnReportRequest,
-    SortOrder, UpdateMeetingRequest,
+    Claims, CompleteMeetingRequest, CreateBuildingDto, CreateExpenseDto, CreateMeetingRequest,
+    LinkDocumentToExpenseRequest, LinkDocumentToMeetingRequest, LoginRequest, LoginResponse,
+    PageRequest, PcnReportRequest, RefreshTokenRequest, RegisterRequest, SortOrder,
+    UpdateMeetingRequest,
 };
-use koprogo_api::application::ports::BuildingRepository;
+use koprogo_api::application::ports::{BuildingRepository, UserRoleRepository};
 use koprogo_api::application::use_cases::{
     BuildingUseCases, DocumentUseCases, ExpenseUseCases, MeetingUseCases, PcnUseCases,
 };
+use koprogo_api::domain::entities::{ExpenseCategory, UserRole, UserRoleAssignment};
 use koprogo_api::domain::i18n::{I18n, Language, TranslationKey};
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository,
     PostgresMeetingRepository, PostgresRefreshTokenRepository, PostgresUserRepository,
+    PostgresUserRoleRepository,
 };
+use koprogo_api::infrastructure::pool::DbPool;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use std::sync::Arc;
+use std::time::Duration;
 use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
+use tokio::time::sleep;
 use uuid::Uuid;
 
 #[derive(World)]
@@ -41,6 +47,16 @@ pub struct BuildingWorld {
     last_download: Option<(Vec<u8>, String, String)>,
     last_expense_id: Option<Uuid>,
     last_user_id: Option<Uuid>,
+    user_role_repo: Option<Arc<dyn UserRoleRepository>>,
+    multi_user_email: Option<String>,
+    multi_user_password: Option<String>,
+    multi_user_id: Option<Uuid>,
+    secondary_role_id: Option<Uuid>,
+    last_login_response: Option<LoginResponse>,
+    last_token_claims: Option<Claims>,
+    last_access_token: Option<String>,
+    last_refresh_token: Option<String>,
+    pool: Option<DbPool>,
 }
 
 impl std::fmt::Debug for BuildingWorld {
@@ -75,14 +91,35 @@ impl BuildingWorld {
             last_download: None,
             last_expense_id: None,
             last_user_id: None,
+            user_role_repo: None,
+            multi_user_email: None,
+            multi_user_password: None,
+            multi_user_id: None,
+            secondary_role_id: None,
+            last_login_response: None,
+            last_token_claims: None,
+            last_access_token: None,
+            last_refresh_token: None,
+            pool: None,
         }
     }
 
     async fn setup_database(&mut self) {
-        let postgres_container = Postgres::default()
-            .start()
-            .await
-            .expect("Failed to start postgres container");
+        let mut attempts = 0;
+        let postgres_container = loop {
+            match Postgres::default().start().await {
+                Ok(container) => break container,
+                Err(e) if attempts < 3 => {
+                    attempts += 1;
+                    eprintln!(
+                        "Postgres container start failed (attempt {}): {}. Retrying...",
+                        attempts, e
+                    );
+                    sleep(Duration::from_millis(500)).await;
+                }
+                Err(e) => panic!("Failed to start postgres container: {}", e),
+            }
+        };
 
         let host_port = postgres_container
             .get_host_port_ipv4(5432)
@@ -103,6 +140,8 @@ impl BuildingWorld {
             .await
             .expect("Failed to run migrations");
 
+        self.pool = Some(pool.clone());
+
         // Create organization for FK
         let org_id = Uuid::new_v4();
         sqlx::query(
@@ -120,6 +159,8 @@ impl BuildingWorld {
         let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
         let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
         let refresh_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
+        let user_role_repo: Arc<dyn UserRoleRepository> =
+            Arc::new(PostgresUserRoleRepository::new(pool.clone()));
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
         let meeting_use_cases = MeetingUseCases::new(meeting_repo);
@@ -132,6 +173,7 @@ impl BuildingWorld {
         let auth_use_cases = koprogo_api::application::use_cases::AuthUseCases::new(
             user_repo,
             refresh_repo,
+            user_role_repo.clone(),
             "test-secret-key".to_string(),
         );
 
@@ -163,6 +205,28 @@ impl BuildingWorld {
         self._container = Some(postgres_container);
         self.org_id = Some(org_id);
         self.building_id = Some(building_id);
+        self.user_role_repo = Some(user_role_repo);
+    }
+
+    async fn ensure_second_org(&mut self) -> Uuid {
+        if let Some(id) = self.second_org_id {
+            return id;
+        }
+
+        let pool = self.pool.as_ref().expect("pool").clone();
+        let second_org_id = Uuid::new_v4();
+
+        sqlx::query(
+            r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
+               VALUES ($1, 'Org Secondary', 'org-secondary', 'sec@org.com', 'starter', 10, 10, true, NOW(), NOW())"#,
+        )
+        .bind(second_org_id)
+        .execute(&pool)
+        .await
+        .expect("insert secondary org");
+
+        self.second_org_id = Some(second_org_id);
+        second_org_id
     }
 }
 
@@ -319,7 +383,6 @@ async fn then_pcn_generated(world: &mut BuildingWorld) {
 // Document linking + download
 #[when("I link the document to the meeting")]
 async fn when_link_document_to_meeting(world: &mut BuildingWorld) {
-    use koprogo_api::application::dto::LinkDocumentToMeetingRequest;
     let doc_id = world.last_document_id.expect("uploaded document");
     let meeting_id = world.last_meeting_id.expect("created meeting");
     let uc = world.document_use_cases.as_ref().unwrap();
@@ -492,8 +555,6 @@ async fn then_at_least_one_meeting(world: &mut BuildingWorld) {
 // Expenses + documents linking
 #[given(regex = r#"^I create an expense of amount ([-+]?[0-9]*\.?[0-9]+)$"#)]
 async fn given_create_expense(world: &mut BuildingWorld, amount: f64) {
-    use koprogo_api::application::dto::CreateExpenseDto;
-    use koprogo_api::domain::entities::ExpenseCategory;
     let uc = world.expense_use_cases.as_ref().unwrap();
     let dto = CreateExpenseDto {
         organization_id: world.org_id.unwrap().to_string(),
@@ -511,7 +572,6 @@ async fn given_create_expense(world: &mut BuildingWorld, amount: f64) {
 
 #[when("I link the document to the expense")]
 async fn when_link_document_to_expense(world: &mut BuildingWorld) {
-    use koprogo_api::application::dto::LinkDocumentToExpenseRequest;
     let doc_id = world.last_document_id.expect("doc id");
     let exp_id = world.last_expense_id.expect("expense id");
     let uc = world.document_use_cases.as_ref().unwrap();
@@ -568,8 +628,11 @@ async fn then_at_least_one_expense(world: &mut BuildingWorld) {
 // Auth BDD
 #[when("I register a new user and login")]
 async fn when_register_and_login(world: &mut BuildingWorld) {
-    use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
-    let auth = world.auth_use_cases.as_ref().unwrap();
+    let auth = world
+        .auth_use_cases
+        .as_ref()
+        .expect("auth use cases")
+        .clone();
     let email = format!("user+{}@test.com", Uuid::new_v4());
     let org = world.org_id.unwrap();
     let reg = RegisterRequest {
@@ -589,7 +652,12 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
     match res {
         Ok(r) => {
             world.last_user_id = Some(r.user.id);
-            world.last_result = Some(Ok(r.refresh_token));
+            world.last_access_token = Some(r.token.clone());
+            world.last_refresh_token = Some(r.refresh_token.clone());
+            world.last_login_response = Some(r.clone());
+            world.last_token_claims =
+                Some(auth.verify_token(&r.token).expect("validate token claims"));
+            world.last_result = Some(Ok(r.refresh_token.clone()));
         }
         Err(e) => world.last_result = Some(Err(e)),
     }
@@ -597,12 +665,10 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
 
 #[then("I receive an access token and a refresh token")]
 async fn then_tokens_received(world: &mut BuildingWorld) {
-    let auth = world.auth_use_cases.as_ref().unwrap();
-    let refresh = world.last_result.as_ref().unwrap().as_ref().unwrap();
-    // last_result holds refresh token; verify it's non-empty and decodable via refresh flow
+    let access = world.last_access_token.as_ref().expect("access token");
+    let refresh = world.last_refresh_token.as_ref().expect("refresh token");
+    assert!(!access.is_empty());
     assert!(!refresh.is_empty());
-    // Not refreshing here (done in next scenario), just ensure something was returned
-    let _ = auth; // keep for future use
 }
 
 #[given("I have a valid refresh token")]
@@ -612,27 +678,169 @@ async fn given_have_refresh_token(world: &mut BuildingWorld) {
 
 #[when("I refresh my session")]
 async fn when_refresh_session(world: &mut BuildingWorld) {
-    use koprogo_api::application::dto::RefreshTokenRequest;
-    let auth = world.auth_use_cases.as_ref().unwrap();
+    let auth = world
+        .auth_use_cases
+        .as_ref()
+        .expect("auth use cases")
+        .clone();
     let refresh = world
-        .last_result
+        .last_refresh_token
         .as_ref()
-        .unwrap()
-        .as_ref()
-        .unwrap()
+        .expect("refresh token")
         .clone();
     let res = auth
         .refresh_token(RefreshTokenRequest {
             refresh_token: refresh,
         })
         .await;
-    world.last_result = Some(res.map(|r| r.token));
+    let response = res.expect("refresh response");
+    world.last_access_token = Some(response.token.clone());
+    world.last_refresh_token = Some(response.refresh_token.clone());
+    world.last_login_response = Some(response.clone());
+    world.last_token_claims = Some(auth.verify_token(&response.token).expect("claims"));
+    world.last_result = Some(Ok(response.token));
 }
 
 #[then("I receive a new access token")]
 async fn then_new_access_token(world: &mut BuildingWorld) {
-    let token = world.last_result.as_ref().unwrap().as_ref().unwrap();
+    let token = world.last_access_token.as_ref().expect("new access token");
     assert!(!token.is_empty());
+}
+
+#[given("a user with multiple roles")]
+async fn given_user_with_multiple_roles(world: &mut BuildingWorld) {
+    if world.org_id.is_none() {
+        world.setup_database().await;
+    }
+
+    let auth = world
+        .auth_use_cases
+        .as_ref()
+        .expect("auth use cases")
+        .clone();
+    let org_primary = world.org_id.expect("primary org");
+    let email = format!("multi+{}@test.com", Uuid::new_v4());
+    let password = format!("Passw0rd-{}", Uuid::new_v4());
+
+    world.multi_user_email = Some(email.clone());
+    world.multi_user_password = Some(password.clone());
+
+    let register = RegisterRequest {
+        email: email.clone(),
+        password: password.clone(),
+        first_name: "Multi".to_string(),
+        last_name: "Role".to_string(),
+        role: "syndic".to_string(),
+        organization_id: Some(org_primary),
+    };
+    auth.register(register)
+        .await
+        .expect("register multi-role user");
+
+    let login_response = auth
+        .login(LoginRequest {
+            email: email.clone(),
+            password: password.clone(),
+        })
+        .await
+        .expect("login multi-role");
+
+    world.multi_user_id = Some(login_response.user.id);
+    world.last_user_id = Some(login_response.user.id);
+    world.last_login_response = Some(login_response.clone());
+    world.last_access_token = Some(login_response.token.clone());
+    world.last_refresh_token = Some(login_response.refresh_token.clone());
+    world.last_token_claims = Some(
+        auth.verify_token(&login_response.token)
+            .expect("claims for multi-role login"),
+    );
+
+    let second_org_id = world.ensure_second_org().await;
+    let role_repo = world
+        .user_role_repo
+        .as_ref()
+        .expect("role repository")
+        .clone();
+
+    let secondary_assignment = role_repo
+        .create(&UserRoleAssignment::new(
+            login_response.user.id,
+            UserRole::Accountant,
+            Some(second_org_id),
+            false,
+        ))
+        .await
+        .expect("create secondary role");
+    world.secondary_role_id = Some(secondary_assignment.id);
+
+    // Re-login to fetch updated roles list
+    let refreshed_login = auth
+        .login(LoginRequest { email, password })
+        .await
+        .expect("login after adding role");
+
+    world.last_login_response = Some(refreshed_login.clone());
+    world.last_access_token = Some(refreshed_login.token.clone());
+    world.last_refresh_token = Some(refreshed_login.refresh_token.clone());
+    world.last_token_claims = Some(
+        auth.verify_token(&refreshed_login.token)
+            .expect("claims after secondary role login"),
+    );
+    world.last_result = Some(Ok(refreshed_login.user.id.to_string()));
+}
+
+#[when("I switch to the secondary role")]
+async fn when_switch_to_secondary_role(world: &mut BuildingWorld) {
+    let auth = world
+        .auth_use_cases
+        .as_ref()
+        .expect("auth use cases")
+        .clone();
+    let user_id = world.multi_user_id.expect("multi-role user id");
+    let role_id = world.secondary_role_id.expect("secondary role id");
+
+    let response = auth
+        .switch_active_role(user_id, role_id)
+        .await
+        .expect("switch role");
+
+    world.last_login_response = Some(response.clone());
+    world.last_access_token = Some(response.token.clone());
+    world.last_refresh_token = Some(response.refresh_token.clone());
+    world.last_token_claims = Some(
+        auth.verify_token(&response.token)
+            .expect("claims after switch"),
+    );
+    world.last_result = Some(Ok(role_id.to_string()));
+}
+
+#[then(regex = r#"^my active role should be \"([^\"]*)\"$"#)]
+async fn then_active_role(world: &mut BuildingWorld, expected_role: String) {
+    let response = world.last_login_response.as_ref().expect("login response");
+    let active_role = response.user.active_role.as_ref().expect("active_role");
+    assert_eq!(
+        active_role.role.to_lowercase(),
+        expected_role.to_lowercase()
+    );
+}
+
+#[then("the user response should list multiple roles")]
+async fn then_multiple_roles_listed(world: &mut BuildingWorld) {
+    let response = world.last_login_response.as_ref().expect("login response");
+    assert!(response.user.roles.len() >= 2);
+}
+
+#[then(regex = r#"^the JWT claims should use role \"([^\"]*)\"$"#)]
+async fn then_claims_use_role(world: &mut BuildingWorld, expected: String) {
+    let claims = world.last_token_claims.as_ref().expect("token claims");
+    assert_eq!(claims.role.to_lowercase(), expected.to_lowercase());
+}
+
+#[then("the JWT claims should reference the selected role")]
+async fn then_claims_reference_role(world: &mut BuildingWorld) {
+    let claims = world.last_token_claims.as_ref().expect("token claims");
+    let role_id = world.secondary_role_id.expect("secondary role id");
+    assert_eq!(claims.role_id, Some(role_id));
 }
 
 // Pagination & Filtering BDD
@@ -671,27 +879,12 @@ async fn given_upload_document(world: &mut BuildingWorld, name: String) {
 // Multi-tenancy BDD
 #[given("a coproperty management system with two organizations")]
 async fn given_two_orgs(world: &mut BuildingWorld) {
-    world.setup_database().await;
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+    let pool = world.pool.as_ref().expect("pool").clone();
 
-    // reuse same DB pool by re-building connection string
-    let container = world._container.as_ref().unwrap();
-    let host_port = container.get_host_port_ipv4(5432).await.expect("host port");
-    let pool = create_pool(&format!(
-        "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        host_port
-    ))
-    .await
-    .expect("pool");
-
-    let second_org_id = Uuid::new_v4();
-    sqlx::query(
-        r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
-           VALUES ($1, 'Org B', 'org-b', 'b@org.com', 'starter', 10, 10, true, NOW(), NOW())"#
-    )
-    .bind(second_org_id)
-    .execute(&pool)
-    .await
-    .expect("insert second org");
+    let second_org_id = world.ensure_second_org().await;
 
     // Create a building for second org
     let building_repo = PostgresBuildingRepository::new(pool.clone());
