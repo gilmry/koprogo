@@ -93,7 +93,10 @@ export default defineConfig({
             // En CI, le backend tourne sur localhost:8080 (pas de Traefik)
             PUBLIC_API_URL: "http://localhost:8080/api/v1",
           }
-        : {}, // En local, utilise la config par défaut (Traefik)
+        : {
+            // En local, le backend est accessible via Traefik sur port 80
+            PUBLIC_API_URL: "http://localhost/api/v1",
+          }
     },
   ],
 
