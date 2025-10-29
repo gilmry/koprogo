@@ -464,7 +464,7 @@ Chaque mois, l'ASBL publie un **rapport financier public** détaillant:
 #. **Prix coûtant calculé**
 #. **Répartition revenus** (maintenance, développement, réserves)
 
-**Accès**\ : Tableau de bord public sur `koprogo.be/transparence <https://koprogo.be/transparence>`_
+**Accès**\ : Tableau de bord public sur `koprogo.com/transparence <https://koprogo.com/transparence>`_
 
 **Exemple Format**\ :
 

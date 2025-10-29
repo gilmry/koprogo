@@ -166,7 +166,7 @@ Variables Terraform
    instance_name = "koprogo-prod"
    region = "GRA11"
    ssh_public_key_path = "~/.ssh/koprogo.pub"
-   domain = "koprogo.be"
+   domain = "koprogo.com"
    EOF
 
 Providers

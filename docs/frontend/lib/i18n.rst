@@ -333,10 +333,10 @@ Le frontend doit mettre à jour ``<html lang="...">`` :
 .. code-block:: astro
 
    <head>
-     <link rel="alternate" hreflang="nl" href="https://koprogo.be/nl" />
-     <link rel="alternate" hreflang="fr" href="https://koprogo.be/fr" />
-     <link rel="alternate" hreflang="de" href="https://koprogo.be/de" />
-     <link rel="alternate" hreflang="en" href="https://koprogo.be/en" />
+    <link rel="alternate" hreflang="nl" href="https://koprogo.com/nl" />
+    <link rel="alternate" hreflang="fr" href="https://koprogo.com/fr" />
+    <link rel="alternate" hreflang="de" href="https://koprogo.com/de" />
+    <link rel="alternate" hreflang="en" href="https://koprogo.com/en" />
    </head>
 
 Extensions Futures

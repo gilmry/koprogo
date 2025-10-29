@@ -75,7 +75,7 @@ The KoproGo team takes security bugs seriously. We appreciate your efforts to re
 
 Instead, please report security vulnerabilities by email to:
 
-**gilmry+koprogo@gmail.com**
+**abuse@koprogo.com**
 
 You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
 
@@ -104,7 +104,7 @@ When the security team receives a security bug report, they will:
 
 ### Comments on this Policy
 
-If you have suggestions on how this process could be improved, please submit a pull request or email gilmry+koprogo@gmail.com.
+If you have suggestions on how this process could be improved, please submit a pull request or email abuse@koprogo.com.
 
 ## Security Best Practices for Contributors
 
@@ -309,7 +309,7 @@ Use this checklist for security-sensitive features:
 
 ## Security Contacts
 
-- **Security Email**: gilmry+koprogo@gmail.com
+- **Security Email**: abuse@koprogo.com
 - **Project Maintainer**: gilmry
 - **Response Time**: Within 48 hours
 
@@ -323,4 +323,4 @@ We would like to thank the following researchers for responsibly disclosing secu
 
 **Last updated**: 2025-10-25
 
-For questions about this policy, contact gilmry+koprogo@gmail.com.
+For questions about this policy, contact abuse@koprogo.com.

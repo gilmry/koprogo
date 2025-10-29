@@ -140,8 +140,8 @@ Infrastructure Provisionnée
 
 **Exposition Publique** :
 
-- ``https://koprogo.be`` → Frontend (Traefik → port 3000)
-- ``https://api.koprogo.be`` → Backend (Traefik → port 8080)
+- ``https://koprogo.com`` → Frontend (Traefik → port 3000)
+- ``https://api.koprogo.com`` → Backend (Traefik → port 8080)
 - Ports 80/443 : Traefik (SSL termination)
 - Port 22 : SSH (accès maintenance)
 
@@ -269,7 +269,7 @@ GitOps Auto-Update
    - Docker Compose down
    - Docker Compose pull (nouvelles images)
    - Docker Compose up -d
-   - Health check API (``https://api.koprogo.be/api/v1/health``)
+   - Health check API (``https://api.koprogo.com/api/v1/health``)
 3. Si health check échoue :
    - Rollback automatique (``git reset --hard ORIG_HEAD``)
    - Docker Compose up avec ancienne version
@@ -318,7 +318,7 @@ Monitoring
    # Script: /home/koprogo/koprogo/scripts/health-check.sh
 
    # Check API health
-   curl -f https://api.koprogo.be/api/v1/health || \
+   curl -f https://api.koprogo.com/api/v1/health || \
        echo "ALERT: API down!" | mail -s "KoproGo Alert" admin@example.com
 
 **Métriques Docker** :
@@ -476,7 +476,7 @@ Voir documentation complète : ``docs/deployment/troubleshooting.md``
 
    # API ne répond pas
    docker compose logs backend
-   curl https://api.koprogo.be/api/v1/health
+   curl https://api.koprogo.com/api/v1/health
 
    # SSL non configuré
    docker compose logs traefik

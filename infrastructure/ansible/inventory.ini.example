@@ -7,7 +7,7 @@ koprogo-vps ansible_host=YOUR_VPS_IP ansible_user=ubuntu ansible_ssh_private_key
 [koprogo:vars]
 # Variables optionnelles (peuvent être définies dans playbook.yml)
 # domain=koprogo.com
-# acme_email=admin@koprogo.com
+# acme_email=contact@koprogo.com
 # S3 / MinIO configuration
 # storage_provider=s3               # s3 (par défaut) ou local
 # s3_bucket=koprogo-documents

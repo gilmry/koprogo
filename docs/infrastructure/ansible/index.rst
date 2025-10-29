@@ -109,10 +109,10 @@ Variables d'environnement
 
 .. code-block:: bash
 
-   export KOPROGO_DOMAIN=koprogo.be
-   export KOPROGO_FRONTEND_DOMAIN=koprogo.be
-   export KOPROGO_API_DOMAIN=api.koprogo.be
-   export ACME_EMAIL=admin@koprogo.be
+   export KOPROGO_DOMAIN=koprogo.com
+   export KOPROGO_FRONTEND_DOMAIN=koprogo.com
+   export KOPROGO_API_DOMAIN=api.koprogo.com
+   export ACME_EMAIL=contact@koprogo.com
 
    # Credentials OVH (pour DNS automatique)
    export OVH_ENDPOINT=ovh-eu
@@ -333,9 +333,9 @@ Section par Section
    IMAGE_TAG=latest
 
    # Traefik Configuration
-   ACME_EMAIL=admin@koprogo.be
-   API_DOMAIN=api.koprogo.be
-   FRONTEND_DOMAIN=koprogo.be
+   ACME_EMAIL=contact@koprogo.com
+   API_DOMAIN=api.koprogo.com
+   FRONTEND_DOMAIN=koprogo.com
 
    # Database (password auto-généré)
    POSTGRES_DB=koprogo_db
@@ -344,10 +344,10 @@ Section par Section
 
    # Backend (JWT secret auto-généré)
    JWT_SECRET=<random-64-chars>
-   CORS_ALLOWED_ORIGINS=https://koprogo.be,https://api.koprogo.be
+   CORS_ALLOWED_ORIGINS=https://koprogo.com,https://api.koprogo.com
 
    # Frontend
-   PUBLIC_API_URL=https://api.koprogo.be/api/v1
+   PUBLIC_API_URL=https://api.koprogo.com/api/v1
 
 **8. Configuration DNS OVH (optionnel)**
 
@@ -376,8 +376,8 @@ Section par Section
 
 **Script configure-ovh-dns.py** :
 
-- Crée/update A record pour frontend (koprogo.be → VPS_IP)
-- Crée/update A record pour API (api.koprogo.be → VPS_IP)
+- Crée/update A record pour frontend (koprogo.com → VPS_IP)
+- Crée/update A record pour API (api.koprogo.com → VPS_IP)
 - Utilise API OVH pour modification DNS
 
 **9. Déploiement Docker Compose**
@@ -834,8 +834,8 @@ Health Check Failed
    docker compose ps
 
    # Vérifier DNS pointent vers VPS
-   dig koprogo.be
-   dig api.koprogo.be
+   dig koprogo.com
+   dig api.koprogo.com
 
 Gestion Secrets
 ---------------

@@ -1168,7 +1168,7 @@ RUSTSEC-2023-0071 (RSA Marvin Attack) comes from `sqlx-mysql` dependency. We onl
 
 - **Database Seeder Module** (`infrastructure/database/seed.rs`)
   - `DatabaseSeeder` class with comprehensive seeding capabilities
-  - `seed_superadmin()` - Automatic SuperAdmin account creation on startup
+    - `seed_superadmin()` - Automatic SuperAdmin account creation on startup
     - Fixed UUID for SuperAdmin: `00000000-0000-0000-0000-000000000001`
     - Default credentials: admin@koprogo.com / admin123
   - `seed_demo_data()` - Creates complete demo dataset:
