@@ -56,8 +56,11 @@ jobs:
         with:
           workspaces: backend
 
-      - name: 🗄️ Install sqlx-cli
-        run: cargo install sqlx-cli --no-default-features --features postgres
+      - name: 🗄️ Install cargo-binstall
+        run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+      - name: 🗄️ Install sqlx-cli (precompiled binary)
+        run: cargo binstall sqlx-cli --no-confirm --version 0.8.2
 
       - name: 📊 Run migrations
         working-directory: backend
