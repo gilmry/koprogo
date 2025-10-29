@@ -2,9 +2,114 @@
 
 Ce dossier contient les scripts pour intégrer automatiquement les vidéos Playwright dans la documentation Sphinx.
 
+## 🚀 Workflow Simplifié (Nouveau)
+
+**Le système a été grandement simplifié !** Vous pouvez maintenant :
+
+1. **Enregistrer vos tests** avec Playwright Codegen (mode enregistrement interactif)
+2. **Copier les vidéos** automatiquement avec `make docs-sync-videos`
+3. **La page RST se génère toute seule** - liste automatique de toutes les vidéos
+
+### Méthode recommandée : Enregistrement avec Playwright Codegen
+
+La façon la plus simple d'enregistrer vos tests :
+
+```bash
+cd frontend
+
+# Démarrer l'enregistrement interactif
+npm run codegen
+# OU: npx playwright codegen http://localhost:3000
+
+# Version mobile
+npm run codegen:mobile
+
+# Playwright ouvre un navigateur et enregistre vos actions
+# → Cliquez, naviguez, remplissez les formulaires
+# → Le code du test est généré automatiquement
+# → Copiez-le dans tests/e2e/mon-test.spec.ts
+
+# Puis lancez le test pour générer la vidéo
+npm run test:e2e -- mon-test.spec.ts
+```
+
+### Workflow complet
+
+```bash
+# 1. Enregistrer votre test interactivement
+cd frontend
+npx playwright codegen http://localhost:3000
+
+# 2. Copier le code généré dans un fichier .spec.ts
+# (Playwright affiche le code dans une fenêtre séparée)
+
+# 3. Lancer le test pour générer la vidéo
+npm run test:e2e
+
+# 4. Synchroniser les vidéos
+cd ..
+make docs-sync-videos
+
+# 5. Générer la documentation
+make docs-sphinx
+
+# Ou étapes 4-5 en une commande :
+make docs-with-videos
+```
+
 ## 📁 Fichiers
 
-### `sync-playwright-videos.sh`
+### `copy-videos.sh` ⭐ (Nouveau - Simplifié)
+
+Script principal qui copie les vidéos et génère automatiquement la page RST.
+
+**Usage :**
+```bash
+bash .claude/scripts/copy-videos.sh
+# OU
+make docs-sync-videos
+```
+
+### `generate-video-rst.py` ⭐ (Nouveau)
+
+Génère automatiquement `docs/e2e-videos.rst` en listant toutes les vidéos `.webm` présentes dans `docs/_static/videos/`.
+
+- ✅ Scanne automatiquement le répertoire
+- ✅ Convertit les noms de fichiers en titres lisibles
+- ✅ Génère le HTML avec player vidéo
+- ✅ Aucune configuration manuelle nécessaire
+
+**Appelé automatiquement par `copy-videos.sh`** - pas besoin de l'exécuter manuellement.
+
+### `slow-down-tests.sh` ⭐ (Nouveau - Vidéos plus lisibles)
+
+Ajoute automatiquement des pauses (délai configurable) entre chaque action dans les tests pour créer des vidéos plus faciles à suivre.
+
+**Usage :**
+```bash
+# Ralentir avec 1 seconde entre chaque action
+bash .claude/scripts/slow-down-tests.sh 1000
+
+# OU via make (recommandé)
+make test-e2e-slow
+```
+
+**Ce que ça fait :**
+- Ajoute `await page.waitForTimeout(1000)` après chaque `click()`, `fill()`, `goto()`, etc.
+- Créé des vidéos beaucoup plus faciles à suivre pour la documentation
+
+### `restore-test-speed.sh` ⭐ (Nouveau)
+
+Retire toutes les pauses ajoutées par `slow-down-tests.sh` pour revenir à la vitesse normale.
+
+**Usage :**
+```bash
+bash .claude/scripts/restore-test-speed.sh
+# OU
+make test-e2e-restore-speed
+```
+
+### `sync-playwright-videos.sh` (Ancien - Complexe)
 
 Script principal qui synchronise les vidéos E2E de Playwright vers la documentation Sphinx.
 
