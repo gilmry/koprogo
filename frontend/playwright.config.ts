@@ -96,7 +96,7 @@ export default defineConfig({
         : {
             // En local, le backend est accessible via Traefik sur port 80
             PUBLIC_API_URL: "http://localhost/api/v1",
-          }
+          },
     },
   ],
 
