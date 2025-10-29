@@ -9,6 +9,7 @@ pub mod refresh_token_repository_impl;
 pub mod unit_owner_repository_impl;
 pub mod unit_repository_impl;
 pub mod user_repository_impl;
+pub mod user_role_repository_impl;
 
 pub use audit_log_repository_impl::PostgresAuditLogRepository;
 pub use building_repository_impl::PostgresBuildingRepository;
@@ -21,3 +22,4 @@ pub use refresh_token_repository_impl::PostgresRefreshTokenRepository;
 pub use unit_owner_repository_impl::PostgresUnitOwnerRepository;
 pub use unit_repository_impl::PostgresUnitRepository;
 pub use user_repository_impl::PostgresUserRepository;
+pub use user_role_repository_impl::PostgresUserRoleRepository;

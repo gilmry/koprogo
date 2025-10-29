@@ -21,6 +21,7 @@ pub struct AuthenticatedUser {
     pub user_id: Uuid,
     pub email: String,
     pub role: String,
+    pub role_id: Option<Uuid>,
     pub organization_id: Option<Uuid>,
 }
 
@@ -64,6 +65,7 @@ impl FromRequest for AuthenticatedUser {
                         user_id,
                         email: claims.email,
                         role: claims.role,
+                        role_id: claims.role_id,
                         organization_id: claims.organization_id,
                     })),
                     Err(_) => ready(Err(ErrorUnauthorized("Invalid user ID in token"))),
@@ -125,6 +127,7 @@ mod tests {
             user_id: Uuid::new_v4(),
             email: "test@example.com".to_string(),
             role: "admin".to_string(),
+            role_id: None,
             organization_id: Some(Uuid::new_v4()),
         };
 
@@ -134,6 +137,7 @@ mod tests {
             user_id: Uuid::new_v4(),
             email: "test@example.com".to_string(),
             role: "admin".to_string(),
+            role_id: None,
             organization_id: None,
         };
 

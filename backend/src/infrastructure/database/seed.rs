@@ -57,6 +57,28 @@ impl DatabaseSeeder {
         .await
         .map_err(|e| format!("Failed to upsert superadmin: {}", e))?;
 
+        sqlx::query(
+            r#"
+            DELETE FROM user_roles
+            WHERE user_id = $1 AND role = 'superadmin'
+            "#,
+        )
+        .bind(superadmin_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to cleanup superadmin roles: {}", e))?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, created_at, updated_at)
+            VALUES (gen_random_uuid(), $1, 'superadmin', NULL, true, NOW(), NOW())
+            "#,
+        )
+        .bind(superadmin_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to upsert superadmin role: {}", e))?;
+
         log::info!("✅ Superadmin ready: {}", superadmin_email);
 
         Ok(User {
@@ -627,6 +649,22 @@ impl DatabaseSeeder {
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to create user {}: {}", email, e))?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, created_at, updated_at)
+            VALUES (gen_random_uuid(), $1, $2, $3, true, $4, $4)
+            ON CONFLICT (user_id, role, organization_id)
+            DO UPDATE SET is_primary = true, updated_at = EXCLUDED.updated_at
+            "#,
+        )
+        .bind(user_id)
+        .bind(role)
+        .bind(organization_id)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to assign role {} to user {}: {}", role, email, e))?;
 
         Ok(user_id)
     }

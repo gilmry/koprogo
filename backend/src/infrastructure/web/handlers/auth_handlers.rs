@@ -1,5 +1,7 @@
-use crate::application::dto::{LoginRequest, RefreshTokenRequest, RegisterRequest};
-use crate::infrastructure::web::AppState;
+use crate::application::dto::{
+    LoginRequest, RefreshTokenRequest, RegisterRequest, SwitchRoleRequest,
+};
+use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use validator::Validate;
 
@@ -95,5 +97,23 @@ pub async fn refresh_token(
         Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
             "error": e
         })),
+    }
+}
+
+#[post("/auth/switch-role")]
+pub async fn switch_role(
+    data: web::Data<AppState>,
+    user: AuthenticatedUser,
+    request: web::Json<SwitchRoleRequest>,
+) -> impl Responder {
+    let payload = request.into_inner();
+
+    match data
+        .auth_use_cases
+        .switch_active_role(user.user_id, payload.role_id)
+        .await
+    {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(e) => HttpResponse::BadRequest().json(serde_json::json!({ "error": e })),
     }
 }
