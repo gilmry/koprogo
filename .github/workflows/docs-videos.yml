@@ -7,7 +7,7 @@ on:
       - 'docs/**'
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.ts'
-      - '.claude/scripts/sync-playwright-videos.sh'
+      - '.claude/scripts/**'
       - '.github/workflows/docs-videos.yml'
   pull_request:
     branches: [main]
@@ -15,6 +15,7 @@ on:
       - 'docs/**'
       - 'frontend/tests/e2e/**'
       - 'frontend/playwright.config.ts'
+      - '.claude/scripts/**'
   workflow_dispatch: # Permet de lancer manuellement
 
 env:
@@ -107,16 +108,6 @@ jobs:
         working-directory: frontend
         run: npx playwright install chromium --with-deps
 
-      - name: 🎥 Run E2E tests (generate videos)
-        working-directory: frontend
-        run: npm run test:e2e
-        continue-on-error: true # Continue même si certains tests échouent
-        env:
-          CI: true
-
-      - name: 📋 Sync Playwright videos to docs
-        run: bash .claude/scripts/sync-playwright-videos.sh
-
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
@@ -126,12 +117,15 @@ jobs:
       - name: 📚 Install Sphinx dependencies
         working-directory: docs
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m venv .venv
+          .venv/bin/pip install --upgrade pip
+          .venv/bin/pip install -r requirements.txt
 
-      - name: 📖 Build Sphinx documentation
-        working-directory: docs
-        run: sphinx-build -M html . _build -W --keep-going
+      - name: 🎥 Generate docs with E2E videos (using make)
+        run: make docs-with-videos
+        continue-on-error: false
+        env:
+          CI: true
 
       - name: 📦 Upload documentation artifacts
         uses: actions/upload-artifact@v4
@@ -215,9 +209,14 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ Documentation built successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎥 Video Generation" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests ralentis avec 1 seconde entre chaque action" >> $GITHUB_STEP_SUMMARY
+          echo "- Vidéos lisibles et faciles à suivre" >> $GITHUB_STEP_SUMMARY
+          echo "- Page automatiquement générée avec toutes les vidéos" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- 📚 Sphinx Documentation" >> $GITHUB_STEP_SUMMARY
-          echo "- 🎥 E2E Test Videos (30 tests)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🎥 E2E Test Videos (slowed down)" >> $GITHUB_STEP_SUMMARY
           echo "- 📊 Playwright Test Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY

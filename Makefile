@@ -74,6 +74,19 @@ test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
 	cd frontend && npm run test:e2e
 
+test-e2e-slow: ## 🐌 Tests E2E ralentis (1s entre chaque action - pour vidéos)
+	@echo "$(GREEN)🐌 Ralentissement des tests E2E...$(NC)"
+	bash .claude/scripts/slow-down-tests.sh 1000
+	@echo ""
+	@echo "$(GREEN)🎥 Lancement des tests ralentis...$(NC)"
+	cd frontend && npm run test:e2e || true
+	@echo ""
+	@echo "$(GREEN)⚡ Restauration de la vitesse normale...$(NC)"
+	bash .claude/scripts/restore-test-speed.sh
+
+test-e2e-restore-speed: ## ⚡ Restaurer la vitesse normale des tests
+	bash .claude/scripts/restore-test-speed.sh
+
 test-watch: ## 👀 Tests en mode watch (auto-reload)
 	cd backend && cargo watch -x "test --lib"
 
@@ -200,16 +213,26 @@ docs-serve: ## 🔄 Servir docs Sphinx avec live reload
 	fi
 	cd docs && .venv/bin/sphinx-autobuild . _build/html --port 8000 --open-browser
 
-docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E
+docs-sync-videos: ## 📹 Copier vidéos E2E et générer page RST
+	@echo "$(GREEN)📹 Synchronisation vidéos E2E...$(NC)"
+	bash .claude/scripts/copy-videos.sh
+
+docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis 1s)
 	@echo "$(GREEN)🎥 Génération docs avec vidéos E2E...$(NC)"
 	@echo ""
-	@echo "1️⃣ Lancement tests E2E..."
-	cd frontend && npm run test:e2e || (echo "$(YELLOW)⚠️  Certains tests ont échoué, mais on continue...$(NC)")
+	@echo "1️⃣ Ralentissement des tests (1 s entre chaque action)..."
+	bash .claude/scripts/slow-down-tests.sh 1000
 	@echo ""
-	@echo "2️⃣ Synchronisation vidéos..."
-	bash .claude/scripts/sync-playwright-videos.sh
+	@echo "2️⃣ Lancement des tests E2E..."
+	cd frontend && npm run test:e2e || echo "$(YELLOW)⚠️  Certains tests ont échoué$(NC)"
 	@echo ""
-	@echo "3️⃣ Build docs Sphinx..."
+	@echo "3️⃣ Restauration de la vitesse normale..."
+	bash .claude/scripts/restore-test-speed.sh
+	@echo ""
+	@echo "4️⃣ Synchronisation des vidéos..."
+	bash .claude/scripts/copy-videos.sh
+	@echo ""
+	@echo "5️⃣ Build docs Sphinx..."
 	@if [ ! -d docs/.venv ]; then \
 		echo "$(YELLOW)⚠️  Creating Python venv...$(NC)"; \
 		cd docs && python3 -m venv .venv && .venv/bin/pip install -q -r requirements.txt; \
