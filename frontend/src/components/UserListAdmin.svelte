@@ -1,23 +1,32 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
-  import type { User } from '../lib/types';
+import { api } from '../lib/api';
+import { toast } from '../stores/toast';
+import type { User } from '../lib/types';
+import { mapUserFromBackend } from '../stores/auth';
   import UserForm from './admin/UserForm.svelte';
   import ConfirmDialog from './ui/ConfirmDialog.svelte';
   import Button from './ui/Button.svelte';
 
-  // Backend user format (snake_case)
-  interface BackendUser {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    role: string;
-    organization_id?: string;
-    is_active: boolean;
-    created_at: string;
-  }
+interface BackendRole {
+  id: string;
+  role: string;
+  organization_id?: string | null;
+  is_primary: boolean;
+}
+
+interface BackendUser {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  organization_id?: string | null;
+  is_active: boolean;
+  created_at: string;
+  roles: BackendRole[];
+  active_role?: BackendRole | null;
+}
 
   let users: User[] = [];
   let loading = true;
@@ -35,22 +44,14 @@
   });
 
   async function loadUsers() {
-    try {
-      loading = true;
-      error = '';
-      const response = await api.get<{ data: BackendUser[] }>('/users?per_page=1000');
+  try {
+    loading = true;
+    error = '';
+    const response = await api.get<{ data: BackendUser[] }>('/users?per_page=1000');
 
-      // Map backend format to frontend format
-      users = response.data.map((u) => ({
-        id: u.id,
-        email: u.email,
-        firstName: u.first_name,
-        lastName: u.last_name,
-        role: u.role as any,
-        organizationId: u.organization_id,
-        is_active: u.is_active,
-        created_at: u.created_at,
-      }));
+    users = response.data.map((backendUser) =>
+      mapUserFromBackend(backendUser)
+    );
     } catch (e) {
       error = e instanceof Error ? e.message : 'Erreur lors du chargement des utilisateurs';
       console.error('Error loading users:', e);
@@ -233,7 +234,7 @@
                 Email
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Rôle
+                Rôles
               </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Organisation
@@ -270,9 +271,23 @@
                   <div class="text-sm text-gray-900">{user.email}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {getRoleBadgeClass(user.role)}">
-                    {getRoleLabel(user.role)}
-                  </span>
+                  <div class="flex flex-wrap gap-1">
+                    {#each user.roles as roleSummary (roleSummary.id)}
+                      <span
+                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {getRoleBadgeClass(roleSummary.role)} {roleSummary.isPrimary ? 'ring-2 ring-primary-300' : ''}"
+                      >
+                        {getRoleLabel(roleSummary.role)}
+                        {#if roleSummary.organizationId}
+                          <span class="ml-1 text-gray-500">
+                            ({roleSummary.organizationId.substring(0, 8)}…)
+                          </span>
+                        {/if}
+                        {#if roleSummary.isPrimary}
+                          <span class="ml-1 text-primary-700">★</span>
+                        {/if}
+                      </span>
+                    {/each}
+                  </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {user.organizationId ? user.organizationId.substring(0, 8) + '...' : '-'}

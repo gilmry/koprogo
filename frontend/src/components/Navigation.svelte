@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import { _ } from 'svelte-i18n';
   import { authStore } from '../stores/auth';
   import { UserRole } from '../lib/types';
@@ -7,9 +8,63 @@
   import LanguageSelector from './LanguageSelector.svelte';
 
   let showUserMenu = false;
+  let switchingRole = false;
+  let selectedRoleId: string | null = null;
 
   $: user = $authStore.user;
   $: isAuthenticated = $authStore.isAuthenticated;
+
+  const getRoleLabel = (role: UserRole | undefined) => {
+    switch (role) {
+      case UserRole.SUPERADMIN:
+        return 'Admin plateforme';
+      case UserRole.SYNDIC:
+        return 'Syndic';
+      case UserRole.ACCOUNTANT:
+        return 'Comptable';
+      case UserRole.OWNER:
+        return 'Copropriétaire';
+      default:
+        return 'Rôle';
+    }
+  };
+
+  const formatRoleOption = (roleId: string | undefined, role: UserRole | undefined, organizationId?: string) => {
+    const organizationLabel = organizationId ? `• ${organizationId.slice(0, 8)}` : '• Plateforme';
+    return `${getRoleLabel(role)} ${organizationLabel}`;
+  };
+
+  const handleRoleChange = async (event: Event) => {
+    const target = event.target as HTMLSelectElement;
+    const roleId = target.value;
+    if (!roleId || roleId === user?.activeRole?.id) {
+      return;
+    }
+
+    switchingRole = true;
+    const success = await authStore.switchRole(roleId);
+    switchingRole = false;
+
+    if (!success) {
+      // revert selection on failure
+      target.value = user?.activeRole?.id ?? '';
+    } else {
+      selectedRoleId = roleId;
+      const nextUser = get(authStore).user;
+      if (nextUser?.role) {
+        const redirectMap = {
+          [UserRole.SUPERADMIN]: '/admin',
+          [UserRole.SYNDIC]: '/syndic',
+          [UserRole.ACCOUNTANT]: '/accountant',
+          [UserRole.OWNER]: '/owner',
+        } as const;
+        const destination = redirectMap[nextUser.role] ?? '/';
+        if (!window.location.pathname.startsWith(destination)) {
+          window.location.href = destination;
+        }
+      }
+    }
+  };
 
   // Initialize auth store from localStorage on mount
   onMount(async () => {
@@ -71,6 +126,9 @@
   };
 
   $: navItems = getNavItems(user?.role, $_);
+  $: if (user?.activeRole?.id && user.activeRole.id !== selectedRoleId) {
+    selectedRoleId = user.activeRole.id;
+  }
 </script>
 
 <nav class="bg-white shadow-sm border-b border-gray-200">
@@ -104,6 +162,23 @@
 
         <!-- Right side: Language Selector + Sync Status + User Menu -->
         <div class="flex items-center gap-4">
+          {#if user?.roles && user.roles.length > 1}
+            <div class="flex items-center">
+              <label class="text-xs text-gray-500 mr-2 hidden lg:inline">Rôle</label>
+              <select
+                class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                on:change|stopPropagation={handleRoleChange}
+                disabled={switchingRole}
+                bind:value={selectedRoleId}
+              >
+                {#each user.roles as roleOption}
+                  <option value={roleOption.id}>
+                    {formatRoleOption(roleOption.id, roleOption.role, roleOption.organizationId)}
+                  </option>
+                {/each}
+              </select>
+            </div>
+          {/if}
           <LanguageSelector />
           <SyncStatus />
 

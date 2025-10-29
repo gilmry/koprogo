@@ -6,6 +6,13 @@ export enum UserRole {
   OWNER = "owner", // Co-owner
 }
 
+export interface UserRoleSummary {
+  id: string;
+  role: UserRole;
+  organizationId?: string;
+  isPrimary: boolean;
+}
+
 // User type
 export interface User {
   id: string;
@@ -17,6 +24,8 @@ export interface User {
   buildingIds?: string[]; // Buildings the user has access to
   is_active?: boolean;
   created_at?: string;
+  roles: UserRoleSummary[];
+  activeRole?: UserRoleSummary;
 }
 
 // Organization subscription plans

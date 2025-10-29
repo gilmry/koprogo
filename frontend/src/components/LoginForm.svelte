@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { authStore } from '../stores/auth';
+  import { authStore, mapUserFromBackend } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import type { User } from '../lib/types';
   import { apiEndpoint } from '../lib/config';
@@ -27,15 +27,7 @@
         const { token, refresh_token, user } = data;
 
         // Map backend user format to frontend format
-        const mappedUser: User = {
-          id: user.id,
-          email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name,
-          role: user.role,
-          organizationId: user.organization_id,
-          buildingIds: [], // Will be populated from backend later
-        };
+        const mappedUser: User = mapUserFromBackend(user);
 
         // Login with token, refresh token and initialize sync
         await authStore.login(mappedUser, token, refresh_token);

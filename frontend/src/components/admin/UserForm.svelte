@@ -14,15 +14,38 @@
 
   const dispatch = createEventDispatcher();
 
+  interface RoleFormEntry {
+    id: string;
+    role: UserRole;
+    organizationId: string;
+    isPrimary: boolean;
+  }
+
+  const generateId = () =>
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  const createRoleEntry = (
+    role: UserRole = UserRole.OWNER,
+    organizationId = '',
+    isPrimary = false
+  ): RoleFormEntry => ({
+    id: generateId(),
+    role,
+    organizationId,
+    isPrimary,
+  });
+
   let formData = {
     email: '',
     password: '',
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    role: UserRole.OWNER,
-    organizationId: '',
   };
+
+  let formRoles: RoleFormEntry[] = [createRoleEntry(UserRole.OWNER, '', true)];
 
   let errors = {
     email: '',
@@ -30,12 +53,14 @@
     confirmPassword: '',
     firstName: '',
     lastName: '',
-    organizationId: '',
+    roles: '',
   };
 
   let organizations: Organization[] = [];
+  let organizationOptions: Array<{ value: string; label: string }> = [];
   let loading = false;
   let loadingOrgs = false;
+  let currentUserId: string | null = null;
 
   const roleOptions = [
     { value: UserRole.OWNER, label: 'Copropriétaire' },
@@ -44,9 +69,6 @@
     { value: UserRole.SUPERADMIN, label: 'Super Administrateur' },
   ];
 
-  let organizationOptions: Array<{ value: string; label: string }> = [];
-
-  // Load organizations on mount
   onMount(async () => {
     await loadOrganizations();
   });
@@ -67,20 +89,145 @@
     }
   }
 
-  // Initialize form with user data if editing
-  $: if (user && mode === 'edit') {
+  function resetForm() {
     formData = {
-      email: user.email,
+      email: '',
       password: '',
       confirmPassword: '',
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      organizationId: user.organizationId || '',
+      firstName: '',
+      lastName: '',
+    };
+    formRoles = [createRoleEntry(UserRole.OWNER, '', true)];
+    errors = {
+      email: '',
+      password: '',
+      confirmPassword: '',
+      firstName: '',
+      lastName: '',
+      roles: '',
     };
   }
 
-  $: requiresOrganization = formData.role !== UserRole.SUPERADMIN;
+  function populateFormFromUser(existing: User) {
+    formData = {
+      email: existing.email,
+      password: '',
+      confirmPassword: '',
+      firstName: existing.firstName,
+      lastName: existing.lastName,
+    };
+
+    const roles = existing.roles ?? [];
+    if (roles.length > 0) {
+      formRoles = roles.map((role) =>
+        createRoleEntry(
+          role.role,
+          role.organizationId ?? '',
+          role.isPrimary
+        )
+      );
+      ensureSinglePrimary();
+    } else {
+      const fallbackRole = existing.activeRole ?? {
+        id: generateId(),
+        role: existing.role,
+        organizationId: existing.organizationId ?? '',
+        isPrimary: true,
+      };
+      formRoles = [
+        createRoleEntry(
+          fallbackRole.role,
+          fallbackRole.organizationId ?? '',
+          true
+        ),
+      ];
+    }
+
+    errors.roles = '';
+  }
+
+  function ensureSinglePrimary() {
+    if (!formRoles.some((role) => role.isPrimary) && formRoles.length > 0) {
+      formRoles = formRoles.map((role, index) => ({
+        ...role,
+        isPrimary: index === 0,
+      }));
+    }
+  }
+
+  $: if (isOpen) {
+    if (mode === 'edit' && user && currentUserId !== user.id) {
+      populateFormFromUser(user);
+      currentUserId = user.id;
+    } else if (mode === 'create' && currentUserId !== null) {
+      resetForm();
+      currentUserId = null;
+    }
+  } else if (!isOpen) {
+    currentUserId = mode === 'edit' && user ? user.id : null;
+  }
+
+  function setPrimaryRole(index: number) {
+    formRoles = formRoles.map((role, idx) => ({
+      ...role,
+      isPrimary: idx === index,
+    }));
+  }
+
+  function handleRoleChange(index: number, value: string) {
+    const roleValue = normalizeRoleValue(value);
+    formRoles = formRoles.map((role, idx) => {
+      if (idx !== index) return role;
+      return {
+        ...role,
+        role: roleValue,
+        organizationId: roleValue === UserRole.SUPERADMIN ? '' : role.organizationId,
+      };
+    });
+  }
+
+  function handleOrganizationChange(index: number, value: string) {
+    formRoles = formRoles.map((role, idx) =>
+      idx === index ? { ...role, organizationId: value } : role
+    );
+  }
+
+  function addRoleEntry() {
+    formRoles = [
+      ...formRoles,
+      createRoleEntry(
+        UserRole.OWNER,
+        '',
+        formRoles.length === 0
+      ),
+    ];
+    ensureSinglePrimary();
+  }
+
+  function removeRoleEntry(index: number) {
+    if (formRoles.length <= 1) {
+      return;
+    }
+    const removedPrimary = formRoles[index].isPrimary;
+    formRoles = formRoles.filter((_, idx) => idx !== index);
+    if (removedPrimary) {
+      setPrimaryRole(0);
+    }
+  }
+
+  function normalizeRoleValue(value: string): UserRole {
+    switch (value) {
+      case UserRole.SUPERADMIN:
+        return UserRole.SUPERADMIN;
+      case UserRole.SYNDIC:
+        return UserRole.SYNDIC;
+      case UserRole.ACCOUNTANT:
+        return UserRole.ACCOUNTANT;
+      case UserRole.OWNER:
+      default:
+        return UserRole.OWNER;
+    }
+  }
 
   const validateForm = (): boolean => {
     let isValid = true;
@@ -90,20 +237,20 @@
       confirmPassword: '',
       firstName: '',
       lastName: '',
-      organizationId: '',
+      roles: '',
     };
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
-      errors.email = 'L\'email est requis';
+      errors.email = "L'email est requis";
       isValid = false;
     } else if (!emailRegex.test(formData.email)) {
-      errors.email = 'Format d\'email invalide';
+      errors.email = "Format d'email invalide";
       isValid = false;
     }
 
-    // Password validation (only for create mode or if password is provided in edit mode)
+    // Password validation
     if (mode === 'create' || formData.password) {
       if (!formData.password) {
         errors.password = 'Le mot de passe est requis';
@@ -131,10 +278,40 @@
       isValid = false;
     }
 
-    // Organization validation
-    if (requiresOrganization && !formData.organizationId) {
-      errors.organizationId = 'L\'organisation est requise pour ce rôle';
+    // Roles validation
+    if (formRoles.length === 0) {
+      errors.roles = 'Au moins un rôle doit être attribué';
       isValid = false;
+    } else {
+      const seen = new Set<string>();
+      let primaryCount = 0;
+      for (const entry of formRoles) {
+        if (entry.role !== UserRole.SUPERADMIN && !entry.organizationId) {
+          errors.roles =
+            'Choisissez une organisation pour chaque rôle (sauf SuperAdmin)';
+          isValid = false;
+          break;
+        }
+        if (entry.isPrimary) {
+          primaryCount += 1;
+        }
+        const key = `${entry.role}-${entry.organizationId || 'none'}`;
+        if (seen.has(key)) {
+          errors.roles = 'Doublon de rôle détecté';
+          isValid = false;
+          break;
+        }
+        seen.add(key);
+      }
+      if (isValid) {
+        if (primaryCount == 0) {
+          errors.roles = 'Sélectionnez un rôle principal';
+          isValid = false;
+        } else if (primaryCount > 1) {
+          errors.roles = 'Un seul rôle peut être défini comme principal';
+          isValid = false;
+        }
+      }
     }
 
     return isValid;
@@ -148,25 +325,38 @@
     loading = true;
 
     try {
+      const primary = formRoles.find((role) => role.isPrimary) ?? formRoles[0];
+      const rolesPayload = formRoles.map((entry) => ({
+        role: entry.role,
+        organization_id:
+          entry.role === UserRole.SUPERADMIN
+            ? null
+            : entry.organizationId || null,
+        is_primary: entry.isPrimary,
+      }));
+
       const payload: any = {
         email: formData.email.trim(),
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
-        role: formData.role,
+        roles: rolesPayload,
+        role: primary.role,
       };
 
-      if (formData.password && mode === 'create') {
-        payload.password = formData.password;
-      }
-
-      if (requiresOrganization && formData.organizationId) {
-        payload.organization_id = formData.organizationId;
+      if (primary.role !== UserRole.SUPERADMIN) {
+        payload.organization_id = primary.organizationId || null;
+      } else {
+        payload.organization_id = null;
       }
 
       if (mode === 'create') {
+        payload.password = formData.password;
         await api.post('/users', payload);
         toast.show('Utilisateur créé avec succès', 'success');
       } else if (user) {
+        if (formData.password) {
+          payload.password = formData.password;
+        }
         await api.put(`/users/${user.id}`, payload);
         toast.show('Utilisateur mis à jour avec succès', 'success');
       }
@@ -189,132 +379,165 @@
   const handleClose = () => {
     if (!loading) {
       isOpen = false;
-      // Reset form
-      formData = {
-        email: '',
-        password: '',
-        confirmPassword: '',
-        firstName: '',
-        lastName: '',
-        role: UserRole.OWNER,
-        organizationId: '',
-      };
-      errors = {
-        email: '',
-        password: '',
-        confirmPassword: '',
-        firstName: '',
-        lastName: '',
-        organizationId: '',
-      };
-      dispatch('close');
+      resetForm();
     }
   };
 </script>
 
-<Modal
-  {isOpen}
-  title={mode === 'create' ? 'Nouvel Utilisateur' : 'Modifier l\'Utilisateur'}
-  size="md"
-  on:close={handleClose}
->
-  <form on:submit|preventDefault={handleSubmit} class="space-y-4">
-    <div class="grid grid-cols-2 gap-4">
+<Modal bind:isOpen onClose={handleClose} size="lg" title={mode === 'create' ? 'Créer un utilisateur' : 'Modifier un utilisateur'}>
+  <div class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormInput
-        id="user-firstName"
+        id="email"
+        label="Email"
+        type="email"
+        required
+        bind:value={formData.email}
+        error={errors.email}
+      />
+      <FormInput
+        id="firstName"
         label="Prénom"
-        type="text"
+        required
         bind:value={formData.firstName}
         error={errors.firstName}
-        required
-        placeholder="Jean"
       />
-
       <FormInput
-        id="user-lastName"
+        id="lastName"
         label="Nom"
-        type="text"
+        required
         bind:value={formData.lastName}
         error={errors.lastName}
-        required
-        placeholder="Dupont"
       />
-    </div>
-
-    <FormInput
-      id="user-email"
-      label="Email"
-      type="email"
-      bind:value={formData.email}
-      error={errors.email}
-      required
-      placeholder="jean.dupont@example.com"
-      autocomplete="email"
-    />
-
-    {#if mode === 'create' || formData.password}
-      <FormInput
-        id="user-password"
-        label={mode === 'create' ? 'Mot de passe' : 'Nouveau mot de passe (laisser vide pour ne pas changer)'}
-        type="password"
-        bind:value={formData.password}
-        error={errors.password}
-        required={mode === 'create'}
-        placeholder="••••••••"
-        hint="Au moins 6 caractères"
-        autocomplete="new-password"
-      />
-
-      {#if formData.password}
+      {#if mode === 'create'}
         <FormInput
-          id="user-confirmPassword"
-          label="Confirmer le mot de passe"
+          id="password"
+          label="Mot de passe"
+          type="password"
+          required
+          bind:value={formData.password}
+          error={errors.password}
+        />
+        <FormInput
+          id="confirmPassword"
+          label="Confirmation du mot de passe"
+          type="password"
+          required
+          bind:value={formData.confirmPassword}
+          error={errors.confirmPassword}
+        />
+      {:else}
+        <FormInput
+          id="password"
+          label="Nouveau mot de passe (optionnel)"
+          type="password"
+          bind:value={formData.password}
+          error={errors.password}
+        />
+        <FormInput
+          id="confirmPassword"
+          label="Confirmation du mot de passe"
           type="password"
           bind:value={formData.confirmPassword}
           error={errors.confirmPassword}
-          required={mode === 'create' || !!formData.password}
-          placeholder="••••••••"
-          autocomplete="new-password"
         />
       {/if}
-    {/if}
-
-    <FormSelect
-      id="user-role"
-      label="Rôle"
-      bind:value={formData.role}
-      options={roleOptions}
-      required
-    />
-
-    {#if requiresOrganization}
-      <FormSelect
-        id="user-organization"
-        label="Organisation"
-        bind:value={formData.organizationId}
-        options={organizationOptions}
-        error={errors.organizationId}
-        required
-        placeholder={loadingOrgs ? 'Chargement...' : 'Sélectionner une organisation'}
-        disabled={loadingOrgs}
-      />
-    {:else}
-      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-        <p class="text-yellow-800">
-          ℹ️ Les Super Administrateurs n'appartiennent à aucune organisation et ont accès à tout le système.
-        </p>
-      </div>
-    {/if}
-  </form>
-
-  <svelte:fragment slot="footer">
-    <div class="flex justify-end space-x-3">
-      <Button variant="outline" on:click={handleClose} disabled={loading}>
-        Annuler
-      </Button>
-      <Button variant="primary" on:click={handleSubmit} {loading}>
-        {mode === 'create' ? 'Créer l\'utilisateur' : 'Enregistrer les modifications'}
-      </Button>
     </div>
-  </svelte:fragment>
+
+    <div class="border-t border-gray-200 pt-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900">Rôles attribués</h3>
+        <Button variant="secondary" type="button" on:click={addRoleEntry}>
+          ➕ Ajouter un rôle
+        </Button>
+      </div>
+      <p class="text-sm text-gray-500 mt-1">
+        Définissez un ou plusieurs rôles. Un unique rôle doit être marqué comme principal.
+      </p>
+      {#if errors.roles}
+        <p class="text-sm text-red-600 mt-2">{errors.roles}</p>
+      {/if}
+
+      <div class="space-y-4 mt-4">
+        {#each formRoles as roleEntry, index (roleEntry.id)}
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-gray-50 rounded-lg p-4">
+            <div class="md:col-span-4">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                Rôle <span class="text-red-500">*</span>
+              </label>
+              <select
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                bind:value={roleEntry.role}
+                on:change={(event) =>
+                  handleRoleChange(index, (event.target as HTMLSelectElement).value)}
+              >
+                {#each roleOptions as option}
+                  <option value={option.value}>{option.label}</option>
+                {/each}
+              </select>
+            </div>
+
+            <div class="md:col-span-5">
+              {#if roleEntry.role === UserRole.SUPERADMIN}
+                <p class="text-sm text-gray-600 mt-8">
+                  Aucun rattachement d'organisation pour un SuperAdmin.
+                </p>
+              {:else}
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Organisation <span class="text-red-500">*</span>
+                </label>
+                <FormSelect
+                  id={`role-org-${index}`}
+                  placeholder="Sélectionner une organisation"
+                  options={organizationOptions}
+                  bind:value={roleEntry.organizationId}
+                  disabled={loadingOrgs}
+                />
+              {/if}
+            </div>
+
+            <div class="md:col-span-2 flex items-center">
+              <label class="flex items-center space-x-2 text-sm text-gray-700 mt-6">
+                <input
+                  type="radio"
+                  name="primaryRole"
+                  checked={roleEntry.isPrimary}
+                  on:change={() => setPrimaryRole(index)}
+                />
+                <span>Rôle principal</span>
+              </label>
+            </div>
+
+            <div class="md:col-span-1 flex items-center justify-end mt-6">
+              {#if formRoles.length > 1}
+                <button
+                  type="button"
+                  class="text-red-600 hover:text-red-800 text-sm"
+                  on:click={() => removeRoleEntry(index)}
+                  title="Supprimer ce rôle"
+                >
+                  🗑️
+                </button>
+              {/if}
+            </div>
+          </div>
+        {/each}
+      </div>
+    </div>
+  </div>
+
+  <div slot="footer" class="flex justify-end space-x-3">
+    <Button variant="secondary" on:click={handleClose} disabled={loading}>
+      Annuler
+    </Button>
+    <Button variant="primary" on:click={handleSubmit} disabled={loading}>
+      {loading
+        ? mode === 'create'
+          ? 'Création...'
+          : 'Enregistrement...'
+        : mode === 'create'
+        ? 'Créer'
+        : 'Mettre à jour'}
+    </Button>
+  </div>
 </Modal>
