@@ -1,476 +1,437 @@
+=====================================
+🎥 Guide Complet des Tests E2E
+=====================================
 
-🎥 Guide des Tests E2E avec Documentation Vidéo
-===============================================
+Ce guide centralise **toutes les informations** sur les tests End-to-End avec Playwright et la génération de vidéos de documentation vivante.
 
-KoproGo utilise Playwright pour les tests End-to-End qui génèrent automatiquement des **vidéos de documentation vivante** !
+.. contents:: Table des matières
+   :local:
+   :depth: 2
 
-🎯 Qu'est-ce que c'est ?
-------------------------
+🎯 Introduction
+===============
 
-Les tests E2E testent **toute la stack** :
+Les tests E2E de KoproGo testent **toute la stack** :
 
-
-* ✅ Frontend (Astro + Svelte)
+* ✅ Frontend (Astro + Svelte)  
 * ✅ Backend (Rust + Actix-web)
 * ✅ Base de données (PostgreSQL)
 * ✅ API REST
 * ✅ PWA + Mode Offline
 
-Chaque test génère une **vidéo** qui montre exactement comment l'application fonctionne !
+Chaque test génère automatiquement une **vidéo** qui devient de la **documentation vivante** !
 
 🚀 Démarrage Rapide
--------------------
+===================
 
-1. Installation (une seule fois)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Installation (une seule fois)
+------------------------------
 
 .. code-block:: bash
 
+   # Installer les dépendances frontend
    cd frontend
    npm install
-   npm run test:install  # Installe Playwright + Chromium
 
-2. Démarrer les Services
-^^^^^^^^^^^^^^^^^^^^^^^^
+   # Installer Playwright et Chromium
+   npx playwright install chromium
 
-**Terminal 1 - Backend:**
-
-.. code-block:: bash
-
-   cd backend
-   docker-compose up -d postgres  # Si pas déjà démarré
-   cargo run
-
-**Terminal 2 - Frontend (optionnel si test:e2e démarre déjà le serveur):**
+Démarrer les services
+---------------------
 
 .. code-block:: bash
 
-   cd frontend
-   npm run dev
+   # Depuis la racine du projet
+   make up
 
-3. Lancer les Tests
-^^^^^^^^^^^^^^^^^^^
+   # Les services démarrent automatiquement via Docker Compose + Traefik
+   # Frontend: http://localhost
+   # API: http://localhost/api/v1
 
-.. code-block:: bash
-
-   cd frontend
-   npm run test:e2e  # Exécute tous les tests + génère les vidéos
-
-4. Voir les Vidéos ! 🎬
-^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   npm run test:e2e:report  # Ouvre le rapport HTML avec vidéos intégrées
-
-📹 Vidéos Générées
-------------------
-
-Après chaque exécution, vous trouverez les vidéos dans :
-
-.. code-block::
-
-   frontend/test-results/
-   ├── auth-Authentication-Flow-should-login-successfully-chromium/
-   │   └── video.webm  ← Vidéo du parcours de login
-   ├── pwa-offline-PWA-Capabilities-should-work-offline-chromium/
-   │   └── video.webm  ← Vidéo du mode offline
-   └── dashboards-Syndic-Dashboard-chromium/
-       └── video.webm  ← Vidéo du dashboard
-
-🎬 Commandes Disponibles
-------------------------
-
-.. code-block:: bash
-
-   # Mode Headless (CI/CD) - Génère les vidéos
-   npm run test:e2e
-
-   # Mode UI - Interface graphique interactive
-   npm run test:e2e:ui
-
-   # Mode Headed - Voir le navigateur en action
-   npm run test:e2e:headed
-
-   # Mode Debug - Debug pas à pas
-   npm run test:e2e:debug
-
-   # Voir le rapport avec vidéos
-   npm run test:e2e:report
-
-📝 Tests Disponibles
---------------------
-
-1. Tests d'Authentification (\ ``auth.spec.ts``\ )
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   npx playwright test auth.spec.ts
-
-**Ce qui est testé :**
-
-
-* ✅ Page de login accessible
-* ✅ Login avec appel API backend réel
-* ✅ Redirection vers dashboard selon le rôle
-* ✅ Gestion d'erreurs (mauvais password)
-* ✅ Persistance de session (localStorage + IndexedDB)
-* ✅ Logout complet
-* ✅ Création de comptes pour chaque rôle
-
-**Vidéo générée :** Parcours complet d'un utilisateur qui se connecte.
-
-2. Tests des Dashboards (\ ``dashboards.spec.ts``\ )
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   npx playwright test dashboards.spec.ts
-
-**Ce qui est testé :**
-
-
-* ✅ Dashboard Syndic (gestion immeubles)
-* ✅ Dashboard Comptable (finances)
-* ✅ Dashboard Copropriétaire (infos personnelles)
-* ✅ Dashboard SuperAdmin (vue plateforme)
-* ✅ Navigation entre sections
-* ✅ Permissions par rôle
-
-**Vidéos générées :** Un parcours pour chaque type d'utilisateur.
-
-3. Tests PWA et Offline (\ ``pwa-offline.spec.ts``\ )
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   npx playwright test pwa-offline.spec.ts
-
-**Ce qui est testé :**
-
-
-* ✅ Manifest.json valide
-* ✅ Service Worker enregistré
-* ✅ Indicateur online/offline
-* ✅ IndexedDB utilisé
-* ✅ Mode offline fonctionnel
-* ✅ Queue de synchronisation
-
-**Vidéos générées :** Démonstration du mode offline.
-
-🎓 Cas d'Usage des Vidéos
--------------------------
-
-1. Documentation d'Équipe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # Générer les vidéos
-   npm run test:e2e
-
-   # Partager le rapport
-   npm run test:e2e:report
-   # Envoyer le lien dans Slack/Teams
-
-2. Onboarding Développeurs
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Les vidéos montrent **exactement** comment l'application fonctionne :
-
-
-* Parcours utilisateur complet
-* Interactions frontend-backend
-* Mode offline en action
-
-3. Présentation Client/Stakeholders
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-   # Exécuter les tests en mode headed pour montrer en direct
-   npm run test:e2e:headed
-
-   # Ou partager les vidéos du dernier run
-   npm run test:e2e:report
-
-4. Debugging
-^^^^^^^^^^^^
-
-Si un test échoue, la vidéo montre **exactement** ce qui s'est passé :
-
-.. code-block:: bash
-
-   npm run test:e2e:report
-   # Cliquer sur le test qui a échoué
-   # Voir la vidéo + screenshots + traces
-
-🔧 Configuration
+Lancer les tests
 ----------------
 
-Modifier la qualité vidéo
-^^^^^^^^^^^^^^^^^^^^^^^^^
+.. code-block:: bash
 
-Dans ``frontend/playwright.config.ts`` :
+   # Tests normaux (rapides)
+   cd frontend
+   npm run test:e2e
 
-.. code-block:: typescript
+   # OU depuis la racine
+   make test-e2e
 
-   video: {
-     mode: 'on',  // Toujours enregistrer
-     size: { width: 1920, height: 1080 }  // HD
-   }
+   # Tests ralentis (pour vidéos plus lisibles) ⭐
+   make test-e2e-slow
 
-Garder les vidéos même en cas de succès
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+📹 Enregistrer de Nouveaux Tests
+=================================
 
-Par défaut, **toutes les vidéos sont gardées** (\ ``mode: 'on'``\ ) pour la documentation.
+Méthode 1 : Playwright Codegen (⭐ Recommandé)
+-----------------------------------------------
 
-Pour économiser l'espace :
-
-.. code-block:: typescript
-
-   video: {
-     mode: 'retain-on-failure'  // Seulement en cas d'échec
-   }
-
-🤖 CI/CD avec GitHub Actions
-----------------------------
-
-Le workflow ``.github/workflows/e2e-tests.yml`` :
-
-
-#. ✅ Lance le backend + PostgreSQL
-#. ✅ Exécute tous les tests E2E
-#. ✅ Génère les vidéos
-#. 📦 Sauvegarde les vidéos comme **artifacts GitHub**
-#. 💬 Commente la PR avec lien vers les vidéos
-
-Voir les vidéos dans GitHub Actions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-#. Aller dans **Actions** tab
-#. Sélectionner le workflow run
-#. Descendre vers **Artifacts**
-#. Télécharger ``test-videos-XXX.zip``
-
-Les vidéos sont gardées **30 jours** !
-
-📊 Rapport HTML Interactif
---------------------------
-
-Le rapport HTML contient :
-
-.. code-block::
-
-   playwright-report/
-   ├── index.html          ← Page principale
-   ├── data/               ← Données des tests
-   └── trace/              ← Traces Playwright
-
-**Contenu du rapport :**
-
-
-* 🎥 Vidéos de chaque test (embedded)
-* 📸 Screenshots à chaque étape
-* 📝 Logs de console
-* ⏱️ Timeline d'exécution
-* 🔍 Traces interactives
+**Enregistrement interactif** - Playwright génère le code automatiquement !
 
 .. code-block:: bash
 
-   npm run test:e2e:report  # Ouvre dans le navigateur
+   # Assurer que l'app tourne
+   make up
 
-🎨 Écrire de Nouveaux Tests
----------------------------
+   # Lancer l'enregistrement
+   cd frontend
+   npm run codegen
 
-Template de Base
-^^^^^^^^^^^^^^^^
+   # OU pour mobile
+   npm run codegen:mobile
+
+**Ce qui se passe :**
+
+1. Un navigateur s'ouvre sur ``http://localhost``
+2. Une fenêtre **"Playwright Inspector"** s'ouvre à côté
+3. Vous naviguez dans l'app (clic, remplissage de formulaires, etc.)
+4. Le code du test apparaît en temps réel dans l'Inspector
+5. Vous copiez le code et le collez dans un fichier ``.spec.ts``
+
+**Sauvegarder le test :**
 
 .. code-block:: typescript
 
+   // frontend/tests/e2e/mon-test.spec.ts
    import { test, expect } from '@playwright/test';
 
-   test('Mon nouveau test', async ({ page }) => {
-     // Se connecter (si besoin)
+   test('Mon scénario de test', async ({ page }) => {
      await page.goto('/login');
      await page.fill('input[type="email"]', 'test@test.com');
      await page.fill('input[type="password"]', 'test123');
      await page.click('button[type="submit"]');
-
-     // Tester ma fonctionnalité
-     await page.click('text=Ma Fonctionnalité');
-     await expect(page.locator('text=Succès')).toBeVisible();
+     await expect(page.locator('text=Dashboard')).toBeVisible();
    });
 
-Test avec Création d'Utilisateur
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: typescript
-
-   test('Mon test avec nouvel utilisateur', async ({ page }) => {
-     // Créer un utilisateur via l'API
-     const response = await page.request.post('http://127.0.0.1:8080/api/v1/auth/register', {
-       data: {
-         email: `user-${Date.now()}@test.com`,
-         password: 'test123',
-         first_name: 'Test',
-         last_name: 'User',
-         role: 'syndic'
-       }
-     });
-
-     const { user } = await response.json();
-
-     // Login avec ce compte
-     await page.goto('/login');
-     await page.fill('input[type="email"]', user.email);
-     await page.fill('input[type="password"]', 'test123');
-     await page.click('button[type="submit"]');
-
-     // Faire quelque chose...
-   });
-
-La **vidéo sera automatiquement générée** ! 🎥
-
-🐛 Problèmes Courants
----------------------
-
-Backend pas démarré
-^^^^^^^^^^^^^^^^^^^
-
-**Erreur :**
-
-.. code-block::
-
-   Error: connect ECONNREFUSED 127.0.0.1:8080
-
-**Solution :**
+**Lancer le test :**
 
 .. code-block:: bash
 
-   cd backend
-   cargo run
+   npm run test:e2e -- mon-test.spec.ts
 
-Base de données pas migrée
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+La vidéo sera dans ``frontend/test-results/`` !
 
-**Erreur :**
+Méthode 2 : Écrire le Test Manuellement
+----------------------------------------
 
-.. code-block::
-
-   relation "users" does not exist
-
-**Solution :**
+Si vous préférez écrire le code directement :
 
 .. code-block:: bash
 
-   cd backend
-   sqlx migrate run
+   # Créer le fichier
+   nano frontend/tests/e2e/mon-test.spec.ts
 
-Timeout des tests
-^^^^^^^^^^^^^^^^^
+   # Écrire le test (voir exemple ci-dessus)
 
-**Erreur :**
+   # Lancer
+   npm run test:e2e -- mon-test.spec.ts
+
+🐌 Créer des Vidéos Plus Lisibles
+==================================
+
+Pour que les vidéos soient plus faciles à suivre, utilisez le **mode ralenti** :
+
+.. code-block:: bash
+
+   make test-e2e-slow
+
+**Ce qui se passe automatiquement :**
+
+1. ✅ Ajoute ``await page.waitForTimeout(1000)`` après chaque action (click, fill, etc.)
+2. ✅ Lance les tests E2E
+3. ✅ Génère les vidéos (1 seconde entre chaque action = plus lisible !)
+4. ✅ Restaure automatiquement la vitesse normale après
+
+**Délai personnalisé :**
+
+.. code-block:: bash
+
+   # 2 secondes entre chaque action
+   bash .claude/scripts/slow-down-tests.sh 2000
+   cd frontend && npm run test:e2e
+   bash .claude/scripts/restore-test-speed.sh
+
+**Restaurer manuellement :**
+
+.. code-block:: bash
+
+   make test-e2e-restore-speed
+
+📚 Synchroniser les Vidéos dans la Documentation
+=================================================
+
+Une fois les tests exécutés, synchronisez les vidéos :
+
+.. code-block:: bash
+
+   # Copie les vidéos + génère la page RST automatiquement
+   make docs-sync-videos
+
+   # Générer la documentation Sphinx
+   make docs-sphinx
+
+   # Voir le résultat
+   open docs/_build/html/e2e-videos.html
+
+Les vidéos sont automatiquement listées dans la page :doc:`e2e-videos`.
+
+🎬 Commandes Disponibles
+=========================
+
+Commandes npm (depuis ``frontend/``)
+-------------------------------------
+
+.. code-block:: bash
+
+   # Enregistrement interactif
+   npm run codegen              # Desktop
+   npm run codegen:mobile       # iPhone 13
+
+   # Tests
+   npm run test:e2e             # Tous les tests (headless)
+   npm run test:e2e -- mon-test.spec.ts  # Un test spécifique
+   npm run test:e2e:ui          # Mode UI (interface graphique)
+   npm run test:e2e:headed      # Voir le navigateur
+   npm run test:e2e:debug       # Mode debug pas à pas
+
+   # Rapports
+   npm run test:e2e:report      # Ouvre le rapport HTML avec vidéos
+
+Commandes make (depuis la racine)
+----------------------------------
+
+.. code-block:: bash
+
+   # Tests E2E
+   make test-e2e                # Tests normaux (rapides)
+   make test-e2e-slow           # Tests ralentis (vidéos lisibles)
+   make test-e2e-restore-speed  # Restaurer vitesse normale
+
+   # Documentation
+   make docs-sync-videos        # Copier vidéos + générer RST
+   make docs-with-videos        # Tests + vidéos + doc Sphinx
+   make docs-sphinx             # Générer doc Sphinx seule
+
+📂 Structure des Fichiers
+==========================
+
+Tests E2E
+---------
 
 .. code-block::
 
-   Timeout 30000ms exceeded
+   frontend/tests/e2e/
+   ├── config.ts                    # Configuration (URL API, etc.)
+   ├── admin_dashboard_tour.spec.ts # Exemple de test
+   └── *.spec.ts                    # Vos autres tests
 
-**Solution :**
-Augmenter le timeout dans ``playwright.config.ts`` :
+Vidéos Générées
+---------------
+
+.. code-block::
+
+   frontend/test-results/
+   ├── admin-dashboard-tour-test-chromium/
+   │   ├── video.webm              # ← Vidéo du test
+   │   ├── trace.zip               # Trace Playwright
+   │   └── test-failed-1.png       # (si échec)
+   └── autre-test-chromium/
+       └── video.webm
+
+Documentation Vidéos
+--------------------
+
+.. code-block::
+
+   docs/_static/videos/
+   ├── admin-dashboard-tour.webm
+   ├── login-success.webm
+   └── *.webm                      # Toutes vos vidéos
+
+   docs/e2e-videos.rst             # Page auto-générée
+
+⚙️ Configuration Playwright
+============================
+
+Le fichier ``frontend/playwright.config.ts`` configure :
+
+* **Enregistrement vidéo** : ``video: { mode: 'on', size: { width: 1280, height: 720 } }``
+* **Base URL** : ``baseURL: 'http://localhost:3000'``
+* **WebServer** : Démarre automatiquement ``npm run dev``
+* **Timeouts** : 10s par action, 30s par page
+* **Screenshots** : Uniquement en cas d'échec
+
+🐛 Debugging
+============
+
+Mode UI (Recommandé)
+--------------------
+
+.. code-block:: bash
+
+   cd frontend
+   npm run test:e2e:ui
+
+Cela ouvre une interface graphique où vous pouvez :
+
+* ✅ Voir tous vos tests
+* ✅ Les lancer un par un
+* ✅ Voir les vidéos/screenshots
+* ✅ Inspecter chaque étape
+* ✅ Voir les timings
+
+Mode Debug
+----------
+
+.. code-block:: bash
+
+   npm run test:e2e:debug
+
+Le test s'arrête à chaque étape, vous pouvez :
+
+* Inspecter le DOM
+* Exécuter du code dans la console
+* Avancer pas à pas
+
+Mode Headed (Voir le navigateur)
+---------------------------------
+
+.. code-block:: bash
+
+   npm run test:e2e:headed
+
+Le navigateur s'affiche pendant l'exécution des tests.
+
+🆘 Problèmes Courants
+=====================
+
+❌ Les navigateurs ne s'installent pas
+---------------------------------------
+
+.. code-block:: bash
+
+   # Sans dépendances système (si pas de sudo)
+   npx playwright install chromium
+
+   # Avec dépendances (si sudo disponible)
+   npx playwright install chromium --with-deps
+
+❌ L'app n'est pas accessible
+------------------------------
+
+.. code-block:: bash
+
+   # Vérifier que les services tournent
+   curl http://localhost
+   curl http://localhost/api/v1/health
+
+   # Si pas de réponse, démarrer :
+   make up
+
+❌ Timeout lors des tests
+--------------------------
+
+Augmentez les timeouts dans ``playwright.config.ts`` :
 
 .. code-block:: typescript
 
    use: {
-     navigationTimeout: 60000,  // 60 secondes
+     actionTimeout: 20000,        // 20s au lieu de 10s
+     navigationTimeout: 60000,    // 60s au lieu de 30s
    }
 
-Service Worker pas enregistré
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+❌ Les vidéos ne sont pas générées
+-----------------------------------
 
-**Solution :**
-Vérifier que le serveur de dev est démarré et que la PWA est bien configurée.
+Vérifiez dans ``playwright.config.ts`` :
+
+.. code-block:: typescript
+
+   video: {
+     mode: 'on',  // Doit être 'on', pas 'retain-on-failure'
+   }
+
+❌ "Target page has been closed"
+---------------------------------
+
+Votre app redirige trop vite. Ajoutez des attentes :
+
+.. code-block:: typescript
+
+   await page.click('button');
+   await page.waitForURL('/dashboard');
+
+📊 Best Practices
+=================
+
+1. **Noms de tests explicites**
+
+   .. code-block:: typescript
+
+      // ✅ Bon
+      test('Login admin et navigation vers dashboard organisations', ...)
+
+      // ❌ Mauvais
+      test('test', ...)
+
+2. **Utiliser les rôles ARIA**
+
+   .. code-block:: typescript
+
+      // ✅ Bon (plus robuste)
+      await page.getByRole('button', { name: 'Se connecter' }).click();
+
+      // ❌ Éviter (fragile)
+      await page.click('.btn-login');
+
+3. **Attentes explicites**
+
+   .. code-block:: typescript
+
+      // ✅ Bon
+      await expect(page.getByText('Dashboard')).toBeVisible();
+
+      // ❌ Éviter
+      await page.waitForTimeout(5000);
+
+4. **One test, one scenario**
+
+   Chaque test doit tester UN scénario utilisateur complet.
+
+5. **Vidéos lisibles**
+
+   Utilisez ``make test-e2e-slow`` pour créer des vidéos de documentation.
+
+🔗 Intégration CI/CD
+====================
+
+Le workflow ``.github/workflows/docs-videos.yml`` :
+
+1. ✅ Démarre PostgreSQL
+2. ✅ Build et lance le backend
+3. ✅ Installe Playwright
+4. ✅ Lance les tests E2E (génère les vidéos)
+5. ✅ Copie les vidéos dans ``docs/_static/videos/``
+6. ✅ Génère la documentation Sphinx
+7. ✅ Déploie sur GitHub Pages (branche main uniquement)
 
 📚 Ressources
--------------
+=============
 
+* **Documentation Playwright** : https://playwright.dev
+* **Page vidéos** : :doc:`e2e-videos`
+* **Scripts** : ``.claude/scripts/README.md``
+* **Configuration** : ``frontend/playwright.config.ts``
+* **Makefile** : :doc:`MAKEFILE_GUIDE`
 
-* `Documentation Playwright <https://playwright.dev>`_
-* `Playwright Best Practices <https://playwright.dev/docs/best-practices>`_
-* `Test Generator <https://playwright.dev/docs/codegen>`_
+----
 
-Générer des Tests Automatiquement
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. raw:: html
 
-.. code-block:: bash
-
-   npx playwright codegen http://localhost:3000
-
-Cela ouvre un navigateur et enregistre vos actions en code Playwright !
-
-✨ Workflow Recommandé
-----------------------
-
-Développement d'une Nouvelle Fonctionnalité
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
-#. 
-   **Développer** la fonctionnalité (frontend + backend)
-
-#. 
-   **Écrire un test E2E** qui la valide :
-
-   .. code-block:: bash
-
-      # Créer le fichier de test
-      touch tests/e2e/ma-feature.spec.ts
-
-#. 
-   **Exécuter le test en mode UI** pour le développer :
-
-   .. code-block:: bash
-
-      npm run test:e2e:ui
-
-#. 
-   **Générer la vidéo finale** :
-
-   .. code-block:: bash
-
-      npm run test:e2e
-
-#. 
-   **Partager la vidéo** avec l'équipe/client :
-
-   .. code-block:: bash
-
-      npm run test:e2e:report
-
-Pull Request
-^^^^^^^^^^^^
-
-
-#. Les tests s'exécutent automatiquement via GitHub Actions
-#. Les vidéos sont uploadées comme artifacts
-#. Le bot commente la PR avec le lien vers les vidéos
-#. Reviewer peut voir exactement comment ça fonctionne ! 🎬
-
-🎉 C'est Tout !
----------------
-
-.. code-block:: bash
-
-   # Quick Start
-   cd frontend
-   npm run test:install    # Installation (une fois)
-   cd ../backend && cargo run &  # Démarrer le backend
-   cd ../frontend
-   npm run test:e2e        # Lancer les tests
-   npm run test:e2e:report # Voir les vidéos !
-
-**Les vidéos sont votre documentation vivante !** 🎥✨
-
-Elles montrent exactement comment l'application fonctionne, remplaçant des heures de documentation écrite par des vidéos claires et actualisées automatiquement.
+   <div style="text-align: center; margin: 2rem 0; color: #666;">
+       <p><strong>🤖 Guide maintenu avec Claude Code</strong></p>
+       <p>KoproGo ASBL - Tests E2E et Documentation Vivante</p>
+   </div>

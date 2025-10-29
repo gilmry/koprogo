@@ -17,7 +17,9 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:install": "playwright install chromium --with-deps",
-    "docs:videos": "bash ../.claude/scripts/sync-playwright-videos.sh",
+    "codegen": "playwright codegen http://localhost",
+    "codegen:mobile": "playwright codegen --device='iPhone 13' http://localhost",
+    "docs:videos": "bash ../.claude/scripts/copy-videos.sh",
     "test:docs": "npm run test:e2e && npm run docs:videos"
   },
   "dependencies": {

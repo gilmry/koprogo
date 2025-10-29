@@ -9,29 +9,59 @@ Les vidéos ne sont **pas versionnées dans Git** car :
 - 🔄 Régénérées automatiquement à chaque CI/CD
 - ♻️ Principe de "build artifact" : ne pas versionner ce qui est généré
 
-## 🚀 Comment générer les vidéos ?
+## 🚀 Comment enregistrer et générer les vidéos ?
 
-### Méthode 1 : Make (Recommandé)
+### Méthode 1 : Playwright Codegen (⭐ Le plus simple !)
 
-```bash
-make docs-with-videos
-```
-
-### Méthode 2 : npm scripts
+**Enregistrement interactif de vos actions** - Playwright génère le code automatiquement !
 
 ```bash
 cd frontend
-npm run test:e2e          # Génère les vidéos
-npm run docs:videos       # Copie vers docs/_static/videos/
-```
 
-### Méthode 3 : Manuel
+# Lancer l'enregistrement interactif
+npm run codegen
+# OU: npx playwright codegen http://localhost
 
-```bash
-cd frontend
-npm run test:e2e
+# Playwright ouvre un navigateur et enregistre vos actions :
+# → Naviguez, cliquez, remplissez des formulaires
+# → Le code du test est généré en temps réel dans une fenêtre
+# → Copiez-le dans tests/e2e/mon-test.spec.ts
+
+# Lancez le test pour générer la vidéo
+npm run test:e2e -- mon-test.spec.ts
+
+# Synchroniser les vidéos dans la doc
 cd ..
-bash .claude/scripts/sync-playwright-videos.sh
+make docs-sync-videos
+```
+
+### Méthode 2 : Écrire le test manuellement
+
+Créez `frontend/tests/e2e/mon-test.spec.ts` :
+
+```typescript
+import { test, expect } from "@playwright/test";
+
+test("Mon scénario de test", async ({ page }) => {
+  await page.goto("/login");
+  await page.fill('input[type="email"]', "test@test.com");
+  await page.fill('input[type="password"]', "test123");
+  await page.click('button[type="submit"]');
+  await expect(page.locator("text=Dashboard")).toBeVisible();
+});
+```
+
+Puis :
+```bash
+cd frontend && npm run test:e2e
+cd .. && make docs-sync-videos
+```
+
+### Méthode 3 : Workflow complet via Make
+
+```bash
+# Tout en une commande (tests + vidéos + doc)
+make docs-with-videos
 ```
 
 ## 📊 Vidéos générées
