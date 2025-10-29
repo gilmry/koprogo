@@ -48,6 +48,7 @@ Projets GitHub: [Software (#2)](https://github.com/users/gilmry/projects/2) | [I
 - 💰 **Économique** : 1€/copro/mois, 1,000-1,500 copropriétés sur 5€/mois infra
 - 🏗️ **Architecture Hexagonale** : Séparation stricte des couches (Domain, Application, Infrastructure)
 - 🧪 **Tests Complets** : Unitaires, Intégration, BDD (Cucumber), E2E, Load tests
+- 🧑‍🤝‍🧑 **Multi-propriété native** : quote-parts cumulées, contact principal, historique complet des copropriétaires
 - 🔒 **Sécurité** : Conforme GDPR, ISO 27001 ready
 - 📦 **Stack Moderne** : Rust + Actix-web + Astro + PostgreSQL
 
@@ -512,6 +513,7 @@ make bench             # Benchmarks
 make coverage          # Coverage report
 make lint              # Linters
 make format            # Formatter le code
+make install-hooks     # Installer/mettre à jour les hooks Git (pre-commit, pre-push)
 make build             # Build release
 make docker-up         # Démarrer Docker
 make docker-down       # Arrêter Docker
@@ -591,21 +593,23 @@ Documentation complète disponible dans le dossier `docs/` :
 
 ### Guides Techniques
 - **[CLAUDE.md](CLAUDE.md)** - Instructions pour développeurs (Architecture, Commandes, TDD)
+- **[Multi-owner Support](docs/MULTI_OWNER_SUPPORT.md)** - Fonctionnement des quotes-parts et API multi-copropriétaires
 - **[E2E Testing Guide](E2E_TESTING_GUIDE.md)** - Tests End-to-End
 - **[Makefile Guide](MAKEFILE_GUIDE.md)** - Commandes disponibles
 
 ## 📝 Contribuer
 
-Contributions bienvenues ! Voir [CONTRIBUTING.md](CONTRIBUTING.md) (à venir).
+Contributions bienvenues ! Le guide [CONTRIBUTING.md](CONTRIBUTING.md) détaille les conventions de branches, les hooks Git et la checklist qualité.
 
 ### Workflow
 
 1. Fork le projet
-2. Créer une branche feature (`git checkout -b feature/amazing-feature`)
-3. TDD : Tests d'abord !
-4. Commit (`git commit -m 'Add amazing feature'`)
-5. Push (`git push origin feature/amazing-feature`)
-6. Ouvrir une Pull Request
+2. Créer une branche dédiée (`feature/`, `fix/`, `docs/`, `chore/`…)
+3. Installer les hooks Git si nécessaire (`make install-hooks`)
+4. TDD : Tests d'abord !
+5. Commit (`git commit -m 'feat: add amazing feature'`)
+6. Push (`git push origin feature/amazing-feature`)
+7. Ouvrir une Pull Request (référence à l'issue, checklist PR)
 
 ## 📄 Licence
 
