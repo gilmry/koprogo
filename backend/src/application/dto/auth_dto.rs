@@ -29,7 +29,7 @@ pub struct RegisterRequest {
     pub organization_id: Option<uuid::Uuid>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct LoginResponse {
     pub token: String,
     pub refresh_token: String,
@@ -41,7 +41,15 @@ pub struct RefreshTokenRequest {
     pub refresh_token: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UserRoleSummary {
+    pub id: uuid::Uuid,
+    pub role: String,
+    pub organization_id: Option<uuid::Uuid>,
+    pub is_primary: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserResponse {
     pub id: uuid::Uuid,
     pub email: String,
@@ -50,6 +58,13 @@ pub struct UserResponse {
     pub role: String,
     pub organization_id: Option<uuid::Uuid>,
     pub is_active: bool,
+    pub roles: Vec<UserRoleSummary>,
+    pub active_role: Option<UserRoleSummary>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SwitchRoleRequest {
+    pub role_id: uuid::Uuid,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,6 +73,7 @@ pub struct Claims {
     pub email: String,
     pub role: String,
     pub organization_id: Option<uuid::Uuid>,
+    pub role_id: Option<uuid::Uuid>,
     pub exp: i64, // expiration timestamp
     pub iat: i64, // issued at
 }

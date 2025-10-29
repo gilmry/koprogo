@@ -9,6 +9,7 @@ pub mod refresh_token_repository;
 pub mod unit_owner_repository;
 pub mod unit_repository;
 pub mod user_repository;
+pub mod user_role_repository;
 
 pub use audit_log_repository::{AuditLogFilters, AuditLogRepository};
 pub use building_repository::BuildingRepository;
@@ -21,3 +22,4 @@ pub use refresh_token_repository::RefreshTokenRepository;
 pub use unit_owner_repository::UnitOwnerRepository;
 pub use unit_repository::UnitRepository;
 pub use user_repository::UserRepository;
+pub use user_role_repository::UserRoleRepository;
