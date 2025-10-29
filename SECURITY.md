@@ -310,7 +310,7 @@ Use this checklist for security-sensitive features:
 ## Security Contacts
 
 - **Security Email**: abuse@koprogo.com
-- **Project Maintainer**: gilmry
+- **Project Maintainer**: gilles maury
 - **Response Time**: Within 48 hours
 
 ## Hall of Fame

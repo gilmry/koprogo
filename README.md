@@ -615,7 +615,7 @@ Cette licence copyleft forte garantit que toute modification du code source, y c
 
 ## 👥 Auteurs
 
-- **Votre Nom** - *Initial work*
+- **L'équipe Koprogo ASBL** - *contact@koprogo.com*
 
 ## 🙏 Remerciements
 
