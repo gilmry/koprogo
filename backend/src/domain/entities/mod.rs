@@ -8,6 +8,7 @@ pub mod refresh_token;
 pub mod unit;
 pub mod unit_owner;
 pub mod user;
+pub mod user_role_assignment;
 
 pub use building::Building;
 pub use document::{Document, DocumentType};
@@ -19,3 +20,4 @@ pub use refresh_token::RefreshToken;
 pub use unit::{Unit, UnitType};
 pub use unit_owner::UnitOwner;
 pub use user::{User, UserRole};
+pub use user_role_assignment::UserRoleAssignment;
