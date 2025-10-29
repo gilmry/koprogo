@@ -77,7 +77,7 @@ jobs:
       - name: 🚀 Start backend server
         working-directory: backend
         run: |
-          ./target/release/koprogo-backend &
+          ./target/release/koprogo-api &
           echo "BACKEND_PID=$!" >> $GITHUB_ENV
         env:
           DATABASE_URL: postgresql://koprogo:koprogo123@localhost:5432/koprogo_db
