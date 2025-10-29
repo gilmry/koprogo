@@ -19,7 +19,7 @@ Les tests E2E de KoproGo testent **toute la stack** :
 * ✅ API REST
 * ✅ PWA + Mode Offline
 
-Chaque test génère automatiquement une **vidéo** qui devient de la **documentation vivante** !
+Chaque test peut enregistrer une **vidéo** de démonstration : générez-les localement, puis ajoutez les fichiers ``.webm`` dans ``docs/_static/videos/`` pour enrichir la documentation.
 
 🚀 Démarrage Rapide
 ===================
@@ -142,7 +142,7 @@ Pour que les vidéos soient plus faciles à suivre, utilisez le **mode ralenti**
 
 1. ✅ Ajoute ``await page.waitForTimeout(1000)`` après chaque action (click, fill, etc.)
 2. ✅ Lance les tests E2E
-3. ✅ Génère les vidéos (1 seconde entre chaque action = plus lisible !)
+3. ✅ Génère les vidéos localement (1 seconde entre chaque action = plus lisible !)
 4. ✅ Restaure automatiquement la vitesse normale après
 
 **Délai personnalisé :**
@@ -160,10 +160,10 @@ Pour que les vidéos soient plus faciles à suivre, utilisez le **mode ralenti**
 
    make test-e2e-restore-speed
 
-📚 Synchroniser les Vidéos dans la Documentation
-=================================================
+📚 Ajouter les Vidéos dans la Documentation
+===========================================
 
-Une fois les tests exécutés, synchronisez les vidéos :
+Une fois les tests exécutés **en local**, synchronisez et versionnez les vidéos :
 
 .. code-block:: bash
 
@@ -173,10 +173,14 @@ Une fois les tests exécutés, synchronisez les vidéos :
    # Générer la documentation Sphinx
    make docs-sphinx
 
-   # Voir le résultat
+   # Vérifier le rendu localement
    open docs/_build/html/e2e-videos.html
 
-Les vidéos sont automatiquement listées dans la page :doc:`e2e-videos`.
+Les fichiers copiés dans ``docs/_static/videos/`` doivent être **commités** dans Git. Ils seront ensuite publiés automatiquement par le workflow documentation (:file:`.github/workflows/docs.yml`).
+
+Le dossier ``docs/_build/`` reste local (ignoré par Git) : ne le commitez pas.
+
+Les vidéos validées sont listées dans la page :doc:`e2e-videos`.
 
 🎬 Commandes Disponibles
 =========================
@@ -211,8 +215,8 @@ Commandes make (depuis la racine)
    make test-e2e-restore-speed  # Restaurer vitesse normale
 
    # Documentation
-   make docs-sync-videos        # Copier vidéos + générer RST
-   make docs-with-videos        # Tests + vidéos + doc Sphinx
+   make docs-sync-videos        # Copier vidéos + générer RST (local)
+   make docs-with-videos        # Helper local pour générer vidéos + doc
    make docs-sphinx             # Générer doc Sphinx seule
 
 📂 Structure des Fichiers
@@ -408,15 +412,8 @@ Votre app redirige trop vite. Ajoutez des attentes :
 🔗 Intégration CI/CD
 ====================
 
-Le workflow ``.github/workflows/docs-videos.yml`` :
-
-1. ✅ Démarre PostgreSQL
-2. ✅ Build et lance le backend
-3. ✅ Installe Playwright
-4. ✅ Lance les tests E2E (génère les vidéos)
-5. ✅ Copie les vidéos dans ``docs/_static/videos/``
-6. ✅ Génère la documentation Sphinx
-7. ✅ Déploie sur GitHub Pages (branche main uniquement)
+Les vidéos ne sont plus générées dans la CI : elles doivent provenir d'un run local fiable, puis être ajoutées au dépôt.  
+Le workflow ``.github/workflows/docs.yml`` se charge ensuite de publier la documentation Sphinx (et toutes les vidéos déjà présentes dans ``docs/_static/videos/``) vers GitHub Pages.
 
 📚 Ressources
 =============

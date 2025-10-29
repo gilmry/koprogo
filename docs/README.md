@@ -48,7 +48,7 @@ Voir aussi:
 
 - **[E2E_TESTING_GUIDE.md](E2E_TESTING_GUIDE.md)**
   - Tests E2E avec Playwright
-  - Génération automatique de vidéos
+  - Génération manuelle de vidéos pour la documentation
   - Tests d'accessibilité et performance
 
 - **[PERFORMANCE_TESTING.md](PERFORMANCE_TESTING.md)**

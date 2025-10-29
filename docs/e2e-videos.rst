@@ -33,7 +33,8 @@
 Introduction
 ============
 
-Cette page présente les **vidéos des tests E2E** enregistrées manuellement.
+Cette page présente les **vidéos des tests E2E** enregistrées manuellement.  
+Les fichiers ``.webm`` doivent être versionnés dans ``docs/_static/videos/`` pour être publiés automatiquement avec la documentation.
 
 📊 Statistiques
 ---------------
@@ -46,19 +47,19 @@ Vidéos disponibles
 ==================
 
 
-Admin_dashboard_tour Admin Dashboard Tour Idempotent
-----------------------------------------------------
+Admin_dashboard_tour Admin Dashboard Tour
+-----------------------------------------
 
 .. raw:: html
 
    <div class="video-card">
        <video controls preload="metadata" style="width:100%">
-           <source src="_static/videos/admin_dashboard_tour-Admin-Dashboard-Tour---Idempotent.webm" type="video/webm">
+           <source src="_static/videos/admin_dashboard_tour-Admin-Dashboard-Tour.webm" type="video/webm">
            Votre navigateur ne supporte pas la balise vidéo.
        </video>
        <div class="video-info">
-           <div class="video-title">Admin_dashboard_tour Admin Dashboard Tour Idempotent</div>
-           <small style="color: #666;">Fichier: admin_dashboard_tour-Admin-Dashboard-Tour---Idempotent.webm</small>
+           <div class="video-title">Admin_dashboard_tour Admin Dashboard Tour</div>
+           <small style="color: #666;">Fichier: admin_dashboard_tour-Admin-Dashboard-Tour.webm</small>
        </div>
    </div>
 
@@ -91,6 +92,12 @@ Méthode 1 : Playwright Codegen (⭐ Recommandé)
    cd ..
    make docs-sync-videos
    make docs-sphinx
+
+   # Commit des fichiers synchronisés
+   git add docs/_static/videos docs/e2e-videos.rst
+   git commit -m "docs: ajouter vidéo e2e"
+
+# Les artefacts de build Sphinx (``docs/_build/``) sont ignorés par Git : ne les ajoutez pas.
 
 Méthode 2 : Écrire le test manuellement
 ----------------------------------------

@@ -96,7 +96,7 @@ Tests Backend (Rust)
 Tests E2E Complets (Frontend + Backend) 🎥
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Les tests E2E avec Playwright testent **toute la stack** et génèrent automatiquement des **vidéos de documentation**\ !
+Les tests E2E avec Playwright testent **toute la stack** et permettent d'enregistrer des **vidéos de documentation** à publier dans ``docs/_static/videos/`` (commit requis).
 
 Installation (une seule fois)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -112,7 +112,7 @@ Lancer les tests
 
 .. code-block:: bash
 
-   make test-e2e-full     # Lance tous les tests E2E + génère les vidéos!
+   make test-e2e-full     # Lance tous les tests E2E + génère les vidéos localement
    make test-e2e-ui       # Mode UI interactif (recommandé)
    make test-e2e-headed   # Voir le navigateur en action
    make test-e2e-debug    # Mode debug pas à pas
@@ -131,8 +131,11 @@ Workflow recommandé
 
 .. code-block:: bash
 
-   make test-e2e-full     # Génère toutes les vidéos
+   make test-e2e-full     # Génère toutes les vidéos localement
    make test-e2e-report   # Voir les résultats
+
+   # Après validation, synchroniser et commiter les vidéos :
+   make docs-sync-videos
 
 **Debugging:**
 
