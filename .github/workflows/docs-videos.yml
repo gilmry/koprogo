@@ -18,6 +18,9 @@ on:
       - '.claude/scripts/**'
   workflow_dispatch: # Permet de lancer manuellement
 
+permissions:
+  contents: read
+
 env:
   RUST_VERSION: 1.83.0
   NODE_VERSION: 20
