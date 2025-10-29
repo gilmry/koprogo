@@ -9,7 +9,7 @@ test("Admin Dashboard Tour - Idempotent", async ({ page }) => {
   const lastName = `Last${timestamp}`;
 
   // Login
-  await page.goto("http://localhost/");
+  await page.goto("/");
   await page.getByRole("link", { name: "Se connecter" }).click();
   await page.getByRole("textbox", { name: "Email" }).click();
   await page.getByRole("textbox", { name: "Email" }).fill("admin@koprogo.com");
@@ -30,7 +30,10 @@ test("Admin Dashboard Tour - Idempotent", async ({ page }) => {
 
   // Select first organization option dynamically
   const orgSelect = page.getByLabel("Organisation *");
-  const firstOrgValue = await orgSelect.locator("option").nth(1).getAttribute("value"); // nth(1) to skip placeholder
+  const firstOrgValue = await orgSelect
+    .locator("option")
+    .nth(1)
+    .getAttribute("value"); // nth(1) to skip placeholder
   if (firstOrgValue) {
     await orgSelect.selectOption(firstOrgValue);
   }

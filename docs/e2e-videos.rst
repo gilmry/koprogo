@@ -46,19 +46,19 @@ Vidéos disponibles
 ==================
 
 
-Admin_dashboard_tour Test
--------------------------
+Admin_dashboard_tour Admin Dashboard Tour Idempotent
+----------------------------------------------------
 
 .. raw:: html
 
    <div class="video-card">
        <video controls preload="metadata" style="width:100%">
-           <source src="_static/videos/admin_dashboard_tour-test.webm" type="video/webm">
+           <source src="_static/videos/admin_dashboard_tour-Admin-Dashboard-Tour---Idempotent.webm" type="video/webm">
            Votre navigateur ne supporte pas la balise vidéo.
        </video>
        <div class="video-info">
-           <div class="video-title">Admin_dashboard_tour Test</div>
-           <small style="color: #666;">Fichier: admin_dashboard_tour-test.webm</small>
+           <div class="video-title">Admin_dashboard_tour Admin Dashboard Tour Idempotent</div>
+           <small style="color: #666;">Fichier: admin_dashboard_tour-Admin-Dashboard-Tour---Idempotent.webm</small>
        </div>
    </div>
 

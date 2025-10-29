@@ -88,6 +88,12 @@ export default defineConfig({
       url: "http://localhost:3000",
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
+      env: process.env.CI
+        ? {
+            // En CI, le backend tourne sur localhost:8080 (pas de Traefik)
+            PUBLIC_API_URL: "http://localhost:8080/api/v1",
+          }
+        : {}, // En local, utilise la config par défaut (Traefik)
     },
   ],
 
