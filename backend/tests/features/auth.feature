@@ -14,3 +14,11 @@ Feature: Authentication and refresh tokens
     When I refresh my session
     Then I receive a new access token
 
+  Scenario: Switch active role updates JWT
+    Given a coproperty management system
+    And a user with multiple roles
+    When I switch to the secondary role
+    Then my active role should be "accountant"
+    And the user response should list multiple roles
+    And the JWT claims should use role "accountant"
+    And the JWT claims should reference the selected role

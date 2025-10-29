@@ -4,7 +4,7 @@ use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository,
     PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
-    PostgresUnitRepository, PostgresUserRepository,
+    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
@@ -49,6 +49,7 @@ async fn setup_test_db() -> (
     let unit_owner_repo = Arc::new(PostgresUnitOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
+    let user_role_repo = Arc::new(PostgresUserRoleRepository::new(pool.clone()));
     let refresh_token_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
     let meeting_repo = Arc::new(
         koprogo_api::infrastructure::database::repositories::PostgresMeetingRepository::new(
@@ -58,7 +59,8 @@ async fn setup_test_db() -> (
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
 
     let jwt_secret = "test-secret-key".to_string();
-    let auth_use_cases = AuthUseCases::new(user_repo, refresh_token_repo, jwt_secret);
+    let auth_use_cases =
+        AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo);
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
