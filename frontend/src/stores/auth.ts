@@ -77,10 +77,14 @@ const mapBackendUser = (user: any): User => {
   }
 
   if (!activeRole) {
-    activeRole = roles.find((role) => role.isPrimary) ?? roles[0];
+    activeRole =
+      roles.find((role: UserRoleSummary) => role.isPrimary) ?? roles[0];
   }
 
-  roles.sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary));
+  roles.sort(
+    (a: UserRoleSummary, b: UserRoleSummary) =>
+      Number(b.isPrimary) - Number(a.isPrimary),
+  );
 
   return {
     id: user.id,

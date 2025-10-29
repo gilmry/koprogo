@@ -48,7 +48,7 @@ echo "  → Installing pre-push hook..."
 cat > "$HOOKS_DIR/pre-push" << 'EOF'
 #!/bin/bash
 # Git pre-push hook for KoproGo
-# Runs comprehensive tests before pushing to remote
+# Runs comprehensive CI checks before pushing to remote
 
 set -e
 
@@ -57,17 +57,9 @@ echo "🚀 Running pre-push checks..."
 # Change to project root
 cd "$(git rev-parse --show-toplevel)"
 
-# Run linting
-echo "🔍 Running linting..."
-make lint || {
-    echo "❌ Linting failed. Please fix issues before pushing."
-    exit 1
-}
-
-# Run all tests (unit + e2e + bdd)
-echo "🧪 Running all tests..."
-make test || {
-    echo "❌ Tests failed. Please fix them before pushing."
+# Run full CI checks (lint + check-frontend + test + audit)
+make ci || {
+    echo "❌ CI checks failed. Please fix issues before pushing."
     exit 1
 }
 
@@ -81,7 +73,7 @@ echo "✅ Git hooks installed successfully!"
 echo ""
 echo "Hooks installed:"
 echo "  • pre-commit: Format + Lint"
-echo "  • pre-push: Tests + Build check"
+echo "  • pre-push: Full CI (Lint + TypeScript Check + Tests + Audit)"
 echo ""
 echo "To skip hooks temporarily:"
 echo "  git commit --no-verify"
