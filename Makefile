@@ -95,6 +95,10 @@ lint: ## 🔍 Linter (clippy + prettier)
 	@echo "$(GREEN)🔍 Linting frontend...$(NC)"
 	cd frontend && npx prettier --check .
 
+check-frontend: ## 🔍 Vérification TypeScript frontend (astro check)
+	@echo "$(GREEN)🔍 Checking TypeScript frontend...$(NC)"
+	cd frontend && npx astro check
+
 format: ## ✨ Formatter le code (rustfmt + prettier)
 	@echo "$(GREEN)✨ Formatting backend...$(NC)"
 	cd backend && cargo fmt
@@ -200,7 +204,7 @@ docs-serve: ## 🔄 Servir docs Sphinx avec live reload
 ## 🚀 CI/CD & Déploiement
 ##
 
-ci: lint test audit ## ✅ Vérifications CI locales (avant push)
+ci: lint check-frontend test audit ## ✅ Vérifications CI locales (avant push)
 	@echo ""
 	@echo "$(GREEN)🎉 Tous les checks CI passés!$(NC)"
 	@echo "$(GREEN)✅ Prêt à push$(NC)"
