@@ -194,8 +194,14 @@ make docker-build
 Base URL: `http://localhost:8080/api/v1`
 
 **Buildings**: `/buildings` (GET, POST), `/buildings/:id` (GET, PUT, DELETE)
-**Units**: `/units` (GET, POST), `/buildings/:id/units` (GET), `/units/:id/assign-owner/:owner_id` (PUT)
-**Owners**: `/owners` (GET, POST), `/owners/:id` (GET)
+**Units**: `/units` (GET, POST), `/buildings/:id/units` (GET)
+**Unit owners**:
+   - `GET /units/:id/owners` (actifs), `GET /units/:id/owners/history`
+   - `GET /units/:id/owners/total-percentage`
+   - `POST /units/:id/owners`, `DELETE /units/:unit_id/owners/:owner_id`
+   - `PUT /unit-owners/:relationship_id` (quote-part ou contact principal)
+   - `POST /units/:unit_id/owners/transfer`
+**Owners**: `/owners` (GET, POST), `/owners/:id` (GET), `/owners/:id/units`, `/owners/:id/units/history`
 **Expenses**: `/expenses` (GET, POST), `/buildings/:id/expenses` (GET), `/expenses/:id/mark-paid` (PUT)
 **Health**: `/health` (GET)
 
@@ -204,13 +210,24 @@ Base URL: `http://localhost:8080/api/v1`
 The system models property management with these aggregates:
 
 - **Building**: Main aggregate (name, address, total_units, construction_year)
-- **Unit**: Lots within buildings (unit_number, floor, area, owner relationship)
+- **Unit**: Lots within buildings (unit_number, floor, area, liens `unit_owners`)
 - **Owner**: Co-owners (name, email, phone, GDPR-sensitive data)
+- **UnitOwner**: Relation d'appartenance (pourcentage, temporalité, contact principal)
 - **Expense**: Charges (amount, description, due_date, paid status)
 - **Meeting**: General assemblies (date, agenda, minutes)
 - **Document**: File storage (title, file_path, document_type)
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
+
+### Multi-owner support
+
+- Junction table `unit_owners` (see `backend/migrations/20250127000000_refactor_owners_multitenancy.sql`) enables many-to-many between units and owners.
+- Domain entity: `backend/src/domain/entities/unit_owner.rs` (pourcentage `0.0 < p ≤ 1.0`, timestamps, primary contact).
+- Use cases: `backend/src/application/use_cases/unit_owner_use_cases.rs` (somme des quotes-parts ≤ 100 %, transfert, historique, contact principal unique).
+- Web handlers: `backend/src/infrastructure/web/handlers/unit_owner_handlers.rs` exposent les routes `/api/v1/units/{id}/owners`, `/unit-owners/{id}`, `/units/{id}/owners/transfer`, etc.
+- Tests : `backend/tests/integration_unit_owner.rs` (PostgreSQL) + BDD multi-tenant.
+- Frontend Svelte : `frontend/src/components/UnitOwners.svelte`, `OwnerList.svelte`, `OwnerCreateModal.svelte`, `OwnerEditModal.svelte`.
+- Documentation produit : `docs/MULTI_OWNER_SUPPORT.md`.
 
 ## Performance Targets
 
@@ -274,7 +291,13 @@ GitHub Actions workflows configured for:
 - Linting and formatting checks
 - Building release artifacts
 
-**Current branch**: `claude/add-ci-workflows-011CUMhvUnFsKBJoJ9rbWXoN`
+**Hooks Git locaux** :
+- Installer via `make install-hooks` (alias `./scripts/install-hooks.sh`)
+- `pre-commit` ⇒ `make format` + `make lint`
+- `pre-push` ⇒ `make lint` + `make test` (unit + BDD + build frontend)
+- Dépannage détaillé dans `docs/GIT_HOOKS.rst`
+
+**Current branch**: `chore/new-branch-workflow`
 **Main branch**: `main`
 
 ## Key Dependencies

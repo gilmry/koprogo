@@ -149,6 +149,27 @@ Quand bypasser?
 
 **⚠️ Ne JAMAIS bypasser sur ``main``\ !**
 
+⏸️ Désactiver temporairement les hooks
+--------------------------------------
+
+Pour une session de pair-programming ou une migration lourde, vous pouvez désactiver *localement* les hooks (à éviter sur la durée) :
+
+1. Rediriger les hooks vers un dossier vide :
+
+   .. code-block:: bash
+
+      mkdir -p .git/hooks-disabled
+      git config core.hooksPath .git/hooks-disabled
+
+2. Restaurer ensuite la configuration par défaut :
+
+   .. code-block:: bash
+
+      git config --unset core.hooksPath
+      ./scripts/install-hooks.sh
+
+**Important**\ : avertissez votre équipe et ne poussez pas sur ``main`` tant que les hooks sont coupés.
+
 🔧 Dépannage
 ------------
 
@@ -166,8 +187,8 @@ Hooks ne s'exécutent pas
    # Réinstaller
    make install-hooks
 
-Erreur "cargo fmt check failed"
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Pre-commit : ``cargo fmt --check`` modifie des fichiers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -177,8 +198,8 @@ Erreur "cargo fmt check failed"
    # Ou manuellement
    cd backend && cargo fmt
 
-Erreur "clippy warnings"
-^^^^^^^^^^^^^^^^^^^^^^^^
+Pre-commit : ``cargo clippy`` échoue
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -188,8 +209,8 @@ Erreur "clippy warnings"
    # Corriger automatiquement (quand possible)
    cd backend && SQLX_OFFLINE=true cargo clippy --fix
 
-Erreur "SQLx cache out of date"
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Pre-push : cache SQLx obsolète
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -197,6 +218,30 @@ Erreur "SQLx cache out of date"
    cd backend
    export DATABASE_URL="postgresql://koprogo:koprogo123@localhost:5432/koprogo_db"
    cargo sqlx prepare
+
+Pre-push : PostgreSQL indisponible pour les tests
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+   docker compose up -d postgres
+   # Vérifier l'état
+   docker compose ps postgres
+   # Relancer les tests
+   make test
+
+Pre-push : ``npm``/``prettier`` introuvable
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+
+   cd frontend && npm install
+   cd frontend && npx prettier --check .
+
+   # Pour des erreurs TypeScript/Astro
+   cd frontend && npm run build
+
+Toujours corriger la cause racine avant de relancer le commit/push.
 
 Erreur "Frontend build failed"
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
