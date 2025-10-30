@@ -114,7 +114,7 @@
     </p>
   {:else}
     <div class="grid gap-4">
-      {#each owners as owner}
+      {#each owners as owner (owner.id)}
         <div class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition">
           <div class="p-4">
             <div class="flex justify-between items-start">

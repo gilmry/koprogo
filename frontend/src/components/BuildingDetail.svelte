@@ -5,6 +5,10 @@
   import type { Building } from '../lib/types';
   import BuildingForm from './admin/BuildingForm.svelte';
   import Button from './ui/Button.svelte';
+  import UnitList from './UnitList.svelte';
+  import ExpenseList from './ExpenseList.svelte';
+  import MeetingList from './MeetingList.svelte';
+  import DocumentList from './DocumentList.svelte';
 
   let building: Building | null = null;
   let loading = true;
@@ -33,15 +37,18 @@
       error = '';
       building = await api.get<Building>(`/buildings/${buildingId}`);
 
-      // Load organization name
+      // Load organization name (only for SuperAdmin)
       if (building && building.organization_id) {
         try {
-          const response = await api.get<{ data: any[] }>('/organizations?per_page=1000');
-          const org = response.data.find((o: any) => o.id === building.organization_id);
-          organizationName = org ? org.name : 'Organisation inconnue';
+          const userInfo = await api.get<any>('/auth/me');
+          if (userInfo.role === 'superadmin') {
+            const response = await api.get<{ data: any[] }>('/organizations?per_page=1000');
+            const org = response.data.find((o: any) => o.id === building.organization_id);
+            organizationName = org ? org.name : 'Organisation inconnue';
+          }
         } catch (e) {
           console.error('Error loading organization:', e);
-          organizationName = 'Organisation inconnue';
+          organizationName = '';
         }
       }
     } catch (e) {
@@ -128,6 +135,10 @@
                 <span class="text-gray-600">🏢 Nombre de lots:</span>
                 <span class="ml-2 font-semibold text-gray-900">{building.total_units}</span>
               </div>
+              <div class="flex items-center">
+                <span class="text-gray-600">📊 Total tantièmes:</span>
+                <span class="ml-2 font-semibold text-gray-900">{building.total_tantiemes} millièmes</span>
+              </div>
               {#if building.construction_year}
                 <div class="flex items-center">
                   <span class="text-gray-600">🏗️ Année de construction:</span>
@@ -141,61 +152,29 @@
     </div>
 
     <!-- Related Data Sections -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="space-y-8">
       <!-- Units Section -->
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">Lots</h3>
-          <Button variant="outline" size="sm">
-            ➕ Ajouter
-          </Button>
-        </div>
-        <div class="text-center text-gray-500 py-8">
-          <p>Les lots seront affichés ici</p>
-          <p class="text-sm mt-2">(À implémenter)</p>
-        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Lots</h3>
+        <UnitList buildingId={buildingId} />
       </div>
 
       <!-- Expenses Section -->
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">Dépenses</h3>
-          <Button variant="outline" size="sm">
-            ➕ Ajouter
-          </Button>
-        </div>
-        <div class="text-center text-gray-500 py-8">
-          <p>Les dépenses seront affichées ici</p>
-          <p class="text-sm mt-2">(À implémenter)</p>
-        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Dépenses</h3>
+        <ExpenseList buildingId={buildingId} />
       </div>
 
       <!-- Meetings Section -->
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">Assemblées Générales</h3>
-          <Button variant="outline" size="sm">
-            ➕ Planifier
-          </Button>
-        </div>
-        <div class="text-center text-gray-500 py-8">
-          <p>Les AG seront affichées ici</p>
-          <p class="text-sm mt-2">(À implémenter)</p>
-        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Assemblées Générales</h3>
+        <MeetingList buildingId={buildingId} />
       </div>
 
       <!-- Documents Section -->
       <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-gray-900">Documents</h3>
-          <Button variant="outline" size="sm">
-            📎 Télécharger
-          </Button>
-        </div>
-        <div class="text-center text-gray-500 py-8">
-          <p>Les documents seront affichés ici</p>
-          <p class="text-sm mt-2">(À implémenter)</p>
-        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
+        <DocumentList buildingId={buildingId} />
       </div>
     </div>
   {/if}

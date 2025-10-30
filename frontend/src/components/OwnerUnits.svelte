@@ -97,7 +97,7 @@
           Lots actuels ({activeUnits.length})
         </h4>
 
-        {#each activeUnits as ownerUnit}
+        {#each activeUnits as ownerUnit (ownerUnit.id)}
           <div class="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition">
             <div class="flex justify-between items-start">
               <div class="flex-1">
@@ -112,7 +112,7 @@
                         {getUnitTypeLabel(ownerUnit.unit.unit_type)} - Étage {ownerUnit.unit.floor}
                       </p>
                       <p class="text-xs text-gray-500">
-                        {ownerUnit.unit.surface_area} m² • {(ownerUnit.unit.ownership_share * 1000).toFixed(0)}/1000èmes
+                        {ownerUnit.unit.surface_area} m² • {Math.round(ownerUnit.unit.quota)}/1000èmes
                       </p>
                     </div>
                   </div>
@@ -152,7 +152,7 @@
           Historique ({inactiveUnits.length})
         </h4>
 
-        {#each inactiveUnits as ownerUnit}
+        {#each inactiveUnits as ownerUnit (ownerUnit.id)}
           <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 opacity-75">
             <div class="flex justify-between items-start">
               <div class="flex-1">
