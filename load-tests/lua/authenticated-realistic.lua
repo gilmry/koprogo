@@ -17,6 +17,13 @@ function extract_token(body)
     return token
 end
 
+-- Generate unique identifier (timestamp + random)
+function generate_unique_id()
+    local timestamp = os.time()
+    local random = math.random(10000000, 99999999)
+    return string.format("%d%d", timestamp, random)
+end
+
 init = function(args)
     wrk.headers["Content-Type"] = "application/json"
     wrk.headers["Accept"] = "application/json"
@@ -26,7 +33,8 @@ init = function(args)
 end
 
 -- Weighted endpoints: 80% GET / 20% POST
--- Format: {weight, method, path, body (optional)}
+-- Format: {weight, method, path, body_type (optional)}
+-- body_type indicates what kind of POST body to generate dynamically
 endpoints = {
     -- === 80% GET operations ===
 
@@ -57,22 +65,67 @@ endpoints = {
     -- === 20% POST operations ===
 
     -- Expenses creation (8% POST) - Most common write operation
-    {4, "POST", "/api/v1/expenses", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","category":"Maintenance","description":"Entretien mensuel","amount":150.50,"expense_date":"2025-10-30T00:00:00Z","supplier":"Maintenance Plus","invoice_number":"INV-' .. math.random(1000,9999) .. '"}'},
-    {2, "POST", "/api/v1/expenses", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","category":"Utilities","description":"Eau et électricité","amount":250.00,"expense_date":"2025-10-30T00:00:00Z","supplier":"Energy SA","invoice_number":"ENE-' .. math.random(1000,9999) .. '"}'},
-    {2, "POST", "/api/v1/expenses", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","category":"Insurance","description":"Assurance copropriété","amount":500.00,"expense_date":"2025-10-30T00:00:00Z","supplier":"Assur Corp","invoice_number":"ASS-' .. math.random(1000,9999) .. '"}'},
+    {4, "POST", "/api/v1/expenses", "expense_maintenance"},
+    {2, "POST", "/api/v1/expenses", "expense_utilities"},
+    {2, "POST", "/api/v1/expenses", "expense_insurance"},
 
     -- Owners creation (5% POST)
-    {3, "POST", "/api/v1/owners", '{"first_name":"Jean","last_name":"Martin","email":"jean.martin' .. math.random(1000, 9999) .. '@example.com","phone":"+32499123456","address":"Avenue Louise 123","city":"Bruxelles","postal_code":"1000","country":"Belgique"}'},
-    {2, "POST", "/api/v1/owners", '{"first_name":"Marie","last_name":"Dubois","email":"marie.dubois' .. math.random(1000, 9999) .. '@example.com","phone":"+32477654321","address":"Rue Royale 45","city":"Bruxelles","postal_code":"1000","country":"Belgique"}'},
+    {3, "POST", "/api/v1/owners", "owner_jean"},
+    {2, "POST", "/api/v1/owners", "owner_marie"},
 
     -- Meetings creation (4% POST)
-    {2, "POST", "/api/v1/meetings", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","meeting_type":"Ordinary","title":"Assemblée Générale Ordinaire","description":"AG annuelle","scheduled_date":"2025-12-15T14:00:00Z","location":"Salle communale"}'},
-    {2, "POST", "/api/v1/meetings", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","meeting_type":"Extraordinary","title":"AG Extraordinaire","description":"Travaux urgents","scheduled_date":"2025-11-20T18:00:00Z","location":"Salle polyvalente"}'},
+    {2, "POST", "/api/v1/meetings", "meeting_ordinary"},
+    {2, "POST", "/api/v1/meetings", "meeting_extraordinary"},
 
     -- Units creation (3% POST)
-    {2, "POST", "/api/v1/units", '{"building_id":"' .. building_id .. '","unit_number":"T' .. math.random(100, 999) .. '","unit_type":"Apartment","floor":' .. math.random(1, 5) .. ',"surface_area":' .. math.random(50, 120) .. '.5,"quota":' .. math.random(50, 200) .. '.0}'},
-    {1, "POST", "/api/v1/units", '{"building_id":"' .. building_id .. '","unit_number":"P' .. math.random(100, 999) .. '","unit_type":"Parking","floor":-1,"surface_area":12.5,"quota":10.0}'},
+    {2, "POST", "/api/v1/units", "unit_apartment"},
+    {1, "POST", "/api/v1/units", "unit_parking"},
 }
+
+-- Generate POST body based on type
+function generate_post_body(body_type)
+    local unique_id = generate_unique_id()
+
+    if body_type == "expense_maintenance" then
+        return string.format('{"organization_id":"%s","building_id":"%s","category":"Maintenance","description":"Entretien mensuel","amount":150.50,"expense_date":"2025-10-30T00:00:00Z","supplier":"Maintenance Plus","invoice_number":"INV-%s"}',
+            organization_id, building_id, unique_id)
+
+    elseif body_type == "expense_utilities" then
+        return string.format('{"organization_id":"%s","building_id":"%s","category":"Utilities","description":"Eau et électricité","amount":250.00,"expense_date":"2025-10-30T00:00:00Z","supplier":"Energy SA","invoice_number":"ENE-%s"}',
+            organization_id, building_id, unique_id)
+
+    elseif body_type == "expense_insurance" then
+        return string.format('{"organization_id":"%s","building_id":"%s","category":"Insurance","description":"Assurance copropriété","amount":500.00,"expense_date":"2025-10-30T00:00:00Z","supplier":"Assur Corp","invoice_number":"ASS-%s"}',
+            organization_id, building_id, unique_id)
+
+    elseif body_type == "owner_jean" then
+        return string.format('{"first_name":"Jean","last_name":"Martin","email":"jean.martin.%s@example.com","phone":"+32499123456","address":"Avenue Louise 123","city":"Bruxelles","postal_code":"1000","country":"Belgique"}',
+            unique_id)
+
+    elseif body_type == "owner_marie" then
+        return string.format('{"first_name":"Marie","last_name":"Dubois","email":"marie.dubois.%s@example.com","phone":"+32477654321","address":"Rue Royale 45","city":"Bruxelles","postal_code":"1000","country":"Belgique"}',
+            unique_id)
+
+    elseif body_type == "meeting_ordinary" then
+        return string.format('{"organization_id":"%s","building_id":"%s","meeting_type":"Ordinary","title":"Assemblée Générale Ordinaire","description":"AG annuelle","scheduled_date":"2025-12-15T14:00:00Z","location":"Salle communale"}',
+            organization_id, building_id)
+
+    elseif body_type == "meeting_extraordinary" then
+        return string.format('{"organization_id":"%s","building_id":"%s","meeting_type":"Extraordinary","title":"AG Extraordinaire","description":"Travaux urgents","scheduled_date":"2025-11-20T18:00:00Z","location":"Salle polyvalente"}',
+            organization_id, building_id)
+
+    elseif body_type == "unit_apartment" then
+        return string.format('{"building_id":"%s","unit_number":"T%d","unit_type":"Apartment","floor":%d,"surface_area":%d.5,"quota":%d.0}',
+            building_id, math.random(100, 999), math.random(1, 5), math.random(50, 120), math.random(50, 200))
+
+    elseif body_type == "unit_parking" then
+        return string.format('{"building_id":"%s","unit_number":"P%s","unit_type":"Parking","floor":-1,"surface_area":12.5,"quota":10.0}',
+            building_id, unique_id)
+
+    else
+        return nil
+    end
+end
 
 -- Calculate total weight
 total_weight = 0
@@ -88,7 +141,7 @@ function select_endpoint()
     for i, endpoint in ipairs(endpoints) do
         sum = sum + endpoint[1]
         if rand <= sum then
-            return endpoint[2], endpoint[3], endpoint[4]
+            return endpoint[2], endpoint[3], endpoint[4]  -- method, path, body_type
         end
     end
 
@@ -111,9 +164,11 @@ request = function()
     wrk.headers["Content-Type"] = "application/json"
 
     -- Select and execute endpoint
-    local method, path, body = select_endpoint()
+    local method, path, body_type = select_endpoint()
 
-    if body then
+    if body_type then
+        -- Generate unique POST body for each request
+        local body = generate_post_body(body_type)
         return wrk.format(method, path, nil, body)
     else
         return wrk.format(method, path)
