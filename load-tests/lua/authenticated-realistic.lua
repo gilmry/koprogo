@@ -5,6 +5,7 @@
 
 local jwt_token = nil
 local building_id = "ed1c49c5-8434-48c8-8509-43fa202b7be6" -- From production seed data (Résidence Grand Place)
+local organization_id = "718be179-675b-4a6b-a2a1-90f98e0c76a9" -- From production seed data
 
 -- Simple JSON token extractor (no external dependencies)
 function extract_token(body)
@@ -56,17 +57,17 @@ endpoints = {
     -- === 20% POST operations ===
 
     -- Expenses creation (8% POST) - Most common write operation
-    {4, "POST", "/api/v1/expenses", '{"building_id":"' .. building_id .. '","category":"Maintenance","description":"Entretien mensuel","amount":150.50,"expense_date":"2025-10-30T00:00:00Z","payment_status":"Pending"}'},
-    {2, "POST", "/api/v1/expenses", '{"building_id":"' .. building_id .. '","category":"Utilities","description":"Eau et électricité","amount":250.00,"expense_date":"2025-10-30T00:00:00Z","payment_status":"Pending"}'},
-    {2, "POST", "/api/v1/expenses", '{"building_id":"' .. building_id .. '","category":"Insurance","description":"Assurance copropriété","amount":500.00,"expense_date":"2025-10-30T00:00:00Z","payment_status":"Pending"}'},
+    {4, "POST", "/api/v1/expenses", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","category":"Maintenance","description":"Entretien mensuel","amount":150.50,"expense_date":"2025-10-30T00:00:00Z","supplier":"Maintenance Plus","invoice_number":"INV-' .. math.random(1000,9999) .. '"}'},
+    {2, "POST", "/api/v1/expenses", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","category":"Utilities","description":"Eau et électricité","amount":250.00,"expense_date":"2025-10-30T00:00:00Z","supplier":"Energy SA","invoice_number":"ENE-' .. math.random(1000,9999) .. '"}'},
+    {2, "POST", "/api/v1/expenses", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","category":"Insurance","description":"Assurance copropriété","amount":500.00,"expense_date":"2025-10-30T00:00:00Z","supplier":"Assur Corp","invoice_number":"ASS-' .. math.random(1000,9999) .. '"}'},
 
     -- Owners creation (5% POST)
     {3, "POST", "/api/v1/owners", '{"first_name":"Jean","last_name":"Martin","email":"jean.martin' .. math.random(1000, 9999) .. '@example.com","phone":"+32499123456","address":"Avenue Louise 123","city":"Bruxelles","postal_code":"1000","country":"Belgique"}'},
     {2, "POST", "/api/v1/owners", '{"first_name":"Marie","last_name":"Dubois","email":"marie.dubois' .. math.random(1000, 9999) .. '@example.com","phone":"+32477654321","address":"Rue Royale 45","city":"Bruxelles","postal_code":"1000","country":"Belgique"}'},
 
     -- Meetings creation (4% POST)
-    {2, "POST", "/api/v1/meetings", '{"building_id":"' .. building_id .. '","meeting_type":"Ordinary","title":"Assemblée Générale Ordinaire","description":"AG annuelle","scheduled_date":"2025-12-15T14:00:00Z","location":"Salle communale","status":"Scheduled"}'},
-    {2, "POST", "/api/v1/meetings", '{"building_id":"' .. building_id .. '","meeting_type":"Extraordinary","title":"AG Extraordinaire","description":"Travaux urgents","scheduled_date":"2025-11-20T18:00:00Z","location":"Salle polyvalente","status":"Scheduled"}'},
+    {2, "POST", "/api/v1/meetings", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","meeting_type":"Ordinary","title":"Assemblée Générale Ordinaire","description":"AG annuelle","scheduled_date":"2025-12-15T14:00:00Z","location":"Salle communale"}'},
+    {2, "POST", "/api/v1/meetings", '{"organization_id":"' .. organization_id .. '","building_id":"' .. building_id .. '","meeting_type":"Extraordinary","title":"AG Extraordinaire","description":"Travaux urgents","scheduled_date":"2025-11-20T18:00:00Z","location":"Salle polyvalente"}'},
 
     -- Units creation (3% POST)
     {2, "POST", "/api/v1/units", '{"building_id":"' .. building_id .. '","unit_number":"T' .. math.random(100, 999) .. '","unit_type":"Apartment","floor":' .. math.random(1, 5) .. ',"surface_area":' .. math.random(50, 120) .. '.5,"quota":' .. math.random(50, 200) .. '.0}'},
