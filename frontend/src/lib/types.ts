@@ -61,6 +61,7 @@ export interface Building {
   postal_code: string;
   country: string;
   total_units: number;
+  total_tantiemes: number; // Total shares (typically 1000 in Belgium)
   construction_year?: number;
   created_at?: string;
   updated_at?: string;
@@ -100,7 +101,7 @@ export interface Unit {
   unit_number: string;
   floor: number;
   surface_area: number;
-  ownership_share: number;
+  quota: number; // Quote-part en millièmes (déjà exprimée sur 1000, ex: 350 = 350/1000èmes)
   unit_type: "Apartment" | "Parking" | "Storage";
   owner_id?: string; // Deprecated - use unit_owners instead
   // Optional: populated owners list
@@ -124,6 +125,8 @@ export interface Expense {
     | "Other";
   payment_status: "Pending" | "Paid" | "Overdue" | "Cancelled";
   paid_date?: string;
+  supplier?: string;
+  invoice_number?: string;
   created_at?: string;
 }
 
@@ -131,12 +134,14 @@ export interface Expense {
 export interface Meeting {
   id: string;
   building_id: string;
+  meeting_type: string;
   title: string;
-  meeting_date: string;
-  location?: string;
-  agenda: string;
-  minutes?: string;
+  description?: string;
+  scheduled_date: string;
+  location: string;
   status: "Scheduled" | "Completed" | "Cancelled";
+  agenda: string[]; // Liste des points à l'ordre du jour
+  attendees_count?: number;
   created_at?: string;
   updated_at?: string;
 }

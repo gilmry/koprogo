@@ -22,6 +22,7 @@
     postal_code: '',
     country: 'Belgique',
     total_units: 0,
+    total_tantiemes: 1000,
     construction_year: null as number | null,
     organization_id: '',
   };
@@ -63,6 +64,7 @@
     city: '',
     postal_code: '',
     total_units: '',
+    total_tantiemes: '',
     construction_year: '',
     organization_id: '',
   };
@@ -78,6 +80,7 @@
       postal_code: building.postal_code,
       country: building.country || 'Belgique',
       total_units: building.total_units,
+      total_tantiemes: building.total_tantiemes || 1000,
       construction_year: building.construction_year,
       organization_id: building.organization_id || '',
     };
@@ -91,6 +94,7 @@
       city: '',
       postal_code: '',
       total_units: '',
+      total_tantiemes: '',
       construction_year: '',
       organization_id: '',
     };
@@ -122,6 +126,12 @@
     // Total units validation
     if (formData.total_units < 1) {
       errors.total_units = 'Le nombre de lots doit être au moins 1';
+      isValid = false;
+    }
+
+    // Total tantièmes validation
+    if (formData.total_tantiemes < 1) {
+      errors.total_tantiemes = 'Le total des tantièmes doit être au moins 1';
       isValid = false;
     }
 
@@ -158,6 +168,7 @@
         postal_code: formData.postal_code.trim(),
         country: formData.country.trim(),
         total_units: formData.total_units,
+        total_tantiemes: formData.total_tantiemes,
         construction_year: formData.construction_year,
       };
 
@@ -200,6 +211,7 @@
         postal_code: '',
         country: 'Belgique',
         total_units: 0,
+        total_tantiemes: 1000,
         construction_year: null,
         organization_id: '',
       };
@@ -209,6 +221,7 @@
         city: '',
         postal_code: '',
         total_units: '',
+        total_tantiemes: '',
         construction_year: '',
         organization_id: '',
       };
@@ -310,20 +323,32 @@
       />
 
       <FormInput
-        id="building-construction-year"
-        label="Année de construction"
+        id="building-total-tantiemes"
+        label="Total tantièmes (millièmes)"
         type="number"
-        bind:value={formData.construction_year}
-        error={errors.construction_year}
-        placeholder="2000"
-        hint="Optionnel"
-        on:input={(e) => {
-          const val = e.target.value;
-          formData.construction_year = val === '' ? null : parseInt(val);
-        }}
-        data-testid="building-constructionyear-input"
+        bind:value={formData.total_tantiemes}
+        error={errors.total_tantiemes}
+        required
+        placeholder="1000"
+        hint="Généralement 1000 en Belgique"
+        data-testid="building-totaltantiemes-input"
       />
     </div>
+
+    <FormInput
+      id="building-construction-year"
+      label="Année de construction"
+      type="number"
+      bind:value={formData.construction_year}
+      error={errors.construction_year}
+      placeholder="2000"
+      hint="Optionnel"
+      on:input={(e) => {
+        const val = e.target.value;
+        formData.construction_year = val === '' ? null : parseInt(val);
+      }}
+      data-testid="building-constructionyear-input"
+    />
   </form>
 
   <svelte:fragment slot="footer">
