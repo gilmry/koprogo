@@ -1,10 +1,10 @@
 # GDPR Implementation Status (Issue #42)
 
 **Date**: 2025-10-30
-**Status**: 🟡 In Progress - Foundation Complete
-**Completion**: ~30% (Backend foundation ready)
+**Status**: 🟢 In Progress - Backend Business Logic Complete
+**Completion**: ~50% (Domain + Application layers ready, Infrastructure pending)
 
-## ✅ Completed (Phases 1-2)
+## ✅ Completed (Phases 1-2.3)
 
 ### Phase 1: Database & Domain Layer
 
@@ -67,15 +67,30 @@
 - **Commit**: `8960840` - feat(dto): add GDPR export and erase DTOs
 - **Tests**: 6/6 passed ✅
 
+#### 2.3 Use Cases ✅
+- **File**: `backend/src/application/use_cases/gdpr_use_cases.rs`
+- **Struct**: `GdprUseCases`
+- **Methods**:
+  - `export_user_data(user_id, requesting_user_id, organization_id)` - Export with authorization
+  - `erase_user_data(user_id, requesting_user_id, organization_id)` - Erasure with validation
+  - `can_erase_user(user_id)` - Check legal holds
+- **Features**:
+  - Authorization: self-service + SuperAdmin bypass
+  - Validation: anonymization status, legal holds
+  - Transaction handling: user + multiple owners
+  - Error handling: clear messages for all scenarios
+- **Commit**: `9729db6` - feat(use-case): implement GDPR use cases
+- **Tests**: 9/9 passed ✅
+
 ---
 
-## 🚧 Remaining Work (Phases 2.3-14)
+## 🚧 Remaining Work (Phases 3-14)
 
-### Phase 2.3: Use Cases (🔴 TODO)
+### Phase 3: Repository Implementation (🔴 TODO - HIGH PRIORITY)
 **Files to create**:
-- `backend/src/application/use_cases/gdpr_use_cases.rs`
+- `backend/src/infrastructure/database/repositories/gdpr_repository_impl.rs`
 
-**Methods**:
+**Methods** (implement GdprRepository trait):
 ```rust
 pub struct GdprUseCases {
     gdpr_repository: Arc<dyn GdprRepository>,
@@ -323,19 +338,23 @@ make coverage  # > 80% coverage target
 
 ## 📊 Statistics
 
-### Completed
-- **Commits**: 4
-- **Files created**: 4
-- **Files modified**: 3
-- **Tests written**: 19 (all passing ✅)
-- **Lines of code**: ~1200
+### Completed ✅
+- **Commits**: 6
+- **Files created**: 10 (including plans)
+- **Files modified**: 6
+- **Tests written**: 28 (all passing ✅)
+  - Domain entities: 9 tests
+  - Repository port: 4 tests
+  - DTOs: 6 tests
+  - Use Cases: 9 tests
+- **Lines of code**: ~2500
 
-### Remaining
-- **Estimated commits**: 20-25
-- **Files to create**: ~15-20
-- **Files to modify**: ~10
-- **Tests to write**: ~50-60
-- **Estimated time**: 6-8 hours
+### Remaining 🔴
+- **Estimated commits**: 15-20
+- **Files to create**: ~12-15
+- **Files to modify**: ~8-10
+- **Tests to write**: ~40-50
+- **Estimated time**: 4-6 hours
 
 ---
 
@@ -404,6 +423,8 @@ cd frontend && npm install && npm run dev
   - `3a4e11c` - Domain entities
   - `ec916bc` - Repository port
   - `8960840` - DTOs
+  - `8f707ad` - Documentation status
+  - `9729db6` - Use Cases
 
 ---
 

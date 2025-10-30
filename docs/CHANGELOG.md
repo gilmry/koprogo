@@ -24,6 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Domain-to-DTO conversions with From traits
   - RFC3339 timestamp formatting
   - 6 unit tests (100% coverage)
+- Added GDPR use cases (`GdprUseCases`) for business logic orchestration
+  - `export_user_data()`: Export all personal data with authorization
+  - `erase_user_data()`: Anonymize user + owners with validation
+  - `can_erase_user()`: Check legal holds
+  - Authorization: self-service + SuperAdmin bypass
+  - Legal holds checking, partial anonymization handling
+  - 9 unit tests with mocks (100% coverage)
 
 ### API
 
