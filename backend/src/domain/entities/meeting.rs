@@ -79,15 +79,41 @@ impl Meeting {
         Ok(())
     }
 
-    pub fn complete(&mut self, attendees_count: i32) {
-        self.status = MeetingStatus::Completed;
-        self.attendees_count = Some(attendees_count);
-        self.updated_at = Utc::now();
+    pub fn complete(&mut self, attendees_count: i32) -> Result<(), String> {
+        match self.status {
+            MeetingStatus::Scheduled => {
+                self.status = MeetingStatus::Completed;
+                self.attendees_count = Some(attendees_count);
+                self.updated_at = Utc::now();
+                Ok(())
+            }
+            MeetingStatus::Completed => Err("Meeting is already completed".to_string()),
+            MeetingStatus::Cancelled => Err("Cannot complete a cancelled meeting".to_string()),
+        }
     }
 
-    pub fn cancel(&mut self) {
-        self.status = MeetingStatus::Cancelled;
-        self.updated_at = Utc::now();
+    pub fn cancel(&mut self) -> Result<(), String> {
+        match self.status {
+            MeetingStatus::Scheduled => {
+                self.status = MeetingStatus::Cancelled;
+                self.updated_at = Utc::now();
+                Ok(())
+            }
+            MeetingStatus::Completed => Err("Cannot cancel a completed meeting".to_string()),
+            MeetingStatus::Cancelled => Err("Meeting is already cancelled".to_string()),
+        }
+    }
+
+    pub fn reschedule(&mut self, new_date: DateTime<Utc>) -> Result<(), String> {
+        match self.status {
+            MeetingStatus::Scheduled | MeetingStatus::Cancelled => {
+                self.scheduled_date = new_date;
+                self.status = MeetingStatus::Scheduled;
+                self.updated_at = Utc::now();
+                Ok(())
+            }
+            MeetingStatus::Completed => Err("Cannot reschedule a completed meeting".to_string()),
+        }
     }
 
     pub fn is_upcoming(&self) -> bool {
@@ -162,9 +188,78 @@ mod tests {
         )
         .unwrap();
 
-        meeting.complete(45);
+        let result = meeting.complete(45);
+        assert!(result.is_ok());
         assert_eq!(meeting.status, MeetingStatus::Completed);
         assert_eq!(meeting.attendees_count, Some(45));
         assert!(!meeting.is_upcoming());
+    }
+
+    #[test]
+    fn test_complete_already_completed_fails() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        meeting.complete(45).unwrap();
+        let result = meeting.complete(50);
+        assert!(result.is_err());
+        assert_eq!(meeting.attendees_count, Some(45)); // Should not change
+    }
+
+    #[test]
+    fn test_cancel_meeting() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        let result = meeting.cancel();
+        assert!(result.is_ok());
+        assert_eq!(meeting.status, MeetingStatus::Cancelled);
+    }
+
+    #[test]
+    fn test_reschedule_meeting() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        let new_date = Utc::now() + Duration::days(60);
+        let result = meeting.reschedule(new_date);
+        assert!(result.is_ok());
+        assert_eq!(meeting.scheduled_date, new_date);
     }
 }

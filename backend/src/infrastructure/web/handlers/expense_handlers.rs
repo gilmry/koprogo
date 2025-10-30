@@ -154,3 +154,99 @@ pub async fn mark_expense_paid(
         }
     }
 }
+
+#[post("/expenses/{id}/mark-overdue")]
+pub async fn mark_expense_overdue(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    match state.expense_use_cases.mark_as_overdue(*id).await {
+        Ok(expense) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseMarkedPaid,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Expense", *id)
+            .log();
+
+            HttpResponse::Ok().json(expense)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+#[post("/expenses/{id}/cancel")]
+pub async fn cancel_expense(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    match state.expense_use_cases.cancel_expense(*id).await {
+        Ok(expense) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseMarkedPaid,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Expense", *id)
+            .log();
+
+            HttpResponse::Ok().json(expense)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+#[post("/expenses/{id}/reactivate")]
+pub async fn reactivate_expense(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    match state.expense_use_cases.reactivate_expense(*id).await {
+        Ok(expense) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseMarkedPaid,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Expense", *id)
+            .log();
+
+            HttpResponse::Ok().json(expense)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+#[post("/expenses/{id}/unpay")]
+pub async fn unpay_expense(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    match state.expense_use_cases.unpay_expense(*id).await {
+        Ok(expense) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseMarkedPaid,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Expense", *id)
+            .log();
+
+            HttpResponse::Ok().json(expense)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}

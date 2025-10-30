@@ -102,7 +102,7 @@ impl DocumentRepository for PostgresDocumentRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Document>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
+            SELECT id, organization_id, building_id, document_type::text AS document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
             FROM documents
             WHERE building_id = $1
             ORDER BY created_at DESC
@@ -150,13 +150,61 @@ impl DocumentRepository for PostgresDocumentRepository {
     async fn find_by_meeting(&self, meeting_id: Uuid) -> Result<Vec<Document>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
+            SELECT id, organization_id, building_id, document_type::text AS document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
             FROM documents
             WHERE related_meeting_id = $1
             ORDER BY created_at DESC
             "#,
         )
         .bind(meeting_id)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+        Ok(rows
+            .iter()
+            .map(|row| {
+                let document_type_str: String = row.get("document_type");
+                let document_type = match document_type_str.as_str() {
+                    "meeting_minutes" => DocumentType::MeetingMinutes,
+                    "financial_statement" => DocumentType::FinancialStatement,
+                    "invoice" => DocumentType::Invoice,
+                    "contract" => DocumentType::Contract,
+                    "regulation" => DocumentType::Regulation,
+                    "works_quote" => DocumentType::WorksQuote,
+                    _ => DocumentType::Other,
+                };
+
+                Document {
+                    id: row.get("id"),
+                    organization_id: row.get("organization_id"),
+                    building_id: row.get("building_id"),
+                    document_type,
+                    title: row.get("title"),
+                    description: row.get("description"),
+                    file_path: row.get("file_path"),
+                    file_size: row.get("file_size"),
+                    mime_type: row.get("mime_type"),
+                    uploaded_by: row.get("uploaded_by"),
+                    related_meeting_id: row.get("related_meeting_id"),
+                    related_expense_id: row.get("related_expense_id"),
+                    created_at: row.get("created_at"),
+                    updated_at: row.get("updated_at"),
+                }
+            })
+            .collect())
+    }
+
+    async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<Document>, String> {
+        let rows = sqlx::query(
+            r#"
+            SELECT id, organization_id, building_id, document_type::text AS document_type, title, description, file_path, file_size, mime_type, uploaded_by, related_meeting_id, related_expense_id, created_at, updated_at
+            FROM documents
+            WHERE related_expense_id = $1
+            ORDER BY created_at DESC
+            "#,
+        )
+        .bind(expense_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| format!("Database error: {}", e))?;

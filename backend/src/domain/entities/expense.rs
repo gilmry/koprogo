@@ -77,19 +77,65 @@ impl Expense {
         })
     }
 
-    pub fn mark_as_paid(&mut self) {
-        self.payment_status = PaymentStatus::Paid;
-        self.updated_at = Utc::now();
+    pub fn mark_as_paid(&mut self) -> Result<(), String> {
+        match self.payment_status {
+            PaymentStatus::Pending | PaymentStatus::Overdue => {
+                self.payment_status = PaymentStatus::Paid;
+                self.updated_at = Utc::now();
+                Ok(())
+            }
+            PaymentStatus::Paid => Err("Expense is already paid".to_string()),
+            PaymentStatus::Cancelled => Err("Cannot mark a cancelled expense as paid".to_string()),
+        }
     }
 
-    pub fn mark_as_overdue(&mut self) {
-        self.payment_status = PaymentStatus::Overdue;
-        self.updated_at = Utc::now();
+    pub fn mark_as_overdue(&mut self) -> Result<(), String> {
+        match self.payment_status {
+            PaymentStatus::Pending => {
+                self.payment_status = PaymentStatus::Overdue;
+                self.updated_at = Utc::now();
+                Ok(())
+            }
+            PaymentStatus::Overdue => Err("Expense is already overdue".to_string()),
+            PaymentStatus::Paid => Err("Cannot mark a paid expense as overdue".to_string()),
+            PaymentStatus::Cancelled => {
+                Err("Cannot mark a cancelled expense as overdue".to_string())
+            }
+        }
     }
 
-    pub fn cancel(&mut self) {
-        self.payment_status = PaymentStatus::Cancelled;
-        self.updated_at = Utc::now();
+    pub fn cancel(&mut self) -> Result<(), String> {
+        match self.payment_status {
+            PaymentStatus::Pending | PaymentStatus::Overdue => {
+                self.payment_status = PaymentStatus::Cancelled;
+                self.updated_at = Utc::now();
+                Ok(())
+            }
+            PaymentStatus::Paid => Err("Cannot cancel a paid expense".to_string()),
+            PaymentStatus::Cancelled => Err("Expense is already cancelled".to_string()),
+        }
+    }
+
+    pub fn reactivate(&mut self) -> Result<(), String> {
+        match self.payment_status {
+            PaymentStatus::Cancelled => {
+                self.payment_status = PaymentStatus::Pending;
+                self.updated_at = Utc::now();
+                Ok(())
+            }
+            _ => Err("Can only reactivate cancelled expenses".to_string()),
+        }
+    }
+
+    pub fn unpay(&mut self) -> Result<(), String> {
+        match self.payment_status {
+            PaymentStatus::Paid => {
+                self.payment_status = PaymentStatus::Pending;
+                self.updated_at = Utc::now();
+                Ok(())
+            }
+            _ => Err("Can only unpay paid expenses".to_string()),
+        }
     }
 
     pub fn is_paid(&self) -> bool {
@@ -158,7 +204,72 @@ mod tests {
         .unwrap();
 
         assert!(!expense.is_paid());
-        expense.mark_as_paid();
+        let result = expense.mark_as_paid();
+        assert!(result.is_ok());
         assert!(expense.is_paid());
+    }
+
+    #[test]
+    fn test_mark_paid_expense_as_paid_fails() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let mut expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Maintenance,
+            "Test".to_string(),
+            100.0,
+            Utc::now(),
+            None,
+            None,
+        )
+        .unwrap();
+
+        expense.mark_as_paid().unwrap();
+        let result = expense.mark_as_paid();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_cancel_expense() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let mut expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Maintenance,
+            "Test".to_string(),
+            100.0,
+            Utc::now(),
+            None,
+            None,
+        )
+        .unwrap();
+
+        let result = expense.cancel();
+        assert!(result.is_ok());
+        assert_eq!(expense.payment_status, PaymentStatus::Cancelled);
+    }
+
+    #[test]
+    fn test_reactivate_expense() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let mut expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Maintenance,
+            "Test".to_string(),
+            100.0,
+            Utc::now(),
+            None,
+            None,
+        )
+        .unwrap();
+
+        expense.cancel().unwrap();
+        let result = expense.reactivate();
+        assert!(result.is_ok());
+        assert_eq!(expense.payment_status, PaymentStatus::Pending);
     }
 }

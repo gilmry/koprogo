@@ -81,7 +81,59 @@ impl ExpenseUseCases {
             .await?
             .ok_or_else(|| "Expense not found".to_string())?;
 
-        expense.mark_as_paid();
+        expense.mark_as_paid()?;
+
+        let updated = self.repository.update(&expense).await?;
+        Ok(self.to_response_dto(&updated))
+    }
+
+    pub async fn mark_as_overdue(&self, id: Uuid) -> Result<ExpenseResponseDto, String> {
+        let mut expense = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| "Expense not found".to_string())?;
+
+        expense.mark_as_overdue()?;
+
+        let updated = self.repository.update(&expense).await?;
+        Ok(self.to_response_dto(&updated))
+    }
+
+    pub async fn cancel_expense(&self, id: Uuid) -> Result<ExpenseResponseDto, String> {
+        let mut expense = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| "Expense not found".to_string())?;
+
+        expense.cancel()?;
+
+        let updated = self.repository.update(&expense).await?;
+        Ok(self.to_response_dto(&updated))
+    }
+
+    pub async fn reactivate_expense(&self, id: Uuid) -> Result<ExpenseResponseDto, String> {
+        let mut expense = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| "Expense not found".to_string())?;
+
+        expense.reactivate()?;
+
+        let updated = self.repository.update(&expense).await?;
+        Ok(self.to_response_dto(&updated))
+    }
+
+    pub async fn unpay_expense(&self, id: Uuid) -> Result<ExpenseResponseDto, String> {
+        let mut expense = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| "Expense not found".to_string())?;
+
+        expense.unpay()?;
 
         let updated = self.repository.update(&expense).await?;
         Ok(self.to_response_dto(&updated))

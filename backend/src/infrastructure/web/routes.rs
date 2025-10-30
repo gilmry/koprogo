@@ -46,6 +46,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_expense)
             .service(list_expenses_by_building)
             .service(mark_expense_paid)
+            .service(mark_expense_overdue)
+            .service(cancel_expense)
+            .service(reactivate_expense)
+            .service(unpay_expense)
             // Meetings
             .service(create_meeting)
             .service(list_meetings)
@@ -55,6 +59,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(add_agenda_item)
             .service(complete_meeting)
             .service(cancel_meeting)
+            .service(reschedule_meeting)
             .service(delete_meeting)
             // Documents
             .service(upload_document)
@@ -63,6 +68,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(download_document)
             .service(list_documents_by_building)
             .service(list_documents_by_meeting)
+            .service(list_documents_by_expense)
             .service(link_document_to_meeting)
             .service(link_document_to_expense)
             .service(delete_document)

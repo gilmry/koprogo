@@ -71,3 +71,9 @@ pub struct AddAgendaItemRequest {
 pub struct CompleteMeetingRequest {
     pub attendees_count: i32,
 }
+
+/// Request DTO for rescheduling a meeting
+#[derive(Debug, Deserialize)]
+pub struct RescheduleMeetingRequest {
+    pub scheduled_date: DateTime<Utc>,
+}

@@ -1,6 +1,6 @@
 use crate::application::dto::{
     AddAgendaItemRequest, CompleteMeetingRequest, CreateMeetingRequest, PageRequest, PageResponse,
-    UpdateMeetingRequest,
+    RescheduleMeetingRequest, UpdateMeetingRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -192,9 +192,52 @@ pub async fn complete_meeting(
 }
 
 #[post("/meetings/{id}/cancel")]
-pub async fn cancel_meeting(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn cancel_meeting(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.meeting_use_cases.cancel_meeting(*id).await {
-        Ok(meeting) => HttpResponse::Ok().json(meeting),
+        Ok(meeting) => {
+            AuditLogEntry::new(
+                AuditEventType::MeetingCompleted,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Meeting", *id)
+            .log();
+
+            HttpResponse::Ok().json(meeting)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+#[post("/meetings/{id}/reschedule")]
+pub async fn reschedule_meeting(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    request: web::Json<RescheduleMeetingRequest>,
+) -> impl Responder {
+    match state
+        .meeting_use_cases
+        .reschedule_meeting(*id, request.scheduled_date)
+        .await
+    {
+        Ok(meeting) => {
+            AuditLogEntry::new(
+                AuditEventType::MeetingCompleted,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Meeting", *id)
+            .log();
+
+            HttpResponse::Ok().json(meeting)
+        }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": err
         })),

@@ -129,7 +129,7 @@ impl MeetingUseCases {
             .await?
             .ok_or_else(|| "Meeting not found".to_string())?;
 
-        meeting.complete(request.attendees_count);
+        meeting.complete(request.attendees_count)?;
 
         let updated = self.repository.update(&meeting).await?;
         Ok(MeetingResponse::from(updated))
@@ -142,7 +142,24 @@ impl MeetingUseCases {
             .await?
             .ok_or_else(|| "Meeting not found".to_string())?;
 
-        meeting.cancel();
+        meeting.cancel()?;
+
+        let updated = self.repository.update(&meeting).await?;
+        Ok(MeetingResponse::from(updated))
+    }
+
+    pub async fn reschedule_meeting(
+        &self,
+        id: Uuid,
+        new_date: chrono::DateTime<chrono::Utc>,
+    ) -> Result<MeetingResponse, String> {
+        let mut meeting = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| "Meeting not found".to_string())?;
+
+        meeting.reschedule(new_date)?;
 
         let updated = self.repository.update(&meeting).await?;
         Ok(MeetingResponse::from(updated))

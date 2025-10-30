@@ -232,7 +232,7 @@ impl MeetingRepository for PostgresMeetingRepository {
 
         // Fetch paginated data
         let data_query = format!(
-            "SELECT id, organization_id, building_id, meeting_type, title, description, scheduled_date, location, status, agenda, attendees_count, created_at, updated_at \
+            "SELECT id, organization_id, building_id, meeting_type::text AS meeting_type, title, description, scheduled_date, location, status::text AS status, agenda, attendees_count, created_at, updated_at \
              FROM meetings {} ORDER BY scheduled_date DESC LIMIT {} OFFSET {}",
             where_clause,
             page_request.limit(),

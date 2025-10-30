@@ -214,6 +214,24 @@ pub async fn list_documents_by_meeting(
     }
 }
 
+/// List all documents for an expense
+#[get("/expenses/{expense_id}/documents")]
+pub async fn list_documents_by_expense(
+    app_state: web::Data<AppState>,
+    path: web::Path<Uuid>,
+) -> impl Responder {
+    let expense_id = path.into_inner();
+
+    match app_state
+        .document_use_cases
+        .list_documents_by_expense(expense_id)
+        .await
+    {
+        Ok(documents) => HttpResponse::Ok().json(documents),
+        Err(e) => HttpResponse::InternalServerError().json(e),
+    }
+}
+
 /// Link document to a meeting
 #[put("/documents/{id}/link-meeting")]
 pub async fn link_document_to_meeting(

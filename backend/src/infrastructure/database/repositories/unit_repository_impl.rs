@@ -54,7 +54,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Unit>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, organization_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE id = $1
             "#,
@@ -93,7 +93,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Unit>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, organization_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE building_id = $1
             ORDER BY unit_number
@@ -136,7 +136,7 @@ impl UnitRepository for PostgresUnitRepository {
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<Unit>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
+            SELECT id, organization_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at
             FROM units
             WHERE owner_id = $1
             ORDER BY unit_number
@@ -259,7 +259,7 @@ impl UnitRepository for PostgresUnitRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, building_id, unit_number, unit_type, floor, surface_area, quota, owner_id, created_at, updated_at \
+            "SELECT id, organization_id, building_id, unit_number, unit_type::text AS unit_type, floor, surface_area, quota, owner_id, created_at, updated_at \
              FROM units {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,

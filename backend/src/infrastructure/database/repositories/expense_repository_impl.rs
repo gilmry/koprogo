@@ -367,7 +367,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         sqlx::query(
             r#"
             UPDATE expenses
-            SET payment_status = $2, updated_at = $3
+            SET payment_status = CAST($2 AS payment_status), updated_at = $3
             WHERE id = $1
             "#,
         )

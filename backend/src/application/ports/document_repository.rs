@@ -9,6 +9,7 @@ pub trait DocumentRepository: Send + Sync {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Document>, String>;
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Document>, String>;
     async fn find_by_meeting(&self, meeting_id: Uuid) -> Result<Vec<Document>, String>;
+    async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<Document>, String>;
     async fn update(&self, document: &Document) -> Result<Document, String>;
     async fn delete(&self, id: Uuid) -> Result<bool, String>;
 
