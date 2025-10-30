@@ -1,9 +1,7 @@
 # Les vidéos E2E sont générées automatiquement
 # Ne pas les committer dans Git (trop volumineuses)
 
-*.webm
-*.mp4
-index.html
+#*.webm
+#*.mp4
+#index.html
 
-# Garder le dossier vide
-!.gitignore
