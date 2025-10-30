@@ -1,6 +1,7 @@
 pub mod building;
 pub mod document;
 pub mod expense;
+pub mod gdpr_export;
 pub mod meeting;
 pub mod organization;
 pub mod owner;
@@ -13,6 +14,10 @@ pub mod user_role_assignment;
 pub use building::Building;
 pub use document::{Document, DocumentType};
 pub use expense::{Expense, ExpenseCategory, PaymentStatus};
+pub use gdpr_export::{
+    DocumentData, ExpenseData, GdprExport, MeetingData, OwnerData, RelatedData, UnitOwnershipData,
+    UserData,
+};
 pub use meeting::{Meeting, MeetingStatus, MeetingType};
 pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
