@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Audit log event types
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum AuditEventType {
     // Authentication events
     UserLogin,
