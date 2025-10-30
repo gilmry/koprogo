@@ -63,3 +63,13 @@ ENABLE_MINIO_BOOTSTRAP={{ enable_minio_bootstrap | default('true') }}
 
 # Metrics endpoint protection (optional)
 METRICS_AUTH_TOKEN={{ metrics_auth_token | default('') }}
+
+# SMTP Email Configuration (GDPR notifications)
+# Set SMTP_ENABLED=false to disable email sending (emails will be logged only)
+SMTP_ENABLED={{ smtp_enabled | default('false') }}
+SMTP_HOST={{ smtp_host | default('smtp.gmail.com') }}
+SMTP_PORT={{ smtp_port | default('587') }}
+SMTP_USERNAME={{ smtp_username | default('') }}
+SMTP_PASSWORD={{ smtp_password | default('') }}
+SMTP_FROM_EMAIL={{ smtp_from_email | default('noreply@koprogo.com') }}
+SMTP_FROM_NAME={{ smtp_from_name | default('KoproGo') }}

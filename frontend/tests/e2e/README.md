@@ -219,6 +219,7 @@ Cette unique suite couvre l'intégralité des workflows administrateur à l'aide
 Cette suite couvre l'intégralité des workflows GDPR (Articles 15 & 17) :
 
 **User Self-Service (Articles 15 & 17)** :
+
 - ✅ Export de données personnelles avec téléchargement JSON (Article 15)
 - ✅ Vérification d'éligibilité à l'effacement (legal holds)
 - ✅ Effacement des données avec confirmation en deux étapes (Article 17)
@@ -227,6 +228,7 @@ Cette suite couvre l'intégralité des workflows GDPR (Articles 15 & 17) :
 - ✅ Blocage si des obligations légales existent
 
 **Admin Operations (SuperAdmin)** :
+
 - ✅ Panneau de gestion GDPR admin
 - ✅ Recherche et export des données utilisateur par l'admin
 - ✅ Effacement des données par l'admin avec notification email
@@ -235,10 +237,12 @@ Cette suite couvre l'intégralité des workflows GDPR (Articles 15 & 17) :
 - ✅ Rafraîchissement manuel des logs
 
 **Cross-Organization Access** :
+
 - ✅ SuperAdmin peut exporter les données de n'importe quelle organisation
 - ✅ SuperAdmin peut effacer les données de n'importe quelle organisation
 
 **Complete E2E Journey** :
+
 - ✅ Parcours complet : Register → Export → Erase → Verify → Audit logs
 - ✅ Vérification du cycle de vie GDPR de bout en bout
 

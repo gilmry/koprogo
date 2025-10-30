@@ -195,6 +195,16 @@ ansible-playbook -i inventory.ini playbook.yml \
 # Exemple : protection de l'endpoint /metrics
 ansible-playbook -i inventory.ini playbook.yml \
   -e "metrics_auth_token=token-super-secret"
+
+# Exemple : configuration SMTP pour notifications GDPR
+ansible-playbook -i inventory.ini playbook.yml \
+  -e "smtp_enabled=true" \
+  -e "smtp_host=smtp.gmail.com" \
+  -e "smtp_port=587" \
+  -e "smtp_username=your-email@example.com" \
+  -e "smtp_password=your-app-password" \
+  -e "smtp_from_email=noreply@koprogo.com" \
+  -e "smtp_from_name=KoproGo"
 ```
 
 ## ✅ Vérification post-déploiement

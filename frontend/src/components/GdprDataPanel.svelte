@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { authStore } from '../stores/auth';
-  import { toastStore } from '../stores/toast';
+  import { toast } from '../stores/toast';
   import type { GdprExport, GdprEraseResponse } from '../lib/types';
 
   let loading = false;
-  let canErase = false;
+  let canErase = true; // Default to true, backend will validate
   let checkingErasure = false;
   let exportData: GdprExport | null = null;
   let showExportModal = false;
@@ -13,6 +13,8 @@
   let erasureResult: GdprEraseResponse | null = null;
 
   onMount(async () => {
+    // Ensure auth store is initialized
+    await authStore.init();
     await checkCanErase();
   });
 
@@ -58,9 +60,9 @@
 
       exportData = await response.json();
       showExportModal = true;
-      toastStore.success('Your personal data has been exported successfully');
+      toast.success('Your personal data has been exported successfully');
     } catch (error) {
-      toastStore.error(error instanceof Error ? error.message : 'Failed to export data');
+      toast.error(error instanceof Error ? error.message : 'Failed to export data');
     } finally {
       loading = false;
     }
@@ -86,7 +88,7 @@
 
       erasureResult = await response.json();
       showEraseConfirmation = false;
-      toastStore.success('Your personal data has been anonymized');
+      toast.success('Your personal data has been anonymized');
 
       // Logout after erasure
       setTimeout(() => {
@@ -94,7 +96,7 @@
         window.location.href = '/login';
       }, 3000);
     } catch (error) {
-      toastStore.error(error instanceof Error ? error.message : 'Failed to erase data');
+      toast.error(error instanceof Error ? error.message : 'Failed to erase data');
       showEraseConfirmation = false;
     } finally {
       loading = false;
@@ -225,9 +227,9 @@
 {#if showExportModal && exportData}
   <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-export-modal">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" on:click={() => showExportModal = false}></div>
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" on:click={() => showExportModal = false} aria-hidden="true"></div>
 
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full" data-testid="gdpr-export-modal-content">
+      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full relative z-10" data-testid="gdpr-export-modal-content">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
@@ -297,9 +299,9 @@
 {#if showEraseConfirmation}
   <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-erase-confirm-modal">
     <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" on:click={() => showEraseConfirmation = false}></div>
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" on:click={() => showEraseConfirmation = false} aria-hidden="true"></div>
 
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full" data-testid="gdpr-erase-confirm-content">
+      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10" data-testid="gdpr-erase-confirm-content">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
             <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">

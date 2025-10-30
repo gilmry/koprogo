@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { authStore, mapUserFromBackend } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import type { User } from '../lib/types';
@@ -8,6 +9,11 @@
   let password = '';
   let error = '';
   let loading = false;
+
+  onMount(async () => {
+    // Ensure auth store is initialized before any login attempt
+    await authStore.init();
+  });
 
   const handleLogin = async (e: Event) => {
     e.preventDefault();

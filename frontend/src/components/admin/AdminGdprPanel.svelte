@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { authStore } from '../../stores/auth';
-  import { toastStore } from '../../stores/toast';
+  import { toast } from '../../stores/toast';
   import type {
     GdprExport,
     GdprEraseResponse,
@@ -25,6 +25,8 @@
   let auditLogsTotalPages = 1;
 
   onMount(async () => {
+    // Ensure auth store is initialized before loading users
+    await authStore.init();
     await loadUsers();
   });
 
@@ -33,8 +35,8 @@
       filteredUsers = users.filter(
         (u) =>
           u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.lastName.toLowerCase().includes(searchQuery.toLowerCase()),
+          u.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          u.last_name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     } else {
       filteredUsers = users;
@@ -55,10 +57,11 @@
 
       if (!response.ok) throw new Error('Failed to load users');
 
-      users = await response.json();
+      const responseData = await response.json();
+      users = responseData.data || [];
       filteredUsers = users;
     } catch (error) {
-      toastStore.error(
+      toast.error(
         error instanceof Error ? error.message : 'Failed to load users',
       );
     } finally {
@@ -88,14 +91,14 @@
 
       exportData = await response.json();
       showExportModal = true;
-      toastStore.success(
+      toast.success(
         `Data exported for ${userEmail} - User will be notified`,
       );
 
       // Reload audit logs after operation
       await loadAuditLogs();
     } catch (error) {
-      toastStore.error(
+      toast.error(
         error instanceof Error ? error.message : 'Failed to export data',
       );
     } finally {
@@ -126,14 +129,14 @@
 
       erasureResult = await response.json();
       showEraseConfirmation = false;
-      toastStore.success(
+      toast.success(
         `Data erased for ${userEmail} - User will be notified`,
       );
 
       // Reload users and audit logs
       await Promise.all([loadUsers(), loadAuditLogs()]);
     } catch (error) {
-      toastStore.error(
+      toast.error(
         error instanceof Error ? error.message : 'Failed to erase data',
       );
       showEraseConfirmation = false;
@@ -167,7 +170,7 @@
       auditLogsPage = page;
       auditLogsTotalPages = Math.ceil((data.total || 0) / 20);
     } catch (error) {
-      toastStore.error(
+      toast.error(
         error instanceof Error ? error.message : 'Failed to load audit logs',
       );
     } finally {
@@ -315,8 +318,8 @@
                   <div class="flex items-center">
                     <div>
                       <div class="text-sm font-medium text-gray-900" data-testid="user-name">
-                        {user.firstName}
-                        {user.lastName}
+                        {user.first_name}
+                        {user.last_name}
                       </div>
                       <div class="text-sm text-gray-500" data-testid="user-email">
                         {user.email}
@@ -576,9 +579,10 @@
       <div
         class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
         on:click={() => (showExportModal = false)}
+        aria-hidden="true"
       ></div>
 
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full relative z-10">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
@@ -646,9 +650,10 @@
       <div
         class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
         on:click={() => (showEraseConfirmation = false)}
+        aria-hidden="true"
       ></div>
 
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
             <div

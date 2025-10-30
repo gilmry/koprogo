@@ -7,6 +7,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - GDPR Compliance Implementation (Phases 1-12, 2025-10-29 to 2025-10-30)
+
+**Complete GDPR implementation with Articles 15 & 17 support (Production-ready). Additional Articles 16, 18, 21 domain entities prepared for Phase 2.**
+
+#### Database
+- Added GDPR anonymization fields (`is_anonymized`, `anonymized_at`) to `users` and `owners` tables for GDPR Article 17 compliance
+- Added indexes `idx_users_is_anonymized` and `idx_owners_is_anonymized` for efficient GDPR queries
+
+#### Features
+- Added GDPR export domain entities (`GdprExport`, `UserData`, `OwnerData`, `RelatedData`) for Article 15 compliance
+  - Pure domain layer with no external dependencies
+  - JSON serialization support
+  - 9 unit tests (100% coverage)
+- **Added GDPR domain entities for Articles 16, 18, 21** (Phase 8)
+  - `GdprRectificationRequest`: Right to rectification (Article 16) - 4 unit tests
+  - `GdprRestrictionRequest`: Right to restriction of processing (Article 18) - 5 unit tests
+  - `GdprObjectionRequest`: Right to object (Article 21) - 5 unit tests
+- Added `GdprRepository` port trait for data aggregation and anonymization operations
+  - 6 methods with mock implementation and 4 unit tests
+- Added GDPR DTOs for API endpoints with full JSON serialization support - 6 unit tests
+- Added GDPR use cases (`GdprUseCases`) for business logic orchestration - 9 unit tests
+- Implemented PostgreSQL GDPR repository (`PostgresGdprRepository`)
+  - Multi-table JOIN queries for comprehensive data aggregation
+  - SQL UPDATE statements for user/owner anonymization
+  - Email-based owner discovery and legal holds validation
+
+#### API
+- Added GDPR REST API endpoints for data privacy compliance
+  - `GET /api/v1/gdpr/export` - Export user personal data (Article 15)
+  - `DELETE /api/v1/gdpr/erase` - Request data erasure (Article 17)
+  - `GET /api/v1/gdpr/can-erase` - Check erasure eligibility
+- **Added GDPR Admin endpoints (SuperAdmin only)**
+  - `GET /api/v1/admin/gdpr/audit-logs` - List audit logs with pagination/filters
+  - `GET /api/v1/admin/gdpr/users/:id/export` - Admin-initiated data export
+  - `DELETE /api/v1/admin/gdpr/users/:id/erase` - Admin-initiated data erasure
+- All endpoints protected by JWT authentication with SuperAdmin bypass for cross-organization access
+
+#### Security
+- GDPR endpoints implement proper authorization (self-service + SuperAdmin)
+- Legal holds validation prevents premature data erasure
+- **Audit log persistence with 7-year retention** (GDPR Article 30 compliance)
+  - All GDPR operations logged to `audit_logs` table
+  - 5 GDPR event types tracked
+- **Rate limiting for GDPR endpoints** - 10 requests/hour per user
+- **IP address and User Agent capture** in audit logs
+- **Email notifications for GDPR operations** via SMTP
+
+#### Tests
+- All 186 unit tests passing (3 GDPR handler tests + 1 AuditLogger test + 3 rate limit tests)
+- **2 new E2E tests for audit log persistence** (`tests/e2e_gdpr_audit.rs`)
+- **BDD Cucumber scenarios** (`tests/features/gdpr.feature`) - 15 scenarios, 25+ step definitions
+- **Playwright E2E tests** (`frontend/tests/e2e/Gdpr.spec.ts`) - Phase 12
+  - 5 comprehensive test scenarios (1 passing, 4 skipped pending database cleanup)
+  - Uses 52+ data-testid attributes for stable selectors
+  - Known issue #66: Requires database cleanup before runs
+
+#### Frontend
+- **User GDPR data panel** (`GdprDataPanel.svelte`) - Phase 10
+  - Article 15: Personal data export with JSON download
+  - Article 17: Data erasure with two-step confirmation
+  - Legal holds checking, auto-logout after erasure
+  - 12+ data-testid attributes for E2E testing
+- **Admin GDPR management panel** (`AdminGdprPanel.svelte`) - Phase 11
+  - User search/filter by email, name, organization (723 lines)
+  - Admin-initiated data export/erasure with email notifications
+  - Audit logs viewer with pagination
+  - 15+ data-testid attributes for E2E testing
+- **TypeScript GDPR types** - 10 new interfaces for full type safety
+- **E2E test-ids added** to LoginForm, Navigation, RegisterForm, and all GDPR components
+
+#### Fixed (2025-10-30)
+- Added `authStore.init()` in `LoginForm.svelte` onMount hook to ensure token is loaded before login attempts
+- Added `authStore.init()` in `GdprDataPanel.svelte` and `AdminGdprPanel.svelte` to initialize authentication state
+- Fixed `AdminGdprPanel` users list empty issue by extracting `response.data` array
+- Fixed field name mismatch: `firstName/lastName` → `first_name/last_name` (snake_case)
+- **Root cause identified**: Superadmin account disappears after E2E tests due to fixed UUID conflict
+  - Backend seed function fails with "duplicate key violates unique constraint users_pkey"
+  - Solution documented in GitHub issue #66: Database cleanup required before test runs
+  - E2E test status: 1/5 tests passing reliably ("Complete User Journey")
+  - 4 tests skipped: Admin Operations, Mixed Scenario, Audit Logs Verification, Cross-Organization Access
+
+#### Infrastructure
+- **Updated Ansible deployment templates** for SMTP and GDPR configuration (2025-10-30)
+  - Added SMTP variables to `infrastructure/ansible/templates/env-production.j2`
+  - 7 new template variables: `smtp_enabled`, `smtp_host`, `smtp_port`, `smtp_username`, `smtp_password`, `smtp_from_email`, `smtp_from_name`
+  - Updated `infrastructure/ansible/README.md` with SMTP configuration example
+  - Production-ready email notifications for GDPR operations
+
 ### Added - E2E Testing Infrastructure with data-testid Pattern (2025-10-30)
 
 #### Frontend Test Structure

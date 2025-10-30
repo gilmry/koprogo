@@ -19,3 +19,12 @@ koprogo-vps ansible_host=YOUR_VPS_IP ansible_user=ubuntu ansible_ssh_private_key
 # s3_key_prefix=documents
 # enable_minio_bootstrap=true       # false si bucket géré externe
 # metrics_auth_token=CHANGE_ME      # Protège /metrics via Authorization: Bearer
+# SMTP Email Configuration (GDPR notifications)
+# Set SMTP_ENABLED=false to disable email sending (emails will be logged only)
+#smtp_enabled=false
+#smtp_host=smtp.gmail.com
+#smpt_port=587
+#smtp_username
+#smtp_password
+#smtp_from_email
+#smtp_from_name 
