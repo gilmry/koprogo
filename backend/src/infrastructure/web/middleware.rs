@@ -279,7 +279,9 @@ where
                     None => {
                         // Let the handler deal with missing auth
                         let fut = self.service.call(req);
-                        return Box::pin(async move { fut.await.map(|res| res.map_into_left_body()) });
+                        return Box::pin(
+                            async move { fut.await.map(|res| res.map_into_left_body()) },
+                        );
                     }
                 };
 
@@ -290,7 +292,9 @@ where
                     Err(_) => {
                         // Let the handler deal with invalid token
                         let fut = self.service.call(req);
-                        return Box::pin(async move { fut.await.map(|res| res.map_into_left_body()) });
+                        return Box::pin(
+                            async move { fut.await.map(|res| res.map_into_left_body()) },
+                        );
                     }
                 }
             }
