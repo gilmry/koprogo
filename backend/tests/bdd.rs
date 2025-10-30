@@ -1002,6 +1002,8 @@ async fn given_authenticated_user_with_data(world: &mut BuildingWorld) {
 
 #[when("I request to export my personal data")]
 async fn when_request_export_data(world: &mut BuildingWorld) {
+    use koprogo_api::infrastructure::audit::{AuditEventType, AuditLogEntry};
+
     let gdpr_uc = world.gdpr_use_cases.as_ref().unwrap();
     let user_id = world.last_user_id.unwrap();
 
@@ -1010,7 +1012,20 @@ async fn when_request_export_data(world: &mut BuildingWorld) {
         .await;
 
     match result {
-        Ok(export) => world.last_gdpr_export = Some(export),
+        Ok(export) => {
+            // Create audit log entry (mimicking what the HTTP handler does)
+            if let Some(audit_repo) = world.audit_log_repo.as_ref() {
+                let audit_entry = AuditLogEntry::new(
+                    AuditEventType::GdprDataExported,
+                    Some(user_id),
+                    world.org_id,
+                )
+                .with_resource("User", user_id);
+
+                let _ = audit_repo.create(&audit_entry).await;
+            }
+            world.last_gdpr_export = Some(export);
+        }
         Err(e) => world.last_result = Some(Err(e)),
     }
 }
@@ -1192,7 +1207,7 @@ async fn given_super_admin(world: &mut BuildingWorld) {
     // Insert SuperAdmin user directly
     sqlx::query(
         r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
-           VALUES ($1, $2, $3, 'Super', 'Admin', 'super_admin', NULL, true, NOW(), NOW())"#
+           VALUES ($1, $2, $3, 'Super', 'Admin', 'superadmin', NULL, true, NOW(), NOW())"#
     )
     .bind(admin_id)
     .bind(&email)
