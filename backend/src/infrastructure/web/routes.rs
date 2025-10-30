@@ -97,6 +97,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // GDPR (Data Privacy)
             .service(export_user_data)
             .service(erase_user_data)
-            .service(can_erase_user),
+            .service(can_erase_user)
+            // GDPR Admin (SuperAdmin only)
+            .service(list_audit_logs)
+            .service(admin_export_user_data)
+            .service(admin_erase_user_data),
     );
 }

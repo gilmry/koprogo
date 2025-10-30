@@ -399,24 +399,24 @@ async fn admin_can_manage_user_roles_via_http() {
 
     let org_id = Uuid::new_v4();
     let org_slug = format!("org-multi-{}", org_id);
-    sqlx::query!(
+    sqlx::query(
         r#"
         INSERT INTO organizations (
             id, name, slug, contact_email, contact_phone,
             subscription_plan, max_buildings, max_users, is_active, created_at, updated_at
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-        "#,
-        org_id,
-        "Org Multi Admin",
-        org_slug,
-        "multi-admin@org.com",
-        Option::<String>::None,
-        "starter",
-        50,
-        50,
-        true,
+        "#
     )
+    .bind(org_id)
+    .bind("Org Multi Admin")
+    .bind(&org_slug)
+    .bind("multi-admin@org.com")
+    .bind(Option::<String>::None)
+    .bind("starter")
+    .bind(50)
+    .bind(50)
+    .bind(true)
     .execute(&pool)
     .await
     .expect("insert organization");

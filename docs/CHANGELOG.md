@@ -46,14 +46,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `GET /api/v1/gdpr/export` - Export user personal data (Article 15)
   - `DELETE /api/v1/gdpr/erase` - Request data erasure (Article 17)
   - `GET /api/v1/gdpr/can-erase` - Check erasure eligibility
-- Implemented HTTP handlers (`gdpr_handlers.rs`)
+- **Added GDPR Admin endpoints (SuperAdmin only)**
+  - `GET /api/v1/admin/gdpr/audit-logs` - List audit logs with pagination/filters
+  - `GET /api/v1/admin/gdpr/users/:id/export` - Admin-initiated data export
+  - `DELETE /api/v1/admin/gdpr/users/:id/erase` - Admin-initiated data erasure
+- Implemented HTTP handlers (`gdpr_handlers.rs`, `admin_gdpr_handlers.rs`)
   - `export_user_data()`: Full data export with authentication
   - `erase_user_data()`: Anonymization with legal holds validation
   - `can_erase_user()`: Pre-flight erasure check
+  - `list_audit_logs()`: Paginated audit log viewing with filtering
+  - `admin_export_user_data()`: SuperAdmin export any user
+  - `admin_erase_user_data()`: SuperAdmin erase any user
 - Integrated GdprUseCases into AppState and routes
 - Updated E2E test setup with GDPR use cases
 - All endpoints protected by JWT authentication (AuthenticatedUser middleware)
 - SuperAdmin bypass for cross-organization access
+- Audit logging includes `admin_initiated` flag for admin operations
 
 ### Security
 - GDPR endpoints implement proper authorization (self-service + SuperAdmin)
