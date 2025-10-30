@@ -117,6 +117,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Verifies audit logs are created in database
   - Validates 7-year retention policy
   - Tests GdprDataExported and GdprErasureCheckRequested events
+- **BDD Cucumber scenarios for GDPR operations** (`tests/features/gdpr.feature`)
+  - 15 scenarios documenting GDPR workflows (Articles 15 & 17)
+  - User data export scenarios with owner records and unit ownerships
+  - Data erasure scenarios with legal holds validation
+  - SuperAdmin cross-organization access scenarios
+  - Security scenarios (rate limiting, audit logging, cross-org access)
+  - 25+ step definitions in `tests/bdd.rs`
+  - All BDD tests compile with zero warnings
 - Zero clippy warnings
 - Code formatted with cargo fmt
 - E2E test infrastructure ready for GDPR scenarios
