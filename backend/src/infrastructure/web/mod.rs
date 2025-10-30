@@ -4,5 +4,5 @@ pub mod middleware;
 pub mod routes;
 
 pub use app_state::AppState;
-pub use middleware::{AuthenticatedUser, OrganizationId};
+pub use middleware::{AuthenticatedUser, GdprRateLimit, GdprRateLimitConfig, OrganizationId};
 pub use routes::configure_routes;

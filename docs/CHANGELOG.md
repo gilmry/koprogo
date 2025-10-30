@@ -74,9 +74,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 5 GDPR event types: GdprDataExported, GdprDataExportFailed, GdprDataErased, GdprDataErasureFailed, GdprErasureCheckRequested
   - `retention_until` field set to NOW() + 7 years by default (Belgium GDPR requirement)
   - Integrated into AppState and all GDPR handlers
+- **Rate limiting for GDPR endpoints** (Abuse prevention)
+  - `GdprRateLimit` middleware limits GDPR operations to 10 requests/hour per user
+  - Only applies to `/api/v1/gdpr/*` and `/api/v1/admin/gdpr/*` endpoints
+  - Returns HTTP 429 Too Many Requests with Retry-After header when limit exceeded
+  - Uses in-memory tracking with automatic window reset
+  - 3 unit tests validating rate limiting behavior
 
 ### Tests
-- All 180 unit tests passing (3 GDPR handler tests + 1 AuditLogger test)
+- All 186 unit tests passing (3 GDPR handler tests + 1 AuditLogger test + 3 rate limit tests)
 - **2 new E2E tests for audit log persistence** (`tests/e2e_gdpr_audit.rs`)
   - Verifies audit logs are created in database
   - Validates 7-year retention policy

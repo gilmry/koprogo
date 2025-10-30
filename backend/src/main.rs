@@ -9,7 +9,9 @@ use koprogo_api::infrastructure::database::*;
 use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
-use koprogo_api::infrastructure::web::{configure_routes, AppState};
+use koprogo_api::infrastructure::web::{
+    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig,
+};
 use std::env;
 use std::sync::Arc;
 
@@ -145,6 +147,9 @@ async fn main() -> std::io::Result<()> {
         .finish()
         .unwrap();
 
+    // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints)
+    let gdpr_rate_limit = GdprRateLimit::new(GdprRateLimitConfig::default());
+
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment
         let mut cors = Cors::default();
@@ -162,6 +167,7 @@ async fn main() -> std::io::Result<()> {
 
         App::new()
             .app_data(app_state.clone())
+            .wrap(gdpr_rate_limit.clone())
             .wrap(Governor::new(&governor_conf))
             .wrap(cors)
             .wrap(middleware::Logger::default())
