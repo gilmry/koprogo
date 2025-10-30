@@ -1,10 +1,10 @@
--- Authenticated mixed workload scenario for wrk
--- Simulates realistic user behavior with JWT authentication
+-- Realistic authenticated workload scenario for wrk
+-- Simulates production usage with 80% GET / 20% POST
 --
 -- Uses demo credentials: syndic@grandplace.be / syndic123
 
 local jwt_token = nil
-local login_requested = false
+local building_id = "ed1c49c5-8434-48c8-8509-43fa202b7be6" -- From production seed data (Résidence Grand Place)
 
 -- Simple JSON token extractor (no external dependencies)
 function extract_token(body)
@@ -24,32 +24,53 @@ init = function(args)
     math.randomseed(os.time())
 end
 
--- Weighted endpoints based on real usage patterns
--- Format: {weight, method, path}
+-- Weighted endpoints: 80% GET / 20% POST
+-- Format: {weight, method, path, body (optional)}
 endpoints = {
+    -- === 80% GET operations ===
+
     -- Health checks (5%)
     {5, "GET", "/api/v1/health"},
 
-    -- Buildings (40%)
-    {20, "GET", "/api/v1/buildings"},
+    -- Buildings (30% GET)
+    {15, "GET", "/api/v1/buildings"},
     {10, "GET", "/api/v1/buildings"},
-    {10, "GET", "/api/v1/buildings"},
+    {5, "GET", "/api/v1/buildings"},
 
-    -- Units (25%)
-    {15, "GET", "/api/v1/units"},
-    {10, "GET", "/api/v1/units"},
+    -- Units (20% GET)
+    {12, "GET", "/api/v1/units"},
+    {8, "GET", "/api/v1/units"},
 
-    -- Owners (15%)
-    {10, "GET", "/api/v1/owners"},
+    -- Owners (12% GET)
+    {7, "GET", "/api/v1/owners"},
     {5, "GET", "/api/v1/owners"},
 
-    -- Expenses (10%)
-    {7, "GET", "/api/v1/expenses"},
-    {3, "GET", "/api/v1/expenses"},
+    -- Expenses (10% GET)
+    {6, "GET", "/api/v1/expenses"},
+    {4, "GET", "/api/v1/expenses"},
 
-    -- Meetings (5%)
-    {3, "GET", "/api/v1/meetings"},
+    -- Meetings (3% GET)
     {2, "GET", "/api/v1/meetings"},
+    {1, "GET", "/api/v1/meetings"},
+
+    -- === 20% POST operations ===
+
+    -- Expenses creation (8% POST) - Most common write operation
+    {4, "POST", "/api/v1/expenses", '{"building_id":"' .. building_id .. '","category":"Maintenance","description":"Entretien mensuel","amount":150.50,"expense_date":"2025-10-30T00:00:00Z","payment_status":"Pending"}'},
+    {2, "POST", "/api/v1/expenses", '{"building_id":"' .. building_id .. '","category":"Utilities","description":"Eau et électricité","amount":250.00,"expense_date":"2025-10-30T00:00:00Z","payment_status":"Pending"}'},
+    {2, "POST", "/api/v1/expenses", '{"building_id":"' .. building_id .. '","category":"Insurance","description":"Assurance copropriété","amount":500.00,"expense_date":"2025-10-30T00:00:00Z","payment_status":"Pending"}'},
+
+    -- Owners creation (5% POST)
+    {3, "POST", "/api/v1/owners", '{"first_name":"Jean","last_name":"Martin","email":"jean.martin' .. math.random(1000, 9999) .. '@example.com","phone":"+32499123456","address":"Avenue Louise 123","city":"Bruxelles","postal_code":"1000","country":"Belgique"}'},
+    {2, "POST", "/api/v1/owners", '{"first_name":"Marie","last_name":"Dubois","email":"marie.dubois' .. math.random(1000, 9999) .. '@example.com","phone":"+32477654321","address":"Rue Royale 45","city":"Bruxelles","postal_code":"1000","country":"Belgique"}'},
+
+    -- Meetings creation (4% POST)
+    {2, "POST", "/api/v1/meetings", '{"building_id":"' .. building_id .. '","meeting_type":"Ordinary","title":"Assemblée Générale Ordinaire","description":"AG annuelle","scheduled_date":"2025-12-15T14:00:00Z","location":"Salle communale","status":"Scheduled"}'},
+    {2, "POST", "/api/v1/meetings", '{"building_id":"' .. building_id .. '","meeting_type":"Extraordinary","title":"AG Extraordinaire","description":"Travaux urgents","scheduled_date":"2025-11-20T18:00:00Z","location":"Salle polyvalente","status":"Scheduled"}'},
+
+    -- Units creation (3% POST)
+    {2, "POST", "/api/v1/units", '{"building_id":"' .. building_id .. '","unit_number":"T' .. math.random(100, 999) .. '","unit_type":"Apartment","floor":' .. math.random(1, 5) .. ',"surface_area":' .. math.random(50, 120) .. '.5,"quota":' .. math.random(50, 200) .. '.0}'},
+    {1, "POST", "/api/v1/units", '{"building_id":"' .. building_id .. '","unit_number":"P' .. math.random(100, 999) .. '","unit_type":"Parking","floor":-1,"surface_area":12.5,"quota":10.0}'},
 }
 
 -- Calculate total weight
@@ -66,12 +87,12 @@ function select_endpoint()
     for i, endpoint in ipairs(endpoints) do
         sum = sum + endpoint[1]
         if rand <= sum then
-            return endpoint[2], endpoint[3]
+            return endpoint[2], endpoint[3], endpoint[4]
         end
     end
 
     -- Fallback
-    return "GET", "/api/v1/health"
+    return "GET", "/api/v1/health", nil
 end
 
 request = function()
@@ -89,8 +110,13 @@ request = function()
     wrk.headers["Content-Type"] = "application/json"
 
     -- Select and execute endpoint
-    local method, path = select_endpoint()
-    return wrk.format(method, path)
+    local method, path, body = select_endpoint()
+
+    if body then
+        return wrk.format(method, path, nil, body)
+    else
+        return wrk.format(method, path)
+    end
 end
 
 response = function(status, headers, body)
@@ -113,7 +139,7 @@ end
 -- Track response times
 done = function(summary, latency, requests)
     io.write("------------------------------\n")
-    io.write("Authenticated Load Test Results:\n")
+    io.write("Realistic Load Test Results (80/20):\n")
     io.write("------------------------------\n")
     io.write(string.format("  Total requests: %d\n", summary.requests))
     io.write(string.format("  Successful: %d\n", summary.requests - summary.errors.connect - summary.errors.read - summary.errors.write - summary.errors.status - summary.errors.timeout))
@@ -135,5 +161,7 @@ done = function(summary, latency, requests)
     else
         io.write(string.format("\n❌ Authentication: FAILED (only %.2f%% success rate)\n", success_rate))
     end
+
+    io.write("\n📊 Workload: 80% GET / 20% POST (realistic production scenario)\n")
     io.write("------------------------------\n")
 end
