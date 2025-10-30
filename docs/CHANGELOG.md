@@ -59,9 +59,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GDPR endpoints implement proper authorization (self-service + SuperAdmin)
 - Legal holds validation prevents premature data erasure
 - HTTP status codes follow security best practices (401, 403, 409, 410)
+- **Audit log persistence with 7-year retention** (GDPR Article 30 compliance)
+  - All GDPR operations logged to `audit_logs` table with database persistence
+  - `AuditLogger` service for async logging (stdout + database)
+  - `PostgresAuditLogRepository` with 6 methods (create, find_by_id, find_all_paginated, find_recent, find_failed_operations, delete_older_than, count_by_filters)
+  - 5 GDPR event types: GdprDataExported, GdprDataExportFailed, GdprDataErased, GdprDataErasureFailed, GdprErasureCheckRequested
+  - `retention_until` field set to NOW() + 7 years by default (Belgium GDPR requirement)
+  - Integrated into AppState and all GDPR handlers
 
 ### Tests
-- All 179 unit tests passing (3 GDPR handler tests added)
+- All 180 unit tests passing (3 GDPR handler tests + 1 AuditLogger test)
+- **2 new E2E tests for audit log persistence** (`tests/e2e_gdpr_audit.rs`)
+  - Verifies audit logs are created in database
+  - Validates 7-year retention policy
+  - Tests GdprDataExported and GdprErasureCheckRequested events
 - Zero clippy warnings
 - Code formatted with cargo fmt
 - E2E test infrastructure ready for GDPR scenarios

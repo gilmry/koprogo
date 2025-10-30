@@ -1,5 +1,7 @@
+use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, web, HttpResponse, Responder};
+use tokio::spawn;
 
 /// GET /api/v1/gdpr/export
 /// Export all personal data for the authenticated user (GDPR Article 15 - Right to Access)
@@ -33,8 +35,41 @@ pub async fn export_user_data(
         .export_user_data(user_id, user_id, organization_id)
         .await
     {
-        Ok(export_data) => HttpResponse::Ok().json(export_data),
+        Ok(export_data) => {
+            // Audit log: successful GDPR data export (async with database persistence)
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprDataExported,
+                Some(user_id),
+                organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_metadata(serde_json::json!({
+                "total_items": export_data.total_items,
+                "export_date": export_data.export_date
+            }));
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            HttpResponse::Ok().json(export_data)
+        }
         Err(e) => {
+            // Audit log: failed GDPR data export (async with database persistence)
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprDataExportFailed,
+                Some(user_id),
+                organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_error(e.clone());
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
             if e.contains("not found") {
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
@@ -88,8 +123,41 @@ pub async fn erase_user_data(data: web::Data<AppState>, auth: AuthenticatedUser)
         .erase_user_data(user_id, user_id, organization_id)
         .await
     {
-        Ok(erase_response) => HttpResponse::Ok().json(erase_response),
+        Ok(erase_response) => {
+            // Audit log: successful GDPR data erasure (async with database persistence)
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprDataErased,
+                Some(user_id),
+                organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_metadata(serde_json::json!({
+                "owners_anonymized": erase_response.owners_anonymized,
+                "anonymized_at": erase_response.anonymized_at
+            }));
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            HttpResponse::Ok().json(erase_response)
+        }
         Err(e) => {
+            // Audit log: failed GDPR data erasure (async with database persistence)
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprDataErasureFailed,
+                Some(user_id),
+                organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_error(e.clone());
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
             if e.contains("Unauthorized") {
                 HttpResponse::Forbidden().json(serde_json::json!({
                     "error": e
@@ -128,10 +196,28 @@ pub async fn can_erase_user(data: web::Data<AppState>, auth: AuthenticatedUser) 
     let user_id = auth.user_id;
 
     match data.gdpr_use_cases.can_erase_user(user_id).await {
-        Ok(can_erase) => HttpResponse::Ok().json(serde_json::json!({
-            "can_erase": can_erase,
-            "user_id": user_id.to_string()
-        })),
+        Ok(can_erase) => {
+            // Audit log: erasure check requested (async with database persistence)
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprErasureCheckRequested,
+                Some(user_id),
+                auth.organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_metadata(serde_json::json!({
+                "can_erase": can_erase
+            }));
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "can_erase": can_erase,
+                "user_id": user_id.to_string()
+            }))
+        }
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to check erasure eligibility: {}", e)
         })),

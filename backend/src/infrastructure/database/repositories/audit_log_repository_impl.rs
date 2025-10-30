@@ -45,6 +45,11 @@ impl PostgresAuditLogRepository {
             "UnauthorizedAccess" => AuditEventType::UnauthorizedAccess,
             "RateLimitExceeded" => AuditEventType::RateLimitExceeded,
             "InvalidToken" => AuditEventType::InvalidToken,
+            "GdprDataExported" => AuditEventType::GdprDataExported,
+            "GdprDataExportFailed" => AuditEventType::GdprDataExportFailed,
+            "GdprDataErased" => AuditEventType::GdprDataErased,
+            "GdprDataErasureFailed" => AuditEventType::GdprDataErasureFailed,
+            "GdprErasureCheckRequested" => AuditEventType::GdprErasureCheckRequested,
             _ => AuditEventType::UnauthorizedAccess, // Default fallback
         }
     }

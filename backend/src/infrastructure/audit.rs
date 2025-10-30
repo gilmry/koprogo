@@ -34,6 +34,13 @@ pub enum AuditEventType {
     UnauthorizedAccess,
     RateLimitExceeded,
     InvalidToken,
+
+    // GDPR events (Data Privacy Compliance - Article 30: Records of Processing)
+    GdprDataExported,
+    GdprDataExportFailed,
+    GdprDataErased,
+    GdprDataErasureFailed,
+    GdprErasureCheckRequested,
 }
 
 /// Audit log entry

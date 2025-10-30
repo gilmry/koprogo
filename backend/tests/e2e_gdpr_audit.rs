@@ -1,5 +1,5 @@
 use actix_web::{http::header, test, App};
-use koprogo_api::application::dto::CreateBuildingDto;
+use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
@@ -63,6 +63,7 @@ async fn setup_test_db() -> (
     let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
 
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
+
     let jwt_secret = "test-secret-key".to_string();
     let auth_use_cases =
         AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
@@ -72,7 +73,7 @@ async fn setup_test_db() -> (
     let unit_owner_use_cases = UnitOwnerUseCases::new(unit_owner_repo, unit_repo, owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
-    let storage_root = std::env::temp_dir().join("koprogo_e2e_uploads");
+    let storage_root = std::env::temp_dir().join("koprogo_e2e_gdpr_uploads");
     let storage: Arc<dyn StorageProvider> =
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
@@ -110,27 +111,9 @@ async fn setup_test_db() -> (
 
 #[actix_web::test]
 #[serial]
-async fn test_health_endpoint() {
-    let (app_state, _container, _org_id) = setup_test_db().await;
-
-    let state = app_state.clone();
-    let app = test::init_service(
-        App::new()
-            .app_data(state.clone())
-            .configure(configure_routes),
-    )
-    .await;
-
-    let req = test::TestRequest::get().uri("/api/v1/health").to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-}
-
-#[actix_web::test]
-#[serial]
-async fn test_create_building_endpoint() {
+async fn test_gdpr_export_creates_audit_log() {
     let (app_state, _container, org_id) = setup_test_db().await;
+    let pool = app_state.pool.clone();
 
     let state = app_state.clone();
     let app = test::init_service(
@@ -140,18 +123,18 @@ async fn test_create_building_endpoint() {
     )
     .await;
 
-    // Register + login to obtain JWT tied to org_id
-    let email = format!("e2e+{}@test.com", Uuid::new_v4());
-    let reg = koprogo_api::application::dto::RegisterRequest {
+    // Register + login to obtain JWT
+    let email = format!("gdpr+{}@test.com", Uuid::new_v4());
+    let reg = RegisterRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
-        first_name: "E2E".to_string(),
-        last_name: "User".to_string(),
+        first_name: "GDPR".to_string(),
+        last_name: "Test".to_string(),
         role: "syndic".to_string(),
         organization_id: Some(org_id),
     };
     let _ = state.auth_use_cases.register(reg).await.expect("register");
-    let login = koprogo_api::application::dto::LoginRequest {
+    let login = LoginRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
     };
@@ -162,75 +145,64 @@ async fn test_create_building_endpoint() {
         .expect("login")
         .token;
 
-    let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
-        name: "Test Building".to_string(),
-        address: "123 Test St".to_string(),
-        city: "Paris".to_string(),
-        postal_code: "75001".to_string(),
-        country: "France".to_string(),
-        total_units: 10,
-        construction_year: Some(2000),
-    };
-
-    let req = test::TestRequest::post()
-        .uri("/api/v1/buildings")
-        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-        .set_json(&dto)
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 201);
-}
-
-#[actix_web::test]
-#[serial]
-async fn test_list_buildings_endpoint() {
-    let (app_state, _container, org_id) = setup_test_db().await;
-
-    let state = app_state.clone();
-    let app = test::init_service(
-        App::new()
-            .app_data(state.clone())
-            .configure(configure_routes),
-    )
-    .await;
-
-    // Register + login for auth
-    let email = format!("e2e+{}@test.com", Uuid::new_v4());
-    let reg = koprogo_api::application::dto::RegisterRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-        first_name: "E2E".to_string(),
-        last_name: "User".to_string(),
-        role: "syndic".to_string(),
-        organization_id: Some(org_id),
-    };
-    let _ = state.auth_use_cases.register(reg).await.expect("register");
-    let login = koprogo_api::application::dto::LoginRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-    };
-    let token = state
-        .auth_use_cases
-        .login(login)
-        .await
-        .expect("login")
-        .token;
-
+    // Call GDPR export endpoint
     let req = test::TestRequest::get()
-        .uri("/api/v1/buildings")
+        .uri("/api/v1/gdpr/export")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
+    assert_eq!(resp.status(), 200);
+
+    // Wait a bit for async audit log to be written
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+    // Check that an audit log was created in the database
+    let count: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM audit_logs WHERE event_type = 'GdprDataExported'"
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("count audit logs");
+
+    assert_eq!(count.0, 1, "Expected 1 audit log for GdprDataExported");
+
+    // Verify the audit log has correct data
+    let log: (String, bool, Option<String>) = sqlx::query_as(
+        "SELECT event_type, success, metadata::text FROM audit_logs WHERE event_type = 'GdprDataExported' LIMIT 1"
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("fetch audit log");
+
+    assert_eq!(log.0, "GdprDataExported");
+    assert!(log.1, "Expected success to be true");
+    assert!(log.2.is_some(), "Metadata should be present");
+
+    // Check retention_until is set (7 years in the future)
+    let retention: (chrono::DateTime<chrono::Utc>,) = sqlx::query_as(
+        "SELECT retention_until FROM audit_logs WHERE event_type = 'GdprDataExported' LIMIT 1"
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("fetch retention_until");
+
+    let now = chrono::Utc::now();
+    let min_retention = now + chrono::Duration::days(365 * 6 + 360); // ~6.99 years
+    let max_retention = now + chrono::Duration::days(365 * 7 + 5);   // ~7.01 years
+
+    assert!(
+        retention.0 > min_retention && retention.0 < max_retention,
+        "Retention should be approximately 7 years in the future. Got: {}, Expected between {} and {}",
+        retention.0, min_retention, max_retention
+    );
 }
 
 #[actix_web::test]
 #[serial]
-async fn test_create_building_validation_fails() {
+async fn test_gdpr_can_erase_creates_audit_log() {
     let (app_state, _container, org_id) = setup_test_db().await;
+    let pool = app_state.pool.clone();
 
     let state = app_state.clone();
     let app = test::init_service(
@@ -240,18 +212,18 @@ async fn test_create_building_validation_fails() {
     )
     .await;
 
-    // Auth
-    let email = format!("e2e+{}@test.com", Uuid::new_v4());
-    let reg = koprogo_api::application::dto::RegisterRequest {
+    // Register + login
+    let email = format!("gdpr+{}@test.com", Uuid::new_v4());
+    let reg = RegisterRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
-        first_name: "E2E".to_string(),
-        last_name: "User".to_string(),
+        first_name: "GDPR".to_string(),
+        last_name: "Test".to_string(),
         role: "syndic".to_string(),
         organization_id: Some(org_id),
     };
     let _ = state.auth_use_cases.register(reg).await.expect("register");
-    let login = koprogo_api::application::dto::LoginRequest {
+    let login = LoginRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
     };
@@ -262,23 +234,25 @@ async fn test_create_building_validation_fails() {
         .expect("login")
         .token;
 
-    let dto = CreateBuildingDto {
-        organization_id: org_id.to_string(),
-        name: "".to_string(), // Invalid: empty name
-        address: "123 Test St".to_string(),
-        city: "Paris".to_string(),
-        postal_code: "75001".to_string(),
-        country: "France".to_string(),
-        total_units: 10,
-        construction_year: Some(2000),
-    };
-
-    let req = test::TestRequest::post()
-        .uri("/api/v1/buildings")
+    // Call can-erase endpoint
+    let req = test::TestRequest::get()
+        .uri("/api/v1/gdpr/can-erase")
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
-        .set_json(&dto)
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 400);
+    assert_eq!(resp.status(), 200);
+
+    // Wait for async audit log
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+
+    // Check audit log
+    let count: (i64,) = sqlx::query_as(
+        "SELECT COUNT(*) FROM audit_logs WHERE event_type = 'GdprErasureCheckRequested'"
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("count audit logs");
+
+    assert_eq!(count.0, 1, "Expected 1 audit log for GdprErasureCheckRequested");
 }

@@ -4,6 +4,7 @@ use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
 use env_logger::Env;
 use koprogo_api::application::use_cases::*;
+use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
 use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
@@ -83,6 +84,10 @@ async fn main() -> std::io::Result<()> {
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
+    let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
+
+    // Initialize audit logger with database persistence
+    let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
 
     // Initialize use cases
     let auth_use_cases =
@@ -109,6 +114,7 @@ async fn main() -> std::io::Result<()> {
         document_use_cases,
         pcn_use_cases,
         gdpr_use_cases,
+        audit_logger,
         pool.clone(),
     ));
 

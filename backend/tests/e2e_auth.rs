@@ -1,6 +1,7 @@
 use actix_web::http::header;
 use actix_web::{test, App};
 use koprogo_api::application::use_cases::*;
+use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
@@ -50,6 +51,9 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
+    let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
+
+    let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
 
     // use cases
     let jwt_secret = "e2e-secret".to_string();
@@ -78,6 +82,7 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
         document_use_cases,
         pcn_use_cases,
         gdpr_use_cases,
+        audit_logger,
         pool.clone(),
     ));
 
