@@ -147,6 +147,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TypeScript GDPR types** (`types.ts`)
   - 10 new interfaces: GdprUserData, GdprOwnerData, GdprUnitOwnershipData, GdprExpenseData, GdprDocumentData, GdprMeetingData, GdprExport, GdprEraseResponse, GdprCanEraseResponse
   - Full type safety for all GDPR API responses
+- **E2E test-ids added to critical components** (Phase 12 prep)
+  - LoginForm: 6 test-ids (login-form, login-email, login-password, login-submit, etc.)
+  - Navigation: 11+ test-ids (navigation, nav-logo, nav-links, role-switcher, user-menu-*, etc.)
+  - RegisterForm: 8 test-ids (register-form, register-email, register-password, etc.)
+  - All GDPR components: 27+ test-ids across GdprDataPanel and AdminGdprPanel
+  - Enables systematic Playwright E2E testing for auth, navigation, and GDPR flows
 
 ### Documentation
 
