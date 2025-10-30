@@ -4,6 +4,7 @@ use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;
+use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::configure_routes;
 use koprogo_api::infrastructure::web::AppState;
@@ -83,6 +84,7 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
         pcn_use_cases,
         gdpr_use_cases,
         audit_logger,
+        EmailService::from_env().expect("email service"),
         pool.clone(),
     ));
 

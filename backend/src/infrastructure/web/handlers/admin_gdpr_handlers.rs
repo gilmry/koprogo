@@ -235,6 +235,14 @@ pub async fn admin_export_user_data(
         .await
     {
         Ok(export_data) => {
+            // Extract user info for email notification
+            let user_email = export_data.user.email.clone();
+            let user_name = format!(
+                "{} {}",
+                export_data.user.first_name, export_data.user.last_name
+            );
+            let admin_email = auth.email.clone();
+
             // Audit log: admin-initiated export
             let audit_entry = crate::infrastructure::audit::AuditLogEntry::new(
                 crate::infrastructure::audit::AuditEventType::GdprDataExported,
@@ -253,6 +261,22 @@ pub async fn admin_export_user_data(
             let audit_logger = data.audit_logger.clone();
             tokio::spawn(async move {
                 audit_logger.log(&audit_entry).await;
+            });
+
+            // Send admin notification email (async)
+            let email_service = data.email_service.clone();
+            tokio::spawn(async move {
+                if let Err(e) = email_service
+                    .send_admin_gdpr_notification(
+                        &user_email,
+                        &user_name,
+                        "Data Export",
+                        &admin_email,
+                    )
+                    .await
+                {
+                    log::error!("Failed to send admin GDPR export email notification: {}", e);
+                }
             });
 
             HttpResponse::Ok().json(export_data)
@@ -328,6 +352,14 @@ pub async fn admin_erase_user_data(
         .await
     {
         Ok(erase_response) => {
+            // Extract user info for email notification
+            let user_email = erase_response.user_email.clone();
+            let user_name = format!(
+                "{} {}",
+                erase_response.user_first_name, erase_response.user_last_name
+            );
+            let admin_email = auth.email.clone();
+
             // Audit log: admin-initiated erasure
             let audit_entry = crate::infrastructure::audit::AuditLogEntry::new(
                 crate::infrastructure::audit::AuditEventType::GdprDataErased,
@@ -346,6 +378,25 @@ pub async fn admin_erase_user_data(
             let audit_logger = data.audit_logger.clone();
             tokio::spawn(async move {
                 audit_logger.log(&audit_entry).await;
+            });
+
+            // Send admin notification email (async)
+            let email_service = data.email_service.clone();
+            tokio::spawn(async move {
+                if let Err(e) = email_service
+                    .send_admin_gdpr_notification(
+                        &user_email,
+                        &user_name,
+                        "Data Erasure",
+                        &admin_email,
+                    )
+                    .await
+                {
+                    log::error!(
+                        "Failed to send admin GDPR erasure email notification: {}",
+                        e
+                    );
+                }
             });
 
             HttpResponse::Ok().json(erase_response)

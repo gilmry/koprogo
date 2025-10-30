@@ -70,6 +70,13 @@ pub async fn export_user_data(
         .await
     {
         Ok(export_data) => {
+            // Extract user info for email notification
+            let user_email = export_data.user.email.clone();
+            let user_name = format!(
+                "{} {}",
+                export_data.user.first_name, export_data.user.last_name
+            );
+
             // Audit log: successful GDPR data export (async with database persistence)
             let audit_entry = AuditLogEntry::new(
                 AuditEventType::GdprDataExported,
@@ -86,6 +93,17 @@ pub async fn export_user_data(
             let audit_logger = data.audit_logger.clone();
             spawn(async move {
                 audit_logger.log(&audit_entry).await;
+            });
+
+            // Send email notification (async)
+            let email_service = data.email_service.clone();
+            spawn(async move {
+                if let Err(e) = email_service
+                    .send_gdpr_export_notification(&user_email, &user_name, user_id)
+                    .await
+                {
+                    log::error!("Failed to send GDPR export email notification: {}", e);
+                }
             });
 
             HttpResponse::Ok().json(export_data)
@@ -168,6 +186,14 @@ pub async fn erase_user_data(
         .await
     {
         Ok(erase_response) => {
+            // Extract user info for email notification
+            let user_email = erase_response.user_email.clone();
+            let user_name = format!(
+                "{} {}",
+                erase_response.user_first_name, erase_response.user_last_name
+            );
+            let owners_count = erase_response.owners_anonymized;
+
             // Audit log: successful GDPR data erasure (async with database persistence)
             let audit_entry = AuditLogEntry::new(
                 AuditEventType::GdprDataErased,
@@ -184,6 +210,17 @@ pub async fn erase_user_data(
             let audit_logger = data.audit_logger.clone();
             spawn(async move {
                 audit_logger.log(&audit_entry).await;
+            });
+
+            // Send email notification (async)
+            let email_service = data.email_service.clone();
+            spawn(async move {
+                if let Err(e) = email_service
+                    .send_gdpr_erasure_notification(&user_email, &user_name, owners_count)
+                    .await
+                {
+                    log::error!("Failed to send GDPR erasure email notification: {}", e);
+                }
             });
 
             HttpResponse::Ok().json(erase_response)

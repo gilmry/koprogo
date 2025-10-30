@@ -101,6 +101,15 @@ impl GdprUseCases {
             ));
         }
 
+        // Retrieve user data BEFORE anonymization (needed for email notification)
+        let user_data = self
+            .gdpr_repository
+            .aggregate_user_data(user_id, organization_id)
+            .await?;
+        let user_email = user_data.user_data.email.clone();
+        let user_first_name = user_data.user_data.first_name.clone();
+        let user_last_name = user_data.user_data.last_name.clone();
+
         // Find all linked owner profiles
         let owner_ids = self
             .gdpr_repository
@@ -127,6 +136,9 @@ impl GdprUseCases {
             message: "Personal data has been successfully anonymized".to_string(),
             anonymized_at: Utc::now().to_rfc3339(),
             user_id: user_id.to_string(),
+            user_email,
+            user_first_name,
+            user_last_name,
             owners_anonymized,
         })
     }
@@ -242,6 +254,20 @@ mod tests {
         let owner_id2 = Uuid::new_v4();
         let org_id = Uuid::new_v4();
 
+        // Create test user data
+        let user_data = crate::domain::entities::gdpr_export::UserData {
+            id: user_id,
+            email: "test@example.com".to_string(),
+            first_name: "Test".to_string(),
+            last_name: "User".to_string(),
+            organization_id: Some(org_id),
+            is_active: true,
+            is_anonymized: false,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        let gdpr_export = crate::domain::entities::gdpr_export::GdprExport::new(user_data);
+
         let mut mock_repo = MockGdprRepo::new();
         mock_repo
             .expect_is_user_anonymized()
@@ -251,6 +277,10 @@ mod tests {
             .expect_check_legal_holds()
             .times(1)
             .returning(|_| Ok(vec![]));
+        mock_repo
+            .expect_aggregate_user_data()
+            .times(1)
+            .returning(move |_, _| Ok(gdpr_export.clone()));
         mock_repo
             .expect_find_owner_ids_by_user()
             .times(1)
@@ -273,6 +303,9 @@ mod tests {
         let dto = result.unwrap();
         assert!(dto.success);
         assert_eq!(dto.owners_anonymized, 2);
+        assert_eq!(dto.user_email, "test@example.com");
+        assert_eq!(dto.user_first_name, "Test");
+        assert_eq!(dto.user_last_name, "User");
     }
 
     #[tokio::test]

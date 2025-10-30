@@ -6,6 +6,7 @@ use env_logger::Env;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
+use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
@@ -105,6 +106,9 @@ async fn main() -> std::io::Result<()> {
     let pcn_use_cases = PcnUseCases::new(expense_repo);
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
 
+    // Initialize email service
+    let email_service = EmailService::from_env().expect("Failed to initialize email service");
+
     let app_state = web::Data::new(AppState::new(
         auth_use_cases,
         building_use_cases,
@@ -117,6 +121,7 @@ async fn main() -> std::io::Result<()> {
         pcn_use_cases,
         gdpr_use_cases,
         audit_logger,
+        email_service,
         pool.clone(),
     ));
 

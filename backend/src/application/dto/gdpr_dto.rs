@@ -225,6 +225,9 @@ pub struct GdprEraseResponseDto {
     pub message: String,
     pub anonymized_at: String,
     pub user_id: String,
+    pub user_email: String,
+    pub user_first_name: String,
+    pub user_last_name: String,
     pub owners_anonymized: usize,
 }
 
@@ -343,11 +346,15 @@ mod tests {
             message: "Data successfully anonymized".to_string(),
             anonymized_at: Utc::now().to_rfc3339(),
             user_id: Uuid::new_v4().to_string(),
+            user_email: "test@example.com".to_string(),
+            user_first_name: "John".to_string(),
+            user_last_name: "Doe".to_string(),
             owners_anonymized: 2,
         };
 
         let json = serde_json::to_string(&response).expect("Should serialize");
         assert!(json.contains("success"));
         assert!(json.contains("owners_anonymized"));
+        assert!(json.contains("test@example.com"));
     }
 }

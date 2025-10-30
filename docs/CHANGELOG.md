@@ -86,6 +86,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Falls back to peer address if headers not available
   - Client info stored in `audit_logs` table for forensic analysis
   - Applied to all 5 GDPR handlers (export, erase, can-erase, admin export, admin erase)
+- **Email notifications for GDPR operations** (User transparency)
+  - `EmailService` for sending GDPR-related notifications via SMTP
+  - Data export completion emails with security warnings
+  - Data erasure confirmation emails with anonymization summary
+  - Admin-initiated operation notifications
+  - Configurable via environment variables (SMTP_ENABLED, SMTP_HOST, etc.)
+  - Falls back to logging when email disabled (development mode)
+  - Uses `lettre` crate with async support and TLS encryption
 
 ### Tests
 - All 186 unit tests passing (3 GDPR handler tests + 1 AuditLogger test + 3 rate limit tests)
