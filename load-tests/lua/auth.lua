@@ -11,10 +11,10 @@ end
 
 -- Initialize function (called once per thread)
 init = function(args)
-    -- Default credentials for load testing
-    -- Make sure to create this user or use seed data
-    email = "loadtest@example.com"
-    password = "LoadTest123!"
+    -- Use demo user from seed.rs (backend/src/infrastructure/database/seed.rs:146-153)
+    -- Organization 1: Résidence Grand Place SPRL
+    email = "syndic@grandplace.be"
+    password = "syndic123"
 
     -- Login body
     login_body = string.format([[{"email": "%s", "password": "%s"}]], email, password)
