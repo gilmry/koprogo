@@ -4,8 +4,6 @@
   import { _ } from 'svelte-i18n';
   import { authStore } from '../stores/auth';
   import { UserRole } from '../lib/types';
-  import SyncStatus from './SyncStatus.svelte';
-  import LanguageSelector from './LanguageSelector.svelte';
 
   let showUserMenu = false;
   let switchingRole = false;
@@ -132,17 +130,17 @@
 </script>
 
 <nav class="bg-white shadow-sm border-b border-gray-200" data-testid="navigation">
-  <div class="container mx-auto px-4">
+  <div class="container mx-auto">
     <div class="flex items-center justify-between h-16">
       <!-- Logo -->
       <a
         href={isAuthenticated ? `/${user?.role}` : '/'}
-        class="flex items-center space-x-2"
+        class="flex items-center space-x-1"
         data-testid="nav-logo"
       >
-        <span class="text-2xl font-bold text-primary-600">KoproGo</span>
+        <span class="text-xl font-bold text-primary-600">KoproGo</span>
         {#if user?.role}
-          <span class="text-sm text-gray-500 hidden md:inline">
+          <span class="text-xs text-gray-500 hidden lg:inline">
             | {user.role === UserRole.SUPERADMIN ? 'Admin' :
                user.role === UserRole.SYNDIC ? 'Syndic' :
                user.role === UserRole.ACCOUNTANT ? 'Comptable' : 'Copropriétaire'}
@@ -152,42 +150,21 @@
 
       {#if isAuthenticated}
         <!-- Navigation Links -->
-        <div class="hidden md:flex items-center space-x-1" data-testid="nav-links">
+        <div class="hidden md:flex items-center space-x-0.5" data-testid="nav-links">
           {#each navItems as item}
             <a
               href={item.href}
-              class="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition"
+              class="px-2 py-1.5 rounded text-xs font-medium text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition"
               data-testid="nav-link-{item.label.toLowerCase().replace(/\s+/g, '-')}"
             >
-              <span class="mr-1">{item.icon}</span>
+              <span class="mr-0.5">{item.icon}</span>
               {item.label}
             </a>
           {/each}
         </div>
 
-        <!-- Right side: Language Selector + Sync Status + User Menu -->
-        <div class="flex items-center gap-4">
-          {#if user?.roles && user.roles.length > 1}
-            <div class="flex items-center" data-testid="role-switcher">
-              <label class="text-xs text-gray-500 mr-2 hidden lg:inline">Rôle</label>
-              <select
-                class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                on:change|stopPropagation={handleRoleChange}
-                disabled={switchingRole}
-                bind:value={selectedRoleId}
-                data-testid="role-selector"
-              >
-                {#each user.roles as roleOption}
-                  <option value={roleOption.id}>
-                    {formatRoleOption(roleOption.id, roleOption.role, roleOption.organizationId)}
-                  </option>
-                {/each}
-              </select>
-            </div>
-          {/if}
-          <LanguageSelector />
-          <SyncStatus />
-
+        <!-- Right side: User Menu -->
+        <div class="flex items-center gap-2">
         <!-- User Menu -->
         <div class="relative" data-testid="user-menu-container">
           <button
@@ -208,9 +185,28 @@
 
           {#if showUserMenu}
             <div
-              class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+              class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
               data-testid="user-menu-dropdown"
+              on:click|stopPropagation
             >
+              {#if user?.roles && user.roles.length > 1}
+                <div class="px-4 py-2 border-b border-gray-200" data-testid="role-switcher">
+                  <label class="text-xs text-gray-500 block mb-1">Changer de rôle</label>
+                  <select
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    on:change={handleRoleChange}
+                    disabled={switchingRole}
+                    bind:value={selectedRoleId}
+                    data-testid="role-selector"
+                  >
+                    {#each user.roles as roleOption}
+                      <option value={roleOption.id}>
+                        {formatRoleOption(roleOption.id, roleOption.role, roleOption.organizationId)}
+                      </option>
+                    {/each}
+                  </select>
+                </div>
+              {/if}
               <a
                 href="/profile"
                 on:click|stopPropagation
@@ -241,7 +237,6 @@
         </div>
       {:else}
         <div class="flex items-center gap-4">
-          <LanguageSelector />
           <a
             href="/login"
             class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
