@@ -78,6 +78,9 @@ test.describe("GDPR - User Self-Service (Articles 15 & 17)", () => {
     // Wait for GDPR panel to load
     await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
 
+    // Wait for component to fully hydrate (Svelte client:load)
+    await page.waitForTimeout(1000);
+
     // Click export button
     await page.getByTestId("gdpr-export-button").click();
 
@@ -117,6 +120,7 @@ test.describe("GDPR - User Self-Service (Articles 15 & 17)", () => {
     await page.goto("/settings/gdpr");
 
     await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
+    await page.waitForTimeout(1000); // Wait for Svelte hydration
 
     // Click erase button
     await page.getByTestId("gdpr-erase-button").click();
@@ -146,6 +150,7 @@ test.describe("GDPR - User Self-Service (Articles 15 & 17)", () => {
     await page.goto("/settings/gdpr");
 
     await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
+    await page.waitForTimeout(1000); // Wait for Svelte hydration
 
     // Click erase button
     await page.getByTestId("gdpr-erase-button").click();
@@ -276,7 +281,9 @@ test.describe("GDPR - Admin Operations (SuperAdmin)", () => {
 
     // Verify modal shows user details
     await expect(
-      page.getByTestId("admin-gdpr-erase-modal").locator(`text=${testUser.email}`),
+      page
+        .getByTestId("admin-gdpr-erase-modal")
+        .locator(`text=${testUser.email}`),
     ).toBeVisible();
 
     // Confirm erasure
@@ -315,7 +322,9 @@ test.describe("GDPR - Admin Operations (SuperAdmin)", () => {
 
     // Verify log entries have required fields
     const firstRow = auditRows.first();
-    await expect(firstRow.locator("text=/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/")).toBeVisible(); // Date
+    await expect(
+      firstRow.locator("text=/\\d{1,2}\\/\\d{1,2}\\/\\d{4}/"),
+    ).toBeVisible(); // Date
     await expect(
       firstRow.locator("text=/Export|Erase|GdprData/i"),
     ).toBeVisible(); // Event type
@@ -482,6 +491,7 @@ test.describe("GDPR - Complete End-to-End Journey", () => {
     // Step 2: Export personal data (Article 15)
     await page.goto("/settings/gdpr");
     await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
+    await page.waitForTimeout(1000); // Wait for Svelte hydration
 
     await page.getByTestId("gdpr-export-button").click();
     await expect(page.getByTestId("gdpr-export-modal")).toBeVisible({
@@ -501,6 +511,7 @@ test.describe("GDPR - Complete End-to-End Journey", () => {
 
     // Close modal
     await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
 
     // Step 3: Erase personal data (Article 17)
     await page.getByTestId("gdpr-erase-button").click();
@@ -511,9 +522,9 @@ test.describe("GDPR - Complete End-to-End Journey", () => {
     await page.getByTestId("gdpr-erase-confirm-button").click();
 
     // Wait for success and auto-logout
-    await expect(
-      page.locator("text=/success|anonymi[sz]ed/i"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=/success|anonymi[sz]ed/i")).toBeVisible({
+      timeout: 10000,
+    });
     await page.waitForURL("/login", { timeout: 10000 });
 
     // Step 4: Verify cannot login anymore
