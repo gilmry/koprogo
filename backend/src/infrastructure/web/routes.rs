@@ -93,6 +93,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(update_user)
             .service(activate_user)
             .service(deactivate_user)
-            .service(delete_user),
+            .service(delete_user)
+            // GDPR (Data Privacy)
+            .service(export_user_data)
+            .service(erase_user_data)
+            .service(can_erase_user),
     );
 }

@@ -49,6 +49,7 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
+    let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
 
     // use cases
     let jwt_secret = "e2e-secret".to_string();
@@ -64,6 +65,7 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo);
+    let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
 
     let app_state = actix_web::web::Data::new(AppState::new(
         auth_use_cases,
@@ -75,6 +77,7 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
         meeting_use_cases,
         document_use_cases,
         pcn_use_cases,
+        gdpr_use_cases,
         pool.clone(),
     ));
 

@@ -3,8 +3,9 @@ use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresBuildingRepository, PostgresDocumentRepository, PostgresExpenseRepository,
-    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
-    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
+    PostgresGdprRepository, PostgresOwnerRepository, PostgresRefreshTokenRepository,
+    PostgresUnitOwnerRepository, PostgresUnitRepository, PostgresUserRepository,
+    PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
@@ -57,6 +58,7 @@ async fn setup_test_db() -> (
         ),
     );
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
+    let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
 
     let jwt_secret = "test-secret-key".to_string();
     let auth_use_cases =
@@ -72,6 +74,7 @@ async fn setup_test_db() -> (
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo);
+    let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
 
     // Create an organization for FK references
     let org_id = Uuid::new_v4();
@@ -94,6 +97,7 @@ async fn setup_test_db() -> (
         meeting_use_cases,
         document_use_cases,
         pcn_use_cases,
+        gdpr_use_cases,
         pool.clone(),
     ));
 
