@@ -21,6 +21,12 @@ if [ -z "$BASE_URL" ]; then
     echo ""
 fi
 
+# Ensure BASE_URL has protocol (http:// or https://)
+if [[ ! "$BASE_URL" =~ ^https?:// ]]; then
+    echo "⚠️  BASE_URL missing protocol, adding https://"
+    BASE_URL="https://$BASE_URL"
+fi
+
 echo "========================================="
 echo "🟡 KoproGo REMOTE Load Test - MEDIUM"
 echo "========================================="
