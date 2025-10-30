@@ -80,6 +80,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Returns HTTP 429 Too Many Requests with Retry-After header when limit exceeded
   - Uses in-memory tracking with automatic window reset
   - 3 unit tests validating rate limiting behavior
+- **IP address and User Agent capture in audit logs** (GDPR Article 30 compliance)
+  - All GDPR endpoints now capture client IP and User-Agent for audit trails
+  - Supports X-Forwarded-For and X-Real-IP headers for proxy/load balancer scenarios
+  - Falls back to peer address if headers not available
+  - Client info stored in `audit_logs` table for forensic analysis
+  - Applied to all 5 GDPR handlers (export, erase, can-erase, admin export, admin erase)
 
 ### Tests
 - All 186 unit tests passing (3 GDPR handler tests + 1 AuditLogger test + 3 rate limit tests)

@@ -1,9 +1,38 @@
 use crate::application::dto::PageRequest;
 use crate::application::ports::{AuditLogFilters, AuditLogRepository};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, web, HttpResponse, Responder};
+use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+/// Extract client IP address from request
+fn extract_ip_address(req: &HttpRequest) -> Option<String> {
+    // Try X-Forwarded-For first (for proxy/load balancer scenarios)
+    req.headers()
+        .get("X-Forwarded-For")
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.split(',').next().unwrap_or("").trim().to_string())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            // Try X-Real-IP header
+            req.headers()
+                .get("X-Real-IP")
+                .and_then(|h| h.to_str().ok())
+                .map(|s| s.to_string())
+        })
+        .or_else(|| {
+            // Fall back to peer address
+            req.peer_addr().map(|addr| addr.ip().to_string())
+        })
+}
+
+/// Extract user agent from request
+fn extract_user_agent(req: &HttpRequest) -> Option<String> {
+    req.headers()
+        .get("User-Agent")
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.to_string())
+}
 
 /// Query parameters for audit log filtering
 #[derive(Debug, Deserialize)]
@@ -181,6 +210,7 @@ fn parse_event_type(s: &str) -> Option<crate::infrastructure::audit::AuditEventT
 /// * `500 Internal Server Error` - Database error
 #[get("/admin/gdpr/users/{user_id}/export")]
 pub async fn admin_export_user_data(
+    req: HttpRequest,
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
@@ -193,6 +223,10 @@ pub async fn admin_export_user_data(
     }
 
     let target_user_id = path.into_inner();
+
+    // Extract client information for audit logging
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
 
     // SuperAdmin can export any user's data (no organization restriction)
     match data
@@ -208,6 +242,7 @@ pub async fn admin_export_user_data(
                 auth.organization_id,
             )
             .with_resource("User", target_user_id)
+            .with_client_info(ip_address, user_agent)
             .with_metadata(serde_json::json!({
                 "total_items": export_data.total_items,
                 "export_date": export_data.export_date,
@@ -230,6 +265,7 @@ pub async fn admin_export_user_data(
                 auth.organization_id,
             )
             .with_resource("User", target_user_id)
+            .with_client_info(ip_address, user_agent)
             .with_error(e.clone())
             .with_metadata(serde_json::json!({
                 "admin_initiated": true,
@@ -267,6 +303,7 @@ pub async fn admin_export_user_data(
 /// * `500 Internal Server Error` - Database error
 #[delete("/admin/gdpr/users/{user_id}/erase")]
 pub async fn admin_erase_user_data(
+    req: HttpRequest,
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
@@ -279,6 +316,10 @@ pub async fn admin_erase_user_data(
     }
 
     let target_user_id = path.into_inner();
+
+    // Extract client information for audit logging
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
 
     // SuperAdmin can erase any user's data (no organization restriction)
     match data
@@ -294,6 +335,7 @@ pub async fn admin_erase_user_data(
                 auth.organization_id,
             )
             .with_resource("User", target_user_id)
+            .with_client_info(ip_address, user_agent)
             .with_metadata(serde_json::json!({
                 "owners_anonymized": erase_response.owners_anonymized,
                 "anonymized_at": erase_response.anonymized_at,
@@ -316,6 +358,7 @@ pub async fn admin_erase_user_data(
                 auth.organization_id,
             )
             .with_resource("User", target_user_id)
+            .with_client_info(ip_address, user_agent)
             .with_error(e.clone())
             .with_metadata(serde_json::json!({
                 "admin_initiated": true,

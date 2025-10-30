@@ -1,7 +1,36 @@
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, web, HttpResponse, Responder};
+use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
 use tokio::spawn;
+
+/// Extract client IP address from request
+fn extract_ip_address(req: &HttpRequest) -> Option<String> {
+    // Try X-Forwarded-For first (for proxy/load balancer scenarios)
+    req.headers()
+        .get("X-Forwarded-For")
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.split(',').next().unwrap_or("").trim().to_string())
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            // Try X-Real-IP header
+            req.headers()
+                .get("X-Real-IP")
+                .and_then(|h| h.to_str().ok())
+                .map(|s| s.to_string())
+        })
+        .or_else(|| {
+            // Fall back to peer address
+            req.peer_addr().map(|addr| addr.ip().to_string())
+        })
+}
+
+/// Extract user agent from request
+fn extract_user_agent(req: &HttpRequest) -> Option<String> {
+    req.headers()
+        .get("User-Agent")
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.to_string())
+}
 
 /// GET /api/v1/gdpr/export
 /// Export all personal data for the authenticated user (GDPR Article 15 - Right to Access)
@@ -14,11 +43,16 @@ use tokio::spawn;
 /// * `500 Internal Server Error` - Database or processing error
 #[get("/gdpr/export")]
 pub async fn export_user_data(
+    req: HttpRequest,
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
     // Extract user_id from authenticated user
     let user_id = auth.user_id;
+
+    // Extract client information for audit logging
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
 
     // Determine organization scope based on role
     // SuperAdmin can export across all organizations (organization_id = None)
@@ -43,6 +77,7 @@ pub async fn export_user_data(
                 organization_id,
             )
             .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
             .with_metadata(serde_json::json!({
                 "total_items": export_data.total_items,
                 "export_date": export_data.export_date
@@ -63,6 +98,7 @@ pub async fn export_user_data(
                 organization_id,
             )
             .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
             .with_error(e.clone());
 
             let audit_logger = data.audit_logger.clone();
@@ -106,9 +142,17 @@ pub async fn export_user_data(
 /// * `410 Gone` - User already anonymized
 /// * `500 Internal Server Error` - Database or processing error
 #[delete("/gdpr/erase")]
-pub async fn erase_user_data(data: web::Data<AppState>, auth: AuthenticatedUser) -> impl Responder {
+pub async fn erase_user_data(
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    auth: AuthenticatedUser,
+) -> impl Responder {
     // Extract user_id from authenticated user
     let user_id = auth.user_id;
+
+    // Extract client information for audit logging
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
 
     // Determine organization scope based on role
     let organization_id = if auth.role == "superadmin" {
@@ -131,6 +175,7 @@ pub async fn erase_user_data(data: web::Data<AppState>, auth: AuthenticatedUser)
                 organization_id,
             )
             .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
             .with_metadata(serde_json::json!({
                 "owners_anonymized": erase_response.owners_anonymized,
                 "anonymized_at": erase_response.anonymized_at
@@ -151,6 +196,7 @@ pub async fn erase_user_data(data: web::Data<AppState>, auth: AuthenticatedUser)
                 organization_id,
             )
             .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
             .with_error(e.clone());
 
             let audit_logger = data.audit_logger.clone();
@@ -192,8 +238,16 @@ pub async fn erase_user_data(data: web::Data<AppState>, auth: AuthenticatedUser)
 /// * `401 Unauthorized` - Missing or invalid authentication
 /// * `500 Internal Server Error` - Database or processing error
 #[get("/gdpr/can-erase")]
-pub async fn can_erase_user(data: web::Data<AppState>, auth: AuthenticatedUser) -> impl Responder {
+pub async fn can_erase_user(
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    auth: AuthenticatedUser,
+) -> impl Responder {
     let user_id = auth.user_id;
+
+    // Extract client information for audit logging
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
 
     match data.gdpr_use_cases.can_erase_user(user_id).await {
         Ok(can_erase) => {
@@ -204,6 +258,7 @@ pub async fn can_erase_user(data: web::Data<AppState>, auth: AuthenticatedUser) 
                 auth.organization_id,
             )
             .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
             .with_metadata(serde_json::json!({
                 "can_erase": can_erase
             }));
