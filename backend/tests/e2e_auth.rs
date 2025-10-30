@@ -406,7 +406,7 @@ async fn admin_can_manage_user_roles_via_http() {
             subscription_plan, max_buildings, max_users, is_active, created_at, updated_at
         )
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
-        "#
+        "#,
     )
     .bind(org_id)
     .bind("Org Multi Admin")
