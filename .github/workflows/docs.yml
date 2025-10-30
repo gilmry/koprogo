@@ -49,6 +49,10 @@ jobs:
           cd docs
           pip install -r requirements.txt
 
+      - name: Generate video gallery page
+        run: |
+          python3 .claude/scripts/generate-video-rst.py
+
       - name: Build Rust documentation
         run: |
           cd backend
