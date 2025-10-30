@@ -23,6 +23,9 @@ pub struct CreateBuildingDto {
     #[validate(range(min = 1, message = "Total units must be greater than 0"))]
     pub total_units: i32,
 
+    #[validate(range(min = 1, message = "Total tantiemes must be greater than 0"))]
+    pub total_tantiemes: Option<i32>,
+
     pub construction_year: Option<i32>,
 }
 
@@ -48,6 +51,9 @@ pub struct UpdateBuildingDto {
     #[validate(range(min = 1, message = "Total units must be greater than 0"))]
     pub total_units: i32,
 
+    #[validate(range(min = 1, message = "Total tantiemes must be greater than 0"))]
+    pub total_tantiemes: Option<i32>,
+
     pub construction_year: Option<i32>,
 }
 
@@ -61,6 +67,7 @@ pub struct BuildingResponseDto {
     pub postal_code: String,
     pub country: String,
     pub total_units: i32,
+    pub total_tantiemes: i32,
     pub construction_year: Option<i32>,
     pub created_at: String,
     pub updated_at: String,

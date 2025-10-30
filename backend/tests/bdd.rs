@@ -209,6 +209,7 @@ impl BuildingWorld {
                 "1000".to_string(),
                 "Belgique".to_string(),
                 5,
+                1000,
                 Some(1999),
             )
             .unwrap();
@@ -269,6 +270,7 @@ async fn when_create_building(world: &mut BuildingWorld, name: String, city: Str
         postal_code: "75001".to_string(),
         country: "France".to_string(),
         total_units: 10,
+        total_tantiemes: Some(1000),
         construction_year: Some(2000),
     };
 
@@ -921,6 +923,7 @@ async fn given_two_orgs(world: &mut BuildingWorld) {
         "5000".to_string(),
         "Belgique".to_string(),
         3,
+        1000,
         Some(2001),
     )
     .unwrap();

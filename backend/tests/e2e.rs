@@ -172,6 +172,7 @@ async fn test_create_building_endpoint() {
         postal_code: "75001".to_string(),
         country: "France".to_string(),
         total_units: 10,
+        total_tantiemes: Some(1000),
         construction_year: Some(2000),
     };
 
@@ -272,6 +273,7 @@ async fn test_create_building_validation_fails() {
         postal_code: "75001".to_string(),
         country: "France".to_string(),
         total_units: 10,
+        total_tantiemes: Some(1000),
         construction_year: Some(2000),
     };
 

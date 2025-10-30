@@ -30,6 +30,7 @@ impl BuildingUseCases {
             dto.postal_code,
             dto.country,
             dto.total_units,
+            dto.total_tantiemes.unwrap_or(1000),
             dto.construction_year,
         )?;
 
@@ -91,6 +92,7 @@ impl BuildingUseCases {
             dto.postal_code,
             dto.country,
             dto.total_units,
+            dto.total_tantiemes.unwrap_or(1000),
             dto.construction_year,
         );
 
@@ -112,6 +114,7 @@ impl BuildingUseCases {
             postal_code: building.postal_code.clone(),
             country: building.country.clone(),
             total_units: building.total_units,
+            total_tantiemes: building.total_tantiemes,
             construction_year: building.construction_year,
             created_at: building.created_at.to_rfc3339(),
             updated_at: building.updated_at.to_rfc3339(),
@@ -160,6 +163,7 @@ mod tests {
             postal_code: "75001".to_string(),
             country: "France".to_string(),
             total_units: 10,
+            total_tantiemes: Some(1000),
             construction_year: Some(2000),
         };
 
@@ -180,6 +184,7 @@ mod tests {
             postal_code: "75001".to_string(),
             country: "France".to_string(),
             total_units: 10,
+            total_tantiemes: Some(1000),
             construction_year: Some(2000),
         };
 

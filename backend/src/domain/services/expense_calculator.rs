@@ -122,7 +122,7 @@ mod tests {
             None,
         )
         .unwrap();
-        expense1.mark_as_paid();
+        let _ = expense1.mark_as_paid();
 
         let expense2 = Expense::new(
             org_id,

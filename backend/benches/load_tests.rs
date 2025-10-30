@@ -17,6 +17,7 @@ fn benchmark_building_creation(c: &mut Criterion) {
                 black_box("75001".to_string()),
                 black_box("France".to_string()),
                 black_box(10),
+                black_box(1000),
                 black_box(Some(2000)),
             )
         });

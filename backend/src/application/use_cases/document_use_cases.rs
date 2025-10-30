@@ -119,6 +119,15 @@ impl DocumentUseCases {
         Ok(documents.into_iter().map(DocumentResponse::from).collect())
     }
 
+    /// List all documents for an expense
+    pub async fn list_documents_by_expense(
+        &self,
+        expense_id: Uuid,
+    ) -> Result<Vec<DocumentResponse>, String> {
+        let documents = self.repository.find_by_expense(expense_id).await?;
+        Ok(documents.into_iter().map(DocumentResponse::from).collect())
+    }
+
     /// List all documents with pagination
     pub async fn list_documents_paginated(
         &self,
@@ -241,6 +250,15 @@ mod tests {
             Ok(docs
                 .iter()
                 .filter(|d| d.related_meeting_id == Some(meeting_id))
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<Document>, String> {
+            let docs = self.documents.lock().unwrap();
+            Ok(docs
+                .iter()
+                .filter(|d| d.related_expense_id == Some(expense_id))
                 .cloned()
                 .collect())
         }

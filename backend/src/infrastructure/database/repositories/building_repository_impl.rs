@@ -21,8 +21,8 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn create(&self, building: &Building) -> Result<Building, String> {
         sqlx::query(
             r#"
-            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             "#,
         )
         .bind(building.id)
@@ -33,6 +33,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         .bind(&building.postal_code)
         .bind(&building.country)
         .bind(building.total_units)
+        .bind(building.total_tantiemes)
         .bind(building.construction_year)
         .bind(building.created_at)
         .bind(building.updated_at)
@@ -46,7 +47,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at
+            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, created_at, updated_at
             FROM buildings
             WHERE id = $1
             "#,
@@ -65,6 +66,7 @@ impl BuildingRepository for PostgresBuildingRepository {
             postal_code: row.get("postal_code"),
             country: row.get("country"),
             total_units: row.get("total_units"),
+            total_tantiemes: row.get("total_tantiemes"),
             construction_year: row.get("construction_year"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
@@ -74,7 +76,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_all(&self) -> Result<Vec<Building>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at
+            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, created_at, updated_at
             FROM buildings
             ORDER BY created_at DESC
             "#,
@@ -94,6 +96,7 @@ impl BuildingRepository for PostgresBuildingRepository {
                 postal_code: row.get("postal_code"),
                 country: row.get("country"),
                 total_units: row.get("total_units"),
+                total_tantiemes: row.get("total_tantiemes"),
                 construction_year: row.get("construction_year"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
@@ -190,7 +193,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, name, address, city, postal_code, country, total_units, construction_year, created_at, updated_at \
+            "SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, created_at, updated_at \
              FROM buildings {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -237,6 +240,7 @@ impl BuildingRepository for PostgresBuildingRepository {
                 postal_code: row.get("postal_code"),
                 country: row.get("country"),
                 total_units: row.get("total_units"),
+                total_tantiemes: row.get("total_tantiemes"),
                 construction_year: row.get("construction_year"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
@@ -250,7 +254,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         sqlx::query(
             r#"
             UPDATE buildings
-            SET organization_id = $2, name = $3, address = $4, city = $5, postal_code = $6, country = $7, total_units = $8, construction_year = $9, updated_at = $10
+            SET organization_id = $2, name = $3, address = $4, city = $5, postal_code = $6, country = $7, total_units = $8, total_tantiemes = $9, construction_year = $10, updated_at = $11
             WHERE id = $1
             "#,
         )
@@ -262,6 +266,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         .bind(&building.postal_code)
         .bind(&building.country)
         .bind(building.total_units)
+        .bind(building.total_tantiemes)
         .bind(building.construction_year)
         .bind(building.updated_at)
         .execute(&self.pool)

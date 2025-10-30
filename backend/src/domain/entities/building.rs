@@ -13,6 +13,7 @@ pub struct Building {
     pub postal_code: String,
     pub country: String,
     pub total_units: i32,
+    pub total_tantiemes: i32,
     pub construction_year: Option<i32>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -28,6 +29,7 @@ impl Building {
         postal_code: String,
         country: String,
         total_units: i32,
+        total_tantiemes: i32,
         construction_year: Option<i32>,
     ) -> Result<Self, String> {
         if name.is_empty() {
@@ -35,6 +37,9 @@ impl Building {
         }
         if total_units <= 0 {
             return Err("Total units must be greater than 0".to_string());
+        }
+        if total_tantiemes <= 0 {
+            return Err("Total tantiemes must be greater than 0".to_string());
         }
 
         let now = Utc::now();
@@ -47,6 +52,7 @@ impl Building {
             postal_code,
             country,
             total_units,
+            total_tantiemes,
             construction_year,
             created_at: now,
             updated_at: now,
@@ -62,6 +68,7 @@ impl Building {
         postal_code: String,
         country: String,
         total_units: i32,
+        total_tantiemes: i32,
         construction_year: Option<i32>,
     ) {
         self.name = name;
@@ -70,6 +77,7 @@ impl Building {
         self.postal_code = postal_code;
         self.country = country;
         self.total_units = total_units;
+        self.total_tantiemes = total_tantiemes;
         self.construction_year = construction_year;
         self.updated_at = Utc::now();
     }
@@ -90,6 +98,7 @@ mod tests {
             "75001".to_string(),
             "France".to_string(),
             50,
+            1000,
             Some(1985),
         );
 
@@ -98,6 +107,7 @@ mod tests {
         assert_eq!(building.organization_id, org_id);
         assert_eq!(building.name, "Résidence Les Jardins");
         assert_eq!(building.total_units, 50);
+        assert_eq!(building.total_tantiemes, 1000);
     }
 
     #[test]
@@ -111,6 +121,7 @@ mod tests {
             "75001".to_string(),
             "France".to_string(),
             50,
+            1000,
             Some(1985),
         );
 
@@ -129,6 +140,7 @@ mod tests {
             "75001".to_string(),
             "France".to_string(),
             0,
+            1000,
             Some(1985),
         );
 
@@ -147,6 +159,7 @@ mod tests {
             "00000".to_string(),
             "France".to_string(),
             10,
+            1000,
             None,
         )
         .unwrap();
@@ -160,11 +173,13 @@ mod tests {
             "11111".to_string(),
             "France".to_string(),
             10,
+            1500,
             None,
         );
 
         assert_eq!(building.name, "New Name");
         assert_eq!(building.address, "New Address");
+        assert_eq!(building.total_tantiemes, 1500);
         assert!(building.updated_at > old_updated_at);
     }
 }
