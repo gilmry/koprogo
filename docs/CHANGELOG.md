@@ -31,12 +31,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Authorization: self-service + SuperAdmin bypass
   - Legal holds checking, partial anonymization handling
   - 9 unit tests with mocks (100% coverage)
+- Implemented PostgreSQL GDPR repository (`PostgresGdprRepository`)
+  - Full implementation of `GdprRepository` trait (6 methods)
+  - Multi-table JOIN queries for comprehensive data aggregation
+  - SQL UPDATE statements for user/owner anonymization
+  - Email-based owner discovery and legal holds validation
+  - Compile-time verified queries with sqlx macro
+  - Private helper methods for data fetching
+  - Fixed domain entity: `OwnerData.organization_id` now `Option<Uuid>`
+  - Updated .sqlx query cache for CI/CD compatibility
 
 ### API
 
 ### Security
 
 ### Tests
+- All 176 unit tests passing
+- Zero clippy warnings
+- Code formatted with cargo fmt
 
 ### Documentation
 
