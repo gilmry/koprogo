@@ -53,9 +53,12 @@
   };
 </script>
 
-<form on:submit={handleLogin} class="space-y-6">
+<form on:submit={handleLogin} class="space-y-6" data-testid="login-form">
   {#if error}
-    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+    <div
+      class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+      data-testid="login-error"
+    >
       {error}
     </div>
   {/if}
@@ -71,6 +74,7 @@
       required
       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       placeholder="votre@email.com"
+      data-testid="login-email"
     />
   </div>
 
@@ -85,6 +89,7 @@
       required
       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       placeholder="••••••••"
+      data-testid="login-password"
     />
   </div>
 
@@ -93,10 +98,15 @@
       <input
         type="checkbox"
         class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+        data-testid="login-remember"
       />
       <span class="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
     </label>
-    <a href="/forgot-password" class="text-sm text-primary-600 hover:text-primary-700">
+    <a
+      href="/forgot-password"
+      class="text-sm text-primary-600 hover:text-primary-700"
+      data-testid="login-forgot-password"
+    >
       Mot de passe oublié?
     </a>
   </div>
@@ -105,6 +115,7 @@
     type="submit"
     disabled={loading}
     class="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+    data-testid="login-submit"
   >
     {loading ? 'Connexion...' : 'Se connecter'}
   </button>

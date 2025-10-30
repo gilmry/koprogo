@@ -165,7 +165,7 @@
   };
 </script>
 
-<form on:submit={handleRegister} class="space-y-4">
+<form on:submit={handleRegister} class="space-y-4" data-testid="register-form">
   <div class="grid grid-cols-2 gap-4">
     <FormInput
       id="firstName"
@@ -175,6 +175,7 @@
       error={errors.firstName}
       required
       placeholder="Jean"
+      data-testid="register-first-name"
     />
 
     <FormInput
@@ -185,6 +186,7 @@
       error={errors.lastName}
       required
       placeholder="Dupont"
+      data-testid="register-last-name"
     />
   </div>
 
@@ -197,6 +199,7 @@
     required
     placeholder="jean.dupont@example.com"
     autocomplete="email"
+    data-testid="register-email"
   />
 
   <FormInput
@@ -209,6 +212,7 @@
     placeholder="••••••••"
     hint="Au moins 6 caractères"
     autocomplete="new-password"
+    data-testid="register-password"
   />
 
   <FormInput
@@ -220,6 +224,7 @@
     required
     placeholder="••••••••"
     autocomplete="new-password"
+    data-testid="register-confirm-password"
   />
 
   <FormSelect
@@ -228,6 +233,7 @@
     bind:value={formData.role}
     options={roleOptions}
     required
+    data-testid="register-role"
   />
 
   {#if showOrgField}
@@ -238,10 +244,18 @@
       bind:value={formData.organizationId}
       hint="Laissez vide si vous créez une nouvelle organisation"
       placeholder="550e8400-e29b-41d4-a716-446655440000"
+      data-testid="register-org-id"
     />
   {/if}
 
-  <Button type="submit" {loading} fullWidth variant="primary" size="lg">
+  <Button
+    type="submit"
+    {loading}
+    fullWidth
+    variant="primary"
+    size="lg"
+    data-testid="register-submit"
+  >
     {loading ? 'Création du compte...' : 'Créer mon compte'}
   </Button>
 

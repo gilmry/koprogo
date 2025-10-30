@@ -131,11 +131,15 @@
   }
 </script>
 
-<nav class="bg-white shadow-sm border-b border-gray-200">
+<nav class="bg-white shadow-sm border-b border-gray-200" data-testid="navigation">
   <div class="container mx-auto px-4">
     <div class="flex items-center justify-between h-16">
       <!-- Logo -->
-      <a href={isAuthenticated ? `/${user?.role}` : '/'} class="flex items-center space-x-2">
+      <a
+        href={isAuthenticated ? `/${user?.role}` : '/'}
+        class="flex items-center space-x-2"
+        data-testid="nav-logo"
+      >
         <span class="text-2xl font-bold text-primary-600">KoproGo</span>
         {#if user?.role}
           <span class="text-sm text-gray-500 hidden md:inline">
@@ -148,11 +152,12 @@
 
       {#if isAuthenticated}
         <!-- Navigation Links -->
-        <div class="hidden md:flex items-center space-x-1">
+        <div class="hidden md:flex items-center space-x-1" data-testid="nav-links">
           {#each navItems as item}
             <a
               href={item.href}
               class="px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-primary-600 transition"
+              data-testid="nav-link-{item.label.toLowerCase().replace(/\s+/g, '-')}"
             >
               <span class="mr-1">{item.icon}</span>
               {item.label}
@@ -163,13 +168,14 @@
         <!-- Right side: Language Selector + Sync Status + User Menu -->
         <div class="flex items-center gap-4">
           {#if user?.roles && user.roles.length > 1}
-            <div class="flex items-center">
+            <div class="flex items-center" data-testid="role-switcher">
               <label class="text-xs text-gray-500 mr-2 hidden lg:inline">Rôle</label>
               <select
                 class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 on:change|stopPropagation={handleRoleChange}
                 disabled={switchingRole}
                 bind:value={selectedRoleId}
+                data-testid="role-selector"
               >
                 {#each user.roles as roleOption}
                   <option value={roleOption.id}>
@@ -183,10 +189,11 @@
           <SyncStatus />
 
         <!-- User Menu -->
-        <div class="relative">
+        <div class="relative" data-testid="user-menu-container">
           <button
             on:click|stopPropagation={() => showUserMenu = !showUserMenu}
             class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+            data-testid="user-menu-button"
           >
             <div class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold">
               {user?.firstName?.[0]}{user?.lastName?.[0]}
@@ -200,11 +207,15 @@
           </button>
 
           {#if showUserMenu}
-            <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+            <div
+              class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+              data-testid="user-menu-dropdown"
+            >
               <a
                 href="/profile"
                 on:click|stopPropagation
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                data-testid="user-menu-profile"
               >
                 👤 {$_('navigation.profile')}
               </a>
@@ -212,6 +223,7 @@
                 href="/settings"
                 on:click|stopPropagation
                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                data-testid="user-menu-settings"
               >
                 ⚙️ Paramètres
               </a>
@@ -219,6 +231,7 @@
               <button
                 on:click|stopPropagation={logout}
                 class="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                data-testid="user-menu-logout"
               >
                 🚪 {$_('navigation.logout')}
               </button>
@@ -232,6 +245,7 @@
           <a
             href="/login"
             class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
+            data-testid="nav-login-button"
           >
             Connexion
           </a>
