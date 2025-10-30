@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
   import type { UnitOwner, Owner } from '../lib/types';
+  import UnitOwnerEditModal from './UnitOwnerEditModal.svelte';
+  import UnitOwnerAddModal from './UnitOwnerAddModal.svelte';
 
   export let unitId: string;
   export let showHistory = false;
@@ -9,6 +11,11 @@
   let unitOwners: (UnitOwner & { owner?: Owner })[] = [];
   let loading = true;
   let error = '';
+
+  // Modal state
+  let showEditModal = false;
+  let showAddModal = false;
+  let selectedUnitOwner: (UnitOwner & { owner?: Owner }) | null = null;
 
   onMount(async () => {
     await loadUnitOwners();
@@ -61,6 +68,11 @@
   $: activeOwners = unitOwners.filter(uo => uo.is_active);
   $: inactiveOwners = unitOwners.filter(uo => !uo.is_active);
   $: totalPercentage = activeOwners.reduce((sum, uo) => sum + uo.ownership_percentage, 0);
+
+  function handleEditUnitOwner(unitOwner: UnitOwner & { owner?: Owner }) {
+    selectedUnitOwner = unitOwner;
+    showEditModal = true;
+  }
 </script>
 
 <div class="space-y-4">
@@ -76,11 +88,19 @@
     <!-- Active Owners -->
     {#if activeOwners.length > 0}
       <div class="space-y-2">
-        <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Copropriétaires actuels
-        </h4>
+        <div class="flex justify-between items-center">
+          <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            Copropriétaires actuels
+          </h4>
+          <button
+            on:click={() => showAddModal = true}
+            class="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
+          >
+            + Ajouter
+          </button>
+        </div>
 
-        {#each activeOwners as unitOwner}
+        {#each activeOwners as unitOwner (unitOwner.id)}
           <div class="bg-white border border-gray-200 rounded-lg p-3">
             <div class="flex justify-between items-start">
               <div class="flex-1">
@@ -111,11 +131,20 @@
                 </p>
               </div>
 
-              <div class="ml-4 text-right">
-                <p class="text-2xl font-bold text-primary-600">
-                  {formatPercentage(unitOwner.ownership_percentage)}
-                </p>
-                <p class="text-xs text-gray-500">Quote-part</p>
+              <div class="ml-2 flex items-center gap-1 sm:gap-2">
+                <div class="text-right">
+                  <p class="text-lg sm:text-xl font-bold text-primary-600">
+                    {formatPercentage(unitOwner.ownership_percentage)}
+                  </p>
+                  <p class="text-xs text-gray-500 hidden sm:block">Quote-part</p>
+                </div>
+                <button
+                  on:click={() => handleEditUnitOwner(unitOwner)}
+                  class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition"
+                  title="Modifier la quote-part"
+                >
+                  ✏️
+                </button>
               </div>
             </div>
           </div>
@@ -137,9 +166,17 @@
         </div>
       </div>
     {:else}
-      <p class="text-center text-gray-600 py-4">
-        Aucun copropriétaire actif
-      </p>
+      <div class="text-center py-4">
+        <p class="text-gray-600 mb-3">
+          Aucun copropriétaire actif
+        </p>
+        <button
+          on:click={() => showAddModal = true}
+          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
+        >
+          + Ajouter un copropriétaire
+        </button>
+      </div>
     {/if}
 
     <!-- Historical Owners (if showHistory is true) -->
@@ -149,7 +186,7 @@
           Historique
         </h4>
 
-        {#each inactiveOwners as unitOwner}
+        {#each inactiveOwners as unitOwner (unitOwner.id)}
           <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 opacity-75">
             <div class="flex justify-between items-start">
               <div class="flex-1">
@@ -180,3 +217,22 @@
     {/if}
   {/if}
 </div>
+
+<!-- Edit Modal -->
+<UnitOwnerEditModal
+  bind:open={showEditModal}
+  unitOwner={selectedUnitOwner}
+  on:updated={loadUnitOwners}
+  on:close={() => {
+    showEditModal = false;
+    selectedUnitOwner = null;
+  }}
+/>
+
+<!-- Add Owner Modal -->
+<UnitOwnerAddModal
+  bind:open={showAddModal}
+  unitId={unitId}
+  on:added={loadUnitOwners}
+  on:close={() => showAddModal = false}
+/>
