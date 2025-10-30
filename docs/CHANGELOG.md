@@ -16,6 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pure domain layer with no external dependencies
   - JSON serialization support
   - 9 unit tests (100% coverage)
+- **Added GDPR domain entities for Articles 16, 18, 21** (Phase 8)
+  - `GdprRectificationRequest`: Right to rectification (Article 16)
+    - Track field changes with old/new values
+    - Approval workflow (Pending → Approved → Applied)
+    - Support for User and Owner entity corrections
+    - 4 unit tests
+  - `GdprRestrictionRequest`: Right to restriction of processing (Article 18)
+    - 4 grounds for restriction (accuracy contested, unlawful processing, legal claims, objection pending)
+    - Temporal restrictions with duration support
+    - Active status tracking with expiration
+    - 5 unit tests
+  - `GdprObjectionRequest`: Right to object (Article 21)
+    - 5 objection types (legitimate interests, direct marketing, profiling, automated decisions, research)
+    - Absolute right for direct marketing
+    - Partial acceptance support (some purposes accepted, others rejected)
+    - 5 unit tests
 - Added `GdprRepository` port trait for data aggregation and anonymization operations
   - 6 methods: aggregate_user_data, anonymize_user/owner, find_owner_ids, check_legal_holds, is_anonymized
   - Mock implementation with 4 unit tests
