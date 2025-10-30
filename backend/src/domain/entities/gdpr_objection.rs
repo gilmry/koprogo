@@ -23,9 +23,9 @@ pub struct GdprObjectionRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ObjectionStatus {
     Pending,
-    Accepted,   // Objection upheld, processing stopped
-    Rejected,   // Objection rejected (compelling legitimate grounds)
-    Partial,    // Some purposes accepted, others rejected
+    Accepted, // Objection upheld, processing stopped
+    Rejected, // Objection rejected (compelling legitimate grounds)
+    Partial,  // Some purposes accepted, others rejected
 }
 
 /// Types of objection under Article 21
@@ -136,10 +136,7 @@ mod tests {
     fn test_create_objection_request() {
         let user_id = Uuid::new_v4();
         let org_id = Uuid::new_v4();
-        let purposes = vec![
-            "email_marketing".to_string(),
-            "sms_marketing".to_string(),
-        ];
+        let purposes = vec!["email_marketing".to_string(), "sms_marketing".to_string()];
 
         let request = GdprObjectionRequest::new(
             user_id,
@@ -162,18 +159,16 @@ mod tests {
         let admin_id = Uuid::new_v4();
         let purposes = vec!["profiling".to_string()];
 
-        let mut request = GdprObjectionRequest::new(
-            user_id,
-            None,
-            ObjectionType::Profiling,
-            purposes,
-            None,
-        );
+        let mut request =
+            GdprObjectionRequest::new(user_id, None, ObjectionType::Profiling, purposes, None);
 
         request.accept(admin_id);
 
         assert_eq!(request.status, ObjectionStatus::Accepted);
-        assert!(request.processing_purposes.iter().all(|p| p.accepted == Some(true)));
+        assert!(request
+            .processing_purposes
+            .iter()
+            .all(|p| p.accepted == Some(true)));
         assert_eq!(request.get_accepted_purposes().len(), 1);
     }
 
@@ -194,7 +189,10 @@ mod tests {
         request.reject(admin_id);
 
         assert_eq!(request.status, ObjectionStatus::Rejected);
-        assert!(request.processing_purposes.iter().all(|p| p.accepted == Some(false)));
+        assert!(request
+            .processing_purposes
+            .iter()
+            .all(|p| p.accepted == Some(false)));
         assert_eq!(request.get_accepted_purposes().len(), 0);
     }
 
@@ -223,8 +221,12 @@ mod tests {
 
         assert_eq!(request.status, ObjectionStatus::Partial);
         assert_eq!(request.get_accepted_purposes().len(), 2);
-        assert!(request.get_accepted_purposes().contains(&"email_marketing".to_string()));
-        assert!(!request.get_accepted_purposes().contains(&"analytics".to_string()));
+        assert!(request
+            .get_accepted_purposes()
+            .contains(&"email_marketing".to_string()));
+        assert!(!request
+            .get_accepted_purposes()
+            .contains(&"analytics".to_string()));
     }
 
     #[test]
@@ -240,13 +242,8 @@ mod tests {
             None,
         );
 
-        let profiling_request = GdprObjectionRequest::new(
-            user_id,
-            None,
-            ObjectionType::Profiling,
-            purposes,
-            None,
-        );
+        let profiling_request =
+            GdprObjectionRequest::new(user_id, None, ObjectionType::Profiling, purposes, None);
 
         assert!(marketing_request.is_marketing_objection());
         assert!(!profiling_request.is_marketing_objection());

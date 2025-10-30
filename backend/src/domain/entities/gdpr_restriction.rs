@@ -24,9 +24,9 @@ pub struct GdprRestrictionRequest {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum RestrictionStatus {
     Pending,
-    Active,     // Restriction is in effect
-    Lifted,     // Restriction was removed
-    Expired,    // Restriction period ended
+    Active,  // Restriction is in effect
+    Lifted,  // Restriction was removed
+    Expired, // Restriction period ended
     Rejected,
 }
 
@@ -71,9 +71,7 @@ impl GdprRestrictionRequest {
         let now = Utc::now();
         self.status = RestrictionStatus::Active;
         self.effective_from = Some(now);
-        self.effective_until = duration_days.map(|days| {
-            now + chrono::Duration::days(days as i64)
-        });
+        self.effective_until = duration_days.map(|days| now + chrono::Duration::days(days as i64));
         self.processed_at = Some(now);
         self.processed_by = Some(admin_id);
     }
@@ -151,12 +149,8 @@ mod tests {
         let user_id = Uuid::new_v4();
         let admin_id = Uuid::new_v4();
 
-        let mut request = GdprRestrictionRequest::new(
-            user_id,
-            None,
-            RestrictionReason::ObjectionPending,
-            None,
-        );
+        let mut request =
+            GdprRestrictionRequest::new(user_id, None, RestrictionReason::ObjectionPending, None);
 
         request.activate(admin_id, None);
 
@@ -171,12 +165,8 @@ mod tests {
         let user_id = Uuid::new_v4();
         let admin_id = Uuid::new_v4();
 
-        let mut request = GdprRestrictionRequest::new(
-            user_id,
-            None,
-            RestrictionReason::AccuracyContested,
-            None,
-        );
+        let mut request =
+            GdprRestrictionRequest::new(user_id, None, RestrictionReason::AccuracyContested, None);
 
         request.activate(admin_id, Some(30)); // 30 days
 
@@ -197,12 +187,8 @@ mod tests {
         let user_id = Uuid::new_v4();
         let admin_id = Uuid::new_v4();
 
-        let mut request = GdprRestrictionRequest::new(
-            user_id,
-            None,
-            RestrictionReason::UnlawfulProcessing,
-            None,
-        );
+        let mut request =
+            GdprRestrictionRequest::new(user_id, None, RestrictionReason::UnlawfulProcessing, None);
 
         request.activate(admin_id, None);
         assert!(request.is_active());
@@ -217,12 +203,8 @@ mod tests {
         let user_id = Uuid::new_v4();
         let admin_id = Uuid::new_v4();
 
-        let mut request = GdprRestrictionRequest::new(
-            user_id,
-            None,
-            RestrictionReason::LegalClaims,
-            None,
-        );
+        let mut request =
+            GdprRestrictionRequest::new(user_id, None, RestrictionReason::LegalClaims, None);
 
         request.reject(admin_id);
 
