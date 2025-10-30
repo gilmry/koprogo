@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MeetingDetailComponent from '../components/MeetingDetail.svelte';
+---
+
+<Layout title="Détail de l'assemblée générale" showNav={true} requireAuth={true}>
+  <MeetingDetailComponent client:load />
+</Layout>

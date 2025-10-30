@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ExpenseDetailComponent from '../components/ExpenseDetail.svelte';
+---
+
+<Layout title="Détail de la dépense" showNav={true} requireAuth={true}>
+  <ExpenseDetailComponent client:load />
+</Layout>

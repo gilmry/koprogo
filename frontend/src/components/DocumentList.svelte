@@ -15,6 +15,7 @@
 
   export let allowUpload: boolean | null = null;
   export let allowDelete: boolean | null = null;
+  export let buildingId: string | null = null;
 
   let documents: Document[] = [];
   let loading = true;
@@ -80,15 +81,24 @@
     try {
       loading = true;
       error = '';
-      const response = await api.get<PageResponse<Document>>(
-        `/documents?page=${currentPage}&per_page=${perPage}`,
-      );
 
-      documents = response.data;
-      totalItems = response.pagination.total_items;
-      totalPages = response.pagination.total_pages;
-      currentPage = response.pagination.current_page;
-      perPage = response.pagination.per_page;
+      if (buildingId) {
+        // Endpoint without pagination for building-specific documents
+        const response = await api.get<Document[]>(`/buildings/${buildingId}/documents`);
+        documents = response;
+        totalItems = response.length;
+        totalPages = 1;
+        currentPage = 1;
+      } else {
+        // Paginated endpoint for all documents
+        const endpoint = `/documents?page=${currentPage}&per_page=${perPage}`;
+        const response = await api.get<PageResponse<Document>>(endpoint);
+        documents = response.data;
+        totalItems = response.pagination.total_items;
+        totalPages = response.pagination.total_pages;
+        currentPage = response.pagination.current_page;
+        perPage = response.pagination.per_page;
+      }
     } catch (e) {
       error =
         e instanceof Error ? e.message : 'Erreur lors du chargement des documents';
@@ -258,7 +268,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          {#each documents as doc}
+          {#each documents as doc (doc.id)}
             <tr class="hover:bg-gray-50">
               <td class="px-5 py-3">
                 <div class="flex items-center gap-3">
