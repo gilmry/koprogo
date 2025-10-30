@@ -127,7 +127,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All BDD tests compile with zero warnings
 - Zero clippy warnings
 - Code formatted with cargo fmt
-- E2E test infrastructure ready for GDPR scenarios
+- **Playwright E2E tests for GDPR workflows** (`frontend/tests/e2e/Gdpr.spec.ts`) - Phase 12
+  - 15 comprehensive test scenarios covering full GDPR lifecycle
+  - User self-service: export, erasure eligibility check, data erasure with auto-logout
+  - Admin operations: search users, admin export/erase, audit logs viewer, pagination
+  - Cross-organization access: SuperAdmin privileges for any user
+  - Complete E2E journey: register → export → erase → verify anonymization
+  - Uses all 52+ data-testid attributes for stable selectors
+  - Video recording enabled for living documentation
+  - Helper functions for test user creation and admin login
+  - ~537 lines covering Articles 15, 17, and 30 (audit logs)
 
 ### Frontend
 - **User GDPR data panel** (`GdprDataPanel.svelte`) - Phase 10

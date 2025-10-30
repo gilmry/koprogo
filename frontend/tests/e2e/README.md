@@ -18,6 +18,7 @@ Les vidéos générées par les tests servent de documentation pour :
 tests/e2e/
 ├── README.md                       # Ce fichier
 ├── AdminDashBoard.improved.spec.ts # Suite complète admin (orgs/users/buildings + parcours global)
+├── Gdpr.spec.ts                    # Suite GDPR complète (Articles 15, 17, 30)
 └── config.ts                       # Helpers de configuration Playwright
 ```
 
@@ -212,6 +213,44 @@ Cette unique suite couvre l'intégralité des workflows administrateur à l'aide
 - ✅ Parcours complet : org ➜ user ➜ building ➜ nettoyage automatique.
 
 **Vidéos générées** : un clip par scénario ci-dessus + le parcours complet.
+
+### 3. Suite GDPR Complete (`Gdpr.spec.ts`) - Phase 12
+
+Cette suite couvre l'intégralité des workflows GDPR (Articles 15 & 17) :
+
+**User Self-Service (Articles 15 & 17)** :
+- ✅ Export de données personnelles avec téléchargement JSON (Article 15)
+- ✅ Vérification d'éligibilité à l'effacement (legal holds)
+- ✅ Effacement des données avec confirmation en deux étapes (Article 17)
+- ✅ Déconnexion automatique après effacement
+- ✅ Vérification que l'utilisateur anonymisé ne peut plus se connecter
+- ✅ Blocage si des obligations légales existent
+
+**Admin Operations (SuperAdmin)** :
+- ✅ Panneau de gestion GDPR admin
+- ✅ Recherche et export des données utilisateur par l'admin
+- ✅ Effacement des données par l'admin avec notification email
+- ✅ Visualisation et filtrage des logs d'audit (Article 30)
+- ✅ Pagination des logs d'audit
+- ✅ Rafraîchissement manuel des logs
+
+**Cross-Organization Access** :
+- ✅ SuperAdmin peut exporter les données de n'importe quelle organisation
+- ✅ SuperAdmin peut effacer les données de n'importe quelle organisation
+
+**Complete E2E Journey** :
+- ✅ Parcours complet : Register → Export → Erase → Verify → Audit logs
+- ✅ Vérification du cycle de vie GDPR de bout en bout
+
+**Coverage** : 15 scénarios, ~537 lignes, utilise les 52+ data-testid attributes
+
+**Comment lancer** :
+
+```bash
+npm run test:e2e -- Gdpr.spec.ts
+```
+
+**Vidéos générées** : Démonstration complète de tous les workflows GDPR pour utilisateurs et administrateurs.
 
 ## 🔧 Configuration Avancée
 
