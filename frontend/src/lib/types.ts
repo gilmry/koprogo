@@ -234,3 +234,104 @@ export const canAccessBuilding = (
   if (user.role === UserRole.SUPERADMIN) return true;
   return user.buildingIds?.includes(buildingId) ?? false;
 };
+
+// ============================================================================
+// GDPR Types (Articles 15 & 17)
+// ============================================================================
+
+export interface GdprUserData {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  organization_id?: string;
+  is_active: boolean;
+  is_anonymized: boolean;
+  created_at: string;
+}
+
+export interface GdprOwnerData {
+  id: string;
+  organization_id?: string;
+  user_id?: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  address: string;
+  city: string;
+  postal_code: string;
+  country: string;
+  is_anonymized: boolean;
+  created_at: string;
+  anonymized_at?: string;
+}
+
+export interface GdprUnitOwnershipData {
+  id: string;
+  unit_id: string;
+  owner_id: string;
+  unit_number?: string;
+  building_name?: string;
+  ownership_percentage: number;
+  start_date: string;
+  end_date?: string;
+  is_primary_contact: boolean;
+  is_active: boolean;
+}
+
+export interface GdprExpenseData {
+  id: string;
+  building_id: string;
+  amount: number;
+  description: string;
+  due_date: string;
+  paid: boolean;
+  created_at: string;
+}
+
+export interface GdprDocumentData {
+  id: string;
+  title: string;
+  document_type: string;
+  file_size: number;
+  created_at: string;
+}
+
+export interface GdprMeetingData {
+  id: string;
+  building_id: string;
+  title: string;
+  meeting_type: string;
+  scheduled_at: string;
+  status: string;
+  created_at: string;
+}
+
+export interface GdprExport {
+  export_date: string;
+  user: GdprUserData;
+  owners: GdprOwnerData[];
+  units: GdprUnitOwnershipData[];
+  expenses: GdprExpenseData[];
+  documents: GdprDocumentData[];
+  meetings: GdprMeetingData[];
+  total_items: number;
+}
+
+export interface GdprEraseResponse {
+  success: boolean;
+  message: string;
+  anonymized_at: string;
+  user_id: string;
+  user_email: string;
+  user_first_name: string;
+  user_last_name: string;
+  owners_anonymized: number;
+}
+
+export interface GdprCanEraseResponse {
+  can_erase: boolean;
+  user_id: string;
+  legal_holds: number;
+}
