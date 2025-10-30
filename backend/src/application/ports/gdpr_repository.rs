@@ -107,6 +107,10 @@ pub trait GdprRepository: Send + Sync {
     async fn is_user_anonymized(&self, user_id: Uuid) -> Result<bool, String>;
 }
 
+// Mock implementation available for testing in use cases
+#[cfg(test)]
+pub use tests::MockGdprRepo;
+
 #[cfg(test)]
 mod tests {
     use super::*;
