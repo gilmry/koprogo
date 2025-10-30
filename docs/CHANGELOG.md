@@ -42,13 +42,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated .sqlx query cache for CI/CD compatibility
 
 ### API
+- Added GDPR REST API endpoints for data privacy compliance
+  - `GET /api/v1/gdpr/export` - Export user personal data (Article 15)
+  - `DELETE /api/v1/gdpr/erase` - Request data erasure (Article 17)
+  - `GET /api/v1/gdpr/can-erase` - Check erasure eligibility
+- Implemented HTTP handlers (`gdpr_handlers.rs`)
+  - `export_user_data()`: Full data export with authentication
+  - `erase_user_data()`: Anonymization with legal holds validation
+  - `can_erase_user()`: Pre-flight erasure check
+- Integrated GdprUseCases into AppState and routes
+- Updated E2E test setup with GDPR use cases
+- All endpoints protected by JWT authentication (AuthenticatedUser middleware)
+- SuperAdmin bypass for cross-organization access
 
 ### Security
+- GDPR endpoints implement proper authorization (self-service + SuperAdmin)
+- Legal holds validation prevents premature data erasure
+- HTTP status codes follow security best practices (401, 403, 409, 410)
 
 ### Tests
-- All 176 unit tests passing
+- All 179 unit tests passing (3 GDPR handler tests added)
 - Zero clippy warnings
 - Code formatted with cargo fmt
+- E2E test infrastructure ready for GDPR scenarios
 
 ### Documentation
 
