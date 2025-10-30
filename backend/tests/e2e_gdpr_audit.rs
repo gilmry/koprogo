@@ -3,10 +3,10 @@ use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAuditLogRepository, PostgresBuildingRepository, PostgresDocumentRepository,
-    PostgresExpenseRepository, PostgresGdprRepository, PostgresOwnerRepository,
-    PostgresRefreshTokenRepository, PostgresUnitOwnerRepository, PostgresUnitRepository,
-    PostgresUserRepository, PostgresUserRoleRepository,
+    create_pool, PostgresAuditLogRepository, PostgresBuildingRepository,
+    PostgresDocumentRepository, PostgresExpenseRepository, PostgresGdprRepository,
+    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
+    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
@@ -158,12 +158,11 @@ async fn test_gdpr_export_creates_audit_log() {
     tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     // Check that an audit log was created in the database
-    let count: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM audit_logs WHERE event_type = 'GdprDataExported'"
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("count audit logs");
+    let count: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM audit_logs WHERE event_type = 'GdprDataExported'")
+            .fetch_one(&pool)
+            .await
+            .expect("count audit logs");
 
     assert_eq!(count.0, 1, "Expected 1 audit log for GdprDataExported");
 
@@ -181,7 +180,7 @@ async fn test_gdpr_export_creates_audit_log() {
 
     // Check retention_until is set (7 years in the future)
     let retention: (chrono::DateTime<chrono::Utc>,) = sqlx::query_as(
-        "SELECT retention_until FROM audit_logs WHERE event_type = 'GdprDataExported' LIMIT 1"
+        "SELECT retention_until FROM audit_logs WHERE event_type = 'GdprDataExported' LIMIT 1",
     )
     .fetch_one(&pool)
     .await
@@ -189,7 +188,7 @@ async fn test_gdpr_export_creates_audit_log() {
 
     let now = chrono::Utc::now();
     let min_retention = now + chrono::Duration::days(365 * 6 + 360); // ~6.99 years
-    let max_retention = now + chrono::Duration::days(365 * 7 + 5);   // ~7.01 years
+    let max_retention = now + chrono::Duration::days(365 * 7 + 5); // ~7.01 years
 
     assert!(
         retention.0 > min_retention && retention.0 < max_retention,
@@ -248,11 +247,14 @@ async fn test_gdpr_can_erase_creates_audit_log() {
 
     // Check audit log
     let count: (i64,) = sqlx::query_as(
-        "SELECT COUNT(*) FROM audit_logs WHERE event_type = 'GdprErasureCheckRequested'"
+        "SELECT COUNT(*) FROM audit_logs WHERE event_type = 'GdprErasureCheckRequested'",
     )
     .fetch_one(&pool)
     .await
     .expect("count audit logs");
 
-    assert_eq!(count.0, 1, "Expected 1 audit log for GdprErasureCheckRequested");
+    assert_eq!(
+        count.0, 1,
+        "Expected 1 audit log for GdprErasureCheckRequested"
+    );
 }
