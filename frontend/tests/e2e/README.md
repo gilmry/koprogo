@@ -166,6 +166,7 @@ Le rapport contient :
 **Tous les parcours CRUD (Create-Read-Update-Delete) du dashboard administrateur :**
 
 #### Organizations Management
+
 - ✅ Créer une organisation complète (nom, slug, email, téléphone)
 - ✅ Modifier une organisation existante
 - ✅ Supprimer une organisation
@@ -173,6 +174,7 @@ Le rapport contient :
 - ✅ Activer/Désactiver une organisation
 
 #### Users Management
+
 - ✅ Créer un utilisateur avec rôle
 - ✅ Modifier les informations d'un utilisateur
 - ✅ Supprimer un utilisateur
@@ -180,12 +182,14 @@ Le rapport contient :
 - ✅ Rechercher par nom ou email
 
 #### Buildings Management
+
 - ✅ Créer un immeuble (nom, adresse, ville, code postal, lots, année)
 - ✅ Modifier un immeuble existant
 - ✅ Supprimer un immeuble
 - ✅ Rechercher des immeubles
 
 #### Complete Admin Journey
+
 - ✅ Parcours complet : Créer org → créer user → créer building
 - ✅ Cleanup automatique dans l'ordre inverse
 - ✅ Vérification de bout en bout
@@ -193,6 +197,7 @@ Le rapport contient :
 **Vidéos générées** : Démonstration complète de toutes les opérations CRUD disponibles pour un administrateur.
 
 **Comment lancer** :
+
 ```bash
 npm run test:e2e -- AdminDashBoard.spec.ts
 ```

@@ -9,6 +9,7 @@ Nous avons besoin d'ajouter des attributs `data-testid` à tous les composants S
 Les composants suivants ont **déjà** été mis à jour et servent de référence :
 
 ### 1. Button.svelte ✅
+
 ```svelte
 <script lang="ts">
   // ... autres props
@@ -30,6 +31,7 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 ```
 
 ### 2. FormInput.svelte ✅
+
 ```svelte
 <script lang="ts">
   // ... autres props
@@ -50,6 +52,7 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 ```
 
 ### 3. ConfirmDialog.svelte ✅
+
 ```svelte
 <Button variant="outline" on:click={handleCancel} data-testid="confirm-dialog-cancel">
   {cancelText}
@@ -60,6 +63,7 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 ```
 
 ### 4. OrganizationList.svelte ✅ (Exemple complet)
+
 ```svelte
 <Button variant="primary" on:click={handleCreate} data-testid="create-organization-button">
   ➕ Nouvelle organisation
@@ -108,6 +112,7 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 ```
 
 ### 5. OrganizationForm.svelte ✅
+
 ```svelte
 <form data-testid="organization-form">
   <FormInput
@@ -157,6 +162,7 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 ## 📋 Convention de nommage des data-testid
 
 ### Pattern général
+
 ```
 {entity}-{element}-{action/type}
 ```
@@ -164,6 +170,7 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 ### Exemples par type d'élément
 
 #### Boutons d'action
+
 - `create-{entity}-button` - Bouton de création
 - `edit-{entity}-button` - Bouton d'édition
 - `delete-{entity}-button` - Bouton de suppression
@@ -172,17 +179,20 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 - `{entity}-cancel-button` - Bouton d'annulation
 
 #### Champs de formulaire
+
 - `{entity}-{field}-input` - Input de formulaire
 - `{entity}-{field}-select` - Select de formulaire
 - `{entity}-{field}-textarea` - Textarea
 
 #### Containers et listes
+
 - `{entity}-form` - Formulaire complet
 - `{entities}-table-body` - Corps de tableau
 - `{entity}-row` - Ligne de tableau
 - `{entity}-search-input` - Champ de recherche
 
 #### Données affichées
+
 - `{entity}-name` - Nom de l'entité
 - `{entity}-email` - Email
 - `{entity}-{field}` - Autre champ spécifique
@@ -261,6 +271,7 @@ Les composants suivants ont **déjà** été mis à jour et servent de référen
 Pour chaque composant, ajouter des `data-testid` sur :
 
 ### Liste (List components)
+
 - [ ] Bouton "Créer/Nouvelle" → `create-{entity}-button`
 - [ ] Champ de recherche → `{entity}-search-input`
 - [ ] Filtres (select, etc.) → `{entity}-{field}-filter`
@@ -272,12 +283,14 @@ Pour chaque composant, ajouter des `data-testid` sur :
 - [ ] Bouton toggle/autre action → `toggle-{entity}-button`, etc.
 
 ### Formulaire (Form components)
+
 - [ ] Form tag → `{entity}-form`
 - [ ] Chaque input/select/textarea → `{entity}-{field}-input/select/textarea`
 - [ ] Bouton annuler → `{entity}-cancel-button`
 - [ ] Bouton soumettre → `{entity}-submit-button`
 
 ### Composants UI de base à mettre à jour
+
 - [ ] **FormSelect.svelte** : Ajouter support de `data-testid` comme dans Button et FormInput
 
 ---
@@ -359,17 +372,17 @@ Après avoir ajouté les test-ids, vérifier dans le navigateur :
 
 ```javascript
 // Console browser
-document.querySelector('[data-testid="create-user-button"]')
-document.querySelector('[data-testid="user-form"]')
-document.querySelectorAll('[data-testid="user-row"]')
+document.querySelector('[data-testid="create-user-button"]');
+document.querySelector('[data-testid="user-form"]');
+document.querySelectorAll('[data-testid="user-row"]');
 ```
 
 Ou avec Playwright :
 
 ```typescript
-await page.getByTestId('create-user-button').click();
-await page.getByTestId('user-firstname-input').fill('John');
-await page.getByTestId('user-submit-button').click();
+await page.getByTestId("create-user-button").click();
+await page.getByTestId("user-firstname-input").fill("John");
+await page.getByTestId("user-submit-button").click();
 ```
 
 ---
@@ -386,6 +399,7 @@ await page.getByTestId('user-submit-button').click();
    - Organizations : `organization-*` (déjà fait ✅)
 
 3. **Attributs data supplémentaires** : Sur les rows, ajouter aussi `data-{entity}-id` et `data-{entity}-name` pour faciliter la sélection
+
    ```svelte
    <tr data-testid="user-row" data-user-id={user.id} data-user-email={user.email}>
    ```
@@ -410,26 +424,26 @@ Après cette tâche, nous aurons :
 Exemple de test E2E après ajout des test-ids :
 
 ```typescript
-test('should create and delete user', async ({ page }) => {
+test("should create and delete user", async ({ page }) => {
   // Naviguer
-  await page.goto('/admin/users');
+  await page.goto("/admin/users");
 
   // Créer
-  await page.getByTestId('create-user-button').click();
-  await page.getByTestId('user-firstname-input').fill('John');
-  await page.getByTestId('user-lastname-input').fill('Doe');
-  await page.getByTestId('user-email-input').fill('john@test.com');
-  await page.getByTestId('user-password-input').fill('Pass123!');
-  await page.getByTestId('user-role-select').selectOption('syndic');
-  await page.getByTestId('user-submit-button').click();
+  await page.getByTestId("create-user-button").click();
+  await page.getByTestId("user-firstname-input").fill("John");
+  await page.getByTestId("user-lastname-input").fill("Doe");
+  await page.getByTestId("user-email-input").fill("john@test.com");
+  await page.getByTestId("user-password-input").fill("Pass123!");
+  await page.getByTestId("user-role-select").selectOption("syndic");
+  await page.getByTestId("user-submit-button").click();
 
   // Vérifier
   const userRow = page.locator('[data-user-email="john@test.com"]');
   await expect(userRow).toBeVisible();
 
   // Supprimer
-  await userRow.getByTestId('delete-user-button').click();
-  await page.getByTestId('confirm-dialog-confirm').click();
+  await userRow.getByTestId("delete-user-button").click();
+  await page.getByTestId("confirm-dialog-confirm").click();
 
   // Vérifier suppression
   await expect(userRow).not.toBeVisible();

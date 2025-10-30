@@ -4,11 +4,13 @@ import { defineConfig, devices } from "@playwright/test";
  * See https://playwright.dev/docs/test-configuration.
  */
 const baseURL =
-  process.env.PLAYWRIGHT_BASE_URL && process.env.PLAYWRIGHT_BASE_URL.trim() !== ""
+  process.env.PLAYWRIGHT_BASE_URL &&
+  process.env.PLAYWRIGHT_BASE_URL.trim() !== ""
     ? process.env.PLAYWRIGHT_BASE_URL.trim()
     : "http://localhost";
 
-const useTraefik = !baseURL.includes("://localhost:3000") && !baseURL.includes("127.0.0.1:3000");
+const useTraefik =
+  !baseURL.includes("://localhost:3000") && !baseURL.includes("127.0.0.1:3000");
 
 export default defineConfig({
   testDir: "./tests/e2e",
