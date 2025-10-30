@@ -4,8 +4,8 @@
 -- Uses demo credentials: syndic@grandplace.be / syndic123
 
 local jwt_token = nil
-local building_id = "ed1c49c5-8434-48c8-8509-43fa202b7be6" -- From production seed data (Résidence Grand Place)
-local organization_id = "718be179-675b-4a6b-a2a1-90f98e0c76a9" -- From production seed data
+local building_id = "22e60793-a82f-495c-9d7f-25f298f94149" -- From production seed data (Résidence Grand Place)
+local organization_id = "46705175-5e03-4fd4-b0a3-7aac10a7a663" -- From production seed data
 
 -- Simple JSON token extractor (no external dependencies)
 function extract_token(body)
