@@ -112,6 +112,7 @@ Lancer les tests
 
 .. code-block:: bash
 
+   make codegen           # Playwright codegen (DEVICE=mobile pour iPhone 13)
    make test-e2e-full     # Lance tous les tests E2E + génère les vidéos localement
    make test-e2e-ui       # Mode UI interactif (recommandé)
    make test-e2e-headed   # Voir le navigateur en action

@@ -385,7 +385,11 @@
 </script>
 
 <Modal bind:isOpen onClose={handleClose} size="lg" title={mode === 'create' ? 'Créer un utilisateur' : 'Modifier un utilisateur'}>
-  <div class="space-y-6">
+  <form
+    class="space-y-6"
+    data-testid="user-form"
+    on:submit|preventDefault={handleSubmit}
+  >
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormInput
         id="email"
@@ -394,6 +398,7 @@
         required
         bind:value={formData.email}
         error={errors.email}
+        data-testid="user-email-input"
       />
       <FormInput
         id="firstName"
@@ -401,6 +406,7 @@
         required
         bind:value={formData.firstName}
         error={errors.firstName}
+        data-testid="user-firstname-input"
       />
       <FormInput
         id="lastName"
@@ -408,6 +414,7 @@
         required
         bind:value={formData.lastName}
         error={errors.lastName}
+        data-testid="user-lastname-input"
       />
       {#if mode === 'create'}
         <FormInput
@@ -417,6 +424,7 @@
           required
           bind:value={formData.password}
           error={errors.password}
+          data-testid="user-password-input"
         />
         <FormInput
           id="confirmPassword"
@@ -425,6 +433,7 @@
           required
           bind:value={formData.confirmPassword}
           error={errors.confirmPassword}
+          data-testid="user-confirmpassword-input"
         />
       {:else}
         <FormInput
@@ -433,6 +442,7 @@
           type="password"
           bind:value={formData.password}
           error={errors.password}
+          data-testid="user-password-input"
         />
         <FormInput
           id="confirmPassword"
@@ -440,6 +450,7 @@
           type="password"
           bind:value={formData.confirmPassword}
           error={errors.confirmPassword}
+          data-testid="user-confirmpassword-input"
         />
       {/if}
     </div>
@@ -447,7 +458,12 @@
     <div class="border-t border-gray-200 pt-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900">Rôles attribués</h3>
-        <Button variant="secondary" type="button" on:click={addRoleEntry}>
+        <Button
+          variant="secondary"
+          type="button"
+          on:click={addRoleEntry}
+          data-testid="user-add-role-button"
+        >
           ➕ Ajouter un rôle
         </Button>
       </div>
@@ -458,9 +474,12 @@
         <p class="text-sm text-red-600 mt-2">{errors.roles}</p>
       {/if}
 
-      <div class="space-y-4 mt-4">
+      <div class="space-y-4 mt-4" data-testid="user-roles-container">
         {#each formRoles as roleEntry, index (roleEntry.id)}
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-gray-50 rounded-lg p-4">
+          <div
+            class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start bg-gray-50 rounded-lg p-4"
+            data-testid="user-role-row"
+          >
             <div class="md:col-span-4">
               <label class="block text-sm font-medium text-gray-700 mb-1">
                 Rôle <span class="text-red-500">*</span>
@@ -470,6 +489,7 @@
                 bind:value={roleEntry.role}
                 on:change={(event) =>
                   handleRoleChange(index, (event.target as HTMLSelectElement).value)}
+                data-testid="user-role-select"
               >
                 {#each roleOptions as option}
                   <option value={option.value}>{option.label}</option>
@@ -492,6 +512,7 @@
                   options={organizationOptions}
                   bind:value={roleEntry.organizationId}
                   disabled={loadingOrgs}
+                  data-testid="user-organization-select"
                 />
               {/if}
             </div>
@@ -503,6 +524,7 @@
                   name="primaryRole"
                   checked={roleEntry.isPrimary}
                   on:change={() => setPrimaryRole(index)}
+                  data-testid="user-primary-role-radio"
                 />
                 <span>Rôle principal</span>
               </label>
@@ -515,6 +537,7 @@
                   class="text-red-600 hover:text-red-800 text-sm"
                   on:click={() => removeRoleEntry(index)}
                   title="Supprimer ce rôle"
+                  data-testid="delete-user-role-button"
                 >
                   🗑️
                 </button>
@@ -524,13 +547,23 @@
         {/each}
       </div>
     </div>
-  </div>
+  </form>
 
   <div slot="footer" class="flex justify-end space-x-3">
-    <Button variant="secondary" on:click={handleClose} disabled={loading}>
+    <Button
+      variant="secondary"
+      on:click={handleClose}
+      disabled={loading}
+      data-testid="user-cancel-button"
+    >
       Annuler
     </Button>
-    <Button variant="primary" on:click={handleSubmit} disabled={loading}>
+    <Button
+      variant="primary"
+      on:click={handleSubmit}
+      disabled={loading}
+      data-testid="user-submit-button"
+    >
       {loading
         ? mode === 'create'
           ? 'Création...'

@@ -33,13 +33,12 @@
 Introduction
 ============
 
-Cette page présente les **vidéos des tests E2E** enregistrées manuellement.  
-Les fichiers ``.webm`` doivent être versionnés dans ``docs/_static/videos/`` pour être publiés automatiquement avec la documentation.
+Cette page présente les **vidéos des tests E2E** enregistrées manuellement.
 
 📊 Statistiques
 ---------------
 
-- **Nombre de vidéos** : 1
+- **Nombre de vidéos** : 9
 - **Format** : WebM 1280x720
 - **Emplacement** : ``docs/_static/videos/``
 
@@ -47,19 +46,155 @@ Vidéos disponibles
 ==================
 
 
-Admin_dashboard_tour Admin Dashboard Tour
------------------------------------------
+Admindashboard.improved Ad 55d4d Toggle Organization Status
+-----------------------------------------------------------
 
 .. raw:: html
 
    <div class="video-card">
        <video controls preload="metadata" style="width:100%">
-           <source src="_static/videos/admin_dashboard_tour-Admin-Dashboard-Tour.webm" type="video/webm">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-55d4d--toggle-organization-status.webm" type="video/webm">
            Votre navigateur ne supporte pas la balise vidéo.
        </video>
        <div class="video-info">
-           <div class="video-title">Admin_dashboard_tour Admin Dashboard Tour</div>
-           <small style="color: #666;">Fichier: admin_dashboard_tour-Admin-Dashboard-Tour.webm</small>
+           <div class="video-title">Admindashboard.improved Ad 55d4d Toggle Organization Status</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-55d4d--toggle-organization-status.webm</small>
+       </div>
+   </div>
+
+
+Admindashboard.improved Ad 5ebd0 Delete User Using Test Ids
+-----------------------------------------------------------
+
+.. raw:: html
+
+   <div class="video-card">
+       <video controls preload="metadata" style="width:100%">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-5ebd0--delete-user-using-test-IDs.webm" type="video/webm">
+           Votre navigateur ne supporte pas la balise vidéo.
+       </video>
+       <div class="video-info">
+           <div class="video-title">Admindashboard.improved Ad 5ebd0 Delete User Using Test Ids</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-5ebd0--delete-user-using-test-IDs.webm</small>
+       </div>
+   </div>
+
+
+Admindashboard.improved Ad 72c27 W And Cleanup Automatically
+------------------------------------------------------------
+
+.. raw:: html
+
+   <div class="video-card">
+       <video controls preload="metadata" style="width:100%">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-72c27-w-and-cleanup-automatically.webm" type="video/webm">
+           Votre navigateur ne supporte pas la balise vidéo.
+       </video>
+       <div class="video-info">
+           <div class="video-title">Admindashboard.improved Ad 72c27 W And Cleanup Automatically</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-72c27-w-and-cleanup-automatically.webm</small>
+       </div>
+   </div>
+
+
+Admindashboard.improved Ad 745dd Sers By Role Using Test Ids
+------------------------------------------------------------
+
+.. raw:: html
+
+   <div class="video-card">
+       <video controls preload="metadata" style="width:100%">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-745dd-sers-by-role-using-test-IDs.webm" type="video/webm">
+           Votre navigateur ne supporte pas la balise vidéo.
+       </video>
+       <div class="video-info">
+           <div class="video-title">Admindashboard.improved Ad 745dd Sers By Role Using Test Ids</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-745dd-sers-by-role-using-test-IDs.webm</small>
+       </div>
+   </div>
+
+
+Admindashboard.improved Ad 87575 Organization Using Test Ids
+------------------------------------------------------------
+
+.. raw:: html
+
+   <div class="video-card">
+       <video controls preload="metadata" style="width:100%">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-87575-organization-using-test-IDs.webm" type="video/webm">
+           Votre navigateur ne supporte pas la balise vidéo.
+       </video>
+       <div class="video-info">
+           <div class="video-title">Admindashboard.improved Ad 87575 Organization Using Test Ids</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-87575-organization-using-test-IDs.webm</small>
+       </div>
+   </div>
+
+
+Admindashboard.improved Ad Cf836 Ch Buildings Using Test Ids
+------------------------------------------------------------
+
+.. raw:: html
+
+   <div class="video-card">
+       <video controls preload="metadata" style="width:100%">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-cf836-ch-buildings-using-test-IDs.webm" type="video/webm">
+           Votre navigateur ne supporte pas la balise vidéo.
+       </video>
+       <div class="video-info">
+           <div class="video-title">Admindashboard.improved Ad Cf836 Ch Buildings Using Test Ids</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-cf836-ch-buildings-using-test-IDs.webm</small>
+       </div>
+   </div>
+
+
+Admindashboard.improved Ad Ebbdd E A Building Using Test Ids
+------------------------------------------------------------
+
+.. raw:: html
+
+   <div class="video-card">
+       <video controls preload="metadata" style="width:100%">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-ebbdd-e-a-building-using-test-IDs.webm" type="video/webm">
+           Votre navigateur ne supporte pas la balise vidéo.
+       </video>
+       <div class="video-info">
+           <div class="video-title">Admindashboard.improved Ad Ebbdd E A Building Using Test Ids</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-ebbdd-e-a-building-using-test-IDs.webm</small>
+       </div>
+   </div>
+
+
+Admindashboard.improved Ad Ebfc6 Ame Or Email Using Test Ids
+------------------------------------------------------------
+
+.. raw:: html
+
+   <div class="video-card">
+       <video controls preload="metadata" style="width:100%">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-ebfc6-ame-or-email-using-test-IDs.webm" type="video/webm">
+           Votre navigateur ne supporte pas la balise vidéo.
+       </video>
+       <div class="video-info">
+           <div class="video-title">Admindashboard.improved Ad Ebfc6 Ame Or Email Using Test Ids</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-ebfc6-ame-or-email-using-test-IDs.webm</small>
+       </div>
+   </div>
+
+
+Admindashboard.improved Ad F000d Should Search Organizations
+------------------------------------------------------------
+
+.. raw:: html
+
+   <div class="video-card">
+       <video controls preload="metadata" style="width:100%">
+           <source src="_static/videos/AdminDashBoard.improved-Ad-f000d-should-search-organizations.webm" type="video/webm">
+           Votre navigateur ne supporte pas la balise vidéo.
+       </video>
+       <div class="video-info">
+           <div class="video-title">Admindashboard.improved Ad F000d Should Search Organizations</div>
+           <small style="color: #666;">Fichier: AdminDashBoard.improved-Ad-f000d-should-search-organizations.webm</small>
        </div>
    </div>
 
@@ -92,12 +227,6 @@ Méthode 1 : Playwright Codegen (⭐ Recommandé)
    cd ..
    make docs-sync-videos
    make docs-sphinx
-
-   # Commit des fichiers synchronisés
-   git add docs/_static/videos docs/e2e-videos.rst
-   git commit -m "docs: ajouter vidéo e2e"
-
-# Les artefacts de build Sphinx (``docs/_build/``) sont ignorés par Git : ne les ajoutez pas.
 
 Méthode 2 : Écrire le test manuellement
 ----------------------------------------

@@ -16,10 +16,9 @@ Les vidéos générées par les tests servent de documentation pour :
 
 ```
 tests/e2e/
-├── README.md              # Ce fichier
-├── auth.spec.ts          # Tests d'authentification (login, logout, rôles)
-├── dashboards.spec.ts    # Tests des dashboards par rôle
-└── pwa-offline.spec.ts   # Tests PWA et mode offline
+├── README.md                       # Ce fichier
+├── AdminDashBoard.improved.spec.ts # Suite complète admin (orgs/users/buildings + parcours global)
+└── config.ts                       # Helpers de configuration Playwright
 ```
 
 ## 🚀 Installation
@@ -37,11 +36,10 @@ Cette commande installe Chromium avec toutes les dépendances système nécessai
 Les tests E2E nécessitent que le backend soit en cours d'exécution :
 
 ```bash
-cd ../backend
-cargo run
+docker compose up -d postgres minio backend traefik frontend
 ```
 
-Le backend doit être accessible sur `http://127.0.0.1:8080`
+Par défaut Traefik expose le frontend sur `http://localhost` et proxy les appels API vers `http://localhost/api/v1`.
 
 ## 🧪 Exécution des Tests
 
@@ -54,6 +52,10 @@ npm run test:e2e
 - Lance tous les tests en arrière-plan
 - Génère automatiquement les vidéos dans `test-results/`
 - Crée un rapport HTML
+- Utilise `PLAYWRIGHT_BASE_URL` si défini (défaut `http://localhost`)
+
+> Astuce: pour cibler l'environnement Traefik local, exécuter  
+> `PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e`
 
 ### Mode UI (Recommandé pour le développement)
 
@@ -91,14 +93,14 @@ npm run test:e2e:debug
 
 Après chaque exécution de test, les vidéos sont générées dans :
 
+Chaque répertoire de `test-results/` correspond à un scénario Playwright, exemple :
+
 ```
 test-results/
-├── auth-Authentication-Flow-should-login-successfully-chromium/
-│   └── video.webm  <-- Vidéo du test de login
-├── pwa-offline-PWA-Capabilities-should-work-offline-chromium/
-│   └── video.webm  <-- Vidéo du mode offline
-└── dashboards-Syndic-Dashboard-chromium/
-    └── video.webm  <-- Vidéo du dashboard syndic
+├── AdminDashBoard.improved-Ad-11345-create-edit-delete-organization/
+│   └── video.webm
+└── AdminDashBoard.improved-Ad-319xx-idempotent-full-journey/
+    └── video.webm
 ```
 
 ### Configuration Vidéo
@@ -159,40 +161,52 @@ Le rapport contient :
 
 ## 🎬 Scénarios Couverts
 
-### 1. Authentification (`auth.spec.ts`)
+### 1. Admin Dashboard (`AdminDashBoard.spec.ts`)
 
-- ✅ Page de login accessible
-- ✅ Login avec credentials backend réels
-- ✅ Redirection vers dashboard selon le rôle
-- ✅ Gestion des erreurs (mauvais password)
-- ✅ Persistance de session (localStorage + IndexedDB)
-- ✅ Logout complet
-- ✅ Création de comptes par rôle (Syndic, Accountant, Owner, SuperAdmin)
+**Tous les parcours CRUD (Create-Read-Update-Delete) du dashboard administrateur :**
 
-**Vidéo générée** : Parcours complet d'un utilisateur qui se connecte et accède à son dashboard.
+#### Organizations Management
+- ✅ Créer une organisation complète (nom, slug, email, téléphone)
+- ✅ Modifier une organisation existante
+- ✅ Supprimer une organisation
+- ✅ Rechercher des organisations par nom/email/slug
+- ✅ Activer/Désactiver une organisation
 
-### 2. Dashboards (`dashboards.spec.ts`)
+#### Users Management
+- ✅ Créer un utilisateur avec rôle
+- ✅ Modifier les informations d'un utilisateur
+- ✅ Supprimer un utilisateur
+- ✅ Filtrer par rôle (SuperAdmin, Syndic, Comptable, Propriétaire)
+- ✅ Rechercher par nom ou email
 
-- ✅ Dashboard Syndic (gestion immeubles, tâches)
-- ✅ Dashboard Comptable (finances, transactions)
-- ✅ Dashboard Copropriétaire (infos personnelles)
-- ✅ Dashboard SuperAdmin (vue plateforme)
-- ✅ Navigation entre les sections
-- ✅ Permissions par rôle
+#### Buildings Management
+- ✅ Créer un immeuble (nom, adresse, ville, code postal, lots, année)
+- ✅ Modifier un immeuble existant
+- ✅ Supprimer un immeuble
+- ✅ Rechercher des immeubles
 
-**Vidéos générées** : Un parcours vidéo pour chaque type d'utilisateur.
+#### Complete Admin Journey
+- ✅ Parcours complet : Créer org → créer user → créer building
+- ✅ Cleanup automatique dans l'ordre inverse
+- ✅ Vérification de bout en bout
 
-### 3. PWA et Offline (`pwa-offline.spec.ts`)
+**Vidéos générées** : Démonstration complète de toutes les opérations CRUD disponibles pour un administrateur.
 
-- ✅ Manifest.json présent et valide
-- ✅ Service Worker enregistré
-- ✅ Indicateur online/offline fonctionnel
-- ✅ IndexedDB utilisé pour le cache
-- ✅ Mode offline après chargement initial
-- ✅ Queue de synchronisation
-- ✅ Synchronisation manuelle
+**Comment lancer** :
+```bash
+npm run test:e2e -- AdminDashBoard.spec.ts
+```
 
-**Vidéos générées** : Démonstration du mode offline et de la synchronisation.
+### 2. Suite Admin End-to-End (`AdminDashBoard.improved.spec.ts`)
+
+Cette unique suite couvre l'intégralité des workflows administrateur à l'aide des `data-testid` :
+
+- ✅ Organisations : création, édition, suppression, recherche, changement de statut.
+- ✅ Utilisateurs : création (avec rattachement organisation/role), édition, suppression, filtres et recherche.
+- ✅ Immeubles : création (assignation org), édition, suppression, recherche.
+- ✅ Parcours complet : org ➜ user ➜ building ➜ nettoyage automatique.
+
+**Vidéos générées** : un clip par scénario ci-dessus + le parcours complet.
 
 ## 🔧 Configuration Avancée
 

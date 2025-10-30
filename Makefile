@@ -1,7 +1,7 @@
 # KoproGo - Makefile simplifié pour contributeurs
 # Usage: make help
 
-.PHONY: help dev up down logs test test-unit test-int test-bdd lint format build clean install setup migrate reset-db docs docs-serve audit ci pre-commit deploy-prod deploy-staging
+.PHONY: help dev up down logs test test-unit test-int test-bdd codegen lint format build clean install setup migrate reset-db docs docs-serve audit ci pre-commit deploy-prod deploy-staging
 
 # Couleurs pour output
 GREEN  := \033[0;32m
@@ -72,14 +72,23 @@ test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 
 test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
-	cd frontend && npm run test:e2e
+	cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e
+
+codegen: ## 🎬 Playwright codegen interactif (DEVICE=mobile pour iPhone 13)
+	@echo "$(GREEN)🎬 Playwright codegen ($(YELLOW)DEVICE=$(DEVICE)$(GREEN))...$(NC)"
+	cd frontend && \
+	if [ "$(DEVICE)" = "mobile" ]; then \
+		npm run codegen:mobile; \
+	else \
+		npm run codegen; \
+	fi
 
 test-e2e-slow: ## 🐌 Tests E2E ralentis (1s entre chaque action - pour vidéos)
 	@echo "$(GREEN)🐌 Ralentissement des tests E2E...$(NC)"
 	bash .claude/scripts/slow-down-tests.sh 1000
 	@echo ""
 	@echo "$(GREEN)🎥 Lancement des tests ralentis...$(NC)"
-	cd frontend && npm run test:e2e || true
+	cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e || true
 	@echo ""
 	@echo "$(GREEN)⚡ Restauration de la vitesse normale...$(NC)"
 	bash .claude/scripts/restore-test-speed.sh
@@ -220,11 +229,17 @@ docs-sync-videos: ## 📹 Copier vidéos E2E et générer page RST
 docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis 1s)
 	@echo "$(GREEN)🎥 Génération docs avec vidéos E2E...$(NC)"
 	@echo ""
+	@echo "0️⃣ Vérification des services (Traefik + backend + frontend)..."
+	docker compose up -d postgres minio backend traefik frontend
+	@sleep 3
+	@echo ""
 	@echo "1️⃣ Ralentissement des tests (1 s entre chaque action)..."
 	bash .claude/scripts/slow-down-tests.sh 1000
 	@echo ""
 	@echo "2️⃣ Lancement des tests E2E..."
-	cd frontend && npm run test:e2e || echo "$(YELLOW)⚠️  Certains tests ont échoué$(NC)"
+	@{ \
+		cd frontend && PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e; \
+	} || echo "$(YELLOW)⚠️  Certains tests ont échoué$(NC)"
 	@echo ""
 	@echo "3️⃣ Restauration de la vitesse normale..."
 	bash .claude/scripts/restore-test-speed.sh

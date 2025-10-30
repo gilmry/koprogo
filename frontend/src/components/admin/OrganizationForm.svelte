@@ -179,7 +179,7 @@
   size="md"
   on:close={handleClose}
 >
-  <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+  <form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="organization-form">
     <FormInput
       id="org-name"
       label="Nom de l'organisation"
@@ -189,6 +189,7 @@
       error={errors.name}
       required
       placeholder="Résidence Grand Place SPRL"
+      data-testid="organization-name-input"
     />
 
     <FormInput
@@ -200,6 +201,7 @@
       required
       placeholder="residence-grand-place"
       hint="Utilisé dans les URLs, généré automatiquement depuis le nom"
+      data-testid="organization-slug-input"
     />
 
     <FormInput
@@ -210,6 +212,7 @@
       error={errors.contact_email}
       required
       placeholder="contact@residence-grand-place.be"
+      data-testid="organization-email-input"
     />
 
     <FormInput
@@ -219,6 +222,7 @@
       bind:value={formData.contact_phone}
       error={errors.contact_phone}
       placeholder="+32 2 123 45 67"
+      data-testid="organization-phone-input"
     />
 
     <FormSelect
@@ -251,10 +255,10 @@
 
   <svelte:fragment slot="footer">
     <div class="flex justify-end space-x-3">
-      <Button variant="outline" on:click={handleClose} disabled={loading}>
+      <Button variant="outline" on:click={handleClose} disabled={loading} data-testid="organization-cancel-button">
         Annuler
       </Button>
-      <Button variant="primary" on:click={handleSubmit} {loading}>
+      <Button variant="primary" on:click={handleSubmit} {loading} data-testid="organization-submit-button">
         {mode === 'create' ? 'Créer l\'organisation' : 'Enregistrer les modifications'}
       </Button>
     </div>

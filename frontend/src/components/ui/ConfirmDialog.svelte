@@ -29,10 +29,10 @@
 
   <svelte:fragment slot="footer">
     <div class="flex justify-end space-x-3">
-      <Button variant="outline" on:click={handleCancel} disabled={loading}>
+      <Button variant="outline" on:click={handleCancel} disabled={loading} data-testid="confirm-dialog-cancel">
         {cancelText}
       </Button>
-      <Button {variant} on:click={handleConfirm} {loading}>
+      <Button {variant} on:click={handleConfirm} {loading} data-testid="confirm-dialog-confirm">
         {confirmText}
       </Button>
     </div>

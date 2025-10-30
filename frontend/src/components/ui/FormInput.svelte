@@ -41,6 +41,7 @@
     {max}
     {step}
     {autocomplete}
+    {...$$restProps}
     value={type === 'number' ? value : value}
     on:input={handleInput}
     on:blur

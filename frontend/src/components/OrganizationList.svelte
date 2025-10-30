@@ -132,7 +132,7 @@
         Gérer toutes les organisations de la plateforme
       </p>
     </div>
-    <Button variant="primary" on:click={handleCreate}>
+    <Button variant="primary" on:click={handleCreate} data-testid="create-organization-button">
       ➕ Nouvelle organisation
     </Button>
   </div>
@@ -144,6 +144,7 @@
         type="text"
         bind:value={searchTerm}
         placeholder="Rechercher par nom, email ou slug..."
+        data-testid="organization-search-input"
         class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
       <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
@@ -196,19 +197,19 @@
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="bg-white divide-y divide-gray-200" data-testid="organizations-table-body">
             {#each filteredOrganizations as org (org.id)}
-              <tr class="hover:bg-gray-50">
+              <tr class="hover:bg-gray-50" data-testid="organization-row" data-org-id={org.id} data-org-name={org.name}>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div class="text-sm font-medium text-gray-900">{org.name}</div>
-                    <div class="text-sm text-gray-500">/{org.slug}</div>
+                    <div class="text-sm font-medium text-gray-900" data-testid="organization-name">{org.name}</div>
+                    <div class="text-sm text-gray-500" data-testid="organization-slug">/{org.slug}</div>
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">{org.contact_email}</div>
+                  <div class="text-sm text-gray-900" data-testid="organization-email">{org.contact_email}</div>
                   {#if org.contact_phone}
-                    <div class="text-sm text-gray-500">{org.contact_phone}</div>
+                    <div class="text-sm text-gray-500" data-testid="organization-phone">{org.contact_phone}</div>
                   {/if}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -240,6 +241,7 @@
                       on:click={() => handleEdit(org)}
                       class="text-primary-600 hover:text-primary-900"
                       title="Modifier"
+                      data-testid="edit-organization-button"
                       disabled={actionLoading}
                     >
                       ✏️
@@ -248,6 +250,7 @@
                       on:click={() => handleToggleActive(org)}
                       class={org.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
                       title={org.is_active ? 'Désactiver' : 'Activer'}
+                      data-testid="toggle-organization-button"
                       disabled={actionLoading}
                     >
                       {org.is_active ? '⏸️' : '▶️'}
@@ -256,6 +259,7 @@
                       on:click={() => handleDeleteClick(org)}
                       class="text-red-600 hover:text-red-900"
                       title="Supprimer"
+                      data-testid="delete-organization-button"
                       disabled={actionLoading}
                     >
                       🗑️

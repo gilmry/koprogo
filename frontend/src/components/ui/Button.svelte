@@ -27,6 +27,7 @@
   {type}
   disabled={isDisabled}
   on:click
+  {...$$restProps}
   class="inline-flex items-center justify-center font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed
     {variantClasses[variant]}
     {sizeClasses[size]}

@@ -223,7 +223,11 @@
   size="lg"
   on:close={handleClose}
 >
-  <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+  <form
+    on:submit|preventDefault={handleSubmit}
+    class="space-y-4"
+    data-testid="building-form"
+  >
     {#if isSuperAdmin}
       <FormSelect
         id="building-organization"
@@ -234,6 +238,7 @@
         required={mode === 'create'}
         placeholder={loadingOrgs ? 'Chargement...' : 'Sélectionner une organisation'}
         disabled={loadingOrgs}
+        data-testid="building-organization-select"
       />
     {/if}
 
@@ -245,6 +250,7 @@
       error={errors.name}
       required
       placeholder="Résidence Les Peupliers"
+      data-testid="building-name-input"
     />
 
     <FormInput
@@ -255,6 +261,7 @@
       error={errors.address}
       required
       placeholder="123 Rue de la Paix"
+      data-testid="building-address-input"
     />
 
     <div class="grid grid-cols-2 gap-4">
@@ -266,6 +273,7 @@
         error={errors.postal_code}
         required
         placeholder="1000"
+        data-testid="building-postalcode-input"
       />
 
       <FormInput
@@ -276,6 +284,7 @@
         error={errors.city}
         required
         placeholder="Bruxelles"
+        data-testid="building-city-input"
       />
     </div>
 
@@ -285,6 +294,7 @@
       type="text"
       bind:value={formData.country}
       placeholder="Belgique"
+      data-testid="building-country-input"
     />
 
     <div class="grid grid-cols-2 gap-4">
@@ -296,6 +306,7 @@
         error={errors.total_units}
         required
         placeholder="10"
+        data-testid="building-totalunits-input"
       />
 
       <FormInput
@@ -310,16 +321,27 @@
           const val = e.target.value;
           formData.construction_year = val === '' ? null : parseInt(val);
         }}
+        data-testid="building-constructionyear-input"
       />
     </div>
   </form>
 
   <svelte:fragment slot="footer">
     <div class="flex justify-end space-x-3">
-      <Button variant="outline" on:click={handleClose} disabled={loading}>
+      <Button
+        variant="outline"
+        on:click={handleClose}
+        disabled={loading}
+        data-testid="building-cancel-button"
+      >
         Annuler
       </Button>
-      <Button variant="primary" on:click={handleSubmit} {loading}>
+      <Button
+        variant="primary"
+        on:click={handleSubmit}
+        {loading}
+        data-testid="building-submit-button"
+      >
         {mode === 'create' ? 'Créer l\'immeuble' : 'Enregistrer les modifications'}
       </Button>
     </div>

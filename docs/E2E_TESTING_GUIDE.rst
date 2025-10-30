@@ -83,6 +83,10 @@ Méthode 1 : Playwright Codegen (⭐ Recommandé)
    # OU pour mobile
    npm run codegen:mobile
 
+   # Alternative depuis la racine
+   make codegen
+   make codegen DEVICE=mobile
+
 **Ce qui se passe :**
 
 1. Un navigateur s'ouvre sur ``http://localhost``
@@ -196,6 +200,7 @@ Commandes npm (depuis ``frontend/``)
 
    # Tests
    npm run test:e2e             # Tous les tests (headless)
+   PLAYWRIGHT_BASE_URL=http://localhost npm run test:e2e -- AdminDashBoard.improved.spec.ts  # Suite admin
    npm run test:e2e -- mon-test.spec.ts  # Un test spécifique
    npm run test:e2e:ui          # Mode UI (interface graphique)
    npm run test:e2e:headed      # Voir le navigateur
@@ -218,6 +223,9 @@ Commandes make (depuis la racine)
    make docs-sync-videos        # Copier vidéos + générer RST (local)
    make docs-with-videos        # Helper local pour générer vidéos + doc
    make docs-sphinx             # Générer doc Sphinx seule
+   make codegen                 # Playwright codegen (DEVICE=mobile pour iPhone 13)
+
+Les cibles ``make test-e2e`` et ``make docs-with-videos`` exportent automatiquement ``PLAYWRIGHT_BASE_URL=http://localhost`` pour cibler l'environnement Traefik local.
 
 📂 Structure des Fichiers
 ==========================
@@ -228,9 +236,8 @@ Tests E2E
 .. code-block::
 
    frontend/tests/e2e/
-   ├── config.ts                    # Configuration (URL API, etc.)
-   ├── admin_dashboard_tour.spec.ts # Exemple de test
-   └── *.spec.ts                    # Vos autres tests
+   ├── config.ts                        # Helper pour construire les endpoints
+   └── AdminDashBoard.improved.spec.ts  # Suite complète admin (org/users/buildings)
 
 Vidéos Générées
 ---------------

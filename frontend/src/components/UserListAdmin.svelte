@@ -172,7 +172,7 @@ interface BackendUser {
         Gérer tous les utilisateurs de la plateforme
       </p>
     </div>
-    <Button variant="primary" on:click={handleCreate}>
+    <Button variant="primary" on:click={handleCreate} data-testid="create-user-button">
       ➕ Nouvel utilisateur
     </Button>
   </div>
@@ -185,6 +185,7 @@ interface BackendUser {
           type="text"
           bind:value={searchTerm}
           placeholder="Rechercher par nom ou email..."
+          data-testid="user-search-input"
           class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
         <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
@@ -192,6 +193,7 @@ interface BackendUser {
       <div>
         <select
           bind:value={roleFilter}
+          data-testid="user-role-filter"
           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         >
           <option value="all">Tous les rôles</option>
@@ -250,9 +252,15 @@ interface BackendUser {
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="bg-white divide-y divide-gray-200" data-testid="users-table-body">
             {#each filteredUsers as user (user.id)}
-              <tr class="hover:bg-gray-50">
+              <tr
+                class="hover:bg-gray-50"
+                data-testid="user-row"
+                data-user-id={user.id}
+                data-user-email={user.email}
+                data-user-name={`${user.firstName} ${user.lastName}`}
+              >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     <div class="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
@@ -261,20 +269,21 @@ interface BackendUser {
                       </span>
                     </div>
                     <div class="ml-4">
-                      <div class="text-sm font-medium text-gray-900">
+                      <div class="text-sm font-medium text-gray-900" data-testid="user-name">
                         {user.firstName} {user.lastName}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm text-gray-900">{user.email}</div>
+                  <div class="text-sm text-gray-900" data-testid="user-email">{user.email}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex flex-wrap gap-1">
                     {#each user.roles as roleSummary (roleSummary.id)}
                       <span
                         class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {getRoleBadgeClass(roleSummary.role)} {roleSummary.isPrimary ? 'ring-2 ring-primary-300' : ''}"
+                        data-testid="user-role-badge"
                       >
                         {getRoleLabel(roleSummary.role)}
                         {#if roleSummary.organizationId}
@@ -294,11 +303,17 @@ interface BackendUser {
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   {#if user.is_active}
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    <span
+                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"
+                      data-testid="user-status"
+                    >
                       ✓ Actif
                     </span>
                   {:else}
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                    <span
+                      class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800"
+                      data-testid="user-status"
+                    >
                       ✗ Inactif
                     </span>
                   {/if}
@@ -313,6 +328,7 @@ interface BackendUser {
                       class="text-primary-600 hover:text-primary-900"
                       title="Modifier"
                       disabled={actionLoading}
+                      data-testid="edit-user-button"
                     >
                       ✏️
                     </button>
@@ -321,6 +337,7 @@ interface BackendUser {
                       class={user.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
                       title={user.is_active ? 'Désactiver' : 'Activer'}
                       disabled={actionLoading}
+                      data-testid="toggle-user-button"
                     >
                       {user.is_active ? '⏸️' : '▶️'}
                     </button>
@@ -329,6 +346,7 @@ interface BackendUser {
                       class="text-red-600 hover:text-red-900"
                       title="Supprimer"
                       disabled={actionLoading}
+                      data-testid="delete-user-button"
                     >
                       🗑️
                     </button>

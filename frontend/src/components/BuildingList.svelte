@@ -114,7 +114,7 @@
         Gérer les immeubles de votre copropriété
       </p>
     </div>
-    <Button variant="primary" on:click={handleCreate}>
+    <Button variant="primary" on:click={handleCreate} data-testid="create-building-button">
       ➕ Nouvel immeuble
     </Button>
   </div>
@@ -126,6 +126,7 @@
         type="text"
         bind:value={searchTerm}
         placeholder="Rechercher par nom, adresse, ville..."
+        data-testid="building-search-input"
         class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
       <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
@@ -151,14 +152,21 @@
         {searchTerm ? 'Aucun immeuble trouvé pour cette recherche.' : 'Aucun immeuble enregistré. Créez-en un pour commencer !'}
       </div>
     {:else}
-      <div class="divide-y divide-gray-200">
+      <div class="divide-y divide-gray-200" data-testid="buildings-list">
         {#each filteredBuildings as building (building.id)}
-          <div class="p-6 hover:bg-gray-50 transition">
+          <div
+            class="p-6 hover:bg-gray-50 transition"
+            data-testid="building-card"
+            data-building-id={building.id}
+            data-building-name={building.name}
+          >
             <div class="flex justify-between items-start">
               <div class="flex-1">
-                <h3 class="text-lg font-semibold text-gray-900">{building.name}</h3>
+                <h3 class="text-lg font-semibold text-gray-900" data-testid="building-name">
+                  {building.name}
+                </h3>
                 <div class="mt-2 space-y-1">
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-gray-600" data-testid="building-address">
                     📍 {building.address}, {building.postal_code} {building.city}
                   </p>
                   <p class="text-sm text-gray-500">
@@ -175,6 +183,7 @@
                   class="text-primary-600 hover:text-primary-900"
                   title="Modifier"
                   disabled={actionLoading}
+                  data-testid="edit-building-button"
                 >
                   ✏️
                 </button>
@@ -183,6 +192,7 @@
                   class="text-red-600 hover:text-red-900"
                   title="Supprimer"
                   disabled={actionLoading}
+                  data-testid="delete-building-button"
                 >
                   🗑️
                 </button>
