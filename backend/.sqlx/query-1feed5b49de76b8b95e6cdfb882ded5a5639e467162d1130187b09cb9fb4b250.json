@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT DISTINCT m.title, m.scheduled_date as meeting_date, m.agenda::text as agenda, b.name as building_name\n            FROM meetings m\n            INNER JOIN buildings b ON m.building_id = b.id\n            ORDER BY m.scheduled_date DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "meeting_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "agenda",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "building_name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "1feed5b49de76b8b95e6cdfb882ded5a5639e467162d1130187b09cb9fb4b250"
+}

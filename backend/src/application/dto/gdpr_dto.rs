@@ -143,7 +143,10 @@ impl From<OwnerData> for OwnerDataDto {
     fn from(owner: OwnerData) -> Self {
         Self {
             id: owner.id.to_string(),
-            organization_id: owner.organization_id.to_string(),
+            organization_id: owner
+                .organization_id
+                .map(|id| id.to_string())
+                .unwrap_or_else(|| "none".to_string()),
             first_name: owner.first_name,
             last_name: owner.last_name,
             email: owner.email,
@@ -285,7 +288,7 @@ mod tests {
     fn test_owner_data_dto_conversion() {
         let owner_data = OwnerData {
             id: Uuid::new_v4(),
-            organization_id: Uuid::new_v4(),
+            organization_id: Some(Uuid::new_v4()),
             first_name: "Jane".to_string(),
             last_name: "Smith".to_string(),
             email: Some("jane@example.com".to_string()),

@@ -30,7 +30,7 @@ pub struct UserData {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct OwnerData {
     pub id: Uuid,
-    pub organization_id: Uuid,
+    pub organization_id: Option<Uuid>,
     pub first_name: String,
     pub last_name: String,
     pub email: Option<String>,
@@ -163,7 +163,7 @@ mod tests {
     fn create_test_owner_data() -> OwnerData {
         OwnerData {
             id: Uuid::new_v4(),
-            organization_id: Uuid::new_v4(),
+            organization_id: Some(Uuid::new_v4()),
             first_name: "John".to_string(),
             last_name: "Doe".to_string(),
             email: Some("john.doe@example.com".to_string()),

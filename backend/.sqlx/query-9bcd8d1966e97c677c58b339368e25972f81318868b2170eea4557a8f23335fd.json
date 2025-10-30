@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE users\n            SET\n                email = CONCAT('anonymized-', id::text, '@deleted.local'),\n                first_name = 'Anonymized',\n                last_name = 'User',\n                is_anonymized = TRUE,\n                anonymized_at = NOW(),\n                updated_at = NOW()\n            WHERE id = $1 AND is_anonymized = FALSE\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9bcd8d1966e97c677c58b339368e25972f81318868b2170eea4557a8f23335fd"
+}

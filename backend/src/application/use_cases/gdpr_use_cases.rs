@@ -117,10 +117,7 @@ impl GdprUseCases {
                 Ok(_) => owners_anonymized += 1,
                 Err(e) => {
                     // Log error but continue (partial anonymization is acceptable)
-                    eprintln!(
-                        "Warning: Failed to anonymize owner {}: {}",
-                        owner_id, e
-                    );
+                    eprintln!("Warning: Failed to anonymize owner {}: {}", owner_id, e);
                 }
             }
         }
