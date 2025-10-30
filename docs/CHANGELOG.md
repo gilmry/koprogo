@@ -129,6 +129,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code formatted with cargo fmt
 - E2E test infrastructure ready for GDPR scenarios
 
+### Frontend
+- **User GDPR data panel** (`GdprDataPanel.svelte`) - Phase 10
+  - Article 15: Personal data export with JSON download
+  - Article 17: Data erasure with two-step confirmation
+  - Legal holds checking before erasure
+  - Automatic logout after successful erasure
+  - Toast notifications for all operations
+  - 12+ data-testid attributes for E2E testing (gdpr-data-panel, gdpr-export-button, gdpr-erase-button, etc.)
+- **Admin GDPR management panel** (`AdminGdprPanel.svelte`) - Phase 11
+  - User search/filter by email, name, organization (723 lines)
+  - Admin-initiated data export for any user (cross-organization)
+  - Admin-initiated data erasure with confirmation
+  - Audit logs viewer with pagination (timestamp, event type, IP, admin flag)
+  - Email notifications to users for admin operations
+  - 15+ data-testid attributes for E2E testing (admin-gdpr-panel, admin-gdpr-search, admin-gdpr-users-table, admin-gdpr-export-user, admin-gdpr-erase-user, admin-gdpr-audit-logs, etc.)
+- **TypeScript GDPR types** (`types.ts`)
+  - 10 new interfaces: GdprUserData, GdprOwnerData, GdprUnitOwnershipData, GdprExpenseData, GdprDocumentData, GdprMeetingData, GdprExport, GdprEraseResponse, GdprCanEraseResponse
+  - Full type safety for all GDPR API responses
+
 ### Documentation
 
 ### Fixed
