@@ -2,15 +2,11 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * See https://playwright.dev/docs/test-configuration.
+ * E2E tests use Traefik reverse proxy on http://localhost
  */
-const baseURL =
-  process.env.PLAYWRIGHT_BASE_URL &&
-  process.env.PLAYWRIGHT_BASE_URL.trim() !== ""
-    ? process.env.PLAYWRIGHT_BASE_URL.trim()
-    : "http://localhost";
+const baseURL = "http://localhost"; // Traefik on port 80
 
-const useTraefik =
-  !baseURL.includes("://localhost:3000") && !baseURL.includes("127.0.0.1:3000");
+const useTraefik = true; // Always use Traefik for E2E tests
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -91,25 +87,8 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: useTraefik
-    ? undefined
-    : [
-        {
-          command: "npm run dev",
-          url: "http://localhost:3000",
-          reuseExistingServer: !process.env.CI,
-          timeout: 120 * 1000,
-          env: process.env.CI
-            ? {
-                // En CI, le backend tourne sur localhost:8080 (pas de Traefik)
-                PUBLIC_API_URL: "http://localhost:8080/api/v1",
-              }
-            : {
-                // En local, le backend est accessible via Traefik sur port 80
-                PUBLIC_API_URL: "http://localhost/api/v1",
-              },
-        },
-      ],
+  // Traefik is already running via docker-compose, no need to start webServer
+  webServer: undefined,
 
   /* Output folders */
   outputDir: "test-results",
