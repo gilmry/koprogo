@@ -58,8 +58,8 @@
               linkedUser: linkedUser ? {
                 id: linkedUser.id,
                 email: linkedUser.email,
-                first_name: linkedUser.firstName,
-                last_name: linkedUser.lastName
+                first_name: linkedUser.first_name,
+                last_name: linkedUser.last_name
               } : undefined
             };
           }
@@ -222,7 +222,7 @@
                       <option value="">Sélectionner un user...</option>
                       {#each getAvailableUsers(owner.id) as user (user.id)}
                         <option value={user.id}>
-                          {user.firstName} {user.lastName} ({user.email})
+                          {user.first_name} {user.last_name} ({user.email})
                         </option>
                       {/each}
                     </select>

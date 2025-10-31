@@ -41,8 +41,8 @@
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
   };
 
   let formRoles: RoleFormEntry[] = [createRoleEntry(UserRole.OWNER, '', true)];
@@ -51,8 +51,8 @@
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     roles: '',
   };
 
@@ -94,16 +94,16 @@
       email: '',
       password: '',
       confirmPassword: '',
-      firstName: '',
-      lastName: '',
+      first_name: '',
+      last_name: '',
     };
     formRoles = [createRoleEntry(UserRole.OWNER, '', true)];
     errors = {
       email: '',
       password: '',
       confirmPassword: '',
-      firstName: '',
-      lastName: '',
+      first_name: '',
+      last_name: '',
       roles: '',
     };
   }
@@ -113,8 +113,8 @@
       email: existing.email,
       password: '',
       confirmPassword: '',
-      firstName: existing.firstName,
-      lastName: existing.lastName,
+      first_name: existing.first_name,
+      last_name: existing.last_name,
     };
 
     const roles = existing.roles ?? [];
@@ -235,8 +235,8 @@
       email: '',
       password: '',
       confirmPassword: '',
-      firstName: '',
-      lastName: '',
+      first_name: '',
+      last_name: '',
       roles: '',
     };
 
@@ -267,14 +267,14 @@
     }
 
     // First name validation
-    if (!formData.firstName || formData.firstName.trim().length < 2) {
-      errors.firstName = 'Le prénom doit contenir au moins 2 caractères';
+    if (!formData.first_name || formData.first_name.trim().length < 2) {
+      errors.first_name = 'Le prénom doit contenir au moins 2 caractères';
       isValid = false;
     }
 
     // Last name validation
-    if (!formData.lastName || formData.lastName.trim().length < 2) {
-      errors.lastName = 'Le nom doit contenir au moins 2 caractères';
+    if (!formData.last_name || formData.last_name.trim().length < 2) {
+      errors.last_name = 'Le nom doit contenir au moins 2 caractères';
       isValid = false;
     }
 
@@ -337,8 +337,8 @@
 
       const payload: any = {
         email: formData.email.trim(),
-        first_name: formData.firstName.trim(),
-        last_name: formData.lastName.trim(),
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
         roles: rolesPayload,
         role: primary.role,
       };
@@ -401,19 +401,19 @@
         data-testid="user-email-input"
       />
       <FormInput
-        id="firstName"
+        id="first_name"
         label="Prénom"
         required
-        bind:value={formData.firstName}
-        error={errors.firstName}
+        bind:value={formData.first_name}
+        error={errors.first_name}
         data-testid="user-firstname-input"
       />
       <FormInput
-        id="lastName"
+        id="last_name"
         label="Nom"
         required
-        bind:value={formData.lastName}
-        error={errors.lastName}
+        bind:value={formData.last_name}
+        error={errors.last_name}
         data-testid="user-lastname-input"
       />
       {#if mode === 'create'}

@@ -17,8 +17,8 @@ export interface UserRoleSummary {
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   role: UserRole;
   organizationId?: string; // For multi-tenant support
   buildingIds?: string[]; // Buildings the user has access to

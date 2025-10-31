@@ -7,7 +7,7 @@
 <div>
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
-      Bienvenue, {user?.firstName} 👋
+      Bienvenue, {user?.first_name} 👋
     </h1>
     <p class="text-gray-600">
       Dashboard Comptable - Gestion financière

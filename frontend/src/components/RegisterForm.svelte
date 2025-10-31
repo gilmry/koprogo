@@ -12,8 +12,8 @@
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
     role: UserRole.OWNER,
     organizationId: '',
   };
@@ -22,8 +22,8 @@
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
+    first_name: '',
+    last_name: '',
   };
 
   let loading = false;
@@ -43,8 +43,8 @@
       email: '',
       password: '',
       confirmPassword: '',
-      firstName: '',
-      lastName: '',
+      first_name: '',
+      last_name: '',
     };
 
     // Email validation
@@ -76,14 +76,14 @@
     }
 
     // First name validation
-    if (!formData.firstName || formData.firstName.trim().length < 2) {
-      errors.firstName = 'Le prénom doit contenir au moins 2 caractères';
+    if (!formData.first_name || formData.first_name.trim().length < 2) {
+      errors.first_name = 'Le prénom doit contenir au moins 2 caractères';
       isValid = false;
     }
 
     // Last name validation
-    if (!formData.lastName || formData.lastName.trim().length < 2) {
-      errors.lastName = 'Le nom doit contenir au moins 2 caractères';
+    if (!formData.last_name || formData.last_name.trim().length < 2) {
+      errors.last_name = 'Le nom doit contenir au moins 2 caractères';
       isValid = false;
     }
 
@@ -103,8 +103,8 @@
       const requestBody: any = {
         email: formData.email,
         password: formData.password,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
         role: formData.role,
       };
 
@@ -168,22 +168,22 @@
 <form on:submit={handleRegister} class="space-y-4" data-testid="register-form">
   <div class="grid grid-cols-2 gap-4">
     <FormInput
-      id="firstName"
+      id="first_name"
       label="Prénom"
       type="text"
-      bind:value={formData.firstName}
-      error={errors.firstName}
+      bind:value={formData.first_name}
+      error={errors.first_name}
       required
       placeholder="Jean"
       data-testid="register-first-name"
     />
 
     <FormInput
-      id="lastName"
+      id="last_name"
       label="Nom"
       type="text"
-      bind:value={formData.lastName}
-      error={errors.lastName}
+      bind:value={formData.last_name}
+      error={errors.last_name}
       required
       placeholder="Dupont"
       data-testid="register-last-name"

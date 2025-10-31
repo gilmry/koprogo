@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { authStore } from '../stores/auth';
   import { toast } from '../stores/toast';
+  import { api } from '../lib/api';
   import type { GdprExport, GdprEraseResponse } from '../lib/types';
 
   let loading = false;
@@ -21,19 +22,8 @@
   async function checkCanErase() {
     checkingErasure = true;
     try {
-      const token = $authStore.token;
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch('/api/v1/gdpr/can-erase', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        canErase = data.can_erase;
-      }
+      const data = await api.get<{ can_erase: boolean; user_id: string }>('/gdpr/can-erase');
+      canErase = data.can_erase;
     } catch (error) {
       console.error('Failed to check erasure eligibility:', error);
     } finally {
@@ -44,21 +34,7 @@
   async function handleExportData() {
     loading = true;
     try {
-      const token = $authStore.token;
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch('/api/v1/gdpr/export', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Export failed');
-      }
-
-      exportData = await response.json();
+      exportData = await api.get<GdprExport>('/gdpr/export');
       showExportModal = true;
       toast.success('Your personal data has been exported successfully');
     } catch (error) {
@@ -71,22 +47,7 @@
   async function handleEraseData() {
     loading = true;
     try {
-      const token = $authStore.token;
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch('/api/v1/gdpr/erase', {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erasure failed');
-      }
-
-      erasureResult = await response.json();
+      erasureResult = await api.delete<GdprEraseResponse>('/gdpr/erase');
       showEraseConfirmation = false;
       toast.success('Your personal data has been anonymized');
 

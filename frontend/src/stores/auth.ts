@@ -89,8 +89,8 @@ const mapBackendUser = (user: any): User => {
   return {
     id: user.id,
     email: user.email,
-    firstName: user.first_name ?? user.firstName ?? "",
-    lastName: user.last_name ?? user.lastName ?? "",
+    first_name: user.first_name ?? user.first_name ?? "",
+    last_name: user.last_name ?? user.last_name ?? "",
     role: activeRole?.role ?? normalizeRole(user.role),
     organizationId:
       activeRole?.organizationId ??
@@ -113,8 +113,8 @@ const ensureUserShape = (user: any): User => {
     return {
       id: user.id ?? "",
       email: user.email ?? "",
-      firstName: user.firstName ?? "",
-      lastName: user.lastName ?? "",
+      first_name: user.first_name ?? "",
+      last_name: user.last_name ?? "",
       role: normalizeRole(user.role),
       organizationId: user.organizationId,
       buildingIds: user.buildingIds ?? [],

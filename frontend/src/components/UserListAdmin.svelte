@@ -63,8 +63,8 @@ interface BackendUser {
   $: filteredUsers = users.filter((user) => {
     const matchesSearch =
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase());
+      user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.last_name.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
 
@@ -259,18 +259,18 @@ interface BackendUser {
                 data-testid="user-row"
                 data-user-id={user.id}
                 data-user-email={user.email}
-                data-user-name={`${user.firstName} ${user.lastName}`}
+                data-user-name={`${user.first_name} ${user.last_name}`}
               >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     <div class="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
                       <span class="text-primary-600 font-semibold">
-                        {user.firstName[0]}{user.lastName[0]}
+                        {user.first_name[0]}{user.last_name[0]}
                       </span>
                     </div>
                     <div class="ml-4">
                       <div class="text-sm font-medium text-gray-900" data-testid="user-name">
-                        {user.firstName} {user.lastName}
+                        {user.first_name} {user.last_name}
                       </div>
                     </div>
                   </div>
@@ -386,7 +386,7 @@ interface BackendUser {
 <ConfirmDialog
   bind:isOpen={showConfirmDialog}
   title="Confirmer la suppression"
-  message="Êtes-vous sûr de vouloir supprimer l'utilisateur '{selectedUser?.firstName} {selectedUser?.lastName}' ? Cette action est irréversible."
+  message="Êtes-vous sûr de vouloir supprimer l'utilisateur '{selectedUser?.first_name} {selectedUser?.last_name}' ? Cette action est irréversible."
   confirmText="Supprimer"
   cancelText="Annuler"
   variant="danger"

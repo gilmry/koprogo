@@ -2,11 +2,12 @@
   import { onMount } from 'svelte';
   import { authStore } from '../../stores/auth';
   import { toast } from '../../stores/toast';
+  import { api } from '../../lib/api';
+  import { UserRole } from '../../lib/types';
   import type {
     GdprExport,
     GdprEraseResponse,
     User,
-    UserRole,
   } from '../../lib/types';
 
   let users: User[] = [];
@@ -46,18 +47,7 @@
   async function loadUsers() {
     loading = true;
     try {
-      const token = $authStore.token;
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch('/api/v1/users', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Failed to load users');
-
-      const responseData = await response.json();
+      const responseData = await api.get<{ data: User[] }>('/users');
       users = responseData.data || [];
       filteredUsers = users;
     } catch (error) {
@@ -75,21 +65,7 @@
     selectedUserEmail = userEmail;
 
     try {
-      const token = $authStore.token;
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch(`/api/v1/admin/gdpr/users/${userId}/export`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Export failed');
-      }
-
-      exportData = await response.json();
+      exportData = await api.get<GdprExport>(`/admin/gdpr/users/${userId}/export`);
       showExportModal = true;
       toast.success(
         `Data exported for ${userEmail} - User will be notified`,
@@ -112,22 +88,7 @@
     selectedUserEmail = userEmail;
 
     try {
-      const token = $authStore.token;
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch(`/api/v1/admin/gdpr/users/${userId}/erase`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Erasure failed');
-      }
-
-      erasureResult = await response.json();
+      erasureResult = await api.delete<GdprEraseResponse>(`/admin/gdpr/users/${userId}/erase`);
       showEraseConfirmation = false;
       toast.success(
         `Data erased for ${userEmail} - User will be notified`,
@@ -148,24 +109,13 @@
   async function loadAuditLogs(page = 1) {
     loading = true;
     try {
-      const token = $authStore.token;
-      if (!token) throw new Error('Not authenticated');
-
       const params = new URLSearchParams({
         page: page.toString(),
         per_page: '20',
         event_type: 'Gdpr',
       });
 
-      const response = await fetch(`/api/v1/admin/gdpr/audit-logs?${params}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Failed to load audit logs');
-
-      const data = await response.json();
+      const data = await api.get<{ logs: any[]; total: number }>(`/admin/gdpr/audit-logs?${params}`);
       auditLogs = data.logs || [];
       auditLogsPage = page;
       auditLogsTotalPages = Math.ceil((data.total || 0) / 20);
@@ -330,9 +280,9 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span
                     class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {user.role ===
-                    'super_admin'
+                    UserRole.SUPERADMIN
                       ? 'bg-purple-100 text-purple-800'
-                      : user.role === 'syndic'
+                      : user.role === UserRole.SYNDIC
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-gray-100 text-gray-800'}"
                   >
@@ -458,7 +408,7 @@
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
-                    {log.user_id.substring(0, 8)}...
+                    {log.user_id ? `${log.user_id.substring(0, 8)}...` : '-'}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {log.ip_address || '-'}

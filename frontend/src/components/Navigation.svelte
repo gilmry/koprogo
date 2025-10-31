@@ -174,10 +174,10 @@
             data-testid="user-menu-button"
           >
             <div class="w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-semibold">
-              {user?.firstName?.[0]}{user?.lastName?.[0]}
+              {user?.first_name?.[0]}{user?.last_name?.[0]}
             </div>
             <span class="hidden md:inline text-sm font-medium text-gray-700">
-              {user?.firstName} {user?.lastName}
+              {user?.first_name} {user?.last_name}
             </span>
             <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
