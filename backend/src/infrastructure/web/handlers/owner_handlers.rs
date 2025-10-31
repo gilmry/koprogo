@@ -289,16 +289,35 @@ pub async fn link_owner_to_user(
 
     // If linking to a user, verify the user exists and has role=owner
     if let Some(uid) = user_id_to_link {
-        let user_check = sqlx::query!("SELECT role FROM users WHERE id = $1", uid)
+        // Check if user exists
+        let user_check = sqlx::query!("SELECT id FROM users WHERE id = $1", uid)
             .fetch_optional(&state.pool)
             .await;
 
         match user_check {
-            Ok(Some(user_record)) => {
-                if user_record.role != "owner" {
-                    return HttpResponse::BadRequest().json(serde_json::json!({
-                        "error": "User must have role 'owner' to be linked to an owner entity"
-                    }));
+            Ok(Some(_user_record)) => {
+                // Check if user has 'owner' role in user_roles table
+                let role_check = sqlx::query!(
+                    "SELECT COUNT(*) as count FROM user_roles WHERE user_id = $1 AND role = $2",
+                    uid,
+                    "owner"
+                )
+                .fetch_one(&state.pool)
+                .await;
+
+                match role_check {
+                    Ok(record) => {
+                        if record.count.unwrap_or(0) == 0 {
+                            return HttpResponse::BadRequest().json(serde_json::json!({
+                                "error": "User must have role 'owner' to be linked to an owner entity"
+                            }));
+                        }
+                    }
+                    Err(err) => {
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "error": format!("Database error checking roles: {}", err)
+                        }));
+                    }
                 }
             }
             Ok(None) => {

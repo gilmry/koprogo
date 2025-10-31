@@ -85,6 +85,8 @@
       error = null;
       successMessage = null;
 
+      console.log('Linking owner:', ownerId, 'to user:', userId);
+
       await api.put(`/owners/${ownerId}/link-user`, {
         user_id: userId
       });
@@ -102,6 +104,7 @@
         successMessage = null;
       }, 3000);
     } catch (err) {
+      console.error('Link error:', err);
       error = err instanceof Error ? err.message : 'Erreur lors de la liaison';
     }
   }
