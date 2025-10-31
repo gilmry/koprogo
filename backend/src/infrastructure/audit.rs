@@ -18,6 +18,7 @@ pub enum AuditEventType {
     BuildingDeleted,
     UnitCreated,
     UnitUpdated,
+    UnitDeleted,
     UnitAssignedToOwner,
     UnitOwnerCreated,
     UnitOwnerUpdated,

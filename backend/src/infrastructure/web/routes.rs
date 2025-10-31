@@ -24,6 +24,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_units)
             .service(get_unit)
             .service(update_unit)
+            .service(delete_unit)
             .service(list_units_by_building)
             .service(assign_owner)
             // Owners

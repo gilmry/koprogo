@@ -1,12 +1,16 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { authStore } from '../stores/auth';
   import type { UnitOwner, Owner } from '../lib/types';
   import UnitOwnerEditModal from './UnitOwnerEditModal.svelte';
   import UnitOwnerAddModal from './UnitOwnerAddModal.svelte';
+  import Button from './ui/Button.svelte';
 
   export let unitId: string;
   export let showHistory = false;
+
+  $: canModifyOwnership = $authStore.user?.role === 'superadmin' || $authStore.user?.role === 'syndic';
 
   let unitOwners: (UnitOwner & { owner?: Owner })[] = [];
   let loading = true;
@@ -16,6 +20,8 @@
   let showEditModal = false;
   let showAddModal = false;
   let selectedUnitOwner: (UnitOwner & { owner?: Owner }) | null = null;
+  let showDeleteConfirm = false;
+  let unitOwnerToDelete: (UnitOwner & { owner?: Owner }) | null = null;
 
   onMount(async () => {
     await loadUnitOwners();
@@ -73,6 +79,31 @@
     selectedUnitOwner = unitOwner;
     showEditModal = true;
   }
+
+  function handleDeleteClick(unitOwner: UnitOwner & { owner?: Owner }) {
+    unitOwnerToDelete = unitOwner;
+    showDeleteConfirm = true;
+  }
+
+  async function confirmDelete() {
+    if (!unitOwnerToDelete) return;
+
+    try {
+      await api.delete(`/units/${unitId}/owners/${unitOwnerToDelete.owner_id}`);
+      showDeleteConfirm = false;
+      unitOwnerToDelete = null;
+      await loadUnitOwners();
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Erreur lors de la suppression de la relation';
+      console.error('Error deleting unit owner:', e);
+      showDeleteConfirm = false;
+    }
+  }
+
+  function cancelDelete() {
+    showDeleteConfirm = false;
+    unitOwnerToDelete = null;
+  }
 </script>
 
 <div class="space-y-4">
@@ -92,12 +123,14 @@
           <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
             Copropriétaires actuels
           </h4>
-          <button
-            on:click={() => showAddModal = true}
-            class="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
-          >
-            + Ajouter
-          </button>
+          {#if canModifyOwnership}
+            <button
+              on:click={() => showAddModal = true}
+              class="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
+            >
+              + Ajouter
+            </button>
+          {/if}
         </div>
 
         {#each activeOwners as unitOwner (unitOwner.id)}
@@ -138,13 +171,22 @@
                   </p>
                   <p class="text-xs text-gray-500 hidden sm:block">Quote-part</p>
                 </div>
-                <button
-                  on:click={() => handleEditUnitOwner(unitOwner)}
-                  class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition"
-                  title="Modifier la quote-part"
-                >
-                  ✏️
-                </button>
+                {#if canModifyOwnership}
+                  <button
+                    on:click={() => handleEditUnitOwner(unitOwner)}
+                    class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition"
+                    title="Modifier la quote-part"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    on:click={() => handleDeleteClick(unitOwner)}
+                    class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition"
+                    title="Retirer le copropriétaire"
+                  >
+                    🗑️
+                  </button>
+                {/if}
               </div>
             </div>
           </div>
@@ -170,12 +212,14 @@
         <p class="text-gray-600 mb-3">
           Aucun copropriétaire actif
         </p>
-        <button
-          on:click={() => showAddModal = true}
-          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
-        >
-          + Ajouter un copropriétaire
-        </button>
+        {#if canModifyOwnership}
+          <button
+            on:click={() => showAddModal = true}
+            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
+          >
+            + Ajouter un copropriétaire
+          </button>
+        {/if}
       </div>
     {/if}
 
@@ -236,3 +280,46 @@
   on:added={loadUnitOwners}
   on:close={() => showAddModal = false}
 />
+
+<!-- Delete Confirmation Modal -->
+{#if showDeleteConfirm && unitOwnerToDelete}
+  <div class="fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+      <!-- Backdrop -->
+      <div
+        class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        on:click={cancelDelete}
+      ></div>
+
+      <!-- Modal -->
+      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+        <div class="mb-4">
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Retirer le copropriétaire</h3>
+          {#if unitOwnerToDelete.owner}
+            <p class="text-gray-600">
+              Êtes-vous sûr de vouloir retirer
+              <strong>{unitOwnerToDelete.owner.first_name} {unitOwnerToDelete.owner.last_name}</strong>
+              de ce lot ?
+            </p>
+          {:else}
+            <p class="text-gray-600">
+              Êtes-vous sûr de vouloir retirer ce copropriétaire du lot ?
+            </p>
+          {/if}
+          <p class="text-sm text-gray-500 mt-2">
+            Cette action marquera la relation comme inactive et enregistrera la date de fin.
+          </p>
+        </div>
+
+        <div class="flex gap-2">
+          <Button variant="danger" on:click={confirmDelete}>
+            Retirer
+          </Button>
+          <Button variant="outline" on:click={cancelDelete}>
+            Annuler
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}

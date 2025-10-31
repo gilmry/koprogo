@@ -112,6 +112,18 @@ impl UnitUseCases {
         Ok(self.to_response_dto(&updated))
     }
 
+    pub async fn delete_unit(&self, id: Uuid) -> Result<bool, String> {
+        // Check if unit exists
+        let _unit = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or("Unit not found".to_string())?;
+
+        // Delete the unit
+        self.repository.delete(id).await
+    }
+
     fn to_response_dto(&self, unit: &Unit) -> UnitResponseDto {
         UnitResponseDto {
             id: unit.id.to_string(),

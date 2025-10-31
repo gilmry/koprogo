@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { authStore } from '../stores/auth';
   import type { Unit, PageResponse, Building } from '../lib/types';
   import Pagination from './Pagination.svelte';
   import UnitOwners from './UnitOwners.svelte';
@@ -9,6 +10,8 @@
   import Button from './ui/Button.svelte';
 
   export let buildingId: string | null = null;
+
+  $: isSuperAdmin = $authStore.user?.role === 'superadmin';
 
   let units: Unit[] = [];
   let loading = true;
@@ -28,6 +31,8 @@
   let showCreateModal = false;
   let showEditModal = false;
   let selectedUnit: Unit | null = null;
+  let showDeleteConfirm = false;
+  let unitToDelete: Unit | null = null;
 
   onMount(async () => {
     if (buildingId) {
@@ -112,6 +117,31 @@
     selectedUnit = unit;
     showEditModal = true;
   }
+
+  function handleDeleteClick(unit: Unit) {
+    unitToDelete = unit;
+    showDeleteConfirm = true;
+  }
+
+  async function confirmDelete() {
+    if (!unitToDelete) return;
+
+    try {
+      await api.delete(`/units/${unitToDelete.id}`);
+      showDeleteConfirm = false;
+      unitToDelete = null;
+      await loadUnits();
+    } catch (e) {
+      error = e instanceof Error ? e.message : 'Erreur lors de la suppression du lot';
+      console.error('Error deleting unit:', e);
+      showDeleteConfirm = false;
+    }
+  }
+
+  function cancelDelete() {
+    showDeleteConfirm = false;
+    unitToDelete = null;
+  }
 </script>
 
 <div class="space-y-4">
@@ -119,7 +149,7 @@
     <p class="text-gray-600">
       {totalItems} lot{totalItems !== 1 ? 's' : ''}
     </p>
-    {#if buildingId}
+    {#if buildingId && isSuperAdmin}
       <Button variant="primary" on:click={() => showCreateModal = true}>
         + Ajouter un lot
       </Button>
@@ -160,13 +190,20 @@
                 </div>
               </div>
               <div class="flex gap-2 ml-4">
-                {#if buildingId}
+                {#if buildingId && isSuperAdmin}
                   <button
                     on:click={() => handleEditUnit(unit)}
                     class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                     title="Modifier le lot"
                   >
                     ✏️
+                  </button>
+                  <button
+                    on:click={() => handleDeleteClick(unit)}
+                    class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+                    title="Supprimer le lot"
+                  >
+                    🗑️
                   </button>
                 {/if}
                 <button
@@ -221,5 +258,40 @@
         selectedUnit = null;
       }}
     />
+  {/if}
+
+  <!-- Delete Confirmation Modal -->
+  {#if showDeleteConfirm && unitToDelete}
+    <div class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="flex min-h-screen items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div
+          class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+          on:click={cancelDelete}
+        ></div>
+
+        <!-- Modal -->
+        <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+          <div class="mb-4">
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Confirmer la suppression</h3>
+            <p class="text-gray-600">
+              Êtes-vous sûr de vouloir supprimer le lot <strong>{unitToDelete.unit_number}</strong> ?
+            </p>
+            <p class="text-sm text-red-600 mt-2">
+              Cette action est irréversible et supprimera également toutes les relations avec les copropriétaires.
+            </p>
+          </div>
+
+          <div class="flex gap-2">
+            <Button variant="danger" on:click={confirmDelete}>
+              Supprimer
+            </Button>
+            <Button variant="outline" on:click={cancelDelete}>
+              Annuler
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   {/if}
 </div>

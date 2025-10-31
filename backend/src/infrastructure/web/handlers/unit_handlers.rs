@@ -1,7 +1,7 @@
 use crate::application::dto::{CreateUnitDto, PageRequest, PageResponse, UpdateUnitDto};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -242,6 +242,55 @@ pub async fn update_unit(
             // Audit log: failed unit update
             AuditLogEntry::new(
                 AuditEventType::UnitUpdated,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Unit", *id)
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    }
+}
+
+#[delete("/units/{id}")]
+pub async fn delete_unit(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    // Only SuperAdmin can delete units (structural data)
+    if user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin can delete units (structural data)"
+        }));
+    }
+
+    match state.unit_use_cases.delete_unit(*id).await {
+        Ok(true) => {
+            // Audit log: successful unit deletion
+            AuditLogEntry::new(
+                AuditEventType::UnitDeleted,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Unit", *id)
+            .log();
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "message": "Unit deleted successfully"
+            }))
+        }
+        Ok(false) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Unit not found"
+        })),
+        Err(err) => {
+            // Audit log: failed unit deletion
+            AuditLogEntry::new(
+                AuditEventType::UnitDeleted,
                 Some(user.user_id),
                 user.organization_id,
             )
