@@ -39,10 +39,19 @@ Pour plus de contexte (DDD, architecture, etc.), voyez `README.md`, `CLAUDE.md` 
    git checkout -b <prefix>/<description-kebab-case>
    ```
 
-3. **Commits** : petits, cohérents et en anglais (`feat:`, `fix:`, `docs:`…).
-4. **Hooks** : laissez tourner le `pre-commit` (format, lint) et `pre-push` (tests). Les commandes sont décrites dans `docs/GIT_HOOKS.rst`.
-5. **Tests** (`make test`, `cargo test`, `npm run test`) avant le push final.
-6. **Pull Request** : référencez l'issue correspondante (ex. `Closes #57`) et décrivez les impacts.
+3. **Commits avec DCO** : Tous les commits doivent être signés avec le Developer Certificate of Origin :
+   ```bash
+   git commit -s -m "feat: add amazing feature"
+   ```
+
+   Le flag `-s` ajoute automatiquement `Signed-off-by: Votre Nom <email>` au commit.
+
+   **Pourquoi DCO ?** En signant, vous certifiez avoir le droit de soumettre ce code et acceptez qu'il soit publié sous licence AGPL-3.0. Voir [GOVERNANCE.md](GOVERNANCE.md#contributeurs-externes) pour détails.
+
+4. **Commits descriptifs** : petits, cohérents et en anglais (`feat:`, `fix:`, `docs:`…).
+5. **Hooks** : laissez tourner le `pre-commit` (format, lint) et `pre-push` (tests). Les commandes sont décrites dans `docs/GIT_HOOKS.rst`.
+6. **Tests** (`make test`, `cargo test`, `npm run test`) avant le push final.
+7. **Pull Request** : référencez l'issue correspondante (ex. `Closes #57`) et décrivez les impacts.
 
 ---
 

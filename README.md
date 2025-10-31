@@ -612,6 +612,14 @@ Contributions bienvenues ! Nous suivons le [Contributor Covenant Code of Conduct
 
 Le guide [CONTRIBUTING.md](CONTRIBUTING.md) détaille les conventions de branches, les hooks Git et la checklist qualité.
 
+### Gouvernance
+
+KoproGo est organisé en **ASBL (Association Sans But Lucratif)** belge garantissant transparence et démocratie. Consultez [GOVERNANCE.md](GOVERNANCE.md) pour comprendre :
+- Structure de l'ASBL (création prévue mi-2026)
+- Processus de décision (CA + AG + communauté)
+- Comment devenir membre ou mainteneur
+- Modèle économique et transparence financière
+
 ### Workflow
 
 1. Fork le projet

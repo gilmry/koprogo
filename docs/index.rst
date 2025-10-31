@@ -48,6 +48,12 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
+   :caption: 🏢 Gouvernance ASBL
+
+   GOVERNANCE
+
+.. toctree::
+   :maxdepth: 2
    :caption: 🦀 Backend Rust
 
    backend/index
