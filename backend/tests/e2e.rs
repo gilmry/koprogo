@@ -143,13 +143,14 @@ async fn test_create_building_endpoint() {
     .await;
 
     // Register + login to obtain JWT tied to org_id
+    // Use superadmin role as only superadmin can create buildings (structural data)
     let email = format!("e2e+{}@test.com", Uuid::new_v4());
     let reg = koprogo_api::application::dto::RegisterRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
         first_name: "E2E".to_string(),
-        last_name: "User".to_string(),
-        role: "syndic".to_string(),
+        last_name: "SuperAdmin".to_string(),
+        role: "superadmin".to_string(),
         organization_id: Some(org_id),
     };
     let _ = state.auth_use_cases.register(reg).await.expect("register");
@@ -243,14 +244,14 @@ async fn test_create_building_validation_fails() {
     )
     .await;
 
-    // Auth
+    // Auth - Use superadmin role as only superadmin can create buildings
     let email = format!("e2e+{}@test.com", Uuid::new_v4());
     let reg = koprogo_api::application::dto::RegisterRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
         first_name: "E2E".to_string(),
-        last_name: "User".to_string(),
-        role: "syndic".to_string(),
+        last_name: "SuperAdmin".to_string(),
+        role: "superadmin".to_string(),
         organization_id: Some(org_id),
     };
     let _ = state.auth_use_cases.register(reg).await.expect("register");

@@ -191,15 +191,15 @@ async fn post_building_injects_org_from_jwt() {
     .await
     .expect("insert org");
 
-    // Register + login for Org A
+    // Register + login for Org A (use superadmin as only superadmin can create buildings)
     use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
     let email = format!("e2e+{}@test.com", Uuid::new_v4());
     let reg = RegisterRequest {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
         first_name: "E2E".to_string(),
-        last_name: "User".to_string(),
-        role: "syndic".to_string(),
+        last_name: "SuperAdmin".to_string(),
+        role: "superadmin".to_string(),
         organization_id: Some(org_a),
     };
     let _ = app_state
@@ -214,15 +214,16 @@ async fn post_building_injects_org_from_jwt() {
     let res = app_state.auth_use_cases.login(login).await.expect("login");
     let token = res.token;
 
-    // Prepare POST body with a DIFFERENT organization_id to ensure server overrides it
+    // SuperAdmin can specify organization_id in request body
+    // Test that SuperAdmin can create building with valid organization_id
     #[derive(Deserialize)]
     struct BuildingResp {
         id: String,
     }
 
-    let fake_org = Uuid::new_v4().to_string();
+    // Use the valid org_a that was created in setup
     let payload = serde_json::json!({
-        "organization_id": fake_org,
+        "organization_id": org_a.to_string(),
         "name": "JWT Building",
         "address": "1 JWT St",
         "city": "Brussels",
@@ -249,13 +250,13 @@ async fn post_building_injects_org_from_jwt() {
     let body: BuildingResp = test::read_body_json(resp).await;
     let building_id = Uuid::parse_str(&body.id).expect("uuid");
 
-    // Verify in DB that organization_id is Org A (not fake)
+    // Verify in DB that organization_id is Org A (as specified by SuperAdmin)
     let org_id: Uuid = sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
         .bind(building_id)
         .fetch_one(&pool)
         .await
         .expect("select org id");
-    assert_eq!(org_id, org_a);
+    assert_eq!(org_id, org_a, "SuperAdmin should be able to create building with specified organization_id");
 }
 
 #[actix_web::test]
