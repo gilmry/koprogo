@@ -172,8 +172,17 @@
         construction_year: formData.construction_year,
       };
 
-      // Include organization_id for SuperAdmins
-      if (isSuperAdmin && formData.organization_id) {
+      // Include organization_id ONLY for creation or SuperAdmin edits
+      if (mode === 'create') {
+        if (isSuperAdmin && formData.organization_id) {
+          // SuperAdmin: use selected organization
+          payload.organization_id = formData.organization_id;
+        } else if ($authStore.user?.organizationId) {
+          // Syndic/Accountant: use their organization
+          payload.organization_id = $authStore.user.organizationId;
+        }
+      } else if (mode === 'edit' && isSuperAdmin && formData.organization_id) {
+        // Only SuperAdmin can change organization in edit mode
         payload.organization_id = formData.organization_id;
       }
 

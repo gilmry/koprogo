@@ -14,7 +14,7 @@
   let floor = 0;
   let surfaceArea = 0;
   let quota = 0;
-  let unitType: 'Apartment' | 'Parking' | 'Storage' = 'Apartment';
+  let unitType: 'Apartment' | 'Parking' | 'Cellar' = 'Apartment';
   let loading = false;
   let error = '';
 
@@ -136,7 +136,7 @@
             >
               <option value="Apartment">Appartement</option>
               <option value="Parking">Parking</option>
-              <option value="Storage">Cave/Storage</option>
+              <option value="Cellar">Cave</option>
             </select>
           </div>
 

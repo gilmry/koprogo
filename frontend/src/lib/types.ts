@@ -70,11 +70,18 @@ export interface Building {
 // Owner interface
 export interface Owner {
   id: string;
+  organization_id?: string;
+  user_id?: string; // Link to User account (for portal access)
   first_name: string;
   last_name: string;
   email: string;
   phone?: string;
+  address?: string;
+  city?: string;
+  postal_code?: string;
+  country?: string;
   created_at?: string;
+  updated_at?: string;
 }
 
 // UnitOwner interface (junction table for many-to-many relationship)
@@ -102,7 +109,7 @@ export interface Unit {
   floor: number;
   surface_area: number;
   quota: number; // Quote-part en millièmes (déjà exprimée sur 1000, ex: 350 = 350/1000èmes)
-  unit_type: "Apartment" | "Parking" | "Storage";
+  unit_type: "Apartment" | "Parking" | "Cellar";
   owner_id?: string; // Deprecated - use unit_owners instead
   // Optional: populated owners list
   owners?: UnitOwner[];

@@ -471,6 +471,13 @@
             <span class="text-4xl mb-2 group-hover:scale-110 transition">🌱</span>
             <span class="text-sm font-medium text-gray-700">Seed Data</span>
           </a>
+          <a
+            href="/admin/user-owner-links"
+            class="flex flex-col items-center justify-center p-6 border-2 border-blue-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition group"
+          >
+            <span class="text-4xl mb-2 group-hover:scale-110 transition">🔗</span>
+            <span class="text-sm font-medium text-gray-700">Liens User↔Owner</span>
+          </a>
         </div>
       </div>
     </div>

@@ -62,7 +62,7 @@
     const labels: Record<string, string> = {
       'Apartment': 'Appartement',
       'Parking': 'Parking',
-      'Storage': 'Cave'
+      'Cellar': 'Cave'
     };
     return labels[type] || type;
   }
@@ -71,7 +71,7 @@
     const icons: Record<string, string> = {
       'Apartment': '🏠',
       'Parking': '🚗',
-      'Storage': '📦'
+      'Cellar': '📦'
     };
     return icons[type] || '📋';
   }
