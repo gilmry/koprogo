@@ -256,7 +256,10 @@ async fn post_building_injects_org_from_jwt() {
         .fetch_one(&pool)
         .await
         .expect("select org id");
-    assert_eq!(org_id, org_a, "SuperAdmin should be able to create building with specified organization_id");
+    assert_eq!(
+        org_id, org_a,
+        "SuperAdmin should be able to create building with specified organization_id"
+    );
 }
 
 #[actix_web::test]
