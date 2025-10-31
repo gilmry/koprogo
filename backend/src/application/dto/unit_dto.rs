@@ -20,6 +20,21 @@ pub struct CreateUnitDto {
     pub quota: f64,
 }
 
+#[derive(Debug, Deserialize, Validate, Clone)]
+pub struct UpdateUnitDto {
+    #[validate(length(min = 1))]
+    pub unit_number: String,
+
+    pub unit_type: UnitType,
+    pub floor: i32,
+
+    #[validate(range(min = 0.1))]
+    pub surface_area: f64,
+
+    #[validate(range(min = 0.1, max = 1000.0))]
+    pub quota: f64,
+}
+
 #[derive(Debug, Serialize)]
 pub struct UnitResponseDto {
     pub id: String,

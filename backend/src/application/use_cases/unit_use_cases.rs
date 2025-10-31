@@ -1,4 +1,6 @@
-use crate::application::dto::{CreateUnitDto, PageRequest, UnitFilters, UnitResponseDto};
+use crate::application::dto::{
+    CreateUnitDto, PageRequest, UnitFilters, UnitResponseDto, UpdateUnitDto,
+};
 use crate::application::ports::UnitRepository;
 use crate::domain::entities::Unit;
 use std::sync::Arc;
@@ -63,6 +65,34 @@ impl UnitUseCases {
 
         let dtos = units.iter().map(|u| self.to_response_dto(u)).collect();
         Ok((dtos, total))
+    }
+
+    pub async fn update_unit(
+        &self,
+        id: Uuid,
+        dto: UpdateUnitDto,
+    ) -> Result<UnitResponseDto, String> {
+        // Get existing unit
+        let mut unit = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or("Unit not found".to_string())?;
+
+        // Update unit fields
+        unit.unit_number = dto.unit_number;
+        unit.unit_type = dto.unit_type;
+        unit.floor = Some(dto.floor);
+        unit.surface_area = dto.surface_area;
+        unit.quota = dto.quota;
+        unit.updated_at = chrono::Utc::now();
+
+        // Validate the updated unit
+        unit.validate_update()?;
+
+        // Save updated unit
+        let updated = self.repository.update(&unit).await?;
+        Ok(self.to_response_dto(&updated))
     }
 
     pub async fn assign_owner(

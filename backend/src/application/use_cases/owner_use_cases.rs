@@ -105,6 +105,8 @@ impl OwnerUseCases {
     fn to_response_dto(&self, owner: &Owner) -> OwnerResponseDto {
         OwnerResponseDto {
             id: owner.id.to_string(),
+            organization_id: owner.organization_id.to_string(),
+            user_id: owner.user_id.map(|id| id.to_string()),
             first_name: owner.first_name.clone(),
             last_name: owner.last_name.clone(),
             email: owner.email.clone(),

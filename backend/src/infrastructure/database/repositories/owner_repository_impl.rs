@@ -21,12 +21,13 @@ impl OwnerRepository for PostgresOwnerRepository {
     async fn create(&self, owner: &Owner) -> Result<Owner, String> {
         sqlx::query(
             r#"
-            INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO owners (id, organization_id, user_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             "#,
         )
         .bind(owner.id)
         .bind(owner.organization_id)
+        .bind(owner.user_id)
         .bind(&owner.first_name)
         .bind(&owner.last_name)
         .bind(&owner.email)
@@ -47,7 +48,7 @@ impl OwnerRepository for PostgresOwnerRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Owner>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at
+            SELECT id, organization_id, user_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at
             FROM owners
             WHERE id = $1
             "#,
@@ -60,6 +61,7 @@ impl OwnerRepository for PostgresOwnerRepository {
         Ok(row.map(|row| Owner {
             id: row.get("id"),
             organization_id: row.get("organization_id"),
+            user_id: row.get("user_id"),
             first_name: row.get("first_name"),
             last_name: row.get("last_name"),
             email: row.get("email"),
@@ -76,7 +78,7 @@ impl OwnerRepository for PostgresOwnerRepository {
     async fn find_by_email(&self, email: &str) -> Result<Option<Owner>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at
+            SELECT id, organization_id, user_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at
             FROM owners
             WHERE email = $1
             "#,
@@ -89,6 +91,7 @@ impl OwnerRepository for PostgresOwnerRepository {
         Ok(row.map(|row| Owner {
             id: row.get("id"),
             organization_id: row.get("organization_id"),
+            user_id: row.get("user_id"),
             first_name: row.get("first_name"),
             last_name: row.get("last_name"),
             email: row.get("email"),
@@ -105,7 +108,7 @@ impl OwnerRepository for PostgresOwnerRepository {
     async fn find_all(&self) -> Result<Vec<Owner>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at
+            SELECT id, organization_id, user_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at
             FROM owners
             ORDER BY last_name, first_name
             "#,
@@ -119,6 +122,7 @@ impl OwnerRepository for PostgresOwnerRepository {
             .map(|row| Owner {
                 id: row.get("id"),
                 organization_id: row.get("organization_id"),
+                user_id: row.get("user_id"),
                 first_name: row.get("first_name"),
                 last_name: row.get("last_name"),
                 email: row.get("email"),
@@ -216,7 +220,7 @@ impl OwnerRepository for PostgresOwnerRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at \
+            "SELECT id, organization_id, user_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at \
              FROM owners {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -257,6 +261,7 @@ impl OwnerRepository for PostgresOwnerRepository {
             .map(|row| Owner {
                 id: row.get("id"),
                 organization_id: row.get("organization_id"),
+                user_id: row.get("user_id"),
                 first_name: row.get("first_name"),
                 last_name: row.get("last_name"),
                 email: row.get("email"),

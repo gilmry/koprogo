@@ -64,6 +64,19 @@ impl Unit {
         })
     }
 
+    pub fn validate_update(&self) -> Result<(), String> {
+        if self.unit_number.is_empty() {
+            return Err("Unit number cannot be empty".to_string());
+        }
+        if self.surface_area <= 0.0 {
+            return Err("Surface area must be greater than 0".to_string());
+        }
+        if self.quota <= 0.0 || self.quota > 1000.0 {
+            return Err("Quota must be between 0 and 1000".to_string());
+        }
+        Ok(())
+    }
+
     pub fn assign_owner(&mut self, owner_id: Uuid) {
         self.owner_id = Some(owner_id);
         self.updated_at = Utc::now();

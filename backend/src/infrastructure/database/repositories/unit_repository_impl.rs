@@ -327,14 +327,33 @@ impl UnitRepository for PostgresUnitRepository {
     }
 
     async fn update(&self, unit: &Unit) -> Result<Unit, String> {
+        let unit_type_str = match unit.unit_type {
+            UnitType::Apartment => "apartment",
+            UnitType::Parking => "parking",
+            UnitType::Cellar => "cellar",
+            UnitType::Commercial => "commercial",
+            UnitType::Other => "other",
+        };
+
         sqlx::query(
             r#"
             UPDATE units
-            SET owner_id = $2, updated_at = $3
+            SET unit_number = $2,
+                unit_type = $3::unit_type,
+                floor = $4,
+                surface_area = $5,
+                quota = $6,
+                owner_id = $7,
+                updated_at = $8
             WHERE id = $1
             "#,
         )
         .bind(unit.id)
+        .bind(&unit.unit_number)
+        .bind(unit_type_str)
+        .bind(unit.floor)
+        .bind(unit.surface_area)
+        .bind(unit.quota)
         .bind(unit.owner_id)
         .bind(unit.updated_at)
         .execute(&self.pool)

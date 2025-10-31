@@ -33,6 +33,8 @@ pub struct CreateOwnerDto {
 #[derive(Debug, Serialize)]
 pub struct OwnerResponseDto {
     pub id: String,
+    pub organization_id: String,
+    pub user_id: Option<String>, // Link to User account
     pub first_name: String,
     pub last_name: String,
     pub email: String,

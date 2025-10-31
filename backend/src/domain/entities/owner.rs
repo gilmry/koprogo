@@ -7,6 +7,7 @@ use uuid::Uuid;
 pub struct Owner {
     pub id: Uuid,
     pub organization_id: Uuid,
+    pub user_id: Option<Uuid>, // Optional link to user account (for portal access)
     pub first_name: String,
     pub last_name: String,
     pub email: String,
@@ -46,6 +47,7 @@ impl Owner {
         Ok(Self {
             id: Uuid::new_v4(),
             organization_id,
+            user_id: None, // Set by admin later if needed
             first_name,
             last_name,
             email,
