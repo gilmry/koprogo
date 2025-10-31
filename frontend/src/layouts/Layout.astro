@@ -27,6 +27,13 @@ const { title, showNav = true, requireAuth = false } = Astro.props;
 		<title>{title}</title>
 		<!-- Runtime configuration - loaded from external file for post-build configuration -->
 		<script is:inline src="/config.js"></script>
+		<!-- Privacy-friendly analytics by Plausible -->
+		<script is:inline async src="https://plausible.io/js/pa-cmW7nGIBSJKm4SoELOCgO.js"></script>
+		<script is:inline>
+			window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+			plausible.init()
+		</script>
+
 	</head>
 	<body class="bg-gray-50 min-h-screen flex flex-col">
 		{showNav && <Navigation client:load />}
