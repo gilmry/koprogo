@@ -89,6 +89,7 @@
           ...commonItems,
           { href: '/admin/organizations', label: 'Organisations', icon: '🏛️' },
           { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
+          { href: '/admin/gdpr', label: 'RGPD', icon: '🔒' },
         ];
 
       case UserRole.SYNDIC:
