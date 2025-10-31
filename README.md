@@ -602,7 +602,9 @@ Documentation complète disponible dans le dossier `docs/` :
 
 ## 📝 Contribuer
 
-Contributions bienvenues ! Le guide [CONTRIBUTING.md](CONTRIBUTING.md) détaille les conventions de branches, les hooks Git et la checklist qualité.
+Contributions bienvenues ! Nous suivons le [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md) pour maintenir une communauté bienveillante.
+
+Le guide [CONTRIBUTING.md](CONTRIBUTING.md) détaille les conventions de branches, les hooks Git et la checklist qualité.
 
 ### Workflow
 
@@ -613,6 +615,13 @@ Contributions bienvenues ! Le guide [CONTRIBUTING.md](CONTRIBUTING.md) détaille
 5. Commit (`git commit -m 'feat: add amazing feature'`)
 6. Push (`git push origin feature/amazing-feature`)
 7. Ouvrir une Pull Request (référence à l'issue, checklist PR)
+
+### Obtenir de l'Aide
+
+- 📚 **Documentation**: [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/gilmry/koprogo/discussions)
+- 🐛 **Bugs**: [Créer une issue](https://github.com/gilmry/koprogo/issues/new/choose)
+- 🔒 **Sécurité**: Voir [SECURITY.md](SECURITY.md)
 
 ## 📄 Licence
 
