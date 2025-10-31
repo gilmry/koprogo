@@ -78,6 +78,12 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
+   :caption: 🔐 Sécurité et Permissions
+
+   ROLE_PERMISSIONS_MATRIX
+
+.. toctree::
+   :maxdepth: 2
    :caption: 🛠️ Guides Développeurs
 
    MAKEFILE_GUIDE
