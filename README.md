@@ -14,6 +14,12 @@
 ![Security Audit](https://github.com/gilmry/koprogo/actions/workflows/security.yml/badge.svg)
 ![Documentation](https://github.com/gilmry/koprogo/actions/workflows/docs.yml/badge.svg)
 
+[![GitHub Stars](https://img.shields.io/github/stars/gilmry/koprogo?style=social)](https://github.com/gilmry/koprogo/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/gilmry/koprogo?style=social)](https://github.com/gilmry/koprogo/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/gilmry/koprogo)](https://github.com/gilmry/koprogo/issues)
+[![GitHub Discussions](https://img.shields.io/github/discussions/gilmry/koprogo)](https://github.com/gilmry/koprogo/discussions)
+[![Contributors](https://img.shields.io/github/contributors/gilmry/koprogo)](https://github.com/gilmry/koprogo/graphs/contributors)
+
 **Performance validée** (1 vCPU / 2GB RAM) :
 [![Success Rate](https://img.shields.io/badge/Success%20Rate-99.74%25-success)](docs/PERFORMANCE_REPORT.md)
 [![Throughput](https://img.shields.io/badge/Throughput-287%20req%2Fs-blue)](docs/PERFORMANCE_REPORT.md)
