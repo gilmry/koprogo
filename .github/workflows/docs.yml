@@ -10,6 +10,11 @@ on:
       - 'backend/src/**'
       - 'backend/Cargo.toml'
       - '.github/workflows/docs.yml'
+      - 'GOVERNANCE.md'
+      - 'CODE_OF_CONDUCT.md'
+      - 'CONTRIBUTING.md'
+      - 'README.md'
+      - 'SECURITY.md'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
