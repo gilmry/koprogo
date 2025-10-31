@@ -22,7 +22,6 @@ Table des Matières
 #. `Impact Écologique <#impact-écologique>`_
 #. `Comparaison Concurrence <#comparaison-concurrence>`_
 #. `Exemples Open Source Réussis <#exemples-open-source-réussis>`_
-#. `Gouvernance ASBL <#gouvernance-asbl>`_
 #. `Opportunités de Soutien <#opportunités-de-soutien>`_
 #. `Risques et Opportunités <#risques-et-opportunités>`_
 
@@ -950,122 +949,14 @@ Framasoft (ASBL France)
 
 ----
 
-Gouvernance ASBL
-----------------
+.. note::
+   **Gouvernance ASBL**
 
-Assemblée Générale (AG)
-^^^^^^^^^^^^^^^^^^^^^^^
+   Pour les détails complets sur la gouvernance de l'ASBL KoproGo, consultez le document dédié :
 
-**Composition**\ : Tous les membres de l'ASBL
+   📋 `GOVERNANCE.md <../GOVERNANCE.html>`_ - Structure ASBL, membres, Conseil d'Administration, Assemblée Générale, mainteneurs techniques, processus de décision, et évolution de la gouvernance.
 
-**Membres fondateurs**\ :
-
-
-* Architecte logiciel (fondateur)
-* Étudiante informatique (fondatrice)
-* +1 membre externe (diversité: juriste ou comptable bénévole)
-
-**Cotisation membres**\ : 0€ (ASBL accessible à tous)
-
-**Pouvoirs de l'AG**\ :
-
-
-* Modification des statuts
-* Nomination/révocation administrateurs
-* Approbation comptes annuels
-* Dissolution de l'ASBL
-* **Vote prix et affectation excédents**
-
-**Fréquence**\ : 1x/an minimum (obligatoire) + AG extraordinaires si besoin
-
-Conseil d'Administration (CA)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Composition**\ : 3 administrateurs minimum (loi belge)
-
-**Administrateurs KoproGo**\ :
-
-
-* Architecte logiciel (Président)
-* Étudiante informatique (Secrétaire)
-* Membre externe (Trésorier)
-
-**Mandat**\ : 4 ans renouvelables
-
-**Rémunération**\ : **0€** (bénévolat pur en phase bootstrap)
-
-**Pouvoirs du CA**\ :
-
-
-* Gestion quotidienne de l'ASBL
-* Décisions stratégiques (roadmap, investissements)
-* Recrutement/indemnisation contributeurs (si trésorerie suffisante)
-* Représentation de l'ASBL
-
-**Fréquence réunions**\ : Trimestrielles (4x/an) + ad-hoc si urgent
-
-Gestion Journalière
-^^^^^^^^^^^^^^^^^^^
-
-**Délégation**\ : Le CA peut déléguer la gestion journalière
-
-**KoproGo**\ : Architecte logiciel = gestionnaire journalier délégué
-
-
-* Décisions opérationnelles (infrastructure, déploiements)
-* Engagement dépenses < 500€ (au-delà: validation CA)
-* Représentation ASBL (contrats fournisseurs)
-
-Obligations Légales ASBL
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Comptabilité simplifiée** (si revenus < 500k€/an):
-
-
-* Livre journal des recettes/dépenses
-* Inventaire annuel actifs/passifs
-* Budget prévisionnel annuel
-
-**Comptes annuels**\ :
-
-
-* Dépôt à la Banque Nationale de Belgique (BNB)
-* Délai: 6 mois après clôture exercice
-* Accessibles au public (transparence)
-
-**TVA**\ : Exonération possible si activités à caractère social, éducatif ou culturel
-
-**Impôt sur les Sociétés (ISOC)**\ : Exonération si activités conformes à l'objet social non-lucratif
-
-Rémunération dans l'ASBL
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-**Principes légaux belges**\ :
-
-
-#. **Administrateurs**\ : Pas de rémunération (sauf remboursement frais réels)
-#. **Bénévoles**\ : Indemnités forfaitaires autorisées (max ~40€/jour, 2,000€/an)
-#. **Salariés**\ : Rémunération normale possible si justifiée et approuvée par AG
-
-**Timeline KoproGo**\ :
-
-
-* **Années 1-3**\ : **0€ rémunération** (bénévolat pur)
-* **Année 4**\ : **Indemnités forfaitaires** si trésorerie > 10k€ (500€/mois max)
-* **Année 5+**\ : **Salaires partiels** si trésorerie > 30k€ (1,500€/mois brut mi-temps)
-
-Dissolution ASBL
-^^^^^^^^^^^^^^^^
-
-En cas de fin de mission:
-
-
-#. **Décision AG**\ : Dissolution votée à majorité qualifiée (2/3)
-#. **Liquidation**\ : Remboursement dettes, vente actifs
-#. **Boni de liquidation**\ : **Interdit de distribuer aux membres**
-#. **Attribution**\ : Actifs donnés à ASBL similaire ou d'utilité publique
-
-**KoproGo**\ : En cas de dissolution, code source reste AGPL-3.0 (open-source perpétuel), infrastructure donnée à autre ASBL tech sociale (ex: Framasoft).
+   Ce document couvre : membres de l'ASBL, cotisation (120€/an), Conseil d'Administration (1-10 administrateurs), mainteneurs techniques, contributeurs externes (DCO), financements, transparence financière, propriété intellectuelle, Code of Conduct, et résolution de conflits.
 
 ----
 
