@@ -41,7 +41,11 @@
 
       // Load all users with role='owner'
       const usersResponse = await api.get<{ data: User[] }>('/users?per_page=1000');
-      ownerUsers = usersResponse.data.filter((u: User) => u.role === 'owner');
+      // Filter users who have at least one 'owner' role in their roles array
+      ownerUsers = usersResponse.data.filter((u: User) =>
+        u.roles && u.roles.some(r => r.role === 'owner')
+      );
+      console.log('Users with owner role:', ownerUsers.length, 'out of', usersResponse.data.length);
 
       // Enrich owners with linked user info
       const enrichedOwners = await Promise.all(
