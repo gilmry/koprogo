@@ -114,6 +114,55 @@ import Layout from '../layouts/Layout.astro';
             </li>
           </ul>
         </div>
+
+        <!-- RGPD - Mes données personnelles -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+          <div class="flex items-center mb-4">
+            <svg class="w-6 h-6 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            <h2 class="text-xl font-semibold text-gray-900">RGPD - Mes Données Personnelles</h2>
+          </div>
+          <p class="text-sm text-gray-600 mb-4">
+            Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez de droits sur vos données personnelles.
+          </p>
+          <ul class="space-y-2 text-gray-700 mb-4">
+            <li class="flex items-start">
+              <span class="mr-2 text-blue-600">📥</span>
+              <div>
+                <strong>Droit d'accès (Art. 15)</strong>
+                <p class="text-sm text-gray-600">Télécharger une copie complète de vos données</p>
+              </div>
+            </li>
+            <li class="flex items-start">
+              <span class="mr-2 text-red-600">🗑️</span>
+              <div>
+                <strong>Droit à l'effacement (Art. 17)</strong>
+                <p class="text-sm text-gray-600">Demander l'anonymisation de vos données</p>
+              </div>
+            </li>
+            <li class="flex items-start">
+              <span class="mr-2 text-green-600">✏️</span>
+              <div>
+                <strong>Droit de rectification (Art. 16)</strong>
+                <p class="text-sm text-gray-600">Corriger vos informations personnelles</p>
+              </div>
+            </li>
+            <li class="flex items-start">
+              <span class="mr-2 text-yellow-600">⏸️</span>
+              <div>
+                <strong>Droit à la limitation (Art. 18)</strong>
+                <p class="text-sm text-gray-600">Restreindre le traitement de vos données</p>
+              </div>
+            </li>
+          </ul>
+          <a href="/settings/gdpr" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+            Gérer mes données RGPD
+          </a>
+        </div>
       </div>
 
       <div class="mt-6">
