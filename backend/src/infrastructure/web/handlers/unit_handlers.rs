@@ -1,4 +1,4 @@
-use crate::application::dto::{CreateUnitDto, PageRequest, PageResponse};
+use crate::application::dto::{CreateUnitDto, PageRequest, PageResponse, UpdateUnitDto};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, Responder};
@@ -11,6 +11,13 @@ pub async fn create_unit(
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     mut dto: web::Json<CreateUnitDto>,
 ) -> impl Responder {
+    // Only SuperAdmin can create units (structural data)
+    if user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin can create units (structural data cannot be modified after creation)"
+        }));
+    }
+
     // Override the organization_id from DTO with the one from JWT token
     // This prevents users from creating units in other organizations
     let organization_id = match user.require_organization() {
@@ -111,6 +118,129 @@ pub async fn list_units_by_building(
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),
+    }
+}
+
+#[put("/units/{id}")]
+pub async fn update_unit(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdateUnitDto>,
+) -> impl Responder {
+    // Only SuperAdmin can update units (structural data including quotités)
+    if user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin can update units (structural data including quotités)"
+        }));
+    }
+
+    if let Err(errors) = dto.validate() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Validation failed",
+            "details": errors.to_string()
+        }));
+    }
+
+    // Verify the user owns the unit (via building organization check)
+    if user.role != "superadmin" {
+        match state.unit_use_cases.get_unit(*id).await {
+            Ok(Some(unit)) => {
+                // Get the building to check organization
+                let building_id = match Uuid::parse_str(&unit.building_id) {
+                    Ok(id) => id,
+                    Err(_) => {
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "error": "Invalid building_id"
+                        }));
+                    }
+                };
+
+                match state.building_use_cases.get_building(building_id).await {
+                    Ok(Some(building)) => {
+                        let building_org_id = match Uuid::parse_str(&building.organization_id) {
+                            Ok(id) => id,
+                            Err(_) => {
+                                return HttpResponse::InternalServerError().json(
+                                    serde_json::json!({
+                                        "error": "Invalid building organization_id"
+                                    }),
+                                );
+                            }
+                        };
+
+                        let user_org_id = match user.require_organization() {
+                            Ok(id) => id,
+                            Err(e) => {
+                                return HttpResponse::Unauthorized().json(serde_json::json!({
+                                    "error": e.to_string()
+                                }));
+                            }
+                        };
+
+                        if building_org_id != user_org_id {
+                            return HttpResponse::Forbidden().json(serde_json::json!({
+                                "error": "You can only update units in your own organization"
+                            }));
+                        }
+                    }
+                    Ok(None) => {
+                        return HttpResponse::NotFound().json(serde_json::json!({
+                            "error": "Building not found"
+                        }));
+                    }
+                    Err(err) => {
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "error": err
+                        }));
+                    }
+                }
+            }
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "Unit not found"
+                }));
+            }
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": err
+                }));
+            }
+        }
+    }
+
+    match state
+        .unit_use_cases
+        .update_unit(*id, dto.into_inner())
+        .await
+    {
+        Ok(unit) => {
+            // Audit log: successful unit update
+            AuditLogEntry::new(
+                AuditEventType::UnitUpdated,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Unit", *id)
+            .log();
+
+            HttpResponse::Ok().json(unit)
+        }
+        Err(err) => {
+            // Audit log: failed unit update
+            AuditLogEntry::new(
+                AuditEventType::UnitUpdated,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Unit", *id)
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
     }
 }
 

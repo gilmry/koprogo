@@ -17,12 +17,24 @@ pub struct UpdateOwnerDto {
     pub phone: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct LinkOwnerUserDto {
+    pub user_id: Option<String>, // UUID as string, or null to unlink
+}
+
 #[post("/owners")]
 pub async fn create_owner(
     state: web::Data<AppState>,
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     mut dto: web::Json<CreateOwnerDto>,
 ) -> impl Responder {
+    // Only SuperAdmin and Syndic can create owners
+    if user.role == "owner" || user.role == "accountant" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin and Syndic can create owners"
+        }));
+    }
+
     // For SuperAdmin: allow specifying organization_id in DTO
     // For others: override with their JWT organization_id
     let organization_id = if user.role == "superadmin" {
@@ -141,6 +153,13 @@ pub async fn update_owner(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateOwnerDto>,
 ) -> impl Responder {
+    // Only SuperAdmin and Syndic can update owners
+    if user.role == "owner" || user.role == "accountant" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin and Syndic can update owners"
+        }));
+    }
+
     // SuperAdmin can update any owner, others need organization check
     let user_organization_id = if user.role != "superadmin" {
         match user.require_organization() {
@@ -215,5 +234,155 @@ pub async fn update_owner(
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),
+    }
+}
+
+/// Link or unlink a user account to an owner (SuperAdmin only)
+#[put("/owners/{id}/link-user")]
+pub async fn link_owner_to_user(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<LinkOwnerUserDto>,
+) -> impl Responder {
+    // Only SuperAdmin can link users to owners
+    if user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin can link users to owners"
+        }));
+    }
+
+    let owner_id = *id;
+
+    // Parse user_id if provided
+    let user_id_to_link = if let Some(user_id_str) = &dto.user_id {
+        if user_id_str.is_empty() {
+            None // Empty string = unlink
+        } else {
+            match Uuid::parse_str(user_id_str) {
+                Ok(uid) => Some(uid),
+                Err(_) => {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": "Invalid user_id format"
+                    }))
+                }
+            }
+        }
+    } else {
+        None // null = unlink
+    };
+
+    // Verify owner exists
+    let _owner = match state.owner_use_cases.get_owner(owner_id).await {
+        Ok(Some(o)) => o,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Owner not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // If linking to a user, verify the user exists and has role=owner
+    if let Some(uid) = user_id_to_link {
+        let user_check = sqlx::query!("SELECT role FROM users WHERE id = $1", uid)
+            .fetch_optional(&state.pool)
+            .await;
+
+        match user_check {
+            Ok(Some(user_record)) => {
+                if user_record.role != "owner" {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "error": "User must have role 'owner' to be linked to an owner entity"
+                    }));
+                }
+            }
+            Ok(None) => {
+                return HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "User not found"
+                }));
+            }
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Database error: {}", err)
+                }));
+            }
+        }
+
+        // Check if this user is already linked to another owner
+        let existing_link = sqlx::query!(
+            "SELECT id, first_name, last_name FROM owners WHERE user_id = $1 AND id != $2",
+            uid,
+            owner_id
+        )
+        .fetch_optional(&state.pool)
+        .await;
+
+        match existing_link {
+            Ok(Some(existing)) => {
+                return HttpResponse::Conflict().json(serde_json::json!({
+                    "error": format!("User is already linked to owner {} {} (ID: {})",
+                        existing.first_name, existing.last_name, existing.id)
+                }));
+            }
+            Ok(None) => {} // OK, no conflict
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Database error: {}", err)
+                }));
+            }
+        }
+    }
+
+    // Update the owner's user_id
+    let update_result = sqlx::query!(
+        "UPDATE owners SET user_id = $1, updated_at = NOW() WHERE id = $2",
+        user_id_to_link,
+        owner_id
+    )
+    .execute(&state.pool)
+    .await;
+
+    match update_result {
+        Ok(_) => {
+            // Audit log
+            AuditLogEntry::new(
+                AuditEventType::OwnerUpdated,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Owner", owner_id)
+            .log();
+
+            let action = if user_id_to_link.is_some() {
+                "linked"
+            } else {
+                "unlinked"
+            };
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "message": format!("Owner successfully {} to user", action),
+                "owner_id": owner_id,
+                "user_id": user_id_to_link
+            }))
+        }
+        Err(err) => {
+            // Audit log
+            AuditLogEntry::new(
+                AuditEventType::OwnerUpdated,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_error(err.to_string())
+            .log();
+
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database error: {}", err)
+            }))
+        }
     }
 }

@@ -11,6 +11,13 @@ pub async fn create_building(
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     mut dto: web::Json<CreateBuildingDto>,
 ) -> impl Responder {
+    // Only SuperAdmin can create buildings (structural data)
+    if user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin can create buildings (structural data cannot be modified after creation)"
+        }));
+    }
+
     // SuperAdmin can create buildings for any organization
     // Regular users can only create for their own organization
     let organization_id: Uuid;
@@ -131,6 +138,13 @@ pub async fn update_building(
     id: web::Path<Uuid>,
     dto: web::Json<UpdateBuildingDto>,
 ) -> impl Responder {
+    // Only SuperAdmin can update buildings (structural data)
+    if user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin can update buildings (structural data)"
+        }));
+    }
+
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "Validation failed",
@@ -227,6 +241,13 @@ pub async fn delete_building(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Only SuperAdmin can delete buildings
+    if user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin can delete buildings"
+        }));
+    }
+
     match state.building_use_cases.delete_building(*id).await {
         Ok(true) => {
             // Audit log: successful building deletion

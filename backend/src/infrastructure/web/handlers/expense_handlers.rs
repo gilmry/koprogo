@@ -5,12 +5,28 @@ use actix_web::{get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
 
+/// Helper function to check if owner role is trying to modify data
+/// Note: Accountant CAN create expenses and mark them as paid
+fn check_owner_readonly(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    if user.role == "owner" {
+        Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Owner role has read-only access"
+        })))
+    } else {
+        None
+    }
+}
+
 #[post("/expenses")]
 pub async fn create_expense(
     state: web::Data<AppState>,
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
     mut dto: web::Json<CreateExpenseDto>,
 ) -> impl Responder {
+    if let Some(response) = check_owner_readonly(&user) {
+        return response;
+    }
+
     // Override the organization_id from DTO with the one from JWT token
     // This prevents users from creating expenses in other organizations
     let organization_id = match user.require_organization() {
@@ -124,6 +140,10 @@ pub async fn mark_expense_paid(
     user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Some(response) = check_owner_readonly(&user) {
+        return response;
+    }
+
     match state.expense_use_cases.mark_as_paid(*id).await {
         Ok(expense) => {
             // Audit log: successful expense marked paid

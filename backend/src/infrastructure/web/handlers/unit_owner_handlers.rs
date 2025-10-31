@@ -8,6 +8,18 @@ use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 use validator::Validate;
 
+/// Helper function to check if user role can modify unit ownership
+/// Only SuperAdmin and Syndic can modify unit ownership (who owns what)
+fn check_unit_ownership_permission(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    if user.role == "owner" || user.role == "accountant" {
+        Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only SuperAdmin and Syndic can modify unit ownership"
+        })))
+    } else {
+        None
+    }
+}
+
 /// Add an owner to a unit
 #[post("/units/{unit_id}/owners")]
 pub async fn add_owner_to_unit(
@@ -16,6 +28,10 @@ pub async fn add_owner_to_unit(
     unit_id: web::Path<String>,
     dto: web::Json<AddOwnerToUnitDto>,
 ) -> impl Responder {
+    if let Some(response) = check_unit_ownership_permission(&user) {
+        return response;
+    }
+
     // Validate DTO
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -93,6 +109,10 @@ pub async fn remove_owner_from_unit(
     user: AuthenticatedUser,
     path: web::Path<(String, String)>,
 ) -> impl Responder {
+    if let Some(response) = check_unit_ownership_permission(&user) {
+        return response;
+    }
+
     let (unit_id_str, owner_id_str) = path.into_inner();
 
     // Parse UUIDs
@@ -148,6 +168,10 @@ pub async fn update_unit_owner(
     id: web::Path<String>,
     dto: web::Json<UpdateOwnershipDto>,
 ) -> impl Responder {
+    if let Some(response) = check_unit_ownership_permission(&user) {
+        return response;
+    }
+
     // Validate DTO
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({
@@ -363,6 +387,10 @@ pub async fn transfer_ownership(
     unit_id: web::Path<String>,
     dto: web::Json<TransferOwnershipDto>,
 ) -> impl Responder {
+    if let Some(response) = check_unit_ownership_permission(&user) {
+        return response;
+    }
+
     // Validate DTO
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({

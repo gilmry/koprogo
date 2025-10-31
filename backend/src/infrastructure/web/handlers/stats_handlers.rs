@@ -149,6 +149,147 @@ pub async fn get_dashboard_stats(
     }
 }
 
+/// Get Owner dashboard statistics (Owner role)
+/// Shows data only for buildings where this owner has units
+#[get("/stats/owner")]
+pub async fn get_owner_stats(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+) -> impl Responder {
+    // Only Owner role can access these stats (+ SuperAdmin for debugging)
+    if user.role != "owner" && user.role != "superadmin" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only Owner can access these statistics"
+        }));
+    }
+
+    // Find the owner record linked to this user
+    let owner_record = sqlx::query!("SELECT id FROM owners WHERE user_id = $1", user.user_id)
+        .fetch_optional(&state.pool)
+        .await;
+
+    let owner_id = match owner_record {
+        Ok(Some(record)) => record.id,
+        Ok(None) => {
+            // User is not linked to any owner record
+            return HttpResponse::Ok().json(SyndicDashboardStats {
+                total_buildings: 0,
+                total_units: 0,
+                total_owners: 0,
+                pending_expenses_count: 0,
+                pending_expenses_amount: 0.0,
+                next_meeting: None,
+            });
+        }
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Failed to fetch owner information"
+            }))
+        }
+    };
+
+    // Count DISTINCT buildings where this owner has units
+    let buildings_result = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(DISTINCT b.id) FROM buildings b
+         INNER JOIN units u ON b.id = u.building_id
+         INNER JOIN unit_owners uo ON u.id = uo.unit_id
+         WHERE uo.owner_id = $1 AND uo.end_date IS NULL",
+    )
+    .bind(owner_id)
+    .fetch_one(&state.pool)
+    .await;
+
+    // Count units owned by this owner
+    let units_result = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(*) FROM unit_owners uo
+         WHERE uo.owner_id = $1 AND uo.end_date IS NULL",
+    )
+    .bind(owner_id)
+    .fetch_one(&state.pool)
+    .await;
+
+    // Count other owners in the same buildings (for community info)
+    let owners_result = sqlx::query_scalar::<_, i64>(
+        "SELECT COUNT(DISTINCT uo2.owner_id) FROM unit_owners uo2
+         INNER JOIN units u ON uo2.unit_id = u.id
+         WHERE u.building_id IN (
+             SELECT DISTINCT u2.building_id FROM units u2
+             INNER JOIN unit_owners uo ON u2.id = uo.unit_id
+             WHERE uo.owner_id = $1 AND uo.end_date IS NULL
+         ) AND uo2.end_date IS NULL",
+    )
+    .bind(owner_id)
+    .fetch_one(&state.pool)
+    .await;
+
+    // Get pending expenses for buildings where owner has units
+    let pending_expenses = sqlx::query!(
+        "SELECT COUNT(*) as count, COALESCE(SUM(amount), 0) as total
+         FROM expenses e
+         WHERE e.building_id IN (
+             SELECT DISTINCT u.building_id FROM units u
+             INNER JOIN unit_owners uo ON u.id = uo.unit_id
+             WHERE uo.owner_id = $1 AND uo.end_date IS NULL
+         ) AND e.payment_status = 'pending'",
+        owner_id
+    )
+    .fetch_one(&state.pool)
+    .await;
+
+    // Get next meeting for owner's buildings
+    let next_meeting = sqlx::query!(
+        "SELECT m.id, m.scheduled_date, b.name as building_name
+         FROM meetings m
+         INNER JOIN buildings b ON m.building_id = b.id
+         WHERE b.id IN (
+             SELECT DISTINCT u.building_id FROM units u
+             INNER JOIN unit_owners uo ON u.id = uo.unit_id
+             WHERE uo.owner_id = $1 AND uo.end_date IS NULL
+         )
+         AND m.scheduled_date > NOW() AND m.status = 'scheduled'
+         ORDER BY m.scheduled_date ASC
+         LIMIT 1",
+        owner_id
+    )
+    .fetch_optional(&state.pool)
+    .await;
+
+    match (
+        buildings_result,
+        units_result,
+        owners_result,
+        pending_expenses,
+        next_meeting,
+    ) {
+        (
+            Ok(total_buildings),
+            Ok(total_units),
+            Ok(total_owners),
+            Ok(expenses_data),
+            Ok(meeting_data),
+        ) => {
+            let next_meeting_info = meeting_data.map(|m| NextMeetingInfo {
+                id: m.id.to_string(),
+                date: m.scheduled_date,
+                building_name: m.building_name,
+            });
+
+            let stats = SyndicDashboardStats {
+                total_buildings,
+                total_units,
+                total_owners,
+                pending_expenses_count: expenses_data.count.unwrap_or(0),
+                pending_expenses_amount: expenses_data.total.unwrap_or(0.0),
+                next_meeting: next_meeting_info,
+            };
+            HttpResponse::Ok().json(stats)
+        }
+        _ => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": "Failed to fetch owner dashboard statistics"
+        })),
+    }
+}
+
 /// Get Syndic dashboard statistics (Syndic and Accountant roles)
 #[get("/stats/syndic")]
 pub async fn get_syndic_stats(

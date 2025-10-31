@@ -23,6 +23,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(create_unit)
             .service(list_units)
             .service(get_unit)
+            .service(update_unit)
             .service(list_units_by_building)
             .service(assign_owner)
             // Owners
@@ -30,6 +31,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(list_owners)
             .service(get_owner)
             .service(update_owner)
+            .service(link_owner_to_user)
             // Unit-Owner Relationships
             .service(add_owner_to_unit)
             .service(remove_owner_from_unit)
@@ -86,6 +88,8 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // Stats (Syndic/Accountant)
             .service(get_syndic_stats)
             .service(get_syndic_urgent_tasks)
+            // Stats (Owner)
+            .service(get_owner_stats)
             // Organizations (SuperAdmin only)
             .service(list_organizations)
             .service(create_organization)
