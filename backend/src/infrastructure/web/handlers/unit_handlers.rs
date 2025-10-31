@@ -9,7 +9,7 @@ use validator::Validate;
 pub async fn create_unit(
     state: web::Data<AppState>,
     user: AuthenticatedUser, // JWT-extracted user info (SECURE!)
-    mut dto: web::Json<CreateUnitDto>,
+    dto: web::Json<CreateUnitDto>,
 ) -> impl Responder {
     // Only SuperAdmin can create units (structural data)
     if user.role != "superadmin" {
@@ -18,17 +18,29 @@ pub async fn create_unit(
         }));
     }
 
-    // Override the organization_id from DTO with the one from JWT token
-    // This prevents users from creating units in other organizations
-    let organization_id = match user.require_organization() {
+    // SuperAdmin must specify organization_id and building_id in the request body
+    // Validate that both are provided
+    if dto.organization_id.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "SuperAdmin must specify organization_id"
+        }));
+    }
+
+    if dto.building_id.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "SuperAdmin must specify building_id"
+        }));
+    }
+
+    // Parse organization_id for audit logging
+    let organization_id = match Uuid::parse_str(&dto.organization_id) {
         Ok(org_id) => org_id,
-        Err(e) => {
-            return HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": e.to_string()
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid organization_id format"
             }))
         }
     };
-    dto.organization_id = organization_id.to_string();
 
     if let Err(errors) = dto.validate() {
         return HttpResponse::BadRequest().json(serde_json::json!({

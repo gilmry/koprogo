@@ -207,6 +207,7 @@ SuperAdmin
 
 - ✅ Accès complet à toutes les organisations
 - ✅ Création et configuration initiale des buildings et units
+- ✅ Spécification libre de l'organization_id et building_id lors de la création
 - ✅ Gestion des organizations
 - ✅ Liaison des comptes User aux entités Owner
 - ✅ Peut opérer au niveau de n'importe quelle organisation
