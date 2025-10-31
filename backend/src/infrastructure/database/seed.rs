@@ -57,21 +57,15 @@ impl DatabaseSeeder {
         .await
         .map_err(|e| format!("Failed to upsert superadmin: {}", e))?;
 
-        sqlx::query(
-            r#"
-            DELETE FROM user_roles
-            WHERE user_id = $1 AND role = 'superadmin'
-            "#,
-        )
-        .bind(superadmin_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to cleanup superadmin roles: {}", e))?;
-
+        // Upsert superadmin role (preserve if exists, create if missing)
         sqlx::query(
             r#"
             INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, created_at, updated_at)
             VALUES (gen_random_uuid(), $1, 'superadmin', NULL, true, NOW(), NOW())
+            ON CONFLICT (user_id, role, organization_id)
+            DO UPDATE SET
+                is_primary = true,
+                updated_at = NOW()
             "#,
         )
         .bind(superadmin_id)
