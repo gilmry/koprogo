@@ -1,1 +1,1 @@
-/home/user/koprogo/GOVERNANCE.md
+../GOVERNANCE.md
