@@ -48,6 +48,7 @@
         ownersResponse.data.map(async (owner: Owner) => {
           if (owner.user_id) {
             const linkedUser = ownerUsers.find(u => u.id === owner.user_id);
+            console.log('Owner with user_id:', owner.id, 'user_id:', owner.user_id, 'linkedUser found:', !!linkedUser);
             return {
               ...owner,
               linkedUser: linkedUser ? {
@@ -61,6 +62,9 @@
           return owner;
         })
       );
+
+      console.log('Enriched owners:', enrichedOwners);
+      console.log('Total owner users:', ownerUsers.length);
 
       // Force Svelte reactivity by creating a new array reference
       owners = [...enrichedOwners];
