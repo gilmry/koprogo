@@ -347,3 +347,59 @@ export interface GdprCanEraseResponse {
   user_id: string;
   legal_holds: number;
 }
+// ========================================
+// Board of Directors Types
+// ========================================
+
+export interface BoardMemberResponse {
+  id: string;
+  owner_id: string;
+  building_id: string;
+  position: string;
+  mandate_start: string;
+  mandate_end: string;
+  elected_by_meeting_id: string;
+  is_active: boolean;
+  days_remaining: number;
+  expires_soon: boolean;
+}
+
+export interface BoardDecisionResponse {
+  id: string;
+  building_id: string;
+  meeting_id: string;
+  subject: string;
+  decision_text: string;
+  deadline?: string;
+  status: "pending" | "in_progress" | "completed" | "overdue" | "cancelled";
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DecisionStats {
+  building_id: string;
+  total_decisions: number;
+  pending: number;
+  in_progress: number;
+  completed: number;
+  overdue: number;
+  cancelled: number;
+}
+
+export type DeadlineUrgency = "critical" | "high" | "medium";
+
+export interface DeadlineAlert {
+  decision_id: string;
+  subject: string;
+  deadline: string;
+  days_remaining: number;
+  urgency: DeadlineUrgency;
+}
+
+export interface BoardDashboardResponse {
+  my_mandate?: BoardMemberResponse;
+  decisions_stats: DecisionStats;
+  overdue_decisions: BoardDecisionResponse[];
+  upcoming_deadlines: DeadlineAlert[];
+}
