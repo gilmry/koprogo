@@ -1,23 +1,28 @@
 use cucumber::{given, then, when, World};
 use koprogo_api::application::dto::{
-    Claims, CompleteMeetingRequest, CreateBuildingDto, CreateExpenseDto, CreateMeetingRequest,
-    GdprEraseResponseDto, GdprExportResponseDto, LinkDocumentToExpenseRequest,
+    BoardMemberResponseDto, BoardStatsDto, Claims, CompleteMeetingRequest, CreateBoardDecisionDto,
+    CreateBoardMemberDto, CreateBuildingDto, CreateExpenseDto, CreateMeetingRequest,
+    DecisionStatsDto, GdprEraseResponseDto, GdprExportResponseDto, LinkDocumentToExpenseRequest,
     LinkDocumentToMeetingRequest, LoginRequest, LoginResponse, PageRequest, PcnReportRequest,
     RefreshTokenRequest, RegisterRequest, SortOrder, UpdateMeetingRequest,
 };
 use koprogo_api::application::ports::{
-    AuditLogRepository, BuildingRepository, GdprRepository, OwnerRepository, UserRoleRepository,
+    AuditLogRepository, BoardDecisionRepository, BoardMemberRepository, BuildingRepository,
+    GdprRepository, MeetingRepository, OwnerRepository, UserRoleRepository,
 };
 use koprogo_api::application::use_cases::{
-    BuildingUseCases, DocumentUseCases, ExpenseUseCases, GdprUseCases, MeetingUseCases, PcnUseCases,
+    BoardDashboardResponse, BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases,
+    BuildingUseCases, DocumentUseCases, ExpenseUseCases, GdprUseCases, MeetingUseCases,
+    PcnUseCases,
 };
 use koprogo_api::domain::entities::{ExpenseCategory, UserRole, UserRoleAssignment};
 use koprogo_api::domain::i18n::{I18n, Language, TranslationKey};
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAuditLogRepository, PostgresBuildingRepository,
-    PostgresDocumentRepository, PostgresExpenseRepository, PostgresGdprRepository,
-    PostgresMeetingRepository, PostgresOwnerRepository, PostgresRefreshTokenRepository,
-    PostgresUserRepository, PostgresUserRoleRepository,
+    create_pool, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
+    PostgresBoardMemberRepository, PostgresBuildingRepository, PostgresDocumentRepository,
+    PostgresExpenseRepository, PostgresGdprRepository, PostgresMeetingRepository,
+    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUserRepository,
+    PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::pool::DbPool;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
@@ -66,6 +71,20 @@ pub struct BuildingWorld {
     last_gdpr_erase: Option<GdprEraseResponseDto>,
     last_can_erase: Option<bool>,
     owner_repo: Option<Arc<PostgresOwnerRepository>>,
+    board_member_use_cases: Option<Arc<BoardMemberUseCases>>,
+    board_decision_use_cases: Option<Arc<BoardDecisionUseCases>>,
+    board_dashboard_use_cases: Option<Arc<BoardDashboardUseCases>>,
+    last_board_member_id: Option<Uuid>,
+    last_board_decision_id: Option<Uuid>,
+    #[allow(dead_code)]
+    last_board_members: Option<Vec<BoardMemberResponseDto>>,
+    last_board_stats: Option<BoardStatsDto>,
+    #[allow(dead_code)]
+    last_decision_stats: Option<DecisionStatsDto>,
+    last_board_dashboard: Option<BoardDashboardResponse>,
+    current_owner_id: Option<Uuid>,
+    board_member_repo: Option<Arc<dyn BoardMemberRepository>>,
+    board_decision_repo: Option<Arc<dyn BoardDecisionRepository>>,
 }
 
 impl std::fmt::Debug for BuildingWorld {
@@ -116,6 +135,18 @@ impl BuildingWorld {
             last_gdpr_erase: None,
             last_can_erase: None,
             owner_repo: None,
+            board_member_use_cases: None,
+            board_decision_use_cases: None,
+            board_dashboard_use_cases: None,
+            last_board_member_id: None,
+            last_board_decision_id: None,
+            last_board_members: None,
+            last_board_stats: None,
+            last_decision_stats: None,
+            last_board_dashboard: None,
+            current_owner_id: None,
+            board_member_repo: None,
+            board_decision_repo: None,
         }
     }
 
@@ -181,9 +212,25 @@ impl BuildingWorld {
             Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
         let audit_log_repo: Arc<dyn AuditLogRepository> =
             Arc::new(PostgresAuditLogRepository::new(pool.clone()));
+        let board_member_repo: Arc<dyn BoardMemberRepository> =
+            Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
+        let board_decision_repo: Arc<dyn BoardDecisionRepository> =
+            Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
 
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
-        let meeting_use_cases = MeetingUseCases::new(meeting_repo);
+        let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+        let board_member_use_cases =
+            BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+        let board_decision_use_cases = BoardDecisionUseCases::new(
+            board_decision_repo.clone(),
+            building_repo.clone(),
+            meeting_repo.clone(),
+        );
+        let board_dashboard_use_cases = BoardDashboardUseCases::new(
+            board_member_repo.clone(),
+            board_decision_repo.clone(),
+            building_repo.clone(),
+        );
         let storage_root = std::env::temp_dir().join("koprogo_bdd_uploads");
         let storage: Arc<dyn StorageProvider> =
             Arc::new(FileStorage::new(&storage_root).expect("storage"));
@@ -227,6 +274,11 @@ impl BuildingWorld {
         self.gdpr_use_cases = Some(Arc::new(gdpr_use_cases));
         self.audit_log_repo = Some(audit_log_repo);
         self.owner_repo = Some(owner_repo);
+        self.board_member_use_cases = Some(Arc::new(board_member_use_cases));
+        self.board_decision_use_cases = Some(Arc::new(board_decision_use_cases));
+        self.board_dashboard_use_cases = Some(Arc::new(board_dashboard_use_cases));
+        self.board_member_repo = Some(board_member_repo);
+        self.board_decision_repo = Some(board_decision_repo);
         self._container = Some(postgres_container);
         self.org_id = Some(org_id);
         self.building_id = Some(building_id);
@@ -1326,4 +1378,534 @@ async fn then_user_receives_admin_export_email(_world: &mut BuildingWorld) {
 #[then("the user should receive an email about the admin erasure")]
 async fn then_user_receives_admin_erasure_email(_world: &mut BuildingWorld) {
     // Email notifications tested in E2E
+}
+// === Board System BDD Steps ===
+
+// === Board System BDD Steps ===
+
+#[given("a building with more than 20 units exists")]
+async fn given_building_with_many_units(world: &mut BuildingWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let org_id = world.org_id.unwrap();
+
+    // Create building with 25 units
+    use koprogo_api::domain::entities::Building as DomBuilding;
+    let b = DomBuilding::new(
+        org_id,
+        "Large Building".to_string(),
+        "100 Main St".to_string(),
+        "Brussels".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+        25,
+        2500,
+        Some(2020),
+    )
+    .unwrap();
+    let bid = b.id;
+
+    let building_repo = PostgresBuildingRepository::new(pool.clone());
+    building_repo
+        .create(&b)
+        .await
+        .expect("create large building");
+
+    world.building_id = Some(bid);
+}
+
+#[when(regex = r#"^I elect a user as board (president|treasurer|member) with a 1-year mandate$"#)]
+async fn when_elect_board_member(world: &mut BuildingWorld, position: String) {
+    let building_id = world.building_id.unwrap();
+    let org_id = world.org_id.unwrap();
+    let pool = world.pool.as_ref().expect("pool").clone();
+
+    // Create an owner directly in DB (board members must be property owners)
+    let owner_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())"#
+    )
+    .bind(owner_id)
+    .bind(org_id)
+    .bind("Board")
+    .bind("Member")
+    .bind(format!("board_{}@test.com", position))
+    .bind("+32123456789")
+    .bind("123 Owner St")
+    .bind("Brussels")
+    .bind("1000")
+    .bind("Belgium")
+    .execute(&pool)
+    .await
+    .expect("create owner");
+
+    // Create a meeting to elect the member
+    use koprogo_api::domain::entities::{Meeting, MeetingType};
+    let meeting = Meeting::new(
+        org_id,
+        building_id,
+        MeetingType::Ordinary,
+        "Election AG".to_string(),
+        None,
+        chrono::Utc::now(),
+        "Building Hall".to_string(),
+    )
+    .unwrap();
+    let meeting_id = meeting.id;
+
+    let meeting_repo = PostgresMeetingRepository::new(pool.clone());
+    meeting_repo.create(&meeting).await.expect("create meeting");
+
+    world.last_meeting_id = Some(meeting_id);
+
+    // Elect board member
+    use chrono::Duration;
+    let dto = CreateBoardMemberDto {
+        owner_id: owner_id.to_string(),
+        building_id: building_id.to_string(),
+        position,
+        mandate_start: chrono::Utc::now().to_rfc3339(),
+        mandate_end: (chrono::Utc::now() + Duration::days(365)).to_rfc3339(),
+        elected_by_meeting_id: meeting_id.to_string(),
+    };
+
+    let use_cases = world.board_member_use_cases.as_ref().unwrap();
+    let result = use_cases.elect_board_member(dto).await;
+
+    match result {
+        Ok(member) => {
+            world.last_board_member_id = Some(Uuid::parse_str(&member.id).unwrap());
+            world.last_result = Some(Ok("success".to_string()));
+        }
+        Err(e) => {
+            world.last_result = Some(Err(e));
+        }
+    }
+}
+
+#[then("the board member should be created")]
+async fn then_board_member_created(world: &mut BuildingWorld) {
+    assert!(
+        world.last_board_member_id.is_some(),
+        "Board member was not created"
+    );
+}
+
+#[then("the mandate should be active")]
+async fn then_mandate_active(world: &mut BuildingWorld) {
+    let member_id = world.last_board_member_id.unwrap();
+    let use_cases = world.board_member_use_cases.as_ref().unwrap();
+
+    let member = use_cases
+        .get_board_member(member_id)
+        .await
+        .expect("get member")
+        .expect("member should exist");
+
+    assert!(member.is_active, "Mandate should be active");
+}
+
+#[then("the mandate duration should be approximately 1 year")]
+async fn then_mandate_duration_one_year(world: &mut BuildingWorld) {
+    let member_id = world.last_board_member_id.unwrap();
+    let use_cases = world.board_member_use_cases.as_ref().unwrap();
+
+    let member = use_cases
+        .get_board_member(member_id)
+        .await
+        .expect("get member")
+        .expect("member should exist");
+
+    // Should be around 365 days (330-395 days based on domain validation)
+    assert!(
+        member.days_remaining >= 330 && member.days_remaining <= 395,
+        "Mandate duration should be approximately 1 year, got {} days",
+        member.days_remaining
+    );
+}
+
+#[given("a building with 20 units exists")]
+async fn given_building_with_20_units(world: &mut BuildingWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let org_id = world.org_id.unwrap();
+
+    // Create building with exactly 20 units
+    use koprogo_api::domain::entities::Building as DomBuilding;
+    let b = DomBuilding::new(
+        org_id,
+        "Small Building".to_string(),
+        "50 Main St".to_string(),
+        "Brussels".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+        20,
+        2000,
+        Some(2020),
+    )
+    .unwrap();
+    let bid = b.id;
+
+    let building_repo = PostgresBuildingRepository::new(pool);
+    building_repo
+        .create(&b)
+        .await
+        .expect("create small building");
+
+    world.building_id = Some(bid);
+}
+
+#[given("a building with 25 units exists")]
+async fn given_building_with_25_units(world: &mut BuildingWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+
+    let pool = world.pool.as_ref().expect("pool").clone();
+    let org_id = world.org_id.unwrap();
+
+    // Create building with exactly 25 units
+    use koprogo_api::domain::entities::Building as DomBuilding;
+    let b = DomBuilding::new(
+        org_id,
+        "Medium Building".to_string(),
+        "75 Board Ave".to_string(),
+        "Brussels".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+        25,
+        2500,
+        Some(2015),
+    )
+    .unwrap();
+    let bid = b.id;
+
+    let building_repo = PostgresBuildingRepository::new(pool);
+    building_repo
+        .create(&b)
+        .await
+        .expect("create medium building");
+
+    world.building_id = Some(bid);
+}
+
+#[when("I attempt to elect a user as board president")]
+async fn when_attempt_elect_board_president(world: &mut BuildingWorld) {
+    when_elect_board_member(world, "president".to_string()).await;
+}
+
+#[then(regex = r#"^the election should fail with "([^"]*)"$"#)]
+async fn then_election_fails_with(world: &mut BuildingWorld, message: String) {
+    let result = world.last_result.as_ref().unwrap();
+    assert!(result.is_err(), "Expected election to fail");
+
+    let error = result.as_ref().unwrap_err();
+    assert!(
+        error.contains(&message),
+        "Error message should contain '{}', got: '{}'",
+        message,
+        error
+    );
+}
+
+#[given("a general assembly meeting has occurred")]
+async fn given_meeting_occurred(world: &mut BuildingWorld) {
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+
+    if world.building_id.is_none() {
+        given_building_with_many_units(world).await;
+    }
+
+    let building_id = world.building_id.unwrap();
+    let org_id = world.org_id.unwrap();
+    let pool = world.pool.as_ref().expect("pool").clone();
+
+    use koprogo_api::domain::entities::{Meeting, MeetingType};
+    let meeting = Meeting::new(
+        org_id,
+        building_id,
+        MeetingType::Ordinary,
+        "General Assembly".to_string(),
+        Some("Annual meeting".to_string()),
+        chrono::Utc::now(),
+        "Main Hall".to_string(),
+    )
+    .unwrap();
+    let meeting_id = meeting.id;
+
+    let meeting_repo = PostgresMeetingRepository::new(pool);
+    meeting_repo.create(&meeting).await.expect("create meeting");
+
+    world.last_meeting_id = Some(meeting_id);
+}
+
+#[when(regex = r#"^I create a decision "([^"]*)" with deadline in (\d+) days$"#)]
+async fn when_create_decision_with_deadline(world: &mut BuildingWorld, subject: String, days: i64) {
+    let building_id = world.building_id.unwrap();
+    let meeting_id = world.last_meeting_id.unwrap();
+
+    use chrono::Duration;
+    let dto = CreateBoardDecisionDto {
+        building_id: building_id.to_string(),
+        meeting_id: meeting_id.to_string(),
+        subject,
+        decision_text: "Decision details".to_string(),
+        deadline: Some((chrono::Utc::now() + Duration::days(days)).to_rfc3339()),
+    };
+
+    let use_cases = world.board_decision_use_cases.as_ref().unwrap();
+    let result = use_cases.create_decision(dto).await;
+
+    match result {
+        Ok(decision) => {
+            world.last_board_decision_id = Some(Uuid::parse_str(&decision.id).unwrap());
+            world.last_result = Some(Ok("success".to_string()));
+        }
+        Err(e) => {
+            world.last_result = Some(Err(e));
+        }
+    }
+}
+
+#[then(regex = r#"^the decision should be created with status "([^"]*)"$"#)]
+async fn then_decision_created_with_status(world: &mut BuildingWorld, status: String) {
+    assert!(
+        world.last_board_decision_id.is_some(),
+        "Decision was not created"
+    );
+
+    let decision_id = world.last_board_decision_id.unwrap();
+    let use_cases = world.board_decision_use_cases.as_ref().unwrap();
+
+    let decision = use_cases
+        .get_decision(decision_id)
+        .await
+        .expect("get decision");
+
+    assert_eq!(decision.status, status, "Decision status mismatch");
+}
+
+#[then("the decision should have a deadline")]
+async fn then_decision_has_deadline(world: &mut BuildingWorld) {
+    let decision_id = world.last_board_decision_id.unwrap();
+    let use_cases = world.board_decision_use_cases.as_ref().unwrap();
+
+    let decision = use_cases
+        .get_decision(decision_id)
+        .await
+        .expect("get decision");
+
+    assert!(
+        decision.deadline.is_some(),
+        "Decision should have a deadline"
+    );
+}
+
+#[then("the decision should not be overdue")]
+async fn then_decision_not_overdue(world: &mut BuildingWorld) {
+    let decision_id = world.last_board_decision_id.unwrap();
+    let use_cases = world.board_decision_use_cases.as_ref().unwrap();
+
+    let decision = use_cases
+        .get_decision(decision_id)
+        .await
+        .expect("get decision");
+
+    assert!(!decision.is_overdue, "Decision should not be overdue");
+}
+
+#[when(regex = r#"^I request board statistics for the building$"#)]
+async fn when_request_board_stats(world: &mut BuildingWorld) {
+    let building_id = world.building_id.unwrap();
+    let use_cases = world.board_member_use_cases.as_ref().unwrap();
+
+    let stats = use_cases
+        .get_board_stats(building_id)
+        .await
+        .expect("get board stats");
+
+    world.last_board_stats = Some(stats);
+}
+
+#[then(regex = r#"^the statistics should show (\d+) active members$"#)]
+async fn then_stats_show_active_members(world: &mut BuildingWorld, count: i64) {
+    let stats = world.last_board_stats.as_ref().unwrap();
+    assert_eq!(stats.active_members, count, "Active members count mismatch");
+}
+
+// ==================== Board Dashboard Steps ====================
+
+#[given("I am a board member for that building")]
+async fn given_i_am_board_member(world: &mut BuildingWorld) {
+    let owner_repo = world.owner_repo.as_ref().expect("owner repo");
+    let building_id = world.building_id.expect("building_id");
+    let org_id = world.org_id.expect("org_id");
+    let pool = world.pool.as_ref().expect("pool");
+
+    // Create owner
+    let owner = koprogo_api::domain::entities::Owner::new(
+        org_id,
+        "Board".to_string(),
+        "Member".to_string(),
+        format!("board{}@test.com", Uuid::new_v4()),
+        Some("+32123456789".to_string()),
+        "123 Board St".to_string(),
+        "Brussels".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+    )
+    .expect("create owner");
+
+    let created_owner = owner_repo.create(&owner).await.expect("save owner");
+    world.current_owner_id = Some(created_owner.id);
+
+    // Create meeting if needed
+    if world.last_meeting_id.is_none() {
+        let meeting_id = Uuid::new_v4();
+        sqlx::query(
+            "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+        )
+        .bind(meeting_id)
+        .bind(org_id)
+        .bind(building_id)
+        .bind("ordinary")
+        .bind("Board Election")
+        .bind("Building Meeting Room")
+        .bind(chrono::Utc::now())
+        .execute(pool)
+        .await
+        .expect("create meeting");
+        world.last_meeting_id = Some(meeting_id);
+    }
+
+    // Elect as board member
+    let board_member_use_cases = world
+        .board_member_use_cases
+        .as_ref()
+        .expect("board member use cases");
+    let dto = CreateBoardMemberDto {
+        owner_id: created_owner.id.to_string(),
+        building_id: building_id.to_string(),
+        position: "president".to_string(),
+        mandate_start: chrono::Utc::now().to_rfc3339(),
+        mandate_end: (chrono::Utc::now() + chrono::Duration::days(365)).to_rfc3339(),
+        elected_by_meeting_id: world.last_meeting_id.unwrap().to_string(),
+    };
+
+    let member = board_member_use_cases
+        .elect_board_member(dto)
+        .await
+        .expect("elect board member");
+    world.last_board_member_id = Some(Uuid::parse_str(&member.id).unwrap());
+}
+
+#[given(regex = r#"^there are (\d+) pending decisions?$"#)]
+async fn given_n_pending_decisions(world: &mut BuildingWorld, count: usize) {
+    let building_id = world.building_id.expect("building_id");
+    let meeting_id = world.last_meeting_id.expect("meeting_id");
+    let use_cases = world
+        .board_decision_use_cases
+        .as_ref()
+        .expect("board decision use cases");
+
+    for i in 0..count {
+        let dto = CreateBoardDecisionDto {
+            building_id: building_id.to_string(),
+            meeting_id: meeting_id.to_string(),
+            subject: format!("Pending Decision {}", i + 1),
+            decision_text: format!("Details for decision {}", i + 1),
+            deadline: Some((chrono::Utc::now() + chrono::Duration::days(30)).to_rfc3339()),
+        };
+        use_cases
+            .create_decision(dto)
+            .await
+            .expect("create decision");
+    }
+}
+
+#[given(regex = r#"^there is (\d+) overdue decisions?$"#)]
+async fn given_n_overdue_decisions(world: &mut BuildingWorld, count: usize) {
+    let building_id = world.building_id.expect("building_id");
+    let meeting_id = world.last_meeting_id.expect("meeting_id");
+    let pool = world.pool.as_ref().expect("pool");
+
+    // Create overdue decisions directly in DB to bypass validation
+    for i in 0..count {
+        let decision_id = Uuid::new_v4();
+        let overdue_deadline = chrono::Utc::now() - chrono::Duration::days(10);
+        sqlx::query(
+            "INSERT INTO board_decisions (id, building_id, meeting_id, subject, decision_text, deadline, status, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, 'overdue', NOW(), NOW())"
+        )
+        .bind(decision_id)
+        .bind(building_id)
+        .bind(meeting_id)
+        .bind(format!("Overdue Decision {}", i + 1))
+        .bind(format!("This is overdue {}", i + 1))
+        .bind(overdue_deadline)
+        .execute(pool)
+        .await
+        .expect("create overdue decision in DB");
+    }
+}
+
+#[given(regex = r#"^my mandate expires in (\d+) days$"#)]
+async fn given_mandate_expires_in_days(world: &mut BuildingWorld, days: i64) {
+    let member_id = world.last_board_member_id.expect("board member id");
+    let repo = world.board_member_repo.as_ref().expect("board member repo");
+
+    let mut member = repo
+        .find_by_id(member_id)
+        .await
+        .expect("find")
+        .expect("exists");
+    member.mandate_start = chrono::Utc::now() - chrono::Duration::days(365 - days);
+    member.mandate_end = chrono::Utc::now() + chrono::Duration::days(days);
+    repo.update(&member).await.expect("update mandate");
+}
+
+#[when("I request my board dashboard")]
+async fn when_request_dashboard(world: &mut BuildingWorld) {
+    let building_id = world.building_id.expect("building_id");
+    let owner_id = world.current_owner_id.expect("owner_id");
+    let use_cases = world
+        .board_dashboard_use_cases
+        .as_ref()
+        .expect("dashboard use cases");
+
+    let dashboard = use_cases
+        .get_dashboard(building_id, owner_id)
+        .await
+        .expect("get dashboard");
+    world.last_board_dashboard = Some(dashboard);
+}
+
+#[then(regex = r#"^the dashboard should show (\d+) pending decisions?$"#)]
+async fn then_dashboard_shows_pending(world: &mut BuildingWorld, count: i64) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    assert_eq!(dashboard.decisions_stats.pending, count);
+}
+
+#[then(regex = r#"^the dashboard should show (\d+) overdue decisions?$"#)]
+async fn then_dashboard_shows_overdue(world: &mut BuildingWorld, count: i64) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    assert_eq!(dashboard.decisions_stats.overdue, count);
+    assert_eq!(dashboard.overdue_decisions.len(), count as usize);
+}
+
+#[then("the dashboard should show my mandate expiring soon")]
+async fn then_mandate_expiring_soon(world: &mut BuildingWorld) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    let mandate = dashboard.my_mandate.as_ref().expect("mandate");
+    assert!(mandate.expires_soon);
 }

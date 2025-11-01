@@ -92,6 +92,18 @@ async fn setup_test_db() -> (
     .await
     .expect("insert org");
 
+    let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
+    let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
+    let board_member_use_cases =
+        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+    let board_decision_use_cases =
+        BoardDecisionUseCases::new(board_decision_repo.clone(), building_repo.clone(), meeting_repo.clone());
+    let board_dashboard_use_cases = BoardDashboardUseCases::new(
+        board_member_repo.clone(),
+        board_decision_repo.clone(),
+        building_repo.clone(),
+    );
+
     let app_state = actix_web::web::Data::new(AppState::new(
         auth_use_cases,
         building_use_cases,
@@ -103,6 +115,9 @@ async fn setup_test_db() -> (
         document_use_cases,
         pcn_use_cases,
         gdpr_use_cases,
+        board_member_use_cases,
+        board_decision_use_cases,
+        board_dashboard_use_cases,
         audit_logger,
         EmailService::from_env().expect("email service"),
         pool.clone(),
