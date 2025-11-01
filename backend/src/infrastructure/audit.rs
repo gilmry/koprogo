@@ -32,6 +32,15 @@ pub enum AuditEventType {
     DocumentUploaded,
     DocumentDeleted,
 
+    // Board management events
+    BoardMemberElected,
+    BoardMemberRemoved,
+    BoardMemberMandateRenewed,
+    BoardDecisionCreated,
+    BoardDecisionUpdated,
+    BoardDecisionCompleted,
+    BoardDecisionNotesAdded,
+
     // Security events
     UnauthorizedAccess,
     RateLimitExceeded,
