@@ -1,4 +1,7 @@
 pub mod auth_use_cases;
+pub mod board_dashboard_use_cases;
+pub mod board_decision_use_cases;
+pub mod board_member_use_cases;
 pub mod building_use_cases;
 pub mod document_use_cases;
 pub mod expense_use_cases;
@@ -10,6 +13,9 @@ pub mod unit_owner_use_cases;
 pub mod unit_use_cases;
 
 pub use auth_use_cases::AuthUseCases;
+pub use board_dashboard_use_cases::{BoardDashboardResponse, BoardDashboardUseCases};
+pub use board_decision_use_cases::BoardDecisionUseCases;
+pub use board_member_use_cases::BoardMemberUseCases;
 pub use building_use_cases::BuildingUseCases;
 pub use document_use_cases::DocumentUseCases;
 pub use expense_use_cases::ExpenseUseCases;
