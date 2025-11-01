@@ -305,7 +305,7 @@ async fn test_board_member_lifecycle() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert!(body.as_array().unwrap().len() > 0);
+    assert!(!body.as_array().unwrap().is_empty());
 
     // 4. Renew mandate
     let renew = serde_json::json!({
@@ -503,7 +503,7 @@ async fn test_board_decision_lifecycle() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert!(body.as_array().unwrap().len() > 0);
+    assert!(!body.as_array().unwrap().is_empty());
 
     // 4. Update decision status
     let update = serde_json::json!({
@@ -548,7 +548,7 @@ async fn test_board_decision_lifecycle() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert!(body.as_array().unwrap().len() > 0);
+    assert!(!body.as_array().unwrap().is_empty());
 
     // 7. Complete decision
     let req = test::TestRequest::put()

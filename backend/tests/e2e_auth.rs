@@ -59,12 +59,12 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     // use cases
     let jwt_secret = "e2e-secret".to_string();
     let auth_use_cases = AuthUseCases::new(user_repo, refresh_repo, user_role_repo, jwt_secret);
-    let building_use_cases = BuildingUseCases::new(building_repo);
+    let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
     let unit_owner_use_cases = UnitOwnerUseCases::new(unit_owner_repo, unit_repo, owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo);
+    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let storage_root = std::env::temp_dir().join("koprogo_e2e_http_uploads");
     let storage: Arc<dyn StorageProvider> =
         Arc::new(FileStorage::new(&storage_root).expect("storage"));

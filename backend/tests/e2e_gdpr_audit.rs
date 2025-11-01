@@ -3,10 +3,11 @@ use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAuditLogRepository, PostgresBuildingRepository,
-    PostgresDocumentRepository, PostgresExpenseRepository, PostgresGdprRepository,
-    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
-    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
+    create_pool, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
+    PostgresBoardMemberRepository, PostgresBuildingRepository, PostgresDocumentRepository,
+    PostgresExpenseRepository, PostgresGdprRepository, PostgresOwnerRepository,
+    PostgresRefreshTokenRepository, PostgresUnitOwnerRepository, PostgresUnitRepository,
+    PostgresUserRepository, PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
