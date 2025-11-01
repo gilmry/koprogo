@@ -1,6 +1,8 @@
-# KoproGo - Roadmap des Fonctionnalités Futures
+# KoproGo - Issues Roadmap
 
-Ce dossier contient **15 issues détaillées** avec cahiers des charges complets pour l'évolution de la plateforme KoproGo.
+Ce dossier contient **25 issues détaillées** avec cahiers des charges complets pour l'évolution de la plateforme KoproGo vers une conformité légale belge complète et des fonctionnalités avancées.
+
+**Dernière mise à jour** : 2025-11-01 (Gap Analysis complète)
 
 ---
 
@@ -8,195 +10,201 @@ Ce dossier contient **15 issues détaillées** avec cahiers des charges complets
 
 | Catégorie | Nombre | Estimation Totale | Priorité |
 |-----------|--------|-------------------|----------|
-| **Critique** | 5 | 37-46 heures | 🔴 À faire en priorité |
-| **Important** | 5 | 58-72 heures | 🟡 Phase 2 |
-| **Nice-to-Have** | 5 | 94-125 heures | 🟢 Long terme |
-| **TOTAL** | **15** | **189-243 heures** | ~5-6 semaines |
+| **🔴 Critique** | 9 | 86-106 heures | À faire AVANT production |
+| **🟡 Important** | 10 | 107-135 heures | Phase 2 automation/compliance |
+| **🟢 Nice-to-Have** | 6 | 127-167 heures | Long terme différenciation |
+| **TOTAL** | **25** | **320-408 heures** | ~40-51 jours |
+
+**Note** : Issues #004 (Pagination) et #007 (Work Management) supprimées (déjà implémentées ou fusionnées).
 
 ---
 
-## 🔴 Issues Critiques (MVP Complet)
+## 🔴 Issues Critiques (Production-Ready Belgique)
 
-Ces fonctionnalités sont **essentielles** pour une version 1.0 production-ready.
+Ces fonctionnalités sont **bloquantes pour la mise en production légale** en Belgique.
 
 ### [#001 - Gestion des Assemblées Générales](./critical/001-meeting-management-api.md)
-**Estimation** : 6-8h | **Labels** : `backend`, `domain-logic`
+**Estimation** : 6-8h | **Labels** : `backend`, `domain-logic`, `legal-compliance`
 
-Implémenter les use cases et API pour les assemblées générales (AG). Les entités et migrations existent déjà.
+API complète pour assemblées générales (AG ordinaires/extraordinaires). Entités existent, manque use cases et endpoints.
 
-**Livrables** :
-- Use Cases : `MeetingUseCases` avec CRUD complet
-- Endpoints : 10 routes (création, modification, agenda, PV, présences)
-- Tests : E2E + BDD Gherkin
-- Intégration avec `Document` pour PV
-
-**Valeur métier** : Obligation légale pour syndics de copropriété.
+**Livrables** : Use Cases, 10 endpoints REST, tests E2E + BDD Gherkin
 
 ---
 
 ### [#002 - Gestion Documentaire Complète](./critical/002-document-upload-download.md)
 **Estimation** : 8-10h | **Labels** : `backend`, `frontend`, `file-storage`
 
-Système complet upload/download de fichiers avec stockage sécurisé.
+Upload/download documents avec stockage sécurisé (PV, factures, règlements).
 
-**Livrables** :
-- Trait `FileStorageService` + implémentation locale
-- Upload multipart/form-data (10MB max)
-- Validation types MIME (PDF, JPG, PNG, XLSX)
-- Contrôle d'accès par `building_id`
-- Composant Svelte `FileUpload`
-
-**Valeur métier** : Archivage légal de documents (PV, factures, règlements).
+**Livrables** : Trait `FileStorageService`, upload multipart, composant Svelte
 
 ---
 
 ### [#003 - Génération de Rapports Financiers](./critical/003-financial-reports-generation.md)
 **Estimation** : 10-12h | **Labels** : `backend`, `frontend`, `finance`
 
-6 types de rapports : appels de fonds, budget, impayés, FEC (export comptable).
+6 types de rapports : appels de fonds, budget, impayés, FEC comptable.
 
-**Livrables** :
-- `ReportUseCases` intégrant `ExpenseCalculator` existant
-- Génération PDF (printpdf) et Excel (rust_xlsxwriter)
-- Export FEC conforme DGFiP
-- Composant `ReportDashboard.svelte`
-
-**Valeur métier** : Transparence financière obligatoire en AG.
-
----
-
-### [#004 - Pagination et Filtrage](./critical/004-pagination-filtering.md)
-**Estimation** : 3-4h | **Labels** : `backend`, `performance`
-
-Ajouter pagination/filtrage à tous les endpoints de liste.
-
-**Livrables** :
-- Structs génériques `PageRequest`, `PageResponse`, `PaginationMeta`
-- Filtres spécifiques : `BuildingFilters`, `ExpenseFilters`, etc.
-- Query parameters : `?page=1&per_page=20&sort_by=created_at&order=desc`
-- Migration tous repositories vers `find_all_paginated()`
-
-**Valeur métier** : Performance scalable (100+ copropriétés).
+**Livrables** : `ReportUseCases`, génération PDF + Excel, dashboard frontend
 
 ---
 
 ### [#005 - Renforcement Sécurité](./critical/005-security-hardening.md)
 **Estimation** : 10-12h | **Labels** : `security`, `backend`, `production-ready`
 
-Sécurisation avant production.
+Rate limiting, JWT refresh tokens, CORS, structured logging, 2FA optionnel.
 
-**Livrables** :
-- Rate limiting (5 req/15min login, 100 req/min API)
-- JWT refresh tokens (expiry 15min + refresh 7j)
-- CORS restreint (variable `ALLOWED_ORIGINS`)
-- Structured logging (migration `tracing`)
-- Audit logs pour actions critiques
-- Validation JWT_SECRET (pas de fallback)
-- 2FA TOTP (optionnel)
-
-**Valeur métier** : Conformité sécurité, prêt production.
+**Valeur** : Conformité sécurité production
 
 ---
 
-## 🟡 Issues Importantes (Phase 2)
+### [#016 - Plan Comptable Normalisé Belge](./critical/016-plan-comptable-belge.md) 🆕
+**Estimation** : 8-10h | **Labels** : `backend`, `critical`, `finance`, `legal-compliance`
 
-Fonctionnalités **fortement recommandées** pour compétitivité marché.
+**NOUVEAU** - Implémenter plan comptable conforme arrêté royal 12/07/2012 (classes 4, 5, 6, 7).
+
+**Livrables** : Enum `AccountCode` (24+ codes), génération bilan + compte de résultat
+
+**Bloque** : #017, #018, #003
+
+---
+
+### [#017 - État Daté Génération](./critical/017-etat-date-generation.md) 🆕
+**Estimation** : 6-8h | **Labels** : `backend`, `frontend`, `critical`, `legal-compliance`
+
+**NOUVEAU** - Génération états datés pour mutations immobilières (obligation Article 577-2 Code Civil).
+
+**Impact** : BLOQUE toutes les ventes de lots sans ça
+
+**Livrables** : Entity `EtatDate`, génération PDF, délai 15 jours
+
+---
+
+### [#018 - Budget Prévisionnel Annuel](./critical/018-budget-previsionnel.md) 🆕
+**Estimation** : 8-10h | **Labels** : `backend`, `frontend`, `critical`, `finance`
+
+**NOUVEAU** - Système budget annuel (ordinaire + extraordinaire) avec variance analysis.
+
+**Livrables** : Entity `Budget`, calcul provisions automatiques, vote AG
+
+---
+
+### [#022 - Conseil de Copropriété](./critical/022-conseil-copropriete.md) 🆕
+**Estimation** : 12-15h | **Labels** : `backend`, `frontend`, `critical`, `legal-compliance`, `governance`
+
+**NOUVEAU** - **OBLIGATION LÉGALE** pour immeubles >20 lots (Article 577-8/4 Code Civil).
+
+**0% implémenté actuellement** - Gap critique identifié.
+
+**Livrables** :
+- Rôle `BoardMember` avec permissions spéciales
+- Élections et mandats annuels
+- Dashboard suivi décisions AG
+- Tracking délais (devis, travaux)
+- Alertes retards syndic
+- Rapports semestriels/annuels automatiques
+- Vérification incompatibilité syndic ≠ conseil
+
+**Bloque** : Production pour copropriétés >20 lots
+
+---
+
+### [#023 - Workflow Recouvrement Impayés](./critical/023-workflow-recouvrement.md) 🆕
+**Estimation** : 6-8h | **Labels** : `backend`, `frontend`, `critical`, `finance`, `automation`
+
+**NOUVEAU** - Workflow automatisé relances 3 niveaux (J+15, J+30, J+60 mise en demeure).
+
+**Livrables** : Entity `PaymentReminder`, génération PDF lettres, cron job quotidien
+
+**Impact** : Réduction impayés 30-50%
+
+---
+
+## 🟡 Issues Importantes (Automation & Features)
+
+Ces fonctionnalités améliorent significativement l'expérience et la conformité.
 
 ### [#006 - Système de Paiement en Ligne](./important/006-online-payments.md)
 **Estimation** : 15-20h | **Labels** : `backend`, `frontend`, `payments`
 
-Intégration Stripe + SEPA Direct Debit.
-
-**Fonctionnalités** :
-- Paiement CB via Stripe Elements
-- Prélèvement automatique SEPA
-- Webhook `payment.succeeded`
-- Génération reçus PDF automatiques
-- Dashboard encaissements syndic
-
-**ROI** : Réduction impayés, automatisation encaissements.
-
----
-
-### [#007 - Gestion des Travaux](./important/007-work-management.md)
-**Estimation** : 12-15h | **Labels** : `backend`, `frontend`, `feature`
-
-Module complet gestion travaux copropriété.
-
-**Fonctionnalités** :
-- Entités `Work` + `Quote` (devis)
-- Workflow : Proposition → Vote AG → En cours → Terminé
-- Galerie photos avant/après
-- Appels de fonds exceptionnels
-- Garanties décennales
-
-**ROI** : Simplification gestion gros chantiers.
+Intégration Stripe + SEPA Direct Debit pour paiements en ligne.
 
 ---
 
 ### [#008 - Système de Ticketing](./important/008-ticketing-system.md)
 **Estimation** : 8-10h | **Labels** : `backend`, `frontend`, `support`
 
-Tickets de maintenance et interventions.
-
-**Fonctionnalités** :
-- Déclaration incidents par copropriétaires
-- Affectation prestataires
-- Statuts : Open → InProgress → Resolved
-- Upload photos problème
-- Historique interventions
-
-**ROI** : Amélioration satisfaction résidents.
+Tickets maintenance et interventions (déclaration incidents copropriétaires).
 
 ---
 
 ### [#009 - Notifications Multi-Canal](./important/009-notifications-system.md)
 **Estimation** : 8-10h | **Labels** : `backend`, `frontend`, `notifications`
 
-Notifications email + push web + in-app.
-
-**Fonctionnalités** :
-- Email SMTP/SendGrid
-- Push web (Service Worker)
-- Cloche notifications in-app
-- Préférences utilisateur
-- Queue asynchrone (Redis)
-
-**ROI** : Engagement utilisateurs, réduction no-shows AG.
+Notifications email + push web + in-app avec queue asynchrone.
 
 ---
 
 ### [#010 - Progressive Web App](./important/010-progressive-web-app.md)
 **Estimation** : 10-12h | **Labels** : `frontend`, `pwa`, `offline`
 
-Transformer en PWA installable.
-
-**Fonctionnalités** :
-- `manifest.json` + Service Worker
-- Mode hors-ligne avec IndexedDB
-- Background sync
-- Installation mobile/desktop
-- Push notifications natives
-
-**ROI** : Expérience mobile premium sans app native.
+Transformer en PWA installable avec mode hors-ligne (IndexedDB).
 
 ---
 
-## 🟢 Issues Nice-to-Have (Long Terme)
+### [#019 - Convocations AG Automatiques](./important/019-convocations-ag-automatiques.md) 🆕
+**Estimation** : 5-7h | **Labels** : `backend`, `frontend`, `notifications`, `legal-compliance`
 
-Fonctionnalités **innovantes** pour différenciation marché.
+**NOUVEAU** - Génération automatique convocations AG avec PDF + email, vérification délais légaux (15j/8j).
+
+---
+
+### [#020 - Carnet d'Entretien](./important/020-carnet-entretien.md) 🆕
+**Estimation** : 10-12h | **Labels** : `backend`, `frontend`, `maintenance`, `legal-compliance`
+
+**NOUVEAU** - Carnet d'entretien numérique avec suivi travaux, garanties (décennales), alertes contrôles techniques.
+
+---
+
+### [#021 - GDPR Articles Complémentaires](./important/021-gdpr-articles-complementaires.md) 🆕
+**Estimation** : 5-7h | **Labels** : `backend`, `frontend`, `gdpr`, `legal-compliance`
+
+**NOUVEAU** - Compléter GDPR avec Articles 16 (Rectification), 18 (Restriction), 21 (Opposition).
+
+**État actuel** : Articles 15 & 17 ✅ | Manque : 16, 18, 21
+
+---
+
+### [#024 - Module Devis Travaux](./important/024-module-devis-travaux.md) 🆕
+**Estimation** : 8-10h | **Labels** : `backend`, `frontend`, `finance`, `procurement`
+
+**NOUVEAU** - Gestion devis multi-prestataires avec tableau comparatif automatique (obligation 3 devis pour travaux >5000€).
+
+---
+
+### [#025 - Affichage Public Syndic](./important/025-affichage-public-syndic.md) 🆕
+**Estimation** : 3-4h | **Labels** : `frontend`, `legal-compliance`
+
+**NOUVEAU** - Page publique (non authentifiée) affichage coordonnées syndic (obligation légale).
+
+---
+
+### [#027 - Accessibilité WCAG 2.1 AA](./important/027-accessibilite-wcag.md) 🆕
+**Estimation** : 8-10h | **Labels** : `frontend`, `accessibility`, `a11y`, `compliance`
+
+**NOUVEAU** - Conformité WCAG 2.1 niveau AA (contraste, clavier, ARIA, lecteurs d'écran).
+
+---
+
+## 🟢 Issues Nice-to-Have (Innovation & Différenciation)
+
+Fonctionnalités **innovantes** pour différenciation marché et mission sociale ASBL.
 
 ### [#011 - Intelligence Artificielle](./nice-to-have/011-ai-features.md)
 **Estimation** : 20-30h | **Labels** : `ai`, `ml`, `innovation`
 
-5 fonctionnalités IA :
-- OCR factures (extraction auto montant/fournisseur)
-- Prédiction charges futures (ML)
-- Détection anomalies dépenses
-- Chatbot assistant copropriétaires
-- Classification auto documents
-
-**Tech** : Python microservice (FastAPI) + Azure Computer Vision ou Tesseract.
+5 fonctionnalités IA : OCR factures, prédiction charges, détection anomalies, chatbot, classification documents.
 
 ---
 
@@ -205,270 +213,221 @@ Fonctionnalités **innovantes** pour différenciation marché.
 
 Annuaire prestataires vérifiés + notation + demandes de devis.
 
-**Business Model** : Commission sur contrats signés.
-
 ---
 
 ### [#013 - Écologie et Durabilité](./nice-to-have/013-sustainability.md)
 **Estimation** : 12-15h | **Labels** : `sustainability`, `green`
 
-Aligné avec objectif **< 0.5g CO2/req**.
-
-**Fonctionnalités** :
-- Bilan carbone immeuble
-- Suivi consommations énergétiques
-- Tracking DPE (évolution avant/après travaux)
-- Calculateur aides MaPrimeRénov'
-- Recommandations IA travaux isolation
-
-**Marketing** : Certification "Green SaaS".
+Bilan carbone immeuble, suivi consommations énergétiques, DPE, aides rénovation.
 
 ---
 
 ### [#014 - Analytics & Business Intelligence](./nice-to-have/014-analytics-bi.md)
 **Estimation** : 12-15h | **Labels** : `analytics`, `bi`
 
-Tableaux de bord multi-copropriétés pour cabinets syndics.
-
-**Fonctionnalités** :
-- KPIs temps réel (taux recouvrement, charges/m²)
-- Benchmarking vs marché
-- Prédictions financières ML
-- Rapports clients auto-générés PDF
-
-**Business** : Premium feature payante.
+Tableaux de bord multi-copropriétés pour cabinets syndics (KPIs, benchmarking, ML).
 
 ---
 
 ### [#015 - Application Mobile Native](./nice-to-have/015-mobile-app.md)
 **Estimation** : 30-40h | **Labels** : `mobile`, `react-native`
 
-App iOS/Android avec fonctionnalités natives.
-
-**Fonctionnalités** :
-- Auth biométrique (Face ID, Touch ID)
-- Scanner QR codes factures
-- Photos haute résolution
-- Push notifications natives
-- Partage localisation technicien
-
-**Tech** : React Native (code partagé 90%).
+App iOS/Android avec auth biométrique, scanner QR, push notifications natives.
 
 ---
 
-## 📅 Roadmap Suggérée
+### [#026 - Modules Communautaires](./nice-to-have/026-modules-communautaires.md) 🆕
+**Estimation** : 15-20h | **Labels** : `backend`, `frontend`, `community`, `social-impact`
 
-### Phase 1 : MVP Production-Ready (4-6 semaines)
-**Objectif** : Version 1.0 déployable en production
+**NOUVEAU** - 5 modules pour mission sociale ASBL :
+1. **SEL** (Système d'Échange Local) - Troc compétences
+2. **Bazar de Troc** - Échange/don objets
+3. **Prêt d'Objets** - Bibliothèque outils
+4. **Annuaire Compétences** - Listing habitants
+5. **Tableau Affichage** - Petites annonces
 
-```
-Semaine 1-2 : Issues Critiques #001-#003
-  ├─ Assemblées Générales API
-  ├─ Documents upload/download
-  └─ Rapports financiers
+**Livrables** : 5 entities, tracking impact social, gamification (badges), rapport annuel
 
-Semaine 3 : Issues Critiques #004-#005
-  ├─ Pagination/Filtres
-  └─ Sécurité (rate limiting, JWT refresh, CORS)
-
-Semaine 4 : Tests & Déploiement
-  ├─ Tests E2E complets
-  ├─ Load testing
-  ├─ Setup CI/CD Kubernetes
-  └─ Documentation utilisateur
-```
-
-**Livrables** :
-- API complète fonctionnelle
-- Frontend intégré
-- Tests coverage > 80%
-- Déploiement production
+**Impact** : Différenciateur fort vs concurrents classiques
 
 ---
 
-### Phase 2 : Différenciation Marché (6-8 semaines)
-**Objectif** : Fonctionnalités compétitives
+## 📋 Roadmap Suggérée
+
+### Phase 1 : MVP Production-Ready Belgique (86-106 heures = 11-14 jours)
+
+**Objectif** : Conformité légale complète pour production en Belgique
 
 ```
-Semaine 5-7 : Paiements & Travaux
-  ├─ #006 Stripe integration
-  └─ #007 Gestion travaux
+Semaine 1-2 : Conformité Comptable & Financière
+  ├─ #016 Plan Comptable Belge (8-10h) ← PRIORITÉ 1
+  ├─ #018 Budget Prévisionnel (8-10h)
+  └─ #017 État Daté (6-8h)
 
-Semaine 8-9 : Communication
-  ├─ #008 Ticketing
-  └─ #009 Notifications
+Semaine 2-3 : Governance & Recouvrement
+  ├─ #022 Conseil de Copropriété (12-15h) ← BLOQUANT >20 lots
+  └─ #023 Workflow Recouvrement (6-8h)
 
-Semaine 10-12 : PWA
-  └─ #010 Mode offline complet
+Semaine 3-4 : Finalisation MVP
+  ├─ #001 Meeting Management API (6-8h)
+  ├─ #002 Document Upload (8-10h)
+  ├─ #003 Financial Reports (10-12h)
+  └─ #005 Security Hardening (10-12h)
 ```
 
-**Livrables** :
-- Paiements en ligne opérationnels
-- Module travaux testé en AG
-- PWA installable
+**Livrables Phase 1** :
+- ✅ Comptabilité conforme AR 12/07/2012
+- ✅ États datés générables (mutations)
+- ✅ Budgets annuels votables
+- ✅ Conseil de copropriété opérationnel
+- ✅ Recouvrement automatisé
+- ✅ Sécurité production-ready
 
 ---
 
-### Phase 3 : Innovation & Scalabilité (3-6 mois)
-**Objectif** : Leadership marché
+### Phase 2 : Automation & Compliance (107-135 heures = 13-17 jours)
+
+**Objectif** : Amélioration productivité + conformité GDPR complète
 
 ```
-Mois 4-5 : IA & Analytics
-  ├─ #011 OCR + Prédictions
-  └─ #014 BI Dashboard
+Semaine 5-6 : Automation Juridique
+  ├─ #019 Convocations AG Auto (5-7h)
+  ├─ #024 Module Devis (8-10h)
+  ├─ #025 Affichage Public (3-4h)
+  └─ #021 GDPR Compléments (5-7h)
 
-Mois 5-6 : Marketplace & Écologie
-  ├─ #012 Prestataires
-  └─ #013 Bilan carbone
+Semaine 7-8 : Features Métier
+  ├─ #020 Carnet Entretien (10-12h)
+  ├─ #008 Ticketing (8-10h)
+  ├─ #009 Notifications (8-10h)
+  └─ #027 Accessibilité WCAG (8-10h)
 
-Mois 6+ : Mobile Native
-  └─ #015 React Native app
+Semaine 9-11 : Advanced Features
+  ├─ #010 PWA (10-12h)
+  └─ #006 Paiements en Ligne (15-20h)
 ```
 
-**Livrables** :
-- Différenciation IA
-- Certification Green SaaS
-- Apps stores iOS/Android
+**Livrables Phase 2** :
+- ✅ Convocations automatiques
+- ✅ GDPR 100% conforme (Articles 15-18, 21)
+- ✅ Carnet entretien numérique
+- ✅ Accessibilité WCAG AA
+- ✅ PWA installable
+- ✅ Paiements en ligne Stripe + SEPA
 
 ---
 
-## 💰 Estimations Budgétaires
+### Phase 3 : Innovation & Différenciation (127-167 heures = 16-21 jours)
 
-### Développement (tarif indépendant 500€/j)
+**Objectif** : Leadership marché + mission sociale
+
+```
+Mois 4-5 : Community & Sustainability
+  ├─ #026 Modules Communautaires (15-20h)
+  ├─ #013 Écologie/Durabilité (12-15h)
+  └─ #014 Analytics BI (12-15h)
+
+Mois 5-6 : IA & Marketplace
+  ├─ #011 AI Features (20-30h)
+  └─ #012 Marketplace (20-25h)
+
+Mois 6+ : Mobile
+  └─ #015 Mobile App (30-40h)
+```
+
+**Livrables Phase 3** :
+- ✅ SEL, Troc, Partage opérationnels
+- ✅ Bilan carbone, DPE tracking
+- ✅ IA OCR factures + prédictions
+- ✅ Mobile app iOS/Android
+
+---
+
+## 🔗 Dépendances Critiques
+
+### Chaînes de Dépendances Principales
+
+```
+#016 Plan Comptable Belge
+  ├─▶ #018 Budget Prévisionnel (utilise account_code)
+  ├─▶ #017 État Daté (situation financière)
+  └─▶ #003 Financial Reports (bilan, compte résultat)
+
+#001 Meeting Management API
+  ├─▶ #019 Convocations AG
+  └─▶ #022 Conseil Copropriété (vote élections)
+
+#002 Document Upload
+  ├─▶ #017 État Daté (PDF génération)
+  ├─▶ #020 Carnet Entretien (photos travaux)
+  └─▶ #024 Module Devis (upload devis PDF)
+
+GDPR #042 (Articles 15 & 17 existants)
+  └─▶ #021 GDPR Compléments (Articles 16, 18, 21)
+
+#009 Notifications
+  ├─▶ #019 Convocations (emails)
+  ├─▶ #020 Carnet Entretien (alertes)
+  └─▶ #023 Recouvrement (relances)
+```
+
+---
+
+## 💰 Estimation Budgétaire
+
+### Développement (tarif senior 500€/jour)
 
 | Phase | Heures | Jours | Coût HT |
 |-------|--------|-------|---------|
-| Phase 1 (MVP) | 37-46h | 5-6j | 2 500 - 3 000€ |
-| Phase 2 (Différenciation) | 58-72h | 7-9j | 3 500 - 4 500€ |
-| Phase 3 (Innovation) | 94-125h | 12-16j | 6 000 - 8 000€ |
-| **TOTAL** | **189-243h** | **24-31j** | **12 000 - 15 500€** |
+| Phase 1 (MVP Belgique) | 86-106h | 11-14j | 5 500 - 7 000€ |
+| Phase 2 (Automation) | 107-135h | 13-17j | 6 500 - 8 500€ |
+| Phase 3 (Innovation) | 127-167h | 16-21j | 8 000 - 10 500€ |
+| **TOTAL** | **320-408h** | **40-52j** | **20 000 - 26 000€** |
 
-### Infrastructure (coûts mensuels)
-
-| Service | Coût/mois |
-|---------|-----------|
-| PostgreSQL RDS (production) | 50€ |
-| Redis (sessions/cache) | 30€ |
-| Kubernetes cluster | 100€ |
-| Stripe fees (2.9% + 0.25€) | Variable |
-| SendGrid (emails) | 15€ |
-| Azure Computer Vision (OCR) | 50€ |
-| **TOTAL** | **~245€/mois** |
-
-### One-time costs
-- Apple Developer Account : 99$/an
-- Google Play Developer : 25$ one-time
-- SSL certificats : Gratuit (Let's Encrypt)
+**Note** : Estimation développeur senior Rust/Svelte. Multiplier par 1.5-2x pour junior.
 
 ---
 
-## 🎯 Recommandations Stratégiques
+## 📚 Documents Complémentaires
 
-### Démarrage Immédiat
-1. **Issue #001** (Assemblées Générales) - Obligation légale
-2. **Issue #005** (Sécurité) - Bloque production
-3. **Issue #004** (Pagination) - Performance essentielle
-
-### Quick Wins
-- **Issue #009** (Notifications) - Impact utilisateur élevé, implémentation simple
-- **Issue #008** (Ticketing) - Amélioration satisfaction immédiate
-
-### Différenciation Concurrentielle
-- **Issue #011** (IA/OCR) - Innovation forte
-- **Issue #013** (Écologie) - Argument marketing unique
-- **Issue #006** (Paiements) - Réduction impayés = ROI immédiat
+- **[GAP_ANALYSIS_KoproGov.md](../docs/GAP_ANALYSIS_KoproGov.md)** : Analyse complète gaps projet vs fonctionnalités requises (93 fonctionnalités, 29% complétion)
+- **[NEW_ISSUES_SUMMARY.md](./NEW_ISSUES_SUMMARY.md)** : Résumé des 12 nouvelles issues créées depuis gap analysis
+- **[ROADMAP.rst](../docs/ROADMAP.rst)** : Roadmap infrastructure Phase 1-3 (VPS → K3s → K8s)
 
 ---
 
-## 📈 Métriques de Succès
+## 🎯 Métriques de Succès
 
 ### Phase 1 (MVP)
-- [ ] 100% endpoints API fonctionnels
+- [ ] 100% conformité légale Belgique (plan comptable, états datés, conseil copropriété)
+- [ ] 0 vulnérabilités critiques (cargo audit)
 - [ ] P99 latency < 5ms
 - [ ] Test coverage > 80%
-- [ ] 0 vulnérabilités critiques (cargo audit)
-- [ ] Lighthouse score > 90
 
-### Phase 2 (Différenciation)
+### Phase 2 (Automation)
 - [ ] Taux adoption paiements en ligne > 30%
-- [ ] Temps résolution tickets < 48h
-- [ ] PWA installs > 20% utilisateurs
+- [ ] Réduction impayés > 30%
+- [ ] GDPR compliance score = 100%
 - [ ] NPS (Net Promoter Score) > 50
 
 ### Phase 3 (Innovation)
+- [ ] Taux participation SEL > 20% habitants
 - [ ] OCR accuracy > 90%
-- [ ] Réduction CO2/req < 0.5g
-- [ ] Mobile app rating stores > 4.5/5
-- [ ] Churn rate < 5%/mois
-
----
-
-## 🛠️ Comment Utiliser ces Issues
-
-### 1. Copier sur GitHub
-Chaque fichier `.md` peut être copié-collé directement dans une GitHub issue.
-
-**Template issue** :
-```
-Titre : [Copier depuis H1 du fichier]
-Labels : [Copier depuis Labels du fichier]
-Description : [Copier tout le contenu markdown]
-```
-
-### 2. Priorisation
-- **Critiques** : À faire en premier (MVP)
-- **Importantes** : Phase 2 (après production)
-- **Nice-to-Have** : Backlog long terme
-
-### 3. Estimation
-Toutes les estimations sont en **heures développeur senior**.
-Multiplier par 1.5-2x pour développeur junior.
-
-### 4. Dépendances
-Vérifier section "Dépendances" de chaque issue avant de commencer.
-
-Exemple : Issue #007 (Travaux) dépend de #001 (Meetings) et #002 (Documents).
+- [ ] CO2/req < 0.5g
+- [ ] Mobile app rating > 4.5/5
 
 ---
 
 ## 📞 Contact & Support
 
 Pour questions sur ces issues :
+- Référencer **GAP_ANALYSIS_KoproGov.md** pour contexte
+- Consulter **ROADMAP.rst** pour planification globale
 - Ouvrir discussion GitHub
-- Consulter `CLAUDE.md` pour architecture
-- Référencer `CHANGELOG.md` pour historique
 
 ---
 
-## 📜 Licence
-
-Ces cahiers des charges sont propriété du projet KoproGo.
-Utilisation interne uniquement.
-
----
-
-**Généré le** : 2025-10-23
-**Version** : 1.0
-**Auteur** : Claude Code Analysis
-
----
-
-## 🔗 Navigation Rapide
-
-### Par Priorité
-- [Critiques (1-5)](./critical/)
-- [Importantes (6-10)](./important/)
-- [Nice-to-Have (11-15)](./nice-to-have/)
-
-### Par Thématique
-- **Backend** : #001, #002, #003, #004, #005, #006, #007, #008
-- **Frontend** : #002, #003, #006, #007, #008, #010, #015
-- **Sécurité** : #005
-- **Paiements** : #006
-- **IA/ML** : #011, #014
-- **Mobile** : #010, #015
-- **Écologie** : #013
-
----
-
-**Prochaine étape** : Choisir une issue et démarrer l'implémentation ! 🚀
+**Dernière mise à jour** : 2025-11-01
+**Version** : 2.0 (Post Gap Analysis)
+**Auteur** : KoproGo Development Team
+**Prochaine étape** : Commencer #016 (Plan Comptable Belge) 🚀
