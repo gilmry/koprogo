@@ -2,10 +2,11 @@
 KoproGo - Roadmap 2025-2026
 ===========================
 
-**Date de mise à jour**\ : 27 octobre 2024, 17:15
+**Date de mise à jour**\ : 1 novembre 2025, 15:30
 **Début effectif**\ : Novembre 2025
-**Version**\ : 1.0
-**Durée totale estimée**\ : 21-29 semaines (6-7 mois)
+**Version**\ : 2.0 (Gap Analysis Complète)
+**Durée totale estimée**\ : 25-32 semaines (6-8 mois)
+**Issues totales**\ : 25 (320-408 heures)
 
 ----
 
@@ -21,6 +22,43 @@ KoproGo - Roadmap 2025-2026
 #. `Timeline Globale <#-timeline-globale>`_
 #. `Dépendances Critiques <#-dépendances-critiques>`_
 #. `Ressources & Liens <#-ressources--liens>`_
+
+----
+
+🆕 Nouveautés Version 2.0 (Gap Analysis)
+----------------------------------------
+
+Cette version 2.0 intègre une **analyse complète des gaps** de conformité légale belge réalisée le 1er novembre 2025.
+
+**Résultat Gap Analysis**\ :
+
+
+* **93 features analysées** pour plateforme copropriété conforme législation belge
+* **29% de complétude actuelle** (27 features implémentées, 14 partielles, 52 manquantes)
+* **12 nouvelles issues créées** pour combler les gaps critiques
+* **2 issues obsolètes supprimées** (#004 Pagination, #007 Work Management)
+* **Total: 25 issues** couvrant tous les besoins (320-408 heures effort)
+
+**Gaps Critiques Identifiés**\ :
+
+#. ❌ **Conseil de Copropriété** (0% implémenté) - **OBLIGATION LÉGALE >20 lots** (Issue #022)
+#. ❌ **Plan Comptable Normalisé Belge** (AR 12/07/2012) - 0% implémenté (Issue #016)
+#. ❌ **État Daté** (Article 577-2) - BLOQUE toutes ventes immobilières (Issue #017)
+#. ❌ **Budget Prévisionnel Annuel** - Requis légalement (Issue #018)
+#. ❌ **Workflow Recouvrement** - Pas d'automatisation (Issue #023)
+
+**Impact Roadmap**\ :
+
+
+* Phase 1 étendue: +3-4 semaines (conformité légale prioritaire)
+* Livraison finale: Septembre 2026 (vs Août 2026 précédemment)
+* **PRIORITÉ #1**: Issue #022 (Conseil) - Bloque production >20 lots
+
+**Documents**\ :
+
+
+* Gap Analysis complète: `docs/GAP_ANALYSIS_KoproGov.md <./GAP_ANALYSIS_KoproGov.md>`_
+* Issues détaillées: `issues/README.md <../issues/README.md>`_
 
 ----
 
@@ -91,33 +129,70 @@ Principes de Développement
 * **Infrastructure as Code** (IaC)
 * **GitOps Continuous Deployment**
 
-État Actuel (Octobre 2025)
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+État Actuel (Novembre 2025) - Gap Analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**✅ Implémenté**\ :
+**✅ Implémenté (29% complétude légale belge)**\ :
 
 
 * 73 endpoints API REST
 * 11 entités domain (Building, Unit, Owner, Expense, Meeting, etc.)
-* Auth JWT + Refresh Tokens (4 rôles: SuperAdmin, Syndic, Accountant, Owner)
-* Multi-tenancy (Organization)
-* 26 pages frontend + 39 composants Svelte
+* Auth JWT + Refresh Tokens + Multi-rôles (SuperAdmin, Syndic, Accountant, Owner)
+* Multi-tenancy complet (Organization + isolation données)
+* Multi-owner support (junction table unit_owners avec quotités)
+* 26 pages frontend + 49 composants Svelte
 * PWA + offline mode (IndexedDB, Service Worker)
 * i18n (4 langues: NL, FR, DE, EN)
 * Terraform + Ansible (VPS OVH)
 * Docker Compose production avec Traefik
 * GitOps auto-deploy (systemd service)
 * CI/CD complet (6 workflows GitHub Actions)
+* GDPR Articles 15 & 17 (export + effacement)
 
-**🚧 Gaps Identifiés**\ : 16 issues créés (voir phases ci-dessous)
+**🚧 Gaps Identifiés (Gap Analysis complète)**\ :
+
+**Voir**\ : `docs/GAP_ANALYSIS_KoproGov.md <./GAP_ANALYSIS_KoproGov.md>`_ (93 features analysées)
+
+.. list-table::
+   :header-rows: 1
+
+   * - Statut
+     - Nombre Features
+     - % Complétion
+   * - ✅ Implémenté
+     - 27/93
+     - 29%
+   * - 🟡 Partiel
+     - 14/93
+     - 15%
+   * - ❌ Manquant
+     - 52/93
+     - 56%
+
+**Gaps Critiques Identifiés**\ :
+
+* ❌ **Plan comptable normalisé belge** (AR 12/07/2012) - 0% implémenté
+* ❌ **État daté** (Article 577-2 Code Civil) - BLOQUE ventes immobilières
+* ❌ **Conseil de Copropriété** (Article 577-8/4) - OBLIGATOIRE >20 lots - 0% implémenté
+* ❌ **Budget prévisionnel annuel** - Requis légalement
+* ❌ **Workflow recouvrement** - Pas d'automatisation
+* ❌ **Carnet d'entretien digital** - 0% implémenté
+* ❌ **Convocations AG automatiques** - Workflow manuel
+* ❌ **Génération PDF étendue** (PCN, états datés, PV) - Partiel
+* ❌ **GDPR Articles 16, 18, 21** - Manquants
+* ❌ **Accessibilité WCAG 2.1 AA** - 0% implémenté
+
+**25 issues créées** pour combler ces gaps (voir phases ci-dessous)
 
 ----
 
-🚀 Phase 1: VPS MVP (Novembre 2025 - Février 2026)
---------------------------------------------------
+🚀 Phase 1: VPS MVP + Conformité Légale Belge (Novembre 2025 - Mars 2026)
+--------------------------------------------------------------------------
 
-**Durée estimée**\ : 9-13 semaines
-**Objectif**\ : Production-ready sur VPS OVH avec sécurité, GDPR, backups
+**Durée estimée**\ : 12-16 semaines
+**Objectif**\ : Production-ready sur VPS OVH avec conformité légale belge complète
+
+**PRIORITÉ ABSOLUE**\ : Conformité législation belge (Conseil, Budget, État daté, Plan comptable)
 
 Infrastructure Critique (16-24 jours)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -224,8 +299,174 @@ Infrastructure Critique (16-24 jours)
 
 ----
 
-Software Critique/High (26-35 jours)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Software Critique - Conformité Légale Belge (40-51 heures) 🆕
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**NOUVEAU (Gap Analysis)**\ : Ces 5 issues comblent les gaps critiques de conformité légale.
+
+#016: Plan Comptable Normalisé Belge ⏱️ 8-10h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🔴 Critical | **Track**\ : Software | **Labels**\ : ``finance``, ``legal-compliance``
+
+**Description**\ : Implémenter plan comptable conforme arrêté royal 12/07/2012 (classes 4, 5, 6, 7).
+
+**Tâches**\ :
+
+
+* Enum ``AccountCode`` avec 24+ codes (6000-7999)
+* Migration SQL pour account_code dans expenses table
+* Use cases génération bilan comptable + compte de résultat
+* Endpoints ``GET /api/v1/financial/balance-sheet``, ``/income-statement``
+* Frontend: rapports comptables avec drill-down par compte
+
+**Livrables**\ :
+
+
+* Entity ``Account`` + enum ``AccountCode``
+* Génération bilan + compte de résultat conformes PCN belge
+* Tests unitaires + E2E comptabilité
+* Documentation PCN pour utilisateurs
+
+**Bloque**\ : #017 (État daté), #018 (Budget), #003 (Rapports financiers)
+
+**Voir**\ : `issues/critical/016-plan-comptable-belge.md <../issues/critical/016-plan-comptable-belge.md>`_
+
+----
+
+#017: État Daté Génération ⏱️ 6-8h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🔴 Critical | **Track**\ : Software | **Labels**\ : ``legal-compliance``, ``pdf``
+
+**Description**\ : Génération états datés pour mutations immobilières (Article 577-2 Code Civil).
+
+**Impact**\ : **BLOQUE TOUTES LES VENTES DE LOTS** sans ce document légal.
+
+**Tâches**\ :
+
+
+* Entity ``EtatDate`` (building_id, unit_id, reference_date, data JSONB, status)
+* Génération PDF conforme (16 sections légales requises)
+* Workflow: demande → génération (max 15 jours) → délivrance
+* Endpoints: ``POST /api/v1/units/:id/etat-date``, ``GET /api/v1/etat-dates/:id/pdf``
+* Historique complet: appels de fonds, paiements, travaux votés, litiges
+
+**Livrables**\ :
+
+
+* Template PDF état daté conforme législation
+* Workflow avec rappels si délai > 10 jours
+* Tests E2E génération + validation contenu
+* Documentation procédure notaires
+
+**Dépend de**\ : #016 (Plan Comptable pour section financière)
+
+**Voir**\ : `issues/critical/017-etat-date-generation.md <../issues/critical/017-etat-date-generation.md>`_
+
+----
+
+#018: Budget Prévisionnel Annuel ⏱️ 8-10h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🔴 Critical | **Track**\ : Software | **Labels**\ : ``finance``, ``legal-compliance``
+
+**Description**\ : Système budget annuel (ordinaire + extraordinaire) avec variance analysis.
+
+**Tâches**\ :
+
+
+* Entity ``Budget`` (fiscal_year, ordinary_budget, extraordinary_budget, status)
+* Calcul automatique provisions mensuelles
+* Variance analysis (budget vs actual) mensuelle
+* Vote AG obligatoire avant exercice fiscal
+* Endpoints: ``POST /api/v1/buildings/:id/budget``, ``GET /budget/:year/variance``
+* Dashboard syndic: alertes dépassements budgétaires
+
+**Livrables**\ :
+
+
+* Système budget complet avec projections
+* Génération PDF budget pour vote AG
+* Alertes dépassements > 10%
+* Rapports variance trimestriels
+
+**Dépend de**\ : #016 (Plan Comptable pour catégorisation)
+
+**Voir**\ : `issues/critical/018-budget-previsionnel.md <../issues/critical/018-budget-previsionnel.md>`_
+
+----
+
+#022: Conseil de Copropriété ⏱️ 12-15h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🔴 Critical | **Track**\ : Software | **Labels**\ : ``legal-compliance``, ``governance``
+
+**Description**\ : **OBLIGATION LÉGALE** pour immeubles >20 lots (Article 577-8/4 Code Civil).
+
+**Gap Critique**\ : **0% implémenté actuellement** - Bloque production pour copropriétés >20 lots.
+
+**Tâches**\ :
+
+
+* **Nouveau rôle**\ : ``BoardMember`` avec permissions spéciales
+* Entity ``BoardMember`` (user_id, building_id, position, mandate_start/end)
+* Entity ``BoardDecision`` (subject, decision_text, deadline, status)
+* Élections conseil (vote AG) avec mandats 1 an renouvelables
+* Dashboard conseil: suivi décisions AG + alertes retards syndic
+* Tracking délais: devis (30j), travaux votés (60j), PV (30j)
+* Rapports automatiques: semestriel + annuel pour AG
+* Trigger SQL: vérification incompatibilité syndic ≠ conseil
+
+**Livrables**\ :
+
+
+* Rôle ``BoardMember`` opérationnel
+* Workflow élections + mandats
+* Dashboard suivi + alertes
+* Rapports semestriels/annuels automatiques
+* Tests BDD scenarios complets
+
+**Bloque**\ : Production pour tout immeuble >20 lots (majorité du marché belge)
+
+**Voir**\ : `issues/critical/022-conseil-copropriete.md <../issues/critical/022-conseil-copropriete.md>`_
+
+----
+
+#023: Workflow Recouvrement Impayés ⏱️ 6-8h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🔴 Critical | **Track**\ : Software | **Labels**\ : ``finance``, ``automation``
+
+**Description**\ : Workflow automatisé relances 3 niveaux (J+15, J+30, J+60 mise en demeure).
+
+**Impact Business**\ : Réduction impayés 30-50% via automatisation.
+
+**Tâches**\ :
+
+
+* Entity ``PaymentReminder`` (expense_id, owner_id, level, sent_date, status)
+* 3 niveaux: FirstReminder (J+15 aimable), SecondReminder (J+30 ferme), FormalNotice (J+60 légale)
+* Génération PDF lettres (templates par niveau + langue)
+* Cron job quotidien: détection impayés + envoi automatique
+* Calcul pénalités retard (taux légal belge 8% annuel)
+* Workflow: email → PDF lettre recommandée → procédure huissier
+* Dashboard syndic: vue impayés + historique relances
+
+**Livrables**\ :
+
+
+* 3 templates PDF lettres (FR/NL/DE/EN)
+* Cron job relances automatique
+* Calcul pénalités conforme législation
+* Tests E2E workflow complet
+
+**Voir**\ : `issues/critical/023-workflow-recouvrement.md <../issues/critical/023-workflow-recouvrement.md>`_
+
+----
+
+Software Critique/High - Core Features (26-35 jours)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #44: Document Storage Strategy ⏱️ 2-3 jours
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -378,8 +619,8 @@ Software Critique/High (26-35 jours)
 
 ----
 
-Recap Phase 1
-^^^^^^^^^^^^^
+Recap Phase 1 - Conformité Légale Belge Prioritaire
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
@@ -390,23 +631,37 @@ Recap Phase 1
    * - **Infrastructure**
      - #39, #40, #41, #43
      - 16-24 jours
-   * - **Software**
+   * - **🆕 Conformité Légale Belge**
+     - #016, #017, #018, #022, #023
+     - 40-51 heures (5-6 jours)
+   * - **Software Core**
      - #44, #45, #48, #42, #51
      - 26-35 jours
    * - **Total Phase 1**
-     - 9 issues
-     - **42-59 jours** (9-13 semaines)
+     - **14 issues**
+     - **47-65 jours** (12-16 semaines)
 
 
-**Note**\ : Registration itsme® (#48) prend 2-4 semaines (processus externe), mais peut être faite en parallèle du développement.
+**Priorités Critiques Phase 1**\ :
+
+#. 🔴 **#022 (Conseil)** + **#016 (PCN)** + **#017 (État daté)** - Bloquants légaux
+#. 🔴 **#39-41** (Infrastructure sécurisée) - Requis GDPR
+#. 🟡 **#48** (Strong Auth) → #46 (Voting) Phase 2
+#. 🟡 Autres features automation (#018, #023, #42, #51)
+
+**Notes**\ :
+
+* **Conseil Copropriété (#022)**\ : PRIORITÉ #1 - Bloque >20 lots (majorité marché)
+* **itsme® registration (#48)**\ : 2-4 semaines (externe), démarrer immédiatement en parallèle
+* **Plan Comptable (#016)**\ : Bloque #017, #018, #003 - Démarrer semaine 1
 
 ----
 
-🚀 Phase 2: K3s (Mars - Mai 2026)
----------------------------------
+🚀 Phase 2: K3s + Automation & Community (Mars - Juin 2026)
+------------------------------------------------------------
 
-**Durée estimée**\ : 6-8 semaines
-**Objectif**\ : Migration K3s avec ArgoCD, features communautaires avancées
+**Durée estimée**\ : 8-11 semaines
+**Objectif**\ : Migration K3s + Automation workflow + Features communautaires
 
 Infrastructure K3s (~15 jours)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -431,8 +686,198 @@ Infrastructure K3s (~15 jours)
 
 ----
 
-Software Features (31-39 jours)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Software Features - Automation & GDPR (27-35 heures) 🆕
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**NOUVEAU (Gap Analysis)**\ : Automation workflow + GDPR compliance complète.
+
+#019: Convocations AG Automatiques ⏱️ 5-7h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟡 High | **Track**\ : Software | **Labels**\ : ``automation``, ``legal-compliance``
+
+**Description**\ : Génération automatique convocations AG avec PDF + email + vérification délais légaux.
+
+**Tâches**\ :
+
+
+* Templates PDF convocations (FR/NL/DE/EN)
+* Vérification délais: 15 jours (AG ordinaire), 8 jours (extraordinaire)
+* Génération automatique: ordre du jour + annexes
+* Envoi email automatique avec PDF attaché
+* Accusés réception + relance J-3 si non ouvert
+* Tracking présences prévues vs effectives
+
+**Livrables**\ :
+
+
+* Templates multi-langue conformes législation
+* Workflow automatique complet
+* Tests E2E convocation → réception
+* Dashboard syndic: statut convocations
+
+**Dépend de**\ : #001 (Meeting API doit être complète)
+
+**Voir**\ : `issues/important/019-convocations-ag-automatiques.md <../issues/important/019-convocations-ag-automatiques.md>`_
+
+----
+
+#020: Carnet d'Entretien Digital ⏱️ 10-12h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟡 High | **Track**\ : Software | **Labels**\ : ``maintenance``, ``legal-compliance``
+
+**Description**\ : Carnet d'entretien digital avec rapports travaux, inspections techniques, garanties.
+
+**Gap**\ : 0% implémenté - Obligation légale belge pour suivi maintenance.
+
+**Tâches**\ :
+
+
+* Entity ``WorkReport`` (contractor, date, description, photos, cost)
+* Entity ``TechnicalInspection`` (type, inspector, date, report, next_due)
+* Gestion garanties: 2 ans (défauts apparents), 10 ans (décennale)
+* Alertes inspections obligatoires: ascenseur, chaudière, électricité
+* Upload photos avec métadonnées EXIF
+* Historique complet interventions par équipement
+* Export PDF carnet pour vente/audit
+
+**Livrables**\ :
+
+
+* Carnet digital complet
+* Alertes inspections automatiques
+* Export PDF conforme pour notaires
+* Tests E2E workflow maintenance
+
+**Voir**\ : `issues/important/020-carnet-entretien.md <../issues/important/020-carnet-entretien.md>`_
+
+----
+
+#021: GDPR Articles Complémentaires ⏱️ 5-7h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟡 High | **Track**\ : Software | **Labels**\ : ``gdpr``, ``legal-compliance``
+
+**Description**\ : Compléter GDPR avec Articles 16 (Rectification), 18 (Restriction), 21 (Objection).
+
+**État actuel**\ : Articles 15 & 17 implémentés, manque 16, 18, 21.
+
+**Tâches**\ :
+
+
+* **Article 16 (Rectification)**\ : Endpoint ``PUT /api/v1/users/me/data`` + UI correction données
+* **Article 18 (Restriction)**\ : Flag ``processing_restricted`` + freeze processing partiel
+* **Article 21 (Objection)**\ : Opt-out marketing + traitements automatisés
+* Audit logs pour toutes demandes GDPR
+* Page frontend "Mes droits GDPR" complète
+* Tests unitaires + E2E compliance
+
+**Livrables**\ :
+
+
+* 3 nouveaux endpoints GDPR
+* UI complète droits utilisateurs
+* Documentation compliance GDPR 100%
+* Tests conformité
+
+**Voir**\ : `issues/important/021-gdpr-articles-complementaires.md <../issues/important/021-gdpr-articles-complementaires.md>`_
+
+----
+
+#024: Module Devis Travaux ⏱️ 8-10h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟡 High | **Track**\ : Software | **Labels**\ : ``finance``, ``quotes``
+
+**Description**\ : Gestion devis avec comparaison multi-entrepreneurs + scoring automatique.
+
+**Obligation légale**\ : 3 devis obligatoires pour travaux >€5000.
+
+**Tâches**\ :
+
+
+* Entity ``Quote`` (contractor, work_description, amount, validity_date, status)
+* Comparaison multi-devis: tableau prix + délais + conditions
+* Scoring automatique: prix (40%), délai (30%), garanties (20%), réputation (10%)
+* Workflow: demande → réception → comparaison → vote AG → attribution
+* Tracking: devis acceptés → WorkReport (carnet #020)
+* Historique contractors: notes, délais respectés, qualité
+
+**Livrables**\ :
+
+
+* Système devis complet
+* Algorithme scoring automatique
+* Dashboard comparaison visuelle
+* Tests E2E workflow
+
+**Voir**\ : `issues/important/024-module-devis-travaux.md <../issues/important/024-module-devis-travaux.md>`_
+
+----
+
+#025: Affichage Public Syndic ⏱️ 3-4h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟡 High | **Track**\ : Software | **Labels**\ : ``frontend``, ``legal-compliance``
+
+**Description**\ : Page publique (non authentifiée) affichant coordonnées syndic (obligation légale belge).
+
+**Tâches**\ :
+
+
+* Route ``/public/buildings/:slug/syndic`` (accessible sans auth)
+* Affichage: nom syndic, adresse, téléphone, email, horaires permanence
+* Option QR code pour accès mobile rapide
+* SEO optimisé pour recherche "syndic [adresse immeuble]"
+* Composant Svelte réutilisable
+
+**Livrables**\ :
+
+
+* Page publique syndic opérationnelle
+* Tests E2E accessibilité publique
+* Documentation SEO
+
+**Voir**\ : `issues/important/025-affichage-public-syndic.md <../issues/important/025-affichage-public-syndic.md>`_
+
+----
+
+#027: Accessibilité WCAG 2.1 AA ⏱️ 8-10h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟡 High | **Track**\ : Frontend | **Labels**\ : ``accessibility``, ``wcag``
+
+**Description**\ : Conformité WCAG 2.1 Level AA complète.
+
+**Gap**\ : 0% implémenté - Audit accessibilité nécessaire.
+
+**Tâches**\ :
+
+
+* Audit accessibilité complet (automated + manual)
+* Ratios contraste conformes (4.5:1 texte, 3:1 large)
+* Navigation clavier complète (focus visible, tab order logique)
+* ARIA labels sur tous composants interactifs
+* Landmarks ARIA (navigation, main, complementary)
+* Tests screen readers (NVDA, VoiceOver)
+* Skip links + page titles descriptifs
+* Forms: labels explicites + messages erreur clairs
+
+**Livrables**\ :
+
+
+* Conformité WCAG 2.1 AA validée
+* Documentation accessibilité
+* Tests automatisés (axe-core)
+* Guide développeurs a11y
+
+**Voir**\ : `issues/important/027-accessibilite-wcag.md <../issues/important/027-accessibilite-wcag.md>`_
+
+----
+
+Software Features - Voting & PDF (31-39 jours)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #47: PDF Generation Extended ⏱️ 5-7 jours
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -550,8 +995,8 @@ Software Features (31-39 jours)
 
 ----
 
-Recap Phase 2
-^^^^^^^^^^^^^
+Recap Phase 2 - Automation & Community
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
@@ -560,14 +1005,28 @@ Recap Phase 2
      - Issues
      - Effort Total
    * - **Infrastructure**
-     - K3s setup
+     - K3s setup + ArgoCD
      - ~15 jours
-   * - **Software**
-     - #47, #46, #49, #52
-     - 31-39 jours
+   * - **🆕 Automation & GDPR**
+     - #019, #020, #021, #024, #025, #027
+     - 39-50 heures (5-6 jours)
+   * - **Software Voting & PDF**
+     - #47, #46
+     - 13-17 jours
+   * - **Software Community**
+     - #49, #52
+     - 18-22 jours
    * - **Total Phase 2**
-     - 4 issues + infra
-     - **46-54 jours** (6-8 semaines)
+     - **10 issues + infra**
+     - **51-60 jours** (8-11 semaines)
+
+
+**Priorités Phase 2**\ :
+
+#. 🔴 K3s migration (bloque Phase 3)
+#. 🟡 #019, #020, #021, #024, #027 (automation + compliance)
+#. 🟡 #46 (Voting) + #47 (PDF Extended)
+#. 🟢 #49 (Community) + #52 (Contractor) - différenciateurs marché
 
 
 ----
@@ -602,10 +1061,50 @@ Infrastructure K8s (~15 jours)
 
 ----
 
-Software Advanced (30-40 jours)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Software Advanced Features (30-40 jours)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Features**\ :
+#026: Modules Communautaires (Mission ASBL) ⏱️ 15-20h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟢 Nice-to-Have | **Track**\ : Software | **Labels**\ : ``community``, ``asbl-mission``
+
+**Description**\ : 5 modules communautaires pour dynamique sociale et impact environnemental.
+
+**Mission ASBL**\ : Résolution "phénomènes sociétés" via partage et solidarité.
+
+**Modules**\ :
+
+#. **SEL (Système d'Échange Local)**\ : Troc compétences (monnaie locale virtuelle)
+#. **Swap Shop (Bazar de Troc)**\ : Échange/don objets entre habitants
+#. **Object Lending Library**\ : Prêt outils, échelles, tondeuse, etc.
+#. **Skills Directory**\ : Annuaire compétences (bricolage, cours, jardinage)
+#. **Digital Notice Board**\ : Tableau affichage petites annonces
+
+**Tâches**\ :
+
+
+* 5 entities: ``SelOffer``, ``SwapItem``, ``LendableObject``, ``SkillOffer``, ``Notice``
+* Gamification: badges (Super Partageur, Éco-Héros), leaderboard copropriété
+* Modération: signalement contenu + workflow validation
+* Notifications: email + push pour nouveaux items
+* Tracking impact: CO2 économisé, objets réutilisés, compétences partagées
+* Rapport annuel impact social (export PDF pour AG)
+
+**Livrables**\ :
+
+
+* 5 modules fonctionnels complets
+* Système gamification + badges
+* Outil modération
+* Dashboard impact social
+* Tests E2E chaque module
+
+**Voir**\ : `issues/nice-to-have/026-modules-communautaires.md <../issues/nice-to-have/026-modules-communautaires.md>`_
+
+----
+
+**Features Performance & Analytics**\ :
 
 
 #. **ScyllaDB/DragonflyDB Integration**\ : NoSQL pour performance lectures (sessions, cache)
@@ -618,98 +1117,161 @@ Software Advanced (30-40 jours)
 **Livrables**\ :
 
 
-* 6 nouvelles features majeures
+* #026 (Modules communautaires) + 6 features performance
 * Tests performance (benchmarks Criterion)
 * Documentation scalabilité
 * Mobile app (MVP)
 
 ----
 
-Recap Phase 3
-^^^^^^^^^^^^^
+Recap Phase 3 - Performance & Community
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
 
    * - Catégorie
+     - Issues/Features
      - Effort Total
-   * - **Infrastructure**
+   * - **Infrastructure K8s**
+     - Multi-node HA + monitoring
      - ~15 jours
-   * - **Software**
+   * - **🆕 Community ASBL**
+     - #026 (5 modules)
+     - 15-20 heures (2 jours)
+   * - **Software Performance**
+     - 6 features (NoSQL, WebSocket, Analytics, Mobile, Search, Audit)
      - 30-40 jours
    * - **Total Phase 3**
-     - **45-55 jours** (6-8 semaines)
+     - **1 issue + 6 features + infra**
+     - **47-57 jours** (7-9 semaines)
 
 
 ----
 
-📅 Timeline Globale
--------------------
+📅 Timeline Globale (Gap Analysis Intégrée)
+-------------------------------------------
 
 .. code-block::
 
-   Nov 2025          Fév 2026          Mai 2026          Août 2026
+   Nov 2025          Mars 2026         Juin 2026         Sept 2026
       |                 |                 |                 |
       v                 v                 v                 v
    ┌──────────────────┐ ┌───────────────┐ ┌───────────────┐
-   │   VPS MVP        │ │     K3s       │ │  K8s Prod     │
-   │  (9-13 sem.)     │ │  (6-8 sem.)   │ │  (6-8 sem.)   │
+   │   VPS MVP +      │ │   K3s +       │ │  K8s Prod +   │
+   │ Legal Compliance │ │  Automation   │ │  Performance  │
+   │  (12-16 sem.)    │ │  (8-11 sem.)  │ │  (7-9 sem.)   │
    └──────────────────┘ └───────────────┘ └───────────────┘
-    Security, GDPR,     Voting, PDF,      Performance,
-    Storage, Backups,   Community,        Real-time,
-    Monitoring,         Contractor        Analytics,
-    Board Tools         Backoffice        Mobile App
+   🔴 PRIORITÉ:         Voting, PDF,      Performance,
+   Conseil Copropriété, Automation,       Real-time,
+   Plan Comptable,      Community,        Analytics,
+   État Daté,           Contractor,       Mobile App,
+   Budget, Security,    GDPR Complete,    ASBL Community
+   GDPR, Backups        Maintenance       Modules
 
-Dates Clés
-^^^^^^^^^^
+Dates Clés (Mises à Jour)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-* **Novembre 2025**\ : Début Phase 1 (VPS MVP)
-* **Février 2026**\ : Fin Phase 1, début Phase 2 (K3s)
-* **Mai 2026**\ : Fin Phase 2, début Phase 3 (K8s)
-* **Août 2026**\ : KoproGo 1.0 Production-Ready
+* **Novembre 2025**\ : Début Phase 1 (VPS MVP + Legal Compliance)
+* **Mars 2026**\ : Fin Phase 1 (conformité légale belge complète), début Phase 2 (K3s)
+* **Juin 2026**\ : Fin Phase 2 (automation + community), début Phase 3 (K8s)
+* **Septembre 2026**\ : KoproGo 1.0 Production-Ready avec conformité légale 100%
 
-Effort Total
-^^^^^^^^^^^^
+Effort Total Mis à Jour
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
 
    * - Phase
+     - Issues/Features
      - Durée
      - Fin Prévue
-   * - **Phase 1 (VPS MVP)**
-     - 9-13 semaines
-     - Février 2026
-   * - **Phase 2 (K3s)**
-     - 6-8 semaines
-     - Mai 2026
-   * - **Phase 3 (K8s)**
-     - 6-8 semaines
-     - Août 2026
+   * - **Phase 1 (VPS + Legal)**
+     - 14 issues
+     - 12-16 semaines
+     - Mars 2026
+   * - **Phase 2 (K3s + Automation)**
+     - 10 issues
+     - 8-11 semaines
+     - Juin 2026
+   * - **Phase 3 (K8s + Performance)**
+     - 1 issue + 6 features
+     - 7-9 semaines
+     - Septembre 2026
    * - **TOTAL**
-     - **21-29 semaines**
-     - **Août 2026**
+     - **25 issues + features**
+     - **27-36 semaines** (~7-9 mois)
+     - **Septembre 2026**
+
+
+**Changements vs Version 1.0**\ :
+
+* +5 issues Belgian Legal Compliance (Phase 1): #016, #017, #018, #022, #023
+* +6 issues Automation & Accessibility (Phase 2): #019, #020, #021, #024, #025, #027
+* +1 issue Community Modules (Phase 3): #026
+* -2 issues obsolètes supprimés: #004 (Pagination), #007 (Work Management)
+* **Durée totale**: +6-7 semaines (conformité légale prioritaire)
 
 
 ----
 
-🔗 Dépendances Critiques
-------------------------
+🔗 Dépendances Critiques (Mises à Jour)
+---------------------------------------
 
-Chaînes de Dépendances
-^^^^^^^^^^^^^^^^^^^^^^
+Chaînes de Dépendances - Phase 1
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
 
-   #44 (Storage Strategy) ──▶ #45 (File Upload UI)
-   #48 (Strong Auth)      ──▶ #46 (Voting System)
-   #39-41 (Security/Backup/Monitoring) ──▶ Production VPS
-   Phase 1 Complete      ──▶ Phase 2 (K3s)
-   Phase 2 Complete      ──▶ Phase 3 (K8s)
+   🆕 #016 (Plan Comptable) ──▶ #017 (État Daté), #018 (Budget), #003 (Rapports)
+   🆕 #022 (Conseil Copropriété) ──▶ BLOQUE production >20 lots (PRIORITÉ #1)
 
-Risques & Mitigations
-^^^^^^^^^^^^^^^^^^^^^
+   #44 (Storage Strategy) ──▶ #45 (File Upload UI) ──▶ #002 (Documents)
+   #48 (Strong Auth)      ──▶ #46 (Voting System - Phase 2)
+   #39-41 (Security/Backup/Monitoring) ──▶ Production VPS
+
+   Phase 1 Complete ──▶ Phase 2 (K3s)
+
+Chaînes de Dépendances - Phase 2
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block::
+
+   🆕 #001 (Meeting API) ──▶ #019 (Convocations AG), #022 (Conseil)
+   🆕 #002 (Documents) ──▶ #017 (État Daté), #020 (Carnet), #024 (Devis)
+
+   #48 (Strong Auth - Phase 1) ──▶ #46 (Voting)
+   #020 (Carnet Entretien) ──▶ #024 (Devis Travaux - tracking)
+
+   Phase 2 Complete ──▶ Phase 3 (K8s)
+
+Ordre de Développement Optimal
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Phase 1 - Semaine 1-2 (Critique)**\ :
+
+#. **#022 Conseil Copropriété** (12-15h) - BLOQUANT >20 lots
+#. **#016 Plan Comptable** (8-10h) - Bloque #017, #018, #003
+#. **#039-041 Infrastructure** (16-24 jours en parallèle)
+
+**Phase 1 - Semaine 3-4**\ :
+
+#. **#017 État Daté** (6-8h) - Dépend de #016
+#. **#018 Budget Prévisionnel** (6-8h) - Dépend de #016
+#. **#023 Workflow Recouvrement** (6-8h) - Indépendant
+#. **#044-045 Storage + Upload** (5-8 jours)
+
+**Phase 1 - Semaine 5-12**\ :
+
+#. **#048 Strong Auth** (8-10 jours) - Bloque #046 Phase 2
+#. **#042 GDPR Export/Deletion** (5-7 jours)
+#. **#051 Board Tools** (8-10 jours)
+#. **#001, #002, #003, #005** (Core features)
+
+Risques & Mitigations (Mis à Jour)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
@@ -718,18 +1280,34 @@ Risques & Mitigations
      - Impact
      - Probabilité
      - Mitigation
+   * - 🆕 **Conseil Copropriété non implémenté**
+     - BLOQUE production >20 lots (majorité marché)
+     - Haute (0% actuellement)
+     - **PRIORITÉ #1** - Démarrer semaine 1
+   * - 🆕 **Plan Comptable bloque chaîne**
+     - Bloque #017, #018, #003 (État daté critique)
+     - Moyenne
+     - Démarrer semaine 1 en parallèle #022
    * - **itsme® registration delay**
-     - Bloque #48 → #46
+     - Bloque #48 → #46 (Voting Phase 2)
      - Moyenne
      - Démarrer registration immédiatement (Nov 2025)
+   * - 🆕 **Sous-estimation effort Belgian Compliance**
+     - Retard Phase 1 (40-51h nouvelles)
+     - Moyenne
+     - Buffer +3 semaines dans Phase 1
    * - **Storage strategy indecision**
-     - Bloque #45
+     - Bloque #45 → #002
      - Faible
      - Decision meeting semaine 1
    * - **K3s migration complexity**
      - Retard Phase 2
      - Moyenne
      - Tests migration sur env staging
+   * - 🆕 **Accessibilité WCAG manuelle**
+     - Retard Phase 2 (tests screen readers)
+     - Moyenne
+     - Audit externe + tests automatisés continus
    * - **Performance K8s**
      - Retard Phase 3
      - Faible
@@ -835,6 +1413,27 @@ Sustainability (Mission ASBL)
 
 ----
 
-**Dernière mise à jour**\ : 27 octobre 2024, 17:15
+**Dernière mise à jour**\ : 1 novembre 2025, 15:30
+**Version**\ : 2.0 (Gap Analysis Complète)
 **Maintenu par**\ : KoproGo ASBL
 **Contact**\ : `GitHub Issues <https://github.com/gilmry/koprogo/issues>`_
+
+----
+
+📊 Documents Associés
+---------------------
+
+* **Gap Analysis Complète**\ : `docs/GAP_ANALYSIS_KoproGov.md <./GAP_ANALYSIS_KoproGov.md>`_ (93 features analysées)
+* **Issues Détaillées**\ : `issues/README.md <../issues/README.md>`_ (25 issues avec cahiers des charges)
+* **Belgian Legal Compliance**\ :
+
+  * `#016 Plan Comptable <../issues/critical/016-plan-comptable-belge.md>`_
+  * `#017 État Daté <../issues/critical/017-etat-date-generation.md>`_
+  * `#018 Budget Prévisionnel <../issues/critical/018-budget-previsionnel.md>`_
+  * `#022 Conseil Copropriété <../issues/critical/022-conseil-copropriete.md>`_ (PRIORITÉ #1)
+  * `#023 Workflow Recouvrement <../issues/critical/023-workflow-recouvrement.md>`_
+
+* **Architecture**\ : `CLAUDE.md <../CLAUDE.md>`_ (Hexagonal Architecture + DDD)
+* **GDPR Compliance**\ : `docs/GDPR_COMPLIANCE_CHECKLIST.md <./GDPR_COMPLIANCE_CHECKLIST.md>`_
+* **Multi-Owner Support**\ : `docs/unit_owners/ <./unit_owners/>`_
+* **Deployment**\ : `docs/deployment/ <./deployment/>`_ (Terraform + Ansible)
