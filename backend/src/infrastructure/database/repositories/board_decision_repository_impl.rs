@@ -20,15 +20,24 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
     async fn create(&self, decision: &BoardDecision) -> Result<BoardDecision, String> {
         let status_str = decision.status.to_string();
 
+        // Get organization_id from building
+        let organization_id: Uuid =
+            sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
+                .bind(decision.building_id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to get building organization: {}", e))?;
+
         sqlx::query(
             r#"
-            INSERT INTO board_decisions (id, building_id, meeting_id, subject, decision_text, deadline, status, completed_at, notes, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO board_decisions (id, building_id, meeting_id, organization_id, subject, decision_text, deadline, status, completed_at, notes, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8::decision_status, $9, $10, $11, $12)
             "#,
         )
         .bind(decision.id)
         .bind(decision.building_id)
         .bind(decision.meeting_id)
+        .bind(organization_id)
         .bind(&decision.subject)
         .bind(&decision.decision_text)
         .bind(decision.deadline)
@@ -47,7 +56,7 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<BoardDecision>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status, completed_at, notes, created_at, updated_at
+            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status::TEXT as status, completed_at, notes, created_at, updated_at
             FROM board_decisions
             WHERE id = $1
             "#,
@@ -82,7 +91,7 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<BoardDecision>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status, completed_at, notes, created_at, updated_at
+            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status::TEXT as status, completed_at, notes, created_at, updated_at
             FROM board_decisions
             WHERE building_id = $1
             ORDER BY created_at DESC
@@ -121,7 +130,7 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
     async fn find_by_meeting(&self, meeting_id: Uuid) -> Result<Vec<BoardDecision>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status, completed_at, notes, created_at, updated_at
+            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status::TEXT as status, completed_at, notes, created_at, updated_at
             FROM board_decisions
             WHERE meeting_id = $1
             ORDER BY created_at DESC
@@ -166,9 +175,9 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status, completed_at, notes, created_at, updated_at
+            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status::TEXT as status, completed_at, notes, created_at, updated_at
             FROM board_decisions
-            WHERE building_id = $1 AND status = $2
+            WHERE building_id = $1 AND status = $2::decision_status
             ORDER BY created_at DESC
             "#,
         )
@@ -206,7 +215,7 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
     async fn find_overdue(&self, building_id: Uuid) -> Result<Vec<BoardDecision>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status, completed_at, notes, created_at, updated_at
+            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status::TEXT as status, completed_at, notes, created_at, updated_at
             FROM board_decisions
             WHERE building_id = $1
               AND deadline IS NOT NULL
@@ -252,7 +261,7 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
     ) -> Result<Vec<BoardDecision>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status, completed_at, notes, created_at, updated_at
+            SELECT id, building_id, meeting_id, subject, decision_text, deadline, status::TEXT as status, completed_at, notes, created_at, updated_at
             FROM board_decisions
             WHERE building_id = $1
               AND deadline IS NOT NULL
@@ -302,7 +311,7 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
             SET subject = $1,
                 decision_text = $2,
                 deadline = $3,
-                status = $4,
+                status = $4::decision_status,
                 completed_at = $5,
                 notes = $6,
                 updated_at = $7
@@ -350,7 +359,7 @@ impl BoardDecisionRepository for PostgresBoardDecisionRepository {
             r#"
             SELECT COUNT(*)
             FROM board_decisions
-            WHERE building_id = $1 AND status = $2
+            WHERE building_id = $1 AND status = $2::decision_status
             "#,
         )
         .bind(building_id)

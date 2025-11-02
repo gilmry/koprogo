@@ -1678,6 +1678,9 @@ async fn when_create_decision_with_deadline(world: &mut BuildingWorld, subject: 
 
 #[then(regex = r#"^the decision should be created with status "([^"]*)"$"#)]
 async fn then_decision_created_with_status(world: &mut BuildingWorld, status: String) {
+    if let Some(Err(e)) = &world.last_result {
+        panic!("Decision creation failed: {}", e);
+    }
     assert!(
         world.last_board_decision_id.is_some(),
         "Decision was not created"
@@ -1839,17 +1842,26 @@ async fn given_n_overdue_decisions(world: &mut BuildingWorld, count: usize) {
     let meeting_id = world.last_meeting_id.expect("meeting_id");
     let pool = world.pool.as_ref().expect("pool");
 
+    // Get organization_id from building
+    let organization_id: Uuid =
+        sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
+            .bind(building_id)
+            .fetch_one(pool)
+            .await
+            .expect("get organization_id from building");
+
     // Create overdue decisions directly in DB to bypass validation
     for i in 0..count {
         let decision_id = Uuid::new_v4();
         let overdue_deadline = chrono::Utc::now() - chrono::Duration::days(10);
         sqlx::query(
-            "INSERT INTO board_decisions (id, building_id, meeting_id, subject, decision_text, deadline, status, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, 'overdue', NOW(), NOW())"
+            "INSERT INTO board_decisions (id, building_id, meeting_id, organization_id, subject, decision_text, deadline, status, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'overdue', NOW(), NOW())"
         )
         .bind(decision_id)
         .bind(building_id)
         .bind(meeting_id)
+        .bind(organization_id)
         .bind(format!("Overdue Decision {}", i + 1))
         .bind(format!("This is overdue {}", i + 1))
         .bind(overdue_deadline)

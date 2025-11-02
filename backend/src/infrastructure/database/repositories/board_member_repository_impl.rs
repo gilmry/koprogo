@@ -326,7 +326,7 @@ impl BoardMemberRepository for PostgresBoardMemberRepository {
         sqlx::query(
             r#"
             UPDATE board_members
-            SET position = $1,
+            SET position = $1::board_position,
                 mandate_start = $2,
                 mandate_end = $3,
                 elected_by_meeting_id = $4,

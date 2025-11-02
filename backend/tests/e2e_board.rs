@@ -81,9 +81,13 @@ async fn setup_test_db() -> (
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo);
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
-    let board_member_use_cases = BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
-    let board_decision_use_cases =
-        BoardDecisionUseCases::new(board_decision_repo.clone(), building_repo.clone(), meeting_repo);
+    let board_member_use_cases =
+        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+    let board_decision_use_cases = BoardDecisionUseCases::new(
+        board_decision_repo.clone(),
+        building_repo.clone(),
+        meeting_repo,
+    );
 
     // Create an organization for FK references
     let org_id = Uuid::new_v4();
