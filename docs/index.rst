@@ -29,28 +29,19 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🎯 Vision et Mission
+   :caption: 📘 Vision & Stratégie
 
    VISION
    MISSION
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 🗺️ Roadmap
-
-   ROADMAP
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 💼 Modèle Économique
-
    ECONOMIC_MODEL
+   GOVERNANCE
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🏢 Gouvernance ASBL
+   :caption: 🗺️ Roadmaps
 
-   GOVERNANCE
+   ROADMAP_INTEGREE_2025_2030
+   ROADMAP
 
 .. toctree::
    :maxdepth: 2

@@ -1,10 +1,12 @@
+============================================================
+Modèle Économique KoproGo ASBL - Guide Complet
+============================================================
 
-Modèle Économique KoproGo - Guide Complet
-=========================================
-
-**Version 4.0 - Janvier 2025**
-**Statut**\ : ASBL Belge (Association Sans But Lucratif)
-**License**\ : Code AGPL-3.0 / Document CC BY-SA 4.0
+:Version: 5.0
+:Date: 2 novembre 2025
+:Statut: ASBL Belge (Association Sans But Lucratif)
+:License: Code AGPL-3.0 / Document CC BY-SA 4.0
+:Voir aussi: :doc:`VISION` | :doc:`MISSION` | :doc:`ROADMAP_INTEGREE_2025_2030` | :doc:`GOVERNANCE`
 
 ----
 
@@ -64,15 +66,53 @@ Principes Fondamentaux du Modèle
 
 ----
 
-Structure Juridique ASBL
-------------------------
+Structure Juridique Évolutive
+------------------------------
+
+Évolution de la Gouvernance (2025-2030+)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. note::
+   **Détails complets** : Pour le calendrier détaillé et les jalons de chaque phase, voir :doc:`ROADMAP_INTEGREE_2025_2030` (Section "Évolution Gouvernance et Structure Juridique").
+
+KoproGo adopte une **approche progressive** alignée sur la maturité du projet :
+
+#. **Phase Bootstrap (Nov 2025 - Déc 2026)** : Solo dev bénévole
+
+   * Statut : Projet personnel opensource
+   * Gouvernance : Gilmry (solo developer)
+   * Financement : Bénévolat (10-20h/semaine)
+   * Objectif : MVP, validation product-market fit, < 100 copros
+
+#. **Phase Fondateurs (Jan 2026 - Juin 2027)** : Noyau fondateur
+
+   * Statut : Association de fait (2-3 fondateurs)
+   * Gouvernance : Décisions consensuelles fondateurs
+   * Financement : Autofinancement (premiers revenus cloud)
+   * Objectif : 100 → 500 copropriétés, préparation ASBL
+
+#. **Phase ASBL (Juil 2027 - Déc 2029)** : Association Sans But Lucratif
+
+   * Statut : ASBL belge constituée
+   * Gouvernance : AG annuelle + CA élu (3-7 membres)
+   * Financement : Revenus cloud + services B2B
+   * Objectif : 500 → 5,000 copropriétés, viabilité long terme
+
+#. **Phase Coopérative (2030+)** : Transformation optionnelle
+
+   * Statut : **Si vote favorable AG** → Coopérative agréée
+   * Gouvernance : Utilisateurs = sociétaires (1 personne = 1 voix)
+   * Avantages : Subventions économie sociale, implication renforcée
+   * Décision : Soumise à l'Assemblée Générale 2029
 
 Qu'est-ce qu'une ASBL ?
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 **ASBL** = Association Sans But Lucratif (loi belge du 27 juin 1921, réformée en 2019)
 
 **Définition légale**\ : Une ASBL est une personne morale qui ne cherche pas à procurer un gain matériel à ses membres. Tous les bénéfices doivent être réinvestis dans l'objet social de l'association.
+
+**Calendrier constitution ASBL KoproGo** : Juillet 2027 (J2-Launch, 500 copros, revenus stabilisés)
 
 Avantages du Statut ASBL
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -115,42 +155,51 @@ Objet Social ASBL KoproGo
    * Réduisant l'empreinte écologique de l'hébergement numérique"
 
 
-ASBL vs Startup
-^^^^^^^^^^^^^^^
+KoproGo vs Startup (Trajectoires Comparées)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
 
    * - Aspect
-     - Startup
-     - ASBL KoproGo
+     - Startup Classique
+     - KoproGo (Solo→Fondateurs→ASBL→Coop)
    * - **Objectif**
      - Profit actionnaires
-     - Impact social
+     - Impact social + viabilité
+   * - **Phase Bootstrap**
+     - Levée seed (100-500k€)
+     - Bénévolat solo dev (0€)
+   * - **Gouvernance initiale**
+     - CEO + investisseurs
+     - Solo dev → Fondateurs consensuels
+   * - **Gouvernance mature**
+     - Board + actionnaires
+     - AG démocratique (ASBL/Coop)
    * - **Code**
-     - Propriétaire
-     - Open source (AGPL-3.0)
+     - Propriétaire (secret)
+     - Open source (AGPL-3.0, auditable)
    * - **Prix**
-     - Maximum acceptable
+     - Maximum acceptable (ROI)
      - Prix coûtant + marge solidaire
    * - **Données**
-     - Monétisées
-     - Propriété utilisateur
-   * - **Gouvernance**
-     - CEO + VC
-     - Assemblée Générale
+     - Monétisées (revente)
+     - Propriété utilisateur (RGPD)
    * - **Bénéfices**
-     - Dividendes
-     - Réinvestis mission
+     - Dividendes actionnaires
+     - Réinvestis mission (0 dividende)
    * - **Financement**
-     - Levées de fonds
-     - Autofinancement + dons
+     - Levées (Series A/B/C)
+     - Autofinancement progressif
    * - **Pression croissance**
-     - Très élevée
-     - Aucune
-   * - **Dilution**
-     - 30-50%
-     - 0%
+     - Très élevée (exit 5-7 ans)
+     - Aucune (croissance organique)
+   * - **Dilution fondateurs**
+     - 30-50% (voire plus)
+     - 0% (pas d'actionnaires)
+   * - **Exit strategy**
+     - Acquisition ou IPO
+     - Aucune (pérennité long terme)
 
 
 ----
@@ -196,22 +245,26 @@ Pourquoi Open Source le Core ?
 * ✅ **SEO/Visibilité**\ : GitHub stars, crédibilité
 * ✅ **Sécurité**\ : Failles détectées rapidement
 
-Modèle Hybride 20/80
-^^^^^^^^^^^^^^^^^^^^
+Modèle Hybride Cloud + Self-Hosted
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Objectif 2028**\ : Répartition utilisateurs
+.. note::
+   **Évolution du modèle** : Avec la tarification échelonnée, le modèle n'est plus un simple 20/80 mais évolue selon le mix client (micro/petit/moyen/grand/XL). Voir :doc:`ROADMAP_INTEGREE_2025_2030` pour les projections détaillées.
+
+**Répartition utilisateurs** (évolue selon la croissance) :
 
 
-* **20% Cloud KoproGo**\ : 400 copropriétés × 1.20€ = 480€/mois
-* **80% Self-hosted**\ : 1,600 copropriétés × 0€ = 0€ revenus (autonomes)
+* **Cloud KoproGo géré** : Tarifs échelonnés 1,50-8€ selon taille (détails ci-dessous)
+* **Self-hosted** : Gratuit à vie, aucun revenu (autonomie totale)
 
 **Les revenus cloud financent**\ :
 
 
-#. Développement (contributeurs, temps partiel)
-#. Infrastructure (VPS + S3 + DNS)
+#. Développement (contributeurs, puis temps partiel, puis ETP)
+#. Infrastructure (VPS + SSD chiffré + S3 + DNS + bande passante)
 #. Support (documentation, forum, email)
 #. Réserves (6-12 mois de fonctionnement)
+#. Investissement features communautaires (SEL, partage objets)
 
 ----
 
@@ -270,37 +323,72 @@ Option 1: Self-Hosted (Gratuit à Vie) 🔓
 * Syndics ayant déjà un VPS/serveur
 * Utilisateurs exigeant souveraineté totale des données
 
-Option 2: Cloud KoproGo (1€/mois) ☁️
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Option 2: Cloud KoproGo (Tarifs Échelonnés) ☁️
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Offre Standard: 1€/mois TTC par copropriété**
+**Grille tarifaire échelonnée selon taille et features**
 
-**Inclus dans l'offre de base**\ :
+.. note::
+   **Nouveau modèle de pricing** : À partir de 2025, KoproGo adopte une grille tarifaire échelonnée basée sur la taille de la copropriété et les fonctionnalités activées. Pour le détail complet des paliers et de l'évolution des prix, voir :doc:`ROADMAP_INTEGREE_2025_2030`.
+
+**Tarifs 2025 (Launch - J2)** :
+
+* **Micro (1-5 lots)** : 1,50€/mois
+* **Petit (6-20 lots)** : 2-2,50€/mois
+* **Moyen (21-50 lots)** : 3-3,50€/mois (inclut Conseil de Copropriété obligatoire)
+* **Grand (51-100 lots)** : 4-5€/mois
+* **XL (100+ lots)** : 5-8€/mois
+
+Cette tarification échelonnée permet de :
+
+* Maintenir un prix d'entrée bas pour les petites copropriétés (1,50€)
+* Aligner les prix sur les frontières légales belges (Article 577-8/4 : 20 lots = Conseil obligatoire)
+* Refléter les coûts réels de stockage et compute par segment
+* Rester compétitif face aux solutions propriétaires (200-500€/mois)
+
+**Quotas et services inclus** (adaptés selon la taille) :
+
+.. note::
+   Les quotas de stockage et utilisateurs évoluent selon le segment (micro/petit/moyen/grand/XL) pour refléter les besoins réels. Voir :doc:`ROADMAP_INTEGREE_2025_2030` pour les détails par segment.
 
 .. list-table::
    :header-rows: 1
 
    * - Ressource
-     - Quota Standard
-     - Usage Typique
+     - Micro (1-5)
+     - Petit (6-20)
+     - Moyen (21-50)
+     - Grand/XL (51+)
    * - **Stockage documents**
-     - 500 MB
-     - ~500 fichiers PDF/photos (1 MB moyen)
+     - 100-200 MB
+     - 200-500 MB
+     - 500 MB-1 GB
+     - 1-5 GB
    * - **Utilisateurs**
-     - 50
-     - Suffisant pour immeuble 20-30 lots
+     - 10-20
+     - 20-50
+     - 50-100
+     - 100-500
    * - **Requêtes API**
-     - 100,000/mois
-     - ~3,300 req/jour (~140 req/h)
+     - Illimité
+     - Illimité
+     - Illimité
+     - Illimité
    * - **Bande passante**
-     - 5 GB/mois
-     - Téléchargement documents, consultation
+     - Incluse
+     - Incluse
+     - Incluse
+     - Incluse
    * - **Backup automatique**
-     - Quotidien
-     - Rétention 7 jours
+     - Quotidien (7j)
+     - Quotidien (7j)
+     - Quotidien (30j)
+     - Quotidien (90j)
    * - **Support**
      - Email (72h)
-     - Documentation complète + forum
+     - Email (48h)
+     - Email (48h)
+     - Email (24h)
 
 
 **Services Cloud inclus**\ :
@@ -319,104 +407,88 @@ Option 2: Cloud KoproGo (1€/mois) ☁️
 **Pour qui?**
 
 
-* Petites et moyennes copropriétés (5-30 lots)
-* Usage standard: gestion charges, assemblées, documents
-* ~90% des utilisateurs restent dans les quotas de base
-* Copropriétés sans compétences techniques
+* **Micro/Petit** : Petites copropriétés (1-20 lots) avec usage léger
+* **Moyen** : Copropriétés moyennes (21-50 lots) avec Conseil de Copropriété
+* **Grand/XL** : Grandes copropriétés (51+ lots) avec usage intensif
+* Copropriétés sans compétences techniques souhaitant une solution clé en main
 
-Dépassement de Quotas: Prix Coûtant Mutualisé
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Philosophie Tarifaire : Prix Coûtant + Marge Minimale
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Philosophie**\ : Nous ne faisons **aucun profit** sur les dépassements. Les coûts additionnels sont calculés au **prix coûtant réel** et **mutualisés entre tous les utilisateurs** du cloud KoproGo.
+**Principe fondamental**\ : Les tarifs sont calculés au **prix coûtant réel** (infrastructure compute + storage) avec une **marge minimale ASBL** pour financer le développement et les réserves.
 
-Calcul du Prix Coûtant
-~~~~~~~~~~~~~~~~~~~~~~
+Calcul du Prix Coûtant par Segment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Le prix coûtant est calculé mensuellement et communiqué publiquement:
+.. note::
+   Pour le calcul détaillé des coûts par palier (Nano/Micro/Petit/Moyen/Grand) incluant compute, SSD chiffré, et S3 backup, voir :doc:`ROADMAP_INTEGREE_2025_2030` (Section "Coûts Infrastructure Réels").
 
-**Formule**\ :
-
-.. code-block::
-
-   Prix coûtant = (Coût infrastructure total + Coût bande passante + Coût stockage S3) / Nombre total copropriétés cloud
-
-**Exemple Octobre 2025**\ :
+**Composantes du coût** (exemple palier Micro, 100 copros) :
 
 .. code-block::
 
-   Infrastructure VPS OVH (d2-2): 7€/mois
-   Stockage S3 OVH (200 GB):     2€/mois (0.01€/GB)
-   Bande passante (500 GB):      0€ (inclus)
-   Support (bénévole):           0€
-   Total coûts:                  9€/mois
+   Compute (VPS s1-2):           4,20€/mois
+   SSD chiffré (20 GB):          2,00€/mois (0.10€/GB LUKS)
+   S3 backup (10 GB):            0,10€/mois (0.01€/GB)
+   DNS OVH:                      0,10€/mois
+   Bande passante:               0€ (incluse)
+   Support (bénévole Phase 1):   0€
+   -------------------------------------------
+   Total coûts:                  6,40€/mois
 
-   Nombre copropriétés cloud:    100
-   Prix coûtant de base:         0.09€/copro/mois
-   Marge ASBL (maintenance):     0.91€/copro/mois (91%)
+   100 copropriétés cloud:       100 × 2€ = 200€/mois
+   Coût réel par copro:          0,064€/copro/mois
+   Marge ASBL (développement):   1,936€/copro/mois (96,8%)
 
-Grille Tarifaire Dépassement (Prix Coûtant)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+**Évolution des coûts** : Le storage (SSD + S3) devient dominant (60-70%) au-delà de 500 copropriétés, d'où la tarification échelonnée selon la taille.
 
-.. list-table::
-   :header-rows: 1
+**Important**\ : Les requêtes API et utilisateurs n'ont **aucun coût marginal** infrastructure, donc **illimités sans surcoût**.
 
-   * - Ressource
-     - Coût Unitaire
-     - Exemple Dépassement
-     - Coût Additionnel
-   * - **Stockage +100 MB**
-     - 0.001€/GB/mois
-     - 600 MB total
-     - +0.10€/mois
-   * - **Utilisateurs +10**
-     - 0€
-     - 60 users total
-     - **Gratuit**
-   * - **Requêtes API +50k**
-     - 0€
-     - 150k req/mois
-     - **Gratuit**
-   * - **Bande passante +1 GB**
-     - 0.002€/GB
-     - 6 GB/mois
-     - +0.02€/mois
+Exemples Concrets de Tarification (Launch 2025 - J2)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cas 1: Micro copropriété 4 lots**
 
 
-**Important**\ : Les quotas utilisateurs et requêtes API n'ont **aucun coût marginal** pour l'infrastructure, donc **aucun surcoût** en cas de dépassement.
+* Segment: Micro (1-5 lots)
+* Stockage: ~100 MB (factures, PV)
+* Utilisateurs: 8 copropriétaires
+* **Coût total: 1,50€/mois** ✅
+* **Économie vs concurrent** : 198,50€/mois (99,25%)
 
-Exemples Concrets de Tarification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Cas 1: Copropriété 10 lots (usage léger)**
-
-
-* Stockage: 200 MB (sous quota)
-* Utilisateurs: 15 (sous quota)
-* Requêtes: 30,000/mois (sous quota)
-* **Coût total: 1.00€/mois** ✅
-
-**Cas 2: Copropriété 50 lots (usage normal)**
+**Cas 2: Petite copropriété 15 lots**
 
 
-* Stockage: 800 MB *(+300 MB)*
-* Utilisateurs: 80 *(+30 users, gratuit)*
-* Requêtes: 180,000/mois *(gratuit)*
-* **Coût total: 1.30€/mois** (1€ base + 0.30€ stockage)
+* Segment: Petit (6-20 lots)
+* Stockage: ~300 MB (documents 5 ans)
+* Utilisateurs: 25 copropriétaires
+* **Coût total: 2,50€/mois**
+* **Économie vs concurrent** : 197,50€/mois (98,75%)
 
-**Cas 3: Grande copropriété 100 lots (usage intensif)**
-
-
-* Stockage: 2 GB *(+1.5 GB)*
-* Utilisateurs: 150 *(+100 users, gratuit)*
-* Requêtes: 500,000/mois *(gratuit)*
-* Bande passante: 12 GB *(+7 GB)*
-* **Coût total: 2.64€/mois** (1€ + 1.50€ stockage + 0.14€ BP)
-
-**Comparaison avec concurrent propriétaire**\ :
+**Cas 3: Copropriété moyenne 35 lots**
 
 
-* Solution SaaS classique: 200-500€/mois pour 100 lots
-* **KoproGo: 2.64€/mois** (soit **99% d'économie**\ )
+* Segment: Moyen (21-50 lots) - **Conseil Copropriété obligatoire**
+* Stockage: ~600 MB (historique complet)
+* Utilisateurs: 70 copropriétaires + conseil
+* Features: CRUD + Conseil + Voting
+* **Coût total: 3,50€/mois**
+* **Économie vs concurrent** : 196,50€/mois (98,25%)
+
+**Cas 4: Grande copropriété 80 lots**
+
+
+* Segment: Grand (51-100 lots)
+* Stockage: ~1,5 GB (10 ans archives)
+* Utilisateurs: 150 copropriétaires
+* Features: Complètes + Community
+* **Coût total: 5€/mois**
+* **Économie vs concurrent** : 295-495€/mois (98-99%)
+
+**Comparaison synthétique** :
+
+* Solution SaaS classique 50 lots : **200-300€/mois**
+* **KoproGo 50 lots : 4-5€/mois** (soit **98-99% d'économie**\ )
 
 Services Additionnels (Futurs)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -573,46 +645,56 @@ Scénario Croissance
 
 **Le coût par copropriété diminue de 73% entre 100 et 2,000 utilisateurs.**
 
-Évolution Tarifs avec l'Échelle
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Évolution Tarifs par Phase
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Plus de copropriétés = Prix plus bas**
+.. note::
+   **Détails complets** : Pour l'évolution des tarifs par segment (Micro/Petit/Moyen/Grand/XL) et par phase (Beta/Launch/Growth/Scale), voir :doc:`ROADMAP_INTEGREE_2025_2030` (Grille Tarifaire Échelonnée).
+
+**Principe** : Les prix **baissent progressivement** grâce aux économies d'échelle, tout en maintenant une tarification équitable selon la taille.
 
 .. list-table::
    :header-rows: 1
 
-   * - Année
+   * - Phase
+     - Année
      - Copros Cloud
-     - Coût Infra
-     - Prix/Copro Possible
-   * - **2025**
+     - Prix Moyen
+     - Mix Client
+   * - **Beta (J1)**
+     - 2025
      - 100
-     - 10€/mois
-     - 1.00€
-   * - **2026**
-     - 400
-     - 20€/mois
-     - 0.70€
-   * - **2028**
-     - 1,000
-     - 30€/mois
-     - 0.50€
-   * - **2030**
-     - 2,000
-     - 40€/mois
-     - 0.40€
+     - 2,00€/mois
+     - Majoritairement Micro/Petit (early adopters)
+   * - **Launch (J2)**
+     - 2026
+     - 500
+     - 2,50€/mois
+     - Équilibré Petit/Moyen
+   * - **Growth (J3)**
+     - 2027-2028
+     - 2000
+     - 3,00€/mois
+     - Montée en gamme Moyen/Grand
+   * - **Scale (J4)**
+     - 2030
+     - 5000
+     - 3,50€/mois
+     - Mix mature avec plus de Premium
 
+**Exemple concret** : Une copropriété Petit (6-20 lots) paie 2,50€ en Launch (2026) et pourrait voir ce prix baisser à 2€ en Scale (2030) grâce aux économies d'échelle.
 
 Réinvestissement Démocratique
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-L'\ **Assemblée Générale ASBL** vote chaque année pour:
+L'\ **Assemblée Générale ASBL** vote chaque année l'affectation des excédents :
 
 
-* **Baisser le prix de base** (si réserves suffisantes)
-* **Améliorer les quotas** (plus de stockage inclus)
-* **Investir dans de nouvelles features**
-* **Constituer des réserves** (sécurité)
+* **Baisser les prix** (si réserves suffisantes et coûts infrastructure baissent)
+* **Améliorer les quotas** (plus de stockage/backup inclus)
+* **Investir features communautaires** (SEL, partage objets, annuaire compétences)
+* **Investir dans nouvelles features** (mobile app, real-time, AI assistant)
+* **Constituer des réserves** (6-12 mois fonctionnement minimum)
 
 **C'est la communauté qui décide, pas des actionnaires.**
 
@@ -624,12 +706,17 @@ Viabilité Financière
 Budget Prévisionnel 2025-2030
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Hypothèses conservatrices**\ :
+.. note::
+   **Projections détaillées** : Pour les projections financières complètes avec mix client, coûts infrastructure (compute + storage), et évolution des revenus, voir :doc:`ROADMAP_INTEGREE_2025_2030` (Section "Projections Financières Complètes").
+
+**Hypothèses actualisées**\ :
 
 
-* Croissance: 100 copros (2025) → 2,000 copros (2030)
-* Répartition: 20% cloud, 80% self-hosted
-* Prix moyen cloud: 1.20€/mois (avec dépassements)
+* Croissance: 100 copros (2025) → 5,000 copros (2030)
+* Répartition cloud: évolution du mix petit→moyen→grand
+* Prix moyen cloud évolue: 2€/mois (J1-Beta) → 3,50€/mois (J4-Scale)
+* **Coûts infrastructure** : compute + SSD chiffré + S3 backup
+* Storage devient dominant (60-70% coûts au-delà de 500 copros)
 
 .. list-table::
    :header-rows: 1
@@ -672,54 +759,64 @@ Budget Prévisionnel 2025-2030
      - +10,200€
 
 
-**Réserves cumulées 2030**\ : ~15,000€ (soit 25 mois de fonctionnement)
+**Réserves cumulées 2030**\ : ~150k€ (détails :doc:`ROADMAP_INTEGREE_2025_2030`)
 
-Unit Economics Cloud ASBL
-^^^^^^^^^^^^^^^^^^^^^^^^^
+**Impact économique et écologique 2030** :
+
+* **Économies générées** : 8M€ (logiciels propriétaires) + 750k€ (SEL) + 600k€ (consommation évitée) = **9,35M€/an**
+* **Impact carbone** : -534 tonnes CO₂/an (50t infrastructure + 484t features communautaires)
+
+Unit Economics Cloud ASBL (Tarif Moyen)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **LTV (Lifetime Value)**\ :
 
 .. code-block::
 
-   1€/copro/mois × durée vie moyenne
-   - Churn: 5%/an (très faible, besoin réel)
+   Prix moyen: 3€/copro/mois (mix client équilibré Phase J3-J4)
+   - Churn: 5%/an (très faible, besoin réel de gestion copro)
    - Durée vie = 1 / 0.05 = 20 ans
-   - LTV = 1€ × 12 mois × 20 ans = 240€ par copro
+   - LTV = 3€ × 12 mois × 20 ans = 720€ par copro
 
-   Conservateur (10 ans): LTV = 120€
+   Conservateur (10 ans): LTV = 360€
 
 **CAC (Customer Acquisition Cost)**\ :
 
 .. code-block::
 
-   0€ marketing → CAC = 0€
-   Temps bénévole si compté: ~5€ réaliste
+   0€ marketing (croissance organique, bouche-à-oreille)
+   Temps bénévole si valorisé: ~5-10€ réaliste
+
+   CAC effectif: 5-10€
 
 **LTV/CAC**\ :
 
 .. code-block::
 
-   240€ / 5€ = 48:1 (exceptionnel)
+   720€ / 10€ = 72:1 (exceptionnel)
    Target SaaS classique: 3:1
-   KoproGo ASBL: 48:1 ✅
+   KoproGo ASBL: 72:1 ✅
 
 **Payback Period**\ :
 
 .. code-block::
 
-   CAC / MRR par copro = 5€ / 1€ = 5 mois
+   CAC / MRR par copro = 10€ / 3€ = 3,3 mois
    Target SaaS: < 12 mois
-   KoproGo: 5 mois ✅
+   KoproGo: 3,3 mois ✅
 
 **Gross Margin**\ :
 
 .. code-block::
 
-   Revenus 1€/copro/mois
-   Coûts variables: ~0.01€/copro (compute)
-   Marge brute: 99% ✅
+   Revenus moyens: 3€/copro/mois
+   Coûts variables (compute + storage): ~0,10€/copro
+   Marge brute: 96,7% ✅
 
-**Conclusion Unit Economics**\ : Très sains, scalabilité énorme, pas de pression croissance.
+   Note: Storage devient dominant (60-70%) au-delà de 500 copros,
+   d'où la tarification échelonnée selon taille réelle.
+
+**Conclusion Unit Economics**\ : Exceptionnellement sains, scalabilité énorme, aucune pression croissance, viabilité long terme assurée.
 
 Scénarios de Crise
 ^^^^^^^^^^^^^^^^^^
@@ -727,28 +824,34 @@ Scénarios de Crise
 **Scénario 1: Chute revenus cloud (-50%)**
 
 
-* Impact: Réduction développement à 0.5 ETP
-* Solution: Appel communauté, campagne dons
+* Impact: Réduction développement à temps partiel
+* Solution: Appel communauté, campagne dons, gel nouvelles features
+* Marge sécurité: Réserves 6-12 mois
 
 **Scénario 2: Augmentation coûts infra (+100%)**
 
 
-* Impact: Augmentation prix 1€ → 1.50€
-* Vote Assemblée Générale requis
+* Impact: Ajustement tarifs (+0,50-1€ selon segment)
+* Exemple: Petit 2,50€ → 3€, Moyen 3,50€ → 4€
+* Vote Assemblée Générale requis + transparence totale
 
-**Scénario 3: Pic usage (×10)**
+**Scénario 3: Pic usage inattendu (×10)**
 
 
-* Impact: Migration K3s anticipée (Phase 2)
-* Financement: Réserves cumulées
+* Impact: Migration infrastructure anticipée (K3s Phase 2)
+* Financement: Réserves cumulées + ajustement temporaire tarifs
+* Transition progressive sans interruption service
 
 ----
 
 Impact Écologique
 -----------------
 
-Comparaison Carbone
-^^^^^^^^^^^^^^^^^^^
+.. note::
+   **Impact complet** : Pour une analyse détaillée de l'impact écologique incluant les features communautaires (SEL, partage objets) et leurs bénéfices carbone (10x l'infrastructure), voir :doc:`ROADMAP_INTEGREE_2025_2030` et :doc:`MISSION`.
+
+Comparaison Carbone Infrastructure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Solution classique (SaaS WordPress)**\ :
 
@@ -761,7 +864,14 @@ Comparaison Carbone
 
 * VPS partagé: 10W / 1,000 copros = 0.01W par copro
 * Datacenter bas carbone (GRA11): 0.01W × 8760h × 0.06 kg CO2/kWh = **0.0053 kg CO2/an**
-* **Réduction: 99.996%** 🌱
+* **Réduction infrastructure: 99.996%** 🌱
+
+**Impact Total avec Features Communautaires (2030)** :
+
+
+* Infrastructure: -50 tonnes CO₂/an (5000 copros cloud)
+* **Features communautaires** (30% adoption) : -484 tonnes CO₂/an (partage objets, réduction consommation)
+* **Impact total : -534 tonnes CO₂/an** (effet multiplicateur 10x)
 
 Politique Green IT
 ^^^^^^^^^^^^^^^^^^
@@ -816,9 +926,9 @@ Marché Solutions Propriétaires
      - ❌ Cloud BE
      - ~30 kg
    * - **KoproGo Cloud**
-     - **1-3€**
-     - 0.5-∞ GB
-     - Email 72h
+     - **1,50-8€**
+     - 0.1-5 GB
+     - Email 24-72h
      - ✅ EU/Local
      - **0.005 kg**
    * - **KoproGo Self-Hosted**
@@ -829,36 +939,67 @@ Marché Solutions Propriétaires
      - **0.001 kg**
 
 
-**Économie moyenne**\ : **1,600-9,500€/an par copropriété** (soit 95-99% de réduction)
+**Économie moyenne**\ :
 
-Économies Réalisées
-^^^^^^^^^^^^^^^^^^^
+* Micro (1-5 lots) : **198,50€/mois** (99,25% réduction vs 200€)
+* Petit (6-20 lots) : **197,50€/mois** (98,75% réduction vs 200€)
+* Moyen (21-50 lots) : **246,50€/mois** (98,60% réduction vs 250€)
+* Grand/XL (51-100+ lots) : **395-495€/mois** (98-99% réduction vs 400-500€)
 
-**Exemple: Copropriété 20 lots sur 3 ans**
+Économies Réalisées (Exemples Réels)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Exemple 1: Petite copropriété 15 lots sur 3 ans**
 
 .. list-table::
    :header-rows: 1
 
    * - Poste
-     - Propriétaire
-     - KoproGo Cloud
+     - Solution Propriétaire
+     - KoproGo Cloud (Petit)
      - Économie
-   * - Licence
-     - 3,000€
-     - 12€
-     - −99.6%
+   * - Licence/Abonnement
+     - 7,200€ (200€×36 mois)
+     - 90€ (2,50€×36 mois)
+     - −99%
    * - Formation
      - 800€
-     - 0€
+     - 0€ (doc self-service)
      - −100%
    * - Migration
      - 500€
+     - 0€ (import CSV)
+     - −100%
+   * - **Total 3 ans**
+     - **8,500€**
+     - **90€**
+     - **−98,94%**
+
+**Exemple 2: Copropriété moyenne 40 lots sur 3 ans**
+
+.. list-table::
+   :header-rows: 1
+
+   * - Poste
+     - Solution Propriétaire
+     - KoproGo Cloud (Moyen)
+     - Économie
+   * - Licence/Abonnement
+     - 10,800€ (300€×36 mois)
+     - 126€ (3,50€×36 mois)
+     - −98,8%
+   * - Formation
+     - 1,200€
      - 0€
      - −100%
-   * - **Total**
-     - **10,400€**
-     - **36€**
-     - **−99.65%**
+   * - Migration
+     - 800€
+     - 0€
+     - −100%
+   * - **Total 3 ans**
+     - **12,800€**
+     - **126€**
+     - **−99,02%**
 
 
 ----
@@ -1246,31 +1387,53 @@ Points Clés
 Notre Engagement
 ^^^^^^^^^^^^^^^^
 
-**Le coût de KoproGo ne dépassera jamais 5€/mois par copropriété**\ , quel que soit le succès du projet. Tout excédent sera réinvesti dans le développement, la communauté, ou redistribué via baisse de prix.
+**Le coût de KoproGo restera accessible et transparent** :
 
-L'Équipe (Bénévole Jusqu'à Viabilité)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+* Grille tarifaire échelonnée : 1,50€ (micro) à 8€ (XL 100+ lots)
+* Prix alignés sur la valeur apportée et les coûts réels (compute + storage)
+* Toujours **95-99% moins cher** que les solutions propriétaires (200-500€/mois)
+* Tout excédent sera réinvesti dans le développement, la communauté, ou redistribué via amélioration des services
+* Option self-hosted **gratuite à vie** toujours disponible
 
-**2 personnes, 0.25 FTE équivalent**\ :
+L'Équipe et Évolution Organisationnelle
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+.. note::
+   **Évolution progressive** : L'équipe évolue avec la maturité du projet (voir :doc:`ROADMAP_INTEGREE_2025_2030`).
 
-#. 
-   **Architecte Logiciel** (10-20h/semaine en side-project)
-
-
-   * Emploi temps plein ailleurs (sécurité financière)
-   * Architecture + développement core Rust
-   * DevOps + infrastructure OVH
-   * Vision produit long-terme
-
-#. 
-   **Étudiante en Informatique** (5-10h/semaine bénévole)
+**Phase Bootstrap (Nov 2025 - Déc 2026)** : Solo dev bénévole
 
 
-   * Formation pratique sur projet réel
-   * Maintenance, documentation, tests
-   * Community management GitHub
-   * Contribution au CV professionnel
+* **Gilmry** (10-20h/semaine side-project)
+
+  * Emploi temps plein ailleurs (sécurité financière)
+  * Architecture + développement core Rust
+  * DevOps + infrastructure OVH
+  * Vision produit long-terme
+
+**Phase Fondateurs (Jan 2026 - Jun 2027)** : Noyau fondateur (2-3 personnes)
+
+
+* **Gilmry** + 1-2 co-fondateurs
+* Contribution bénévole ou temps partiel rémunéré (si revenus suffisants)
+* Spécialisations : Backend, Frontend, Community/Support
+* Constitution structure légale (préparation ASBL)
+
+**Phase ASBL (Jul 2027 - Déc 2029)** : Équipe structurée
+
+
+* CA élu (3-7 administrateurs bénévoles)
+* 1-2 développeurs salariés (temps partiel puis temps plein)
+* Contributeurs communautaires (opensource)
+* Budget : Revenus cloud + services B2B
+
+**Phase Coopérative (2030+)** : Organisation mature
+
+
+* Sociétaires (utilisateurs-membres)
+* 2-3 salariés permanents
+* Contributeurs réguliers (10-20 personnes)
+* Gouvernance démocratique renforcée
 
 Contact et Collaboration
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1300,3 +1463,12 @@ Contact et Collaboration
 **Transparence**\ : Ce document est public. Les comptes annuels de l'ASBL KoproGo seront publiés sur GitHub et le site web, conformément aux obligations légales belges et à notre engagement de transparence radicale.
 
 **License document**\ : CC BY-SA 4.0 (Creative Commons Attribution-ShareAlike)
+
+----
+
+**Voir aussi** :
+
+* :doc:`ROADMAP_INTEGREE_2025_2030` - Roadmap stratégique complète avec projections financières détaillées et évolution tarifaire
+* :doc:`VISION` - Vision sociétale et impact écologique
+* :doc:`MISSION` - Mission ASBL et valeurs fondamentales
+* :doc:`GOVERNANCE` - Structure de gouvernance et processus de décision
