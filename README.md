@@ -9,10 +9,10 @@
 [![License](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-gilmry.github.io%2Fkoprogo-blue)](https://gilmry.github.io/koprogo)
 
-[![CI Pipeline](https://github.com/gilmry/koprogo/actions/workflows/ci.yml/badge.svg)](https://github.com/gilmry/koprogo/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/gilmry/koprogo/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gilmry/koprogo/actions/workflows/ci.yml)
 [![GDPR Compliance](https://img.shields.io/badge/GDPR-Partial%20Compliance-yellow)](docs/GDPR_COMPLIANCE_CHECKLIST.md)
-![Security Audit](https://github.com/gilmry/koprogo/actions/workflows/security.yml/badge.svg)
-![Documentation](https://github.com/gilmry/koprogo/actions/workflows/docs.yml/badge.svg)
+[![Security Audit](https://github.com/gilmry/koprogo/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/gilmry/koprogo/actions/workflows/security.yml)
+[![Documentation](https://github.com/gilmry/koprogo/actions/workflows/docs.yml/badge.svg?branch=main)](https://github.com/gilmry/koprogo/actions/workflows/docs.yml)
 
 [![GitHub Stars](https://img.shields.io/github/stars/gilmry/koprogo?style=social)](https://github.com/gilmry/koprogo/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/gilmry/koprogo?style=social)](https://github.com/gilmry/koprogo/network/members)
