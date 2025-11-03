@@ -186,14 +186,18 @@
 
           {#if showUserMenu}
             <div
+              role="menu"
+              tabindex="-1"
               class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
               data-testid="user-menu-dropdown"
               on:click|stopPropagation
+              on:keydown={(e) => e.key === 'Escape' && (showUserMenu = false)}
             >
               {#if user?.roles && user.roles.length > 1}
                 <div class="px-4 py-2 border-b border-gray-200" data-testid="role-switcher">
-                  <label class="text-xs text-gray-500 block mb-1">Changer de rôle</label>
+                  <label for="role-selector" class="text-xs text-gray-500 block mb-1">Changer de rôle</label>
                   <select
+                    id="role-selector"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     on:change={handleRoleChange}
                     disabled={switchingRole}
