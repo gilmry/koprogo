@@ -237,6 +237,10 @@ docs-sync-videos: ## 📹 Copier vidéos E2E et générer page RST
 	@echo "$(GREEN)📹 Synchronisation vidéos E2E...$(NC)"
 	bash .claude/scripts/copy-videos.sh
 
+docs-export-github: ## 📦 Exporter données GitHub (issues, milestones, projects) en RST
+	@echo "$(GREEN)📦 Export données GitHub...$(NC)"
+	./scripts/export-github-to-rst.sh
+
 docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis 1s)
 	@echo "$(GREEN)🎥 Génération docs avec vidéos E2E...$(NC)"
 	@echo ""
