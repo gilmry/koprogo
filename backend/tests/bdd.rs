@@ -78,6 +78,16 @@ pub struct BuildingWorld {
     last_board_decision_id: Option<Uuid>,
     #[allow(dead_code)]
     last_board_members: Option<Vec<BoardMemberResponseDto>>,
+    // Invoice workflow fields (Issue #73)
+    last_invoice_id: Option<Uuid>,
+    last_invoice_status: Option<String>,
+    last_invoice_vat_amount: Option<f64>,
+    last_invoice_total: Option<f64>,
+    accountant_user_id: Option<Uuid>,
+    syndic_user_id: Option<Uuid>,
+    owner_user_id: Option<Uuid>,
+    last_distributions_count: Option<usize>,
+    last_owner_total_due: Option<f64>,
     last_board_stats: Option<BoardStatsDto>,
     #[allow(dead_code)]
     last_decision_stats: Option<DecisionStatsDto>,
@@ -141,6 +151,16 @@ impl BuildingWorld {
             last_board_member_id: None,
             last_board_decision_id: None,
             last_board_members: None,
+            // Invoice workflow fields (Issue #73)
+            last_invoice_id: None,
+            last_invoice_status: None,
+            last_invoice_vat_amount: None,
+            last_invoice_total: None,
+            accountant_user_id: None,
+            syndic_user_id: None,
+            owner_user_id: None,
+            last_distributions_count: None,
+            last_owner_total_due: None,
             last_board_stats: None,
             last_decision_stats: None,
             last_board_dashboard: None,
