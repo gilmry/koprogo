@@ -45,6 +45,12 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
+   :caption: 📊 GitHub Project Management
+
+   github-export/index
+
+.. toctree::
+   :maxdepth: 2
    :caption: 🦀 Backend Rust
 
    backend/index
