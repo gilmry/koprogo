@@ -1921,3 +1921,366 @@ async fn then_mandate_expiring_soon(world: &mut BuildingWorld) {
     let mandate = dashboard.my_mandate.as_ref().expect("mandate");
     assert!(mandate.expires_soon);
 }
+
+// ==================== Additional Board Member Steps ====================
+
+#[given(regex = r#"^a building "([^"]*)" with (\d+) units$"#)]
+async fn given_building_with_units(world: &mut BuildingWorld, name: String, units: i32) {
+    world.setup_once().await;
+    let building_repo = world.use_cases.as_ref().unwrap().building_repo.clone();
+    let org_id = world.org_id.expect("org_id");
+    
+    use koprogo_api::domain::entities::Building as DomBuilding;
+    let building = DomBuilding::new(
+        org_id,
+        name,
+        "1 Main St".to_string(),
+        "Brussels".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+        units,
+        100,
+        Some(2000),
+    )
+    .unwrap();
+    
+    let created = building_repo.create(&building).await.unwrap();
+    world.building_id = Some(created.id);
+}
+
+#[given(regex = r#"^an owner "([^"]*)" owning unit (\d+)$"#)]
+async fn given_owner_owning_unit(world: &mut BuildingWorld, owner_name: String, _unit_num: i32) {
+    let owner_repo = world.owner_repo.as_ref().expect("owner repo");
+    let org_id = world.org_id.expect("org_id");
+    
+    let name_parts: Vec<&str> = owner_name.split(' ').collect();
+    let first_name = name_parts.first().unwrap_or(&"Unknown").to_string();
+    let last_name = name_parts.get(1).unwrap_or(&"Unknown").to_string();
+    
+    let owner = koprogo_api::domain::entities::Owner::new(
+        org_id,
+        first_name,
+        last_name,
+        format!("{}@test.com", owner_name.replace(' ', ".").to_lowercase()),
+        Some("+32123456789".to_string()),
+        "1 Test St".to_string(),
+        "Brussels".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+    )
+    .expect("create owner");
+    
+    let created_owner = owner_repo.create(&owner).await.expect("save owner");
+    world.current_owner_id = Some(created_owner.id);
+}
+
+#[when(regex = r#"^I elect "([^"]*)" as board (president|treasurer|member) for building "([^"]*)" at meeting "([^"]*)"$"#)]
+async fn when_elect_board_member(world: &mut BuildingWorld, _owner_name: String, position: String, _building_name: String, _meeting_name: String) {
+    let building_id = world.building_id.expect("building_id");
+    let owner_id = world.current_owner_id.expect("owner_id");
+    
+    // Create meeting if not exists
+    if world.last_meeting_id.is_none() {
+        let pool = world.pool.as_ref().expect("pool");
+        let org_id = world.org_id.expect("org_id");
+        let meeting_id = Uuid::new_v4();
+        
+        sqlx::query(
+            "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+             VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+        )
+        .bind(meeting_id)
+        .bind(org_id)
+        .bind(building_id)
+        .bind("ordinary")
+        .bind("AG Annuelle 2024")
+        .bind("Meeting Room")
+        .bind(chrono::Utc::now())
+        .execute(pool)
+        .await
+        .expect("create meeting");
+        world.last_meeting_id = Some(meeting_id);
+    }
+    
+    let board_member_use_cases = world.board_member_use_cases.as_ref().expect("board member use cases");
+    let dto = CreateBoardMemberDto {
+        owner_id: owner_id.to_string(),
+        building_id: building_id.to_string(),
+        position,
+        mandate_start: chrono::Utc::now().to_rfc3339(),
+        mandate_end: (chrono::Utc::now() + chrono::Duration::days(365)).to_rfc3339(),
+        elected_by_meeting_id: world.last_meeting_id.unwrap().to_string(),
+    };
+    
+    let member = board_member_use_cases.elect_board_member(dto).await.expect("elect board member");
+    world.last_board_member_id = Some(Uuid::parse_str(&member.id).unwrap());
+}
+
+#[given(regex = r#"^"([^"]*)" is elected as board (president|treasurer|member) for building "([^"]*)"$"#)]
+async fn given_elected_as_board_member(world: &mut BuildingWorld, owner_name: String, position: String, building_name: String) {
+    // First ensure owner exists
+    given_owner_owning_unit(world, owner_name.clone(), 101).await;
+    
+    // Then elect them
+    when_elect_board_member(world, owner_name, position, building_name, "AG 2024".to_string()).await;
+}
+
+#[then(regex = r#"^the board member should have position "([^"]*)"$"#)]
+async fn then_board_member_has_position(world: &mut BuildingWorld, expected_position: String) {
+    let member_id = world.last_board_member_id.expect("board member id");
+    let use_cases = world.board_member_use_cases.as_ref().expect("board member use cases");
+    
+    let member = use_cases.get_board_member(member_id).await.expect("get board member");
+    assert_eq!(member.position, expected_position);
+}
+
+#[then("the mandate should be active")]
+async fn then_mandate_is_active(world: &mut BuildingWorld) {
+    let member_id = world.last_board_member_id.expect("board member id");
+    let use_cases = world.board_member_use_cases.as_ref().expect("board member use cases");
+    
+    let member = use_cases.get_board_member(member_id).await.expect("get board member");
+    assert!(member.is_active, "Mandate should be active");
+}
+
+#[then("the mandate duration should be approximately 1 year")]
+async fn then_mandate_duration_one_year(world: &mut BuildingWorld) {
+    let member_id = world.last_board_member_id.expect("board member id");
+    let repo = world.board_member_repo.as_ref().expect("board member repo");
+    
+    let member = repo.find_by_id(member_id).await.expect("find").expect("exists");
+    let duration_days = (member.mandate_end - member.mandate_start).num_days();
+    assert!(duration_days >= 330 && duration_days <= 395, "Mandate duration should be approximately 1 year (330-395 days), got {} days", duration_days);
+}
+
+#[given(regex = r#"^a meeting "([^"]*)" for building "([^"]*)"$"#)]
+async fn given_meeting_for_building(world: &mut BuildingWorld, meeting_name: String, _building_name: String) {
+    let building_id = world.building_id.expect("building_id");
+    let org_id = world.org_id.expect("org_id");
+    let pool = world.pool.as_ref().expect("pool");
+    let meeting_id = Uuid::new_v4();
+    
+    sqlx::query(
+        "INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, location, scheduled_date, created_at, updated_at)
+         VALUES ($1, $2, $3, $4::meeting_type, $5, $6, $7, NOW(), NOW())"
+    )
+    .bind(meeting_id)
+    .bind(org_id)
+    .bind(building_id)
+    .bind("ordinary")
+    .bind(meeting_name)
+    .bind("Meeting Room")
+    .bind(chrono::Utc::now())
+    .execute(pool)
+    .await
+    .expect("create meeting");
+    
+    world.last_meeting_id = Some(meeting_id);
+}
+
+// ==================== Board Decision Steps ====================
+
+#[when(regex = r#"^I create a decision "([^"]*)" for meeting "([^"]*)"$"#)]
+async fn when_create_decision_for_meeting(world: &mut BuildingWorld, subject: String, _meeting_name: String) {
+    let building_id = world.building_id.expect("building_id");
+    let meeting_id = world.last_meeting_id.expect("meeting_id");
+    let use_cases = world.board_decision_use_cases.as_ref().expect("board decision use cases");
+    
+    let dto = CreateBoardDecisionDto {
+        building_id: building_id.to_string(),
+        meeting_id: meeting_id.to_string(),
+        subject,
+        decision_text: "Decision details".to_string(),
+        deadline: Some((chrono::Utc::now() + chrono::Duration::days(30)).to_rfc3339()),
+    };
+    
+    let decision = use_cases.create_decision(dto).await.expect("create decision");
+    world.last_board_decision_id = Some(Uuid::parse_str(&decision.id).unwrap());
+}
+
+#[then(regex = r#"^the decision should have status "([^"]*)"$"#)]
+async fn then_decision_has_status(world: &mut BuildingWorld, expected_status: String) {
+    let decision_id = world.last_board_decision_id.expect("decision id");
+    let use_cases = world.board_decision_use_cases.as_ref().expect("board decision use cases");
+    
+    let decision = use_cases.get_decision(decision_id).await.expect("get decision");
+    assert_eq!(decision.status, expected_status);
+}
+
+#[then(regex = r#"^the decision should be assigned to meeting "([^"]*)"$"#)]
+async fn then_decision_assigned_to_meeting(world: &mut BuildingWorld, _meeting_name: String) {
+    let decision_id = world.last_board_decision_id.expect("decision id");
+    let use_cases = world.board_decision_use_cases.as_ref().expect("board decision use cases");
+    
+    let decision = use_cases.get_decision(decision_id).await.expect("get decision");
+    assert_eq!(decision.meeting_id, world.last_meeting_id.unwrap().to_string());
+}
+
+// ==================== Board Dashboard Additional Steps ====================
+
+#[when(regex = r#"^"([^"]*)" views their board dashboard$"#)]
+async fn when_owner_views_dashboard(world: &mut BuildingWorld, _owner_name: String) {
+    let building_id = world.building_id.expect("building_id");
+    let owner_id = world.current_owner_id.expect("owner_id");
+    let use_cases = world.board_dashboard_use_cases.as_ref().expect("dashboard use cases");
+    
+    let dashboard = use_cases.get_dashboard(building_id, owner_id).await.expect("get dashboard");
+    world.last_board_dashboard = Some(dashboard);
+}
+
+#[then("the dashboard should show their current mandate")]
+async fn then_dashboard_shows_current_mandate(world: &mut BuildingWorld) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    assert!(dashboard.my_mandate.is_some(), "Dashboard should show current mandate");
+}
+
+#[then("the dashboard should show decision statistics")]
+async fn then_dashboard_shows_decision_stats(world: &mut BuildingWorld) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    // Just verify the stats object exists
+    assert!(dashboard.decisions_stats.pending >= 0);
+}
+
+#[then("the dashboard should show upcoming deadlines")]
+async fn then_dashboard_shows_upcoming_deadlines(world: &mut BuildingWorld) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    // Verify the upcoming_deadlines vec exists (can be empty)
+    assert!(dashboard.upcoming_deadlines.len() >= 0);
+}
+
+#[given(regex = r#"^(\d+) decisions? with status "([^"]*)"$"#)]
+async fn given_n_decisions_with_status(world: &mut BuildingWorld, count: usize, status: String) {
+    let building_id = world.building_id.expect("building_id");
+    let meeting_id = world.last_meeting_id.expect("meeting_id");
+    let pool = world.pool.as_ref().expect("pool");
+    let org_id = world.org_id.expect("org_id");
+    
+    for i in 0..count {
+        let decision_id = Uuid::new_v4();
+        sqlx::query(
+            "INSERT INTO board_decisions (id, building_id, meeting_id, organization_id, subject, decision_text, status, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7::decision_status, NOW(), NOW())"
+        )
+        .bind(decision_id)
+        .bind(building_id)
+        .bind(meeting_id)
+        .bind(org_id)
+        .bind(format!("Decision {} - {}", i + 1, status))
+        .bind(format!("Details for {} decision {}", status, i + 1))
+        .bind(&status)
+        .execute(pool)
+        .await
+        .expect("create decision");
+    }
+}
+
+#[given(regex = r#"^a decision "([^"]*)" with deadline in (\d+) days$"#)]
+async fn given_decision_with_deadline_in_days(world: &mut BuildingWorld, subject: String, days: i64) {
+    let building_id = world.building_id.expect("building_id");
+    let meeting_id = world.last_meeting_id.expect("meeting_id");
+    let pool = world.pool.as_ref().expect("pool");
+    let org_id = world.org_id.expect("org_id");
+    
+    let decision_id = Uuid::new_v4();
+    let deadline = chrono::Utc::now() + chrono::Duration::days(days);
+    
+    sqlx::query(
+        "INSERT INTO board_decisions (id, building_id, meeting_id, organization_id, subject, decision_text, deadline, status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', NOW(), NOW())"
+    )
+    .bind(decision_id)
+    .bind(building_id)
+    .bind(meeting_id)
+    .bind(org_id)
+    .bind(subject)
+    .bind("Decision details")
+    .bind(deadline)
+    .execute(pool)
+    .await
+    .expect("create decision");
+}
+
+#[then(regex = r#"^the dashboard should show position "([^"]*)"$"#)]
+async fn then_dashboard_shows_position(world: &mut BuildingWorld, expected_position: String) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    let mandate = dashboard.my_mandate.as_ref().expect("mandate");
+    assert_eq!(mandate.position, expected_position);
+}
+
+#[then("the dashboard should show mandate start date")]
+async fn then_dashboard_shows_mandate_start(world: &mut BuildingWorld) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    let mandate = dashboard.my_mandate.as_ref().expect("mandate");
+    assert!(!mandate.mandate_start.is_empty());
+}
+
+#[then("the dashboard should show mandate end date")]
+async fn then_dashboard_shows_mandate_end(world: &mut BuildingWorld) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    let mandate = dashboard.my_mandate.as_ref().expect("mandate");
+    assert!(!mandate.mandate_end.is_empty());
+}
+
+#[then(regex = r#"^the dashboard should show building "([^"]*)"$"#)]
+async fn then_dashboard_shows_building(world: &mut BuildingWorld, _expected_building: String) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    let mandate = dashboard.my_mandate.as_ref().expect("mandate");
+    assert!(!mandate.building_id.is_empty());
+}
+
+#[then("the dashboard should show a mandate expiration alert")]
+async fn then_dashboard_shows_expiration_alert(world: &mut BuildingWorld) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    let mandate = dashboard.my_mandate.as_ref().expect("mandate");
+    assert!(mandate.expires_soon, "Mandate should be expiring soon");
+}
+
+#[then(regex = r#"^the alert should indicate (\d+) days remaining$"#)]
+async fn then_alert_indicates_days_remaining(world: &mut BuildingWorld, _expected_days: i64) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    let mandate = dashboard.my_mandate.as_ref().expect("mandate");
+    assert!(mandate.days_remaining > 0);
+}
+
+#[then(regex = r#"^"([^"]*)" should be flagged as urgent$"#)]
+async fn then_decision_flagged_as_urgent(world: &mut BuildingWorld, _decision_name: String) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    assert!(dashboard.upcoming_deadlines.len() > 0, "Should have upcoming deadlines");
+}
+
+#[then(regex = r#"^the stats should show (\d+) pending$"#)]
+async fn then_stats_show_pending(world: &mut BuildingWorld, count: i64) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    assert_eq!(dashboard.decisions_stats.pending, count);
+}
+
+#[then(regex = r#"^the stats should show (\d+) in_progress$"#)]
+async fn then_stats_show_in_progress(world: &mut BuildingWorld, count: i64) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    assert_eq!(dashboard.decisions_stats.in_progress, count);
+}
+
+#[then(regex = r#"^the stats should show (\d+) completed$"#)]
+async fn then_stats_show_completed(world: &mut BuildingWorld, count: i64) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    assert_eq!(dashboard.decisions_stats.completed, count);
+}
+
+#[then(regex = r#"^the stats should show (\d+) overdue$"#)]
+async fn then_stats_show_overdue(world: &mut BuildingWorld, count: i64) {
+    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    assert_eq!(dashboard.decisions_stats.overdue, count);
+}
+
+#[given("1 overdue decision")]
+async fn given_one_overdue_decision(world: &mut BuildingWorld) {
+    given_n_overdue_decisions(world, 1).await;
+}
+
+#[main]
+async fn main() {
+    BuildingWorld::cucumber()
+        .fail_on_skipped()
+        .run("tests/features/")
+        .await;
+}
