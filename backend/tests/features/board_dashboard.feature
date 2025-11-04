@@ -1,48 +1,53 @@
-Feature: Board Member Dashboard
+Feature: Board Dashboard and Alerts
   As a board member
-  I want to see a dashboard with key metrics and alerts
-  So that I can effectively monitor the syndic's execution of board decisions
+  I want a centralized dashboard
+  So that I can monitor all board activities and receive alerts
 
   Background:
     Given a coproperty management system
+    And a building "Résidence Bellevue" with 30 units
+    And an owner "Pierre Dupont" owning unit 101
+    And "Pierre Dupont" is elected as board president for building "Résidence Bellevue"
+    And a meeting "AG Annuelle 2024" for building "Résidence Bellevue"
 
-  Scenario: Board member views their dashboard with complete data
-    Given a building with 25 units exists
-    And I am a board member for that building
-    And there are 3 pending decisions
-    And there is 1 overdue decision
-    And my mandate expires in 45 days
-    When I request my board dashboard
-    Then the dashboard should show 3 pending decisions
+  Scenario: View board dashboard as board member
+    Given 3 decisions with status "pending"
+    And 2 decisions with status "in_progress"
+    And 1 decision with status "completed"
+    And 1 overdue decision
+    When "Pierre Dupont" views their board dashboard
+    Then the dashboard should show their current mandate
+    And the dashboard should show decision statistics
     And the dashboard should show 1 overdue decision
-    And the dashboard should show my mandate expiring soon
+    And the dashboard should show upcoming deadlines
 
-  Scenario: Board member sees deadline approaching alerts
-    Given a building with 25 units exists
-    And I am a board member for that building
-    And a decision has a deadline in 5 days
-    When I view my board alerts
-    Then I should see 1 approaching deadline alert
-    And the alert urgency should be "critical"
+  Scenario: Dashboard shows mandate details
+    When "Pierre Dupont" views their board dashboard
+    Then the dashboard should show position "president"
+    And the dashboard should show mandate start date
+    And the dashboard should show mandate end date
+    And the dashboard should show building "Résidence Bellevue"
 
-  Scenario: Non-board member cannot access board dashboard
-    Given a building with 25 units exists
-    And I am an owner (not a board member)
-    When I try to access the board dashboard
-    Then I should receive a 403 Forbidden error
+  Scenario: Dashboard alerts for expiring mandate
+    Given "Pierre Dupont" mandate expires in 45 days
+    When "Pierre Dupont" views their board dashboard
+    Then the dashboard should show a mandate expiration alert
+    And the alert should indicate 45 days remaining
 
-  Scenario: Dashboard filters decisions by building
-    Given a building with 25 units exists
-    And I am a board member for that building
-    And another building exists with its own decisions
-    When I request my board dashboard
-    Then I should only see decisions from my building
-    And I should not see decisions from other buildings
+  Scenario: Dashboard shows upcoming deadlines
+    Given a decision "Devis chaudière" with deadline in 7 days
+    And a decision "Réparation hall" with deadline in 15 days
+    When "Pierre Dupont" views their board dashboard
+    Then the dashboard should show upcoming deadlines
+    And "Devis chaudière" should be flagged as urgent
 
-  Scenario: Dashboard shows empty state when no alerts
-    Given a building with 25 units exists
-    And I am a board member for that building
-    And all decisions are completed on time
-    When I request my board dashboard
-    Then the dashboard should show 0 overdue decisions
-    And the dashboard should show 0 pending decisions
+  Scenario: Dashboard decision statistics breakdown
+    Given 5 decisions with status "pending"
+    And 3 decisions with status "in_progress"
+    And 8 decisions with status "completed"
+    And 2 decisions with status "overdue"
+    When "Pierre Dupont" views their board dashboard
+    Then the stats should show 5 pending
+    And the stats should show 3 in_progress
+    And the stats should show 8 completed
+    And the stats should show 2 overdue
