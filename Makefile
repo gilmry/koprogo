@@ -137,6 +137,14 @@ install-hooks: ## 🪝 Installer les Git hooks (pre-commit, pre-push)
 	@echo "$(GREEN)🪝 Installation des Git hooks...$(NC)"
 	./scripts/install-hooks.sh
 
+check-deps: ## 🔍 Vérifier les dépendances requises (gh CLI, etc.)
+	@echo "$(GREEN)🔍 Vérification des dépendances...$(NC)"
+	./scripts/check-dependencies.sh
+
+install-deps: ## 📦 Installer les dépendances manquantes
+	@echo "$(GREEN)📦 Installation des dépendances...$(NC)"
+	./scripts/check-dependencies.sh --auto-install
+
 ##
 ## 📦 Setup & Installation
 ##
@@ -148,24 +156,27 @@ install: ## 📦 Installer dépendances frontend
 setup: ## 🚀 Setup complet du projet (first time)
 	@echo "$(GREEN)🚀 Setup KoproGo...$(NC)"
 	@echo ""
-	@echo "1️⃣ Vérification Docker..."
+	@echo "1️⃣ Vérification des dépendances..."
+	./scripts/check-dependencies.sh || true
+	@echo ""
+	@echo "2️⃣ Vérification Docker..."
 	@docker --version || (echo "$(YELLOW)❌ Docker non installé$(NC)" && exit 1)
 	@docker compose version || (echo "$(YELLOW)❌ Docker Compose non installé$(NC)" && exit 1)
 	@echo "$(GREEN)✅ Docker OK$(NC)"
 	@echo ""
-	@echo "2️⃣ Installation frontend..."
+	@echo "3️⃣ Installation frontend..."
 	cd frontend && npm install
 	@echo "$(GREEN)✅ Frontend OK$(NC)"
 	@echo ""
-	@echo "3️⃣ Démarrage PostgreSQL..."
+	@echo "4️⃣ Démarrage PostgreSQL..."
 	docker compose up -d postgres
 	@sleep 5
 	@echo "$(GREEN)✅ PostgreSQL OK$(NC)"
 	@echo ""
-	@echo "4️⃣ Migrations DB..."
+	@echo "5️⃣ Migrations DB..."
 	cd backend && sqlx migrate run || echo "$(YELLOW)⚠️  Migrations échouées (normal si DB vide)$(NC)"
 	@echo ""
-	@echo "5️⃣ Installation des Git hooks..."
+	@echo "6️⃣ Installation des Git hooks..."
 	./scripts/install-hooks.sh
 	@echo ""
 	@echo "$(GREEN)✅ Setup terminé!$(NC)"
@@ -225,6 +236,10 @@ docs-serve: ## 🔄 Servir docs Sphinx avec live reload
 docs-sync-videos: ## 📹 Copier vidéos E2E et générer page RST
 	@echo "$(GREEN)📹 Synchronisation vidéos E2E...$(NC)"
 	bash .claude/scripts/copy-videos.sh
+
+docs-export-github: ## 📦 Exporter données GitHub (issues, milestones, projects) en RST
+	@echo "$(GREEN)📦 Export données GitHub...$(NC)"
+	./scripts/export-github-to-rst.sh
 
 docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis 1s)
 	@echo "$(GREEN)🎥 Génération docs avec vidéos E2E...$(NC)"

@@ -29,28 +29,25 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🎯 Vision et Mission
+   :caption: 📘 Vision & Stratégie
 
    VISION
    MISSION
+   ECONOMIC_MODEL
+   GOVERNANCE
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🗺️ Roadmap
+   :caption: 🗺️ Roadmaps
 
+   ROADMAP_INTEGREE_2025_2030
    ROADMAP
 
 .. toctree::
    :maxdepth: 2
-   :caption: 💼 Modèle Économique
+   :caption: 📊 GitHub Project Management
 
-   ECONOMIC_MODEL
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 🏢 Gouvernance ASBL
-
-   GOVERNANCE
+   github-export/index
 
 .. toctree::
    :maxdepth: 2

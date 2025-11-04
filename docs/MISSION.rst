@@ -1,6 +1,10 @@
-
+========================================
 Mission KoproGo ASBL
-====================
+========================================
+
+:Version: 3.0
+:Date: 2 novembre 2025
+:Voir aussi: :doc:`VISION` | :doc:`ROADMAP_INTEGREE_2025_2030` | :doc:`ECONOMIC_MODEL`
 
 Notre Raison d'Être
 -------------------
@@ -57,13 +61,15 @@ Lien Social et Dynamique Communautaire *(Modules Optionnels)*
 * ✅ **Annuaire de compétences** : Qui sait faire quoi dans l'immeuble
 * ✅ **Tableau d'affichage numérique** : Petites annonces locales, covoiturage, garde d'enfants
 
-**Impact** :
+**Impact** *(objectif 2030, 30% adoption sur 5000 copros)* :
 
 
 * Réduction isolement urbain : +30% de voisins connus
-* Économie circulaire locale : 50+ objets partagés par immeuble
-* Réduction consommation : -20% achats neufs (outils partagés)
-* Entraide renforcée : 10+ échanges SEL/mois par immeuble actif
+* Économie circulaire locale : 12,000 objets partagés (8 objets/copro actif)
+* **Économie circulaire** : 750k€/an via échanges SEL
+* **Consommation évitée** : 600k€ achats neufs grâce au partage
+* **Impact carbone** : -484 tonnes CO₂/an (partage objets + réduction consommation)
+* Entraide renforcée : 24,000 heures services échangés/an
 
 **Note importante** : Ces modules sont **totalement optionnels** et configurables par le conseil de copropriété. Chaque immeuble décide librement d'activer ou non ces fonctionnalités selon sa culture et ses besoins.
 
@@ -75,10 +81,11 @@ Lien Social et Dynamique Communautaire *(Modules Optionnels)*
 **Actions** :
 
 
-* ✅ Gratuit pour self-hosted (80% des utilisateurs)
-* ✅ Cloud à 8€/mois TTC (vs 200-500€/mois concurrents)
+* ✅ Gratuit pour self-hosted (option toujours disponible)
+* ✅ **Cloud géré** : 1,50-8€/mois selon taille et features (vs 200-500€/mois concurrents)
 * ✅ Aucun coût de licence ni frais cachés
 * ✅ Exportation données libre (CSV, JSON, PDF)
+* ✅ **Grille tarifaire équitable** : alignée sur taille copropriété et frontières légales (détails :doc:`ROADMAP_INTEGREE_2025_2030`)
 
 **Impact** :
 
@@ -123,12 +130,14 @@ Souveraineté Numérique
 * ✅ Latency P99 < 5ms (expérience utilisateur optimale)
 * ✅ Consommation : < 10W par VPS (2,000-3,000 copropriétés)
 
-**Impact** :
+**Impact** *(infrastructure seule)* :
 
 
 * **96% de réduction carbone** vs solutions actuelles
-* 5.3 kg CO2/an pour 2,000 copropriétés cloud
-* 0.0026g CO2/copro/an (objectif < 0.5g CO2/requête atteint)
+* ~50 tonnes CO₂/an économisées (5000 copros cloud, 2030)
+* < 0.5g CO2/requête (objectif atteint grâce à Rust + datacenter bas carbone)
+* **+ Features communautaires** : -484 tonnes CO₂/an supplémentaires (partage objets, réduction consommation)
+* **Impact total 2030** : -534 tonnes CO₂/an
 
 **Comparaison** :
 
@@ -242,26 +251,50 @@ Standards Opensource
 * Releases prévisibles (semantic versioning)
 * Communauté respectueuse (code of conduct)
 
-Gouvernance ASBL
-~~~~~~~~~~~~~~~~
+Gouvernance Évolutive : Solo Dev → Coopérative
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Objectif** : Garantir une gouvernance démocratique et transparente.
+**Objectif** : Garantir une gouvernance démocratique et transparente, évoluant avec la maturité du projet.
 
-**Actions** :
-
-
-* ✅ Assemblée générale annuelle (décisions collectives)
-* ✅ Conseil d'administration élu (3-7 membres)
-* ✅ Comptes publics (bilans annuels)
-* ✅ Statuts ASBL belge (non-profit)
-
-**Impact** :
+**Évolution progressive** (détails :doc:`ROADMAP_INTEGREE_2025_2030`) :
 
 
-* Aucun actionnaire, aucun profit
+#. **Phase Bootstrap (2025)** : Solo dev bénévole (Gilmry)
+
+   * Validation MVP et product-market fit
+   * Premiers utilisateurs bêta (< 100 copros)
+   * Développement bénévole (10-20h/semaine)
+
+#. **Phase Fondateurs (2026)** : Noyau fondateur 2-3 personnes
+
+   * Constitution structure légale (préparation ASBL)
+   * Croissance 100 → 500 copropriétés
+   * Premiers revenus cloud (autofinancement)
+
+#. **Phase ASBL (2027-2029)** : Association Sans But Lucratif belge
+
+   * ✅ Assemblée générale annuelle (décisions collectives)
+   * ✅ Conseil d'administration élu (3-7 membres)
+   * ✅ Comptes publics (bilans annuels)
+   * ✅ Statuts ASBL belge (non-profit)
+   * Croissance 500 → 5,000 copropriétés
+   * Développement financé (1-2 ETP)
+
+#. **Phase Coopérative (2030+)** : Transformation optionnelle
+
+   * **Si la communauté le souhaite** : ASBL → Coopérative agréée
+   * Utilisateurs deviennent sociétaires (parts sociales)
+   * Gouvernance renforcée (1 personne = 1 voix)
+   * Éligibilité subventions économie sociale
+
+**Impact gouvernance évolutive** :
+
+
+* Aucun actionnaire, aucun profit (toutes phases)
 * Excédents réinvestis dans le projet
 * Décisions alignées avec la mission
 * Protection contre la dérive commerciale
+* Transparence radicale à chaque étape
 
 4. Utilisation de l'IA pour le Développement Collaboratif
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -500,17 +533,21 @@ Indicateurs Clés 2025-2030
 **Écologique** :
 
 
-* 2025 : -10 tonnes CO2/an
-* 2030 : -500 tonnes CO2/an
-* Consommation : < 10W par instance
-* Économie circulaire : -20% consommation via partage
+* 2025 : -10 tonnes CO₂/an (infrastructure)
+* 2030 : -50 tonnes CO₂/an (infrastructure optimisée)
+* **+ Features communautaires** (30% adoption) : -484 tonnes CO₂/an
+* **Impact total 2030** : -534 tonnes CO₂/an
+* Consommation infrastructure : < 10W par instance VPS
+* Économie circulaire : 600k€ consommation évitée via partage
 
 **Économique** :
 
 
-* 2025 : 160,000€ économisés
-* 2030 : 8,000,000€ économisés
-* Coût moyen : 0-8€/mois (vs 200-500€)
+* 2025 : 160k€ économisés (vs logiciels propriétaires)
+* 2030 : 8M€ économisés (logiciels) + 750k€ économie circulaire SEL + 600k€ consommation évitée
+* **Impact économique total 2030** : 9,35M€/an
+* Coût cloud géré : 1,50-8€/mois selon taille (vs 200-500€ concurrents)
+* Self-hosted : 0€
 
 **Technique** :
 
@@ -553,4 +590,9 @@ KoproGo ne se contente pas de fournir un logiciel. Notre mission est **holistiqu
 
 ----
 
-**Prochaine section** : {doc}\ ``README`` - Architecture, stack, et implémentation
+**Voir aussi** :
+
+* :doc:`VISION` - Vision stratégique et problème sociétal
+* :doc:`ROADMAP_INTEGREE_2025_2030` - Roadmap complète et jalons techniques
+* :doc:`ECONOMIC_MODEL` - Modèle économique ASBL et viabilité financière
+* :doc:`GOVERNANCE` - Gouvernance et structure ASBL
