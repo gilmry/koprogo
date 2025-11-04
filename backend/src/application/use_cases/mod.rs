@@ -3,6 +3,7 @@ pub mod board_dashboard_use_cases;
 pub mod board_decision_use_cases;
 pub mod board_member_use_cases;
 pub mod building_use_cases;
+pub mod charge_distribution_use_cases;
 pub mod document_use_cases;
 pub mod expense_use_cases;
 pub mod gdpr_use_cases;
@@ -17,6 +18,7 @@ pub use board_dashboard_use_cases::{BoardDashboardResponse, BoardDashboardUseCas
 pub use board_decision_use_cases::BoardDecisionUseCases;
 pub use board_member_use_cases::BoardMemberUseCases;
 pub use building_use_cases::BuildingUseCases;
+pub use charge_distribution_use_cases::ChargeDistributionUseCases;
 pub use document_use_cases::DocumentUseCases;
 pub use expense_use_cases::ExpenseUseCases;
 pub use gdpr_use_cases::GdprUseCases;
