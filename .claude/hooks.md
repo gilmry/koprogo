@@ -6,6 +6,54 @@ Hooks automatiques pour maintenir la documentation et la qualité du code.
 
 Les hooks sont configurés dans `.claude/settings.local.json` et s'exécutent automatiquement lors de certaines actions.
 
+## Hook SessionStart : Vérification des Dépendances
+
+**Déclencheur** : Au démarrage de chaque session Claude Code
+
+**Actions** :
+1. Vérifie que GitHub CLI (`gh`) est installé
+2. Vérifie les autres dépendances requises (à venir)
+3. Affiche des warnings si des dépendances manquent
+
+**Configuration dans `.claude/settings.local.json`** :
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/check-dependencies.sh --quiet"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Script** : [`scripts/check-dependencies.sh`](../scripts/check-dependencies.sh)
+
+**Usage manuel** :
+```bash
+# Vérifier les dépendances
+make check-deps
+# ou: ./scripts/check-dependencies.sh
+
+# Installer automatiquement les dépendances manquantes
+make install-deps
+# ou: ./scripts/check-dependencies.sh --auto-install
+```
+
+**Dépendances vérifiées** :
+- **GitHub CLI (`gh`)** : Requis pour gérer les issues, PRs et releases
+  - Détection multi-source (snap, apt, installation manuelle)
+  - Installation automatique via dépôt officiel GitHub
+  - Options : `--quiet` (mode silencieux), `--auto-install` (installation automatique)
+
 ## Hook 1 : Pre-commit Documentation
 
 **Déclencheur** : Avant chaque commit via Claude Code
