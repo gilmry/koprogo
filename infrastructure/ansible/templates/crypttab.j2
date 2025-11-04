@@ -1,0 +1,10 @@
+# /etc/crypttab - Encrypted volume configuration for KoproGo
+# Format: <target name> <source device> <key file> <options>
+
+{% if postgres_volume_device is defined %}
+postgres_encrypted /dev/{{ postgres_volume_device }} /root/.koprogo-luks-key luks,nofail
+{% endif %}
+
+{% if uploads_volume_device is defined %}
+uploads_encrypted /dev/{{ uploads_volume_device }} /root/.koprogo-luks-key luks,nofail
+{% endif %}

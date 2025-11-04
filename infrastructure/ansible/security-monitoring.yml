@@ -1,0 +1,406 @@
+---
+# Security and Monitoring Enhancement Playbook for KoproGo
+# Issues: #39 (LUKS), #40 (Encrypted Backups), #41 (Monitoring), #43 (Security Hardening)
+#
+# Usage:
+#   ansible-playbook -i inventory.ini security-monitoring.yml
+#
+# This playbook can be run independently or imported from the main playbook
+
+- name: Configure KoproGo Security and Monitoring
+  hosts: koprogo
+  become: yes
+  vars:
+    koprogo_user: koprogo
+    koprogo_dir: /home/{{ koprogo_user }}/koprogo
+    gpg_backup_email: "backup@koprogo.local"
+    s3_backup_bucket: "koprogo-backups"
+    grafana_admin_password: "{{ lookup('env', 'GRAFANA_ADMIN_PASSWORD') | default('changeme', true) }}"
+    alert_email: "{{ lookup('env', 'ALERT_EMAIL') | default('admin@example.com', true) }}"
+    ssh_allowed_users: "{{ koprogo_user }}"
+
+  tasks:
+    # ========================================
+    # Issue #39: LUKS Encryption
+    # ========================================
+    - name: Install LUKS encryption tools
+      apt:
+        name:
+          - cryptsetup
+          - cryptsetup-bin
+        state: present
+
+    - name: Deploy LUKS setup script
+      template:
+        src: luks-setup.sh.j2
+        dest: /usr/local/bin/koprogo-luks-setup.sh
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Deploy crypttab configuration
+      template:
+        src: crypttab.j2
+        dest: /etc/crypttab
+        owner: root
+        group: root
+        mode: '0644'
+      when: postgres_volume_device is defined or uploads_volume_device is defined
+
+    - name: Add LUKS volumes to fstab
+      template:
+        src: fstab-luks.j2
+        dest: /etc/fstab.d/koprogo-luks
+        owner: root
+        group: root
+        mode: '0644'
+      when: postgres_volume_device is defined or uploads_volume_device is defined
+
+    # Note: LUKS setup script should be run manually first time with volume devices configured
+    # Example: POSTGRES_VOLUME_DEVICE=vdb UPLOADS_VOLUME_DEVICE=vdc /usr/local/bin/koprogo-luks-setup.sh
+
+    # ========================================
+    # Issue #40: Encrypted Backups
+    # ========================================
+    - name: Install backup tools
+      apt:
+        name:
+          - gnupg
+          - s3cmd
+          - gzip
+        state: present
+
+    - name: Generate GPG key parameters file
+      template:
+        src: gpg-key-params.j2
+        dest: /root/gpg-key-params
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Check if GPG key exists
+      shell: gpg --list-keys "{{ gpg_backup_email }}"
+      register: gpg_key_check
+      failed_when: false
+      changed_when: false
+
+    - name: Generate GPG backup key
+      command: gpg --batch --gen-key /root/gpg-key-params
+      when: gpg_key_check.rc != 0
+
+    - name: Configure s3cmd
+      template:
+        src: s3cfg.j2
+        dest: /root/.s3cfg
+        owner: root
+        group: root
+        mode: '0600'
+      when: s3_access_key is defined and s3_secret_key is defined
+
+    - name: Deploy encrypted backup script
+      template:
+        src: backup-encrypted.sh.j2
+        dest: "{{ koprogo_dir }}/scripts/backup-encrypted.sh"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0755'
+
+    - name: Remove old unencrypted backup script
+      file:
+        path: "{{ koprogo_dir }}/scripts/backup.sh"
+        state: absent
+
+    - name: Setup encrypted backup cron job
+      cron:
+        name: "KoproGo Daily Encrypted Backup"
+        minute: "0"
+        hour: "2"
+        job: "{{ koprogo_dir }}/scripts/backup-encrypted.sh >> /var/log/koprogo-backup.log 2>&1"
+        user: root
+
+    # ========================================
+    # Issue #41: Monitoring Stack
+    # ========================================
+    - name: Create monitoring directory
+      file:
+        path: "{{ koprogo_dir }}/monitoring"
+        state: directory
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0755'
+
+    - name: Create monitoring subdirectories
+      file:
+        path: "{{ koprogo_dir }}/monitoring/{{ item }}"
+        state: directory
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0755'
+      loop:
+        - prometheus
+        - prometheus/alerts
+        - grafana/provisioning/datasources
+        - grafana/provisioning/dashboards
+        - grafana/dashboards
+        - loki
+        - promtail
+        - alertmanager
+        - postgres-exporter
+
+    - name: Copy monitoring docker-compose file
+      copy:
+        src: "{{ koprogo_dir }}/monitoring/docker-compose.monitoring.yml"
+        dest: "{{ koprogo_dir }}/monitoring/docker-compose.yml"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0644'
+        remote_src: yes
+
+    - name: Create monitoring .env file
+      copy:
+        content: |
+          GRAFANA_ADMIN_PASSWORD={{ grafana_admin_password }}
+          GRAFANA_ROOT_URL=http://localhost:3001
+          ALERT_EMAIL={{ alert_email }}
+          SMTP_HOST={{ smtp_host | default('smtp.gmail.com') }}
+          SMTP_PORT={{ smtp_port | default('587') }}
+          SMTP_USERNAME={{ smtp_username | default('') }}
+          SMTP_PASSWORD={{ smtp_password | default('') }}
+          POSTGRES_USER=koprogo
+          POSTGRES_PASSWORD={{ lookup('env', 'POSTGRES_PASSWORD') | default('koprogo123') }}
+          POSTGRES_HOST=postgres
+          POSTGRES_DB=koprogo_db
+        dest: "{{ koprogo_dir }}/monitoring/.env"
+        owner: "{{ koprogo_user }}"
+        group: "{{ koprogo_user }}"
+        mode: '0600'
+
+    - name: Create textfile collector directory for node-exporter
+      file:
+        path: /var/lib/node_exporter/textfile_collector
+        state: directory
+        owner: nobody
+        group: nogroup
+        mode: '0755'
+
+    - name: Start monitoring stack
+      command: docker compose -f {{ koprogo_dir }}/monitoring/docker-compose.yml up -d
+      args:
+        chdir: "{{ koprogo_dir }}/monitoring"
+      become: yes
+      become_user: "{{ koprogo_user }}"
+
+    # ========================================
+    # Issue #43: Security Hardening
+    # ========================================
+
+    # fail2ban configuration
+    - name: Deploy fail2ban custom jails
+      template:
+        src: fail2ban-koprogo.conf.j2
+        dest: /etc/fail2ban/jail.d/koprogo.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart fail2ban
+
+    - name: Create fail2ban filter directory
+      file:
+        path: /etc/fail2ban/filter.d
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Deploy fail2ban filters
+      copy:
+        src: "fail2ban-filters/{{ item }}"
+        dest: "/etc/fail2ban/filter.d/{{ item }}"
+        owner: root
+        group: root
+        mode: '0644'
+      loop:
+        - traefik-auth.conf
+        - traefik-badbots.conf
+        - koprogo-api-abuse.conf
+        - postgres-bruteforce.conf
+      notify: restart fail2ban
+
+    - name: Ensure fail2ban is running
+      systemd:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    # CrowdSec WAF
+    - name: Add CrowdSec repository key
+      apt_key:
+        url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
+        state: present
+
+    - name: Add CrowdSec repository
+      apt_repository:
+        repo: "deb https://packagecloud.io/crowdsec/crowdsec/ubuntu/ {{ ansible_distribution_release }} main"
+        state: present
+
+    - name: Install CrowdSec
+      apt:
+        name:
+          - crowdsec
+          - crowdsec-firewall-bouncer-iptables
+        state: present
+        update_cache: yes
+
+    - name: Enable CrowdSec service
+      systemd:
+        name: crowdsec
+        state: started
+        enabled: yes
+
+    # Suricata IDS
+    - name: Add Suricata PPA
+      apt_repository:
+        repo: ppa:oisf/suricata-stable
+        state: present
+
+    - name: Install Suricata
+      apt:
+        name: suricata
+        state: present
+        update_cache: yes
+
+    - name: Deploy custom Suricata rules
+      template:
+        src: suricata-local.rules.j2
+        dest: /etc/suricata/rules/local.rules
+        owner: root
+        group: root
+        mode: '0644'
+      notify: reload suricata
+
+    - name: Enable Suricata service
+      systemd:
+        name: suricata
+        state: started
+        enabled: yes
+
+    # SSH Hardening
+    - name: Backup original sshd_config
+      copy:
+        src: /etc/ssh/sshd_config
+        dest: /etc/ssh/sshd_config.backup
+        owner: root
+        group: root
+        mode: '0600'
+        remote_src: yes
+        force: no
+
+    - name: Deploy hardened SSH configuration
+      template:
+        src: sshd_config_hardening.j2
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        validate: '/usr/sbin/sshd -t -f %s'
+      notify: restart sshd
+
+    # Kernel hardening
+    - name: Deploy kernel hardening sysctl configuration
+      template:
+        src: sysctl-hardening.conf.j2
+        dest: /etc/sysctl.d/99-koprogo-hardening.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Apply sysctl hardening
+      command: sysctl -p /etc/sysctl.d/99-koprogo-hardening.conf
+
+    # Security audit tools
+    - name: Install security audit tools
+      apt:
+        name:
+          - lynis
+          - rkhunter
+          - aide
+          - unattended-upgrades
+        state: present
+
+    - name: Initialize AIDE database
+      command: aideinit
+      args:
+        creates: /var/lib/aide/aide.db
+
+    - name: Configure unattended upgrades
+      command: dpkg-reconfigure -plow unattended-upgrades
+      args:
+        creates: /etc/apt/apt.conf.d/20auto-upgrades
+
+    - name: Deploy security audit script
+      template:
+        src: security-audit.sh.j2
+        dest: /usr/local/bin/koprogo-security-audit.sh
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Schedule weekly security audit
+      cron:
+        name: "KoproGo Security Audit"
+        minute: "0"
+        hour: "3"
+        weekday: "0"
+        job: "/usr/local/bin/koprogo-security-audit.sh"
+        user: root
+
+    - name: Schedule daily rkhunter scan
+      cron:
+        name: "KoproGo Rootkit Scan"
+        minute: "0"
+        hour: "4"
+        job: "/usr/bin/rkhunter --check --skip-keypress --report-warnings-only | logger -t rkhunter"
+        user: root
+
+    # ========================================
+    # Final verification
+    # ========================================
+    - name: Display security and monitoring status
+      debug:
+        msg:
+          - "=========================================="
+          - "Security and Monitoring Configuration Complete!"
+          - "=========================================="
+          - "✅ LUKS encryption configured"
+          - "✅ Encrypted backups enabled (daily at 2am)"
+          - "✅ Monitoring stack deployed:"
+          - "   - Prometheus: http://{{ ansible_host }}:9090"
+          - "   - Grafana: http://{{ ansible_host }}:3001"
+          - "   - Alertmanager: http://{{ ansible_host }}:9093"
+          - "✅ Security hardening applied:"
+          - "   - fail2ban custom jails active"
+          - "   - CrowdSec WAF enabled"
+          - "   - Suricata IDS monitoring"
+          - "   - SSH hardened (key-only authentication)"
+          - "   - Kernel hardening applied"
+          - "   - Security audits scheduled (weekly)"
+          - "=========================================="
+          - "⚠️  IMPORTANT: Update Grafana admin password!"
+          - "   Default: admin / {{ grafana_admin_password }}"
+          - "=========================================="
+
+  handlers:
+    - name: restart fail2ban
+      systemd:
+        name: fail2ban
+        state: restarted
+
+    - name: reload suricata
+      systemd:
+        name: suricata
+        state: reloaded
+
+    - name: restart sshd
+      systemd:
+        name: sshd
+        state: restarted

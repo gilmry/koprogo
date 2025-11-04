@@ -1,0 +1,53 @@
+# Suricata custom rules for KoproGo
+# /etc/suricata/rules/local.rules
+
+# SQL Injection attempts
+alert http any any -> any any (msg:"SQL Injection Attempt - SELECT"; content:"SELECT"; content:"FROM"; sid:1000001; rev:1;)
+alert http any any -> any any (msg:"SQL Injection Attempt - UNION"; content:"UNION"; content:"SELECT"; sid:1000002; rev:1;)
+alert http any any -> any any (msg:"SQL Injection Attempt - DROP"; content:"DROP"; content:"TABLE"; sid:1000003; rev:1;)
+alert http any any -> any any (msg:"SQL Injection Attempt - INSERT"; content:"INSERT"; content:"INTO"; sid:1000004; rev:1;)
+alert http any any -> any any (msg:"SQL Injection Attempt - UPDATE"; content:"UPDATE"; content:"SET"; sid:1000005; rev:1;)
+
+# XSS (Cross-Site Scripting) attempts
+alert http any any -> any any (msg:"XSS Attempt - <script> tag"; content:"<script"; nocase; sid:1000010; rev:1;)
+alert http any any -> any any (msg:"XSS Attempt - javascript:"; content:"javascript:"; nocase; sid:1000011; rev:1;)
+alert http any any -> any any (msg:"XSS Attempt - onerror"; content:"onerror="; nocase; sid:1000012; rev:1;)
+alert http any any -> any any (msg:"XSS Attempt - onload"; content:"onload="; nocase; sid:1000013; rev:1;)
+
+# Path Traversal
+alert http any any -> any any (msg:"Path Traversal Attempt - ../"; content:"../"; sid:1000020; rev:1;)
+alert http any any -> any any (msg:"Path Traversal Attempt - ..\\"; content:"..\\"; sid:1000021; rev:1;)
+alert http any any -> any any (msg:"Path Traversal Attempt - /etc/passwd"; content:"/etc/passwd"; sid:1000022; rev:1;)
+
+# Command Injection
+alert http any any -> any any (msg:"Command Injection - shell commands"; content:"; ls"; sid:1000030; rev:1;)
+alert http any any -> any any (msg:"Command Injection - pipe"; content:"| cat"; sid:1000031; rev:1;)
+alert http any any -> any any (msg:"Command Injection - backticks"; content:"`whoami`"; sid:1000032; rev:1;)
+
+# LDAP Injection
+alert http any any -> any any (msg:"LDAP Injection Attempt"; content:"(|("; sid:1000040; rev:1;)
+
+# XXE (XML External Entity) Injection
+alert http any any -> any any (msg:"XXE Attempt - DOCTYPE"; content:"<!DOCTYPE"; content:"ENTITY"; sid:1000050; rev:1;)
+
+# File Upload Attacks
+alert http any any -> any any (msg:"Suspicious File Upload - PHP"; content:"Content-Type: application/x-php"; sid:1000060; rev:1;)
+alert http any any -> any any (msg:"Suspicious File Upload - executable"; content:"Content-Type: application/x-executable"; sid:1000061; rev:1;)
+
+# PostgreSQL-specific attacks
+alert tcp any any -> any 5432 (msg:"PostgreSQL brute force attempt"; flags:S; threshold: type threshold, track by_src, count 10, seconds 60; sid:1000070; rev:1;)
+
+# MinIO/S3 attacks
+alert http any any -> any 9000 (msg:"MinIO unauthorized access attempt"; http.status; content:"403"; threshold: type threshold, track by_src, count 5, seconds 60; sid:1000080; rev:1;)
+
+# Suspicious User-Agents
+alert http any any -> any any (msg:"Suspicious User-Agent - sqlmap"; content:"User-Agent|3a| sqlmap"; sid:1000090; rev:1;)
+alert http any any -> any any (msg:"Suspicious User-Agent - nikto"; content:"User-Agent|3a| Nikto"; sid:1000091; rev:1;)
+alert http any any -> any any (msg:"Suspicious User-Agent - nmap"; content:"User-Agent|3a| nmap"; sid:1000092; rev:1;)
+
+# DDoS/Flood detection
+alert tcp any any -> any any (msg:"Potential SYN flood"; flags:S; threshold: type threshold, track by_src, count 50, seconds 10; sid:1000100; rev:1;)
+alert http any any -> any any (msg:"HTTP flood detection"; threshold: type threshold, track by_src, count 100, seconds 10; sid:1000101; rev:1;)
+
+# GDPR-sensitive data exfiltration
+alert http any any -> any any (msg:"Potential GDPR data exfiltration"; content:"email"; content:"password"; content:"phone"; sid:1000110; rev:1;)
