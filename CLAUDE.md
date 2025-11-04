@@ -174,6 +174,30 @@ cd backend && sqlx migrate add <name>
 cargo run --bin seed
 ```
 
+### GitHub Project Management Export
+
+```bash
+# Export GitHub data (issues, milestones, projects) to RST
+make docs-export-github
+# Output: docs/github-export/
+
+# Exported data includes:
+# - All issues (organized by phase, priority, label)
+# - All milestones with their issues
+# - GitHub Projects overview
+# - Labels catalog
+```
+
+**Usage for Claude Code Web**:
+Claude Code Web doesn't have direct access to GitHub API. The RST export allows it to access all project management data by simply cloning the repository:
+
+```bash
+git clone https://github.com/gilmry/koprogo.git
+# Browse docs/github-export/ for complete project info
+```
+
+The export is integrated into Sphinx documentation under "GitHub Project Management" section.
+
 ### Build & Deploy
 
 ```bash
