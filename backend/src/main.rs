@@ -88,6 +88,7 @@ async fn main() -> std::io::Result<()> {
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
     let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
+    let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -105,6 +106,7 @@ async fn main() -> std::io::Result<()> {
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo);
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
+    let account_use_cases = AccountUseCases::new(account_repo);
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");
@@ -120,6 +122,7 @@ async fn main() -> std::io::Result<()> {
         document_use_cases,
         pcn_use_cases,
         gdpr_use_cases,
+        account_use_cases,
         audit_logger,
         email_service,
         pool.clone(),
