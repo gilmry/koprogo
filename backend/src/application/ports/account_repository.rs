@@ -3,7 +3,8 @@
 // CREDITS & ATTRIBUTION:
 // This repository interface is inspired by the Noalyss project (https://gitlab.com/noalyss/noalyss)
 // Noalyss is a free accounting software for Belgian and French accounting
-// License: AGPL-3.0-only
+// License: GPL-2.0-or-later (GNU General Public License version 2 or later)
+// Copyright: (C) 1989, 1991 Free Software Foundation, Inc.
 // Copyright: Dany De Bontridder <dany@alchimerys.eu>
 //
 // The repository pattern provides abstraction over the Belgian PCMN (Plan Comptable Minimum Normalisé)

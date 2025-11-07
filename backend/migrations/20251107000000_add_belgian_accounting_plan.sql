@@ -5,7 +5,8 @@
 -- CREDITS & ATTRIBUTION:
 -- This implementation is heavily inspired by the Noalyss project (https://gitlab.com/noalyss/noalyss)
 -- Noalyss is a free accounting software for Belgian and French accounting
--- License: AGPL-3.0-only
+-- License: GPL-2.0-or-later (GNU General Public License version 2 or later)
+-- Copyright: (C) 1989, 1991 Free Software Foundation, Inc.
 -- Copyright: Dany De Bontridder <dany@alchimerys.eu>
 --
 -- We extend our sincere gratitude to the Noalyss team for their excellent work on
@@ -39,7 +40,7 @@ CREATE TYPE account_type AS ENUM (
 
 COMMENT ON TYPE account_type IS
 'Account classification based on Belgian PCMN (Plan Comptable Minimum Normalisé).
-Inspired by Noalyss project (AGPL-3.0) - https://gitlab.com/noalyss/noalyss';
+Inspired by Noalyss project (GPL-2.0+) - https://gitlab.com/noalyss/noalyss';
 
 -- ============================================================================
 -- STEP 2: Create accounts table
@@ -126,7 +127,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 COMMENT ON FUNCTION find_account_type IS
 'Automatically detects account type based on Belgian PCMN class (first digit).
 Inspired by Noalyss find_pcm_type() function.
-Source: https://gitlab.com/noalyss/noalyss (AGPL-3.0)';
+Source: https://gitlab.com/noalyss/noalyss (GPL-2.0+)';
 
 -- ============================================================================
 -- STEP 5: Trigger to auto-update updated_at timestamp
