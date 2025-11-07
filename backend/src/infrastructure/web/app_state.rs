@@ -1,8 +1,8 @@
 use crate::application::use_cases::{
-    AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases,
-    BuildingUseCases, ChargeDistributionUseCases, DocumentUseCases, ExpenseUseCases, GdprUseCases,
-    MeetingUseCases, OwnerUseCases, PaymentReminderUseCases, PcnUseCases, UnitOwnerUseCases,
-    UnitUseCases,
+    AccountUseCases, AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases,
+    BoardMemberUseCases, BuildingUseCases, ChargeDistributionUseCases, DocumentUseCases,
+    ExpenseUseCases, FinancialReportUseCases, GdprUseCases, MeetingUseCases, OwnerUseCases,
+    PaymentReminderUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -10,6 +10,7 @@ use crate::infrastructure::pool::DbPool;
 use std::sync::Arc;
 
 pub struct AppState {
+    pub account_use_cases: Arc<AccountUseCases>,
     pub auth_use_cases: Arc<AuthUseCases>,
     pub building_use_cases: Arc<BuildingUseCases>,
     pub unit_use_cases: Arc<UnitUseCases>,
@@ -25,6 +26,7 @@ pub struct AppState {
     pub board_member_use_cases: Arc<BoardMemberUseCases>,
     pub board_decision_use_cases: Arc<BoardDecisionUseCases>,
     pub board_dashboard_use_cases: Arc<BoardDashboardUseCases>,
+    pub financial_report_use_cases: Arc<FinancialReportUseCases>,
     pub audit_logger: Arc<AuditLogger>,
     pub email_service: Arc<EmailService>,
     pub pool: DbPool, // For seeding operations
@@ -33,6 +35,7 @@ pub struct AppState {
 impl AppState {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        account_use_cases: AccountUseCases,
         auth_use_cases: AuthUseCases,
         building_use_cases: BuildingUseCases,
         unit_use_cases: UnitUseCases,
@@ -48,11 +51,13 @@ impl AppState {
         board_member_use_cases: BoardMemberUseCases,
         board_decision_use_cases: BoardDecisionUseCases,
         board_dashboard_use_cases: BoardDashboardUseCases,
+        financial_report_use_cases: FinancialReportUseCases,
         audit_logger: AuditLogger,
         email_service: EmailService,
         pool: DbPool,
     ) -> Self {
         Self {
+            account_use_cases: Arc::new(account_use_cases),
             auth_use_cases: Arc::new(auth_use_cases),
             building_use_cases: Arc::new(building_use_cases),
             unit_use_cases: Arc::new(unit_use_cases),
@@ -68,6 +73,7 @@ impl AppState {
             board_member_use_cases: Arc::new(board_member_use_cases),
             board_decision_use_cases: Arc::new(board_decision_use_cases),
             board_dashboard_use_cases: Arc::new(board_dashboard_use_cases),
+            financial_report_use_cases: Arc::new(financial_report_use_cases),
             audit_logger: Arc::new(audit_logger),
             email_service: Arc::new(email_service),
             pool,

@@ -1,0 +1,102 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE accounts\n            SET code = $2, label = $3, parent_code = $4, account_type = $5::account_type,\n                direct_use = $6, updated_at = $7\n            WHERE id = $1\n            RETURNING id, code, label, parent_code, account_type AS \"account_type: AccountType\",\n                      direct_use, organization_id, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "parent_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "account_type: AccountType",
+        "type_info": {
+          "Custom": {
+            "name": "account_type",
+            "kind": {
+              "Enum": [
+                "ASSET",
+                "LIABILITY",
+                "EXPENSE",
+                "REVENUE",
+                "OFF_BALANCE"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "direct_use",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Text",
+        "Varchar",
+        {
+          "Custom": {
+            "name": "account_type",
+            "kind": {
+              "Enum": [
+                "ASSET",
+                "LIABILITY",
+                "EXPENSE",
+                "REVENUE",
+                "OFF_BALANCE"
+              ]
+            }
+          }
+        },
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "bb51b3ca2de9b03f9cfad2d7ab470de561182e4312bcb7dc45945d6c49c3058e"
+}

@@ -39,8 +39,8 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
         sqlx::query(
             r#"
-            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at)
-            VALUES ($1, $2, $3, CAST($4 AS expense_category), $5, $6, $7, CAST($8 AS payment_status), $9, $10, $11, $12)
+            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, account_code, created_at, updated_at)
+            VALUES ($1, $2, $3, CAST($4 AS expense_category), $5, $6, $7, CAST($8 AS payment_status), $9, $10, $11, $12, $13)
             "#,
         )
         .bind(expense.id)
@@ -53,6 +53,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         .bind(status_str)
         .bind(&expense.supplier)
         .bind(&expense.invoice_number)
+        .bind(&expense.account_code)
         .bind(expense.created_at)
         .bind(expense.updated_at)
         .execute(&self.pool)
@@ -67,7 +68,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
             r#"
             SELECT id, organization_id, building_id,
                    category::text AS category, description, amount, expense_date,
-                   payment_status::text AS payment_status, supplier, invoice_number, created_at, updated_at
+                   payment_status::text AS payment_status, supplier, invoice_number, account_code, created_at, updated_at
             FROM expenses
             WHERE id = $1
             "#,
@@ -121,6 +122,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
                 payment_status,
                 supplier: row.get("supplier"),
                 invoice_number: row.get("invoice_number"),
+                account_code: row.get("account_code"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
             }
@@ -132,7 +134,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
             r#"
             SELECT id, organization_id, building_id,
                    category::text AS category, description, amount, expense_date,
-                   payment_status::text AS payment_status, supplier, invoice_number, created_at, updated_at
+                   payment_status::text AS payment_status, supplier, invoice_number, account_code, created_at, updated_at
             FROM expenses
             WHERE building_id = $1
             ORDER BY expense_date DESC
@@ -189,6 +191,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
                     payment_status,
                     supplier: row.get("supplier"),
                     invoice_number: row.get("invoice_number"),
+                    account_code: row.get("account_code"),
                     created_at: row.get("created_at"),
                     updated_at: row.get("updated_at"),
                 }
@@ -295,7 +298,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, supplier, invoice_number, created_at, updated_at \
+            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, supplier, invoice_number, account_code, created_at, updated_at \
              FROM expenses {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -383,6 +386,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
                     payment_status,
                     supplier: row.get("supplier"),
                     invoice_number: row.get("invoice_number"),
+                    account_code: row.get("account_code"),
                     created_at: row.get("created_at"),
                     updated_at: row.get("updated_at"),
                 }

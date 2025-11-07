@@ -54,6 +54,7 @@ mod tests {
             Utc::now(),
             None,
             None,
+            None, // account_code
         )
         .unwrap();
 
@@ -87,6 +88,7 @@ mod tests {
                 Utc::now(),
                 None,
                 None,
+                None, // account_code
             )
             .unwrap(),
             Expense::new(
@@ -98,6 +100,7 @@ mod tests {
                 Utc::now(),
                 None,
                 None,
+                None, // account_code
             )
             .unwrap(),
         ];
@@ -120,6 +123,7 @@ mod tests {
             Utc::now(),
             None,
             None,
+            None, // account_code
         )
         .unwrap();
         let _ = expense1.mark_as_paid();
@@ -133,6 +137,7 @@ mod tests {
             Utc::now(),
             None,
             None,
+            None, // account_code
         )
         .unwrap();
 

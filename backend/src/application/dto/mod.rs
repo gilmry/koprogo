@@ -1,3 +1,4 @@
+pub mod account_dto;
 pub mod auth_dto;
 pub mod board_decision_dto;
 pub mod board_member_dto;
@@ -14,6 +15,7 @@ pub mod pcn_dto;
 pub mod unit_dto;
 pub mod unit_owner_dto;
 
+pub use account_dto::*;
 pub use auth_dto::*;
 pub use board_decision_dto::*;
 pub use board_member_dto::*;

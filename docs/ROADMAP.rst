@@ -2,11 +2,11 @@
 KoproGo - Roadmap 2025-2026
 ===========================
 
-**Date de mise à jour**\ : 1 novembre 2025, 15:30
+**Date de mise à jour**\ : 7 novembre 2025
 **Début effectif**\ : Novembre 2025
-**Version**\ : 2.0 (Gap Analysis Complète)
-**Durée totale estimée**\ : 25-32 semaines (6-8 mois)
-**Issues totales**\ : 25 (320-408 heures)
+**Version**\ : 2.1 (Gap Analysis + Énergie/IoT Features)
+**Durée totale estimée**\ : 27-35 semaines (6.5-8.5 mois)
+**Issues totales**\ : 28 (358-456 heures)
 
 ----
 
@@ -89,6 +89,54 @@ Cette version 2.0 intègre une **analyse complète des gaps** de conformité lé
 
 * Gap Analysis complète: `docs/GAP_ANALYSIS_KoproGov.md <./GAP_ANALYSIS_KoproGov.md>`_
 * Issues détaillées: `issues/README.md <../issues/README.md>`_
+
+----
+
+🆕 Nouveautés Version 2.1 (Features Énergie & IoT)
+---------------------------------------------------
+
+Cette version 2.1 intègre **3 nouvelles features stratégiques** pour le marché belge :
+
+**Nouvelles Issues**\ :
+
+#. **Issue #028: Commande Groupée Énergie** (10-12h) - Phase 2
+
+   * Agrégation consommations pour négociation collective électricité + gaz
+   * Économies estimées : 15-30% sur factures énergétiques
+   * Conforme réglementation belge (CWaPE, VREG, BRUGEL)
+
+#. **Issue #029: Import Relevés ISTA** (6-8h) - Phase 2
+
+   * Import automatique relevés compteurs ISTA (CSV/XML)
+   * Historisation consommations eau/chauffage par unité
+   * Détection anomalies et fuites
+
+#. **Issue #030: Intégration Sondes IoT** (18-24h) - Phase 3
+
+   * Monitoring temps réel via MQTT (eau froide/chaude, gaz, électricité, cogénération)
+   * Alertes instantanées (fuites, surconsommations)
+   * Architecture événementielle avec TimescaleDB
+
+**Impact Roadmap**\ :
+
+* Phase 2 : +2 issues (16-20h) → Total Phase 2 : **12 issues** (65-78 jours)
+* Phase 3 : +1 issue (18-24h) → Total Phase 3 : **2 issues + 6 features** (50-60 jours)
+* **Durée totale** : +2-3 semaines (features énergie différenciateurs marché)
+
+**Contexte Stratégique**\ :
+
+Ces 3 features ciblent un besoin critique du marché belge des copropriétés :
+
+* **Augmentation factures énergétiques** : +300% depuis 2021 (crise énergie)
+* **Législation belge** : Libéralisation marché énergie 2007 → achats groupés légaux
+* **Standard ISTA** : Leader européen sous-comptage (majorité copropriétés belges)
+* **IoT monitoring** : Tendance émergente (détection fuites, économies 10-20%)
+
+**Documents**\ :
+
+* `Issue #028 <../issues/important/028-commande-groupee-energie.md>`_ (Commande Groupée Énergie)
+* `Issue #029 <../issues/important/029-import-releves-ista.md>`_ (Import Relevés ISTA)
+* `Issue #030 <../issues/important/030-integration-sondes-iot.md>`_ (Intégration Sondes IoT)
 
 ----
 
@@ -873,6 +921,82 @@ Software Features - Automation & GDPR (27-35 heures) 🆕
 
 ----
 
+Software Features - Énergie & IoT (16-20 heures) 🆕
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**NOUVEAU (Version 2.1)**\ : Features stratégiques pour économies d'énergie et monitoring consommations.
+
+#028: Commande Groupée Énergie (Électricité + Gaz) ⏱️ 10-12h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟡 High | **Track**\ : Software | **Labels**\ : ``energy``, ``finance``, ``belgium``
+
+**Description**\ : Système d'agrégation consommations pour négociation collective avec fournisseurs énergie.
+
+**Impact Business**\ : Économies 15-30% sur factures électricité/gaz pour copropriétés.
+
+**Tâches**\ :
+
+
+* 4 nouvelles entités : ``EnergyContract``, ``GroupPurchaseCampaign``, ``GroupPurchaseParticipant``, ``EnergyQuote``
+* Workflow complet : Lancement campagne → Agrégation conso → Appel d'offres → Vote → Attribution
+* Algorithme scoring fournisseurs (prix, services, origine énergie verte)
+* Calcul économies prévisionnelles vs contrats actuels
+* Intégration régulateurs belges (CWaPE, VREG, BRUGEL)
+* Dashboard syndic : suivi campagnes + ROI
+* API fournisseurs : envoi cahier des charges automatique
+* Génération PDF comparatif offres pour AG
+
+**Livrables**\ :
+
+
+* Système achat groupé complet
+* 8 endpoints API
+* Dashboard comparaison fournisseurs
+* Tests E2E workflow
+* Documentation conformité légale belge
+
+**Synergie**\ : Issue #029 (relevés ISTA) pour historique conso précis
+
+**Voir**\ : `issues/important/028-commande-groupee-energie.md <../issues/important/028-commande-groupee-energie.md>`_
+
+----
+
+#029: Import Relevés ISTA (Historique Consommations) ⏱️ 6-8h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🟡 High | **Track**\ : Software | **Labels**\ : ``automation``, ``energy``, ``belgium``
+
+**Description**\ : Import automatique relevés compteurs ISTA (eau froide/chaude, chauffage) pour historisation.
+
+**Contexte**\ : ISTA = leader européen sous-comptage, majorité copropriétés belges équipées.
+
+**Tâches**\ :
+
+
+* 3 nouvelles entités : ``ISTAReading``, ``ISTAImportBatch``, ``MeterUnitMapping``
+* Parsers CSV + XML pour fichiers ISTA
+* Auto-mapping compteurs → unités (numéro série)
+* Détection anomalies consommation (variation >30%)
+* Génération rapports consommation par période
+* Export Excel pour comptabilité
+* Validation croisée avec factures fournisseurs
+
+**Livrables**\ :
+
+
+* Système import multi-format (CSV/XML)
+* Rapports analyse consommation
+* Détection anomalies + alertes
+* Tests intégration PostgreSQL
+* Documentation guide import
+
+**Synergie**\ : Issue #030 (IoT) pour validation croisée capteurs temps réel vs relevés manuels
+
+**Voir**\ : `issues/important/029-import-releves-ista.md <../issues/important/029-import-releves-ista.md>`_
+
+----
+
 #027: Accessibilité WCAG 2.1 AA ⏱️ 8-10h 🆕
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1025,8 +1149,8 @@ Software Features - Voting & PDF (31-39 jours)
 
 ----
 
-Recap Phase 2 - Automation & Community
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Recap Phase 2 - Automation & Community + Énergie
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
@@ -1040,6 +1164,9 @@ Recap Phase 2 - Automation & Community
    * - **🆕 Automation & GDPR**
      - #019, #020, #021, #024, #025, #027
      - 39-50 heures (5-6 jours)
+   * - **🆕 Énergie & IoT**
+     - #028, #029
+     - 16-20 heures (2-3 jours)
    * - **Software Voting & PDF**
      - #47, #46
      - 13-17 jours
@@ -1047,14 +1174,15 @@ Recap Phase 2 - Automation & Community
      - #49, #52
      - 18-22 jours
    * - **Total Phase 2**
-     - **10 issues + infra**
-     - **51-60 jours** (8-11 semaines)
+     - **12 issues + infra**
+     - **54-63 jours** (8.5-12 semaines)
 
 
 **Priorités Phase 2**\ :
 
 #. 🔴 K3s migration (bloque Phase 3)
 #. 🟡 #019, #020, #021, #024, #027 (automation + compliance)
+#. 🟡 #028, #029 (énergie + ISTA) - différenciateurs marché + ROI direct
 #. 🟡 #46 (Voting) + #47 (PDF Extended)
 #. 🟢 #49 (Community) + #52 (Contractor) - différenciateurs marché
 
@@ -1134,6 +1262,55 @@ Software Advanced Features (30-40 jours)
 
 ----
 
+#030: Intégration Sondes IoT (Monitoring Temps Réel) ⏱️ 18-24h 🆕
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Priority**\ : 🔴 High | **Track**\ : Software | **Labels**\ : ``iot``, ``real-time``, ``energy``, ``monitoring``
+
+**Description**\ : Monitoring temps réel consommations via capteurs IoT (eau froide/chaude, gaz, électricité, cogénération).
+
+**Impact**\ : Détection immédiate fuites + économies 10-20% via optimisation consommations.
+
+**Architecture**\ :
+
+
+* **MQTT Broker** (Mosquitto) pour ingestion capteurs
+* **Service Ingestion IoT** autonome (subscribe MQTT → TimescaleDB)
+* **TimescaleDB** (hypertable) pour time-series optimisé
+* **WebSocket** (Actix) pour streaming temps réel frontend
+* **Redis Streams** pour buffering et résilience
+
+**Tâches**\ :
+
+
+* 3 nouvelles entités : ``IoTSensor``, ``IoTReading`` (time-series), ``IoTAlert``
+* Service ingestion MQTT (Rust async avec rumqttc)
+* Rule engine détection anomalies (seuils configurables)
+* Service alertes (email/SMS/push) en temps réel
+* API endpoints : CRUD sensors, time-series queries, WebSocket stream
+* Dashboard frontend temps réel (Chart.js Streaming)
+* Déploiement K8s : StatefulSet + Mosquitto Broker
+* Tests charge (10k mesures/seconde)
+
+**Livrables**\ :
+
+
+* Architecture IoT complète (MQTT → TimescaleDB → WebSocket)
+* 3 entités domain + repositories
+* Service ingestion indépendant
+* Dashboard temps réel avec graphiques live
+* Alertes automatiques anomalies
+* Tests E2E + tests charge
+* Documentation installation capteurs
+
+**Synergie**\ : Issue #029 (ISTA) pour validation croisée relevés manuels vs capteurs temps réel
+
+**Dépendances Infrastructure**\ : TimescaleDB extension PostgreSQL, MQTT Broker, K8s StatefulSets
+
+**Voir**\ : `issues/important/030-integration-sondes-iot.md <../issues/important/030-integration-sondes-iot.md>`_
+
+----
+
 **Features Performance & Analytics**\ :
 
 
@@ -1154,8 +1331,8 @@ Software Advanced Features (30-40 jours)
 
 ----
 
-Recap Phase 3 - Performance & Community
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Recap Phase 3 - Performance & Community + IoT
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
@@ -1169,12 +1346,15 @@ Recap Phase 3 - Performance & Community
    * - **🆕 Community ASBL**
      - #026 (5 modules)
      - 15-20 heures (2 jours)
+   * - **🆕 IoT Monitoring**
+     - #030 (capteurs temps réel)
+     - 18-24 heures (3 jours)
    * - **Software Performance**
      - 6 features (NoSQL, WebSocket, Analytics, Mobile, Search, Audit)
      - 30-40 jours
    * - **Total Phase 3**
-     - **1 issue + 6 features + infra**
-     - **47-57 jours** (7-9 semaines)
+     - **2 issues + 6 features + infra**
+     - **50-60 jours** (7.5-10 semaines)
 
 
 ----
@@ -1222,27 +1402,28 @@ Effort Total Mis à Jour
      - 14 issues
      - 12-16 semaines
      - Mars 2026
-   * - **Phase 2 (K3s + Automation)**
-     - 10 issues
-     - 8-11 semaines
+   * - **Phase 2 (K3s + Automation + Énergie)**
+     - 12 issues
+     - 8.5-12 semaines
      - Juin 2026
-   * - **Phase 3 (K8s + Performance)**
-     - 1 issue + 6 features
-     - 7-9 semaines
+   * - **Phase 3 (K8s + Performance + IoT)**
+     - 2 issues + 6 features
+     - 7.5-10 semaines
      - Septembre 2026
    * - **TOTAL**
-     - **25 issues + features**
-     - **27-36 semaines** (~7-9 mois)
+     - **28 issues + features**
+     - **28-38 semaines** (~7-9.5 mois)
      - **Septembre 2026**
 
 
-**Changements vs Version 1.0**\ :
+**Changements vs Version 2.0**\ :
 
-* +5 issues Belgian Legal Compliance (Phase 1): #016, #017, #018, #022, #023
-* +6 issues Automation & Accessibility (Phase 2): #019, #020, #021, #024, #025, #027
-* +1 issue Community Modules (Phase 3): #026
-* -2 issues obsolètes supprimés: #004 (Pagination), #007 (Work Management)
-* **Durée totale**: +6-7 semaines (conformité légale prioritaire)
+* +3 issues Énergie & IoT (Version 2.1): #028, #029 (Phase 2), #030 (Phase 3)
+* +5 issues Belgian Legal Compliance (Version 2.0 - Phase 1): #016, #017, #018, #022, #023
+* +6 issues Automation & Accessibility (Version 2.0 - Phase 2): #019, #020, #021, #024, #025, #027
+* +1 issue Community Modules (Version 2.0 - Phase 3): #026
+* -2 issues obsolètes supprimés (Version 2.0): #004 (Pagination), #007 (Work Management)
+* **Durée totale**: +8-10 semaines vs Version 1.0 (conformité légale + énergie prioritaires)
 
 
 ----
@@ -1443,8 +1624,8 @@ Sustainability (Mission ASBL)
 
 ----
 
-**Dernière mise à jour**\ : 1 novembre 2025, 15:30
-**Version**\ : 2.0 (Gap Analysis Complète)
+**Dernière mise à jour**\ : 7 novembre 2025
+**Version**\ : 2.1 (Gap Analysis + Énergie/IoT Features)
 **Maintenu par**\ : KoproGo ASBL
 **Contact**\ : `GitHub Issues <https://github.com/gilmry/koprogo/issues>`_
 
@@ -1454,7 +1635,7 @@ Sustainability (Mission ASBL)
 ---------------------
 
 * **Gap Analysis Complète**\ : `docs/GAP_ANALYSIS_KoproGov.md <./GAP_ANALYSIS_KoproGov.md>`_ (93 features analysées)
-* **Issues Détaillées**\ : `issues/README.md <../issues/README.md>`_ (25 issues avec cahiers des charges)
+* **Issues Détaillées**\ : `issues/README.md <../issues/README.md>`_ (28 issues avec cahiers des charges)
 * **Belgian Legal Compliance**\ :
 
   * `#016 Plan Comptable <../issues/critical/016-plan-comptable-belge.md>`_
@@ -1462,6 +1643,12 @@ Sustainability (Mission ASBL)
   * `#018 Budget Prévisionnel <../issues/critical/018-budget-previsionnel.md>`_
   * `#022 Conseil Copropriété <../issues/critical/022-conseil-copropriete.md>`_ (PRIORITÉ #1)
   * `#023 Workflow Recouvrement <../issues/critical/023-workflow-recouvrement.md>`_
+
+* **🆕 Énergie & IoT Features (Version 2.1)**\ :
+
+  * `#028 Commande Groupée Énergie <../issues/important/028-commande-groupee-energie.md>`_
+  * `#029 Import Relevés ISTA <../issues/important/029-import-releves-ista.md>`_
+  * `#030 Intégration Sondes IoT <../issues/important/030-integration-sondes-iot.md>`_
 
 * **Architecture**\ : `CLAUDE.md <../CLAUDE.md>`_ (Hexagonal Architecture + DDD)
 * **GDPR Compliance**\ : `docs/GDPR_COMPLIANCE_CHECKLIST.md <./GDPR_COMPLIANCE_CHECKLIST.md>`_

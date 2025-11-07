@@ -3,8 +3,8 @@ use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
-    PostgresBoardMemberRepository, PostgresBuildingRepository,
+    create_pool, PostgresAccountRepository, PostgresAuditLogRepository,
+    PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBuildingRepository,
     PostgresChargeDistributionRepository, PostgresDocumentRepository, PostgresExpenseRepository,
     PostgresGdprRepository, PostgresMeetingRepository, PostgresOwnerRepository,
     PostgresPaymentReminderRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
@@ -71,6 +71,10 @@ async fn setup_test_db() -> (
     let jwt_secret = "test-secret-key".to_string();
 
     // Initialize use cases
+    let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
+    let account_use_cases = AccountUseCases::new(account_repo.clone());
+    let financial_report_use_cases = FinancialReportUseCases::new(account_repo, expense_repo.clone());
+
     let auth_use_cases =
         AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
@@ -119,6 +123,7 @@ async fn setup_test_db() -> (
     );
 
     let app_state = actix_web::web::Data::new(AppState::new(
+        account_use_cases,
         auth_use_cases,
         building_use_cases,
         unit_use_cases,
@@ -134,6 +139,7 @@ async fn setup_test_db() -> (
         board_member_use_cases,
         board_decision_use_cases,
         board_dashboard_use_cases,
+        financial_report_use_cases,
         audit_logger,
         EmailService::from_env().expect("email service"),
         pool.clone(),

@@ -1,0 +1,104 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO accounts (id, code, label, parent_code, account_type, direct_use, organization_id, created_at, updated_at)\n            VALUES ($1, $2, $3, $4, $5::account_type, $6, $7, $8, $9)\n            RETURNING id, code, label, parent_code, account_type AS \"account_type: AccountType\",\n                      direct_use, organization_id, created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "parent_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "account_type: AccountType",
+        "type_info": {
+          "Custom": {
+            "name": "account_type",
+            "kind": {
+              "Enum": [
+                "ASSET",
+                "LIABILITY",
+                "EXPENSE",
+                "REVENUE",
+                "OFF_BALANCE"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "direct_use",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Text",
+        "Varchar",
+        {
+          "Custom": {
+            "name": "account_type",
+            "kind": {
+              "Enum": [
+                "ASSET",
+                "LIABILITY",
+                "EXPENSE",
+                "REVENUE",
+                "OFF_BALANCE"
+              ]
+            }
+          }
+        },
+        "Bool",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5201408f2334141cbd7da42019f9b91a80de3f6f3dfe56b90529bf29c7e59912"
+}

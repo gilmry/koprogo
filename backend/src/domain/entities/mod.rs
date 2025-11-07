@@ -1,3 +1,4 @@
+pub mod account;
 pub mod board_decision;
 pub mod board_member;
 pub mod building;
@@ -19,6 +20,7 @@ pub mod unit_owner;
 pub mod user;
 pub mod user_role_assignment;
 
+pub use account::{Account, AccountType};
 pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
 pub use building::Building;

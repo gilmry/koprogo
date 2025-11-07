@@ -63,6 +63,15 @@ pub enum AuditEventType {
     GdprDataErased,
     GdprDataErasureFailed,
     GdprErasureCheckRequested,
+
+    // Accounting events
+    AccountCreated,
+    AccountUpdated,
+    AccountDeleted,
+    BelgianPCMNSeeded,
+
+    // Financial reporting events
+    ReportGenerated,
 }
 
 /// Audit log entry

@@ -1,3 +1,4 @@
+pub mod account_use_cases;
 pub mod auth_use_cases;
 pub mod board_dashboard_use_cases;
 pub mod board_decision_use_cases;
@@ -6,6 +7,7 @@ pub mod building_use_cases;
 pub mod charge_distribution_use_cases;
 pub mod document_use_cases;
 pub mod expense_use_cases;
+pub mod financial_report_use_cases;
 pub mod gdpr_use_cases;
 pub mod meeting_use_cases;
 pub mod owner_use_cases;
@@ -14,6 +16,7 @@ pub mod pcn_use_cases;
 pub mod unit_owner_use_cases;
 pub mod unit_use_cases;
 
+pub use account_use_cases::AccountUseCases;
 pub use auth_use_cases::AuthUseCases;
 pub use board_dashboard_use_cases::{BoardDashboardResponse, BoardDashboardUseCases};
 pub use board_decision_use_cases::BoardDecisionUseCases;
@@ -22,6 +25,7 @@ pub use building_use_cases::BuildingUseCases;
 pub use charge_distribution_use_cases::ChargeDistributionUseCases;
 pub use document_use_cases::DocumentUseCases;
 pub use expense_use_cases::ExpenseUseCases;
+pub use financial_report_use_cases::FinancialReportUseCases;
 pub use gdpr_use_cases::GdprUseCases;
 pub use meeting_use_cases::MeetingUseCases;
 pub use owner_use_cases::OwnerUseCases;
