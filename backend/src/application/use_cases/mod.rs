@@ -1,3 +1,4 @@
+pub mod account_use_cases;
 pub mod auth_use_cases;
 pub mod building_use_cases;
 pub mod document_use_cases;
@@ -9,6 +10,7 @@ pub mod pcn_use_cases;
 pub mod unit_owner_use_cases;
 pub mod unit_use_cases;
 
+pub use account_use_cases::AccountUseCases;
 pub use auth_use_cases::AuthUseCases;
 pub use building_use_cases::BuildingUseCases;
 pub use document_use_cases::DocumentUseCases;

@@ -1,3 +1,4 @@
+pub mod account_dto;
 pub mod auth_dto;
 pub mod building_dto;
 pub mod document_dto;
@@ -11,6 +12,7 @@ pub mod pcn_dto;
 pub mod unit_dto;
 pub mod unit_owner_dto;
 
+pub use account_dto::*;
 pub use auth_dto::*;
 pub use building_dto::*;
 pub use document_dto::*;
