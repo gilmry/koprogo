@@ -27,10 +27,10 @@ pub enum PaymentStatus {
 /// Statut d'approbation pour le workflow de validation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ApprovalStatus {
-    Draft,            // Brouillon - en cours d'édition
-    PendingApproval,  // Soumis pour validation
-    Approved,         // Approuvé par le syndic
-    Rejected,         // Rejeté
+    Draft,           // Brouillon - en cours d'édition
+    PendingApproval, // Soumis pour validation
+    Approved,        // Approuvé par le syndic
+    Rejected,        // Rejeté
 }
 
 /// Représente une charge de copropriété / facture
@@ -43,10 +43,10 @@ pub struct Expense {
     pub description: String,
 
     // Montants et TVA
-    pub amount: f64, // Montant TTC (backward compatibility)
+    pub amount: f64,                  // Montant TTC (backward compatibility)
     pub amount_excl_vat: Option<f64>, // Montant HT
-    pub vat_rate: Option<f64>, // Taux TVA (ex: 21.0 pour 21%)
-    pub vat_amount: Option<f64>, // Montant TVA
+    pub vat_rate: Option<f64>,        // Taux TVA (ex: 21.0 pour 21%)
+    pub vat_amount: Option<f64>,      // Montant TVA
     pub amount_incl_vat: Option<f64>, // Montant TTC (explicite)
 
     // Dates multiples
@@ -58,9 +58,9 @@ pub struct Expense {
     // Workflow de validation
     pub approval_status: ApprovalStatus,
     pub submitted_at: Option<DateTime<Utc>>, // Date de soumission pour validation
-    pub approved_by: Option<Uuid>, // User ID qui a approuvé/rejeté
-    pub approved_at: Option<DateTime<Utc>>, // Date d'approbation/rejet
-    pub rejection_reason: Option<String>, // Raison du rejet
+    pub approved_by: Option<Uuid>,           // User ID qui a approuvé/rejeté
+    pub approved_at: Option<DateTime<Utc>>,  // Date d'approbation/rejet
+    pub rejection_reason: Option<String>,    // Raison du rejet
 
     // Statut et métadonnées
     pub payment_status: PaymentStatus,
@@ -138,7 +138,7 @@ impl Expense {
         if amount_excl_vat <= 0.0 {
             return Err("Amount (excl. VAT) must be greater than 0".to_string());
         }
-        if vat_rate < 0.0 || vat_rate > 100.0 {
+        if !(0.0..=100.0).contains(&vat_rate) {
             return Err("VAT rate must be between 0 and 100".to_string());
         }
 
@@ -181,7 +181,7 @@ impl Expense {
             if amount_excl_vat <= 0.0 {
                 return Err("Amount (excl. VAT) must be greater than 0".to_string());
             }
-            if vat_rate < 0.0 || vat_rate > 100.0 {
+            if !(0.0..=100.0).contains(&vat_rate) {
                 return Err("VAT rate must be between 0 and 100".to_string());
             }
 
@@ -232,9 +232,13 @@ impl Expense {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            ApprovalStatus::Draft => Err("Cannot approve a draft invoice (must be submitted first)".to_string()),
+            ApprovalStatus::Draft => {
+                Err("Cannot approve a draft invoice (must be submitted first)".to_string())
+            }
             ApprovalStatus::Approved => Err("Invoice is already approved".to_string()),
-            ApprovalStatus::Rejected => Err("Cannot approve a rejected invoice (resubmit first)".to_string()),
+            ApprovalStatus::Rejected => {
+                Err("Cannot approve a rejected invoice (resubmit first)".to_string())
+            }
         }
     }
 
@@ -253,7 +257,9 @@ impl Expense {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            ApprovalStatus::Draft => Err("Cannot reject a draft invoice (not submitted)".to_string()),
+            ApprovalStatus::Draft => {
+                Err("Cannot reject a draft invoice (not submitted)".to_string())
+            }
             ApprovalStatus::Approved => Err("Cannot reject an approved invoice".to_string()),
             ApprovalStatus::Rejected => Err("Invoice is already rejected".to_string()),
         }
@@ -694,7 +700,9 @@ mod tests {
         .unwrap();
 
         invoice.submit_for_approval().unwrap();
-        invoice.reject(user_id, "Montant incorrect".to_string()).unwrap();
+        invoice
+            .reject(user_id, "Montant incorrect".to_string())
+            .unwrap();
         assert_eq!(invoice.approval_status, ApprovalStatus::Rejected);
 
         // Re-soumettre une facture rejetée devrait fonctionner
@@ -782,12 +790,18 @@ mod tests {
         .unwrap();
 
         invoice.submit_for_approval().unwrap();
-        let result = invoice.reject(syndic_id, "Le montant ne correspond pas au devis".to_string());
+        let result = invoice.reject(
+            syndic_id,
+            "Le montant ne correspond pas au devis".to_string(),
+        );
 
         assert!(result.is_ok());
         assert_eq!(invoice.approval_status, ApprovalStatus::Rejected);
         assert_eq!(invoice.approved_by, Some(syndic_id));
-        assert_eq!(invoice.rejection_reason, Some("Le montant ne correspond pas au devis".to_string()));
+        assert_eq!(
+            invoice.rejection_reason,
+            Some("Le montant ne correspond pas au devis".to_string())
+        );
     }
 
     #[test]

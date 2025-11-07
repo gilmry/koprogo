@@ -41,6 +41,17 @@ pub enum AuditEventType {
     BoardDecisionCompleted,
     BoardDecisionNotesAdded,
 
+    // Payment reminder events
+    PaymentReminderCreated,
+    PaymentReminderSent,
+    PaymentReminderOpened,
+    PaymentReminderPaid,
+    PaymentReminderCancelled,
+    PaymentReminderEscalated,
+    PaymentReminderTrackingAdded,
+    PaymentRemindersBulkCreated,
+    PaymentReminderDeleted,
+
     // Security events
     UnauthorizedAccess,
     RateLimitExceeded,

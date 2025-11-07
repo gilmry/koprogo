@@ -55,17 +55,12 @@ impl ChargeDistributionUseCases {
             .await?;
 
         if unit_ownerships.is_empty() {
-            return Err(
-                "No active unit-owner relationships found for this building".to_string(),
-            );
+            return Err("No active unit-owner relationships found for this building".to_string());
         }
 
         // 5. Calculer les distributions
-        let distributions = ChargeDistribution::calculate_distributions(
-            expense_id,
-            total_amount,
-            unit_ownerships,
-        )?;
+        let distributions =
+            ChargeDistribution::calculate_distributions(expense_id, total_amount, unit_ownerships)?;
 
         // 6. Sauvegarder en masse
         let saved_distributions = self
@@ -100,10 +95,7 @@ impl ChargeDistributionUseCases {
         &self,
         owner_id: Uuid,
     ) -> Result<Vec<ChargeDistributionResponseDto>, String> {
-        let distributions = self
-            .distribution_repository
-            .find_by_owner(owner_id)
-            .await?;
+        let distributions = self.distribution_repository.find_by_owner(owner_id).await?;
         Ok(distributions
             .iter()
             .map(|d| self.to_response_dto(d))

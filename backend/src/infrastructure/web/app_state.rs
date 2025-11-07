@@ -1,7 +1,8 @@
 use crate::application::use_cases::{
     AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases,
-    BuildingUseCases, ChargeDistributionUseCases, DocumentUseCases, ExpenseUseCases,
-    GdprUseCases, MeetingUseCases, OwnerUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
+    BuildingUseCases, ChargeDistributionUseCases, DocumentUseCases, ExpenseUseCases, GdprUseCases,
+    MeetingUseCases, OwnerUseCases, PaymentReminderUseCases, PcnUseCases, UnitOwnerUseCases,
+    UnitUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -19,6 +20,7 @@ pub struct AppState {
     pub meeting_use_cases: Arc<MeetingUseCases>,
     pub document_use_cases: Arc<DocumentUseCases>,
     pub pcn_use_cases: Arc<PcnUseCases>,
+    pub payment_reminder_use_cases: Arc<PaymentReminderUseCases>,
     pub gdpr_use_cases: Arc<GdprUseCases>,
     pub board_member_use_cases: Arc<BoardMemberUseCases>,
     pub board_decision_use_cases: Arc<BoardDecisionUseCases>,
@@ -41,6 +43,7 @@ impl AppState {
         meeting_use_cases: MeetingUseCases,
         document_use_cases: DocumentUseCases,
         pcn_use_cases: PcnUseCases,
+        payment_reminder_use_cases: PaymentReminderUseCases,
         gdpr_use_cases: GdprUseCases,
         board_member_use_cases: BoardMemberUseCases,
         board_decision_use_cases: BoardDecisionUseCases,
@@ -60,6 +63,7 @@ impl AppState {
             meeting_use_cases: Arc::new(meeting_use_cases),
             document_use_cases: Arc::new(document_use_cases),
             pcn_use_cases: Arc::new(pcn_use_cases),
+            payment_reminder_use_cases: Arc::new(payment_reminder_use_cases),
             gdpr_use_cases: Arc::new(gdpr_use_cases),
             board_member_use_cases: Arc::new(board_member_use_cases),
             board_decision_use_cases: Arc::new(board_decision_use_cases),

@@ -1,7 +1,7 @@
 use crate::application::dto::{
-    ApproveInvoiceDto, CreateExpenseDto, CreateInvoiceDraftDto, ExpenseFilters,
-    ExpenseResponseDto, InvoiceResponseDto, PageRequest, PendingInvoicesListDto,
-    RejectInvoiceDto, SubmitForApprovalDto, UpdateInvoiceDraftDto,
+    ApproveInvoiceDto, CreateExpenseDto, CreateInvoiceDraftDto, ExpenseFilters, ExpenseResponseDto,
+    InvoiceResponseDto, PageRequest, PendingInvoicesListDto, RejectInvoiceDto, SortOrder,
+    SubmitForApprovalDto, UpdateInvoiceDraftDto,
 };
 use crate::application::ports::ExpenseRepository;
 use crate::domain::entities::{ApprovalStatus, Expense};
@@ -326,6 +326,8 @@ impl ExpenseUseCases {
         let page_request = PageRequest {
             page: 1,
             per_page: 1000, // Limite raisonnable
+            sort_by: None,
+            order: SortOrder::default(),
         };
 
         let (expenses, _total) = self

@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT uo.unit_id, uo.owner_id, uo.ownership_percentage\n            FROM unit_owners uo\n            JOIN units u ON uo.unit_id = u.id\n            WHERE u.building_id = $1 AND uo.end_date IS NULL\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "unit_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "owner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "ownership_percentage",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c87004798b67e856f1b3555be5f2f77b8a1bacea62d0c6fbbfd21ef39f9b27c4"
+}

@@ -301,4 +301,27 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             updated_at: row.updated_at,
         }))
     }
+
+    async fn find_active_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
+        let results = sqlx::query!(
+            r#"
+            SELECT uo.unit_id, uo.owner_id, uo.ownership_percentage
+            FROM unit_owners uo
+            JOIN units u ON uo.unit_id = u.id
+            WHERE u.building_id = $1 AND uo.end_date IS NULL
+            "#,
+            building_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to find active unit_owners by building: {}", e))?;
+
+        Ok(results
+            .into_iter()
+            .map(|row| (row.unit_id, row.owner_id, row.ownership_percentage))
+            .collect())
+    }
 }

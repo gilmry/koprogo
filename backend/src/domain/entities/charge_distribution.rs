@@ -27,7 +27,7 @@ impl ChargeDistribution {
         total_amount: f64,
     ) -> Result<Self, String> {
         // Validations
-        if quota_percentage < 0.0 || quota_percentage > 1.0 {
+        if !(0.0..=1.0).contains(&quota_percentage) {
             return Err(format!(
                 "Quota percentage must be between 0 and 1 (got: {})",
                 quota_percentage
@@ -101,10 +101,7 @@ impl ChargeDistribution {
     }
 
     /// Vérifie que la distribution est complète (somme = total_amount à 0.01€ près)
-    pub fn verify_distribution(
-        distributions: &[ChargeDistribution],
-        expected_total: f64,
-    ) -> bool {
+    pub fn verify_distribution(distributions: &[ChargeDistribution], expected_total: f64) -> bool {
         let total = Self::total_distributed(distributions);
         (total - expected_total).abs() < 0.01 // Tolérance de 1 centime
     }
@@ -120,8 +117,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution =
-            ChargeDistribution::new(expense_id, unit_id, owner_id, 0.25, 1000.0);
+        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, 0.25, 1000.0);
 
         assert!(distribution.is_ok());
         let distribution = distribution.unwrap();
@@ -138,8 +134,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution =
-            ChargeDistribution::new(expense_id, unit_id, owner_id, -0.1, 1000.0);
+        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, -0.1, 1000.0);
 
         assert!(distribution.is_err());
         assert!(distribution
@@ -153,8 +148,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution =
-            ChargeDistribution::new(expense_id, unit_id, owner_id, 1.5, 1000.0);
+        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, 1.5, 1000.0);
 
         assert!(distribution.is_err());
     }
@@ -295,12 +289,9 @@ mod tests {
         ];
 
         let total_invoice = 5000.0;
-        let distributions = ChargeDistribution::calculate_distributions(
-            expense_id,
-            total_invoice,
-            unit_ownerships,
-        )
-        .unwrap();
+        let distributions =
+            ChargeDistribution::calculate_distributions(expense_id, total_invoice, unit_ownerships)
+                .unwrap();
 
         assert_eq!(distributions.len(), 5);
         assert_eq!(distributions[0].amount_due, 1250.0); // 25%
@@ -328,8 +319,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution =
-            ChargeDistribution::new(expense_id, unit_id, owner_id, 0.0, 1000.0);
+        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, 0.0, 1000.0);
 
         assert!(distribution.is_ok());
         let distribution = distribution.unwrap();
@@ -343,8 +333,7 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution =
-            ChargeDistribution::new(expense_id, unit_id, owner_id, 1.0, 1000.0);
+        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, 1.0, 1000.0);
 
         assert!(distribution.is_ok());
         let distribution = distribution.unwrap();

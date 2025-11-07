@@ -5,10 +5,14 @@ use uuid::Uuid;
 #[async_trait]
 pub trait ChargeDistributionRepository: Send + Sync {
     /// Create a single charge distribution
-    async fn create(&self, distribution: &ChargeDistribution) -> Result<ChargeDistribution, String>;
+    async fn create(&self, distribution: &ChargeDistribution)
+        -> Result<ChargeDistribution, String>;
 
     /// Create multiple charge distributions in bulk (for performance)
-    async fn create_bulk(&self, distributions: &[ChargeDistribution]) -> Result<Vec<ChargeDistribution>, String>;
+    async fn create_bulk(
+        &self,
+        distributions: &[ChargeDistribution],
+    ) -> Result<Vec<ChargeDistribution>, String>;
 
     /// Find charge distribution by ID
     async fn find_by_id(&self, id: Uuid) -> Result<Option<ChargeDistribution>, String>;

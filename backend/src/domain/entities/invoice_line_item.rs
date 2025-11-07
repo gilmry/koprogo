@@ -39,7 +39,7 @@ impl InvoiceLineItem {
         if unit_price < 0.0 {
             return Err("Unit price cannot be negative".to_string());
         }
-        if vat_rate < 0.0 || vat_rate > 100.0 {
+        if !(0.0..=100.0).contains(&vat_rate) {
             return Err("VAT rate must be between 0 and 100".to_string());
         }
 
@@ -176,8 +176,8 @@ mod tests {
     #[test]
     fn test_recalculate_after_quantity_change() {
         let expense_id = Uuid::new_v4();
-        let mut line = InvoiceLineItem::new(expense_id, "Test".to_string(), 1.0, 100.0, 21.0)
-            .unwrap();
+        let mut line =
+            InvoiceLineItem::new(expense_id, "Test".to_string(), 1.0, 100.0, 21.0).unwrap();
 
         assert_eq!(line.amount_excl_vat, 100.0);
 
@@ -193,8 +193,8 @@ mod tests {
     #[test]
     fn test_recalculate_after_unit_price_change() {
         let expense_id = Uuid::new_v4();
-        let mut line = InvoiceLineItem::new(expense_id, "Test".to_string(), 2.0, 100.0, 21.0)
-            .unwrap();
+        let mut line =
+            InvoiceLineItem::new(expense_id, "Test".to_string(), 2.0, 100.0, 21.0).unwrap();
 
         // Changer le prix unitaire
         line.unit_price = 200.0;

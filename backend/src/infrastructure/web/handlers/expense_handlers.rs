@@ -490,7 +490,11 @@ pub async fn reject_invoice(
     let mut reject_dto = dto.into_inner();
     reject_dto.rejected_by_user_id = user.user_id.to_string();
 
-    match state.expense_use_cases.reject_invoice(*id, reject_dto).await {
+    match state
+        .expense_use_cases
+        .reject_invoice(*id, reject_dto)
+        .await
+    {
         Ok(invoice) => {
             AuditLogEntry::new(
                 AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceRejected event type

@@ -52,7 +52,7 @@ pub struct CreateInvoiceDraftDto {
     #[validate(range(min = 0.0, max = 100.0))]
     pub vat_rate: f64, // Taux TVA (21.0 pour 21%)
 
-    pub invoice_date: String,    // ISO 8601
+    pub invoice_date: String,     // ISO 8601
     pub due_date: Option<String>, // ISO 8601
     pub supplier: Option<String>,
     pub invoice_number: Option<String>,
