@@ -13,7 +13,24 @@ Phase 2: K3s + Automation
 Description
 ===========
 
-Migration K3s + Automation workflow + Features communautaires (Mar - Juin 2026)
+Phase 2: K3s + Automation & Community (Mar - Juin 2026)
+
+🎯 Objectif: Migration K3s + Automation workflows + PropTech 2.0 foundations
+
+🔄 Économies d'Échelle: 1,000-2,000 copros attendus
+- Prix cible: 0.60-0.40€/mois (vs 1.00€ initial)
+- Surplus réinvesti: 50% features + 30% réserve + 20% R&D PropTech
+
+📦 Livrables clés:
+- Migration K3s (lightweight Kubernetes)
+- Voting system (Résolutions & votes AG)
+- PDF generation (PV, contrats, rapports financiers)
+- Contractor backoffice (Work reports, photos, validation)
+- Community features (SEL, neighbor exchange)
+- GDPR Articles 16, 18, 21 (rectification, restriction, objection)
+- Accessibility WCAG 2.1 AA
+
+🚀 Infrastructure: K3s + ArgoCD + GitOps
 
 Issues (18)
 ========

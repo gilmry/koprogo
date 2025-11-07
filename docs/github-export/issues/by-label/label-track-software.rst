@@ -2,7 +2,7 @@
 Label: track:software
 ======================
 
-Total: 38 issues
+Total: 41 issues
 
 .. toctree::
    :maxdepth: 1
@@ -45,3 +45,6 @@ Total: 38 issues
    ../issue-97
    ../issue-98
    ../issue-99
+   ../issue-109
+   ../issue-110
+   ../issue-111

@@ -2,7 +2,7 @@
 Issues
 ======
 
-Total: 54 issues (47 open, 7 closed)
+Total: 57 issues (50 open, 7 closed)
 
 .. toctree::
    :maxdepth: 1

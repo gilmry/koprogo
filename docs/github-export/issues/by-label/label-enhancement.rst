@@ -2,7 +2,7 @@
 Label: enhancement
 ===================
 
-Total: 30 issues
+Total: 33 issues
 
 .. toctree::
    :maxdepth: 1
@@ -37,3 +37,6 @@ Total: 30 issues
    ../issue-97
    ../issue-98
    ../issue-99
+   ../issue-109
+   ../issue-110
+   ../issue-111

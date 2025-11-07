@@ -219,13 +219,237 @@ KoproGo utilise les technologies les plus avancées pour servir l'intérêt gén
 * Audits de sécurité publics
 * Fork autorisé si dérive du projet
 
-**Modèle de revenus** :
+🔄 Le Modèle Participatif : Gagnant-Gagnant par l'Échelle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+**Le Problème des SaaS Classiques**
 
-* Grille tarifaire échelonnée : 1,50-8€/mois selon taille et features (voir :doc:`ECONOMIC_MODEL`)
-* Hébergement cloud géré ou self-hosted (gratuit)
-* Revenus cloud financent le développement
-* Infrastructure mutualisée optimisée (détails :doc:`ROADMAP_INTEGREE_2025_2030`)
+Les solutions SaaS propriétaires de gestion de copropriété présentent un modèle économique injuste :
+
+* **Prix fixe par client** : 50-500€/mois par copropriété, indépendamment de l'échelle
+* **Marges captées par actionnaires** : 70-90% des revenus vont aux investisseurs privés
+* **Aucun bénéfice de l'échelle pour les usagers** : Les économies d'échelle profitent uniquement aux actionnaires
+* **Gouvernance fermée** : Les utilisateurs n'ont aucun pouvoir de décision
+* **Vendor lock-in** : Données prisonnières, migration impossible
+
+**La Révolution KoproGo - Économies d'Échelle Inversées**
+
+KoproGo renverse ce modèle : **Plus de participants = Prix baisse pour tous**. C'est mathématique, transparent, et inscrit dans les statuts ASBL.
+
+1. **Prix Coûtant Mutualisé** 💰
+
+   Les coûts d'infrastructure sont répartis équitablement entre tous les participants :
+
+   * **100 copropriétés** : 95€ serveur / 100 = **0.95€/copro/mois**
+   * **1,000 copropriétés** : 180€ serveur (scale up) / 1,000 = **0.18€/copro/mois** (-81%)
+   * **5,000 copropriétés** : 270€ serveur / 5,000 = **0.054€/copro/mois** (-94%!)
+
+   **Plus de participants = Coûts infrastructure dilués = Prix réel divisé par 17**
+
+2. **Redistribution Automatique en Échelle** 📉
+
+   Au-delà du prix coûtant, KoproGo applique une grille dégressive **inscrite dans les statuts ASBL** :
+
+   .. list-table:: Grille Tarifaire Dégressive (Paliers Automatiques)
+      :header-rows: 1
+      :widths: 20 20 20 20 20
+
+      * - Participants
+        - Prix Facturé
+        - Réduction
+        - Coût Réel
+        - Surplus/an (5k copros)
+      * - 0-500 copros
+        - **1.00€/mois**
+        - Référence
+        - 0.95-0.19€
+        - 60-3,660€
+      * - 500-1,000
+        - **0.80€/mois**
+        - **-20%**
+        - 0.19-0.18€
+        - 3,660-5,040€
+      * - 1,000-2,000
+        - **0.60€/mois**
+        - **-40%**
+        - 0.18-0.09€
+        - 5,040-12,240€
+      * - 2,000-5,000
+        - **0.40€/mois**
+        - **-60%**
+        - 0.09-0.054€
+        - 12,240-20,760€
+      * - 5,000-10,000
+        - **0.20€/mois**
+        - **-80%**
+        - 0.054-0.027€
+        - 20,760-36,000€
+      * - 10,000+
+        - **0.10€/mois**
+        - **-90%**
+        - < 0.027€
+        - 36,000€+
+
+   **Chaque palier se déclenche automatiquement** dès que le nombre de participants est atteint.
+
+   **Exemple concret** : Julie rejoint en 2026 avec 100 copropriétés (1€/mois). En 2030, 5,000 copropriétés utilisent KoproGo → Le tarif de Julie est **automatiquement baissé à 0.40€/mois (-60%)** grâce aux 4,900 nouveaux participants. Elle n'a rien fait, elle bénéficie mécaniquement de l'échelle.
+
+3. **Gouvernance Proportionnelle** 🏛️
+
+   Contrairement aux SaaS classiques, chez KoproGo **1 membre ASBL = 1 voix** (pas de pondération par capital) :
+
+   * Plus de membres = Décisions plus démocratiques
+   * Conseil d'Administration **élu** par l'Assemblée Générale
+   * Budgets votés collectivement (allocation surplus)
+   * Transparence comptable **trimestrielle** (rapports publics)
+
+   **Le pouvoir est chez les usagers, pas chez des actionnaires.**
+
+4. **Cercle Vertueux Contributions** 🔄
+
+   Plus de participants → Plus de valeur créée pour tous :
+
+   * **Plus d'usagers** = Plus de feedback = Meilleur produit
+   * **Plus de contributeurs code** = Plus de features = Service amélioré
+   * **Plus de traducteurs** = Plus de langues = Accessibilité ↑
+   * **Chacun améliore le bien commun** = Tous en bénéficient
+
+   **Contributions valorisées** : Contributeur code/docs = -50% tarif cloud, Mainteneur = Gratuit à vie
+
+**Simulation Concrète 2025-2030**
+
+Scénario de croissance organique (conservateur) :
+
+.. code-block:: text
+
+   Année 1 (2026) : 100 copropriétés
+     → Coût infra : 95€/mois
+     → Prix facturé : 1.00€/copro (palier 0-500)
+     → Chaque copro paie : 12€/an
+
+   Année 3 (2028) : 1,500 copropriétés (+1,400)
+     → Coût infra : 180€/mois (scale up)
+     → Prix coûtant réel : 0.12€/copro
+     → Prix facturé ASBL : 0.60€/copro (palier 1k-2k)
+     → Économie vs Année 1 : -40% (7.20€/an vs 12€/an)
+
+     **Impact : Les 1,400 nouveaux ont fait économiser 4.80€/an aux 100 premiers**
+
+   Année 5 (2030) : 5,000 copropriétés (+3,500)
+     → Coût infra : 270€/mois
+     → Prix coûtant réel : 0.054€/copro
+     → Prix facturé ASBL : 0.40€/copro (palier 2k-5k)
+     → Économie vs Année 1 : -60% (4.80€/an vs 12€/an)
+
+     **Les 100 premières copropriétés ont vu leur facture divisée par 2.5**
+     **grâce aux 4,900 participants qui les ont rejoints.**
+
+**Impact Économique Collectif**
+
+À 5,000 copropriétés (Année 5) :
+
+* **Coût théorique** (si tout le monde payait le prix Année 1) : 5,000 × 12€/an = **60,000€/an**
+* **Coût réel** (prix dégressif 0.40€/mois) : 5,000 × 4.80€/an = **24,000€/an**
+* **Économie collective : 36,000€/an redistribués** aux copropriétés (vs leur prix initial)
+* **vs SaaS concurrent** (50€/copro/mois) : **2,976,000€/an économisés!** (-99%)
+
+**Le Surplus Réinvesti par Vote AG**
+
+Le surplus (prix facturé - coût réel) est réinvesti selon vote de l'Assemblée Générale ASBL :
+
+* **40-50%** : Développement features (vote priorités communauté)
+* **20-30%** : R&D PropTech (IA, IoT, Blockchain)
+* **20-30%** : Réserve légale (sécurité financière 3 mois)
+* **0-20%** : Baisse tarifaire anticipée (si surplus > 25%)
+
+**Exemple AG 2028** (1,500 copros, surplus 8,640€/an) :
+
+.. code-block:: text
+
+   Proposition Conseil d'Administration :
+     • 50% Features prioritaires (4,320€) - Développement communautaire
+     • 30% Réserve légale (2,592€) - Sécurité projet
+     • 20% R&D PropTech (1,728€) - IA/Blockchain/IoT
+
+   Vote AG (1 membre = 1 voix) :
+     ✅ Adopté : 87% pour, 13% abstention
+
+**Le Pari Éthique de la Mutualisation**
+
+   *"Nous ne cherchons pas à maximiser le profit, mais à minimiser le coût pour chacun en maximisant le nombre de participants. C'est le principe coopératif appliqué au numérique."*
+
+**Comparaison Modèles**
+
+.. list-table:: SaaS Classique vs KoproGo ASBL
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Critère
+     - SaaS Classique
+     - KoproGo ASBL
+   * - **Prix/copro**
+     - 50€/mois (fixe)
+     - 0.40-1€/mois (dégressif)
+   * - **Évolution prix**
+     - Hausse annuelle (+5-10%)
+     - **Baisse avec échelle (-60 à -90%)**
+   * - **Bénéfice échelle**
+     - Actionnaires (90% marges)
+     - **Tous participants (100%)**
+   * - **Gouvernance**
+     - Fermée (CEO)
+     - **Ouverte (AG, 1 membre = 1 voix)**
+   * - **Transparence**
+     - Aucune (secret commercial)
+     - **Comptabilité publique trimestrielle**
+   * - **Contribution**
+     - Impossible
+     - **Valorisée (-50% tarif contributeurs)**
+   * - **Self-hosted**
+     - Interdit
+     - **Gratuit (AGPL-3.0)**
+
+**Transparence Radicale - Dashboard Public**
+
+KoproGo publie en temps réel sur `https://koprogo.com/transparency` (accessible sans login) :
+
+* Nombre de participants actifs
+* Coûts infrastructure réels (serveurs, bande passante, stockage)
+* Prix coûtant calculé vs Prix facturé
+* Surplus généré (€ et %)
+* Prochain palier dégressif (countdown participants)
+* Historique baisses tarifaires
+
+**Rapports trimestriels PDF** téléchargeables :
+
+* Bilan comptable complet
+* Détail coûts par poste
+* Allocation surplus (décisions AG)
+* Roadmap investissements
+
+**PropTech 2.0 - Mutualisation des Nouvelles Technologies**
+
+Les features PropTech (IA, Blockchain, IoT) bénéficient aussi des économies d'échelle :
+
+* **IA** : 1 GPU 50€/mois sert **tous** les usagers add-on IA
+
+  * 100 copros add-on : 50€ ÷ 100 = **0.50€ coût réel** → Facturé 2€ (R&D modèles)
+  * 1,000 copros add-on : 50€ ÷ 1,000 = **0.05€ coût réel** → **Baisse future possible à 1€**
+
+* **Blockchain** : 1 node 20€/mois pour tous les votes AG
+
+  * 100 copros votantes : 20€ ÷ 100 = **0.20€ coût réel** → Facturé 1€
+  * 1,000 copros votantes : 20€ ÷ 1,000 = **0.02€ coût réel** → **Baisse future possible à 0.50€**
+
+* **Energy Platform** : **0€** (mission ASBL, financé par partenariats fournisseurs)
+
+  * Principe : Plus de copros = Pouvoir négociation collectif ↑ = Meilleurs prix énergie
+  * Économies cibles : -20% facture énergie
+
+**Mutualisation = Plus de monde = Moins cher pour tous. Même pour les add-ons.**
+
+.. note::
+   **Détails complets** : Pour toutes les projections financières 2025-2030, grille tarifaire add-ons, et transparence comptable, voir :doc:`ECONOMIC_MODEL` (Section Économies d'Échelle Participatives).
 
 Pourquoi Maintenant ?
 ^^^^^^^^^^^^^^^^^^^^^

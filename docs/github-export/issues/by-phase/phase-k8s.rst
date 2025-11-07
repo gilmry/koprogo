@@ -2,7 +2,7 @@
 Phase: K8S
 ===================
 
-Total: 7 issues
+Total: 9 issues
 
 .. toctree::
    :maxdepth: 1
@@ -14,3 +14,5 @@ Total: 7 issues
    ../issue-97
    ../issue-98
    ../issue-99
+   ../issue-109
+   ../issue-110

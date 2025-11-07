@@ -2,7 +2,7 @@
 Labels
 ======
 
-Total: 32 labels
+Total: 38 labels
 
 .. list-table::
    :header-rows: 1
@@ -22,7 +22,7 @@ Total: 32 labels
      - 0
    * - **enhancement**
      - New feature or request
-     - 30
+     - 33
    * - **good first issue**
      - Good for newcomers
      - 0
@@ -55,13 +55,13 @@ Total: 32 labels
      - 8
    * - **phase:k8s**
      - Phase K8s (Q2 2027+) - Kubernetes production
-     - 7
+     - 9
    * - **track:software**
      - Software development track (features, API, frontend)
-     - 38
+     - 41
    * - **track:infrastructure**
      - Infrastructure track (IaC, CI/CD, deployment)
-     - 5
+     - 6
    * - **priority:critical**
      - Critical priority - blocking issue
      - 14
@@ -70,10 +70,10 @@ Total: 32 labels
      - 18
    * - **priority:medium**
      - Medium priority - planned work
-     - 4
+     - 6
    * - **priority:low**
      - Low priority - nice to have
-     - 7
+     - 8
    * - **rust**
      - Pull requests that update rust code
      - 1
@@ -82,7 +82,7 @@ Total: 32 labels
      - 1
    * - **finance**
      - Financial and accounting features
-     - 5
+     - 6
    * - **legal-compliance**
      - Legal compliance (Belgian law)
      - 8
@@ -91,7 +91,7 @@ Total: 32 labels
      - 1
    * - **automation**
      - Automation workflows
-     - 3
+     - 6
    * - **pdf**
      - PDF generation features
      - 2
@@ -106,7 +106,25 @@ Total: 32 labels
      - 1
    * - **community**
      - Community features (ASBL mission)
+     - 4
+   * - **proptech:ai**
+     - PropTech 2.0 - IA/ML features (OCR, chatbot, forecasting)
+     - 1
+   * - **proptech:blockchain**
+     - PropTech 2.0 - Blockchain voting (Polygon/Avalanche)
+     - 1
+   * - **proptech:iot**
+     - PropTech 2.0 - IoT sensors (energy, water, security)
      - 2
+   * - **proptech:energy**
+     - PropTech 2.0 - Energy buying groups & optimization
+     - 3
+   * - **mlops**
+     - Machine Learning Operations (Kubeflow, MLflow)
+     - 1
+   * - **phase:ecosystem**
+     - Phase 4: Ecosystem (Q3 2026+) - External integrations
+     - 1
 
 Label Categories
 ================
@@ -128,7 +146,7 @@ Phase Labels
      - 8
    * - **phase:k8s**
      - Phase K8s (Q2 2027+) - Kubernetes production
-     - 7
+     - 9
 
 Priority Labels
 ---------------
@@ -147,7 +165,7 @@ Priority Labels
      - 18
    * - **priority:medium**
      - Medium priority - planned work
-     - 4
+     - 6
    * - **priority:low**
      - Low priority - nice to have
-     - 7
+     - 8

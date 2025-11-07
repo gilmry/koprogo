@@ -25,6 +25,36 @@ KoproGo - Roadmap 2025-2026
 
 ----
 
+⚠️ IMPORTANT: Modèle Économique Participatif
+---------------------------------------------
+
+**KoproGo repose sur les économies d'échelle inversées**: Plus de participants = Prix baisse pour tous.
+
+**Votre participation compte** :
+
+* ✅ Chaque nouvelle copropriété **dilue les coûts** pour toutes les autres
+* ✅ Paliers dégressifs **automatiques** (500/1k/2k/5k copros)
+* ✅ Surplus **réinvesti** selon vote AG annuel
+* ✅ Contributions **valorisées** (-50% tarif pour contributeurs)
+
+**Effet concret** :
+
+.. code-block:: text
+
+   100 copros:   1.00€/mois (prix lancement)
+   500 copros:   0.80€/mois (-20% automatique)
+   1,000 copros: 0.60€/mois (-40% automatique)
+   5,000 copros: 0.40€/mois (-60% automatique)
+
+   Même infrastructure, meilleur service, prix divisé par 2.5
+
+**Rejoindre KoproGo = Contribuer au bien commun + Économiser**
+
+.. note::
+   **Détails complets** : Voir :doc:`ECONOMIC_MODEL` (Section Économies d'Échelle Participatives) pour projections 2025-2030, grille tarifaire, et transparence comptable.
+
+----
+
 🆕 Nouveautés Version 2.0 (Gap Analysis)
 ----------------------------------------
 

@@ -11,7 +11,7 @@ KoproGo - Software Roadmap
 Description
 ===========
 
-
+🚀 KoproGo Software Roadmap (PropTech 2.0) | 🔄 Modèle Participatif: Plus de copros = Prix baisse pour tous | 4 Phases: VPS MVP → K3s → K8s+PropTech (IA/IoT/Blockchain/Energy) → Ecosystem | 100 copros: 1€/mois → 5,000 copros: 0.40€/mois (-60%)
 
 Statistics
 ==========

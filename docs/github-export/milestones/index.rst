@@ -2,7 +2,7 @@
 Milestones
 ==========
 
-Total: 3 milestones
+Total: 4 milestones
 
 .. toctree::
    :maxdepth: 1
@@ -10,3 +10,4 @@ Total: 3 milestones
    milestone-1-phase-1-vps-mvp-legal-compliance
    milestone-2-phase-2-k3s-automation
    milestone-3-phase-3-k8s-production
+   milestone-4-phase-4-ecosystem-scale

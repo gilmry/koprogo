@@ -11,7 +11,7 @@ KoproGo - Infrastructure Roadmap
 Description
 ===========
 
-
+🏗️ Infrastructure progressive: VPS→K3s→K8s HA | Security: LUKS+GPG+Monitoring+IDS+WAF | GitOps: Ansible+Terraform+ArgoCD | MLOps: Kubeflow+MLflow (Phase 3)
 
 Statistics
 ==========
