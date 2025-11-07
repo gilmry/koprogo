@@ -66,9 +66,29 @@ ansible-playbook -i inventory.ini playbook.yml
 
 ---
 
+## 🔐 Security & Monitoring
+
+KoproGo includes production-grade security and monitoring:
+
+- **[SECURITY.md](./SECURITY.md)** - Complete security and monitoring documentation
+  - Issue #39: LUKS Encryption at Rest
+  - Issue #40: Encrypted Backups (GPG + S3)
+  - Issue #41: Monitoring Stack (Prometheus + Grafana + Loki)
+  - Issue #43: Advanced Security Hardening (fail2ban, CrowdSec, Suricata, SSH)
+
+**Quick deploy:**
+
+```bash
+cd ansible
+ansible-playbook -i inventory.ini security-monitoring.yml
+```
+
+---
+
 ## 📖 Ressources
 
 - **Documentation complète** : [`docs/deployment/`](../docs/deployment/)
+- **Security & Monitoring** : [`SECURITY.md`](./SECURITY.md) ⭐ NEW
 - **Lessons Learned** : [`LESSONS-LEARNED.md`](./LESSONS-LEARNED.md)
 - **Makefile Guide** : [`docs/MAKEFILE_GUIDE.md`](../docs/MAKEFILE_GUIDE.md)
 

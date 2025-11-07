@@ -1,6 +1,6 @@
 use crate::domain::entities::{User, UserRole};
 use bcrypt::{hash, DEFAULT_COST};
-use chrono::Utc;
+use chrono::{NaiveDate, Utc};
 use fake::faker::address::en::*;
 use fake::faker::name::en::*;
 use fake::Fake;
@@ -157,7 +157,7 @@ impl DatabaseSeeder {
             )
             .await?;
 
-        let _owner1_id = self
+        let owner1_user_id = self
             .create_demo_user(
                 "proprietaire1@grandplace.be",
                 "owner123",
@@ -168,7 +168,7 @@ impl DatabaseSeeder {
             )
             .await?;
 
-        let _owner2_id = self
+        let owner2_user_id = self
             .create_demo_user(
                 "proprietaire2@grandplace.be",
                 "owner123",
@@ -254,6 +254,23 @@ impl DatabaseSeeder {
             .await?;
 
         log::info!("✅ Demo owners created");
+
+        // Link users to owners (for portal access)
+        sqlx::query("UPDATE owners SET user_id = $1 WHERE id = $2")
+            .bind(owner1_user_id)
+            .bind(owner1_db_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to link owner1 to user: {}", e))?;
+
+        sqlx::query("UPDATE owners SET user_id = $1 WHERE id = $2")
+            .bind(owner2_user_id)
+            .bind(owner2_db_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to link owner2 to user: {}", e))?;
+
+        log::info!("✅ Users linked to owners");
 
         // Create demo units (owner_id is now deprecated, set to None)
         let unit1_id = self
@@ -436,27 +453,131 @@ impl DatabaseSeeder {
         log::info!("✅ Demo expenses created");
 
         // Create meetings ORG 1
-        self.create_demo_meeting(
-            building1_id,
-            org1_id,
-            "Assemblée Générale Ordinaire 2025",
-            "ordinary",
-            "2025-03-15",
-            "scheduled",
-        )
-        .await?;
+        let meeting1_id = self
+            .create_demo_meeting(
+                building1_id,
+                org1_id,
+                "Assemblée Générale Ordinaire 2025",
+                "ordinary",
+                "2025-03-15",
+                "scheduled",
+            )
+            .await?;
 
-        self.create_demo_meeting(
-            building2_id,
-            org1_id,
-            "Assemblée Générale Extraordinaire - Travaux",
-            "extraordinary",
-            "2025-04-20",
-            "scheduled",
-        )
-        .await?;
+        let meeting2_id = self
+            .create_demo_meeting(
+                building2_id,
+                org1_id,
+                "Assemblée Générale Extraordinaire - Travaux",
+                "extraordinary",
+                "2025-04-20",
+                "scheduled",
+            )
+            .await?;
 
         log::info!("✅ Demo meetings created");
+
+        // Create board members ORG 1
+        // Elect owner1 as president for building1 (mandate: 2024-01-01 to 2024-12-31, ~1 year as per Belgian law)
+        self.create_demo_board_member(
+            owner1_db_id,
+            building1_id,
+            org1_id,
+            meeting1_id,
+            "president",
+            "2024-01-01",
+            "2024-12-31",
+        )
+        .await?;
+
+        // Elect owner2 as treasurer for building2 (mandate: 2024-06-01 to 2025-05-31, ~1 year)
+        self.create_demo_board_member(
+            owner2_db_id,
+            building2_id,
+            org1_id,
+            meeting2_id,
+            "treasurer",
+            "2024-06-01",
+            "2025-05-31",
+        )
+        .await?;
+
+        log::info!("✅ Demo board members elected");
+
+        // Create board decisions ORG 1
+        // Decision 1: Pending with deadline in 25 days (medium urgency)
+        self.create_demo_board_decision(
+            building1_id,
+            org1_id,
+            meeting1_id,
+            "Rénovation de la façade",
+            "Approuver les devis pour la rénovation de la façade principale",
+            Some("2025-11-26"), // ~25 days from 2025-11-01
+            "pending",
+        )
+        .await?;
+
+        // Decision 2: In progress with deadline in 4 days (critical urgency)
+        self.create_demo_board_decision(
+            building1_id,
+            org1_id,
+            meeting1_id,
+            "Contrat d'assurance",
+            "Signer le nouveau contrat d'assurance avec AXA",
+            Some("2025-11-05"), // 4 days from 2025-11-01
+            "in_progress",
+        )
+        .await?;
+
+        // Decision 3: Overdue (deadline passed)
+        self.create_demo_board_decision(
+            building1_id,
+            org1_id,
+            meeting1_id,
+            "Nettoyage des gouttières",
+            "Engager une entreprise pour le nettoyage annuel des gouttières",
+            Some("2025-10-15"), // Past deadline
+            "pending",
+        )
+        .await?;
+
+        // Decision 4: Completed
+        self.create_demo_board_decision(
+            building1_id,
+            org1_id,
+            meeting1_id,
+            "Installation caméras",
+            "Installation du système de vidéosurveillance dans le hall",
+            Some("2025-10-01"),
+            "completed",
+        )
+        .await?;
+
+        // Decision 5: Pending with deadline in 10 days (high urgency)
+        self.create_demo_board_decision(
+            building2_id,
+            org1_id,
+            meeting2_id,
+            "Remplacement chaudière",
+            "Valider le choix du fournisseur pour la nouvelle chaudière",
+            Some("2025-11-11"), // 10 days from 2025-11-01
+            "pending",
+        )
+        .await?;
+
+        // Decision 6: In progress with deadline in 20 days (medium urgency)
+        self.create_demo_board_decision(
+            building2_id,
+            org1_id,
+            meeting2_id,
+            "Aménagement parking vélos",
+            "Organiser l'aménagement du parking à vélos au rez-de-chaussée",
+            Some("2025-11-21"), // 20 days from 2025-11-01
+            "in_progress",
+        )
+        .await?;
+
+        log::info!("✅ Demo board decisions created");
 
         // Create documents ORG 1
         self.create_demo_document(
@@ -944,6 +1065,102 @@ impl DatabaseSeeder {
         .map_err(|e| format!("Failed to create document: {}", e))?;
 
         Ok(document_id)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn create_demo_board_member(
+        &self,
+        owner_id: Uuid,
+        building_id: Uuid,
+        org_id: Uuid,
+        meeting_id: Uuid,
+        position: &str,
+        mandate_start: &str,
+        mandate_end: &str,
+    ) -> Result<Uuid, String> {
+        let board_member_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        let mandate_start_parsed = NaiveDate::parse_from_str(mandate_start, "%Y-%m-%d")
+            .map_err(|e| format!("Failed to parse mandate_start date: {}", e))?
+            .and_hms_opt(0, 0, 0)
+            .ok_or("Failed to create datetime")?;
+
+        let mandate_end_parsed = NaiveDate::parse_from_str(mandate_end, "%Y-%m-%d")
+            .map_err(|e| format!("Failed to parse mandate_end date: {}", e))?
+            .and_hms_opt(0, 0, 0)
+            .ok_or("Failed to create datetime")?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO board_members (id, owner_id, building_id, organization_id, position, mandate_start, mandate_end, elected_by_meeting_id, is_active, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5::board_position, $6, $7, $8, $9, $10, $11)
+            "#
+        )
+        .bind(board_member_id)
+        .bind(owner_id)
+        .bind(building_id)
+        .bind(org_id)
+        .bind(position)
+        .bind(mandate_start_parsed)
+        .bind(mandate_end_parsed)
+        .bind(meeting_id)
+        .bind(true)
+        .bind(now)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create board member: {}", e))?;
+
+        Ok(board_member_id)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    async fn create_demo_board_decision(
+        &self,
+        building_id: Uuid,
+        org_id: Uuid,
+        meeting_id: Uuid,
+        subject: &str,
+        decision_text: &str,
+        deadline: Option<&str>,
+        status: &str,
+    ) -> Result<Uuid, String> {
+        let decision_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        let deadline_parsed = if let Some(deadline_str) = deadline {
+            Some(
+                NaiveDate::parse_from_str(deadline_str, "%Y-%m-%d")
+                    .map_err(|e| format!("Failed to parse deadline date: {}", e))?
+                    .and_hms_opt(0, 0, 0)
+                    .ok_or("Failed to create datetime")?,
+            )
+        } else {
+            None
+        };
+
+        sqlx::query(
+            r#"
+            INSERT INTO board_decisions (id, building_id, organization_id, meeting_id, subject, decision_text, deadline, status, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8::decision_status, $9, $10)
+            "#
+        )
+        .bind(decision_id)
+        .bind(building_id)
+        .bind(org_id)
+        .bind(meeting_id)
+        .bind(subject)
+        .bind(decision_text)
+        .bind(deadline_parsed)
+        .bind(status)
+        .bind(now)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create board decision: {}", e))?;
+
+        Ok(decision_id)
     }
 
     /// Seed realistic data for load testing (optimized for 1 vCPU / 2GB RAM)

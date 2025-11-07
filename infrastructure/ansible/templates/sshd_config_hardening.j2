@@ -1,0 +1,82 @@
+# SSH Hardening Configuration for KoproGo
+# Managed by Ansible - do not edit manually
+
+# Protocol
+Protocol 2
+
+# Listen address (change if specific IP needed)
+#ListenAddress 0.0.0.0
+Port {{ ssh_port | default(22) }}
+
+# Host keys
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Logging
+SyslogFacility AUTH
+LogLevel VERBOSE
+
+# Authentication
+PermitRootLogin prohibit-password
+PubkeyAuthentication yes
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+
+# Disable legacy authentication
+HostbasedAuthentication no
+IgnoreRhosts yes
+
+# Security settings
+MaxAuthTries 3
+MaxSessions 5
+MaxStartups 10:30:60
+LoginGraceTime 30
+
+# Strict mode
+StrictModes yes
+UsePrivilegeSeparation sandbox
+
+# Disable X11 forwarding
+X11Forwarding no
+X11DisplayOffset 10
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+
+# Client alive (keep connections open)
+ClientAliveInterval 300
+ClientAliveCountMax 2
+
+# Environment
+AcceptEnv LANG LC_*
+PermitUserEnvironment no
+
+# Subsystems
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Allow specific users only
+{% if ssh_allowed_users is defined %}
+AllowUsers {{ ssh_allowed_users }}
+{% endif %}
+
+# Key exchange algorithms (modern, secure)
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+
+# Ciphers (strong encryption only)
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+
+# MACs (message authentication)
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
+
+# Banner
+{% if ssh_banner_enabled | default(false) %}
+Banner /etc/ssh/banner
+{% endif %}
+
+# Google Authenticator 2FA (if enabled)
+{% if ssh_2fa_enabled | default(false) %}
+ChallengeResponseAuthentication yes
+AuthenticationMethods publickey,keyboard-interactive
+{% endif %}

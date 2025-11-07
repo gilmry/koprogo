@@ -8,6 +8,7 @@ pub enum UserRole {
     SuperAdmin,
     Syndic,
     Accountant,
+    BoardMember, // Membre du conseil de copropriété
     Owner,
 }
 
@@ -17,6 +18,7 @@ impl std::fmt::Display for UserRole {
             UserRole::SuperAdmin => write!(f, "superadmin"),
             UserRole::Syndic => write!(f, "syndic"),
             UserRole::Accountant => write!(f, "accountant"),
+            UserRole::BoardMember => write!(f, "board_member"),
             UserRole::Owner => write!(f, "owner"),
         }
     }
@@ -30,6 +32,7 @@ impl std::str::FromStr for UserRole {
             "superadmin" => Ok(UserRole::SuperAdmin),
             "syndic" => Ok(UserRole::Syndic),
             "accountant" => Ok(UserRole::Accountant),
+            "board_member" => Ok(UserRole::BoardMember),
             "owner" => Ok(UserRole::Owner),
             _ => Err(format!("Invalid user role: {}", s)),
         }

@@ -1,4 +1,6 @@
 pub mod auth_dto;
+pub mod board_decision_dto;
+pub mod board_member_dto;
 pub mod building_dto;
 pub mod document_dto;
 pub mod expense_dto;
@@ -12,6 +14,8 @@ pub mod unit_dto;
 pub mod unit_owner_dto;
 
 pub use auth_dto::*;
+pub use board_decision_dto::*;
+pub use board_member_dto::*;
 pub use building_dto::*;
 pub use document_dto::*;
 pub use expense_dto::*;

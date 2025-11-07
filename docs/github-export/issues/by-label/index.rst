@@ -12,8 +12,8 @@ Top labels by issue count:
    label-phase-vps
    label-priority-high
    label-priority-critical
+   label-phase-k8s
+   label-priority-low
    label-phase-k3s
    label-legal-compliance
-   label-priority-low
-   label-phase-k8s
    label-track-infrastructure

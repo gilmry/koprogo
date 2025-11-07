@@ -86,6 +86,8 @@ async fn main() -> std::io::Result<()> {
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
+    let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
+    let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
     let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
 
@@ -95,16 +97,28 @@ async fn main() -> std::io::Result<()> {
     // Initialize use cases
     let auth_use_cases =
         AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
-    let building_use_cases = BuildingUseCases::new(building_repo);
+    let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
     let unit_owner_use_cases =
         UnitOwnerUseCases::new(unit_owner_repo, unit_repo.clone(), owner_repo.clone());
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo);
+    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo);
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
+    let board_member_use_cases =
+        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+    let board_decision_use_cases = BoardDecisionUseCases::new(
+        board_decision_repo.clone(),
+        building_repo.clone(),
+        meeting_repo,
+    );
+    let board_dashboard_use_cases = BoardDashboardUseCases::new(
+        board_member_repo,
+        board_decision_repo,
+        building_repo.clone(),
+    );
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");
@@ -120,6 +134,9 @@ async fn main() -> std::io::Result<()> {
         document_use_cases,
         pcn_use_cases,
         gdpr_use_cases,
+        board_member_use_cases,
+        board_decision_use_cases,
+        board_dashboard_use_cases,
         audit_logger,
         email_service,
         pool.clone(),

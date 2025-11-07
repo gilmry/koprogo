@@ -1,6 +1,7 @@
 use crate::application::use_cases::{
-    AuthUseCases, BuildingUseCases, DocumentUseCases, ExpenseUseCases, GdprUseCases,
-    MeetingUseCases, OwnerUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
+    AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases,
+    BuildingUseCases, DocumentUseCases, ExpenseUseCases, GdprUseCases, MeetingUseCases,
+    OwnerUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -18,6 +19,9 @@ pub struct AppState {
     pub document_use_cases: Arc<DocumentUseCases>,
     pub pcn_use_cases: Arc<PcnUseCases>,
     pub gdpr_use_cases: Arc<GdprUseCases>,
+    pub board_member_use_cases: Arc<BoardMemberUseCases>,
+    pub board_decision_use_cases: Arc<BoardDecisionUseCases>,
+    pub board_dashboard_use_cases: Arc<BoardDashboardUseCases>,
     pub audit_logger: Arc<AuditLogger>,
     pub email_service: Arc<EmailService>,
     pub pool: DbPool, // For seeding operations
@@ -36,6 +40,9 @@ impl AppState {
         document_use_cases: DocumentUseCases,
         pcn_use_cases: PcnUseCases,
         gdpr_use_cases: GdprUseCases,
+        board_member_use_cases: BoardMemberUseCases,
+        board_decision_use_cases: BoardDecisionUseCases,
+        board_dashboard_use_cases: BoardDashboardUseCases,
         audit_logger: AuditLogger,
         email_service: EmailService,
         pool: DbPool,
@@ -51,6 +58,9 @@ impl AppState {
             document_use_cases: Arc::new(document_use_cases),
             pcn_use_cases: Arc::new(pcn_use_cases),
             gdpr_use_cases: Arc::new(gdpr_use_cases),
+            board_member_use_cases: Arc::new(board_member_use_cases),
+            board_decision_use_cases: Arc::new(board_decision_use_cases),
+            board_dashboard_use_cases: Arc::new(board_dashboard_use_cases),
             audit_logger: Arc::new(audit_logger),
             email_service: Arc::new(email_service),
             pool,

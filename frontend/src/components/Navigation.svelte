@@ -89,6 +89,7 @@
           ...commonItems,
           { href: '/admin/organizations', label: 'Organisations', icon: '🏛️' },
           { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
+          { href: '/admin/board-members', label: 'Conseil', icon: '👑' },
           { href: '/admin/gdpr', label: 'RGPD', icon: '🔒' },
         ];
 
@@ -100,6 +101,7 @@
           { href: '/units', label: t('navigation.units'), icon: '🚪' },
           { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
           { href: '/meetings', label: t('navigation.meetings'), icon: '📅' },
+          { href: '/syndic/board-members', label: 'Conseil', icon: '👑' },
           { href: '/documents', label: t('navigation.documents'), icon: '📄' },
         ];
 

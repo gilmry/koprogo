@@ -1,5 +1,7 @@
 pub mod admin_gdpr_handlers;
 pub mod auth_handlers;
+pub mod board_decision_handlers;
+pub mod board_member_handlers;
 pub mod building_handlers;
 pub mod document_handlers;
 pub mod expense_handlers;
@@ -18,6 +20,8 @@ pub mod user_handlers;
 
 pub use admin_gdpr_handlers::*;
 pub use auth_handlers::*;
+pub use board_decision_handlers::*;
+pub use board_member_handlers::*;
 pub use building_handlers::*;
 pub use document_handlers::*;
 pub use expense_handlers::*;

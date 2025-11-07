@@ -2,7 +2,7 @@
 Label: priority:low
 ====================
 
-Total: 7 issues
+Total: 8 issues
 
 .. toctree::
    :maxdepth: 1
@@ -14,3 +14,4 @@ Total: 7 issues
    ../issue-97
    ../issue-98
    ../issue-99
+   ../issue-111

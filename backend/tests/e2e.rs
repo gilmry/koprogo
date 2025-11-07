@@ -3,10 +3,11 @@ use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAuditLogRepository, PostgresBuildingRepository,
-    PostgresDocumentRepository, PostgresExpenseRepository, PostgresGdprRepository,
-    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
-    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
+    create_pool, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
+    PostgresBoardMemberRepository, PostgresBuildingRepository, PostgresDocumentRepository,
+    PostgresExpenseRepository, PostgresGdprRepository, PostgresOwnerRepository,
+    PostgresRefreshTokenRepository, PostgresUnitOwnerRepository, PostgresUnitRepository,
+    PostgresUserRepository, PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
@@ -67,12 +68,12 @@ async fn setup_test_db() -> (
     let jwt_secret = "test-secret-key".to_string();
     let auth_use_cases =
         AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
-    let building_use_cases = BuildingUseCases::new(building_repo);
+    let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
     let unit_owner_use_cases = UnitOwnerUseCases::new(unit_owner_repo, unit_repo, owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo);
+    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let storage_root = std::env::temp_dir().join("koprogo_e2e_uploads");
     let storage: Arc<dyn StorageProvider> =
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
@@ -91,6 +92,21 @@ async fn setup_test_db() -> (
     .await
     .expect("insert org");
 
+    let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
+    let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
+    let board_member_use_cases =
+        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
+    let board_decision_use_cases = BoardDecisionUseCases::new(
+        board_decision_repo.clone(),
+        building_repo.clone(),
+        meeting_repo.clone(),
+    );
+    let board_dashboard_use_cases = BoardDashboardUseCases::new(
+        board_member_repo.clone(),
+        board_decision_repo.clone(),
+        building_repo.clone(),
+    );
+
     let app_state = actix_web::web::Data::new(AppState::new(
         auth_use_cases,
         building_use_cases,
@@ -102,6 +118,9 @@ async fn setup_test_db() -> (
         document_use_cases,
         pcn_use_cases,
         gdpr_use_cases,
+        board_member_use_cases,
+        board_decision_use_cases,
+        board_dashboard_use_cases,
         audit_logger,
         EmailService::from_env().expect("email service"),
         pool.clone(),

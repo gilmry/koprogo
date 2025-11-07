@@ -29,6 +29,267 @@ Table des Matières
 
 ----
 
+🔄 Économies d'Échelle Participatives - Le Modèle qui Change Tout
+------------------------------------------------------------------
+
+Introduction - Pourquoi KoproGo est Différent
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+   *"Dans les SaaS classiques, l'échelle enrichit les actionnaires. Chez KoproGo, l'échelle enrichit **chaque participant**. Plus nous sommes nombreux, moins chacun paie. C'est mathématique, transparent, et inscrit dans nos statuts."*
+
+Le Mécanisme en 3 Temps
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+**1. Coûts Infrastructure Fixes (peu élastiques)**
+
+.. code-block:: text
+
+   100 copros:   95€/mois serveur (1 vCPU, 2GB RAM)
+   1,000 copros: 180€/mois serveur (2 vCPU, 4GB RAM) - Scale up à 800 copros
+   5,000 copros: 270€/mois serveur (4 vCPU, 8GB RAM) - Scale up à 3,000 copros
+
+**2. Dilution Coûts = Prix Coûtant Baisse**
+
+.. code-block:: text
+
+   Prix coûtant réel:
+     100 copros:   95€ ÷ 100 = 0.95€/copro/mois
+     1,000 copros: 180€ ÷ 1,000 = 0.18€/copro/mois (-81%)
+     5,000 copros: 270€ ÷ 5,000 = 0.054€/copro/mois (-94%)
+
+**3. Redistribution Statutaire (paliers ASBL)**
+
+.. code-block:: text
+
+   Grille tarifaire dégressive (inscrite statuts):
+     0-500 copros:    1.00€/mois (prix lancement)
+     500-1,000:       0.80€/mois (-20%) ← Baisse auto à 500 copros
+     1,000-2,000:     0.60€/mois (-40%) ← Baisse auto à 1,000 copros
+     2,000-5,000:     0.40€/mois (-60%) ← Baisse auto à 2,000 copros
+     5,000-10,000:    0.20€/mois (-80%) ← Baisse auto à 5,000 copros
+     10,000+:         0.10€/mois (-90%) ← Objectif 2032
+
+   Note: Coût réel à 5,000 copros = 0.054€, facturé 0.40€
+   Surplus (0.346€/copro × 5,000) = 20,760€/an → Réinvesti (voir Budget)
+
+Tableau Comparatif Évolution Prix
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 15 20 20 15 15
+
+   * - Participants
+     - Coût Infra
+     - Prix Coûtant Réel
+     - Prix ASBL Facturé
+     - Surplus/copro
+     - Surplus Total/an
+   * - 100
+     - 95€/mois
+     - 0.95€
+     - **1.00€**
+     - 0.05€
+     - 60€/an
+   * - 500
+     - 95€/mois
+     - 0.19€
+     - **0.80€**
+     - 0.61€
+     - 3,660€/an
+   * - 1,000
+     - 180€/mois
+     - 0.18€
+     - **0.60€**
+     - 0.42€
+     - 5,040€/an
+   * - 2,000
+     - 180€/mois
+     - 0.09€
+     - **0.60€**
+     - 0.51€
+     - 12,240€/an
+   * - 5,000
+     - 270€/mois
+     - 0.054€
+     - **0.40€**
+     - 0.346€
+     - 20,760€/an
+
+**Destination Surplus** : Devs temps plein (60-70%) + R&D PropTech (20-30%) + Réserve (10%)
+
+Effet Concret pour les Premiers Participants
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Julie, syndic, copropriété #47 (rejoint en 2026)** :
+
+.. code-block:: text
+
+   Année 1 (2026): 1.00€/mois → 12€/an
+   Année 2 (2027): 0.80€/mois → 9.60€/an (500 copros atteintes, -20%)
+     → Email: "Bonne nouvelle! 500 copropriétés utilisent KoproGo, votre tarif baisse à 0.80€/mois"
+
+   Année 3 (2028): 0.60€/mois → 7.20€/an (1,000 copros, -40%)
+     → Email: "1,000 copropriétés! Votre tarif passe à 0.60€/mois. Merci d'être parmi les pionniers!"
+
+   Année 5 (2030): 0.40€/mois → 4.80€/an (5,000 copros, -60%)
+     → Économie vs Année 1: 7.20€/an (60%)
+     → Économie vs SaaS concurrent (50€/mois): 595.20€/an (99.2%)
+
+Add-ons Optionnels (prix coûtant + marge raisonnable)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Tarif base** (inclus) :
+
+* Self-hosted : **0€** (toujours gratuit, AGPL-3.0)
+* Cloud géré : **0.40-1€/mois** selon palier dégressif
+
+**Add-ons PropTech** (optionnels) :
+
+**1. AI Assistant Pack** - **+2€/mois**
+
+* Chatbot syndic 24/7
+* OCR factures/PV automatique
+* Prévisions budget ML
+* **Coûts** : GPU inference (0.80€) + stockage modèles (0.50€) + marge infra (0.70€)
+
+**2. IoT Sensors** - **Hardware coût + 1€/capteur/mois**
+
+* Hardware : 15-45€/capteur (coût fabricant, **0€ marge**)
+* Service : 1€/mois (stockage données + alertes)
+* Pack 10 capteurs : 150-450€ hardware + 10€/mois service
+
+**3. Blockchain Voting** - **+1€/mois**
+
+* Votes AG immuables (Polygon Layer 2)
+* 50 votes/mois inclus (≈2 AG/an)
+* **Coûts** : Gas fees mutualisés (0.40€) + node infra (0.30€) + marge (0.30€)
+
+**4. Energy Buying Groups** - **0€ (gratuit)**
+
+* Mission ASBL (intérêt général)
+* Financé par partenariats fournisseurs
+* Aucune commission sur contrats
+
+**Précision Mutualisation Add-ons** :
+
+.. code-block:: text
+
+   AI Assistant: 1 GPU 50€/mois sert TOUS les usagers add-on
+     • 100 copros add-on: 50€ ÷ 100 = 0.50€ coût réel → Facturé 2€ (4x pour R&D)
+     • 1,000 copros add-on: 50€ ÷ 1,000 = 0.05€ coût réel → Baisse future possible à 1€
+
+   Blockchain: 1 node 20€/mois pour tous
+     • 100 copros: 0.20€ coût réel → Facturé 1€
+     • 1,000 copros: 0.02€ coût réel → Baisse future possible à 0.50€
+
+Projections 2025-2030 Révisées
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Scénario Conservateur** (20% adoption add-ons) :
+
+.. code-block:: text
+
+   Année 3 (2028): 2,000 copros
+     • Base 0.60€: 14,400€/an
+     • AI (400 copros): 9,600€/an
+     • IoT (200 copros): 24,000€/an
+     • Blockchain (300 copros): 3,600€/an
+     Total: 51,600€/an (vs 24,000€ sans add-ons)
+
+**Scénario Optimiste** (40% adoption add-ons) :
+
+.. code-block:: text
+
+   Année 5 (2030): 5,000 copros
+     • Base 0.40€: 24,000€/an
+     • AI (2,000 copros): 48,000€/an
+     • IoT (1,000 copros): 120,000€/an
+     • Blockchain (1,500 copros): 18,000€/an
+     Total: 210,000€/an
+
+Coûts Infrastructure PropTech
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. code-block:: text
+
+   GPU IA (inference): 50€/mois (Hetzner GPU Cloud)
+   Blockchain node: 20€/mois (Polygon RPC)
+   IoT ingestion (MQTT): 10€/mois (backend actuel suffit)
+   Stockage time-series (IoT): 15€/mois (TimescaleDB extension PostgreSQL)
+   Total infra PropTech: 95€/mois ≈ 1,140€/an
+
+Transparence - Facture Détaillée Add-ons
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Dashboard public** `/transparency` affiche :
+
+* Coûts réels PropTech (GPU, node, stockage)
+* Nombre utilisateurs par add-on
+* Prix coûtant calculé vs Prix facturé
+* Surplus généré → Allocation (R&D modèles, audits smart contracts)
+
+**Rapports trimestriels** :
+
+* Détail coûts par add-on
+* Évolution adoption (graphiques)
+* Investissements R&D (nouvelles features IA, smart contracts audités)
+
+Budget Participatif - Allocation Surplus
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**Règle ASBL KoproGo** (inscrite statuts) :
+
+* **Réserve légale minimum** : 3 mois coûts infra
+* **Surplus au-delà réserve** : Voté en AG annuelle
+* **Options vote** :
+
+  #. Nouvelles features (développement)
+  #. Amélioration infra (performance, sécurité)
+  #. Baisse tarifaire anticipée (redistribution)
+  #. R&D PropTech (IA, IoT, Blockchain)
+
+**Exemple AG 2028** (1,500 copros, surplus 8,640€) :
+
+.. code-block:: text
+
+   Proposition CA:
+     • 40% Features prioritaires (vote communauté): 3,456€
+     • 30% Réserve légale (sécurité): 2,592€
+     • 20% R&D IA/Blockchain: 1,728€
+     • 10% Baisse anticipée palier 2k: 864€ (remboursé pro-rata)
+
+   Vote AG (1 membre = 1 voix):
+     ✅ Adopté: 87% pour, 13% abstention
+
+Transparence Comptable - Dashboard Public
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+**URL publique** : `https://koprogo.com/transparency` (accessible sans login)
+
+**Métriques temps réel** :
+
+* Nombre participants actifs
+* Coûts infrastructure (serveurs, bande passante, stockage)
+* Prix coûtant réel calculé
+* Prix facturé actuel
+* Surplus généré (€ et %)
+* Prochain palier dégressif (countdown participants)
+* Historique baisses tarifaires
+
+**Rapports trimestriels** (PDF téléchargeable) :
+
+* Bilan comptable complet
+* Détail coûts par poste
+* Allocation surplus
+* Décisions AG
+* Roadmap investissements
+
+.. warning::
+   **Garantie transparence radicale** : Si surplus > 25% pendant 2 trimestres consécutifs, baisse tarifaire **obligatoire** ou redistribution **automatique** (inscrit statuts).
+
+----
+
 Vision et Philosophie
 ---------------------
 

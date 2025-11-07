@@ -1,4 +1,6 @@
 pub mod audit_log_repository;
+pub mod board_decision_repository;
+pub mod board_member_repository;
 pub mod building_repository;
 pub mod document_repository;
 pub mod expense_repository;
@@ -13,6 +15,8 @@ pub mod user_repository;
 pub mod user_role_repository;
 
 pub use audit_log_repository::{AuditLogFilters, AuditLogRepository};
+pub use board_decision_repository::BoardDecisionRepository;
+pub use board_member_repository::BoardMemberRepository;
 pub use building_repository::BuildingRepository;
 pub use document_repository::DocumentRepository;
 pub use expense_repository::ExpenseRepository;

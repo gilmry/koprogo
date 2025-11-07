@@ -13,7 +13,22 @@ Phase 1: VPS MVP + Legal Compliance
 Description
 ===========
 
-Production-ready sur VPS OVH avec conformité légale belge complète (Nov 2025 - Mar 2026)
+Phase 1: VPS MVP + Conformité Légale Belge (Nov 2025 - Mar 2026)
+
+🎯 Objectif: Production-ready sur VPS OVH avec conformité légale belge complète
+
+🔄 Modèle Participatif: Plus de copropriétés rejoignent KoproGo = Prix baisse pour tous
+- 100 copros: 1.00€/mois
+- 500 copros: 0.80€/mois (-20% automatique)
+- 1,000 copros: 0.60€/mois (-40%)
+
+📦 Livrables clés:
+- Sécurité production (LUKS, backups GPG, monitoring)
+- GDPR complet (export, effacement, audit logs)
+- Board Tools (Conseil de Copropriété >20 lots)
+- Conformité belge: Plan Comptable Normalisé, État Daté, Budget Annuel
+
+🚀 Infrastructure: VPS Docker Compose + GitOps + Traefik
 
 Issues (22)
 ========

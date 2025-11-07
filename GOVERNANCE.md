@@ -9,18 +9,19 @@
 ## 📖 Table des Matières
 
 1. [Introduction & Vision](#introduction--vision)
-2. [Structure Juridique](#structure-juridique)
-3. [Membres de l'ASBL](#membres-de-lasbl)
-4. [Conseil d'Administration](#conseil-dadministration)
-5. [Assemblée Générale](#assemblée-générale)
-6. [Mainteneurs Techniques](#mainteneurs-techniques)
-7. [Contributeurs Externes](#contributeurs-externes)
-8. [Processus de Décision](#processus-de-décision)
-9. [Financements & Transparence](#financements--transparence)
-10. [Propriété Intellectuelle](#propriété-intellectuelle)
-11. [Code of Conduct & Modération](#code-of-conduct--modération)
-12. [Résolution de Conflits](#résolution-de-conflits)
-13. [Évolution de la Gouvernance](#évolution-de-la-gouvernance)
+2. [Gouvernance Participative & Redistribution des Bénéfices](#gouvernance-participative--redistribution-des-bénéfices-de-léchelle)
+3. [Structure Juridique](#structure-juridique)
+4. [Membres de l'ASBL](#membres-de-lasbl)
+5. [Conseil d'Administration](#conseil-dadministration)
+6. [Assemblée Générale](#assemblée-générale)
+7. [Mainteneurs Techniques](#mainteneurs-techniques)
+8. [Contributeurs Externes](#contributeurs-externes)
+9. [Processus de Décision](#processus-de-décision)
+10. [Financements & Transparence](#financements--transparence)
+11. [Propriété Intellectuelle](#propriété-intellectuelle)
+12. [Code of Conduct & Modération](#code-of-conduct--modération)
+13. [Résolution de Conflits](#résolution-de-conflits)
+14. [Évolution de la Gouvernance](#évolution-de-la-gouvernance)
 
 ---
 
@@ -42,7 +43,143 @@ Rendre la gestion de copropriété **accessible, performante et respectueuse de 
 
 ---
 
-## 2. Structure Juridique
+## 2. Gouvernance Participative & Redistribution des Bénéfices de l'Échelle
+
+**Principe Fondateur**
+
+> "Chaque nouveau participant renforce le projet pour tous les autres. La gouvernance doit refléter ce cercle vertueux et garantir que les bénéfices de l'échelle profitent à la communauté, jamais à des intérêts privés."
+
+### Mécanismes de Redistribution Statutaires
+
+#### 1. Grille Tarifaire Dégressive (Article X Statuts)
+
+- **Paliers automatiques** inscrits dans statuts ASBL
+- **Non modifiables** sans vote AG (75% majorité qualifiée)
+- **Déclenchement automatique** par compteur participants
+- **Notification email** à tous les membres à chaque palier
+- **Effet rétroactif** dès le 1er du mois suivant
+
+#### 2. Allocation Surplus - Vote AG Annuel
+
+**Processus** :
+
+1. **Calcul surplus** (T4 chaque année) :
+   - Revenus annuels - Coûts infra - Réserve légale (3 mois)
+   - Publication rapport financier 30 jours avant AG
+
+2. **Proposition CA** (Conseil d'Administration) :
+   - Analyse besoins (features, infra, R&D)
+   - Proposition répartition surplus (3-5 options)
+   - Justification détaillée chaque poste
+
+3. **Vote AG** (1 membre = 1 voix) :
+   - Débat ouvert (chaque membre peut s'exprimer)
+   - Amendements possibles (si 10% membres soutiennent)
+   - Vote final à majorité simple
+   - Procès-verbal public sous 7 jours
+
+4. **Exécution** :
+   - Allocation budget votée dans les 30 jours
+   - Suivi trimestriel publié (avancement projets)
+   - Compte-rendu détaillé AG suivante
+
+**Exemples Votes Passés** (simulation) :
+
+**AG 2028** (1,500 copros, surplus 8,640€) :
+
+```
+Proposition CA:
+  A. 50% Features (4,320€) - Vote priorités communauté
+  B. 30% Réserve (2,592€) - Sécurité financière
+  C. 20% R&D PropTech (1,728€) - IA/Blockchain
+
+Amendement membre @Marie_Syndic:
+  "Proposer 10% baisse anticipée au lieu de 20% R&D"
+  → Soutien: 18% membres (> 10%) → Mis au vote
+
+Vote final:
+  - Option CA (50/30/20): 62% ✅ ADOPTÉE
+  - Amendement Marie (50/30/10/10): 28%
+  - Abstention: 10%
+```
+
+#### 3. Contributions Valorisées - Tarifs Préférentiels
+
+**Barème réductions** (inscrit règlement d'ordre intérieur) :
+
+- **Contributeur code** (1+ PR merged/an) : **-25%** tarif cloud
+- **Contributeur actif** (5+ PR/an) : **-50%** tarif cloud
+- **Mainteneur** (core team) : **100% gratuit** à vie
+- **Traducteur** (1 langue complète) : **-15%** 2 ans
+- **Rédacteur docs** (10+ pages) : **-20%** 1 an
+
+**Cumul possible** avec paliers dégressifs :
+
+```
+Exemple: Copro #234, contributeur actif, 2,000 copros atteintes
+  Prix base palier 2k: 0.60€/mois
+  Réduction contributeur: -50%
+  Prix final: 0.30€/mois (3.60€/an vs 600€/an SaaS concurrent)
+```
+
+#### 4. Membres ASBL - Droits Élargis
+
+**Cotisation annuelle** : 120€/an (10€/mois)
+
+- Donne droit de vote AG (1 membre = 1 voix)
+- Éligibilité CA
+- Accès rapports financiers trimestriels
+- Participation groupes de travail (features, gouvernance)
+
+**Exonération cotisation** (sur demande motivée) :
+
+- **Étudiants / Chômeurs** : 100% (preuve statut)
+- **Contributeurs actifs** : 50-100% selon niveau contribution
+- **Copropriétés < 5 lots** : 50% (solidarité petites structures)
+
+**Redistribution cotisations** :
+
+- 60% salaires équipe core (si revenus cloud insuffisants)
+- 30% événements communautaires (meetups, conférences)
+- 10% frais administratifs ASBL (comptable, assurances)
+
+### Comité d'Éthique IA
+
+**Composition** :
+
+- 5 membres : 2 experts techniques (ML/IA, sécurité), 2 représentants usagers (syndics, copropriétaires), 1 éthicien/juriste GDPR
+
+**Rôle** :
+
+- Audit algorithmes IA (biais, équité, transparence)
+- Validation features IA avant production
+- Veto sur fonctionnalités problématiques
+- Rapports publics trimestriels
+
+**Processus** :
+
+- Toute feature IA doit être soumise au Comité
+- Review technique + éthique (délai 15 jours)
+- Si rejet : justification publique + recommandations
+- Appel possible en AG (vote membres)
+
+**Principes IA KoproGo** :
+
+1. **Transparence** : Code open source, explainability modèles
+2. **Privacy** : Pas de surveillance, données anonymisées
+3. **Équité** : Pas de discrimination, audit biais
+4. **Contrôle** : Humain toujours in-the-loop, pas d'automatisation totale
+5. **Réversibilité** : Option désactiver IA à tout moment
+
+### Processus Décision PropTech
+
+- **Features non-controversées** : CA décide
+- **Features controversées** (blockchain, IA sensible) : Vote AG membres
+- **Urgences sécurité** : CA décide, ratification AG suivante
+
+---
+
+## 3. Structure Juridique
 
 ### Statut Actuel (2025)
 
@@ -64,7 +201,7 @@ Rendre la gestion de copropriété **accessible, performante et respectueuse de 
 
 ---
 
-## 3. Membres de l'ASBL
+## 4. Membres de l'ASBL
 
 ### Qui Peut Devenir Membre ?
 
@@ -105,7 +242,7 @@ L'ASBL KoproGo est **ouverte** aux catégories suivantes :
 
 ---
 
-## 4. Conseil d'Administration
+## 5. Conseil d'Administration
 
 ### Composition
 
@@ -144,7 +281,7 @@ L'ASBL KoproGo est **ouverte** aux catégories suivantes :
 
 ---
 
-## 5. Assemblée Générale
+## 6. Assemblée Générale
 
 ### Fréquence
 
@@ -169,7 +306,7 @@ L'ASBL KoproGo est **ouverte** aux catégories suivantes :
 
 ---
 
-## 6. Mainteneurs Techniques
+## 7. Mainteneurs Techniques
 
 ### Rôle des Mainteneurs
 
@@ -205,7 +342,7 @@ Les **mainteneurs** sont les développeurs ayant les **droits d'écriture** (com
 
 ---
 
-## 7. Contributeurs Externes
+## 8. Contributeurs Externes
 
 ### Contributions Ouvertes
 
@@ -252,7 +389,7 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour détails.
 
 ---
 
-## 8. Processus de Décision
+## 9. Processus de Décision
 
 ### Décisions de Développement (Roadmap, Features)
 
@@ -295,7 +432,7 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour détails.
 
 ---
 
-## 9. Financements & Transparence
+## 10. Financements & Transparence
 
 ### Sources de Revenus
 
@@ -345,7 +482,7 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour détails.
 
 ---
 
-## 10. Propriété Intellectuelle
+## 11. Propriété Intellectuelle
 
 ### Droits d'Auteur
 
@@ -369,7 +506,7 @@ Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour détails.
 
 ---
 
-## 11. Code of Conduct & Modération
+## 12. Code of Conduct & Modération
 
 ### Code of Conduct
 
@@ -399,7 +536,7 @@ Le projet KoproGo adopte le **Contributor Covenant v2.1** (voir [CODE_OF_CONDUCT
 
 ---
 
-## 12. Résolution de Conflits
+## 13. Résolution de Conflits
 
 ### Conflits Techniques
 
@@ -424,7 +561,7 @@ Le projet KoproGo adopte le **Contributor Covenant v2.1** (voir [CODE_OF_CONDUCT
 
 ---
 
-## 13. Évolution de la Gouvernance
+## 14. Évolution de la Gouvernance
 
 ### Révision des Statuts
 

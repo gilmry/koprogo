@@ -1,3 +1,5 @@
+pub mod board_decision;
+pub mod board_member;
 pub mod building;
 pub mod document;
 pub mod expense;
@@ -14,6 +16,8 @@ pub mod unit_owner;
 pub mod user;
 pub mod user_role_assignment;
 
+pub use board_decision::{BoardDecision, DecisionStatus};
+pub use board_member::{BoardMember, BoardPosition};
 pub use building::Building;
 pub use document::{Document, DocumentType};
 pub use expense::{Expense, ExpenseCategory, PaymentStatus};

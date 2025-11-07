@@ -4,10 +4,10 @@ Issue #94: feat: AI Features (OCR, Predictions, Anomaly Detection, Chatbot)
 
 :State: **OPEN**
 :Milestone: Phase 3: K8s Production
-:Labels: enhancement,phase:k8s track:software,priority:low
+:Labels: enhancement,phase:k8s track:software,priority:low proptech:ai,mlops
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-01
+:Updated: 2025-11-07
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/94>`_
 
 Description

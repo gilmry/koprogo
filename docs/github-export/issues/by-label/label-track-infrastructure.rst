@@ -2,7 +2,7 @@
 Label: track:infrastructure
 ============================
 
-Total: 5 issues
+Total: 6 issues
 
 .. toctree::
    :maxdepth: 1
@@ -12,3 +12,4 @@ Total: 5 issues
    ../issue-41
    ../issue-43
    ../issue-44
+   ../issue-109

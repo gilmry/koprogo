@@ -75,6 +75,11 @@ export async function apiFetch<T = any>(
     throw new Error(error || `API Error: ${response.status}`);
   }
 
+  // Handle 204 No Content responses (empty body)
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json();
 }
 
@@ -190,6 +195,8 @@ export const api = {
       const error = await response.text();
       throw new Error(error || `Delete failed: ${response.status}`);
     }
+
+    // No need to parse response for DELETE (typically 204 No Content)
   },
 };
 

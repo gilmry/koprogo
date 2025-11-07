@@ -64,6 +64,26 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(cancel_meeting)
             .service(reschedule_meeting)
             .service(delete_meeting)
+            // Board Members
+            .service(elect_board_member)
+            .service(get_my_mandates) // Must be before get_board_member to avoid UUID parsing
+            .service(get_board_dashboard) // Must be before get_board_member to avoid UUID parsing
+            .service(get_board_member)
+            .service(list_active_board_members)
+            .service(list_all_board_members)
+            .service(renew_mandate)
+            .service(remove_board_member)
+            .service(get_board_stats)
+            // Board Decisions
+            .service(create_decision)
+            .service(get_decision)
+            .service(list_decisions_by_building)
+            .service(list_decisions_by_status)
+            .service(list_overdue_decisions)
+            .service(update_decision_status)
+            .service(add_notes)
+            .service(complete_decision)
+            .service(get_decision_stats)
             // Documents
             .service(upload_document)
             .service(list_documents)
