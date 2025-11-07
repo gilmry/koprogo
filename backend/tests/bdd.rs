@@ -1509,7 +1509,6 @@ async fn then_mandate_active(world: &mut BuildingWorld) {
     assert!(member.is_active, "Mandate should be active");
 }
 
-
 #[given("a building with 20 units exists")]
 async fn given_building_with_20_units(world: &mut BuildingWorld) {
     if world.pool.is_none() {
@@ -1946,14 +1945,13 @@ async fn given_owner_owning_unit(world: &mut BuildingWorld, owner_name: String, 
     let email = format!("{}@test.com", owner_name.replace(' ', ".").to_lowercase());
 
     // Check if owner already exists by email
-    let existing: Option<Uuid> = sqlx::query_scalar(
-        "SELECT id FROM owners WHERE email = $1 AND organization_id = $2"
-    )
-    .bind(&email)
-    .bind(org_id)
-    .fetch_optional(pool)
-    .await
-    .expect("check existing owner");
+    let existing: Option<Uuid> =
+        sqlx::query_scalar("SELECT id FROM owners WHERE email = $1 AND organization_id = $2")
+            .bind(&email)
+            .bind(org_id)
+            .fetch_optional(pool)
+            .await
+            .expect("check existing owner");
 
     let owner_id = if let Some(id) = existing {
         id
@@ -2072,7 +2070,6 @@ async fn then_board_member_has_position(world: &mut BuildingWorld, expected_posi
         .expect("board member should exist");
     assert_eq!(member.position, expected_position);
 }
-
 
 #[then("the mandate duration should be approximately 1 year")]
 async fn then_mandate_duration_one_year(world: &mut BuildingWorld) {
@@ -2360,4 +2357,3 @@ async fn then_stats_show_overdue(world: &mut BuildingWorld, count: i64) {
 async fn given_one_overdue_decision(world: &mut BuildingWorld) {
     given_n_overdue_decisions(world, 1).await;
 }
-
