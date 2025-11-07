@@ -104,14 +104,17 @@ async fn main() -> std::io::Result<()> {
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let meeting_use_cases = MeetingUseCases::new(meeting_repo);
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
-    let pcn_use_cases = PcnUseCases::new(expense_repo);
+    let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
-    let account_use_cases = AccountUseCases::new(account_repo);
+    let account_use_cases = AccountUseCases::new(account_repo.clone());
+    let financial_report_use_cases =
+        FinancialReportUseCases::new(account_repo.clone(), expense_repo.clone());
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");
 
     let app_state = web::Data::new(AppState::new(
+        account_use_cases,
         auth_use_cases,
         building_use_cases,
         unit_use_cases,
@@ -122,7 +125,7 @@ async fn main() -> std::io::Result<()> {
         document_use_cases,
         pcn_use_cases,
         gdpr_use_cases,
-        account_use_cases,
+        financial_report_use_cases,
         audit_logger,
         email_service,
         pool.clone(),

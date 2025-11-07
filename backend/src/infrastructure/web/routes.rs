@@ -88,6 +88,9 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(generate_pcn_report)
             .service(export_pcn_pdf)
             .service(export_pcn_excel)
+            // Financial Reports (Belgian PCMN)
+            .service(generate_balance_sheet)
+            .service(generate_income_statement)
             // Seed (SuperAdmin only) - ONE seed only
             .service(seed_demo_data)
             // .service(seed_realistic_data) // Disabled: we only use ONE seed
