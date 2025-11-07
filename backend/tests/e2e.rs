@@ -73,7 +73,8 @@ async fn setup_test_db() -> (
 
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
     let account_use_cases = AccountUseCases::new(account_repo.clone());
-    let financial_report_use_cases = FinancialReportUseCases::new(account_repo, expense_repo.clone());
+    let financial_report_use_cases =
+        FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
     let auth_use_cases =
         AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);

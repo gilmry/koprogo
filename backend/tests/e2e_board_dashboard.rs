@@ -3,8 +3,8 @@ use koprogo_api::application::dto::{CreateBuildingDto, LoginRequest, RegisterReq
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::repositories::*;
-use koprogo_api::infrastructure::database::*;
 use koprogo_api::infrastructure::database::PostgresAccountRepository;
+use koprogo_api::infrastructure::database::*;
 use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
@@ -84,7 +84,8 @@ async fn setup_test_db() -> (
 
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
     let account_use_cases = AccountUseCases::new(account_repo.clone());
-    let financial_report_use_cases = FinancialReportUseCases::new(account_repo, expense_repo.clone());
+    let financial_report_use_cases =
+        FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
     let auth_use_cases =
         AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
