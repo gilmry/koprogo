@@ -8,6 +8,7 @@ pub mod gdpr_restriction;
 pub mod meeting;
 pub mod organization;
 pub mod owner;
+pub mod payment_reminder;
 pub mod refresh_token;
 pub mod unit;
 pub mod unit_owner;
@@ -27,6 +28,7 @@ pub use gdpr_restriction::{GdprRestrictionRequest, RestrictionReason, Restrictio
 pub use meeting::{Meeting, MeetingStatus, MeetingType};
 pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
+pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
 pub use refresh_token::RefreshToken;
 pub use unit::{Unit, UnitType};
 pub use unit_owner::UnitOwner;
