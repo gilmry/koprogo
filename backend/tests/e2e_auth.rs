@@ -65,11 +65,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
-    let unit_owner_use_cases = UnitOwnerUseCases::new(
-        unit_owner_repo.clone(),
-        unit_repo,
-        owner_repo,
-    );
+    let unit_owner_use_cases =
+        UnitOwnerUseCases::new(unit_owner_repo.clone(), unit_repo, owner_repo);
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
     let charge_distribution_use_cases = ChargeDistributionUseCases::new(
         charge_distribution_repo,
