@@ -1418,7 +1418,7 @@ async fn given_building_with_many_units(world: &mut BuildingWorld) {
 }
 
 #[when(regex = r#"^I elect a user as board (president|treasurer|member) with a 1-year mandate$"#)]
-async fn when_elect_board_member(world: &mut BuildingWorld, position: String) {
+async fn when_elect_simple_board_member(world: &mut BuildingWorld, position: String) {
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
     let pool = world.pool.as_ref().expect("pool").clone();
@@ -1509,24 +1509,6 @@ async fn then_mandate_active(world: &mut BuildingWorld) {
     assert!(member.is_active, "Mandate should be active");
 }
 
-#[then("the mandate duration should be approximately 1 year")]
-async fn then_mandate_duration_one_year(world: &mut BuildingWorld) {
-    let member_id = world.last_board_member_id.unwrap();
-    let use_cases = world.board_member_use_cases.as_ref().unwrap();
-
-    let member = use_cases
-        .get_board_member(member_id)
-        .await
-        .expect("get member")
-        .expect("member should exist");
-
-    // Should be around 365 days (330-395 days based on domain validation)
-    assert!(
-        member.days_remaining >= 330 && member.days_remaining <= 395,
-        "Mandate duration should be approximately 1 year, got {} days",
-        member.days_remaining
-    );
-}
 
 #[given("a building with 20 units exists")]
 async fn given_building_with_20_units(world: &mut BuildingWorld) {
@@ -1598,7 +1580,7 @@ async fn given_building_with_25_units(world: &mut BuildingWorld) {
 
 #[when("I attempt to elect a user as board president")]
 async fn when_attempt_elect_board_president(world: &mut BuildingWorld) {
-    when_elect_board_member(world, "president".to_string()).await;
+    when_elect_simple_board_member(world, "president".to_string()).await;
 }
 
 #[then(regex = r#"^the election should fail with "([^"]*)"$"#)]
@@ -1926,8 +1908,11 @@ async fn then_mandate_expiring_soon(world: &mut BuildingWorld) {
 
 #[given(regex = r#"^a building "([^"]*)" with (\d+) units$"#)]
 async fn given_building_with_units(world: &mut BuildingWorld, name: String, units: i32) {
-    world.setup_once().await;
-    let building_repo = world.use_cases.as_ref().unwrap().building_repo.clone();
+    if world.pool.is_none() {
+        world.setup_database().await;
+    }
+
+    let pool = world.pool.as_ref().expect("pool").clone();
     let org_id = world.org_id.expect("org_id");
 
     use koprogo_api::domain::entities::Building as DomBuilding;
@@ -1944,6 +1929,7 @@ async fn given_building_with_units(world: &mut BuildingWorld, name: String, unit
     )
     .unwrap();
 
+    let building_repo = PostgresBuildingRepository::new(pool.clone());
     let created = building_repo.create(&building).await.unwrap();
     world.building_id = Some(created.id);
 }
@@ -1952,26 +1938,44 @@ async fn given_building_with_units(world: &mut BuildingWorld, name: String, unit
 async fn given_owner_owning_unit(world: &mut BuildingWorld, owner_name: String, _unit_num: i32) {
     let owner_repo = world.owner_repo.as_ref().expect("owner repo");
     let org_id = world.org_id.expect("org_id");
+    let pool = world.pool.as_ref().expect("pool");
 
     let name_parts: Vec<&str> = owner_name.split(' ').collect();
     let first_name = name_parts.first().unwrap_or(&"Unknown").to_string();
     let last_name = name_parts.get(1).unwrap_or(&"Unknown").to_string();
+    let email = format!("{}@test.com", owner_name.replace(' ', ".").to_lowercase());
 
-    let owner = koprogo_api::domain::entities::Owner::new(
-        org_id,
-        first_name,
-        last_name,
-        format!("{}@test.com", owner_name.replace(' ', ".").to_lowercase()),
-        Some("+32123456789".to_string()),
-        "1 Test St".to_string(),
-        "Brussels".to_string(),
-        "1000".to_string(),
-        "Belgium".to_string(),
+    // Check if owner already exists by email
+    let existing: Option<Uuid> = sqlx::query_scalar(
+        "SELECT id FROM owners WHERE email = $1 AND organization_id = $2"
     )
-    .expect("create owner");
+    .bind(&email)
+    .bind(org_id)
+    .fetch_optional(pool)
+    .await
+    .expect("check existing owner");
 
-    let created_owner = owner_repo.create(&owner).await.expect("save owner");
-    world.current_owner_id = Some(created_owner.id);
+    let owner_id = if let Some(id) = existing {
+        id
+    } else {
+        let owner = koprogo_api::domain::entities::Owner::new(
+            org_id,
+            first_name,
+            last_name,
+            email,
+            Some("+32123456789".to_string()),
+            "1 Test St".to_string(),
+            "Brussels".to_string(),
+            "1000".to_string(),
+            "Belgium".to_string(),
+        )
+        .expect("create owner");
+
+        let created_owner = owner_repo.create(&owner).await.expect("save owner");
+        created_owner.id
+    };
+
+    world.current_owner_id = Some(owner_id);
 }
 
 #[when(
@@ -2064,24 +2068,11 @@ async fn then_board_member_has_position(world: &mut BuildingWorld, expected_posi
     let member = use_cases
         .get_board_member(member_id)
         .await
-        .expect("get board member");
+        .expect("get board member")
+        .expect("board member should exist");
     assert_eq!(member.position, expected_position);
 }
 
-#[then("the mandate should be active")]
-async fn then_mandate_is_active(world: &mut BuildingWorld) {
-    let member_id = world.last_board_member_id.expect("board member id");
-    let use_cases = world
-        .board_member_use_cases
-        .as_ref()
-        .expect("board member use cases");
-
-    let member = use_cases
-        .get_board_member(member_id)
-        .await
-        .expect("get board member");
-    assert!(member.is_active, "Mandate should be active");
-}
 
 #[then("the mandate duration should be approximately 1 year")]
 async fn then_mandate_duration_one_year(world: &mut BuildingWorld) {
@@ -2095,7 +2086,7 @@ async fn then_mandate_duration_one_year(world: &mut BuildingWorld) {
         .expect("exists");
     let duration_days = (member.mandate_end - member.mandate_start).num_days();
     assert!(
-        duration_days >= 330 && duration_days <= 395,
+        (330..=395).contains(&duration_days),
         "Mandate duration should be approximately 1 year (330-395 days), got {} days",
         duration_days
     );
@@ -2229,9 +2220,9 @@ async fn then_dashboard_shows_decision_stats(world: &mut BuildingWorld) {
 
 #[then("the dashboard should show upcoming deadlines")]
 async fn then_dashboard_shows_upcoming_deadlines(world: &mut BuildingWorld) {
-    let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
+    let _dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
     // Verify the upcoming_deadlines vec exists (can be empty)
-    assert!(dashboard.upcoming_deadlines.len() >= 0);
+    // No assertion needed as the vec always exists
 }
 
 #[given(regex = r#"^(\d+) decisions? with status "([^"]*)"$"#)]
@@ -2336,7 +2327,7 @@ async fn then_alert_indicates_days_remaining(world: &mut BuildingWorld, _expecte
 async fn then_decision_flagged_as_urgent(world: &mut BuildingWorld, _decision_name: String) {
     let dashboard = world.last_board_dashboard.as_ref().expect("dashboard");
     assert!(
-        dashboard.upcoming_deadlines.len() > 0,
+        !dashboard.upcoming_deadlines.is_empty(),
         "Should have upcoming deadlines"
     );
 }
@@ -2370,10 +2361,3 @@ async fn given_one_overdue_decision(world: &mut BuildingWorld) {
     given_n_overdue_decisions(world, 1).await;
 }
 
-#[main]
-async fn main() {
-    BuildingWorld::cucumber()
-        .fail_on_skipped()
-        .run("tests/features/")
-        .await;
-}
