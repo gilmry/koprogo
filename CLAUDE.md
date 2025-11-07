@@ -19,6 +19,35 @@ KoproGo is a SaaS property management platform built with **Hexagonal Architectu
 
 **Stack**: Rust + Actix-web (backend), Astro + Svelte (frontend), PostgreSQL 15
 
+## Security & Monitoring
+
+KoproGo includes production-grade security and observability:
+
+**Implemented (Issues #39, #40, #41, #43):**
+- ✅ **LUKS Encryption at Rest**: Full-disk encryption for PostgreSQL data and uploads (AES-XTS-512)
+- ✅ **Encrypted Backups**: Daily GPG-encrypted backups with S3 off-site storage (7d local, configurable S3 lifecycle)
+- ✅ **Monitoring Stack**: Prometheus + Grafana + Loki + Alertmanager (30d metrics, 7d logs)
+- ✅ **Intrusion Detection**: Suricata IDS with custom rules (SQL injection, XSS, path traversal, etc.)
+- ✅ **WAF Protection**: CrowdSec community threat intelligence
+- ✅ **fail2ban**: Custom jails for SSH, Traefik, API abuse, PostgreSQL brute-force
+- ✅ **SSH Hardening**: Key-only authentication, modern ciphers, reduced attack surface
+- ✅ **Kernel Hardening**: sysctl security configuration (SYN cookies, IP spoofing protection, ASLR)
+- ✅ **Security Auditing**: Automated Lynis audits (weekly), rkhunter scans (daily), AIDE file integrity monitoring
+
+**Monitoring Endpoints:**
+- Prometheus: http://vps-ip:9090
+- Grafana: http://vps-ip:3001
+- Alertmanager: http://vps-ip:9093
+- Backend metrics: http://vps-ip:8080/metrics
+
+**Documentation:** See [`infrastructure/SECURITY.md`](infrastructure/SECURITY.md) for complete setup and configuration.
+
+**Quick deploy:**
+```bash
+cd infrastructure/ansible
+ansible-playbook -i inventory.ini security-monitoring.yml
+```
+
 ## Architecture: Hexagonal (Ports & Adapters)
 
 The backend follows strict layering with dependency inversion:

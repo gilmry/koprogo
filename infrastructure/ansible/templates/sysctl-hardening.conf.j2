@@ -1,0 +1,112 @@
+# /etc/sysctl.d/99-koprogo-hardening.conf
+# Kernel hardening for KoproGo VPS
+
+# ==================================
+# Network Security
+# ==================================
+
+# Disable IP forwarding (not a router)
+net.ipv4.ip_forward = 0
+net.ipv6.conf.all.forwarding = 0
+
+# Enable SYN cookies protection (SYN flood attacks)
+net.ipv4.tcp_syncookies = 1
+
+# Disable source packet routing
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv6.conf.all.accept_source_route = 0
+net.ipv6.conf.default.accept_source_route = 0
+
+# Ignore ICMP redirects
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+
+# Ignore send redirects
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
+# Disable ICMP redirect acceptance
+net.ipv4.conf.all.secure_redirects = 0
+net.ipv4.conf.default.secure_redirects = 0
+
+# Log Martians (packets with impossible addresses)
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+
+# Ignore ICMP ping requests (optional - can break some monitoring)
+# net.ipv4.icmp_echo_ignore_all = 1
+
+# Ignore broadcast ping requests
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Ignore bogus ICMP error responses
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+
+# Enable reverse path filtering (prevent IP spoofing)
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
+# ==================================
+# TCP Hardening
+# ==================================
+
+# Increase the tcp-time-wait buckets pool size (prevent simple DOS)
+net.ipv4.tcp_max_tw_buckets = 1440000
+
+# Limit the maximum number of half-open connections
+net.ipv4.tcp_max_syn_backlog = 2048
+
+# Shorten time connections stay in TIME_WAIT
+net.ipv4.tcp_fin_timeout = 15
+
+# Enable TCP window scaling for high-bandwidth networks
+net.ipv4.tcp_window_scaling = 1
+
+# Increase system file descriptor limit
+fs.file-max = 65535
+
+# Increase local port range
+net.ipv4.ip_local_port_range = 1024 65535
+
+# ==================================
+# Memory Protection
+# ==================================
+
+# Restrict access to kernel logs
+kernel.dmesg_restrict = 1
+
+# Restrict access to kernel pointers
+kernel.kptr_restrict = 2
+
+# Enable ASLR (Address Space Layout Randomization)
+kernel.randomize_va_space = 2
+
+# Disable core dumps
+kernel.core_uses_pid = 1
+fs.suid_dumpable = 0
+
+# ==================================
+# IPv6 (disable if not used)
+# ==================================
+{% if disable_ipv6 | default(true) %}
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+{% endif %}
+
+# ==================================
+# Performance Tuning
+# ==================================
+
+# Increase TCP buffer sizes for better performance
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.tcp_rmem = 4096 87380 16777216
+net.ipv4.tcp_wmem = 4096 65536 16777216
+
+# Increase connection backlog
+net.core.somaxconn = 1024
+net.core.netdev_max_backlog = 5000

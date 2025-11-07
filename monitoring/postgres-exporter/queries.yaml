@@ -1,0 +1,175 @@
+pg_database:
+  query: "SELECT datname, pg_database_size(datname) as size_bytes FROM pg_database"
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Name of the database"
+    - size_bytes:
+        usage: "GAUGE"
+        description: "Disk space used by the database"
+
+pg_stat_activity:
+  query: "SELECT datname, state, count(*) as count FROM pg_stat_activity GROUP BY datname, state"
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - state:
+        usage: "LABEL"
+        description: "Connection state"
+    - count:
+        usage: "GAUGE"
+        description: "Number of connections"
+
+pg_stat_statements:
+  query: |
+    SELECT
+      queryid,
+      calls,
+      mean_exec_time / 1000 as mean_exec_time_seconds,
+      max_exec_time / 1000 as max_exec_time_seconds,
+      stddev_exec_time / 1000 as stddev_exec_time_seconds
+    FROM pg_stat_statements
+    WHERE queryid IS NOT NULL
+    LIMIT 100
+  metrics:
+    - queryid:
+        usage: "LABEL"
+        description: "Query ID"
+    - calls:
+        usage: "COUNTER"
+        description: "Number of times executed"
+    - mean_exec_time_seconds:
+        usage: "GAUGE"
+        description: "Mean execution time in seconds"
+    - max_exec_time_seconds:
+        usage: "GAUGE"
+        description: "Maximum execution time in seconds"
+    - stddev_exec_time_seconds:
+        usage: "GAUGE"
+        description: "Standard deviation of execution time"
+
+pg_stat_database:
+  query: |
+    SELECT
+      datname,
+      numbackends,
+      xact_commit,
+      xact_rollback,
+      blks_read,
+      blks_hit,
+      tup_returned,
+      tup_fetched,
+      tup_inserted,
+      tup_updated,
+      tup_deleted,
+      conflicts,
+      temp_files,
+      temp_bytes,
+      deadlocks
+    FROM pg_stat_database
+    WHERE datname NOT IN ('template0', 'template1', 'postgres')
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Database name"
+    - numbackends:
+        usage: "GAUGE"
+        description: "Number of backends currently connected"
+    - xact_commit:
+        usage: "COUNTER"
+        description: "Number of transactions committed"
+    - xact_rollback:
+        usage: "COUNTER"
+        description: "Number of transactions rolled back"
+    - blks_read:
+        usage: "COUNTER"
+        description: "Number of disk blocks read"
+    - blks_hit:
+        usage: "COUNTER"
+        description: "Number of buffer hits"
+    - tup_returned:
+        usage: "COUNTER"
+        description: "Number of rows returned"
+    - tup_fetched:
+        usage: "COUNTER"
+        description: "Number of rows fetched"
+    - tup_inserted:
+        usage: "COUNTER"
+        description: "Number of rows inserted"
+    - tup_updated:
+        usage: "COUNTER"
+        description: "Number of rows updated"
+    - tup_deleted:
+        usage: "COUNTER"
+        description: "Number of rows deleted"
+    - conflicts:
+        usage: "COUNTER"
+        description: "Number of queries canceled due to conflicts"
+    - temp_files:
+        usage: "COUNTER"
+        description: "Number of temporary files created"
+    - temp_bytes:
+        usage: "COUNTER"
+        description: "Amount of data written to temporary files"
+    - deadlocks:
+        usage: "COUNTER"
+        description: "Number of deadlocks detected"
+
+pg_stat_user_tables:
+  query: |
+    SELECT
+      schemaname,
+      relname,
+      seq_scan,
+      seq_tup_read,
+      idx_scan,
+      idx_tup_fetch,
+      n_tup_ins,
+      n_tup_upd,
+      n_tup_del,
+      n_tup_hot_upd,
+      n_live_tup,
+      n_dead_tup,
+      last_vacuum,
+      last_autovacuum,
+      last_analyze,
+      last_autoanalyze
+    FROM pg_stat_user_tables
+  metrics:
+    - schemaname:
+        usage: "LABEL"
+        description: "Schema name"
+    - relname:
+        usage: "LABEL"
+        description: "Table name"
+    - seq_scan:
+        usage: "COUNTER"
+        description: "Number of sequential scans"
+    - seq_tup_read:
+        usage: "COUNTER"
+        description: "Number of tuples read by sequential scans"
+    - idx_scan:
+        usage: "COUNTER"
+        description: "Number of index scans"
+    - idx_tup_fetch:
+        usage: "COUNTER"
+        description: "Number of tuples fetched by index scans"
+    - n_tup_ins:
+        usage: "COUNTER"
+        description: "Number of tuples inserted"
+    - n_tup_upd:
+        usage: "COUNTER"
+        description: "Number of tuples updated"
+    - n_tup_del:
+        usage: "COUNTER"
+        description: "Number of tuples deleted"
+    - n_tup_hot_upd:
+        usage: "COUNTER"
+        description: "Number of HOT updates"
+    - n_live_tup:
+        usage: "GAUGE"
+        description: "Estimated number of live tuples"
+    - n_dead_tup:
+        usage: "GAUGE"
+        description: "Estimated number of dead tuples"
