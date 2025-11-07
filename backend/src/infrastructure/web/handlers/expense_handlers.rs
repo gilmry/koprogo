@@ -1,4 +1,7 @@
-use crate::application::dto::{CreateExpenseDto, PageRequest, PageResponse};
+use crate::application::dto::{
+    ApproveInvoiceDto, CreateExpenseDto, CreateInvoiceDraftDto, PageRequest, PageResponse,
+    RejectInvoiceDto, SubmitForApprovalDto, UpdateInvoiceDraftDto,
+};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, Responder};
@@ -11,6 +14,28 @@ fn check_owner_readonly(user: &AuthenticatedUser) -> Option<HttpResponse> {
     if user.role == "owner" {
         Some(HttpResponse::Forbidden().json(serde_json::json!({
             "error": "Owner role has read-only access"
+        })))
+    } else {
+        None
+    }
+}
+
+/// Helper function to check if user has syndic role (for approval workflow)
+fn check_syndic_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    if user.role != "syndic" && user.role != "superadmin" {
+        Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only syndic or superadmin can approve/reject invoices"
+        })))
+    } else {
+        None
+    }
+}
+
+/// Helper function to check if user has accountant role (for creating/editing invoices)
+fn check_accountant_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    if user.role != "accountant" && user.role != "syndic" && user.role != "superadmin" {
+        Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only accountant, syndic, or superadmin can create/edit invoices"
         })))
     } else {
         None
@@ -266,6 +291,268 @@ pub async fn unpay_expense(
             HttpResponse::Ok().json(expense)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+// ========== Invoice Workflow Endpoints (Issue #73) ==========
+
+/// POST /invoices/draft - Create a new invoice draft with VAT
+#[post("/invoices/draft")]
+pub async fn create_invoice_draft(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    mut dto: web::Json<CreateInvoiceDraftDto>,
+) -> impl Responder {
+    if let Some(response) = check_accountant_role(&user) {
+        return response;
+    }
+
+    // Override organization_id from JWT token
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
+    };
+    dto.organization_id = organization_id.to_string();
+
+    if let Err(errors) = dto.validate() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Validation failed",
+            "details": errors.to_string()
+        }));
+    }
+
+    match state
+        .expense_use_cases
+        .create_invoice_draft(dto.into_inner())
+        .await
+    {
+        Ok(invoice) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseCreated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Invoice", Uuid::parse_str(&invoice.id).unwrap())
+            .log();
+
+            HttpResponse::Created().json(invoice)
+        }
+        Err(err) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseCreated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    }
+}
+
+/// PUT /invoices/{id} - Update invoice draft (only if Draft or Rejected)
+#[put("/invoices/{id}")]
+pub async fn update_invoice_draft(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<UpdateInvoiceDraftDto>,
+) -> impl Responder {
+    if let Some(response) = check_accountant_role(&user) {
+        return response;
+    }
+
+    if let Err(errors) = dto.validate() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Validation failed",
+            "details": errors.to_string()
+        }));
+    }
+
+    match state
+        .expense_use_cases
+        .update_invoice_draft(*id, dto.into_inner())
+        .await
+    {
+        Ok(invoice) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceUpdated event type
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Invoice", *id)
+            .log();
+
+            HttpResponse::Ok().json(invoice)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+/// PUT /invoices/{id}/submit - Submit invoice for approval (Draft → PendingApproval)
+#[put("/invoices/{id}/submit")]
+pub async fn submit_invoice_for_approval(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    if let Some(response) = check_accountant_role(&user) {
+        return response;
+    }
+
+    match state
+        .expense_use_cases
+        .submit_for_approval(*id, SubmitForApprovalDto {})
+        .await
+    {
+        Ok(invoice) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceSubmitted event type
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Invoice", *id)
+            .log();
+
+            HttpResponse::Ok().json(invoice)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+/// PUT /invoices/{id}/approve - Approve invoice (PendingApproval → Approved)
+/// Only syndic or superadmin can approve
+#[put("/invoices/{id}/approve")]
+pub async fn approve_invoice(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    if let Some(response) = check_syndic_role(&user) {
+        return response;
+    }
+
+    let dto = ApproveInvoiceDto {
+        approved_by_user_id: user.user_id.to_string(),
+    };
+
+    match state.expense_use_cases.approve_invoice(*id, dto).await {
+        Ok(invoice) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceApproved event type
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Invoice", *id)
+            .log();
+
+            HttpResponse::Ok().json(invoice)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+/// PUT /invoices/{id}/reject - Reject invoice with reason (PendingApproval → Rejected)
+/// Only syndic or superadmin can reject
+#[put("/invoices/{id}/reject")]
+pub async fn reject_invoice(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    dto: web::Json<RejectInvoiceDto>,
+) -> impl Responder {
+    if let Some(response) = check_syndic_role(&user) {
+        return response;
+    }
+
+    if let Err(errors) = dto.validate() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Validation failed",
+            "details": errors.to_string()
+        }));
+    }
+
+    let mut reject_dto = dto.into_inner();
+    reject_dto.rejected_by_user_id = user.user_id.to_string();
+
+    match state
+        .expense_use_cases
+        .reject_invoice(*id, reject_dto)
+        .await
+    {
+        Ok(invoice) => {
+            AuditLogEntry::new(
+                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceRejected event type
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Invoice", *id)
+            .log();
+
+            HttpResponse::Ok().json(invoice)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+/// GET /invoices/pending - Get all pending invoices (for syndic dashboard)
+/// Only syndic or superadmin can view pending invoices
+#[get("/invoices/pending")]
+pub async fn get_pending_invoices(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+) -> impl Responder {
+    if let Some(response) = check_syndic_role(&user) {
+        return response;
+    }
+
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
+    };
+
+    match state
+        .expense_use_cases
+        .get_pending_invoices(organization_id)
+        .await
+    {
+        Ok(pending_list) => HttpResponse::Ok().json(pending_list),
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
+/// GET /invoices/{id} - Get full invoice details (enriched with all fields)
+#[get("/invoices/{id}")]
+pub async fn get_invoice(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+    match state.expense_use_cases.get_invoice(*id).await {
+        Ok(Some(invoice)) => HttpResponse::Ok().json(invoice),
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Invoice not found"
+        })),
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),
     }

@@ -40,4 +40,12 @@ pub trait UnitOwnerRepository: Send + Sync {
         unit_id: Uuid,
         owner_id: Uuid,
     ) -> Result<Option<UnitOwner>, String>;
+
+    /// Get all active unit-owner relationships for a building
+    /// Returns tuples of (unit_id, owner_id, ownership_percentage)
+    /// Useful for calculating charge distributions
+    async fn find_active_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<(Uuid, Uuid, f64)>, String>;
 }

@@ -108,6 +108,13 @@ impl UnitOwnerRepository for MockUnitOwnerRepository {
             .find(|uo| uo.unit_id == unit_id && uo.owner_id == owner_id && uo.end_date.is_none())
             .cloned())
     }
+
+    async fn find_active_by_building(
+        &self,
+        _building_id: Uuid,
+    ) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
+        Ok(vec![])
+    }
 }
 
 // Mock UnitRepository

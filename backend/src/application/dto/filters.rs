@@ -1,3 +1,4 @@
+use crate::domain::entities::ApprovalStatus;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
@@ -20,6 +21,7 @@ pub struct ExpenseFilters {
     pub category: Option<String>,
     pub status: Option<String>,
     pub paid: Option<bool>,
+    pub approval_status: Option<ApprovalStatus>, // Nouveau: pour filtrer par statut workflow
     pub date_from: Option<DateTime<Utc>>,
     pub date_to: Option<DateTime<Utc>>,
     pub min_amount: Option<f64>,

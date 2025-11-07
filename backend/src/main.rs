@@ -90,6 +90,9 @@ async fn main() -> std::io::Result<()> {
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
     let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
+    let charge_distribution_repo =
+        Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
+    let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -100,12 +103,22 @@ async fn main() -> std::io::Result<()> {
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
-    let unit_owner_use_cases =
-        UnitOwnerUseCases::new(unit_owner_repo, unit_repo.clone(), owner_repo.clone());
+    let unit_owner_use_cases = UnitOwnerUseCases::new(
+        unit_owner_repo.clone(),
+        unit_repo.clone(),
+        owner_repo.clone(),
+    );
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+    let charge_distribution_use_cases = ChargeDistributionUseCases::new(
+        charge_distribution_repo,
+        expense_repo.clone(),
+        unit_owner_repo,
+    );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
-    let pcn_use_cases = PcnUseCases::new(expense_repo);
+    let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
+    let payment_reminder_use_cases =
+        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo);
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
     let board_member_use_cases =
         BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
@@ -130,9 +143,11 @@ async fn main() -> std::io::Result<()> {
         owner_use_cases,
         unit_owner_use_cases,
         expense_use_cases,
+        charge_distribution_use_cases,
         meeting_use_cases,
         document_use_cases,
         pcn_use_cases,
+        payment_reminder_use_cases,
         gdpr_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
