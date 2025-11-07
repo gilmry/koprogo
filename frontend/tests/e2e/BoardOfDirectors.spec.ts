@@ -87,14 +87,18 @@ test.describe("Board of Directors", () => {
     await page.waitForURL(/\/(admin|syndic)/);
   });
 
-  test("should display board dashboard with mandate and statistics", async ({ page }) => {
+  test("should display board dashboard with mandate and statistics", async ({
+    page,
+  }) => {
     const testData = generateTestData("BoardDashboard");
 
     // Navigate to board dashboard
     await page.goto("/board-dashboard");
 
     // Should show page title
-    await expect(page.locator("h1")).toContainText("Tableau de Bord du Conseil");
+    await expect(page.locator("h1")).toContainText(
+      "Tableau de Bord du Conseil",
+    );
 
     // Should show statistics section
     await expect(page.locator("text=Statistiques des Décisions")).toBeVisible();
@@ -106,7 +110,9 @@ test.describe("Board of Directors", () => {
     await expect(page.locator("text=Terminées")).toBeVisible();
   });
 
-  test("should elect board members (president, treasurer, member)", async ({ page }) => {
+  test("should elect board members (president, treasurer, member)", async ({
+    page,
+  }) => {
     const testData = generateTestData("ElectBoard");
 
     // Step 1: Create a building with >20 units (requires board)
@@ -117,7 +123,10 @@ test.describe("Board of Directors", () => {
     await page.fill('input[name="address"]', testData.building.address);
     await page.fill('input[name="postal_code"]', testData.building.postalCode);
     await page.fill('input[name="city"]', testData.building.city);
-    await page.fill('input[name="total_units"]', testData.building.totalUnits.toString());
+    await page.fill(
+      'input[name="total_units"]',
+      testData.building.totalUnits.toString(),
+    );
 
     await page.click('button[type="submit"]');
     await page.waitForSelector(`text=${testData.building.name}`);
@@ -142,7 +151,9 @@ test.describe("Board of Directors", () => {
 
     await page.fill('input[name="title"]', testData.meeting.title);
     await page.fill('input[name="location"]', testData.meeting.location);
-    await page.selectOption('select[name="building_id"]', { label: testData.building.name });
+    await page.selectOption('select[name="building_id"]', {
+      label: testData.building.name,
+    });
 
     await page.click('button[type="submit"]');
     await page.waitForSelector(`text=${testData.meeting.title}`);
@@ -150,24 +161,36 @@ test.describe("Board of Directors", () => {
     // Step 4: Elect board members
     // Note: This would require a board election UI which should be implemented
     // For now, we verify the structure exists
-    await expect(page.locator("text=Conseil de Copropriété").or(page.locator("text=Board"))).toBeTruthy();
+    await expect(
+      page
+        .locator("text=Conseil de Copropriété")
+        .or(page.locator("text=Board")),
+    ).toBeTruthy();
   });
 
-  test("should display board member list with mandate details", async ({ page }) => {
+  test("should display board member list with mandate details", async ({
+    page,
+  }) => {
     // Navigate to board members page
     await page.goto("/board-dashboard");
 
     // Look for board member list component
-    const boardMemberSection = page.locator("text=Membres du Conseil").or(page.locator("text=Conseil de Copropriété"));
+    const boardMemberSection = page
+      .locator("text=Membres du Conseil")
+      .or(page.locator("text=Conseil de Copropriété"));
 
     // If board members exist, verify the display
-    const hasBoardMembers = await boardMemberSection.count() > 0;
+    const hasBoardMembers = (await boardMemberSection.count()) > 0;
     if (hasBoardMembers) {
       // Should show positions
-      await expect(page.locator("text=Président").or(page.locator("text=Trésorier"))).toBeTruthy();
+      await expect(
+        page.locator("text=Président").or(page.locator("text=Trésorier")),
+      ).toBeTruthy();
 
       // Should show mandate dates
-      await expect(page.locator("text=Mandat").or(page.locator("text=Début du mandat"))).toBeTruthy();
+      await expect(
+        page.locator("text=Mandat").or(page.locator("text=Début du mandat")),
+      ).toBeTruthy();
     }
   });
 
@@ -178,20 +201,23 @@ test.describe("Board of Directors", () => {
     await page.goto("/board-dashboard");
 
     // Look for decision tracker
-    const decisionSection = page.locator("text=Décisions").or(page.locator("text=Suivi des Décisions"));
-    const hasDecisions = await decisionSection.count() > 0;
+    const decisionSection = page
+      .locator("text=Décisions")
+      .or(page.locator("text=Suivi des Décisions"));
+    const hasDecisions = (await decisionSection.count()) > 0;
 
     if (hasDecisions) {
       // Verify status options are displayed
       await expect(
-        page.locator("text=En attente")
+        page
+          .locator("text=En attente")
           .or(page.locator("text=En cours"))
-          .or(page.locator("text=Terminée"))
+          .or(page.locator("text=Terminée")),
       ).toBeTruthy();
 
       // Verify decision details
       await expect(
-        page.locator("text=Deadline").or(page.locator("text=AG"))
+        page.locator("text=Deadline").or(page.locator("text=AG")),
       ).toBeTruthy();
     }
   });
@@ -200,48 +226,66 @@ test.describe("Board of Directors", () => {
     await page.goto("/board-dashboard");
 
     // Look for overdue section
-    const overdueSection = page.locator("text=En Retard").or(page.locator("text=en retard"));
-    const hasOverdue = await overdueSection.count() > 0;
+    const overdueSection = page
+      .locator("text=En Retard")
+      .or(page.locator("text=en retard"));
+    const hasOverdue = (await overdueSection.count()) > 0;
 
     if (hasOverdue) {
       // Should show red alert styling
-      await expect(page.locator(".bg-red-50, .text-red-600, .text-red-800")).toBeTruthy();
+      await expect(
+        page.locator(".bg-red-50, .text-red-600, .text-red-800"),
+      ).toBeTruthy();
 
       // Should show deadline information
       await expect(page.locator("text=Deadline")).toBeTruthy();
     }
   });
 
-  test("should show mandate expiration alerts when < 60 days", async ({ page }) => {
+  test("should show mandate expiration alerts when < 60 days", async ({
+    page,
+  }) => {
     await page.goto("/board-dashboard");
 
     // Look for mandate expiration warning
-    const expirationWarning = page.locator("text=expire")
+    const expirationWarning = page
+      .locator("text=expire")
       .or(page.locator("text=expirant"))
       .or(page.locator("text=renouveler"));
 
-    const hasExpiringMandate = await expirationWarning.count() > 0;
+    const hasExpiringMandate = (await expirationWarning.count()) > 0;
 
     if (hasExpiringMandate) {
       // Should show orange/warning styling
-      await expect(page.locator(".bg-orange-50, .text-orange-800")).toBeTruthy();
+      await expect(
+        page.locator(".bg-orange-50, .text-orange-800"),
+      ).toBeTruthy();
 
       // Should show days remaining
-      await expect(page.locator("text=jours").or(page.locator("text=days"))).toBeTruthy();
+      await expect(
+        page.locator("text=jours").or(page.locator("text=days")),
+      ).toBeTruthy();
     }
   });
 
-  test("should display upcoming deadlines with urgency indicators", async ({ page }) => {
+  test("should display upcoming deadlines with urgency indicators", async ({
+    page,
+  }) => {
     await page.goto("/board-dashboard");
 
     // Look for upcoming deadlines section
-    const deadlinesSection = page.locator("text=Deadlines").or(page.locator("text=Échéances"));
-    const hasDeadlines = await deadlinesSection.count() > 0;
+    const deadlinesSection = page
+      .locator("text=Deadlines")
+      .or(page.locator("text=Échéances"));
+    const hasDeadlines = (await deadlinesSection.count()) > 0;
 
     if (hasDeadlines) {
       // Should show urgency indicators
       await expect(
-        page.locator("text=🔴").or(page.locator("text=🟠")).or(page.locator("text=🟡"))
+        page
+          .locator("text=🔴")
+          .or(page.locator("text=🟠"))
+          .or(page.locator("text=🟡")),
       ).toBeTruthy();
     }
   });
@@ -250,8 +294,10 @@ test.describe("Board of Directors", () => {
     await page.goto("/board-dashboard");
 
     // Look for status filter dropdown
-    const filterSelect = page.locator("select").filter({ hasText: /statut|status/i });
-    const hasFilter = await filterSelect.count() > 0;
+    const filterSelect = page
+      .locator("select")
+      .filter({ hasText: /statut|status/i });
+    const hasFilter = (await filterSelect.count()) > 0;
 
     if (hasFilter) {
       // Should have multiple status options
@@ -265,23 +311,30 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should display legal compliance note (Article 577-8/4)", async ({ page }) => {
+  test("should display legal compliance note (Article 577-8/4)", async ({
+    page,
+  }) => {
     await page.goto("/board-dashboard");
 
     // Should show legal compliance information
     await expect(
-      page.locator("text=577-8/4")
+      page
+        .locator("text=577-8/4")
         .or(page.locator("text=obligatoire"))
-        .or(page.locator("text=20 lots"))
+        .or(page.locator("text=20 lots")),
     ).toBeTruthy();
   });
 
-  test("should show board statistics (active members, positions)", async ({ page }) => {
+  test("should show board statistics (active members, positions)", async ({
+    page,
+  }) => {
     await page.goto("/board-dashboard");
 
     // Look for statistics
-    const statsSection = page.locator("text=Statistiques").or(page.locator("text=membres"));
-    const hasStats = await statsSection.count() > 0;
+    const statsSection = page
+      .locator("text=Statistiques")
+      .or(page.locator("text=membres"));
+    const hasStats = (await statsSection.count()) > 0;
 
     if (hasStats) {
       // Should show counts
@@ -289,12 +342,16 @@ test.describe("Board of Directors", () => {
     }
   });
 
-  test("should allow updating decision status (pending → in_progress → completed)", async ({ page }) => {
+  test("should allow updating decision status (pending → in_progress → completed)", async ({
+    page,
+  }) => {
     await page.goto("/board-dashboard");
 
     // Look for decision status buttons
-    const startButton = page.locator("button").filter({ hasText: /démarrer|start/i });
-    const hasStartButton = await startButton.count() > 0;
+    const startButton = page
+      .locator("button")
+      .filter({ hasText: /démarrer|start/i });
+    const hasStartButton = (await startButton.count()) > 0;
 
     if (hasStartButton) {
       // Click to start decision
@@ -304,7 +361,9 @@ test.describe("Board of Directors", () => {
       await page.waitForTimeout(500);
 
       // Should show "Terminer" button now
-      const completeButton = page.locator("button").filter({ hasText: /terminer|complete/i });
+      const completeButton = page
+        .locator("button")
+        .filter({ hasText: /terminer|complete/i });
       await expect(completeButton.first()).toBeVisible();
     }
   });
@@ -313,8 +372,11 @@ test.describe("Board of Directors", () => {
     await page.goto("/board-dashboard");
 
     // Should show position icons
-    const positionIcons = page.locator("text=👑").or(page.locator("text=💰")).or(page.locator("text=👤"));
-    const hasIcons = await positionIcons.count() > 0;
+    const positionIcons = page
+      .locator("text=👑")
+      .or(page.locator("text=💰"))
+      .or(page.locator("text=👤"));
+    const hasIcons = (await positionIcons.count()) > 0;
 
     if (hasIcons) {
       // Verify at least one position is shown
@@ -332,7 +394,8 @@ test.describe("Board of Directors", () => {
     await page.goto("/board-dashboard");
 
     // May show empty state
-    const emptyState = page.locator("text=Aucun membre")
+    const emptyState = page
+      .locator("text=Aucun membre")
       .or(page.locator("text=pas encore été élu"))
       .or(page.locator("text=🏛️"));
 
