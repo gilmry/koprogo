@@ -93,6 +93,7 @@ async fn main() -> std::io::Result<()> {
     let charge_distribution_repo =
         Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
     let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
+    let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -118,7 +119,7 @@ async fn main() -> std::io::Result<()> {
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
     let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo);
+        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo.clone());
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
     let board_member_use_cases =
         BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
@@ -132,11 +133,15 @@ async fn main() -> std::io::Result<()> {
         board_decision_repo,
         building_repo.clone(),
     );
+    let account_use_cases = AccountUseCases::new(account_repo.clone());
+    let financial_report_use_cases =
+        FinancialReportUseCases::new(account_repo.clone(), expense_repo.clone());
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");
 
     let app_state = web::Data::new(AppState::new(
+        account_use_cases,
         auth_use_cases,
         building_use_cases,
         unit_use_cases,
@@ -152,6 +157,7 @@ async fn main() -> std::io::Result<()> {
         board_member_use_cases,
         board_decision_use_cases,
         board_dashboard_use_cases,
+        financial_report_use_cases,
         audit_logger,
         email_service,
         pool.clone(),

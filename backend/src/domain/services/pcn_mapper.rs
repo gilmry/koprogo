@@ -238,6 +238,7 @@ mod tests {
             Utc::now(),
             Some("Test Supplier".to_string()),
             Some("INV-001".to_string()),
+            None, // account_code
         )
         .unwrap()
     }

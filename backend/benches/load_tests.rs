@@ -79,6 +79,7 @@ fn benchmark_expense_calculation(c: &mut Criterion) {
                     Utc::now(),
                     None,
                     None,
+                    None,
                 )
                 .unwrap()
             })
@@ -106,6 +107,7 @@ fn benchmark_unit_share_calculation(c: &mut Criterion) {
         "Test".to_string(),
         1000.0,
         Utc::now(),
+        None,
         None,
         None,
     )

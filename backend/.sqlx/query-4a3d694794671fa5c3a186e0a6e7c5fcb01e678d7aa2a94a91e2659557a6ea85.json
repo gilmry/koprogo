@@ -1,0 +1,84 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, code, label, parent_code, account_type AS \"account_type: AccountType\",\n                   direct_use, organization_id, created_at, updated_at\n            FROM accounts\n            WHERE parent_code = $1 AND organization_id = $2\n            ORDER BY code ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "parent_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "account_type: AccountType",
+        "type_info": {
+          "Custom": {
+            "name": "account_type",
+            "kind": {
+              "Enum": [
+                "ASSET",
+                "LIABILITY",
+                "EXPENSE",
+                "REVENUE",
+                "OFF_BALANCE"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "direct_use",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4a3d694794671fa5c3a186e0a6e7c5fcb01e678d7aa2a94a91e2659557a6ea85"
+}

@@ -672,6 +672,7 @@ async fn given_create_expense(world: &mut BuildingWorld, amount: f64) {
         expense_date: chrono::Utc::now().to_rfc3339(),
         supplier: Some("Supplier".to_string()),
         invoice_number: Some("INV-BDD".to_string()),
+        account_code: None,
     };
     let res = uc.create_expense(dto).await.expect("create expense");
     world.last_expense_id = Some(Uuid::parse_str(&res.id).unwrap());

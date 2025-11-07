@@ -40,6 +40,7 @@ impl ExpenseUseCases {
             expense_date,
             dto.supplier,
             dto.invoice_number,
+            dto.account_code,
         )?;
 
         let created = self.repository.create(&expense).await?;
@@ -179,6 +180,7 @@ impl ExpenseUseCases {
             due_date,
             dto.supplier,
             dto.invoice_number,
+            None, // account_code (can be added later)
         )?;
 
         let created = self.repository.create(&invoice).await?;
@@ -365,6 +367,7 @@ impl ExpenseUseCases {
             payment_status: expense.payment_status.clone(),
             supplier: expense.supplier.clone(),
             invoice_number: expense.invoice_number.clone(),
+            account_code: expense.account_code.clone(),
         }
     }
 
