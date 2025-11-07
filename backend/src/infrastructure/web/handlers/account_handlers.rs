@@ -216,8 +216,7 @@ pub async fn list_accounts(
 
     match accounts_result {
         Ok(accounts) => {
-            let dtos: Vec<AccountResponseDto> =
-                accounts.iter().map(account_to_dto).collect();
+            let dtos: Vec<AccountResponseDto> = accounts.iter().map(account_to_dto).collect();
             HttpResponse::Ok().json(dtos)
         }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
