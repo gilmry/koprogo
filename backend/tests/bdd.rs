@@ -79,14 +79,23 @@ pub struct BuildingWorld {
     #[allow(dead_code)]
     last_board_members: Option<Vec<BoardMemberResponseDto>>,
     // Invoice workflow fields (Issue #73)
+    #[allow(dead_code)]
     last_invoice_id: Option<Uuid>,
+    #[allow(dead_code)]
     last_invoice_status: Option<String>,
+    #[allow(dead_code)]
     last_invoice_vat_amount: Option<f64>,
+    #[allow(dead_code)]
     last_invoice_total: Option<f64>,
+    #[allow(dead_code)]
     accountant_user_id: Option<Uuid>,
+    #[allow(dead_code)]
     syndic_user_id: Option<Uuid>,
+    #[allow(dead_code)]
     owner_user_id: Option<Uuid>,
+    #[allow(dead_code)]
     last_distributions_count: Option<usize>,
+    #[allow(dead_code)]
     last_owner_total_due: Option<f64>,
     last_board_stats: Option<BoardStatsDto>,
     #[allow(dead_code)]

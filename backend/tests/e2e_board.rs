@@ -4,10 +4,11 @@ use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
-    PostgresBoardMemberRepository, PostgresBuildingRepository, PostgresDocumentRepository,
-    PostgresExpenseRepository, PostgresGdprRepository, PostgresMeetingRepository,
-    PostgresOwnerRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
-    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
+    PostgresBoardMemberRepository, PostgresBuildingRepository, PostgresChargeDistributionRepository,
+    PostgresDocumentRepository, PostgresExpenseRepository, PostgresGdprRepository,
+    PostgresMeetingRepository, PostgresOwnerRepository, PostgresPaymentReminderRepository,
+    PostgresRefreshTokenRepository, PostgresUnitOwnerRepository, PostgresUnitRepository,
+    PostgresUserRepository, PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
@@ -62,6 +63,9 @@ async fn setup_test_db() -> (
     let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
+    let charge_distribution_repo =
+        Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
+    let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
 
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
     let jwt_secret = "test-secret-key".to_string();
@@ -72,14 +76,25 @@ async fn setup_test_db() -> (
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
-    let unit_owner_use_cases = UnitOwnerUseCases::new(unit_owner_repo, unit_repo, owner_repo);
+    let unit_owner_use_cases = UnitOwnerUseCases::new(
+        unit_owner_repo.clone(),
+        unit_repo,
+        owner_repo,
+    );
     let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+    let charge_distribution_use_cases = ChargeDistributionUseCases::new(
+        charge_distribution_repo,
+        expense_repo.clone(),
+        unit_owner_repo,
+    );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let storage_root = std::env::temp_dir().join("koprogo_e2e_board_uploads");
     let storage: Arc<dyn StorageProvider> =
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
-    let pcn_use_cases = PcnUseCases::new(expense_repo);
+    let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
+    let payment_reminder_use_cases =
+        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo);
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
     let board_member_use_cases =
         BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
@@ -113,9 +128,11 @@ async fn setup_test_db() -> (
         owner_use_cases,
         unit_owner_use_cases,
         expense_use_cases,
+        charge_distribution_use_cases,
         meeting_use_cases,
         document_use_cases,
         pcn_use_cases,
+        payment_reminder_use_cases,
         gdpr_use_cases,
         board_member_use_cases,
         board_decision_use_cases,

@@ -474,10 +474,12 @@ mod tests {
     use std::sync::Mutex;
 
     // Mock repository for testing
+    #[allow(dead_code)]
     struct MockPaymentReminderRepository {
         reminders: Mutex<HashMap<Uuid, PaymentReminder>>,
     }
 
+    #[allow(dead_code)]
     impl MockPaymentReminderRepository {
         fn new() -> Self {
             Self {
