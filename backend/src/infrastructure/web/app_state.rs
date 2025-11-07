@@ -1,6 +1,6 @@
 use crate::application::use_cases::{
-    AuthUseCases, BuildingUseCases, DocumentUseCases, ExpenseUseCases, GdprUseCases,
-    MeetingUseCases, OwnerUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
+    AccountUseCases, AuthUseCases, BuildingUseCases, DocumentUseCases, ExpenseUseCases,
+    GdprUseCases, MeetingUseCases, OwnerUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -8,6 +8,7 @@ use crate::infrastructure::pool::DbPool;
 use std::sync::Arc;
 
 pub struct AppState {
+    pub account_use_cases: Arc<AccountUseCases>,
     pub auth_use_cases: Arc<AuthUseCases>,
     pub building_use_cases: Arc<BuildingUseCases>,
     pub unit_use_cases: Arc<UnitUseCases>,
@@ -26,6 +27,7 @@ pub struct AppState {
 impl AppState {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
+        account_use_cases: AccountUseCases,
         auth_use_cases: AuthUseCases,
         building_use_cases: BuildingUseCases,
         unit_use_cases: UnitUseCases,
@@ -41,6 +43,7 @@ impl AppState {
         pool: DbPool,
     ) -> Self {
         Self {
+            account_use_cases: Arc::new(account_use_cases),
             auth_use_cases: Arc::new(auth_use_cases),
             building_use_cases: Arc::new(building_use_cases),
             unit_use_cases: Arc::new(unit_use_cases),

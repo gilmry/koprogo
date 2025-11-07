@@ -1,3 +1,4 @@
+pub mod account_handlers;
 pub mod admin_gdpr_handlers;
 pub mod auth_handlers;
 pub mod building_handlers;
@@ -16,6 +17,7 @@ pub mod unit_handlers;
 pub mod unit_owner_handlers;
 pub mod user_handlers;
 
+pub use account_handlers::*;
 pub use admin_gdpr_handlers::*;
 pub use auth_handlers::*;
 pub use building_handlers::*;
