@@ -1,9 +1,11 @@
 pub mod board_decision;
 pub mod board_member;
 pub mod building;
+pub mod charge_distribution;
 pub mod document;
 pub mod expense;
 pub mod gdpr_export;
+pub mod invoice_line_item;
 pub mod gdpr_objection;
 pub mod gdpr_rectification;
 pub mod gdpr_restriction;
@@ -19,8 +21,10 @@ pub mod user_role_assignment;
 pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
 pub use building::Building;
+pub use charge_distribution::ChargeDistribution;
 pub use document::{Document, DocumentType};
-pub use expense::{Expense, ExpenseCategory, PaymentStatus};
+pub use expense::{ApprovalStatus, Expense, ExpenseCategory, PaymentStatus};
+pub use invoice_line_item::InvoiceLineItem;
 pub use gdpr_export::{
     DocumentData, ExpenseData, GdprExport, MeetingData, OwnerData, RelatedData, UnitOwnershipData,
     UserData,

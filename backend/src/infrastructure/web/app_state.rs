@@ -1,7 +1,7 @@
 use crate::application::use_cases::{
     AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases,
-    BuildingUseCases, DocumentUseCases, ExpenseUseCases, GdprUseCases, MeetingUseCases,
-    OwnerUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
+    BuildingUseCases, ChargeDistributionUseCases, DocumentUseCases, ExpenseUseCases,
+    GdprUseCases, MeetingUseCases, OwnerUseCases, PcnUseCases, UnitOwnerUseCases, UnitUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -15,6 +15,7 @@ pub struct AppState {
     pub owner_use_cases: Arc<OwnerUseCases>,
     pub unit_owner_use_cases: Arc<UnitOwnerUseCases>,
     pub expense_use_cases: Arc<ExpenseUseCases>,
+    pub charge_distribution_use_cases: Arc<ChargeDistributionUseCases>,
     pub meeting_use_cases: Arc<MeetingUseCases>,
     pub document_use_cases: Arc<DocumentUseCases>,
     pub pcn_use_cases: Arc<PcnUseCases>,
@@ -36,6 +37,7 @@ impl AppState {
         owner_use_cases: OwnerUseCases,
         unit_owner_use_cases: UnitOwnerUseCases,
         expense_use_cases: ExpenseUseCases,
+        charge_distribution_use_cases: ChargeDistributionUseCases,
         meeting_use_cases: MeetingUseCases,
         document_use_cases: DocumentUseCases,
         pcn_use_cases: PcnUseCases,
@@ -54,6 +56,7 @@ impl AppState {
             owner_use_cases: Arc::new(owner_use_cases),
             unit_owner_use_cases: Arc::new(unit_owner_use_cases),
             expense_use_cases: Arc::new(expense_use_cases),
+            charge_distribution_use_cases: Arc::new(charge_distribution_use_cases),
             meeting_use_cases: Arc::new(meeting_use_cases),
             document_use_cases: Arc::new(document_use_cases),
             pcn_use_cases: Arc::new(pcn_use_cases),
