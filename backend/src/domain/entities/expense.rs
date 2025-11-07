@@ -25,6 +25,9 @@ pub enum PaymentStatus {
 }
 
 /// Représente une charge de copropriété
+///
+/// Conforme au PCMN belge (Plan Comptable Minimum Normalisé).
+/// Chaque charge peut être liée à un compte comptable via account_code.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Expense {
     pub id: Uuid,
@@ -37,6 +40,9 @@ pub struct Expense {
     pub payment_status: PaymentStatus,
     pub supplier: Option<String>,
     pub invoice_number: Option<String>,
+    /// Code du compte comptable PCMN (e.g., "604001" for electricity, "611002" for elevator maintenance)
+    /// References: accounts.code column in the database
+    pub account_code: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -52,12 +58,24 @@ impl Expense {
         expense_date: DateTime<Utc>,
         supplier: Option<String>,
         invoice_number: Option<String>,
+        account_code: Option<String>,
     ) -> Result<Self, String> {
         if description.is_empty() {
             return Err("Description cannot be empty".to_string());
         }
         if amount <= 0.0 {
             return Err("Amount must be greater than 0".to_string());
+        }
+
+        // Validate account_code format if provided (Belgian PCMN codes)
+        if let Some(ref code) = account_code {
+            if code.is_empty() {
+                return Err("Account code cannot be empty if provided".to_string());
+            }
+            // Belgian PCMN codes are typically 1-10 characters (e.g., "6", "60", "604001")
+            if code.len() > 40 {
+                return Err("Account code cannot exceed 40 characters".to_string());
+            }
         }
 
         let now = Utc::now();
@@ -72,6 +90,7 @@ impl Expense {
             payment_status: PaymentStatus::Pending,
             supplier,
             invoice_number,
+            account_code,
             created_at: now,
             updated_at: now,
         })
@@ -160,6 +179,7 @@ mod tests {
             Utc::now(),
             Some("ACME Elevators".to_string()),
             Some("INV-2024-001".to_string()),
+            Some("611002".to_string()), // Elevator maintenance account (Belgian PCMN)
         );
 
         assert!(expense.is_ok());
@@ -167,6 +187,73 @@ mod tests {
         assert_eq!(expense.organization_id, org_id);
         assert_eq!(expense.amount, 500.0);
         assert_eq!(expense.payment_status, PaymentStatus::Pending);
+        assert_eq!(expense.account_code, Some("611002".to_string()));
+    }
+
+    #[test]
+    fn test_create_expense_without_account_code() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Other,
+            "Miscellaneous expense".to_string(),
+            100.0,
+            Utc::now(),
+            None,
+            None,
+            None, // No account code
+        );
+
+        assert!(expense.is_ok());
+        let expense = expense.unwrap();
+        assert_eq!(expense.account_code, None);
+    }
+
+    #[test]
+    fn test_create_expense_empty_account_code_fails() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Maintenance,
+            "Test".to_string(),
+            100.0,
+            Utc::now(),
+            None,
+            None,
+            Some("".to_string()), // Empty account code should fail
+        );
+
+        assert!(expense.is_err());
+        assert!(expense
+            .unwrap_err()
+            .contains("Account code cannot be empty"));
+    }
+
+    #[test]
+    fn test_create_expense_long_account_code_fails() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let long_code = "a".repeat(41); // 41 characters, exceeds limit
+        let expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Maintenance,
+            "Test".to_string(),
+            100.0,
+            Utc::now(),
+            None,
+            None,
+            Some(long_code),
+        );
+
+        assert!(expense.is_err());
+        assert!(expense
+            .unwrap_err()
+            .contains("Account code cannot exceed 40 characters"));
     }
 
     #[test]
@@ -180,6 +267,7 @@ mod tests {
             "Test".to_string(),
             -100.0,
             Utc::now(),
+            None,
             None,
             None,
         );
@@ -198,6 +286,7 @@ mod tests {
             "Test".to_string(),
             100.0,
             Utc::now(),
+            None,
             None,
             None,
         )
@@ -222,6 +311,7 @@ mod tests {
             Utc::now(),
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -243,6 +333,7 @@ mod tests {
             Utc::now(),
             None,
             None,
+            None,
         )
         .unwrap();
 
@@ -262,6 +353,7 @@ mod tests {
             "Test".to_string(),
             100.0,
             Utc::now(),
+            None,
             None,
             None,
         )

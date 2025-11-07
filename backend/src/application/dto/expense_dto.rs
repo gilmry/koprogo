@@ -17,6 +17,11 @@ pub struct CreateExpenseDto {
     pub expense_date: String,
     pub supplier: Option<String>,
     pub invoice_number: Option<String>,
+
+    /// Optional Belgian PCMN account code (e.g., "604001" for electricity)
+    /// Must reference an existing account in the organization's chart of accounts
+    #[validate(length(max = 40))]
+    pub account_code: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -30,4 +35,6 @@ pub struct ExpenseResponseDto {
     pub payment_status: PaymentStatus,
     pub supplier: Option<String>,
     pub invoice_number: Option<String>,
+    /// Belgian PCMN account code if linked to chart of accounts
+    pub account_code: Option<String>,
 }
