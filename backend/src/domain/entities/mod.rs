@@ -1,3 +1,4 @@
+pub mod account;
 pub mod building;
 pub mod document;
 pub mod expense;
@@ -14,6 +15,7 @@ pub mod unit_owner;
 pub mod user;
 pub mod user_role_assignment;
 
+pub use account::{Account, AccountType};
 pub use building::Building;
 pub use document::{Document, DocumentType};
 pub use expense::{Expense, ExpenseCategory, PaymentStatus};

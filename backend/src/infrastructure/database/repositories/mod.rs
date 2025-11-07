@@ -1,3 +1,4 @@
+pub mod account_repository_impl;
 pub mod audit_log_repository_impl;
 pub mod building_repository_impl;
 pub mod document_repository_impl;
@@ -12,6 +13,7 @@ pub mod unit_repository_impl;
 pub mod user_repository_impl;
 pub mod user_role_repository_impl;
 
+pub use account_repository_impl::PostgresAccountRepository;
 pub use audit_log_repository_impl::PostgresAuditLogRepository;
 pub use building_repository_impl::PostgresBuildingRepository;
 pub use document_repository_impl::PostgresDocumentRepository;
