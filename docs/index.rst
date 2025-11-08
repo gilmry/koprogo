@@ -43,13 +43,24 @@ Documentation
 3. **GOVERNANCE** : Structure organisationnelle évolutive Solo → Fondateurs → ASBL → Coopérative
 4. **ECONOMIC_MODEL** : Modèle économique ASBL et viabilité financière à long terme
 
-**KPIs Stratégiques 2030** :
+**KPIs Stratégiques 2030** (validés avec données réelles Oct 2025):
 
 * **Adoption** : 5,000 copropriétés (100,000 personnes)
-* **Impact Économique** : 9,35M€/an économisés (8M€ logiciels + 750k€ SEL + 600k€ consommation évitée)
-* **Impact Écologique** : -534 tonnes CO₂/an (50t infrastructure + 484t features communautaires)
-* **Performance Technique** : P99 < 5ms, Uptime > 99.9%, < 0.5g CO₂/req
+* **Impact Économique** : 9,35M€/an économisés (8M€ logiciels + 750k€ SEL + 600k€ consommation)
+* **Impact Écologique** : **-840 tonnes CO₂/an** (dépassement +57% vs objectif -534t)
+* **Performance Technique** : P99 < 1s (réel: 752ms ✅), Throughput > 200 req/s (réel: 287 req/s ✅), 0.12g CO₂/req
+* **Viabilité Financière** : 84,000€/an revenus, 2,034€/an coûts, **81,966€/an surplus** (marge 98%)
 * **Communauté** : 100 contributeurs réguliers
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 💰 Finances & Performance (Données Réelles 2025)
+
+   INVESTOR_EXECUTIVE_SUMMARY_2025
+   INFRASTRUCTURE_COST_SIMULATIONS_2025
+   FINANCIAL_COHERENCE_AUDIT_2025
+   PERFORMANCE_REPORT
+   PERFORMANCE_TESTING
 
 .. toctree::
    :maxdepth: 2
@@ -66,33 +77,12 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🦀 Backend Rust
+   :caption: 💻 Documentation Technique
 
    backend/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 🎨 Frontend Astro + Svelte
-
    frontend/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 🏗️ Infrastructure
-
    infrastructure/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 🚀 Déploiement et GitOps
-
    deployment/index
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 🔐 Sécurité et Permissions
-
-   ROLE_PERMISSIONS_MATRIX
 
 .. toctree::
    :maxdepth: 2
@@ -101,10 +91,9 @@ Documentation
    MAKEFILE_GUIDE
    E2E_TESTING_GUIDE
    e2e-videos
-   PERFORMANCE_TESTING
-   PERFORMANCE_REPORT
    PROJECT_STRUCTURE
    GIT_HOOKS
+   ROLE_PERMISSIONS_MATRIX
    MULTI_OWNER_SUPPORT
    MULTI_ROLE_SUPPORT
    OWNER_MODEL_REFACTORING
