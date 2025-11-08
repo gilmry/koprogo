@@ -24,7 +24,7 @@ Piliers de la Mission
 Le Concept d'Économies d'Échelle Inversées
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Économies d'échelle classiques (SaaS capitaliste)** :
+**Économies d'échelle traditionnelles** :
 
 * Plus de clients → Marges accrues → Profits actionnaires ↑
 * Prix restent fixes ou augmentent
@@ -312,14 +312,14 @@ Sécurité et Conformité
 * Failles corrigées en < 3 minutes (vs semaines/mois)
 * Conformité RGPD : Audit automatisé (sqlx compile-time checks)
 
-**Problème résolu : Fragmentation Self-Hosted**
+**Approche GitOps pour l'Auto-Hébergement**
 
-Le self-hosted traditionnel pose un **problème de sécurité majeur** :
+L'auto-hébergement traditionnel présente des défis de maintenance :
 
 
-* 70% des instances ne sont jamais mises à jour
-* Failles critiques non corrigées pendant des mois
-* Manque de compétences techniques des hébergeurs
+* De nombreuses instances ne bénéficient pas de mises à jour régulières
+* Failles critiques peuvent persister
+* Gestion technique parfois complexe
 
 **Solution GitOps** :
 
@@ -731,6 +731,8 @@ KoproGo ne se contente pas de fournir un logiciel. Notre mission est **holistiqu
 ✅ **Recréer du lien social** (modules communautaires optionnels par immeuble)
 
 **Notre engagement** : La technologie doit servir l'humain, la planète, et l'intérêt général. Les modules communautaires (SEL, bazar de troc, prêt d'objets) sont **optionnels** et permettent à chaque copropriété de créer sa propre dynamique sociale selon ses besoins et sa culture.
+
+Même si tu préfères tes outils actuels, tu peux quand même bénéficier de KoproGo.
 
 ----
 
