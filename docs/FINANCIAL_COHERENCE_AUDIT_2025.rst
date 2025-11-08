@@ -152,10 +152,10 @@ Vision Document (KPIs 2030)
   - 750k€ SEL
   - 600k€ consommation évitée
 
-- **Impact Écologique**: -534 tonnes CO₂/an
+- **Impact Écologique**: -840 tonnes CO₂/an (dépassement +57% vs objectif initial -534t)
 
   - 50t infrastructure
-  - 484t features communautaires
+  - 790t features communautaires
 
 Economic Model - Grille Tarifaire Dégressive
 ---------------------------------------------

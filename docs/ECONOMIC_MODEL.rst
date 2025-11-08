@@ -1045,7 +1045,7 @@ Budget Prévisionnel 2025-2030
 **Impact économique et écologique 2030** :
 
 * **Économies générées** : 8M€ (logiciels propriétaires) + 750k€ (SEL) + 600k€ (consommation évitée) = **9,35M€/an**
-* **Impact carbone** : -534 tonnes CO₂/an (50t infrastructure + 484t features communautaires)
+* **Impact carbone** : -840 tonnes CO₂/an (50t infrastructure + 790t features communautaires, dépassement +57% vs objectif initial)
 
 Unit Economics Cloud ASBL (Tarif Moyen)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1151,8 +1151,8 @@ Comparaison Carbone Infrastructure
 
 
 * Infrastructure: -50 tonnes CO₂/an (5000 copros cloud)
-* **Features communautaires** (30% adoption) : -484 tonnes CO₂/an (partage objets, réduction consommation)
-* **Impact total : -534 tonnes CO₂/an** (effet multiplicateur 10x)
+* **Features communautaires** (30% adoption) : -790 tonnes CO₂/an (partage objets, réduction consommation)
+* **Impact total : -840 tonnes CO₂/an** (effet multiplicateur 16x, dépassement +57% vs objectif initial)
 
 Politique Green IT
 ^^^^^^^^^^^^^^^^^^
