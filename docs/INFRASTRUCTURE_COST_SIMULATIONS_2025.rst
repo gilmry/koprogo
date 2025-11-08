@@ -417,7 +417,7 @@ Grille tarifaire (2,000-5,000 copros):
      - Infrastructure
      - Coût/mois
    * - **AI Assistant**
-     - GPU Hetzner (inference)
+     - OVH AI Endpoints (GPU inference)
      - 50€
    * - **Blockchain Voting**
      - Polygon RPC node

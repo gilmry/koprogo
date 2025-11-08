@@ -143,7 +143,7 @@ Tarification Dégressive ASBL
      - Adoption 2030
    * - **AI Assistant**
      - +2€
-     - GPU Hetzner (50€/mois)
+     - OVH AI Endpoints (50-100€/mois)
      - 40%
    * - **Blockchain Voting**
      - +1€

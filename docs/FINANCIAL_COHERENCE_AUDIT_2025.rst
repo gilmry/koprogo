@@ -240,7 +240,7 @@ Infrastructure Add-ons
      - Coût/mois
      - Source
    * - **AI Assistant**
-     - GPU Hetzner (inference)
+     - OVH AI Endpoints (GPU inference)
      - 50€/mois
      - ECONOMIC_MODEL
    * - **Blockchain Voting**
