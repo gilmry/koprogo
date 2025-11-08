@@ -1614,8 +1614,8 @@ Opportunités
 
 **Exemple**\ : Plausible Analytics (bootstrap, OSS) : 15k stars → 10k+ clients sans marketing
 
-2. Tendance Anti-Vendor Lock-In
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2. Souveraineté des Données et Portabilité
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Contexte**\ : 2025-2030 = décennie décentralisation, souveraineté numérique
 
@@ -1623,9 +1623,10 @@ Opportunités
 
 
 * ✅ GDPR natif: Données EU, conformité totale
-* ✅ Souveraineté: OVH France, pas de CLOUD Act
+* ✅ Souveraineté: OVH France, protection des données
+* ✅ Données portables: Export CSV/JSON/SQL inclus
 * ✅ Écologie: 0.12g CO₂/req, mix français bas carbone
-* ✅ Éthique: ASBL non-profit vs SaaS profit-driven
+* ✅ Éthique: ASBL non-profit, réinvestissement communauté
 
 3. Subventions & Dons (Si Utilité Publique)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1735,6 +1736,8 @@ Contact et Collaboration
 **L'open source n'est pas seulement idéaliste, c'est pragmatique.** Les plus grandes réussites technologiques des 20 dernières années sont open source. KoproGo combine l'impact social d'une ASBL avec la viabilité du modèle OpenCore éprouvé.
 
 **Nous ne construisons pas une licorne. Nous construisons un bien commun durable.** 🏛️🔓🌱
+
+Même si tu préfères continuer avec tes solutions actuelles, tu peux quand même bénéficier de KoproGo.
 
 ----
 
