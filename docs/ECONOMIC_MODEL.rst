@@ -211,13 +211,33 @@ Projections 2025-2030 Révisées
 Coûts Infrastructure PropTech
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+⚠️ **IMPORTANT**: Architecture 100% OVH France (Gravelines) pour souveraineté des données
+
 .. code-block:: text
 
-   GPU IA (inference): 50€/mois (Hetzner GPU Cloud)
-   Blockchain node: 20€/mois (Polygon RPC)
-   IoT ingestion (MQTT): 10€/mois (backend actuel suffit)
-   Stockage time-series (IoT): 15€/mois (TimescaleDB extension PostgreSQL)
-   Total infra PropTech: 95€/mois ≈ 1,140€/an
+   AI Assistant (OVH AI Endpoints - serverless @ Gravelines):
+     • Pay-as-you-go inference (40+ modèles LLM open-source)
+     • Estimé: 50-100€/mois selon utilisation
+     • ⚠️ Tarifs non publics - nécessite devis commercial OVH
+     • Alternative GPU instance H100 PCIe: 2,000€/mois (trop cher)
+
+   Blockchain node (Polygon RPC sur VPS OVH):
+     • s1-2 VPS (1 vCore, 2GB RAM) @ 7.20€/mois TTC
+     • Ou service managé Polygon: 20-30€/mois (estim.)
+
+   IoT ingestion (MQTT broker):
+     • Inclus dans backend principal (pas de surcoût VPS)
+     • Ou VPS dédié s1-2 si scaling: 7.20€/mois TTC
+
+   Stockage time-series IoT (TimescaleDB):
+     • Extension PostgreSQL managée OVH Database
+     • Inclus dans PostgreSQL principal ou instance dédiée
+     • Estimé: 15-25€/mois selon volumétrie
+
+   Total infra PropTech (estimé conservateur):
+     • Minimal: 50€ AI + 7€ Blockchain + 0€ MQTT + 15€ TimescaleDB = 72€/mois (864€/an)
+     • Réaliste: 80€ AI + 20€ Blockchain + 7€ MQTT + 20€ TimescaleDB = 127€/mois (1,524€/an)
+     • ⚠️ À VALIDER avec devis OVH commercial (surtout AI Endpoints)
 
 Transparence - Facture Détaillée Add-ons
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1025,7 +1045,7 @@ Budget Prévisionnel 2025-2030
 **Impact économique et écologique 2030** :
 
 * **Économies générées** : 8M€ (logiciels propriétaires) + 750k€ (SEL) + 600k€ (consommation évitée) = **9,35M€/an**
-* **Impact carbone** : -534 tonnes CO₂/an (50t infrastructure + 484t features communautaires)
+* **Impact carbone** : -840 tonnes CO₂/an (50t infrastructure + 790t features communautaires, dépassement +57% vs objectif initial)
 
 Unit Economics Cloud ASBL (Tarif Moyen)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1131,8 +1151,8 @@ Comparaison Carbone Infrastructure
 
 
 * Infrastructure: -50 tonnes CO₂/an (5000 copros cloud)
-* **Features communautaires** (30% adoption) : -484 tonnes CO₂/an (partage objets, réduction consommation)
-* **Impact total : -534 tonnes CO₂/an** (effet multiplicateur 10x)
+* **Features communautaires** (30% adoption) : -790 tonnes CO₂/an (partage objets, réduction consommation)
+* **Impact total : -840 tonnes CO₂/an** (effet multiplicateur 16x, dépassement +57% vs objectif initial)
 
 Politique Green IT
 ^^^^^^^^^^^^^^^^^^
@@ -1147,9 +1167,10 @@ Politique Green IT
 **Mesures concrètes**\ :
 
 
-* 0.12g CO₂/req (OVH France, mix 60g CO₂/kWh)
-* 5.8x moins d'émissions que Hetzner DE
-* 7-25x moins que AWS/Azure US
+* 0.12g CO₂/req (OVH GRA11 Gravelines, mix 60g CO₂/kWh)
+* 5.8x moins d'émissions que datacenters Allemagne (350g CO₂/kWh)
+* 7-25x moins que AWS/Azure US (475-700g CO₂/kWh)
+* **100% souveraineté française** (données hébergées à Gravelines)
 
 ----
 

@@ -7,7 +7,7 @@ Issue #76: feat: Document Upload & Download System (Gestion documentaire complè
 :Labels: enhancement,phase:vps track:software,priority:critical
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-01
+:Updated: 2025-11-08
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/76>`_
 
 Description

@@ -7,7 +7,7 @@ Issue #46: feat: Implement meeting voting system (Résolutions & votes)
 :Labels: phase:vps,track:software priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-01
+:Updated: 2025-11-08
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/46>`_
 
 Description

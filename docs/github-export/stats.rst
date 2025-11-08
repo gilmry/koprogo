@@ -1,8 +1,8 @@
 **Total Issues:** 57
 
-**Open Issues:** 50
+**Open Issues:** 46
 
-**Closed Issues:** 7
+**Closed Issues:** 11
 
 **Milestones:** 4
 

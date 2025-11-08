@@ -260,6 +260,12 @@ Base URL: `http://localhost:8080/api/v1`
    - `GET /auth/me` (profil enrichi)
 **Owners**: `/owners` (GET, POST), `/owners/:id` (GET), `/owners/:id/units`, `/owners/:id/units/history`
 **Expenses**: `/expenses` (GET, POST), `/buildings/:id/expenses` (GET), `/expenses/:id/mark-paid` (PUT)
+   - **✅ NOUVEAU**: `/expenses/:id/submit-for-approval`, `/expenses/:id/approve`, `/expenses/:id/reject` (workflow)
+**✅ NOUVEAU: Accounts (PCMN)**: `/accounts` (GET, POST), `/accounts/:id` (GET, PUT, DELETE), `/accounts/code/:code`, `/accounts/seed/belgian-pcmn`
+**✅ NOUVEAU: Financial Reports**: `/reports/balance-sheet`, `/reports/income-statement`
+**✅ NOUVEAU: Payment Reminders**: `/payment-reminders` (GET, POST), `/payment-reminders/:id` (GET, PUT, DELETE)
+   - `/payment-reminders/:id/mark-sent`, `/payment-reminders/:id/escalate`, `/payment-reminders/stats`
+   - `/expenses/:id/payment-reminders`, `/owners/:id/payment-reminders`
 **Health**: `/health` (GET)
 
 ## Domain Entities
@@ -271,11 +277,50 @@ The system models property management with these aggregates:
 - **Owner**: Co-owners (name, email, phone, GDPR-sensitive data)
 - **UnitOwner**: Relation d'appartenance (pourcentage, temporalité, contact principal)
 - **UserRoleAssignment**: Rôle utilisateur/Organisation (multi-rôles, rôle actif)
-- **Expense**: Charges (amount, description, due_date, paid status)
+- **Expense**: Charges avec workflow d'approbation (Draft → PendingApproval → Approved/Rejected)
+- **✅ NOUVEAU: Account**: Plan Comptable Normalisé Belge (PCMN AR 12/07/2012) - Issue #79
+- **✅ NOUVEAU: InvoiceLineItem**: Lignes de facturation avec TVA (6%, 12%, 21%) - Issue #73
+- **✅ NOUVEAU: PaymentReminder**: Relances automatisées (4 niveaux: Gentle → Formal → FinalNotice → LegalAction) - Issue #83
 - **Meeting**: General assemblies (date, agenda, minutes)
 - **Document**: File storage (title, file_path, document_type)
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
+
+### ✅ NOUVEAU: Belgian Accounting (PCMN) - Issue #79
+
+- Implémentation complète du Plan Comptable Minimum Normalisé belge (AR 12/07/2012)
+- ~90 comptes pré-seed és (8 classes: Actif, Passif, Charges, Produits, Hors-bilan)
+- Hiérarchie complète (classes, sous-classes, groupes, comptes)
+- Validation codes comptables et types de comptes
+- Domain entity: `backend/src/domain/entities/account.rs`
+- Use cases: `backend/src/application/use_cases/account_use_cases.rs`
+- Repository: `backend/src/infrastructure/database/repositories/account_repository_impl.rs`
+- API handlers: `backend/src/infrastructure/web/handlers/account_handlers.rs`
+- Financial reports: `backend/src/application/use_cases/financial_report_use_cases.rs` (Bilan & Compte de résultats)
+- Tests: 100% couverture domain + integration PostgreSQL
+- Documentation: `docs/BELGIAN_ACCOUNTING_PCMN.rst`
+
+### ✅ NOUVEAU: Invoice Workflow - Issue #73
+
+- Workflow complet d'approbation des factures
+- États: Draft → PendingApproval → Approved/Rejected
+- Gestion TVA belge (6%, 12%, 21%) avec calculs automatiques
+- Multi-lignes (InvoiceLineItem) avec quantités et totaux
+- Validation métier (empêche modification après approbation)
+- Domain entities: `backend/src/domain/entities/expense.rs`, `invoice_line_item.rs`
+- Tests: Scénarios BDD + E2E workflow complet
+- Documentation: `docs/INVOICE_WORKFLOW.rst`
+
+### ✅ NOUVEAU: Payment Recovery Workflow - Issue #83
+
+- Workflow automatisé de recouvrement des impayés
+- 4 niveaux d'escalade: Gentle (J+15) → Formal (J+30) → FinalNotice (J+45) → LegalAction (J+60)
+- Calcul automatique pénalités de retard (taux légal belge 8% annuel)
+- Traçabilité complète (sent_date, tracking_number, notes)
+- Domain entity: `backend/src/domain/entities/payment_reminder.rs`
+- Use cases: `backend/src/application/use_cases/payment_reminder_use_cases.rs`
+- Tests: Scénarios d'escalade + calcul pénalités
+- Documentation: `docs/PAYMENT_RECOVERY_WORKFLOW.rst`
 
 ### Multi-owner support
 

@@ -7,7 +7,7 @@ Issue #42: feat: Implement GDPR data export & deletion (Right to be forgotten)
 :Labels: phase:vps,track:software priority:critical
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-01
+:Updated: 2025-11-08
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/42>`_
 
 Description
