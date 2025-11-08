@@ -29,12 +29,27 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: 📘 Vision & Stratégie
+   :caption: 📘 Vision & Stratégie (Hiérarchie Stratégique)
 
    VISION
    MISSION
-   ECONOMIC_MODEL
    GOVERNANCE
+   ECONOMIC_MODEL
+
+**Hiérarchie de lecture recommandée** :
+
+1. **VISION** : Vision macro sociétale et problème à résoudre (pourquoi KoproGo existe)
+2. **MISSION** : Solutions concrètes et valeurs fondamentales (comment nous résolvons le problème)
+3. **GOVERNANCE** : Structure organisationnelle évolutive Solo → Fondateurs → ASBL → Coopérative
+4. **ECONOMIC_MODEL** : Modèle économique ASBL et viabilité financière à long terme
+
+**KPIs Stratégiques 2030** :
+
+* **Adoption** : 5,000 copropriétés (100,000 personnes)
+* **Impact Économique** : 9,35M€/an économisés (8M€ logiciels + 750k€ SEL + 600k€ consommation évitée)
+* **Impact Écologique** : -534 tonnes CO₂/an (50t infrastructure + 484t features communautaires)
+* **Performance Technique** : P99 < 5ms, Uptime > 99.9%, < 0.5g CO₂/req
+* **Communauté** : 100 contributeurs réguliers
 
 .. toctree::
    :maxdepth: 2

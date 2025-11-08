@@ -7,7 +7,7 @@ Issue #75: feat: Complete Meeting Management API (AG assemblées générales)
 :Labels: enhancement,phase:vps track:software,priority:critical
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-01
+:Updated: 2025-11-08
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/75>`_
 
 Description

@@ -5,8 +5,8 @@ Phase 1: VPS MVP + Legal Compliance
 :Number: 1
 :State: open
 :Due Date: 2026-03-31T07:00:00Z
-:Open Issues: 20
-:Closed Issues: 2
+:Open Issues: 17
+:Closed Issues: 5
 :Total Issues: 22
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/1>`_
 
@@ -123,10 +123,10 @@ Issues (22)
 :State: OPEN
 :Link: `#76 <../issues/issue-76.rst>`_
 
-🔵 Issue #77: feat: Financial Reports Generation (Rapports financiers)
+✅ Issue #77: feat: Financial Reports Generation (Rapports financiers)
 ----------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#77 <../issues/issue-77.rst>`_
 
 🔵 Issue #78: feat: Security Hardening for Production (Rate limiting, 2FA, audit logs)
@@ -135,10 +135,10 @@ Issues (22)
 :State: OPEN
 :Link: `#78 <../issues/issue-78.rst>`_
 
-🔵 Issue #79: feat: Belgian Accounting Chart (Plan Comptable Normalisé Belge)
+✅ Issue #79: feat: Belgian Accounting Chart (Plan Comptable Normalisé Belge)
 -----------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#79 <../issues/issue-79.rst>`_
 
 🔵 Issue #80: feat: État Daté Generation for Property Transfers
@@ -159,9 +159,9 @@ Issues (22)
 :State: OPEN
 :Link: `#82 <../issues/issue-82.rst>`_
 
-🔵 Issue #83: feat: Payment Recovery Workflow (Workflow Recouvrement Impayés)
+✅ Issue #83: feat: Payment Recovery Workflow (Workflow Recouvrement Impayés)
 -----------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#83 <../issues/issue-83.rst>`_
 

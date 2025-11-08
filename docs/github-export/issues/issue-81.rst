@@ -7,7 +7,7 @@ Issue #81: feat: Annual Budget System with Variance Analysis
 :Labels: enhancement,phase:vps track:software,priority:critical finance,legal-compliance
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-01
+:Updated: 2025-11-08
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/81>`_
 
 Description

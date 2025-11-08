@@ -5,8 +5,8 @@ Phase 2: K3s + Automation
 :Number: 2
 :State: open
 :Due Date: 2026-06-30T07:00:00Z
-:Open Issues: 18
-:Closed Issues: 0
+:Open Issues: 17
+:Closed Issues: 1
 :Total Issues: 18
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/2>`_
 
@@ -77,10 +77,10 @@ Issues (18)
 :State: OPEN
 :Link: `#67 <../issues/issue-67.rst>`_
 
-🔵 Issue #73: Système Complet d'Encodage de Factures avec Workflow de Validation
+✅ Issue #73: Système Complet d'Encodage de Factures avec Workflow de Validation
 --------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#73 <../issues/issue-73.rst>`_
 
 🔵 Issue #84: feat: Online Payment System (Stripe + SEPA Direct Debit)

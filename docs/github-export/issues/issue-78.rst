@@ -7,7 +7,7 @@ Issue #78: feat: Security Hardening for Production (Rate limiting, 2FA, audit lo
 :Labels: enhancement,phase:vps track:software,priority:critical security
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-01
+:Updated: 2025-11-08
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/78>`_
 
 Description
