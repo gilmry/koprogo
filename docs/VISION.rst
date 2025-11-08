@@ -176,23 +176,57 @@ Sur ``https://koprogo.com/transparency`` (accessible sans login) :
 
 Pas de commission cachée. Juste des chiffres.
 
-La Roadmap : Belgique → Europe → Monde
-======================================
+Roadmap 2026-2030 : On N'Attend Pas
+===================================
 
-**On commence en Belgique** (2025-2026)
-  Validation MVP, 100-500 copropriétés pilotes, constitution ASBL
+**On n'attend pas un décret européen pour avancer.**
 
-**On scale en Europe** (2027-2029)
-  France, Espagne, Italie : expansion dans les pays à forte densité copro
-  Traductions, adaptations légales, partenariats locaux
+On teste en Belgique dès **janvier vingt-six**, avec dix immeubles pilotes. Pas besoin d'autorisation : la loi belge autorise déjà l'achat groupé, on s'appuie dessus.
 
-**Puis dans tous les pays où deux voisins partagent un toit** (2030+)
-  Amérique du Nord (condos), Amérique Latine, Asie
-  Modèle réplicable, opensource, adapté aux contextes locaux
+Les gros acteurs ? Ils n'osent pas bouger tant que le cadre reste floue. Nous, on avance :
 
-**Objectif 2030** : 5,000 copropriétés, 100,000 personnes, 9M€ économisés, 840t CO₂ évitées
+* **Svelte front, Rust backend**
+* **Dockerisé, hébergé OVH**
+* **Trente-trois euros le mois**
 
-Voilà. Tout en bloc, rassembleur, clair.
+**Juin vingt-six** : Première version publique
+  Vote AG numérique, ouverture aux syndics indépendants
+
+**2027** : On passe en France, puis Italie
+  Pas de conquête, juste copie du modèle belge, adapté localement
+
+**2030** : Neuf millions d'euros économisés, huit cent quarante tonnes de CO₂ en moins
+  Pas des rêves : des pilotes, des chiffres, des contrats signés
+
+Écosystème : On Ne Remplace Personne, On Booste
+================================================
+
+**Les syndicats classiques font du bon boulot**, mais avec des outils d'il y a vingt ans—tableurs, réunions en présentiel, factures papier.
+
+On ne les remplace pas, on les booste :
+
+✅ **Notre API gratuite**
+✅ **Notre tableau de bord en temps réel**
+✅ **Un bouton « négocier en groupe » que même ton grand-père cliquerait**
+
+**Les fournisseurs ?** On les invite à la table, pas à se battre.
+
+**Et les voisins réfractaires ?** Ils gardent leur vie, leur AG, leur syndic—on ne force rien. Juste : ceux qui veulent paient moins. Simple.
+
+KPIs 2030 : Pas des Promesses, des Mesures
+==========================================
+
+**Économies** : Neuf millions d'euros
+
+**CO₂** : Moins huit cent quarante tonnes
+
+**Utilisateurs** : Cent mille logements
+
+**Fiabilité** : 99,9% uptime, trente-trois euros par mois, hébergé local
+
+Et pour les plus prudents—ceux qui disent « moi j'aime bien mon syndic de toujours »—même eux économisent : pas obligé de changer d'AG, juste de partager les données.
+
+**Même le sceptique gagne.**
 
 Technologies : Au Service du Bien Commun
 ========================================
@@ -213,10 +247,10 @@ Technologies : Au Service du Bien Commun
 
 Infrastructure mutualisée. Plus de monde = Coûts partagés.
 
-C'est Comme Ça, On Peut Mieux
-=============================
+Tu Viens ?
+==========
 
-**Tu viens ?**
+**Plus de « tu devrais », juste « tu peux ».**
 
 En rejoignant KoproGo, tu ne prends pas un abonnement. Tu rejoins un mouvement :
 
@@ -233,7 +267,7 @@ En 2030 : 9 millions d'euros économisés, 840 tonnes de CO₂ en moins.
 
 **Ça marche déjà en test depuis octobre vingt-cinq.**
 
-Même un investisseur bruxellois y croit.
+**Colle ça partout, et personne ne râlera.**
 
 ----
 
