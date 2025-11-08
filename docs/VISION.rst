@@ -6,14 +6,14 @@ Vision de Koprogo
 :Date: 8 novembre 2025
 :Voir aussi: :doc:`ROADMAP_INTEGREE_2025_2030` | :doc:`MISSION` | :doc:`ECONOMIC_MODEL`
 
-Le Problème : On Dépense Trente à Cinquante Pour Cent de Trop
+Le Contexte : On Peut Économiser Trente à Cinquante Pour Cent
 ==============================================================
 
 Aujourd'hui, dans les **deux cent mille copropriétés belges**, on dépense **trente à cinquante pour cent de trop** sur l'énergie, l'eau, l'entretien.
 
-Pas parce qu'on est dupes, non. Parce que **chaque immeuble négocie seul, sans poids, sans données**.
+Pas parce que les gens font mal, non. C'est juste que **chaque immeuble négocie seul, sans poids, sans données**.
 
-Résultat : on laisse filer des centaines de millions, alors que si on regroupe nos logements comme en Europe—France, Espagne, Italie, partout où le copro existe—on peut taper ensemble et faire baisser la facture de moitié.
+Résultat : des centaines de millions qui pourraient être économisés en regroupant nos logements—comme en Europe (France, Espagne, Italie)—pour négocier ensemble et réduire les coûts.
 
 Les Causes : Un Marché Fragmenté
 =================================
@@ -24,13 +24,13 @@ Les Causes : Un Marché Fragmenté
 **Des contrats pluriannuels qui figent les prix** :
   Énergie, assurances, entretien : verrouillés pendant 3-5 ans sans renégociation
 
-**Une loi qui autorise le collectif mais pas le collectif intelligent** :
-  Le cadre légal permet les achats groupés, mais personne n'a les outils pour le faire
+**Une loi qui autorise le collectif mais sans les outils** :
+  Le cadre légal permet les achats groupés, mais les outils manquent pour le faire facilement
 
-La Solution : Changer Ça avec un Logiciel Ouvert
-================================================
+La Solution : Rendre Ça Possible avec un Logiciel Ouvert
+=========================================================
 
-Et si on changeait ça avec :
+Voici comment on propose de faciliter ça :
 
 ✅ **Un logiciel ouvert** (AGPL-3.0)
   Code public, auditable, aucune surprise
@@ -38,13 +38,13 @@ Et si on changeait ça avec :
 ✅ **Hébergé à trente-trois euros le mois chez OVH**
   Infrastructure France (Gravelines), données souveraines
 
-✅ **Zéro CO₂ en trop** (0.12g par requête)
-  96% de réduction vs solutions actuelles
+✅ **Empreinte carbone faible** (0.12g par requête)
+  96% de réduction vs outils actuels
 
 ✅ **Une assoc' qui redistribue tout** (ASBL belge)
   Pas d'actionnaires, les économies reviennent aux usagers
 
-Pas de patron, pas de commission cachée. Juste du collectif intelligent.
+Une structure associative avec décisions collectives, rôle coordinateur élu, pour avancer dans le cadre légal actuel.
 
 L'Impact : Moins de Pollution, Moins de Stress, Plus de Pouvoir d'Achat
 =======================================================================
@@ -53,20 +53,22 @@ L'Impact : Moins de Pollution, Moins de Stress, Plus de Pouvoir d'Achat
   840 tonnes CO₂/an évitées (infrastructure + partage communautaire)
 
 **Moins de stress** :
-  Fini les factures opaques, les litiges sur les charges, les syndics qui disparaissent
+  Fini les factures opaques, les litiges sur les charges
 
 **Plus de pouvoir d'achat** :
   9 millions d'euros économisés par an (logiciels + énergie + partage)
 
 **Et ça marche déjà en test depuis octobre vingt-cinq.**
 
-Les Chiffres (Pas des Rêves, des Tests Réels)
+Même si tu préfères tes outils actuels, tu peux quand même utiliser KoproGo sans changer tout ton fonctionnement.
+
+Les Chiffres (Tests Réels, Pas des Promesses)
 ==============================================
 
 En 2030, objectif 5,000 copropriétés :
 
 💰 **9 millions d'euros économisés par an**
-  * 8M€ logiciels propriétaires (0.40€/mois vs 50€/mois concurrents)
+  * 8M€ logiciels (0.40€/mois vs 50€/mois concurrents)
   * 750k€ économie circulaire (SEL - Système d'Échange Local)
   * 600k€ consommation évitée (partage d'objets entre voisins)
 
@@ -79,7 +81,7 @@ En 2030, objectif 5,000 copropriétés :
   * Throughput : 287 req/s
   * CO₂/requête : 0.12g (vs 11.5g concurrents)
 
-Pas des projections marketing. Des tests réels depuis octobre vingt-cinq.
+Données issues de tests réels depuis octobre vingt-cinq, pas de projections marketing.
 
 Le Pouvoir du Collectif : Regrouper Pour Peser
 ==============================================
@@ -90,22 +92,22 @@ Le Pouvoir du Collectif : Regrouper Pour Peser
 **Italie** : 1,200,000 copropriétés
 **Europe** : 150 millions de personnes en copropriété
 
-**Un immeuble seul ne pèse rien.**
+**Un immeuble seul négocie avec peu de poids.**
 
-Regroupés, on négocie :
+Regroupés, on peut négocier :
 * Prix énergie (achats groupés)
 * Assurances (tarifs collectifs)
 * Travaux (appels d'offres mutualisés)
 * Technologies (infrastructure partagée à €33/mois)
 
-**Ensemble, on change les règles du jeu.**
+**Ensemble, on a plus de poids.**
 
 Le Modèle Économique : Plus de Monde = Moins Cher
 =================================================
 
-Les SaaS classiques facturent **50-500€/mois par copropriété**, avec des marges captées par les actionnaires.
+Les solutions actuelles facturent **50-500€/mois par copropriété**, avec des marges importantes.
 
-KoproGo inverse le modèle : **plus de participants = prix baisse pour tous**.
+KoproGo propose un autre modèle : **plus de participants = prix baisse pour tous**.
 
 .. list-table:: Grille Tarifaire Dégressive (Automatique)
    :header-rows: 1
@@ -143,8 +145,10 @@ Le surplus (prix facturé - coût réel) est voté en Assemblée Générale :
 
 **Zéro dividende pour des actionnaires. Tout revient à la communauté.**
 
-La Gouvernance : Pas de Patron, Juste l'AG
-==========================================
+Même si tu préfères garder ton système actuel, ça fonctionne quand même.
+
+La Gouvernance : Décisions Collectives, Rôle Coordinateur Élu
+=============================================================
 
 **ASBL (Association Sans But Lucratif)** belge :
 
@@ -160,7 +164,7 @@ La Gouvernance : Pas de Patron, Juste l'AG
 **Opensource (AGPL-3.0)** :
   Code public sur GitHub, contributions bienvenues, fork autorisé si dérive
 
-Pas de coup de menton. Juste : on peut mieux.
+Structure associative avec un rôle coordinateur élu démocratiquement.
 
 La Transparence : Dashboard Public
 ==================================
@@ -174,16 +178,16 @@ Sur ``https://koprogo.com/transparency`` (accessible sans login) :
 * Prochain palier dégressif (countdown)
 * Rapports trimestriels PDF (bilan complet)
 
-Pas de commission cachée. Juste des chiffres.
+Données exportables. Juste des chiffres.
 
-Roadmap 2026-2030 : On N'Attend Pas
-===================================
+Roadmap 2026-2030 : On Avance dans le Cadre Actuel
+==================================================
 
-**On n'attend pas un décret européen pour avancer.**
+**On avance dans le cadre légal actuel.**
 
-On teste en Belgique dès **janvier vingt-six**, avec dix immeubles pilotes. Pas besoin d'autorisation : la loi belge autorise déjà l'achat groupé, on s'appuie dessus.
+On teste en Belgique dès **janvier vingt-six**, avec dix immeubles pilotes. La loi belge autorise déjà l'achat groupé, on s'appuie dessus.
 
-Les gros acteurs ? Ils n'osent pas bouger tant que le cadre reste floue. Nous, on avance :
+Pendant que d'autres attendent, nous proposons une alternative :
 
 * **Svelte front, Rust backend**
 * **Dockerisé, hébergé OVH**
@@ -193,28 +197,30 @@ Les gros acteurs ? Ils n'osent pas bouger tant que le cadre reste floue. Nous, o
   Vote AG numérique, ouverture aux syndics indépendants
 
 **2027** : On passe en France, puis Italie
-  Pas de conquête, juste copie du modèle belge, adapté localement
+  Pas de conquête, juste adaptation du modèle belge localement
 
 **2030** : Neuf millions d'euros économisés, huit cent quarante tonnes de CO₂ en moins
   Pas des rêves : des pilotes, des chiffres, des contrats signés
 
-Écosystème : On Ne Remplace Personne, On Booste
-================================================
+Écosystème : On Complète, On N'Impose Rien
+===========================================
 
-**Les syndicats classiques font du bon boulot**, mais avec des outils d'il y a vingt ans—tableurs, réunions en présentiel, factures papier.
+**Les outils actuels font du bon travail**, mais avec des technologies parfois anciennes—tableurs, réunions en présentiel, factures papier.
 
-On ne les remplace pas, on les booste :
+On propose de compléter avec :
 
 ✅ **Notre API gratuite**
 ✅ **Notre tableau de bord en temps réel**
-✅ **Un bouton « négocier en groupe » que même ton grand-père cliquerait**
+✅ **Un bouton « négocier en groupe » accessible à tous**
 
-**Les fournisseurs ?** On les invite à la table, pas à se battre.
+**Les fournisseurs ?** On les invite à participer.
 
-**Et les voisins réfractaires ?** Ils gardent leur vie, leur AG, leur syndic—on ne force rien. Juste : ceux qui veulent paient moins. Simple.
+**Et ceux qui préfèrent leur système ?** Ils gardent leur vie, leur AG, leur syndic—on ne force rien. Juste : ceux qui veulent peuvent économiser. Simple.
 
-KPIs 2030 : Pas des Promesses, des Mesures
-==========================================
+Même si tu préfères ton syndic actuel, ça marche quand même.
+
+KPIs 2030 : Des Mesures Concrètes
+=================================
 
 **Économies** : Neuf millions d'euros
 
@@ -224,9 +230,9 @@ KPIs 2030 : Pas des Promesses, des Mesures
 
 **Fiabilité** : 99,9% uptime, trente-trois euros par mois, hébergé local
 
-Et pour les plus prudents—ceux qui disent « moi j'aime bien mon syndic de toujours »—même eux économisent : pas obligé de changer d'AG, juste de partager les données.
+Et pour les plus prudents—ceux qui disent « moi j'aime bien mon système actuel »—même eux peuvent bénéficier : pas obligé de tout changer, juste de partager les données.
 
-**Même le sceptique gagne.**
+**Même le sceptique peut économiser.**
 
 Technologies : Au Service du Bien Commun
 ========================================
@@ -252,7 +258,7 @@ Tu Viens ?
 
 **Plus de « tu devrais », juste « tu peux ».**
 
-En rejoignant KoproGo, tu ne prends pas un abonnement. Tu rejoins un mouvement :
+En rejoignant KoproGo, tu ne prends pas un abonnement. Tu rejoins une communauté :
 
 ✅ **Économies réelles** : 80-95% vs logiciels propriétaires
 ✅ **Impact écologique** : 840 tonnes CO₂/an collectivement
@@ -266,6 +272,8 @@ En rejoignant KoproGo, tu ne prends pas un abonnement. Tu rejoins un mouvement :
 En 2030 : 9 millions d'euros économisés, 840 tonnes de CO₂ en moins.
 
 **Ça marche déjà en test depuis octobre vingt-cinq.**
+
+Même si tu préfères ton système actuel, ça marche quand même.
 
 ----
 
