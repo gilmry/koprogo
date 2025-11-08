@@ -267,8 +267,6 @@ En 2030 : 9 millions d'euros économisés, 840 tonnes de CO₂ en moins.
 
 **Ça marche déjà en test depuis octobre vingt-cinq.**
 
-**Colle ça partout, et personne ne râlera.**
-
 ----
 
 **Voir aussi** :
