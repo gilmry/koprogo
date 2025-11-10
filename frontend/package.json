@@ -30,7 +30,7 @@
     "astro": "^5.15.3",
     "svelte": "^5.43.2",
     "svelte-i18n": "^4.0.1",
-    "tailwindcss": "^4.1.16",
+    "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
