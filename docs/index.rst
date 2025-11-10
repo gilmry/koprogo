@@ -95,9 +95,70 @@ Documentation
    MULTI_OWNER_SUPPORT
    MULTI_ROLE_SUPPORT
    OWNER_MODEL_REFACTORING
+   RELEASE_PROCESS
+   PERFORMANCE_TUNING
+   DATABASE_ADMIN
+   INTEGRATION_GUIDES
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 👥 Guides Utilisateurs
+
+   user-guides/syndic-guide
+   user-guides/owner-guide
+   user-guides/accountant-guide
+   user-guides/board-member-guide
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🔧 API Documentation
+
+   api/README
+   api/openapi
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🏗️ Architecture Decision Records (ADR)
+
+   adr/0001-rust-actix-web-backend
+   adr/0002-hexagonal-architecture
+   adr/0003-postgresql-database
+   adr/0004-astro-svelte-frontend
+   adr/0005-jwt-authentication
+   adr/0006-agpl-license
+   adr/0044-document-storage-strategy
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🚨 Operations & SRE
+
+   operations/disaster-recovery
+   operations/monitoring-runbook
+   operations/backup-recovery
+   operations/incident-response
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🎨 Frontend & Internationalization
+
+   FRONTEND_COMPONENTS
+   EMAIL_TEMPLATES
+   I18N_GUIDE
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🔒 Sécurité & Conformité
+
+   BELGIAN_ACCOUNTING_PCMN
+   INVOICE_WORKFLOW
+   PAYMENT_RECOVERY_WORKFLOW
+   GDPR_COMPLIANCE_CHECKLIST
+   GDPR_IMPLEMENTATION_STATUS
+   GDPR_ADDITIONAL_RIGHTS
+   BOARD_OF_DIRECTORS_GUIDE
 
 =====================================
 
 *Documentation maintenue par la communauté KoproGo ASBL*
 
-*Dernière mise à jour : Novembre 2025*
+*Dernière mise à jour : 10 novembre 2025*
