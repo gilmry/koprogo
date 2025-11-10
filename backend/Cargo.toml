@@ -34,7 +34,7 @@ uuid = { version = "1.11", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 validator = { version = "0.20", features = ["derive"] }
 bcrypt = "0.17"
-jsonwebtoken = { version = "10.1", default-features = false, features = ["aws_lc_rs"] }
+jsonwebtoken = { version = "10.2", default-features = false, features = ["aws_lc_rs"] }
 
 # Async trait support
 async-trait = "0.1"
