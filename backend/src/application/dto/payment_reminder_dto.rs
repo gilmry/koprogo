@@ -26,6 +26,8 @@ pub struct PaymentReminderResponseDto {
     pub organization_id: String,
     pub expense_id: String,
     pub owner_id: String,
+    pub owner_name: Option<String>,  // Full name of owner for display
+    pub owner_email: Option<String>, // Owner email for contact
     pub level: ReminderLevel,
     pub status: ReminderStatus,
     pub amount_owed: f64,
@@ -50,6 +52,8 @@ impl From<PaymentReminder> for PaymentReminderResponseDto {
             organization_id: reminder.organization_id.to_string(),
             expense_id: reminder.expense_id.to_string(),
             owner_id: reminder.owner_id.to_string(),
+            owner_name: None,  // Will be enriched by use case
+            owner_email: None, // Will be enriched by use case
             level: reminder.level,
             status: reminder.status,
             amount_owed: reminder.amount_owed,
@@ -150,6 +154,7 @@ impl OverdueExpenseDto {
 /// DTO for bulk reminder creation
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct BulkCreateRemindersDto {
+    #[serde(default)]
     pub organization_id: String,
 
     #[validate(range(min = 15))]

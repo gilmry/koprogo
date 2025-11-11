@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                SUM(debit) as total_debits,\n                SUM(credit) as total_credits\n            FROM journal_entry_lines\n            WHERE journal_entry_id = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total_debits",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 1,
+        "name": "total_credits",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "ea54ceeb50bb2c754b76612b3f7ac3385405d51927242e50802e28de45d528a0"
+}

@@ -17,6 +17,7 @@ pub enum ExpenseCategory {
 
 /// Statut de paiement
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub enum PaymentStatus {
     Pending,
     Paid,
@@ -26,6 +27,7 @@ pub enum PaymentStatus {
 
 /// Statut d'approbation pour le workflow de validation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub enum ApprovalStatus {
     Draft,           // Brouillon - en cours d'édition
     PendingApproval, // Soumis pour validation
@@ -300,6 +302,14 @@ impl Expense {
     }
 
     pub fn mark_as_paid(&mut self) -> Result<(), String> {
+        // Validation critique : une facture ne peut être payée que si elle est approuvée
+        if self.approval_status != ApprovalStatus::Approved {
+            return Err(format!(
+                "Cannot mark expense as paid: invoice must be approved first (current status: {:?})",
+                self.approval_status
+            ));
+        }
+
         match self.payment_status {
             PaymentStatus::Pending | PaymentStatus::Overdue => {
                 self.payment_status = PaymentStatus::Paid;

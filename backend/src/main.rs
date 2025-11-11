@@ -3,6 +3,7 @@ use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
 use env_logger::Env;
+use koprogo_api::application::services::ExpenseAccountingService;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
@@ -70,6 +71,13 @@ async fn main() -> std::io::Result<()> {
         Err(e) => log::error!("Failed to seed superadmin: {}", e),
     }
 
+    // Seed Belgian PCMN for all organizations (idempotent)
+    log::info!("Seeding Belgian PCMN chart of accounts...");
+    match seeder.seed_belgian_pcmn_for_all_organizations().await {
+        Ok(message) => log::info!("{}", message),
+        Err(e) => log::warn!("PCMN seed skipped or failed: {}", e),
+    }
+
     // Initialize storage provider (local filesystem by default)
     let file_storage = initialize_storage_provider()
         .await
@@ -94,6 +102,9 @@ async fn main() -> std::io::Result<()> {
         Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
     let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
+    let journal_entry_repo = Arc::new(PostgresJournalEntryRepository::new(pool.clone()));
+    let owner_contribution_repo = Arc::new(PostgresOwnerContributionRepository::new(pool.clone()));
+    let call_for_funds_repo = Arc::new(PostgresCallForFundsRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -109,17 +120,27 @@ async fn main() -> std::io::Result<()> {
         unit_repo.clone(),
         owner_repo.clone(),
     );
-    let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+    // Create expense accounting service (for automatic journal entry generation)
+    let expense_accounting_service =
+        Arc::new(ExpenseAccountingService::new(journal_entry_repo.clone()));
+
+    let expense_use_cases = ExpenseUseCases::with_accounting_service(
+        expense_repo.clone(),
+        expense_accounting_service.clone(),
+    );
     let charge_distribution_use_cases = ChargeDistributionUseCases::new(
         charge_distribution_repo,
         expense_repo.clone(),
-        unit_owner_repo,
+        unit_owner_repo.clone(),
     );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-    let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo.clone());
+    let payment_reminder_use_cases = PaymentReminderUseCases::new(
+        payment_reminder_repo,
+        expense_repo.clone(),
+        owner_repo.clone(),
+    );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
     let board_member_use_cases =
         BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
@@ -134,8 +155,21 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
     );
     let account_use_cases = AccountUseCases::new(account_repo.clone());
-    let financial_report_use_cases =
-        FinancialReportUseCases::new(account_repo.clone(), expense_repo.clone());
+    let financial_report_use_cases = FinancialReportUseCases::new(
+        account_repo.clone(),
+        expense_repo.clone(),
+        journal_entry_repo.clone(),
+    );
+    let dashboard_use_cases =
+        DashboardUseCases::new(expense_repo.clone(), owner_contribution_repo.clone());
+    let owner_contribution_use_cases =
+        OwnerContributionUseCases::new(owner_contribution_repo.clone());
+    let call_for_funds_use_cases = CallForFundsUseCases::new(
+        call_for_funds_repo,
+        owner_contribution_repo,
+        unit_owner_repo.clone(),
+    );
+    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");
@@ -157,7 +191,11 @@ async fn main() -> std::io::Result<()> {
         board_member_use_cases,
         board_decision_use_cases,
         board_dashboard_use_cases,
+        dashboard_use_cases,
         financial_report_use_cases,
+        owner_contribution_use_cases,
+        call_for_funds_use_cases,
+        journal_entry_use_cases,
         audit_logger,
         email_service,
         pool.clone(),

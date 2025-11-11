@@ -439,3 +439,5 @@ GitHub Actions workflows configured for:
 
 **Current Phase (MVP)**: Core CRUD operations, complete test suite, Docker setup
 **Next Phases**: ScyllaDB/DragonflyDB integration, Kubernetes deployment, JWT auth, advanced features (document generation, real-time notifications)
+- regarde les logs docker compose logs backend qui fait des cargo watch plutot que de faire des cargo build ou cargo check
+- il faut utiliser en mode dev localhost pour le frontend et localhost/api/v1 pour le backend

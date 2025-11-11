@@ -1,0 +1,230 @@
+---
+// Journal Entries Page (Manual Accounting Operations)
+//
+// CREDITS & ATTRIBUTION:
+// This page is inspired by the Noalyss project (https://gitlab.com/noalyss/noalyss)
+// Noalyss is a free accounting software for Belgian and French accounting
+// License: GPL-2.0-or-later (GNU General Public License version 2 or later)
+// Copyright: Dany De Bontridder <dany@alchimerys.eu>
+
+import Layout from '../layouts/Layout.astro';
+import JournalEntryForm from '../components/JournalEntryForm.svelte';
+---
+
+<Layout title="Écritures Comptables - KoproGo">
+  <div class="container">
+    <div class="page-header">
+      <h1>📒 Écritures Comptables Manuelles</h1>
+      <p class="subtitle">
+        Saisie d'opérations comptables en partie double (inspirée de Noalyss)
+      </p>
+    </div>
+
+    <div class="content-grid">
+      <!-- Form Section -->
+      <div class="form-section">
+        <JournalEntryForm client:load buildingId={null} />
+      </div>
+
+      <!-- Help Section -->
+      <div class="help-section">
+        <div class="help-card">
+          <h3>🎓 Types de Journaux (Noalyss)</h3>
+          <ul>
+            <li><strong>ACH - Achats:</strong> Factures fournisseurs, achats de matériel</li>
+            <li><strong>VEN - Ventes:</strong> Factures clients, produits de gestion</li>
+            <li><strong>FIN - Financier:</strong> Opérations bancaires, paiements</li>
+            <li><strong>ODS - Opérations Diverses:</strong> Régularisations, transferts</li>
+          </ul>
+        </div>
+
+        <div class="help-card">
+          <h3>📖 Principe de Partie Double</h3>
+          <p>
+            Chaque opération doit être équilibrée : le total des débits doit égaler
+            le total des crédits.
+          </p>
+          <ul>
+            <li><strong>Débit:</strong> Augmente les actifs et charges, diminue les passifs et produits</li>
+            <li><strong>Crédit:</strong> Diminue les actifs et charges, augmente les passifs et produits</li>
+          </ul>
+        </div>
+
+        <div class="help-card">
+          <h3>💡 Exemple Pratique</h3>
+          <p><strong>Facture eau 1,210€ (1,000€ + 210€ TVA 21%):</strong></p>
+          <table class="example-table">
+            <thead>
+              <tr>
+                <th>Compte</th>
+                <th>Libellé</th>
+                <th class="text-right">Débit</th>
+                <th class="text-right">Crédit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>6100</td>
+                <td>Eau et chauffage</td>
+                <td class="text-right">1,000.00</td>
+                <td class="text-right">-</td>
+              </tr>
+              <tr>
+                <td>4110</td>
+                <td>TVA récupérable</td>
+                <td class="text-right">210.00</td>
+                <td class="text-right">-</td>
+              </tr>
+              <tr>
+                <td>4400</td>
+                <td>Fournisseur (eau)</td>
+                <td class="text-right">-</td>
+                <td class="text-right">1,210.00</td>
+              </tr>
+              <tr class="total-row">
+                <td colspan="2"><strong>Total</strong></td>
+                <td class="text-right"><strong>1,210.00</strong></td>
+                <td class="text-right"><strong>1,210.00</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="help-card">
+          <h3>⚠️ Règles Importantes</h3>
+          <ul>
+            <li>Minimum 2 lignes par écriture</li>
+            <li>Chaque ligne doit avoir SOIT un débit SOIT un crédit (pas les deux)</li>
+            <li>Total débits = Total crédits (tolérance 0.01€)</li>
+            <li>Codes de compte: utiliser le plan comptable PCMN belge</li>
+            <li>Date d'opération: date réelle de l'opération (pas la date de saisie)</li>
+          </ul>
+        </div>
+
+        <div class="help-card">
+          <h3>🔗 Référence: Noalyss</h3>
+          <p>
+            Cette interface est inspirée du logiciel libre <a href="https://gitlab.com/noalyss/noalyss" target="_blank" rel="noopener">Noalyss</a>,
+            un logiciel de comptabilité pour PME et ASBL en Belgique et France.
+          </p>
+          <p class="text-sm">
+            Licence: GPL-2.0-or-later | Copyright: Dany De Bontridder
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .page-header {
+    margin-bottom: 2rem;
+  }
+
+  .page-header h1 {
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+  }
+
+  .subtitle {
+    color: #6b7280;
+    font-size: 1.125rem;
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  @media (max-width: 1200px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .help-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .help-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .help-card h3 {
+    margin: 0 0 1rem 0;
+    color: #1f2937;
+    font-size: 1.125rem;
+  }
+
+  .help-card p {
+    margin: 0 0 1rem 0;
+    color: #4b5563;
+    line-height: 1.6;
+  }
+
+  .help-card ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #4b5563;
+  }
+
+  .help-card li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }
+
+  .help-card a {
+    color: #3b82f6;
+    text-decoration: none;
+  }
+
+  .help-card a:hover {
+    text-decoration: underline;
+  }
+
+  .example-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .example-table th,
+  .example-table td {
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    text-align: left;
+  }
+
+  .example-table thead {
+    background: #f9fafb;
+    font-weight: 600;
+  }
+
+  .example-table .text-right {
+    text-align: right;
+  }
+
+  .example-table .total-row {
+    background: #f0f9ff;
+    font-weight: 600;
+  }
+
+  .text-sm {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+</style>

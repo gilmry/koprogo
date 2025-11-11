@@ -9,6 +9,7 @@
   import ExpenseList from './ExpenseList.svelte';
   import MeetingList from './MeetingList.svelte';
   import DocumentList from './DocumentList.svelte';
+  import BuildingFinancialReports from './BuildingFinancialReports.svelte';
 
   let building: Building | null = null;
   let loading = true;
@@ -175,6 +176,15 @@
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
         <DocumentList buildingId={buildingId} />
+      </div>
+
+      <!-- Financial Reports Section -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">📊 Rapports Financiers PCMN</h3>
+        <p class="text-sm text-gray-600 mb-4">
+          Consultez les rapports financiers conformes au Plan Comptable Minimum Normalisé belge pour cet immeuble.
+        </p>
+        <BuildingFinancialReports buildingId={buildingId} buildingName={building.name} />
       </div>
     </div>
   {/if}

@@ -100,6 +100,9 @@
           { href: '/owners', label: t('navigation.owners'), icon: '👤' },
           { href: '/units', label: t('navigation.units'), icon: '🚪' },
           { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
+          { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
+          { href: '/owner-contributions', label: 'Appels de fonds', icon: '💶' },
+          { href: '/payment-reminders', label: 'Relances', icon: '📧' },
           { href: '/meetings', label: t('navigation.meetings'), icon: '📅' },
           { href: '/syndic/board-members', label: 'Conseil', icon: '👑' },
           { href: '/documents', label: t('navigation.documents'), icon: '📄' },
@@ -110,7 +113,11 @@
           { href: '/accountant', label: t('navigation.dashboard'), icon: '📊' },
           ...commonItems,
           { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
-          { href: '/reports', label: t('navigation.reports'), icon: '📈' },
+          { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
+          { href: '/owner-contributions', label: 'Appels de fonds', icon: '💶' },
+          { href: '/payment-reminders', label: 'Relances', icon: '📧' },
+          { href: '/journal-entries', label: 'Écritures comptables', icon: '📒' },
+          { href: '/reports', label: 'Rapports PCMN', icon: '📈' },
         ];
 
       case UserRole.OWNER:

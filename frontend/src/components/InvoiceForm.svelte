@@ -1,11 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { authStore } from '../stores/auth';
+  import InvoiceLineItems from './InvoiceLineItems.svelte';
 
   export let buildingId: string = '';
+  export let organizationId: string = ''; // Organization ID for multi-tenant
   export let invoiceId: string | null = null; // null for create, UUID for edit
   export let onSaved: ((invoice: any) => void) | null = null;
   export let onCancel: (() => void) | null = null;
+
+  // Form mode: 'simple' for single amount, 'detailed' for line items
+  let mode: 'simple' | 'detailed' = 'simple';
 
   // Form fields
   let description = '';
@@ -16,6 +22,17 @@
   let dueDate = '';
   let supplier = '';
   let invoiceNumber = '';
+  let accountCode = ''; // Code compte PCMN
+
+  // Line items for detailed mode
+  let lineItems: any[] = [];
+
+  // Liste des comptes PCMN
+  let accounts: any[] = [];
+
+  // Liste des bâtiments (si buildingId n'est pas fourni)
+  let buildings: any[] = [];
+  let selectedBuildingId = buildingId;
 
   // Calculated fields
   let vatAmount = 0;
@@ -53,12 +70,47 @@
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     dueDate = nextMonth.toISOString().split('T')[0];
 
+    // Load buildings if no buildingId provided
+    if (!buildingId || buildingId === '') {
+      await loadBuildings();
+    }
+
+    // Load accounts list
+    await loadAccounts();
+
     // Load invoice if editing
     if (invoiceId) {
       isEditMode = true;
       await loadInvoice();
     }
   });
+
+  async function loadBuildings() {
+    try {
+      const response = await api.get('/buildings');
+      const data = Array.isArray(response) ? response : [];
+      buildings = data;
+      if (buildings.length > 0 && !selectedBuildingId) {
+        selectedBuildingId = buildings[0].id;
+      }
+    } catch (err: any) {
+      console.error('Failed to load buildings:', err);
+    }
+  }
+
+  async function loadAccounts() {
+    try {
+      // Load expense accounts (class 6 - Charges)
+      const response = await api.get('/accounts');
+      const data = Array.isArray(response) ? response : [];
+      accounts = data
+        .filter((acc: any) => acc.code.startsWith('6')) // Only class 6 accounts
+        .sort((a: any, b: any) => a.code.localeCompare(b.code));
+    } catch (err: any) {
+      console.error('Failed to load accounts:', err);
+      // Non-blocking error - the field will just be empty
+    }
+  }
 
   async function loadInvoice() {
     try {
@@ -75,6 +127,7 @@
       dueDate = invoice.due_date?.split('T')[0] || '';
       supplier = invoice.supplier || '';
       invoiceNumber = invoice.invoice_number || '';
+      accountCode = invoice.account_code || '';
 
       calculateVAT();
     } catch (err: any) {
@@ -99,51 +152,94 @@
     }
   }
 
+  function handleLineItemsChange(event: CustomEvent) {
+    lineItems = event.detail;
+  }
+
+  function toggleMode() {
+    if (mode === 'simple') {
+      mode = 'detailed';
+    } else {
+      mode = 'simple';
+      lineItems = [];
+    }
+  }
+
   async function handleSubmit() {
     try {
       loading = true;
       error = '';
 
       // Validation
-      if (!description.trim()) {
-        error = 'La description est requise';
+      if (mode === 'simple') {
+        if (!description.trim()) {
+          error = 'La description est requise';
+          return;
+        }
+        if (parseFloat(amountExclVat) <= 0) {
+          error = 'Le montant doit être supérieur à 0';
+          return;
+        }
+      } else {
+        if (lineItems.length === 0) {
+          error = 'Veuillez ajouter au moins une ligne';
+          return;
+        }
+        for (const item of lineItems) {
+          if (!item.description.trim()) {
+            error = 'Toutes les lignes doivent avoir une description';
+            return;
+          }
+        }
+      }
+
+      // Get organization_id from authStore if not provided
+      const orgId = organizationId || $authStore.user?.activeRole?.organizationId || '';
+
+      if (!orgId) {
+        error = 'Organization ID manquant';
         return;
       }
-      if (parseFloat(amountExclVat) <= 0) {
-        error = 'Le montant doit être supérieur à 0';
-        return;
+
+      let dto: any = {
+        organization_id: orgId,
+        building_id: selectedBuildingId,
+        description: mode === 'simple' ? description : lineItems.map(l => l.description).join(', '),
+        category,
+        expense_date: `${invoiceDate}T12:00:00Z`,
+        supplier: supplier || null,
+        invoice_number: invoiceNumber || null,
+        account_code: accountCode || null
+      };
+
+      if (mode === 'simple') {
+        const amountHT = parseFloat(amountExclVat);
+        const vat = parseFloat(vatRate);
+        const amountTTC = amountHT * (1 + vat / 100);
+        dto.amount = amountTTC; // Backend expects TTC (amount with VAT)
+        dto.amount_excl_vat = amountHT;
+        dto.vat_rate = vat;
+      } else {
+        // Calculate totals from line items
+        const totalHT = lineItems.reduce((sum, item) => sum + item.amount_excl_vat, 0);
+        const totalVAT = lineItems.reduce((sum, item) => sum + item.vat_amount, 0);
+        const totalTTC = totalHT + totalVAT;
+        dto.amount = totalTTC; // Backend expects TTC
+        dto.amount_excl_vat = totalHT;
+        dto.vat_rate = totalHT > 0 ? (totalVAT / totalHT) * 100 : 0;
+        dto.line_items = lineItems.map(item => ({
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          vat_rate: item.vat_rate
+        }));
       }
 
       if (isEditMode && invoiceId) {
-        // Update existing invoice
-        const dto = {
-          description,
-          category,
-          amount_excl_vat: parseFloat(amountExclVat),
-          vat_rate: parseFloat(vatRate),
-          invoice_date: `${invoiceDate}T12:00:00Z`,
-          due_date: dueDate ? `${dueDate}T12:00:00Z` : null,
-          supplier: supplier || null,
-          invoice_number: invoiceNumber || null
-        };
-
-        const updated = await api.put(`/invoices/${invoiceId}`, dto);
+        const updated = await api.put(`/expenses/${invoiceId}`, dto);
         if (onSaved) onSaved(updated);
       } else {
-        // Create new invoice draft
-        const dto = {
-          building_id: buildingId,
-          description,
-          category,
-          amount_excl_vat: parseFloat(amountExclVat),
-          vat_rate: parseFloat(vatRate),
-          invoice_date: `${invoiceDate}T12:00:00Z`,
-          due_date: dueDate ? `${dueDate}T12:00:00Z` : null,
-          supplier: supplier || null,
-          invoice_number: invoiceNumber || null
-        };
-
-        const created = await api.post('/invoices/draft', dto);
+        const created = await api.post('/expenses', dto);
         if (onSaved) onSaved(created);
       }
     } catch (err: any) {
@@ -155,77 +251,145 @@
 </script>
 
 <div class="invoice-form">
-  <h2>{isEditMode ? 'Modifier' : 'Créer'} une facture</h2>
+  <div class="form-header">
+    <h2>{isEditMode ? 'Modifier' : 'Créer'} une facture</h2>
+    {#if !isEditMode}
+      <button type="button" class="btn-mode-toggle" on:click={toggleMode} disabled={loading}>
+        {mode === 'simple' ? '📝 Mode Détaillé' : '⚡ Mode Simple'}
+      </button>
+    {/if}
+  </div>
 
   {#if error}
     <div class="alert alert-error">{error}</div>
   {/if}
 
   <form on:submit|preventDefault={handleSubmit}>
-    <!-- Description -->
-    <div class="form-group">
-      <label for="description">Description *</label>
-      <input
-        type="text"
-        id="description"
-        bind:value={description}
-        placeholder="Ex: Réparation ascenseur"
-        required
-        disabled={loading}
-      />
-    </div>
-
-    <!-- Category -->
-    <div class="form-group">
-      <label for="category">Catégorie</label>
-      <select id="category" bind:value={category} disabled={loading}>
-        {#each categories as cat}
-          <option value={cat.value}>{cat.label}</option>
-        {/each}
-      </select>
-    </div>
-
-    <!-- Amount HT and VAT -->
-    <div class="form-row">
+    {#if mode === 'simple'}
+      <!-- Simple Mode: Single Amount -->
+      <!-- Building Selector (if no buildingId provided) -->
+      {#if (!buildingId || buildingId === '') && buildings.length > 0}
       <div class="form-group">
-        <label for="amountExclVat">Montant HT (€) *</label>
+        <label for="buildingSelect">Bâtiment *</label>
+        <select id="buildingSelect" bind:value={selectedBuildingId} disabled={loading} required>
+          <option value="">-- Sélectionner un bâtiment --</option>
+          {#each buildings as building}
+            <option value={building.id}>{building.name} - {building.address}</option>
+          {/each}
+        </select>
+      </div>
+      {/if}
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="description">Description *</label>
         <input
-          type="number"
-          id="amountExclVat"
-          bind:value={amountExclVat}
-          step="0.01"
-          min="0.01"
-          placeholder="1000.00"
+          type="text"
+          id="description"
+          bind:value={description}
+          placeholder="Ex: Réparation ascenseur"
           required
           disabled={loading}
         />
       </div>
 
+      <!-- Category -->
       <div class="form-group">
-        <label for="vatRate">Taux TVA</label>
-        <select id="vatRate" bind:value={vatRate} disabled={loading}>
-          {#each vatRates as rate}
-            <option value={rate.value}>{rate.label}</option>
+        <label for="category">Catégorie</label>
+        <select id="category" bind:value={category} disabled={loading}>
+          {#each categories as cat}
+            <option value={cat.value}>{cat.label}</option>
           {/each}
         </select>
       </div>
-    </div>
 
-    <!-- Calculated VAT -->
-    <div class="calculated-amounts">
-      <div class="amount-row">
-        <span>Montant HT:</span>
-        <strong>{parseFloat(amountExclVat || '0').toFixed(2)} €</strong>
+      <!-- Account Code (PCMN) -->
+      <div class="form-group">
+        <label for="accountCode">Compte comptable (PCMN)</label>
+        <select id="accountCode" bind:value={accountCode} disabled={loading}>
+          <option value="">-- Sélectionner un compte --</option>
+          {#each accounts as account}
+            <option value={account.code}>
+              {account.code} - {account.label}
+            </option>
+          {/each}
+        </select>
+        <small class="form-help">Utilisé pour la génération automatique d'écritures comptables</small>
       </div>
-      <div class="amount-row">
-        <span>TVA ({vatRate}%):</span>
-        <strong>{vatAmount.toFixed(2)} €</strong>
+
+      <!-- Amount HT and VAT -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="amountExclVat">Montant HT (€) *</label>
+          <input
+            type="number"
+            id="amountExclVat"
+            bind:value={amountExclVat}
+            step="0.01"
+            min="0.01"
+            placeholder="1000.00"
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="vatRate">Taux TVA</label>
+          <select id="vatRate" bind:value={vatRate} disabled={loading}>
+            {#each vatRates as rate}
+              <option value={rate.value}>{rate.label}</option>
+            {/each}
+          </select>
+        </div>
       </div>
-      <div class="amount-row total">
-        <span>Montant TTC:</span>
-        <strong>{amountInclVat.toFixed(2)} €</strong>
+
+      <!-- Calculated VAT -->
+      <div class="calculated-amounts">
+        <div class="amount-row">
+          <span>Montant HT:</span>
+          <strong>{parseFloat(amountExclVat || '0').toFixed(2)} €</strong>
+        </div>
+        <div class="amount-row">
+          <span>TVA ({vatRate}%):</span>
+          <strong>{vatAmount.toFixed(2)} €</strong>
+        </div>
+        <div class="amount-row total">
+          <span>Montant TTC:</span>
+          <strong>{amountInclVat.toFixed(2)} €</strong>
+        </div>
       </div>
-    </div>
+    {:else}
+      <!-- Detailed Mode: Line Items -->
+      <!-- Category -->
+      <div class="form-group">
+        <label for="category">Catégorie</label>
+        <select id="category" bind:value={category} disabled={loading}>
+          {#each categories as cat}
+            <option value={cat.value}>{cat.label}</option>
+          {/each}
+        </select>
+      </div>
+
+      <!-- Account Code (PCMN) -->
+      <div class="form-group">
+        <label for="accountCode">Compte comptable (PCMN)</label>
+        <select id="accountCode" bind:value={accountCode} disabled={loading}>
+          <option value="">-- Sélectionner un compte --</option>
+          {#each accounts as account}
+            <option value={account.code}>
+              {account.code} - {account.label}
+            </option>
+          {/each}
+        </select>
+        <small class="form-help">Utilisé pour la génération automatique d'écritures comptables</small>
+      </div>
+
+      <InvoiceLineItems
+        bind:lineItems={lineItems}
+        disabled={loading}
+        on:change={handleLineItemsChange}
+      />
+    {/if}
 
     <!-- Dates -->
     <div class="form-row">
@@ -302,10 +466,37 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  h2 {
-    margin-top: 0;
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 1.5rem;
+  }
+
+  h2 {
+    margin: 0;
     color: #333;
+  }
+
+  .btn-mode-toggle {
+    padding: 0.5rem 1rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .btn-mode-toggle:hover:not(:disabled) {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
+  .btn-mode-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .alert {
@@ -406,6 +597,14 @@
   .btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .form-help {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-style: italic;
   }
 
   .btn-primary {
