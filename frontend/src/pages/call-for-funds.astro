@@ -1,0 +1,208 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Appels de Fonds - KoproGo">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-900">Appels de Fonds Collectifs</h1>
+      <p class="mt-2 text-sm text-gray-600">
+        Gérez les appels de fonds pour l'ensemble des copropriétaires. Les contributions individuelles seront générées automatiquement selon les tantièmes.
+      </p>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="mb-6 rounded-lg bg-blue-50 border border-blue-200 p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-blue-800">Comment ça fonctionne ?</h3>
+          <div class="mt-2 text-sm text-blue-700">
+            <ul class="list-disc list-inside space-y-1">
+              <li><strong>Créez</strong> un appel de fonds collectif avec le montant total</li>
+              <li><strong>Envoyez</strong> l'appel pour générer automatiquement les contributions individuelles</li>
+              <li>Chaque copropriétaire recevra sa quote-part calculée selon ses tantièmes</li>
+              <li>Suivez les paiements dans la section "Contributions Copropriétaires"</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+        <button
+          id="tab-all"
+          class="tab-button border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+          data-tab="all"
+        >
+          Tous les appels
+        </button>
+        <button
+          id="tab-draft"
+          class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+          data-tab="draft"
+        >
+          Brouillons
+        </button>
+        <button
+          id="tab-sent"
+          class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+          data-tab="sent"
+        >
+          Envoyés
+        </button>
+        <button
+          id="tab-overdue"
+          class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+          data-tab="overdue"
+        >
+          En retard
+        </button>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div id="calls-container"></div>
+
+    <!-- Create Form Modal -->
+    <div id="create-modal" class="hidden fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-lg font-medium text-gray-900">Nouvel Appel de Fonds</h3>
+          <button id="close-modal" class="text-gray-400 hover:text-gray-500">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div id="form-container"></div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import CallForFundsList from '../components/CallForFundsList.svelte';
+  import CallForFundsForm from '../components/CallForFundsForm.svelte';
+
+  let currentTab = 'all';
+  let listComponent: any = null;
+
+  // Initialize the list component
+  function initList() {
+    const container = document.getElementById('calls-container');
+    if (container && !listComponent) {
+      listComponent = new CallForFundsList({
+        target: container,
+      });
+    }
+  }
+
+  // Tab switching
+  document.querySelectorAll('.tab-button').forEach((button) => {
+    button.addEventListener('click', (e) => {
+      const target = e.target as HTMLButtonElement;
+      const tab = target.dataset.tab;
+
+      if (tab) {
+        currentTab = tab;
+
+        // Update active tab styles
+        document.querySelectorAll('.tab-button').forEach((btn) => {
+          btn.classList.remove('border-blue-500', 'text-blue-600');
+          btn.classList.add('border-transparent', 'text-gray-500');
+        });
+        target.classList.remove('border-transparent', 'text-gray-500');
+        target.classList.add('border-blue-500', 'text-blue-600');
+
+        // TODO: Filter the list based on tab
+        // For now, we'll just show all items
+      }
+    });
+  });
+
+  // Modal handling
+  const modal = document.getElementById('create-modal');
+  const closeModalBtn = document.getElementById('close-modal');
+
+  function showModal() {
+    if (modal) {
+      modal.classList.remove('hidden');
+
+      // Initialize form
+      const formContainer = document.getElementById('form-container');
+      if (formContainer) {
+        new CallForFundsForm({
+          target: formContainer,
+          props: {
+            onSuccess: () => {
+              hideModal();
+              if (listComponent) {
+                // Reload the list
+                window.location.reload();
+              }
+            },
+            onCancel: () => {
+              hideModal();
+            },
+          },
+        });
+      }
+    }
+  }
+
+  function hideModal() {
+    if (modal) {
+      modal.classList.add('hidden');
+      const formContainer = document.getElementById('form-container');
+      if (formContainer) {
+        formContainer.innerHTML = '';
+      }
+    }
+  }
+
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', hideModal);
+  }
+
+  // Listen for create button clicks from the list component
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.textContent?.includes('Nouvel Appel de Fonds') ||
+        target.textContent?.includes('Créer le premier appel de fonds')) {
+      e.preventDefault();
+      showModal();
+    }
+  });
+
+  // Initialize on load
+  initList();
+</script>
+
+<style>
+  /* Custom scrollbar for modal */
+  #create-modal::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  #create-modal::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  #create-modal::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+
+  #create-modal::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+</style>
