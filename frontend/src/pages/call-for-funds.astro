@@ -89,6 +89,7 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
+  import { mount } from 'svelte';
   import CallForFundsList from '../components/CallForFundsList.svelte';
   import CallForFundsForm from '../components/CallForFundsForm.svelte';
 
@@ -99,13 +100,11 @@ import Layout from '../layouts/Layout.astro';
   function initList() {
     const container = document.getElementById('calls-container');
     if (container && !listComponent) {
-      listComponent = new CallForFundsList({
+      listComponent = mount(CallForFundsList, {
         target: container,
-      });
-
-      // Listen for create event
-      listComponent.$on('create', () => {
-        showModal();
+        props: {
+          onCreate: showModal,
+        },
       });
     }
   }
@@ -144,7 +143,7 @@ import Layout from '../layouts/Layout.astro';
       // Initialize form
       const formContainer = document.getElementById('form-container');
       if (formContainer) {
-        new CallForFundsForm({
+        mount(CallForFundsForm, {
           target: formContainer,
           props: {
             onSuccess: () => {

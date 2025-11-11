@@ -1,12 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { createEventDispatcher } from 'svelte';
   import { callForFundsApi } from '../lib/api';
   import { toast } from '../stores/toast';
 
   export let buildingId: string | undefined = undefined;
-
-  const dispatch = createEventDispatcher();
+  export let onCreate: () => void = () => {};
 
   let calls: any[] = [];
   let loading = true;
@@ -116,7 +114,7 @@
   <div class="flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-900">Appels de Fonds</h2>
     <button
-      on:click={() => dispatch('create')}
+      on:click={onCreate}
       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
     >
       + Nouvel Appel de Fonds
@@ -145,7 +143,7 @@
       </svg>
       <p class="mt-2 text-gray-600">Aucun appel de fonds</p>
       <button
-        on:click={() => dispatch('create')}
+        on:click={onCreate}
         class="mt-4 text-blue-600 hover:text-blue-800"
       >
         Créer le premier appel de fonds
