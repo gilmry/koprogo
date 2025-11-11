@@ -102,6 +102,11 @@ import Layout from '../layouts/Layout.astro';
       listComponent = new CallForFundsList({
         target: container,
       });
+
+      // Listen for create event
+      listComponent.$on('create', () => {
+        showModal();
+      });
     }
   }
 
@@ -171,16 +176,6 @@ import Layout from '../layouts/Layout.astro';
   if (closeModalBtn) {
     closeModalBtn.addEventListener('click', hideModal);
   }
-
-  // Listen for create button clicks from the list component
-  document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    if (target.textContent?.includes('Nouvel Appel de Fonds') ||
-        target.textContent?.includes('Créer le premier appel de fonds')) {
-      e.preventDefault();
-      showModal();
-    }
-  });
 
   // Initialize on load
   initList();

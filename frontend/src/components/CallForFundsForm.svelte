@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api, callForFundsApi } from '../lib/api';
-  import { showToast } from '../stores/toast';
+  import { toast } from '../stores/toast';
 
   export let buildingId: string | undefined = undefined;
   export let onSuccess: () => void = () => {};
@@ -34,7 +34,7 @@
       loading = true;
       buildings = await api.get('/buildings');
     } catch (error: any) {
-      showToast(error.message || 'Erreur lors du chargement des bâtiments', 'error');
+      toast.error(error.message || 'Erreur lors du chargement des bâtiments');
     } finally {
       loading = false;
     }
@@ -44,22 +44,22 @@
     event.preventDefault();
 
     if (!selectedBuildingId) {
-      showToast('Veuillez sélectionner un bâtiment', 'error');
+      toast.error('Veuillez sélectionner un bâtiment');
       return;
     }
 
     if (!title || !description) {
-      showToast('Veuillez remplir tous les champs obligatoires', 'error');
+      toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
     if (totalAmount <= 0) {
-      showToast('Le montant doit être supérieur à 0', 'error');
+      toast.error('Le montant doit être supérieur à 0');
       return;
     }
 
     if (new Date(dueDate) < new Date(callDate)) {
-      showToast('La date d\'échéance doit être postérieure à la date d\'appel', 'error');
+      toast.error('La date d\'échéance doit être postérieure à la date d\'appel');
       return;
     }
 
@@ -76,10 +76,10 @@
         account_code: accountCode || undefined,
       });
 
-      showToast('Appel de fonds créé avec succès', 'success');
+      toast.success('Appel de fonds créé avec succès');
       onSuccess();
     } catch (error: any) {
-      showToast(error.message || 'Erreur lors de la création', 'error');
+      toast.error(error.message || 'Erreur lors de la création');
     } finally {
       submitting = false;
     }

@@ -228,7 +228,7 @@ export const callForFundsApi = {
   async list(buildingId?: string) {
     const url = buildingId
       ? `/call-for-funds?building_id=${buildingId}`
-      : '/call-for-funds';
+      : "/call-for-funds";
     return api.get(url);
   },
 
@@ -252,7 +252,7 @@ export const callForFundsApi = {
     due_date: string;
     account_code?: string;
   }) {
-    return api.post('/call-for-funds', data);
+    return api.post("/call-for-funds", data);
   },
 
   /**
@@ -280,7 +280,7 @@ export const callForFundsApi = {
    * Get overdue calls for funds
    */
   async getOverdue() {
-    return api.get('/call-for-funds/overdue');
+    return api.get("/call-for-funds/overdue");
   },
 };
 
@@ -296,12 +296,13 @@ export const ownerContributionsApi = {
     building_id?: string;
     status?: string;
   }) {
-    let url = '/owner-contributions';
+    let url = "/owner-contributions";
     if (filters) {
       const params = new URLSearchParams();
-      if (filters.owner_id) params.append('owner_id', filters.owner_id);
-      if (filters.building_id) params.append('building_id', filters.building_id);
-      if (filters.status) params.append('status', filters.status);
+      if (filters.owner_id) params.append("owner_id", filters.owner_id);
+      if (filters.building_id)
+        params.append("building_id", filters.building_id);
+      if (filters.status) params.append("status", filters.status);
       if (params.toString()) url += `?${params.toString()}`;
     }
     return api.get(url);
@@ -326,17 +327,20 @@ export const ownerContributionsApi = {
     contribution_date: string;
     account_code?: string;
   }) {
-    return api.post('/owner-contributions', data);
+    return api.post("/owner-contributions", data);
   },
 
   /**
    * Mark a contribution as paid
    */
-  async markAsPaid(id: string, data: {
-    payment_date: string;
-    payment_method?: string;
-    payment_reference?: string;
-  }) {
+  async markAsPaid(
+    id: string,
+    data: {
+      payment_date: string;
+      payment_method?: string;
+      payment_reference?: string;
+    },
+  ) {
     return api.put(`/owner-contributions/${id}/mark-paid`, data);
   },
 };

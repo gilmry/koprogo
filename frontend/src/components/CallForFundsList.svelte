@@ -1,13 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
   import { callForFundsApi } from '../lib/api';
-  import { showToast } from '../stores/toast';
+  import { toast } from '../stores/toast';
 
   export let buildingId: string | undefined = undefined;
 
+  const dispatch = createEventDispatcher();
+
   let calls: any[] = [];
   let loading = true;
-  let showCreateModal = false;
 
   onMount(async () => {
     await loadCalls();
@@ -18,7 +20,7 @@
       loading = true;
       calls = await callForFundsApi.list(buildingId);
     } catch (error: any) {
-      showToast(error.message || 'Erreur lors du chargement des appels de fonds', 'error');
+      toast.error(error.message || 'Erreur lors du chargement des appels de fonds');
     } finally {
       loading = false;
     }
@@ -31,10 +33,10 @@
 
     try {
       const result = await callForFundsApi.send(id);
-      showToast(`Appel de fonds envoyé avec succès. ${result.contributions_generated} contributions générées.`, 'success');
+      toast.success(`Appel de fonds envoyé avec succès. ${result.contributions_generated} contributions générées.`);
       await loadCalls();
     } catch (error: any) {
-      showToast(error.message || 'Erreur lors de l\'envoi', 'error');
+      toast.error(error.message || 'Erreur lors de l\'envoi');
     }
   }
 
@@ -45,10 +47,10 @@
 
     try {
       await callForFundsApi.cancel(id);
-      showToast('Appel de fonds annulé', 'success');
+      toast.success('Appel de fonds annulé');
       await loadCalls();
     } catch (error: any) {
-      showToast(error.message || 'Erreur lors de l\'annulation', 'error');
+      toast.error(error.message || 'Erreur lors de l\'annulation');
     }
   }
 
@@ -59,10 +61,10 @@
 
     try {
       await callForFundsApi.delete(id);
-      showToast('Appel de fonds supprimé', 'success');
+      toast.success('Appel de fonds supprimé');
       await loadCalls();
     } catch (error: any) {
-      showToast(error.message || 'Erreur lors de la suppression', 'error');
+      toast.error(error.message || 'Erreur lors de la suppression');
     }
   }
 
@@ -114,7 +116,7 @@
   <div class="flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-900">Appels de Fonds</h2>
     <button
-      on:click={() => (showCreateModal = true)}
+      on:click={() => dispatch('create')}
       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
     >
       + Nouvel Appel de Fonds
@@ -143,7 +145,7 @@
       </svg>
       <p class="mt-2 text-gray-600">Aucun appel de fonds</p>
       <button
-        on:click={() => (showCreateModal = true)}
+        on:click={() => dispatch('create')}
         class="mt-4 text-blue-600 hover:text-blue-800"
       >
         Créer le premier appel de fonds
@@ -246,22 +248,3 @@
     </div>
   {/if}
 </div>
-
-{#if showCreateModal}
-  <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-      <h3 class="text-lg font-medium text-gray-900 mb-4">Créer un appel de fonds</h3>
-      <p class="text-sm text-gray-600 mb-4">
-        Utilisez le formulaire ci-dessous pour créer un nouvel appel de fonds.
-      </p>
-      <div class="flex justify-end space-x-3">
-        <button
-          on:click={() => (showCreateModal = false)}
-          class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-        >
-          Fermer
-        </button>
-      </div>
-    </div>
-  </div>
-{/if}
