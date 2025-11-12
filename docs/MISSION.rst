@@ -418,6 +418,47 @@ Gouvernance Évolutive : Solo Dev → Coopérative
 
 **Objectif** : Garantir une gouvernance démocratique et transparente, évoluant avec la maturité du projet.
 
+**Principe fondamental: Client = Membre**
+
+Alignement total entre économique et gouvernance:
+
+.. list-table:: Statut et Droits
+   :header-rows: 1
+   :widths: 25 25 25 25
+
+   * - Statut
+     - Accès Cloud
+     - Paiement
+     - Droit de Vote AG
+   * - **Membre actif** (cloud)
+     - ✅ Oui
+     - 5€/mois
+     - ✅ 1 voix
+   * - **Membre inactif** (arrêt)
+     - ❌ Non
+     - 0€
+     - ❌ 0 voix
+   * - **Self-hosted**
+     - N/A (autonome)
+     - Gratuit
+     - ⚠️ Consultation*
+
+**Alignement total**:
+
+* **Qui paie** → Qui décide (gouvernance)
+* **Qui utilise** → Qui contribue (économique)
+* **Qui bénéficie** → Qui vote (démocratie)
+
+**Concrètement**:
+
+* Acheter solution cloud → Membre ASBL/Coopérative automatiquement
+* Paiement actif (5€/mois) → Droit de vote en AG
+* Arrêt paiement → Perte accès cloud + Perte droit de vote
+
+Pas de distinction "client" vs "membre", seulement **membre actif** (votant) ou **inactif** (sans droit de vote).
+
+\*\ **Note self-hosted**: À clarifier si cotisation symbolique requise pour droit de vote, ou statut consultatif uniquement.
+
 **Évolution progressive** (détails :doc:`ROADMAP_PAR_CAPACITES`) :
 
 
@@ -433,20 +474,21 @@ Gouvernance Évolutive : Solo Dev → Coopérative
    * Croissance 100 → 500 copropriétés
    * Premiers revenus cloud (autofinancement)
 
-#. **Phase ASBL (2027-2029)** : Association Sans But Lucratif belge
+#. **Phase ASBL (Viabilité)** : Association Sans But Lucratif belge
 
    * ✅ Assemblée générale annuelle (décisions collectives)
    * ✅ Conseil d'administration élu (3-7 membres)
    * ✅ Comptes publics (bilans annuels)
    * ✅ Statuts ASBL belge (non-profit)
+   * ✅ **Client cloud = Membre automatiquement** (droit de vote)
    * Croissance 500 → 5,000 copropriétés
    * Développement financé (1-2 ETP)
 
-#. **Phase Coopérative (2030+)** : Transformation optionnelle
+#. **Phase Coopérative (Leadership)** : Transformation optionnelle
 
    * **Si la communauté le souhaite** : ASBL → Coopérative agréée
-   * Utilisateurs deviennent sociétaires (parts sociales)
-   * Gouvernance renforcée (1 personne = 1 voix)
+   * Membres deviennent sociétaires (parts sociales)
+   * Gouvernance renforcée (1 personne = 1 voix maintenue)
    * Éligibilité subventions économie sociale
 
 **Impact gouvernance évolutive** :
@@ -457,6 +499,7 @@ Gouvernance Évolutive : Solo Dev → Coopérative
 * Décisions alignées avec la mission
 * Protection contre la dérive commerciale
 * Transparence radicale à chaque étape
+* **Alignement économie-gouvernance** (qui paie = qui décide)
 
 5. Utilisation de l'IA pour le Développement Collaboratif
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

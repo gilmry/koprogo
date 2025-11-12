@@ -167,6 +167,37 @@ La Gouvernance : Décisions Collectives, Rôle Coordinateur Élu
 * Décisions en Assemblée Générale
 * Transparence comptable trimestrielle
 
+**Principe fondamental: Client = Membre**
+
+.. list-table:: Statut et Droits
+   :header-rows: 1
+   :widths: 25 25 25 25
+
+   * - Statut
+     - Accès Cloud
+     - Paiement
+     - Droit de Vote AG
+   * - **Membre actif** (cloud)
+     - ✅ Oui
+     - 5€/mois
+     - ✅ 1 voix
+   * - **Membre inactif** (arrêt)
+     - ❌ Non
+     - 0€
+     - ❌ 0 voix
+   * - **Self-hosted**
+     - N/A (autonome)
+     - Gratuit
+     - ⚠️ Consultation*
+
+**Alignement total**:
+
+* **Qui paie** → Qui décide (gouvernance)
+* **Qui utilise** → Qui contribue (économique)
+* **Qui bénéficie** → Qui vote (démocratie)
+
+Acheter la solution cloud = devenir membre ASBL/Coopérative automatiquement. Pas de "client" vs "membre", juste **membre actif** (avec droit de vote) ou **inactif** (sans droit de vote).
+
 **Blockchain optionnel** :
   Si tu veux voir où va l'argent comme sur un relevé de banque, c'est possible. Audité, transparent. Mais pas obligatoire.
 
@@ -174,6 +205,8 @@ La Gouvernance : Décisions Collectives, Rôle Coordinateur Élu
   Code public sur GitHub, contributions bienvenues, fork autorisé si dérive
 
 Structure associative avec un rôle coordinateur élu démocratiquement.
+
+\*\ **Note self-hosted**: À clarifier si besoin cotisation symbolique pour droit de vote, ou statut consultatif uniquement.
 
 La Transparence : Dashboard Public
 ==================================
