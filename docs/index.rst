@@ -36,6 +36,7 @@ Documentation
    MISSION
    GOVERNANCE
    ECONOMIC_MODEL
+   FONDS_SOLIDARITE
 
 **Hiérarchie de lecture recommandée** :
 
@@ -43,6 +44,7 @@ Documentation
 2. **MISSION** : Solutions concrètes et valeurs fondamentales (comment nous résolvons le problème)
 3. **GOVERNANCE** : Structure organisationnelle évolutive Solo → Fondateurs → ASBL → Coopérative
 4. **ECONOMIC_MODEL** : Modèle économique ASBL et viabilité financière à long terme
+5. **FONDS_SOLIDARITE** : Mécanisme d'aide financière aux membres en difficulté (solidarité concrète)
 
 **Métriques de Succès par Paliers** (progression mesurable):
 
@@ -57,27 +59,27 @@ Documentation
      - Participants
    * - **Validation**
      - 100
-     - 160k€
+     - 80k€
      - -2 tonnes
      - 10
    * - **Viabilité**
      - 500
-     - 850k€
+     - 400k€
      - -15 tonnes
      - 50
    * - **Impact**
      - 1.000
-     - 2M€
+     - 800k€
      - -107 tonnes
      - 100
    * - **Leadership**
      - 2.000
-     - 4,5M€
+     - 1,6M€
      - -214 tonnes
      - 200
    * - **Référence**
      - 5.000
-     - 9,35M€
+     - 4M€
      - **-840 tonnes**
      - 500
 
@@ -102,10 +104,9 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🗺️ Roadmaps
+   :caption: 🗺️ Roadmap
 
    ROADMAP_PAR_CAPACITES
-   ROADMAP_INTEGREE_2025_2030
 
 .. toctree::
    :maxdepth: 2
@@ -154,7 +155,6 @@ Documentation
    :caption: 🔧 API Documentation
 
    api/README
-   api/openapi
 
 .. toctree::
    :maxdepth: 2

@@ -2,7 +2,7 @@
 KoproGo ASBL - Executive Summary Investisseurs/Subsides 2025
 ===================================================================
 
-:Auteur: KoproGo ASBL
+:Auteur: Gilles Maury - Fondateur KoproGo ASBL
 :Date: Novembre 2025
 :Version: 1.0
 :Audience: Investisseurs, Subsides publics, Financeurs participatifs
@@ -20,17 +20,17 @@ Objectif 2030
 -------------
 
 - **5,000 copropriétés** (100,000 personnes)
-- **81,966€/an** de surplus (marge 98%)
+- **192,442€/an** de surplus (marge 99%)
 - **-840 tonnes CO₂/an** évitées
 - **1.5 ETP** financés + R&D
 
 Différenciation Clé
 -------------------
 
-- **Coût infrastructure ultra-compétitif**: 0.085€/copro/mois (vs concurrence ~10-50€)
-- **Modèle ASBL**: Tarification dégressive (1€ → 0.10€), 0% dividendes, réinvestissement communautaire
+- **Coût infrastructure ultra-compétitif**: 0.033€/copro/mois (vs concurrence ~10-50€)
+- **Modèle ASBL**: Prix fixe 5€/mois, baisse par vote AG uniquement, 0% dividendes, réinvestissement communautaire
 - **Opensource radical**: AGPL-3.0, code public, souveraineté des données
-- **PropTech 2.0**: IA, Blockchain, IoT (88% des revenus)
+- **PropTech 2.0**: IA, Blockchain, IoT (38% des revenus, résilience accrue)
 
 📊 Performance Technique - Données Réelles
 ===========================================
@@ -94,41 +94,27 @@ Performance vs Concurrence
 💰 Modèle Économique - Viabilité Démontrée
 ===========================================
 
-Tarification Dégressive ASBL
------------------------------
+Prix Fixe Démocratique
+-----------------------
 
 .. list-table::
    :header-rows: 1
-   :widths: 30 25 20 25
+   :widths: 50 50
 
-   * - Palier
-     - Prix/copro/mois
-     - Réduction
-     - Positionnement
-   * - **0-500 copros**
-     - 1.00€
-     - -
-     - Lancement
-   * - **500-1,000**
-     - 0.80€
-     - -20%
-     - Croissance
-   * - **1,000-2,000**
-     - 0.60€
-     - -40%
-     - Scaling
-   * - **2,000-5,000**
-     - 0.40€
-     - -60%
-     - **KPI 2030**
-   * - **5,000-10,000**
-     - 0.20€
-     - -80%
-     - Expansion
-   * - **10,000+**
-     - 0.10€
-     - -90%
-     - Mature
+   * - Élément
+     - Détail
+   * - **Prix/copro/mois**
+     - **5.00€** (fixe)
+   * - **Réductions**
+     - Uniquement par vote AG si surplus > 25%
+   * - **Cloud/Self-hosted**
+     - 5€ = accès cloud + vote AG | 0€ self-hosted (sans vote)
+   * - **Exemple baisse**
+     - AG vote: 5€ → 4€ si surplus >25% pendant 2 trimestres
+   * - **Positionnement**
+     - 10× moins cher que marché (50€/mois concurrents)
+   * - **Modèle**
+     - Démocratique (1 membre = 1 vote), 0% dividendes
 
 💎 PropTech 2.0 - Add-ons Différenciateurs
 -------------------------------------------
@@ -175,52 +161,52 @@ Tarification Dégressive ASBL
      - R&D dispo/an
    * - **100**
      - 8€
-     - 40€
+     - 200€
      - -
-     - 379€
-     - 79%
+     - 2,302€
+     - 96%
      - -
      - -
    * - **500**
      - 13€
-     - 160€
+     - 1,000€
      - -
-     - 1,760€
-     - 92%
+     - 11,850€
+     - 99%
      - -
      - -
    * - **1,000**
-     - 19€
-     - 240€
+     - 18€
+     - 2,000€
      - -
-     - 2,648€
-     - 92%
+     - 23,785€
+     - 99%
      - -
      - -
    * - **2,000**
-     - 31€
-     - 320€
+     - 29€
+     - 4,000€
      - -
-     - 3,464€
-     - 90%
+     - 47,655€
+     - 99%
      - -
      - -
    * - **5,000** 🎯
-     - 170€
-     - 800€
+     - 163€
+     - 10,000€
      - 6,200€
-     - **81,966€**
-     - **98%**
+     - **192,442€**
+     - **99%**
      - **1.5 ETP**
-     - **38k€**
+     - **149k€**
    * - **10,000**
-     - 244€
-     - 400€
+     - 231€
+     - 20,000€
      - 12,400€
-     - **150,672€**
-     - **98%**
+     - **386,026€**
+     - **99%**
      - **3 ETP**
-     - **64k€**
+     - **341k€**
 
 Scénario Objectif 2030 (5,000 copros)
 --------------------------------------
@@ -230,27 +216,27 @@ Scénario Objectif 2030 (5,000 copros)
 - **Ratio cloud/self-hosted**: 40% cloud (2,000 copros), 60% self-hosted (3,000 copros gratuit)
 - **Adoption add-ons**: 40% AI, 30% Blockchain, 20% IoT
 
-**Revenus annuels**: 84,000€
+**Revenus annuels**: 194,400€
 
-  - Revenus base: 9,600€/an (2,000 copros × 0.40€)
+  - Revenus base: 120,000€/an (2,000 copros × 5.00€ × 12 mois)
   - Add-ons AI: 48,000€/an (2,000 copros × 2€ × 40% adoption)
   - Add-ons Blockchain: 18,000€/an (2,000 copros × 1€ × 30%)
-  - Add-ons IoT: 8,400€/an (400 copros × 10€ × 20%) [corrigé]
+  - Add-ons IoT: 8,400€/an (400 copros × 10€ × 20%)
 
-**Coûts infrastructure**: 2,034€/an
+**Coûts infrastructure**: 1,958€/an
 
-  - VPS (2 × s1-2): 174€/an
-  - Storage (60€/mois): 720€/an
-  - PropTech (GPU + BC + IoT): 1,140€/an
+  - VPS (2 × Value): 168.48€/an
+  - Storage S3 (30GB): 2.52€/an
+  - PropTech (GPU + BC + IoT): 1,787€/an
 
-**Surplus net**: 81,966€/an (marge 98%)
+**Surplus net**: 192,442€/an (marge 99%)
 
 **Allocation surplus**:
 
-  - 💼 **1.5 ETP développement**: 43,200€/an (53%)
-  - 🔬 **R&D / Nouvelles features**: 20,000€/an (24%)
-  - 🛡️ **Fonds urgence**: 10,000€/an (12%)
-  - 🌍 **Redistribution communauté**: 8,766€/an (11%)
+  - 💼 **1.5 ETP développement**: 43,200€/an (22%)
+  - 🔬 **R&D / Nouvelles features**: 80,000€/an (42%)
+  - 🛡️ **Fonds urgence**: 30,000€/an (16%)
+  - 🌍 **Redistribution communauté**: 39,242€/an (20%)
 
 🌱 Impact Écologique - Mesurable & Vérifiable
 ==============================================
@@ -336,9 +322,9 @@ vs Solutions Propriétaires (Urbis, Syndic Online, etc.)
      - Concurrence
      - Avantage
    * - **Prix/copro/mois**
-     - 0.40-1€
+     - 5€
      - 10-50€
-     - **10-50× moins cher**
+     - **2-10× moins cher**
    * - **Licence**
      - AGPL-3.0 (opensource)
      - Propriétaire
@@ -416,8 +402,8 @@ Risques Identifiés
      - Mitigation
    * - **Adoption add-ons < 40%**
      - Moyenne
-     - Élevé (88% revenus)
-     - Scénarios conservateurs (20%), freemium progressif
+     - Faible (38% revenus)
+     - Scénarios conservateurs (20%), revenus base solides (62%)
    * - **Ratio cloud/self 30/70**
      - Faible
      - Moyen (revenus -25%)
@@ -440,21 +426,21 @@ Scénarios Financiers
 
 **Conservateur** (adoption add-ons 20%, cloud/self 30/70):
 
-- Revenus: 42,000€/an
-- Surplus: 39,966€/an
-- Financement: 0.9 ETP + R&D limité
+- Revenus: 108,000€/an (base: 90k€ + add-ons: 18k€)
+- Surplus: 106,000€/an
+- Financement: 2 ETP + R&D modéré
 
 **Réaliste** (adoption 30%, cloud/self 40/60):
 
-- Revenus: 63,000€/an
-- Surplus: 60,966€/an
-- Financement: 1.4 ETP + R&D modéré
+- Revenus: 156,000€/an (base: 120k€ + add-ons: 36k€)
+- Surplus: 154,000€/an
+- Financement: 3 ETP + R&D complet
 
 **Optimiste** (adoption 40%, cloud/self 40/60):
 
-- Revenus: **84,000€/an** ✅ **SCÉNARIO PRÉSENTÉ**
-- Surplus: **81,966€/an**
-- Financement: **1.5 ETP + R&D complet**
+- Revenus: **194,400€/an** ✅ **SCÉNARIO PRÉSENTÉ** (base: 120k€ + add-ons: 74.4k€)
+- Surplus: **192,442€/an**
+- Financement: **1.5 ETP + R&D complet (149k€ dispo)**
 
 💼 Opportunités de Financement
 ===============================
@@ -523,95 +509,117 @@ Arguments Investisseurs
 
 ✅ **Alternative crédible**: vs monopoles SaaS propriétaires
 
-📅 Roadmap 2026-2030
-=====================
+🗺️ Roadmap par Capacités (Pas de Dates Fixes)
+===============================================
 
-Phases Techniques
------------------
+**Philosophie**: KoproGo avance quand les **capacités sont atteintes**, pas selon un calendrier arbitraire.
+
+   **"Tout sera livré tôt ou tard. La seule question est: QUAND?"**
+
+   La réponse dépend de la **force de frappe collective** (clients, partenaires, contributeurs).
+
+Jalons Produit
+--------------
 
 .. list-table::
    :header-rows: 1
    :widths: 15 25 30 30
 
-   * - Phase
-     - Période
-     - Infrastructure
-     - KPIs
-   * - **MVP (VPS)**
-     - Nov 2025 - Fév 2026
-     - Docker Compose, 1 VPS
-     - 100 copros, P99 < 1s
-   * - **Scaling (K3s)**
-     - Mar - Mai 2026
-     - Kubernetes léger, 2-4 VPS
-     - 1,000 copros, HA 99.9%
-   * - **Enterprise (K8s)**
-     - Jun - Août 2026
-     - Kubernetes full, auto-scaling
-     - 5,000 copros (KPI 2030)
+   * - Jalon
+     - Débloque
+     - Features Clés
+     - Conformité Légale
+   * - **Jalon 0** ✅
+     - 10-20 early adopters
+     - Architecture hexagonale, 73 endpoints API
+     - 30% (CRUD de base)
+   * - **Jalon 1**
+     - 50-100 copros (beta publique)
+     - LUKS encryption, backups GPG, GDPR basique, auth forte
+     - 40%
+   * - **Jalon 2**
+     - 200-500 copros
+     - Facturation TVA belge, recouvrement, conseils syndical
+     - 60%
+   * - **Jalon 3**
+     - 500-1,000 copros
+     - Audit trails, RBAC avancé, rapports financiers
+     - 80%
+   * - **Jalon 4**
+     - 1,000-2,000 copros
+     - Intégrations bancaires, exports comptables, workflows
+     - 95%
+   * - **Jalon 5**
+     - 2,000-5,000 copros
+     - Mobile app, API publique, internationalisation
+     - 100%
+   * - **Jalons 6-7**
+     - 5,000+ copros
+     - PropTech 2.0 (IA, Blockchain, IoT, Carbon Credits)
+     - 100%+
 
-Features Métier
----------------
-
-**2026 Q1-Q2** (Fondations):
-
-- ✅ CRUD copropriétés, lots, propriétaires
-- ✅ Gestion charges (PCMN belge)
-- ✅ Multi-rôles utilisateurs
-- 🚧 Facturation & recouvrement
-- 🚧 Conseils syndical (votes, mandats)
-
-**2026 Q3-Q4** (PropTech 2.0):
-
-- 🔮 AI Assistant (GPT-4 Turbo, RAG copro-docs)
-- 🔮 Blockchain Voting (Polygon, ZK-proofs)
-- 🔮 IoT Sensors (compteurs, températures)
-- 🔮 Energy Buying Groups (partenariats)
-
-**2027-2030** (Expansion):
-
-- 🔮 Mobile App (React Native)
-- 🔮 Marketplace plugins communautaires
-- 🔮 API publique (Open Banking copropriété)
-- 🔮 Internationalisation (FR, NL, DE)
-
-Jalons Adoption
----------------
+Paliers de Croissance
+---------------------
 
 .. list-table::
    :header-rows: 1
    :widths: 15 20 20 20 25
 
-   * - Année
+   * - Palier
      - Copros
-     - Revenus/an
-     - ETP
-     - Milestone
-   * - **2026**
+     - Revenus cloud/an
+     - Force de frappe
+     - Capacité débloquée
+   * - **Validation**
      - 100
-     - 480€
-     - 0 (bénévolat)
-     - MVP validé
-   * - **2027**
+     - 2,400€
+     - Solo dev + IA
+     - Jalon 1 livré
+   * - **Viabilité**
      - 500
-     - 1,920€
-     - 0.3
-     - Scaling testé
-   * - **2028**
-     - 1,500
-     - 7,200€
-     - 0.7
-     - PropTech déployé
-   * - **2029**
-     - 3,000
-     - 36,000€
-     - 1.2
-     - Croissance accélérée
-   * - **2030** 🎯
+     - 12,000€
+     - 1 dev temps partiel
+     - Jalon 2-3 livrés
+   * - **Impact**
+     - 1,000
+     - 24,000€
+     - 1-2 ETP
+     - Jalon 4 livré
+   * - **Leadership**
+     - 2,000
+     - 48,000€
+     - 2-3 ETP
+     - Jalon 5 livré
+   * - **Référence** 🎯
      - **5,000**
-     - **84,000€**
-     - **1.5**
-     - **KPI atteint**
+     - **120,000€**
+     - **3-4 ETP + R&D**
+     - **Jalons 6-7 livrés**
+
+**Note**: Revenus cloud = 40% copros × 5€/mois × 12 mois (60% self-hosted gratuit)
+
+Scénarios de Progression
+-------------------------
+
+**Scénario Lent** (solo dev, croissance organique):
+   - Jalon 1: 2-3 mois → 100 copros
+   - Jalon 2-3: 6-12 mois → 500 copros
+   - Jalons 4-5: 2-3 ans → 2,000 copros
+   - Jalons 6-7: 4-5 ans → 5,000 copros
+
+**Scénario Organique** (communauté active, partenaires):
+   - Jalon 1: 6-8 semaines → 100 copros
+   - Jalons 2-3: 6-9 mois → 1,000 copros
+   - Jalons 4-5: 18 mois → 2,000 copros
+   - Jalons 6-7: 2-3 ans → 5,000 copros
+
+**Scénario Rapide** (financement, équipe structurée):
+   - Jalon 1: 3-4 semaines → 100 copros
+   - Jalons 2-3: 3-6 mois → 1,000 copros
+   - Jalons 4-5: 12 mois → 2,000 copros
+   - Jalons 6-7: 18-24 mois → 5,000 copros
+
+**Principe**: Vélocité = f(clients, contributeurs, partenaires). Tout sera livré, la durée dépend de l'oxygène apporté.
 
 🤝 Appel à l'Action
 ===================
@@ -619,7 +627,7 @@ Jalons Adoption
 Pour Financeurs Publics
 ------------------------
 
-**Nous recherchons**: 80,000-150,000€ de subsides (2026-2027)
+**Nous recherchons**: 80,000-150,000€ de subsides (phase de croissance)
 
 **Allocation budgétaire**:
 
@@ -630,7 +638,7 @@ Pour Financeurs Publics
 
 **ROI pour la société**:
 
-- **Impact économique**: 9.35M€ économisés à 5,000 copros (8M€ licences + 750k€ SEL + 600k€ consommation)
+- **Impact économique**: 4M€ économisés à 5,000 copros (2.7M€ licences + 750k€ SEL + 600k€ consommation)
 - **Impact écologique**: -840 tonnes CO₂/an (équivalent 42,000 arbres)
 - **Impact social**: 100,000 personnes (souveraineté numérique, données personnelles)
 
@@ -645,7 +653,7 @@ Pour Crowdfunders
 - **500€**: Formation personnalisée (4h onboarding)
 - **1,000€**: Corporate sponsor (logo site, rapport annuel)
 
-**Campagne prévue**: Q2 2026 (plateforme Miimosa ou Ecotree)
+**Campagne prévue**: Jalon 2 atteint (plateforme Miimosa ou Ecotree)
 
 Pour Contributeurs Opensource
 ------------------------------
@@ -665,15 +673,19 @@ Pour Contributeurs Opensource
 
 **KoproGo ASBL**
 
-- 📧 Email: contact@koprogo.org
-- 🌐 Website: https://koprogo.org
+- 📧 Email: contact@koprogo.com
+- 🌐 Website: https://koprogo.com
 - 💻 GitHub: https://github.com/gilmry/koprogo
-- 📊 Dashboard Public: https://stats.koprogo.org (à venir 2026)
+- 📊 Dashboard Public: https://stats.koprogo.com (à venir)
 
 **Équipe Fondatrice**:
 
-- **Gilmry** (Tech Lead): Architecte Rust, 10+ ans backend
-- **[À compléter]** (Product): Expertise syndic/copropriété
+- **Gilles Maury** (Fondateur & Tech Lead): 25 ans d'expérience en informatique, admirateur de la cause libre et des modèles économiques démocratiques, sociaux et solidaires résilients
+- **[En recrutement]** (Co-fondateur Product): Expertise syndic/copropriété
+
+**🔍 Recrutement actif**:
+
+Nous recherchons un(e) **Co-fondateur(trice) Product** avec expertise en gestion de copropriété (syndic, conseil syndical, ou comptabilité copropriété belge). Profil idéal: connaissance terrain du secteur + vision produit.
 
 **Disponibilité pitch**:
 
@@ -686,4 +698,4 @@ Pour Contributeurs Opensource
 
 **Dernière mise à jour**: Basée sur PERFORMANCE_REPORT.rst (Oct 2025) + simulations validées
 
-**Prochaine révision**: Janvier 2026 (après tests charge 10,000 copros simulées)
+**Prochaine révision**: Après atteinte Jalon 2 (tests charge 10,000 copros simulées)

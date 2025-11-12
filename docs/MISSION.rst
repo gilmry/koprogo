@@ -67,6 +67,7 @@ AG vote allocation surplus (si revenus > coûts+réserve) :
 **Options vote** :
 
 * Nouvelles features (vote priorités communauté)
+* **Fonds de Solidarité** (aide financière membres en difficulté)
 * Amélioration infra (performance, sécurité)
 * **Baisse tarifaire** (si surplus > 25%)
 * Constitution réserve légale (3 mois coûts)
@@ -83,13 +84,20 @@ AG vote allocation surplus (si revenus > coûts+réserve) :
      • Surplus: 72.000€ (80% marge)
 
    Proposition CA :
-     • 40% Baisse tarifaire (5€ → 3,50€) - Économies pour tous
-     • 30% Features prioritaires (21.600€) - Vote communauté
-     • 20% Réserve légale (14.400€) - Sécurité
-     • 10% R&D PropTech (7.200€) - IA/Blockchain/IoT
+     • 30% Fonds de Solidarité (21.600€) - Aide financière membres
+     • 25% Baisse tarifaire (5€ → 4€) - Économies pour tous
+     • 25% Features prioritaires (18.000€) - Vote communauté
+     • 15% Réserve légale (10.800€) - Sécurité
+     • 5% R&D PropTech (3.600€) - IA/Blockchain/IoT
 
    Vote AG (1 membre = 1 voix) :
      ✅ Adopté : 87% pour, 13% abstention
+
+   Résultat Fonds de Solidarité (21.600€/an) :
+     • 15 prêts 0% frais administratifs (10.000€ revolving)
+     • 8 subventions litiges AG (6.000€)
+     • 5 crédits travaux urgents (5.000€ à 1,5%)
+     • 2 subventions urgence (600€ non-remboursable)
 
 **4. Contributions Valorisées**
 
@@ -244,10 +252,10 @@ Lien Social et Dynamique Communautaire *(Modules Optionnels)*
 
 
 * ✅ Gratuit pour self-hosted (option toujours disponible)
-* ✅ **Cloud géré** : 1,50-8€/mois selon taille et features (vs 200-500€/mois concurrents)
+* ✅ **Cloud géré** : **5€/mois** fixe (prix démocratique, baisse par vote AG)
 * ✅ Aucun coût de licence ni frais cachés
 * ✅ Exportation données libre (CSV, JSON, PDF)
-* ✅ **Grille tarifaire équitable** : alignée sur taille copropriété et frontières légales (détails :doc:`ROADMAP_INTEGREE_2025_2030`)
+* ✅ **Tarif unique simple** : même prix pour tous, quelle que soit la taille
 
 **Impact** :
 
@@ -255,6 +263,106 @@ Lien Social et Dynamique Communautaire *(Modules Optionnels)*
 * Économies : 1,600-9,500€/an par copropriété
 * Budget réalloué vers travaux et entretien
 * Accessibilité pour petites copropriétés (< 10 lots)
+
+Accès à la Justice et Solidarité Financière
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Objectif** : Garantir l'accès aux droits démocratiques et prévenir l'exclusion financière des copropriétaires en difficulté.
+
+**Problème identifié** :
+
+* Copropriétaires ne peuvent pas financer un avocat pour contester un vote illégal en AG
+* Impayés de charges créent spirale d'endettement (huissiers, intérêts, pénalités)
+* Travaux urgents votés mais quote-part impossible à financer (banques refusent)
+* Précarité financière entraîne exclusion des décisions collectives
+
+**Solution : Fonds de Solidarité KoproGo** *(financé par surplus ASBL)* :
+
+**A. Aide aux Litiges Démocratiques** ⚖️
+
+* **Subvention 500-2,000€** : Frais avocat pour contestation votes AG (devis non-conformes, procédure irrégulière)
+* **Critères** : Revenu < 2,000€/mois, litige légitime validé par Comité Solidarité
+* **Clause remboursement** : Si gain du procès avec dommages-intérêts → Remboursement 50%
+
+**B. Prêts à Taux 0% Frais Administratifs** 💳
+
+* **Montant** : Jusqu'à 5,000€ pour impayés charges, frais huissier, mises en demeure
+* **Remboursement** : 12-36 mois selon capacité, pas de pénalités retard
+* **Critères** : Revenu < 2,500€/mois ou endettement > 40%
+* **Accompagnement** : Suivi budgétaire proposé (assistante sociale)
+
+**C. Crédits Solidaires Travaux Urgents** 🔧
+
+* **Taux solidaire** : 1-2% (vs 4-6% banques classiques)
+* **Montant** : 5,000-50,000€ selon quote-part travaux votés en AG
+* **Durée** : 5-10 ans, garantie hypothécaire sur lot
+* **Validation** : Travaux légalement votés + devis validés par expert indépendant
+
+**D. Subvention Non-Remboursable** (Cas Extrême) 🆘
+
+* **Montant** : Max 3,000€/an
+* **Critères stricts** : Revenu < seuil pauvreté (1,200€/mois BE), handicap, maladie grave
+* **Fréquence** : 1 seule fois / 5 ans par personne
+* **Validation** : Assistante sociale externe + Comité Solidarité
+
+**Gouvernance du Fonds** :
+
+* **Comité de Solidarité** (5-7 membres bénévoles) : 3 copropriétaires élus AG, 1 travailleur social, 1 juriste, 1 syndic
+* **Décisions transparentes** : Réunion mensuelle, décisions anonymisées publiées
+* **Dashboard public** : Nombre de dossiers, montants, taux de remboursement (sans données perso)
+
+**Financement** *(exemple à 5,000 copros, surplus 149k€/an)* :
+
+* **Budget Fonds Solidarité** : 30% du surplus = **44,772€/an**
+* **Répartition** :
+
+  * Prêts 0% frais admin : 20,000€/an (revolving, remboursé)
+  * Prêts travaux solidaires : 15,000€/an (intérêts 1,5% = revenus fonds)
+  * Subventions litiges : 5,000€/an (3-5 dossiers/an)
+  * Subventions urgence : 3,000€/an (1-3 cas/an)
+  * Fonctionnement : 1,772€/an (assistante sociale)
+
+**Effet Revolving** (capital croissant) :
+
+* Année 1 : 20,000€ prêtés
+* Année 2 : 10,000€ remboursés + 44,772€ nouveaux = 54,772€ disponibles
+* Année 5 : **Capital fonds ~200,000€** (effet boule de neige)
+
+**Impact projeté** *(objectif 2030, 5,000 copros)* :
+
+* **40-60 copropriétaires aidés/an** : Sortie de précarité financière
+* **15-20 litiges AG/an évités** : Justice restaurée, économies copropriétés (200k€/an)
+* **5-8 familles sauvées expulsion/an** : Stabilité logement préservée
+* **Taux remboursement 92-95%** : Modèle Grameen Bank (solidarité = responsabilité)
+* **150,000€ aidé/an** (dont 60k€ revolving) : Impact social massif
+
+**Critères d'Éligibilité** :
+
+* ✅ Membre KoproGo (cloud 5€/mois ou cotisation membre self-hosted)
+* ✅ Dossier complet (revenus, justificatifs, devis)
+* ✅ Pas de fraude détectée
+* ✅ Bonne foi (pas d'abus précédent)
+* ❌ Exclusion : Propriétaire 2+ biens, revenus patrimoniaux > 1,000€/mois
+
+**Processus** :
+
+#. Demande en ligne (formulaire sécurisé)
+#. Analyse automatique (revenus, endettement)
+#. Instruction Comité (sous 15 jours, urgences 48h)
+#. Décision motivée (acceptation/refus/contre-proposition)
+#. Versement direct (huissier, avocat, syndic)
+#. Suivi remboursement (prélèvement automatique)
+
+**Exemples concrets** :
+
+* *Marie, retraitée (1,200€/mois), conteste travaux façade 15k€ (devis non-conformes). KoproGo finance avocat 1,500€. Elle gagne, économise 60k€ pour toute la copropriété.*
+* *Ahmed, intérimaire, accumule 3,200€ impayés (chômage technique). Prêt 0% sur 24 mois = 133€/mois. Évite saisie, régularise situation.*
+* *Sofiane, auto-entrepreneur, quote-part toiture 12k€. Banque refuse. KoproGo prête 12k€ à 1,5% sur 7 ans = 152€/mois. Travaux réalisés, copropriété sauvée.*
+
+**Philosophie** : La solidarité financière n'est pas de la charité, mais un **investissement dans la cohésion sociale**. Chaque membre aidé contribue à la stabilité collective de la copropriété.
+
+.. note::
+   **Détails complets** : Structure juridique, exemples détaillés, KPIs dans un futur document dédié ``FONDS_SOLIDARITE.rst``.
 
 Souveraineté Numérique
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -786,13 +894,58 @@ Indicateurs par Paliers de Croissance
 * **Leadership** (2.000 copros): Économie circulaire établie
 * **Référence** (5.000 copros): 1.000+ copros avec fonctions communautaires actives
 
+**Fonds de Solidarité par Palier** *(financé par surplus ASBL)* :
+
+.. list-table:: KPIs Fonds de Solidarité
+   :header-rows: 1
+   :widths: 20 20 20 20 20
+
+   * - Palier
+     - Budget Fonds/an
+     - Personnes Aidées/an
+     - Impact Social
+     - Capital Revolving
+   * - **Validation**
+     - 1,500€
+     - 3-5
+     - Tests process
+     - 1,500€
+   * - **Viabilité**
+     - 8,000€
+     - 10-15
+     - 5 litiges évités
+     - 15,000€
+   * - **Impact**
+     - 18,000€
+     - 20-30
+     - 10 litiges évités
+     - 50,000€
+   * - **Leadership**
+     - 32,000€
+     - 30-40
+     - 15 litiges évités
+     - 120,000€
+   * - **Référence**
+     - **44,772€**
+     - **40-60**
+     - **20 litiges évités**
+     - **200,000€**
+
+**Détails Référence (5.000 copros)** :
+
+* **40-60 personnes aidées/an** : Sortie de précarité, stabilité logement
+* **15-20 litiges AG évités** : Économies collectives 200k€/an
+* **5-8 familles sauvées expulsion** : Cohésion sociale préservée
+* **Taux remboursement 92-95%** : Modèle pérenne, capital croissant
+* **150,000€ aidé/an** (dont 60k€ revolving) : Impact massif, effet boule de neige
+
 **Performance Technique** (maintenue à tous les paliers) :
 
 * Latency P99 : < 1s (752ms validé)
 * Throughput : 287 req/s soutenu
 * Uptime : > 99.9%
 * Security : 0 CVE non patchées
-* Coût cloud : 1,50-8€/mois vs 200-500€ concurrents
+* Coût cloud : **5€/mois** fixe (modèle démocratique ASBL)
 
 **Formation et Communauté** (croissance organique) :
 
@@ -807,6 +960,7 @@ Conclusion : Mission Holistique
 KoproGo ne se contente pas de fournir un logiciel. Notre mission est **holistique** :
 
 ✅ **Résoudre un problème sociétal** (copropriétés + isolement urbain)
+✅ **Garantir accès à la justice** (Fonds de Solidarité pour membres en difficulté)
 ✅ **Adopter pratiques écologiques** (< 0.5g CO2/requête)
 ✅ **Garantir sécurité et conformité** (RGPD, GitOps)
 ✅ **Promouvoir opensource** (AGPL-3.0, communauté)

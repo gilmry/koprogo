@@ -35,8 +35,8 @@ Voici comment on propose de faciliter ça :
 ✅ **Un logiciel ouvert** (AGPL-3.0)
   Code public, auditable, aucune surprise
 
-✅ **Hébergé à trente-trois euros le mois chez OVH**
-  Infrastructure France (Gravelines), données souveraines
+✅ **Infrastructure mutualisée ultra-économique chez OVH**
+  7-163€/mois selon échelle (500 à 5,000 copros), hébergé France (Gravelines), données souveraines
 
 ✅ **Empreinte carbone faible** (0.12g par requête)
   96% de réduction vs outils actuels
@@ -56,7 +56,10 @@ L'Impact : Moins de Pollution, Moins de Stress, Plus de Pouvoir d'Achat
   Fini les factures opaques, les litiges sur les charges
 
 **Plus de pouvoir d'achat** :
-  9 millions d'euros économisés par an (logiciels + énergie + partage)
+  4 millions d'euros économisés par an (logiciels + SEL + partage)
+
+**Plus de sécurité financière** :
+  Fonds de solidarité pour copropriétaires en difficulté (litiges, travaux urgents, impayés)
 
 **Et ça marche déjà : nos tests de charge à l'automne 2025 ont validé la faisabilité technique.**
 
@@ -69,10 +72,19 @@ Notre objectif : atteindre 5,000 copropriétés. Quand? Quand les conditions ser
 
 **À ce palier, nous aurons** :
 
-💰 **9 millions d'euros économisés par an**
-  * 8M€ logiciels (0.40€/mois vs 50€/mois concurrents)
+💰 **4 millions d'euros économisés par an**
+  * 2.7M€ logiciels (5€/mois vs 50€/mois concurrents)
   * 750k€ économie circulaire (SEL - Système d'Échange Local)
   * 600k€ consommation évitée (partage d'objets entre voisins)
+
+🤝 **40-60 copropriétaires aidés financièrement chaque année**
+  * Prêts à taux 0% pour frais administratifs (huissiers, impayés)
+  * Subventions litiges démocratiques (contestation votes illégaux)
+  * Crédits solidaires travaux urgents (1-2% vs 4-6% banques)
+  * Subventions d'urgence pour situations de précarité extrême
+
+.. note::
+   **Potentiel supplémentaire non quantifié** : Les achats groupés énergie/assurances pourraient générer des économies additionnelles significatives. Ces chiffres seront documentés une fois les partenariats fournisseurs établis (Jalon 3+).
 
 🌍 **840 tonnes de CO₂ en moins**
   * 50 tonnes infrastructure (Rust + datacenter bas carbone)
@@ -100,7 +112,7 @@ Regroupés, on peut négocier :
 * Prix énergie (achats groupés)
 * Assurances (tarifs collectifs)
 * Travaux (appels d'offres mutualisés)
-* Technologies (infrastructure partagée à €33/mois)
+* Technologies (infrastructure mutualisée à coût ultra-faible)
 
 **Ensemble, on a plus de poids.**
 
@@ -130,9 +142,10 @@ Comment ça marche?
 
 **Exemple d'allocation du surplus** (votée en AG):
 
-* 40-50% : Développement nouvelles features
-* 20-30% : R&D PropTech (IA, IoT, blockchain)
-* 20-30% : Réserve légale (sécurité financière)
+* 30-40% : Développement nouvelles features
+* 20-30% : **Fonds de Solidarité** (aide litiges, prêts 0%, travaux urgents)
+* 15-20% : R&D PropTech (IA, IoT, blockchain)
+* 15-20% : Réserve légale (sécurité financière)
 * 0-20% : **Baisse tarifaire** (si surplus > 25%)
 
 **Principe**: Si les revenus dépassent largement les coûts, l'AG peut voter pour baisser le prix (ex: 5€ → 4€ → 3€ selon croissance).
@@ -148,11 +161,12 @@ Comment ça marche?
 
 **Zéro dividende pour des actionnaires. Tout revient à la communauté.**
 
-**Comparaison**:
+**Notre approche**:
 
-* Vilogi/Apronet: 50-500€/mois (prix fixe, marges opaques)
-* KoproGo: 5€/mois (prix transparent, surplus voté collectivement)
-* **Économie**: 45-495€/mois (90-99% moins cher)
+* **Modèle démocratique**: 5€/mois (prix transparent, surplus voté collectivement)
+* **Tarif fixe simple**: Pas de grille tarifaire complexe selon la taille
+* **Économies réalisables**: 45-495€/mois selon votre situation actuelle
+* **Compatible**: Utilisez KoproGo en complément de vos outils existants (modules communautaires seuls) ou en solution complète
 
 Même si tu préfères garder ton système actuel, ça fonctionne quand même.
 
@@ -253,7 +267,7 @@ Pendant que d'autres attendent, nous proposons une alternative :
 
 * **Svelte front, Rust backend**
 * **Dockerisé, hébergé OVH**
-* **Trente-trois euros par mois pour des centaines de copropriétés**
+* **Infrastructure mutualisée : 7€/mois pour 500 copros, 163€/mois pour 5,000 copros**
 
 **Notre progression se fait par paliers mesurables** :
 
@@ -308,28 +322,28 @@ Métriques de Succès : Des Mesures Concrètes
      - CO₂ évité/an
    * - **Validation**
      - 100
-     - 160k€
+     - 80k€
      - -2 tonnes
    * - **Viabilité**
      - 500
-     - 850k€
+     - 400k€
      - -15 tonnes
    * - **Impact**
      - 1.000
-     - 2M€
+     - 800k€
      - -107 tonnes
    * - **Leadership**
      - 2.000
-     - 4,5M€
+     - 1,6M€
      - -214 tonnes
    * - **Référence**
      - 5.000
-     - 9,35M€
+     - 4M€
      - -840 tonnes
 
 **Chaque palier débloque le suivant. Aucune pression calendaire.**
 
-**Fiabilité technique** : 99,9% uptime, infrastructure mutualisée à 33€/mois, hébergé en France
+**Fiabilité technique** : 99,9% uptime, infrastructure mutualisée à coût ultra-faible (0.03€/copro/mois à 5,000 copros), hébergé en France
 
 Et pour les plus prudents—ceux qui disent « moi j'aime bien mon système actuel »—même eux peuvent bénéficier : pas obligé de tout changer, juste de partager les données.
 
@@ -361,16 +375,16 @@ Tu Viens ?
 
 En rejoignant KoproGo, tu ne prends pas un abonnement. Tu rejoins une communauté :
 
-✅ **Économies réelles** : 80-95% vs logiciels propriétaires
+✅ **Économies réelles** : 90% vs logiciels propriétaires (5€ vs 50€/mois)
 ✅ **Impact écologique** : 840 tonnes CO₂/an collectivement
 ✅ **Pouvoir de négociation** : Ensemble, on pèse
 ✅ **Transparence totale** : Comptabilité publique trimestrielle
 ✅ **Gouvernance démocratique** : 1 membre = 1 voix
-✅ **Prix dégressif** : Plus on est, moins cher c'est
+✅ **Prix démocratique** : Baisse votée en AG si surplus > 25%
 
 **Pas de magie. Juste du collectif intelligent.**
 
-Notre objectif : 9 millions d'euros économisés, 840 tonnes de CO₂ en moins à 5.000 copropriétés.
+Notre objectif : 4 millions d'euros économisés, 840 tonnes de CO₂ en moins à 5.000 copropriétés.
 
 **Quand?** Quand nous aurons la force de frappe collective nécessaire. Peut-être dans 2 ans (avec une grande communauté), peut-être dans 5 ans (en petit comité). L'important est d'y arriver de manière soutenable.
 
