@@ -418,46 +418,62 @@ Gouvernance Évolutive : Solo Dev → Coopérative
 
 **Objectif** : Garantir une gouvernance démocratique et transparente, évoluant avec la maturité du projet.
 
-**Principe fondamental: Client = Membre**
+**Principe fondamental: Cotisation = Membre**
+
+**Cotisation mensuelle ASBL/Coopérative = 5€/mois**
+
+Cette cotisation donne:
+1. **Droit de vote** en Assemblée Générale (gouvernance)
+2. **Accès solution cloud** (bonus inclus)
 
 Alignement total entre économique et gouvernance:
 
 .. list-table:: Statut et Droits
    :header-rows: 1
-   :widths: 25 25 25 25
+   :widths: 30 20 20 30
 
    * - Statut
+     - Cotisation
      - Accès Cloud
-     - Paiement
      - Droit de Vote AG
-   * - **Membre actif** (cloud)
-     - ✅ Oui
+   * - **Membre actif cloud**
      - 5€/mois
+     - ✅ Oui
      - ✅ 1 voix
-   * - **Membre inactif** (arrêt)
-     - ❌ Non
+   * - **Membre actif self-hosted**
+     - 5€/mois
+     - ❌ Non (autonome)
+     - ✅ 1 voix
+   * - **Self-hosted gratuit**
      - 0€
+     - ❌ Non (autonome)
      - ❌ 0 voix
-   * - **Self-hosted**
-     - N/A (autonome)
-     - Gratuit
-     - ⚠️ Consultation*
+   * - **Membre inactif**
+     - 0€
+     - ❌ Non
+     - ❌ 0 voix
 
 **Alignement total**:
 
-* **Qui paie** → Qui décide (gouvernance)
-* **Qui utilise** → Qui contribue (économique)
-* **Qui bénéficie** → Qui vote (démocratie)
+* **Qui cotise (5€/mois)** → Qui décide (gouvernance)
+* **Cotisation** → Droit de vote garanti (cloud OU self-hosted)
+* **Self-hosted gratuit** → Usage libre, mais sans droit de vote
+* **Arrêt cotisation** → Perte droit de vote (+ accès cloud si utilisé)
 
 **Concrètement**:
 
-* Acheter solution cloud → Membre ASBL/Coopérative automatiquement
-* Paiement actif (5€/mois) → Droit de vote en AG
-* Arrêt paiement → Perte accès cloud + Perte droit de vote
+* **Option 1: Cloud** → Cotiser 5€/mois = Accès cloud + Droit de vote
+* **Option 2: Self-hosted + Gouvernance** → Cotiser 5€/mois = Droit de vote (sans utiliser le cloud)
+* **Option 3: Self-hosted gratuit** → 0€ = Usage libre, mais aucun droit de vote
+* **Arrêt cotisation** → Perte droit de vote (+ accès cloud si option 1)
 
-Pas de distinction "client" vs "membre", seulement **membre actif** (votant) ou **inactif** (sans droit de vote).
+Pas de distinction "client" vs "membre", seulement **membre actif** (cotisant = votant) ou **inactif** (non-cotisant = sans droit de vote).
 
-\*\ **Note self-hosted**: À clarifier si cotisation symbolique requise pour droit de vote, ou statut consultatif uniquement.
+**Clarification self-hosted**:
+
+* **Gratuit**: Tu héberges, tu utilises, mais tu ne votes pas
+* **Membre votant (5€/mois)**: Tu héberges ET tu participes à la gouvernance
+* **Choix libre**: Self-hosted n'oblige PAS à cotiser, mais cotiser PERMET de voter
 
 **Évolution progressive** (détails :doc:`ROADMAP_PAR_CAPACITES`) :
 

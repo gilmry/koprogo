@@ -167,36 +167,58 @@ La Gouvernance : Décisions Collectives, Rôle Coordinateur Élu
 * Décisions en Assemblée Générale
 * Transparence comptable trimestrielle
 
-**Principe fondamental: Client = Membre**
+**Principe fondamental: Cotisation = Membre**
+
+**Cotisation mensuelle ASBL/Coopérative = 5€/mois**
+
+Cette cotisation donne:
+1. **Droit de vote** en Assemblée Générale (gouvernance)
+2. **Accès solution cloud** (bonus inclus)
 
 .. list-table:: Statut et Droits
    :header-rows: 1
-   :widths: 25 25 25 25
+   :widths: 30 20 20 30
 
    * - Statut
+     - Cotisation
      - Accès Cloud
-     - Paiement
      - Droit de Vote AG
-   * - **Membre actif** (cloud)
-     - ✅ Oui
+   * - **Membre actif cloud**
      - 5€/mois
+     - ✅ Oui
      - ✅ 1 voix
-   * - **Membre inactif** (arrêt)
-     - ❌ Non
+   * - **Membre actif self-hosted**
+     - 5€/mois
+     - ❌ Non (autonome)
+     - ✅ 1 voix
+   * - **Self-hosted gratuit**
      - 0€
+     - ❌ Non (autonome)
      - ❌ 0 voix
-   * - **Self-hosted**
-     - N/A (autonome)
-     - Gratuit
-     - ⚠️ Consultation*
+   * - **Membre inactif**
+     - 0€
+     - ❌ Non
+     - ❌ 0 voix
 
 **Alignement total**:
 
-* **Qui paie** → Qui décide (gouvernance)
-* **Qui utilise** → Qui contribue (économique)
-* **Qui bénéficie** → Qui vote (démocratie)
+* **Qui cotise** → Qui décide (gouvernance)
+* **Cotisation 5€/mois** → Droit de vote garanti (cloud ou self-hosted)
+* **Self-hosted gratuit** → Usage libre, mais sans droit de vote
+* **Arrêt cotisation** → Perte droit de vote (+ accès cloud si utilisé)
 
-Acheter la solution cloud = devenir membre ASBL/Coopérative automatiquement. Pas de "client" vs "membre", juste **membre actif** (avec droit de vote) ou **inactif** (sans droit de vote).
+**Clarification self-hosted**:
+
+* Tu préfères héberger toi-même? **Gratuit** (AGPL-3.0, toujours)
+* Tu veux participer à la gouvernance? **Cotisation 5€/mois** = Membre avec droit de vote
+* Tu veux juste utiliser? **Gratuit**, mais sans influence sur les décisions
+
+**Avantages du modèle**:
+
+✅ **Flexibilité**: Self-hosted gratuit OU membre votant (5€/mois)
+✅ **Équité**: Cotisation = Droit de vote (indépendant de l'usage)
+✅ **Simplicité**: Un seul montant (5€), une seule règle (cotise = vote)
+✅ **Autonomie**: Self-hosted reste gratuit pour toujours
 
 **Blockchain optionnel** :
   Si tu veux voir où va l'argent comme sur un relevé de banque, c'est possible. Audité, transparent. Mais pas obligatoire.
@@ -205,8 +227,6 @@ Acheter la solution cloud = devenir membre ASBL/Coopérative automatiquement. Pa
   Code public sur GitHub, contributions bienvenues, fork autorisé si dérive
 
 Structure associative avec un rôle coordinateur élu démocratiquement.
-
-\*\ **Note self-hosted**: À clarifier si besoin cotisation symbolique pour droit de vote, ou statut consultatif uniquement.
 
 La Transparence : Dashboard Public
 ==================================
