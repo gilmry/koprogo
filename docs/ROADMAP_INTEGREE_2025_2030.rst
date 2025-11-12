@@ -2,10 +2,29 @@
 KoproGo - Vision Stratégique 2025-2030
 =========================================================
 
-:Version: 3.0
+:Version: 3.0 (Document historique)
 :Date: 2 novembre 2025
 :Auteurs: Gilles & Farah - Co-fondateurs KoproGo ASBL
-:Statut: Document de référence stratégique
+:Statut: **DÉPRÉCIÉ - Voir** :doc:`ROADMAP_PAR_CAPACITES`
+
+.. warning::
+   **Ce document est conservé pour référence historique uniquement.**
+
+   La nouvelle roadmap KoproGo est basée sur des **capacités et métriques mesurables**,
+   pas sur des dates fixes. Ce changement reflète notre engagement pour une progression
+   **saine et soutenable**, sans pression calendaire artificielle.
+
+   **→ Consultez** :doc:`ROADMAP_PAR_CAPACITES` **pour la version actuelle**
+
+   **Pourquoi ce changement?**
+
+   * ✅ Dates fixes = pression artificielle, burnout, promesses non tenues
+   * ✅ Capacités mesurables = progression saine, qualité préservée, confiance
+   * ✅ Métriques objectives = transparence totale, déclencheurs automatiques
+   * ✅ Force de travail flexible = scénarios multiples (solo/duo/équipe/communauté)
+
+   **Exemple**: Au lieu de "Jalon 1 en 6-8 semaines", nous disons
+   "Jalon 1 débloque 50-100 copropriétés quand Sécurité + GDPR sont validés"
 
 .. contents:: Table des matières
    :depth: 3

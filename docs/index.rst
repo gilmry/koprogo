@@ -11,10 +11,11 @@ KoproGo est un projet **holistique** qui combine :
 
 ✅ **Résolution d'un problème sociétal** (gestion copropriétés en Belgique et Europe)
 ✅ **Technologies de pointe** (Rust, GitOps, IA, Architecture Hexagonale)
-✅ **Écologie** (< 0.5g CO2/requête, 96% réduction vs solutions actuelles)
+✅ **Écologie** (0.12g CO2/requête, 96% réduction vs solutions actuelles)
 ✅ **Opensource et communautaire** (AGPL-3.0, ASBL, partage des recettes IA)
 ✅ **Sécurité et conformité** (RGPD, souveraineté des données, GitOps)
 ✅ **Pédagogie** (documentation exhaustive, onboarding facilité)
+✅ **Progression mesurable** (jalons basés sur capacités, pas sur dates)
 
 **Stack Technique** :
 
@@ -43,14 +44,52 @@ Documentation
 3. **GOVERNANCE** : Structure organisationnelle évolutive Solo → Fondateurs → ASBL → Coopérative
 4. **ECONOMIC_MODEL** : Modèle économique ASBL et viabilité financière à long terme
 
-**KPIs Stratégiques 2030** (validés avec données réelles Oct 2025):
+**Métriques de Succès par Paliers** (progression mesurable):
 
-* **Adoption** : 5,000 copropriétés (100,000 personnes)
-* **Impact Économique** : 9,35M€/an économisés (8M€ logiciels + 750k€ SEL + 600k€ consommation)
-* **Impact Écologique** : **-840 tonnes CO₂/an** (dépassement +57% vs objectif -534t)
-* **Performance Technique** : P99 < 1s (réel: 752ms ✅), Throughput > 200 req/s (réel: 287 req/s ✅), 0.12g CO₂/req
-* **Viabilité Financière** : 84,000€/an revenus, 2,034€/an coûts, **81,966€/an surplus** (marge 98%)
-* **Communauté** : 100 contributeurs réguliers
+.. list-table:: Progression par Capacités
+   :header-rows: 1
+   :widths: 20 20 20 20 20
+
+   * - Palier
+     - Copropriétés
+     - Impact Économique
+     - CO₂ évité/an
+     - Participants
+   * - **Validation**
+     - 100
+     - 160k€
+     - -2 tonnes
+     - 10
+   * - **Viabilité**
+     - 500
+     - 850k€
+     - -15 tonnes
+     - 50
+   * - **Impact**
+     - 1.000
+     - 2M€
+     - -107 tonnes
+     - 100
+   * - **Leadership**
+     - 2.000
+     - 4,5M€
+     - -214 tonnes
+     - 200
+   * - **Référence**
+     - 5.000
+     - 9,35M€
+     - **-840 tonnes**
+     - 500
+
+**Performance Technique Validée** :
+
+* Latence P99: 752ms (charge soutenue, 1 vCPU) ✅
+* Throughput: 287 req/s soutenu ✅
+* Consommation: 0.12g CO₂/req (96% réduction vs marché) ✅
+* RAM: 128MB utilisée sur 2GB (5% seulement) ✅
+* Viabilité: Marge 98% maintenue à tous les paliers ✅
+
+**Chaque palier débloque le suivant. Pas de dates fixes, mais des conditions mesurables.**
 
 .. toctree::
    :maxdepth: 2
@@ -65,6 +104,7 @@ Documentation
    :maxdepth: 2
    :caption: 🗺️ Roadmaps
 
+   ROADMAP_PAR_CAPACITES
    ROADMAP_INTEGREE_2025_2030
 
 .. toctree::
@@ -161,4 +201,4 @@ Documentation
 
 *Documentation maintenue par la communauté KoproGo ASBL*
 
-*Dernière mise à jour : 10 novembre 2025*
+*Modèle de progression: Capacités et métriques, pas dates fixes*

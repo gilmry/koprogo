@@ -2,9 +2,9 @@
 Mission KoproGo ASBL
 ========================================
 
-:Version: 3.0
-:Date: 2 novembre 2025
-:Voir aussi: :doc:`VISION` | :doc:`ROADMAP_INTEGREE_2025_2030` | :doc:`ECONOMIC_MODEL`
+:Version: 4.0
+:Modèle: Progression par capacités et métriques
+:Voir aussi: :doc:`VISION` | :doc:`ROADMAP_PAR_CAPACITES` | :doc:`ECONOMIC_MODEL`
 
 Notre Raison d'Être
 -------------------
@@ -399,7 +399,7 @@ Gouvernance Évolutive : Solo Dev → Coopérative
 
 **Objectif** : Garantir une gouvernance démocratique et transparente, évoluant avec la maturité du projet.
 
-**Évolution progressive** (détails :doc:`ROADMAP_INTEGREE_2025_2030`) :
+**Évolution progressive** (détails :doc:`ROADMAP_PAR_CAPACITES`) :
 
 
 #. **Phase Bootstrap (2025)** : Solo dev bénévole (Gilmry)
@@ -654,67 +654,74 @@ Internationalisation (i18n)
 Mesure de l'Impact Mission
 --------------------------
 
-Indicateurs Clés 2025-2030
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Indicateurs par Paliers de Croissance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Sociétal** :
+**Notre succès se mesure par paliers, pas par années**
 
+.. list-table:: Métriques par Palier
+   :header-rows: 1
+   :widths: 20 15 15 15 15 20
 
-* 2025 : 100 copropriétés (2,000 personnes)
-* 2030 : 5,000 copropriétés (100,000 personnes)
-* Réduction litiges : -50%
-* Satisfaction : > 90%
+   * - Palier
+     - Copros
+     - Personnes
+     - CO₂/an
+     - Économies
+     - Contributeurs
+   * - **Validation**
+     - 100
+     - 2.000
+     - -2t
+     - 160k€
+     - 10
+   * - **Viabilité**
+     - 500
+     - 10.000
+     - -15t
+     - 850k€
+     - 50
+   * - **Impact**
+     - 1.000
+     - 20.000
+     - -107t
+     - 2M€
+     - 100
+   * - **Leadership**
+     - 2.000
+     - 40.000
+     - -214t
+     - 4,5M€
+     - 200
+   * - **Référence**
+     - 5.000
+     - 100.000
+     - **-840t**
+     - **9,35M€**
+     - 500
 
-**Lien Social** *(modules communautaires optionnels)* :
+**Impact Social par Palier** *(modules communautaires optionnels)* :
 
+* **Validation** (100 copros): Tests des modules communautaires
+* **Viabilité** (500 copros): 20% adoptent SEL/Partage → 100+ échanges/mois
+* **Impact** (1.000 copros): 500+ objets partagés en circulation
+* **Leadership** (2.000 copros): Économie circulaire établie
+* **Référence** (5.000 copros): 1.000+ copros avec fonctions communautaires actives
 
-* 2026 : 20% copropriétés activent modules communautaires
-* 2028 : 100+ échanges SEL/mois, 500+ objets partagés
-* 2030 : 1,000 copropriétés utilisent fonctions communautaires
-* Impact isolement : 30% habitants connaissent plus de voisins
+**Performance Technique** (maintenue à tous les paliers) :
 
-**Écologique** :
-
-
-* 2025 : -10 tonnes CO₂/an (infrastructure)
-* 2030 : -50 tonnes CO₂/an (infrastructure optimisée)
-* **+ Features communautaires** (30% adoption) : -790 tonnes CO₂/an
-* **Impact total 2030** : -840 tonnes CO₂/an (dépassement +57% vs objectif initial)
-* Consommation infrastructure : < 10W par instance VPS
-* Économie circulaire : 600k€ consommation évitée via partage
-
-**Économique** :
-
-
-* 2025 : 160k€ économisés (vs logiciels propriétaires)
-* 2030 : 8M€ économisés (logiciels) + 750k€ économie circulaire SEL + 600k€ consommation évitée
-* **Impact économique total 2030** : 9,35M€/an
-* Coût cloud géré : 1,50-8€/mois selon taille (vs 200-500€ concurrents)
-* Self-hosted : 0€
-
-**Technique** :
-
-
-* Latency P99 : < 1s (752ms mesuré, maintenu)
-* Throughput : 287 req/s mesuré (charge soutenue)
+* Latency P99 : < 1s (752ms validé)
+* Throughput : 287 req/s soutenu
 * Uptime : > 99.9%
 * Security : 0 CVE non patchées
+* Coût cloud : 1,50-8€/mois vs 200-500€ concurrents
 
-**Communauté** :
+**Formation et Communauté** (croissance organique) :
 
-
-* 2025 : 10 contributeurs réguliers
-* 2030 : 100 contributeurs
-* Commits : 1,000+/an
-* Stars GitHub : 1,000+
-
-**Formation** :
-
-
-* 2025 : 50 développeurs formés
-* 2030 : 500 développeurs formés
-* Workshops : 10/an
-* Tutoriels : 50 articles/vidéos
+* **Validation**: 10 contributeurs, 50 devs formés
+* **Viabilité**: 50 contributeurs, 100 devs formés
+* **Impact**: 100 contributeurs, 200 devs formés
+* **Référence**: 500 contributeurs, 500+ devs formés
 
 Conclusion : Mission Holistique
 -------------------------------
@@ -739,6 +746,6 @@ Même si tu préfères tes outils actuels, tu peux quand même bénéficier de K
 **Voir aussi** :
 
 * :doc:`VISION` - Vision stratégique et problème sociétal
-* :doc:`ROADMAP_INTEGREE_2025_2030` - Roadmap complète et jalons techniques
+* :doc:`ROADMAP_PAR_CAPACITES` - Roadmap par capacités (sans dates fixes)
 * :doc:`ECONOMIC_MODEL` - Modèle économique ASBL et viabilité financière
 * :doc:`GOVERNANCE` - Gouvernance et structure ASBL

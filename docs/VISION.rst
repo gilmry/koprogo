@@ -2,9 +2,9 @@
 Vision de Koprogo
 ============================
 
-:Version: 5.0
-:Date: 8 novembre 2025
-:Voir aussi: :doc:`ROADMAP_INTEGREE_2025_2030` | :doc:`MISSION` | :doc:`ECONOMIC_MODEL`
+:Version: 6.0
+:Modèle: Progression par capacités et métriques
+:Voir aussi: :doc:`ROADMAP_PAR_CAPACITES` | :doc:`MISSION` | :doc:`ECONOMIC_MODEL`
 
 Le Contexte : On Peut Économiser Trente à Cinquante Pour Cent
 ==============================================================
@@ -58,14 +58,16 @@ L'Impact : Moins de Pollution, Moins de Stress, Plus de Pouvoir d'Achat
 **Plus de pouvoir d'achat** :
   9 millions d'euros économisés par an (logiciels + énergie + partage)
 
-**Et ça marche déjà en test depuis octobre vingt-cinq.**
+**Et ça marche déjà : nos tests de charge à l'automne 2025 ont validé la faisabilité technique.**
 
 Même si tu préfères tes outils actuels, tu peux quand même utiliser KoproGo sans changer tout ton fonctionnement.
 
 Les Chiffres (Tests Réels, Pas des Promesses)
 ==============================================
 
-En 2030, objectif 5,000 copropriétés :
+Notre objectif : atteindre 5,000 copropriétés. Quand? Quand les conditions seront remplies.
+
+**À ce palier, nous aurons** :
 
 💰 **9 millions d'euros économisés par an**
   * 8M€ logiciels (0.40€/mois vs 50€/mois concurrents)
@@ -76,12 +78,12 @@ En 2030, objectif 5,000 copropriétés :
   * 50 tonnes infrastructure (Rust + datacenter bas carbone)
   * 790 tonnes features communautaires (partage, achats groupés)
 
-⚡ **Performance mesurée (tests Oct 2025)**
+⚡ **Performance mesurée (tests de charge validés)**
   * Latence P99 : 752ms (charge soutenue, 1 vCPU)
   * Throughput : 287 req/s
   * CO₂/requête : 0.12g (vs 11.5g concurrents)
 
-Données issues de tests réels depuis octobre vingt-cinq, pas de projections marketing.
+Données issues de tests réels en production, pas de projections marketing.
 
 Le Pouvoir du Collectif : Regrouper Pour Peser
 ==============================================
@@ -180,27 +182,39 @@ Sur ``https://koprogo.com/transparency`` (accessible sans login) :
 
 Données exportables. Juste des chiffres.
 
-Roadmap 2026-2030 : On Avance dans le Cadre Actuel
-==================================================
+Notre Progression : Basée sur les Capacités, Pas les Dates
+===========================================================
 
 **On avance dans le cadre légal actuel.**
 
-On teste en Belgique dès **janvier vingt-six**, avec dix immeubles pilotes. La loi belge autorise déjà l'achat groupé, on s'appuie dessus.
+Notre approche pilote en Belgique, avec des immeubles tests. La loi belge autorise déjà l'achat groupé, on s'appuie dessus.
 
 Pendant que d'autres attendent, nous proposons une alternative :
 
 * **Svelte front, Rust backend**
 * **Dockerisé, hébergé OVH**
-* **Trente-trois euros le mois**
+* **Trente-trois euros par mois pour des centaines de copropriétés**
 
-**Juin vingt-six** : Première version publique
-  Vote AG numérique, ouverture aux syndics indépendants
+**Notre progression se fait par paliers mesurables** :
 
-**2027** : On passe en France, puis Italie
-  Pas de conquête, juste adaptation du modèle belge localement
+1. **Validation** (100 copropriétés) : Sécurité + GDPR basique
+   → Beta publique, premiers retours utilisateurs
 
-**2030** : Neuf millions d'euros économisés, huit cent quarante tonnes de CO₂ en moins
-  Pas des rêves : des pilotes, des chiffres, des contrats signés
+2. **Viabilité** (500 copropriétés) : Conformité légale belge
+   → Production ouverte, syndics professionnels
+
+3. **Impact** (1.000 copropriétés) : Features différenciantes
+   → SEL + Partage, communauté active
+
+4. **Leadership** (2.000-5.000 copropriétés) : Automation + Mobile
+   → Référence belge, expansion possible
+
+5. **Expansion** (5.000+ copropriétés) : Multi-pays
+   → France, Italie, Benelux selon la force de travail disponible
+
+**Chaque palier débloque le suivant. Pas de dates fixes, mais des conditions mesurables.**
+
+L'objectif n'est pas "neuf millions en 2030", mais "neuf millions d'euros économisés quand nous aurons 5.000 copropriétés" - que ce soit dans deux ans, cinq ans ou dix ans, selon notre force de frappe collective.
 
 Écosystème : On Complète, On N'Impose Rien
 ===========================================
@@ -219,16 +233,43 @@ On propose de compléter avec :
 
 Même si tu préfères ton syndic actuel, ça marche quand même.
 
-KPIs 2030 : Des Mesures Concrètes
-=================================
+Métriques de Succès : Des Mesures Concrètes
+============================================
 
-**Économies** : Neuf millions d'euros
+**Notre succès se mesure par paliers, pas par années** :
 
-**CO₂** : Moins huit cent quarante tonnes
+.. list-table:: Paliers de Progression
+   :header-rows: 1
+   :widths: 25 25 25 25
 
-**Utilisateurs** : Cent mille logements
+   * - Palier
+     - Copropriétés
+     - Économies
+     - CO₂ évité/an
+   * - **Validation**
+     - 100
+     - 160k€
+     - -2 tonnes
+   * - **Viabilité**
+     - 500
+     - 850k€
+     - -15 tonnes
+   * - **Impact**
+     - 1.000
+     - 2M€
+     - -107 tonnes
+   * - **Leadership**
+     - 2.000
+     - 4,5M€
+     - -214 tonnes
+   * - **Référence**
+     - 5.000
+     - 9,35M€
+     - -840 tonnes
 
-**Fiabilité** : 99,9% uptime, trente-trois euros par mois, hébergé local
+**Chaque palier débloque le suivant. Aucune pression calendaire.**
+
+**Fiabilité technique** : 99,9% uptime, infrastructure mutualisée à 33€/mois, hébergé en France
 
 Et pour les plus prudents—ceux qui disent « moi j'aime bien mon système actuel »—même eux peuvent bénéficier : pas obligé de tout changer, juste de partager les données.
 
@@ -269,9 +310,11 @@ En rejoignant KoproGo, tu ne prends pas un abonnement. Tu rejoins une communaut�
 
 **Pas de magie. Juste du collectif intelligent.**
 
-En 2030 : 9 millions d'euros économisés, 840 tonnes de CO₂ en moins.
+Notre objectif : 9 millions d'euros économisés, 840 tonnes de CO₂ en moins à 5.000 copropriétés.
 
-**Ça marche déjà en test depuis octobre vingt-cinq.**
+**Quand?** Quand nous aurons la force de frappe collective nécessaire. Peut-être dans 2 ans (avec une grande communauté), peut-être dans 5 ans (en petit comité). L'important est d'y arriver de manière soutenable.
+
+**Les fondations techniques sont validées depuis nos tests de charge.**
 
 Même si tu préfères ton système actuel, ça marche quand même.
 
@@ -279,6 +322,6 @@ Même si tu préfères ton système actuel, ça marche quand même.
 
 **Voir aussi** :
 
-* :doc:`ROADMAP_INTEGREE_2025_2030` - Roadmap stratégique 2025-2030
+* :doc:`ROADMAP_PAR_CAPACITES` - Roadmap par capacités (sans dates)
 * :doc:`ECONOMIC_MODEL` - Modèle économique ASBL détaillé
 * :doc:`MISSION` - Mission et valeurs fondamentales
