@@ -2,9 +2,9 @@
 Vision de Koprogo
 ============================
 
-:Version: 5.0
-:Date: 8 novembre 2025
-:Voir aussi: :doc:`ROADMAP_INTEGREE_2025_2030` | :doc:`MISSION` | :doc:`ECONOMIC_MODEL`
+:Version: 6.0
+:Modèle: Progression par capacités et métriques
+:Voir aussi: :doc:`ROADMAP_PAR_CAPACITES` | :doc:`MISSION` | :doc:`ECONOMIC_MODEL`
 
 Le Contexte : On Peut Économiser Trente à Cinquante Pour Cent
 ==============================================================
@@ -35,8 +35,8 @@ Voici comment on propose de faciliter ça :
 ✅ **Un logiciel ouvert** (AGPL-3.0)
   Code public, auditable, aucune surprise
 
-✅ **Hébergé à trente-trois euros le mois chez OVH**
-  Infrastructure France (Gravelines), données souveraines
+✅ **Infrastructure mutualisée ultra-économique chez OVH**
+  7-163€/mois selon échelle (500 à 5,000 copros), hébergé France (Gravelines), données souveraines
 
 ✅ **Empreinte carbone faible** (0.12g par requête)
   96% de réduction vs outils actuels
@@ -56,32 +56,46 @@ L'Impact : Moins de Pollution, Moins de Stress, Plus de Pouvoir d'Achat
   Fini les factures opaques, les litiges sur les charges
 
 **Plus de pouvoir d'achat** :
-  9 millions d'euros économisés par an (logiciels + énergie + partage)
+  4 millions d'euros économisés par an (logiciels + SEL + partage)
 
-**Et ça marche déjà en test depuis octobre vingt-cinq.**
+**Plus de sécurité financière** :
+  Fonds de solidarité pour copropriétaires en difficulté (litiges, travaux urgents, impayés)
+
+**Et ça marche déjà : nos tests de charge à l'automne 2025 ont validé la faisabilité technique.**
 
 Même si tu préfères tes outils actuels, tu peux quand même utiliser KoproGo sans changer tout ton fonctionnement.
 
 Les Chiffres (Tests Réels, Pas des Promesses)
 ==============================================
 
-En 2030, objectif 5,000 copropriétés :
+Notre objectif : atteindre 5,000 copropriétés. Quand? Quand les conditions seront remplies.
 
-💰 **9 millions d'euros économisés par an**
-  * 8M€ logiciels (0.40€/mois vs 50€/mois concurrents)
+**À ce palier, nous aurons** :
+
+💰 **4 millions d'euros économisés par an**
+  * 2.7M€ logiciels (5€/mois vs 50€/mois concurrents)
   * 750k€ économie circulaire (SEL - Système d'Échange Local)
   * 600k€ consommation évitée (partage d'objets entre voisins)
+
+🤝 **40-60 copropriétaires aidés financièrement chaque année**
+  * Prêts à taux 0% pour frais administratifs (huissiers, impayés)
+  * Subventions litiges démocratiques (contestation votes illégaux)
+  * Crédits solidaires travaux urgents (1-2% vs 4-6% banques)
+  * Subventions d'urgence pour situations de précarité extrême
+
+.. note::
+   **Potentiel supplémentaire non quantifié** : Les achats groupés énergie/assurances pourraient générer des économies additionnelles significatives. Ces chiffres seront documentés une fois les partenariats fournisseurs établis (Jalon 3+).
 
 🌍 **840 tonnes de CO₂ en moins**
   * 50 tonnes infrastructure (Rust + datacenter bas carbone)
   * 790 tonnes features communautaires (partage, achats groupés)
 
-⚡ **Performance mesurée (tests Oct 2025)**
+⚡ **Performance mesurée (tests de charge validés)**
   * Latence P99 : 752ms (charge soutenue, 1 vCPU)
   * Throughput : 287 req/s
   * CO₂/requête : 0.12g (vs 11.5g concurrents)
 
-Données issues de tests réels depuis octobre vingt-cinq, pas de projections marketing.
+Données issues de tests réels en production, pas de projections marketing.
 
 Le Pouvoir du Collectif : Regrouper Pour Peser
 ==============================================
@@ -98,52 +112,61 @@ Regroupés, on peut négocier :
 * Prix énergie (achats groupés)
 * Assurances (tarifs collectifs)
 * Travaux (appels d'offres mutualisés)
-* Technologies (infrastructure partagée à €33/mois)
+* Technologies (infrastructure mutualisée à coût ultra-faible)
 
 **Ensemble, on a plus de poids.**
 
-Le Modèle Économique : Plus de Monde = Moins Cher
+Le Modèle Économique : Démocratie Tarifaire
 =================================================
 
 Les solutions actuelles facturent **50-500€/mois par copropriété**, avec des marges importantes.
 
-KoproGo propose un autre modèle : **plus de participants = prix baisse pour tous**.
+KoproGo propose un autre modèle : **le prix est décidé collectivement, démocratiquement**.
 
-.. list-table:: Grille Tarifaire Dégressive (Automatique)
-   :header-rows: 1
-   :widths: 30 30 40
+Modèle Tarifaire
+-----------------
 
-   * - Participants
-     - Prix/Mois
-     - Économie
-   * - 0-500
-     - **1.00€**
-     - Référence
-   * - 500-1,000
-     - **0.80€**
-     - -20%
-   * - 1,000-2,000
-     - **0.60€**
-     - -40%
-   * - 2,000-5,000
-     - **0.40€**
-     - -60%
-   * - 5,000-10,000
-     - **0.20€**
-     - -80%
-   * - 10,000+
-     - **0.10€**
-     - -90%
+**Prix de départ** (validé à la création ASBL):
 
-**Chaque palier se déclenche automatiquement.** Tu rejoins, tu bénéficies de l'échelle. Mécaniquement.
+* **Cloud géré**: **5€/mois** par copropriété
+* **Self-hosted**: **Gratuit** (toujours)
 
-Le surplus (prix facturé - coût réel) est voté en Assemblée Générale :
-* 40-50% : Développement features
-* 20-30% : R&D PropTech
-* 20-30% : Réserve légale
-* 0-20% : Baisse tarifaire si surplus > 25%
+**Réévaluation**: Le prix évolue **uniquement par vote en Assemblée Générale** (ASBL → Coopérative)
+
+Comment ça marche?
+~~~~~~~~~~~~~~~~~~
+
+1. **Transparence totale**: Les coûts réels sont publiés chaque trimestre
+2. **Calcul du surplus**: Prix facturé (5€) - Coût réel (infrastructure/RH)
+3. **Vote démocratique**: L'AG décide de l'allocation du surplus
+
+**Exemple d'allocation du surplus** (votée en AG):
+
+* 30-40% : Développement nouvelles features
+* 20-30% : **Fonds de Solidarité** (aide litiges, prêts 0%, travaux urgents)
+* 15-20% : R&D PropTech (IA, IoT, blockchain)
+* 15-20% : Réserve légale (sécurité financière)
+* 0-20% : **Baisse tarifaire** (si surplus > 25%)
+
+**Principe**: Si les revenus dépassent largement les coûts, l'AG peut voter pour baisser le prix (ex: 5€ → 4€ → 3€ selon croissance).
+
+**Objectif**: Baisser les coûts reste notre mission, mais **décidé collectivement**, pas automatiquement.
+
+**Avantages du modèle**:
+
+✅ **Simplicité**: Un seul prix, facile à comprendre (5€)
+✅ **Démocratie**: La communauté décide quand et comment baisser
+✅ **Transparence**: Comptabilité publique trimestrielle
+✅ **Flexibilité**: L'AG choisit entre baisse, features, réserve, ristournes
 
 **Zéro dividende pour des actionnaires. Tout revient à la communauté.**
+
+**Notre approche**:
+
+* **Modèle démocratique**: 5€/mois (prix transparent, surplus voté collectivement)
+* **Tarif fixe simple**: Pas de grille tarifaire complexe selon la taille
+* **Économies réalisables**: 45-495€/mois selon votre situation actuelle
+* **Compatible**: Utilisez KoproGo en complément de vos outils existants (modules communautaires seuls) ou en solution complète
 
 Même si tu préfères garder ton système actuel, ça fonctionne quand même.
 
@@ -157,6 +180,59 @@ La Gouvernance : Décisions Collectives, Rôle Coordinateur Élu
 * **1 membre = 1 voix** (pas de pondération par capital)
 * Décisions en Assemblée Générale
 * Transparence comptable trimestrielle
+
+**Principe fondamental: Cotisation = Membre**
+
+**Cotisation mensuelle ASBL/Coopérative = 5€/mois**
+
+Cette cotisation donne:
+1. **Droit de vote** en Assemblée Générale (gouvernance)
+2. **Accès solution cloud** (bonus inclus)
+
+.. list-table:: Statut et Droits
+   :header-rows: 1
+   :widths: 30 20 20 30
+
+   * - Statut
+     - Cotisation
+     - Accès Cloud
+     - Droit de Vote AG
+   * - **Membre actif cloud**
+     - 5€/mois
+     - ✅ Oui
+     - ✅ 1 voix
+   * - **Membre actif self-hosted**
+     - 5€/mois
+     - ❌ Non (autonome)
+     - ✅ 1 voix
+   * - **Self-hosted gratuit**
+     - 0€
+     - ❌ Non (autonome)
+     - ❌ 0 voix
+   * - **Membre inactif**
+     - 0€
+     - ❌ Non
+     - ❌ 0 voix
+
+**Alignement total**:
+
+* **Qui cotise** → Qui décide (gouvernance)
+* **Cotisation 5€/mois** → Droit de vote garanti (cloud ou self-hosted)
+* **Self-hosted gratuit** → Usage libre, mais sans droit de vote
+* **Arrêt cotisation** → Perte droit de vote (+ accès cloud si utilisé)
+
+**Clarification self-hosted**:
+
+* Tu préfères héberger toi-même? **Gratuit** (AGPL-3.0, toujours)
+* Tu veux participer à la gouvernance? **Cotisation 5€/mois** = Membre avec droit de vote
+* Tu veux juste utiliser? **Gratuit**, mais sans influence sur les décisions
+
+**Avantages du modèle**:
+
+✅ **Flexibilité**: Self-hosted gratuit OU membre votant (5€/mois)
+✅ **Équité**: Cotisation = Droit de vote (indépendant de l'usage)
+✅ **Simplicité**: Un seul montant (5€), une seule règle (cotise = vote)
+✅ **Autonomie**: Self-hosted reste gratuit pour toujours
 
 **Blockchain optionnel** :
   Si tu veux voir où va l'argent comme sur un relevé de banque, c'est possible. Audité, transparent. Mais pas obligatoire.
@@ -180,27 +256,39 @@ Sur ``https://koprogo.com/transparency`` (accessible sans login) :
 
 Données exportables. Juste des chiffres.
 
-Roadmap 2026-2030 : On Avance dans le Cadre Actuel
-==================================================
+Notre Progression : Basée sur les Capacités, Pas les Dates
+===========================================================
 
 **On avance dans le cadre légal actuel.**
 
-On teste en Belgique dès **janvier vingt-six**, avec dix immeubles pilotes. La loi belge autorise déjà l'achat groupé, on s'appuie dessus.
+Notre approche pilote en Belgique, avec des immeubles tests. La loi belge autorise déjà l'achat groupé, on s'appuie dessus.
 
 Pendant que d'autres attendent, nous proposons une alternative :
 
 * **Svelte front, Rust backend**
 * **Dockerisé, hébergé OVH**
-* **Trente-trois euros le mois**
+* **Infrastructure mutualisée : 7€/mois pour 500 copros, 163€/mois pour 5,000 copros**
 
-**Juin vingt-six** : Première version publique
-  Vote AG numérique, ouverture aux syndics indépendants
+**Notre progression se fait par paliers mesurables** :
 
-**2027** : On passe en France, puis Italie
-  Pas de conquête, juste adaptation du modèle belge localement
+1. **Validation** (100 copropriétés) : Sécurité + GDPR basique
+   → Beta publique, premiers retours utilisateurs
 
-**2030** : Neuf millions d'euros économisés, huit cent quarante tonnes de CO₂ en moins
-  Pas des rêves : des pilotes, des chiffres, des contrats signés
+2. **Viabilité** (500 copropriétés) : Conformité légale belge
+   → Production ouverte, syndics professionnels
+
+3. **Impact** (1.000 copropriétés) : Features différenciantes
+   → SEL + Partage, communauté active
+
+4. **Leadership** (2.000-5.000 copropriétés) : Automation + Mobile
+   → Référence belge, expansion possible
+
+5. **Expansion** (5.000+ copropriétés) : Multi-pays
+   → France, Italie, Benelux selon la force de travail disponible
+
+**Chaque palier débloque le suivant. Pas de dates fixes, mais des conditions mesurables.**
+
+L'objectif n'est pas "neuf millions en 2030", mais "neuf millions d'euros économisés quand nous aurons 5.000 copropriétés" - que ce soit dans deux ans, cinq ans ou dix ans, selon notre force de frappe collective.
 
 Écosystème : On Complète, On N'Impose Rien
 ===========================================
@@ -219,16 +307,43 @@ On propose de compléter avec :
 
 Même si tu préfères ton syndic actuel, ça marche quand même.
 
-KPIs 2030 : Des Mesures Concrètes
-=================================
+Métriques de Succès : Des Mesures Concrètes
+============================================
 
-**Économies** : Neuf millions d'euros
+**Notre succès se mesure par paliers, pas par années** :
 
-**CO₂** : Moins huit cent quarante tonnes
+.. list-table:: Paliers de Progression
+   :header-rows: 1
+   :widths: 25 25 25 25
 
-**Utilisateurs** : Cent mille logements
+   * - Palier
+     - Copropriétés
+     - Économies
+     - CO₂ évité/an
+   * - **Validation**
+     - 100
+     - 80k€
+     - -2 tonnes
+   * - **Viabilité**
+     - 500
+     - 400k€
+     - -15 tonnes
+   * - **Impact**
+     - 1.000
+     - 800k€
+     - -107 tonnes
+   * - **Leadership**
+     - 2.000
+     - 1,6M€
+     - -214 tonnes
+   * - **Référence**
+     - 5.000
+     - 4M€
+     - -840 tonnes
 
-**Fiabilité** : 99,9% uptime, trente-trois euros par mois, hébergé local
+**Chaque palier débloque le suivant. Aucune pression calendaire.**
+
+**Fiabilité technique** : 99,9% uptime, infrastructure mutualisée à coût ultra-faible (0.03€/copro/mois à 5,000 copros), hébergé en France
 
 Et pour les plus prudents—ceux qui disent « moi j'aime bien mon système actuel »—même eux peuvent bénéficier : pas obligé de tout changer, juste de partager les données.
 
@@ -260,18 +375,20 @@ Tu Viens ?
 
 En rejoignant KoproGo, tu ne prends pas un abonnement. Tu rejoins une communauté :
 
-✅ **Économies réelles** : 80-95% vs logiciels propriétaires
+✅ **Économies réelles** : 90% vs logiciels propriétaires (5€ vs 50€/mois)
 ✅ **Impact écologique** : 840 tonnes CO₂/an collectivement
 ✅ **Pouvoir de négociation** : Ensemble, on pèse
 ✅ **Transparence totale** : Comptabilité publique trimestrielle
 ✅ **Gouvernance démocratique** : 1 membre = 1 voix
-✅ **Prix dégressif** : Plus on est, moins cher c'est
+✅ **Prix démocratique** : Baisse votée en AG si surplus > 25%
 
 **Pas de magie. Juste du collectif intelligent.**
 
-En 2030 : 9 millions d'euros économisés, 840 tonnes de CO₂ en moins.
+Notre objectif : 4 millions d'euros économisés, 840 tonnes de CO₂ en moins à 5.000 copropriétés.
 
-**Ça marche déjà en test depuis octobre vingt-cinq.**
+**Quand?** Quand nous aurons la force de frappe collective nécessaire. Peut-être dans 2 ans (avec une grande communauté), peut-être dans 5 ans (en petit comité). L'important est d'y arriver de manière soutenable.
+
+**Les fondations techniques sont validées depuis nos tests de charge.**
 
 Même si tu préfères ton système actuel, ça marche quand même.
 
@@ -279,6 +396,6 @@ Même si tu préfères ton système actuel, ça marche quand même.
 
 **Voir aussi** :
 
-* :doc:`ROADMAP_INTEGREE_2025_2030` - Roadmap stratégique 2025-2030
+* :doc:`ROADMAP_PAR_CAPACITES` - Roadmap par capacités (sans dates)
 * :doc:`ECONOMIC_MODEL` - Modèle économique ASBL détaillé
 * :doc:`MISSION` - Mission et valeurs fondamentales

@@ -2,9 +2,9 @@
 Mission KoproGo ASBL
 ========================================
 
-:Version: 3.0
-:Date: 2 novembre 2025
-:Voir aussi: :doc:`VISION` | :doc:`ROADMAP_INTEGREE_2025_2030` | :doc:`ECONOMIC_MODEL`
+:Version: 4.0
+:Modèle: Progression par capacités et métriques
+:Voir aussi: :doc:`VISION` | :doc:`ROADMAP_PAR_CAPACITES` | :doc:`ECONOMIC_MODEL`
 
 Notre Raison d'Être
 -------------------
@@ -21,8 +21,8 @@ Piliers de la Mission
 
 **Objectif** : Démontrer que la croissance profite à **tous** les participants, pas aux actionnaires.
 
-Le Concept d'Économies d'Échelle Inversées
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Le Concept de Démocratie Tarifaire
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Économies d'échelle traditionnelles** :
 
@@ -30,35 +30,35 @@ Le Concept d'Économies d'Échelle Inversées
 * Prix restent fixes ou augmentent
 * Usagers ne bénéficient jamais de l'échelle
 
-**Économies d'échelle inversées (KoproGo ASBL)** :
+**Démocratie tarifaire (KoproGo ASBL)** :
 
-* Plus de participants → Coûts dilués → **Prix baisse pour tous** ↓
-* Surplus réinvesti dans le projet (features, infra)
+* Plus de participants → Coûts dilués → **Prix voté collectivement** ↓
+* Surplus réinvesti dans le projet (features, infra, baisse tarifaire)
 * Chaque nouveau participant **enrichit** les précédents
+* **L'Assemblée Générale décide** de l'évolution du prix
 
 Actions Concrètes
 ~~~~~~~~~~~~~~~~~
 
-**1. Grille Tarifaire Dégressive Statutaire**
+**1. Prix Fixe de Départ + Vote Démocratique**
 
-Inscrite dans statuts ASBL (non modifiable sans AG) :
+**Prix de départ** (validé à la création ASBL):
 
-* **Palier 0-500** : 1.00€/mois (prix lancement)
-* **Palier 500-1,000** : 0.80€/mois (**-20% automatique** dès 500 copros)
-* **Palier 1,000-2,000** : 0.60€/mois (**-40% automatique** dès 1,000 copros)
-* **Palier 2,000-5,000** : 0.40€/mois (**-60% automatique** dès 2,000 copros)
-* **Palier 5,000+** : 0.20€/mois (**-80% automatique** dès 5,000 copros)
+* **Cloud géré**: **5€/mois** par copropriété
+* **Self-hosted**: **Gratuit** (toujours)
 
-**Déclenchement** : Compteur participants automatique, notification email à chaque baisse
+**Évolution du prix**: Uniquement par **vote en Assemblée Générale** (ASBL → Coopérative)
 
-**Exemple** : "Bonne nouvelle! 500 copros atteintes, votre tarif passe de 1€ à 0.80€/mois"
+**Principe**: Si les revenus dépassent largement les coûts, l'AG peut voter pour baisser le prix (ex: 5€ → 4€ → 3€ selon croissance et surplus).
+
+**Exemple**: "Rapport AG: surplus 25.000€/an (marge 80%). Proposition CA: baisse à 4€/mois. Vote: 87% pour, 13% abstention. ✅ Adopté"
 
 **2. Transparence Comptable Trimestrielle**
 
 * **Publication coûts réels** infrastructure (serveurs, bande passante, stockage)
 * **Calcul prix coûtant réel** vs prix facturé (tableau comparatif)
 * **Dashboard public temps réel** : `/transparency` (nb copros, coûts, prix coûtant, surplus)
-* **Si surplus > 20%** : redistribution extraordinaire ou baisse anticipée (vote AG)
+* **Si surplus > 25%** : l'AG peut voter baisse tarifaire ou redistribution
 
 **3. Budget Participatif Annuel**
 
@@ -67,61 +67,80 @@ AG vote allocation surplus (si revenus > coûts+réserve) :
 **Options vote** :
 
 * Nouvelles features (vote priorités communauté)
+* **Fonds de Solidarité** (aide financière membres en difficulté)
 * Amélioration infra (performance, sécurité)
-* Baisse tarifaire anticipée
+* **Baisse tarifaire** (si surplus > 25%)
 * Constitution réserve légale (3 mois coûts)
+* Ristournes sociétaires (modèle coopératif)
 
-**Exemple AG 2028** (1,500 copros, surplus 8,640€/an) :
+**Exemple AG** (1.500 copros, prix 5€, surplus 72.000€/an) :
 
 .. code-block:: text
 
+   Rapport CA :
+     • Revenus: 90.000€/an (1.500 copros × 5€/mois × 12)
+     • Coûts infra: 2.160€/an
+     • Coûts RH: 15.840€/an (2 devs temps partiel)
+     • Surplus: 72.000€ (80% marge)
+
    Proposition CA :
-     • 50% Features prioritaires (4,320€) - Vote communauté
-     • 30% Réserve légale (2,592€) - Sécurité
-     • 20% R&D PropTech (1,728€) - IA/Blockchain/IoT
+     • 30% Fonds de Solidarité (21.600€) - Aide financière membres
+     • 25% Baisse tarifaire (5€ → 4€) - Économies pour tous
+     • 25% Features prioritaires (18.000€) - Vote communauté
+     • 15% Réserve légale (10.800€) - Sécurité
+     • 5% R&D PropTech (3.600€) - IA/Blockchain/IoT
 
    Vote AG (1 membre = 1 voix) :
      ✅ Adopté : 87% pour, 13% abstention
+
+   Résultat Fonds de Solidarité (21.600€/an) :
+     • 15 prêts 0% frais administratifs (10.000€ revolving)
+     • 8 subventions litiges AG (6.000€)
+     • 5 crédits travaux urgents (5.000€ à 1,5%)
+     • 2 subventions urgence (600€ non-remboursable)
 
 **4. Contributions Valorisées**
 
 Qui contribue au bien commun en bénéficie davantage :
 
-* **Contributeurs code/docs/traductions** : **-50%** tarif cloud (réduction participative)
+* **Contributeurs code/docs/traductions** : **-50%** tarif cloud (ex: 2,50€ au lieu de 5€)
 * **Mainteneurs actifs** : **Gratuit à vie**
 * **Principe** : Le bénévolat est récompensé concrètement
 
-Impact 2025-2030 (objectif 5,000 copros)
+Impact par Paliers (objectif 5.000 copros)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Scénario Participation Croissante** :
+**Scénario Participation Croissante** (prix fixe 5€, évolution par vote AG):
 
 .. code-block:: text
 
-   Année 1 : 100 copros → 1.00€/mois → Revenus: 1,200€/an
-     Coûts infra : 1,140€/an
-     Surplus : 60€ (5%) → Réserve légale
+   Palier 1 : 100 copros → 5€/mois → Revenus: 60.000€/an
+     Coûts infra : 6.300€/an
+     Surplus : 53.700€ (89%) → Constitution réserve + 1er dev
+     Prix maintenu à 5€ (phase bootstrap)
 
-   Année 3 : 1,500 copros → 0.60€/mois → Revenus: 10,800€/an
-     Coûts infra : 2,160€/an (scale up)
-     Surplus : 8,640€ (80%)
-     → Redistribution :
-       • 50% features (4,320€ = 2 devs temps partiel)
-       • 30% réserve (2,592€)
-       • 20% baisse anticipée palier 2k (1,728€ remboursés pro-rata)
+   Palier 2 : 500 copros → 5€/mois → Revenus: 300.000€/an
+     Coûts infra : 21.200€/an
+     Coûts RH : 72.000€/an (2 devs)
+     Surplus : 206.800€ (69%)
+     → AG vote baisse à 4€/mois (surplus > 25%)
 
-   Année 5 : 5,000 copros → 0.40€/mois → Revenus: 24,000€/an
-     Coûts infra : 3,240€/an
-     Surplus : 20,760€ (87%)
-     → Redistribution :
-       • 40% features (8,304€ = 4 devs temps partiel + MLOps)
-       • 30% réserve (6,228€ = 2 ans autonomie)
-       • 30% baisse palier 10k anticipée (6,228€)
+   Palier 3 : 1.500 copros → 4€/mois → Revenus: 288.000€/an
+     Coûts infra : 52.200€/an
+     Coûts RH : 150.000€/an (5 ETP)
+     Surplus : 85.800€ (30%)
+     → Prix maintenu à 4€ (réinvestissement features)
+
+   Palier 4 : 5.000 copros → 4€/mois → Revenus: 960.000€/an
+     Coûts infra : 348.000€/an
+     Coûts RH : 350.000€/an (10-15 ETP)
+     Surplus : 262.000€ (27%)
+     → AG vote baisse à 3€/mois (surplus > 25%)
 
 Effet Cercle Vertueux
 ~~~~~~~~~~~~~~~~~~~~~~
 
-* **Plus de participants** → Prix baisse → Attractivité ↑
+* **Plus de participants** → Surplus augmente → AG peut voter baisse → Attractivité ↑
 * **Attractivité ↑** → Nouveaux participants → Communauté ↑
 * **Communauté ↑** → Contributions ↑ → Qualité produit ↑
 * **Qualité ↑** → Satisfaction ↑ → Bouche-à-oreille ↑
@@ -138,11 +157,11 @@ Comparaison Modèles
      - SaaS Classique
      - KoproGo ASBL
    * - Prix/copro
-     - 50€/mois fixe
-     - 0.40-1€/mois dégressif
+     - 50-500€/mois fixe
+     - **5€/mois** (voté démocratiquement)
    * - Évolution prix
      - Hausse annuelle
-     - **Baisse avec échelle**
+     - **Baisse si AG vote** (surplus > 25%)
    * - Bénéfice échelle
      - Actionnaires (90%)
      - **Tous participants (100%)**
@@ -156,8 +175,16 @@ Comparaison Modèles
      - Impossible
      - **Valorisée (-50% tarif)**
 
+**Avantages du modèle**:
+
+✅ **Simplicité**: Un seul prix, facile à comprendre (5€)
+✅ **Démocratie**: La communauté décide quand et comment baisser
+✅ **Transparence**: Comptabilité publique trimestrielle
+✅ **Flexibilité**: L'AG choisit entre baisse, features, réserve, ristournes
+✅ **Objectif de baisse**: Reste notre mission, mais décidé collectivement
+
 .. note::
-   **Détails complets** : Projections financières, grille tarifaire, et transparence dans :doc:`ECONOMIC_MODEL` (Section Économies d'Échelle Participatives).
+   **Détails complets** : Projections financières et transparence dans :doc:`ECONOMIC_MODEL` et :doc:`ROADMAP_PAR_CAPACITES`.
 
 2. Résoudre un Problème Sociétal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -225,10 +252,10 @@ Lien Social et Dynamique Communautaire *(Modules Optionnels)*
 
 
 * ✅ Gratuit pour self-hosted (option toujours disponible)
-* ✅ **Cloud géré** : 1,50-8€/mois selon taille et features (vs 200-500€/mois concurrents)
+* ✅ **Cloud géré** : **5€/mois** fixe (prix démocratique, baisse par vote AG)
 * ✅ Aucun coût de licence ni frais cachés
 * ✅ Exportation données libre (CSV, JSON, PDF)
-* ✅ **Grille tarifaire équitable** : alignée sur taille copropriété et frontières légales (détails :doc:`ROADMAP_INTEGREE_2025_2030`)
+* ✅ **Tarif unique simple** : même prix pour tous, quelle que soit la taille
 
 **Impact** :
 
@@ -236,6 +263,106 @@ Lien Social et Dynamique Communautaire *(Modules Optionnels)*
 * Économies : 1,600-9,500€/an par copropriété
 * Budget réalloué vers travaux et entretien
 * Accessibilité pour petites copropriétés (< 10 lots)
+
+Accès à la Justice et Solidarité Financière
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Objectif** : Garantir l'accès aux droits démocratiques et prévenir l'exclusion financière des copropriétaires en difficulté.
+
+**Problème identifié** :
+
+* Copropriétaires ne peuvent pas financer un avocat pour contester un vote illégal en AG
+* Impayés de charges créent spirale d'endettement (huissiers, intérêts, pénalités)
+* Travaux urgents votés mais quote-part impossible à financer (banques refusent)
+* Précarité financière entraîne exclusion des décisions collectives
+
+**Solution : Fonds de Solidarité KoproGo** *(financé par surplus ASBL)* :
+
+**A. Aide aux Litiges Démocratiques** ⚖️
+
+* **Subvention 500-2,000€** : Frais avocat pour contestation votes AG (devis non-conformes, procédure irrégulière)
+* **Critères** : Revenu < 2,000€/mois, litige légitime validé par Comité Solidarité
+* **Clause remboursement** : Si gain du procès avec dommages-intérêts → Remboursement 50%
+
+**B. Prêts à Taux 0% Frais Administratifs** 💳
+
+* **Montant** : Jusqu'à 5,000€ pour impayés charges, frais huissier, mises en demeure
+* **Remboursement** : 12-36 mois selon capacité, pas de pénalités retard
+* **Critères** : Revenu < 2,500€/mois ou endettement > 40%
+* **Accompagnement** : Suivi budgétaire proposé (assistante sociale)
+
+**C. Crédits Solidaires Travaux Urgents** 🔧
+
+* **Taux solidaire** : 1-2% (vs 4-6% banques classiques)
+* **Montant** : 5,000-50,000€ selon quote-part travaux votés en AG
+* **Durée** : 5-10 ans, garantie hypothécaire sur lot
+* **Validation** : Travaux légalement votés + devis validés par expert indépendant
+
+**D. Subvention Non-Remboursable** (Cas Extrême) 🆘
+
+* **Montant** : Max 3,000€/an
+* **Critères stricts** : Revenu < seuil pauvreté (1,200€/mois BE), handicap, maladie grave
+* **Fréquence** : 1 seule fois / 5 ans par personne
+* **Validation** : Assistante sociale externe + Comité Solidarité
+
+**Gouvernance du Fonds** :
+
+* **Comité de Solidarité** (5-7 membres bénévoles) : 3 copropriétaires élus AG, 1 travailleur social, 1 juriste, 1 syndic
+* **Décisions transparentes** : Réunion mensuelle, décisions anonymisées publiées
+* **Dashboard public** : Nombre de dossiers, montants, taux de remboursement (sans données perso)
+
+**Financement** *(exemple à 5,000 copros, surplus 149k€/an)* :
+
+* **Budget Fonds Solidarité** : 30% du surplus = **44,772€/an**
+* **Répartition** :
+
+  * Prêts 0% frais admin : 20,000€/an (revolving, remboursé)
+  * Prêts travaux solidaires : 15,000€/an (intérêts 1,5% = revenus fonds)
+  * Subventions litiges : 5,000€/an (3-5 dossiers/an)
+  * Subventions urgence : 3,000€/an (1-3 cas/an)
+  * Fonctionnement : 1,772€/an (assistante sociale)
+
+**Effet Revolving** (capital croissant) :
+
+* Année 1 : 20,000€ prêtés
+* Année 2 : 10,000€ remboursés + 44,772€ nouveaux = 54,772€ disponibles
+* Année 5 : **Capital fonds ~200,000€** (effet boule de neige)
+
+**Impact projeté** *(objectif 2030, 5,000 copros)* :
+
+* **40-60 copropriétaires aidés/an** : Sortie de précarité financière
+* **15-20 litiges AG/an évités** : Justice restaurée, économies copropriétés (200k€/an)
+* **5-8 familles sauvées expulsion/an** : Stabilité logement préservée
+* **Taux remboursement 92-95%** : Modèle Grameen Bank (solidarité = responsabilité)
+* **150,000€ aidé/an** (dont 60k€ revolving) : Impact social massif
+
+**Critères d'Éligibilité** :
+
+* ✅ Membre KoproGo (cloud 5€/mois ou cotisation membre self-hosted)
+* ✅ Dossier complet (revenus, justificatifs, devis)
+* ✅ Pas de fraude détectée
+* ✅ Bonne foi (pas d'abus précédent)
+* ❌ Exclusion : Propriétaire 2+ biens, revenus patrimoniaux > 1,000€/mois
+
+**Processus** :
+
+#. Demande en ligne (formulaire sécurisé)
+#. Analyse automatique (revenus, endettement)
+#. Instruction Comité (sous 15 jours, urgences 48h)
+#. Décision motivée (acceptation/refus/contre-proposition)
+#. Versement direct (huissier, avocat, syndic)
+#. Suivi remboursement (prélèvement automatique)
+
+**Exemples concrets** :
+
+* *Marie, retraitée (1,200€/mois), conteste travaux façade 15k€ (devis non-conformes). KoproGo finance avocat 1,500€. Elle gagne, économise 60k€ pour toute la copropriété.*
+* *Ahmed, intérimaire, accumule 3,200€ impayés (chômage technique). Prêt 0% sur 24 mois = 133€/mois. Évite saisie, régularise situation.*
+* *Sofiane, auto-entrepreneur, quote-part toiture 12k€. Banque refuse. KoproGo prête 12k€ à 1,5% sur 7 ans = 152€/mois. Travaux réalisés, copropriété sauvée.*
+
+**Philosophie** : La solidarité financière n'est pas de la charité, mais un **investissement dans la cohésion sociale**. Chaque membre aidé contribue à la stabilité collective de la copropriété.
+
+.. note::
+   **Détails complets** : Structure juridique, exemples détaillés, KPIs dans un futur document dédié ``FONDS_SOLIDARITE.rst``.
 
 Souveraineté Numérique
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -399,7 +526,64 @@ Gouvernance Évolutive : Solo Dev → Coopérative
 
 **Objectif** : Garantir une gouvernance démocratique et transparente, évoluant avec la maturité du projet.
 
-**Évolution progressive** (détails :doc:`ROADMAP_INTEGREE_2025_2030`) :
+**Principe fondamental: Cotisation = Membre**
+
+**Cotisation mensuelle ASBL/Coopérative = 5€/mois**
+
+Cette cotisation donne:
+1. **Droit de vote** en Assemblée Générale (gouvernance)
+2. **Accès solution cloud** (bonus inclus)
+
+Alignement total entre économique et gouvernance:
+
+.. list-table:: Statut et Droits
+   :header-rows: 1
+   :widths: 30 20 20 30
+
+   * - Statut
+     - Cotisation
+     - Accès Cloud
+     - Droit de Vote AG
+   * - **Membre actif cloud**
+     - 5€/mois
+     - ✅ Oui
+     - ✅ 1 voix
+   * - **Membre actif self-hosted**
+     - 5€/mois
+     - ❌ Non (autonome)
+     - ✅ 1 voix
+   * - **Self-hosted gratuit**
+     - 0€
+     - ❌ Non (autonome)
+     - ❌ 0 voix
+   * - **Membre inactif**
+     - 0€
+     - ❌ Non
+     - ❌ 0 voix
+
+**Alignement total**:
+
+* **Qui cotise (5€/mois)** → Qui décide (gouvernance)
+* **Cotisation** → Droit de vote garanti (cloud OU self-hosted)
+* **Self-hosted gratuit** → Usage libre, mais sans droit de vote
+* **Arrêt cotisation** → Perte droit de vote (+ accès cloud si utilisé)
+
+**Concrètement**:
+
+* **Option 1: Cloud** → Cotiser 5€/mois = Accès cloud + Droit de vote
+* **Option 2: Self-hosted + Gouvernance** → Cotiser 5€/mois = Droit de vote (sans utiliser le cloud)
+* **Option 3: Self-hosted gratuit** → 0€ = Usage libre, mais aucun droit de vote
+* **Arrêt cotisation** → Perte droit de vote (+ accès cloud si option 1)
+
+Pas de distinction "client" vs "membre", seulement **membre actif** (cotisant = votant) ou **inactif** (non-cotisant = sans droit de vote).
+
+**Clarification self-hosted**:
+
+* **Gratuit**: Tu héberges, tu utilises, mais tu ne votes pas
+* **Membre votant (5€/mois)**: Tu héberges ET tu participes à la gouvernance
+* **Choix libre**: Self-hosted n'oblige PAS à cotiser, mais cotiser PERMET de voter
+
+**Évolution progressive** (détails :doc:`ROADMAP_PAR_CAPACITES`) :
 
 
 #. **Phase Bootstrap (2025)** : Solo dev bénévole (Gilmry)
@@ -414,20 +598,21 @@ Gouvernance Évolutive : Solo Dev → Coopérative
    * Croissance 100 → 500 copropriétés
    * Premiers revenus cloud (autofinancement)
 
-#. **Phase ASBL (2027-2029)** : Association Sans But Lucratif belge
+#. **Phase ASBL (Viabilité)** : Association Sans But Lucratif belge
 
    * ✅ Assemblée générale annuelle (décisions collectives)
    * ✅ Conseil d'administration élu (3-7 membres)
    * ✅ Comptes publics (bilans annuels)
    * ✅ Statuts ASBL belge (non-profit)
+   * ✅ **Client cloud = Membre automatiquement** (droit de vote)
    * Croissance 500 → 5,000 copropriétés
    * Développement financé (1-2 ETP)
 
-#. **Phase Coopérative (2030+)** : Transformation optionnelle
+#. **Phase Coopérative (Leadership)** : Transformation optionnelle
 
    * **Si la communauté le souhaite** : ASBL → Coopérative agréée
-   * Utilisateurs deviennent sociétaires (parts sociales)
-   * Gouvernance renforcée (1 personne = 1 voix)
+   * Membres deviennent sociétaires (parts sociales)
+   * Gouvernance renforcée (1 personne = 1 voix maintenue)
    * Éligibilité subventions économie sociale
 
 **Impact gouvernance évolutive** :
@@ -438,6 +623,7 @@ Gouvernance Évolutive : Solo Dev → Coopérative
 * Décisions alignées avec la mission
 * Protection contre la dérive commerciale
 * Transparence radicale à chaque étape
+* **Alignement économie-gouvernance** (qui paie = qui décide)
 
 5. Utilisation de l'IA pour le Développement Collaboratif
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -654,67 +840,119 @@ Internationalisation (i18n)
 Mesure de l'Impact Mission
 --------------------------
 
-Indicateurs Clés 2025-2030
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+Indicateurs par Paliers de Croissance
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**Sociétal** :
+**Notre succès se mesure par paliers, pas par années**
 
+.. list-table:: Métriques par Palier
+   :header-rows: 1
+   :widths: 20 15 15 15 15 20
 
-* 2025 : 100 copropriétés (2,000 personnes)
-* 2030 : 5,000 copropriétés (100,000 personnes)
-* Réduction litiges : -50%
-* Satisfaction : > 90%
+   * - Palier
+     - Copros
+     - Personnes
+     - CO₂/an
+     - Économies
+     - Contributeurs
+   * - **Validation**
+     - 100
+     - 2.000
+     - -2t
+     - 160k€
+     - 10
+   * - **Viabilité**
+     - 500
+     - 10.000
+     - -15t
+     - 850k€
+     - 50
+   * - **Impact**
+     - 1.000
+     - 20.000
+     - -107t
+     - 2M€
+     - 100
+   * - **Leadership**
+     - 2.000
+     - 40.000
+     - -214t
+     - 4,5M€
+     - 200
+   * - **Référence**
+     - 5.000
+     - 100.000
+     - **-840t**
+     - **9,35M€**
+     - 500
 
-**Lien Social** *(modules communautaires optionnels)* :
+**Impact Social par Palier** *(modules communautaires optionnels)* :
 
+* **Validation** (100 copros): Tests des modules communautaires
+* **Viabilité** (500 copros): 20% adoptent SEL/Partage → 100+ échanges/mois
+* **Impact** (1.000 copros): 500+ objets partagés en circulation
+* **Leadership** (2.000 copros): Économie circulaire établie
+* **Référence** (5.000 copros): 1.000+ copros avec fonctions communautaires actives
 
-* 2026 : 20% copropriétés activent modules communautaires
-* 2028 : 100+ échanges SEL/mois, 500+ objets partagés
-* 2030 : 1,000 copropriétés utilisent fonctions communautaires
-* Impact isolement : 30% habitants connaissent plus de voisins
+**Fonds de Solidarité par Palier** *(financé par surplus ASBL)* :
 
-**Écologique** :
+.. list-table:: KPIs Fonds de Solidarité
+   :header-rows: 1
+   :widths: 20 20 20 20 20
 
+   * - Palier
+     - Budget Fonds/an
+     - Personnes Aidées/an
+     - Impact Social
+     - Capital Revolving
+   * - **Validation**
+     - 1,500€
+     - 3-5
+     - Tests process
+     - 1,500€
+   * - **Viabilité**
+     - 8,000€
+     - 10-15
+     - 5 litiges évités
+     - 15,000€
+   * - **Impact**
+     - 18,000€
+     - 20-30
+     - 10 litiges évités
+     - 50,000€
+   * - **Leadership**
+     - 32,000€
+     - 30-40
+     - 15 litiges évités
+     - 120,000€
+   * - **Référence**
+     - **44,772€**
+     - **40-60**
+     - **20 litiges évités**
+     - **200,000€**
 
-* 2025 : -10 tonnes CO₂/an (infrastructure)
-* 2030 : -50 tonnes CO₂/an (infrastructure optimisée)
-* **+ Features communautaires** (30% adoption) : -790 tonnes CO₂/an
-* **Impact total 2030** : -840 tonnes CO₂/an (dépassement +57% vs objectif initial)
-* Consommation infrastructure : < 10W par instance VPS
-* Économie circulaire : 600k€ consommation évitée via partage
+**Détails Référence (5.000 copros)** :
 
-**Économique** :
+* **40-60 personnes aidées/an** : Sortie de précarité, stabilité logement
+* **15-20 litiges AG évités** : Économies collectives 200k€/an
+* **5-8 familles sauvées expulsion** : Cohésion sociale préservée
+* **Taux remboursement 92-95%** : Modèle pérenne, capital croissant
+* **150,000€ aidé/an** (dont 60k€ revolving) : Impact massif, effet boule de neige
 
+**Performance Technique** (maintenue à tous les paliers) :
 
-* 2025 : 160k€ économisés (vs logiciels propriétaires)
-* 2030 : 8M€ économisés (logiciels) + 750k€ économie circulaire SEL + 600k€ consommation évitée
-* **Impact économique total 2030** : 9,35M€/an
-* Coût cloud géré : 1,50-8€/mois selon taille (vs 200-500€ concurrents)
-* Self-hosted : 0€
-
-**Technique** :
-
-
-* Latency P99 : < 1s (752ms mesuré, maintenu)
-* Throughput : 287 req/s mesuré (charge soutenue)
+* Latency P99 : < 1s (752ms validé)
+* Throughput : 287 req/s soutenu
 * Uptime : > 99.9%
 * Security : 0 CVE non patchées
+* Coût cloud : **5€/mois** fixe (modèle démocratique ASBL)
 
-**Communauté** :
+**Formation et Communauté** (croissance organique) :
 
-
-* 2025 : 10 contributeurs réguliers
-* 2030 : 100 contributeurs
-* Commits : 1,000+/an
-* Stars GitHub : 1,000+
-
-**Formation** :
-
-
-* 2025 : 50 développeurs formés
-* 2030 : 500 développeurs formés
-* Workshops : 10/an
-* Tutoriels : 50 articles/vidéos
+* **Validation**: 10 contributeurs, 50 devs formés
+* **Viabilité**: 50 contributeurs, 100 devs formés
+* **Impact**: 100 contributeurs, 200 devs formés
+* **Référence**: 500 contributeurs, 500+ devs formés
 
 Conclusion : Mission Holistique
 -------------------------------
@@ -722,6 +960,7 @@ Conclusion : Mission Holistique
 KoproGo ne se contente pas de fournir un logiciel. Notre mission est **holistique** :
 
 ✅ **Résoudre un problème sociétal** (copropriétés + isolement urbain)
+✅ **Garantir accès à la justice** (Fonds de Solidarité pour membres en difficulté)
 ✅ **Adopter pratiques écologiques** (< 0.5g CO2/requête)
 ✅ **Garantir sécurité et conformité** (RGPD, GitOps)
 ✅ **Promouvoir opensource** (AGPL-3.0, communauté)
@@ -739,6 +978,6 @@ Même si tu préfères tes outils actuels, tu peux quand même bénéficier de K
 **Voir aussi** :
 
 * :doc:`VISION` - Vision stratégique et problème sociétal
-* :doc:`ROADMAP_INTEGREE_2025_2030` - Roadmap complète et jalons techniques
+* :doc:`ROADMAP_PAR_CAPACITES` - Roadmap par capacités (sans dates fixes)
 * :doc:`ECONOMIC_MODEL` - Modèle économique ASBL et viabilité financière
 * :doc:`GOVERNANCE` - Gouvernance et structure ASBL

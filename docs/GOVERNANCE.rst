@@ -2,11 +2,11 @@
 Gouvernance KoproGo : Solo Dev → Coopérative
 =============================================
 
-:Version: 2.0
-:Date: 2 novembre 2025
+:Version: 2.1
+:Auteur: Gilles Maury - Fondateur KoproGo ASBL
 :Statut: Phase Bootstrap (Solo dev bénévole)
-:Constitution ASBL prévue: Juillet 2027
-:Voir aussi: :doc:`VISION` | :doc:`MISSION` | :doc:`ECONOMIC_MODEL` | :doc:`ROADMAP_INTEGREE_2025_2030`
+:Constitution ASBL: Quand Jalon 3 atteint (500-1,000 copros)
+:Voir aussi: :doc:`VISION` | :doc:`MISSION` | :doc:`ECONOMIC_MODEL` | :doc:`ROADMAP_PAR_CAPACITES`
 
 ----
 
@@ -18,12 +18,12 @@ Gouvernance KoproGo : Solo Dev → Coopérative
 Table des Matières
 ==================
 
-1. `Évolution de la Gouvernance (2025-2030+)`_
+1. `Évolution de la Gouvernance (Par Jalons)`_
 2. `Introduction & Vision`_
-3. `Phase 1: Bootstrap (Nov 2025 - Déc 2026)`_
-4. `Phase 2: Fondateurs (Jan 2026 - Jun 2027)`_
-5. `Phase 3: ASBL (Jul 2027 - Déc 2029)`_
-6. `Phase 4: Coopérative (2030+)`_
+3. `Phase 1: Bootstrap (Jalons 0-1)`_
+4. `Phase 2: Fondateurs (Jalons 2-3)`_
+5. `Phase 3: ASBL (Jalons 4-5)`_
+6. `Phase 4: Coopérative (Jalons 6+)`_
 7. `Membres de l'ASBL`_
 8. `Conseil d'Administration`_
 9. `Assemblée Générale`_
@@ -37,8 +37,8 @@ Table des Matières
 
 ----
 
-Évolution de la Gouvernance (2025-2030+)
-========================================
+Évolution de la Gouvernance (Par Jalons)
+=========================================
 
 Vue d'Ensemble
 --------------
@@ -50,61 +50,66 @@ KoproGo adopte une **approche progressive** de gouvernance, évoluant d'un proje
    :widths: 15 20 25 20 20
 
    * - Phase
-     - Période
+     - Jalons
      - Statut Juridique
      - Gouvernance
      - Financement
    * - **Bootstrap**
-     - Nov 2025 - Déc 2026
+     - Jalons 0-1 (10-100 copros)
      - Projet personnel
-     - Solo dev (Gilmry)
-     - Bénévolat (0€)
+     - Solo dev (Gilles Maury)
+     - Bénévolat + IA (65€/mois)
    * - **Fondateurs**
-     - Jan 2026 - Jun 2027
+     - Jalons 2-3 (200-1,000 copros)
      - Association de fait
      - 2-3 fondateurs
-     - Autofinancement (revenus cloud)
+     - Autofinancement (revenus 5€/mois)
    * - **ASBL**
-     - Jul 2027 - Déc 2029
+     - Jalons 4-5 (1,000-5,000 copros)
      - ASBL belge
      - AG + CA élu
-     - Cloud + Services B2B
+     - Cloud + PropTech 2.0
    * - **Coopérative**
-     - 2030+
+     - Jalons 6+ (5,000+ copros)
      - Coopérative agréée
      - Sociétaires
      - Économie sociale
 
-Calendrier Détaillé
---------------------
+Progression par Capacités
+--------------------------
 
-**Phase 1 - Bootstrap (Nov 2025 - Déc 2026)** :
+**Phase 1 - Bootstrap (Jalons 0-1)** :
 
-- Nov 2025 : Lancement MVP beta
-- Fév 2026 : 50 copropriétés utilisatrices
-- Juin 2026 : 100 copropriétés, premiers revenus cloud
-- Déc 2026 : Validation product-market fit
+- **Jalon 0** ✅ : Architecture hexagonale, 73 endpoints API (10-20 early adopters)
+- **Jalon 1** : LUKS encryption, backups GPG, GDPR basique → **50-100 copropriétés**
+- **Revenus** : 2,400€/an (100 copros × 40% cloud × 5€ × 12 mois)
+- **Force de frappe** : Solo dev + IA
 
-**Phase 2 - Fondateurs (Jan 2026 - Jun 2027)** :
+**Phase 2 - Fondateurs (Jalons 2-3)** :
 
-- Jan 2026 : Recrutement 1-2 co-fondateurs
-- Mar 2026 : 200 copropriétés
-- Juin 2026 : Autofinancement atteint
-- Mar 2027 : 500 copropriétés, préparation statuts ASBL
+- **Jalon 2** : Facturation TVA, recouvrement, conseils syndical → **200-500 copropriétés**
+- **Jalon 3** : Audit trails, RBAC avancé, rapports financiers → **500-1,000 copropriétés**
+- **Revenus** : 12,000-24,000€/an
+- **Déclencheur ASBL** : Quand Jalon 3 atteint (500-1,000 copros)
+- **Force de frappe** : 1-2 devs temps partiel, préparation statuts ASBL
 
-**Phase 3 - ASBL (Jul 2027 - Déc 2029)** :
+**Phase 3 - ASBL (Jalons 4-5)** :
 
-- Jul 2027 : Constitution ASBL, première AG
-- Sep 2027 : Élection CA (3-7 membres)
-- 2028 : 2000 copropriétés, embauche 1er salarié
-- 2029 : 5000 copropriétés, consultation transformation coopérative
+- **Constitution ASBL** : Quand 500-1,000 copros atteints (Jalon 3 validé)
+- **Première AG** : Élection CA (3-7 membres), vote statuts
+- **Jalon 4** : Intégrations bancaires, exports comptables → **1,000-2,000 copropriétés**
+- **Jalon 5** : Mobile app, API publique, internationalisation → **2,000-5,000 copropriétés**
+- **Revenus** : 48,000-120,000€/an
+- **Force de frappe** : 2-4 ETP, embauche 1er salarié
 
-**Phase 4 - Coopérative (2030+)** :
+**Phase 4 - Coopérative (Jalons 6+)** :
 
-- Jan 2030 : Vote AG sur transformation coopérative
+- **Déclencheur** : Quand 5,000 copros atteints (Jalon 5 validé)
+- **Vote AG** : Consultation membres sur transformation coopérative
 - Si approuvé : Conversion ASBL → Coopérative agréée
 - Utilisateurs deviennent sociétaires (parts sociales)
 - Gouvernance renforcée (1 personne = 1 voix)
+- **Jalons 6-7** : PropTech 2.0 (IA, Blockchain, IoT, Carbon Credits)
 
 ----
 
@@ -118,7 +123,7 @@ Valeurs Fondamentales
 
 * 🌱 **Écologie** : Empreinte carbone minimale (< 0.5g CO₂/req, 96% réduction vs concurrents)
 * 🔓 **Transparence** : Comptabilité publique, décisions ouvertes, roadmap communautaire
-* 🤝 **Équité** : Prix coûtant (1,50-8€ selon taille), pas d'actionnaires, réinvestissement 100%
+* 🤝 **Équité** : Prix fixe 5€/mois (baisse par vote AG selon surplus), pas d'actionnaires, réinvestissement 100%
 * ⚖️ **Démocratie** : Gouvernance participative évolutive, vote des membres
 * 🎓 **Pédagogie** : Documentation exhaustive, architecture exemplaire (hexagonale/DDD)
 
@@ -129,8 +134,8 @@ Rendre la gestion de copropriété **accessible, performante et respectueuse de 
 
 ----
 
-Phase 1: Bootstrap (Nov 2025 - Déc 2026)
-=========================================
+Phase 1: Bootstrap (Jalons 0-1)
+===============================
 
 Statut Juridique
 ----------------
@@ -173,8 +178,8 @@ Décisions
 
 ----
 
-Phase 2: Fondateurs (Jan 2026 - Jun 2027)
-==========================================
+Phase 2: Fondateurs (Jalons 2-3)
+=================================
 
 Statut Juridique
 ----------------
@@ -203,7 +208,7 @@ Objectifs Phase
 Financement
 -----------
 
-* **Revenus cloud** : 100-500 copros × 1,50-2,50€ = 150-1250€/mois
+* **Revenus cloud** : 200-1,000 copros × 40% cloud × 5€ = 400-2,000€/mois
 * **Autofinancement** : Couvre infrastructure + petits salaires ponctuels
 * **Réinvestissement** : 100% excédents dans développement
 
@@ -227,15 +232,15 @@ Admission Fondateurs
 
 ----
 
-Phase 3: ASBL (Jul 2027 - Déc 2029)
-====================================
+Phase 3: ASBL (Jalons 4-5)
+==========================
 
 Statut Juridique
 ----------------
 
 **ASBL belge** (Association Sans But Lucratif, loi 27 juin 1921 réformée 2019)
 
-**Constitution prévue** : Juillet 2027 (J2-Launch, 500 copros, revenus stabilisés)
+**Constitution prévue** : Quand Jalon 3 atteint (500-1,000 copros, revenus stabilisés)
 
 Avantages ASBL
 --------------
@@ -294,9 +299,13 @@ Gouvernance ASBL
 
 **Membres ASBL** :
 
-* **Catégories** : Utilisateurs, sponsors, contributeurs, sympathisants
-* **Cotisation** : 120€/an (exonération possible sur demande)
-* **Droits** : Vote AG, éligibilité CA, accès rapports financiers
+* **Principe** : Client cloud = Membre automatiquement
+* **Cotisation** : **5€/mois** (60€/an) - Identique au prix cloud
+* **Catégories** :
+  * Membres actifs cloud (5€/mois) : Accès cloud + Vote AG
+  * Membres actifs self-hosted (5€/mois) : Vote AG uniquement
+  * Self-hosted gratuit (0€) : Usage libre, pas de vote
+* **Droits** : Vote AG (1 membre = 1 voix), éligibilité CA, accès rapports financiers
 
 Objectifs Phase
 ---------------
@@ -310,10 +319,13 @@ Objectifs Phase
 Financement
 -----------
 
-* **Revenus cloud** : 500-5000 copros × 2,50-3,50€ = 1250-17500€/mois
+* **Revenus cloud/membres** : 500-5000 copros × 5€ = 2,500-25,000€/mois (60,000-300,000€/an)
 * **Services B2B** : Formation, support premium, intégrations
 * **Subventions** : Horizon Europe, Digital Wallonia, Innoviris
-* **Dons** : Particuliers et entreprises
+* **Dons** : Particuliers et entreprises (optionnel)
+
+.. note::
+   Le prix de 5€/mois peut **baisser par vote AG** selon le surplus disponible (ex: 5€ → 4€ → 3€)
 
 Décisions
 ---------
@@ -324,8 +336,8 @@ Décisions
 
 ----
 
-Phase 4: Coopérative (2030+)
-=============================
+Phase 4: Coopérative (Jalons 6+)
+=================================
 
 Statut Juridique
 ----------------
@@ -391,11 +403,19 @@ L'ASBL KoproGo est **ouverte** aux catégories suivantes :
 Processus d'Admission
 ----------------------
 
+**Pour clients cloud** : Adhésion **automatique** lors de la souscription
+
+1. **Souscription cloud** : 5€/mois → Devient membre ASBL automatiquement
+2. **Droits immédiats** : Accès cloud + Vote AG (1 voix)
+3. **Notification** : Email de bienvenue avec droits AG
+
+**Pour membres self-hosted** (qui souhaitent voter) :
+
 1. **Candidature** : Formulaire en ligne ou email
-2. **Examen CA** : Vérification critères d'admission
+2. **Examen CA** : Vérification alignement valeurs
 3. **Vote CA** : Majorité simple
-4. **Notification** : Réponse sous 30 jours
-5. **Cotisation** : 120€/an si accepté (exonération possible)
+4. **Cotisation** : 5€/mois (60€/an) pour droit de vote
+5. **Droits** : Vote AG, pas d'accès cloud (autonomie self-hosted)
 
 Droits des Membres
 -------------------
@@ -601,15 +621,15 @@ Sources de Revenus
    * - Source
      - Description
      - Phase Activation
-   * - **SaaS Cloud**
-     - Hébergement géré 1,50-8€/copro/mois
+   * - **SaaS Cloud/Membres**
+     - 5€/mois par copropriété cloud (= cotisation membre)
      - Phase 2 (2026)
-   * - **Dons**
-     - Liberapay, Open Collective
-     - Toutes phases
-   * - **Cotisations membres**
-     - 120€/an par membre
+   * - **Membres self-hosted**
+     - 5€/mois pour droit de vote AG (optionnel)
      - Phase 3 (2027)
+   * - **Dons**
+     - Liberapay, Open Collective (optionnel)
+     - Toutes phases
    * - **Services B2B**
      - Formation, support, consulting
      - Phase 3 (2027)
@@ -634,20 +654,24 @@ Transparence Financière
    Rapport Financier 2028
 
    Revenus
-   - SaaS Cloud : 72,000€ (2,000 copros × 36€/an moyen)
+   - Membres cloud : 96,000€ (1,600 copros × 5€/mois × 12)
+   - Membres self-hosted : 2,400€ (40 membres × 5€/mois × 12)
    - Services B2B : 15,000€
-   - Cotisations : 2,400€ (20 membres × 120€)
    - Subventions : 10,000€
-   Total : 99,400€
+   Total : 123,400€
 
    Dépenses
-   - Infrastructure : 3,600€
+   - Infrastructure : 4,200€
    - Salaires (1.5 ETP) : 60,000€
    - Admin/compta : 3,000€
    - Communication : 2,000€
-   Total : 68,600€
+   Total : 69,200€
 
-   Résultat : +30,800€ (réserves ASBL)
+   Résultat : +54,200€ (44% marge)
+
+   Décision AG 2029:
+   → Surplus > 25% pendant 2 trimestres
+   → Vote baisse tarifaire: 5€ → 4€/mois (adoptée 87% pour)
 
 Principe Prix Coûtant
 ----------------------
@@ -778,7 +802,7 @@ Historique des Versions
 
 **Voir aussi** :
 
-* :doc:`ROADMAP_INTEGREE_2025_2030` - Roadmap stratégique complète avec jalons gouvernance
+* :doc:`ROADMAP_PAR_CAPACITES` - Roadmap stratégique complète avec jalons gouvernance
 * :doc:`VISION` - Vision et modèle communautaire
 * :doc:`MISSION` - Mission et gouvernance évolutive
 * :doc:`ECONOMIC_MODEL` - Modèle économique et évolution structure

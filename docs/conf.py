@@ -48,11 +48,11 @@ html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
 html_theme_options = {
-    'navigation_depth': 1,
-    'collapse_navigation': True,
+    'navigation_depth': 3,
+    'collapse_navigation': False,
     'sticky_navigation': True,
     'includehidden': True,
-    'titles_only': True,
+    'titles_only': False,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'display_version': False,

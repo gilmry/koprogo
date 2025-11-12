@@ -6,7 +6,7 @@ Modèle Économique KoproGo ASBL - Guide Complet
 :Date: 2 novembre 2025
 :Statut: ASBL Belge (Association Sans But Lucratif)
 :License: Code AGPL-3.0 / Document CC BY-SA 4.0
-:Voir aussi: :doc:`VISION` | :doc:`MISSION` | :doc:`ROADMAP_INTEGREE_2025_2030` | :doc:`GOVERNANCE`
+:Voir aussi: :doc:`VISION` | :doc:`MISSION` | :doc:`ROADMAP_PAR_CAPACITES` | :doc:`GOVERNANCE`
 
 ----
 
@@ -29,94 +29,110 @@ Table des Matières
 
 ----
 
-🔄 Économies d'Échelle Participatives - Le Modèle qui Change Tout
-------------------------------------------------------------------
+🔄 Démocratie Tarifaire - Le Modèle qui Change Tout
+----------------------------------------------------
 
 Introduction - Pourquoi KoproGo est Différent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   *"Dans les SaaS classiques, l'échelle enrichit les actionnaires. Chez KoproGo, l'échelle enrichit **chaque participant**. Plus nous sommes nombreux, moins chacun paie. C'est mathématique, transparent, et inscrit dans nos statuts."*
+   *"Dans les SaaS classiques, l'échelle enrichit les actionnaires. Chez KoproGo, l'échelle enrichit **chaque participant**. Plus nous sommes nombreux, plus le surplus augmente, et **c'est la communauté qui décide** comment l'utiliser: baisse de prix, nouvelles features, ou réinvestissement. C'est démocratique, transparent, et inscrit dans nos statuts."*
 
-Le Mécanisme en 3 Temps
-^^^^^^^^^^^^^^^^^^^^^^^^
+Le Mécanisme de Démocratie Tarifaire
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-**1. Coûts Infrastructure Fixes (peu élastiques)**
-
-.. code-block:: text
-
-   100 copros:   95€/mois serveur (1 vCPU, 2GB RAM)
-   1,000 copros: 180€/mois serveur (2 vCPU, 4GB RAM) - Scale up à 800 copros
-   5,000 copros: 270€/mois serveur (4 vCPU, 8GB RAM) - Scale up à 3,000 copros
-
-**2. Dilution Coûts = Prix Coûtant Baisse**
+**1. Prix Fixe de Départ** (validé à la création ASBL)
 
 .. code-block:: text
 
-   Prix coûtant réel:
-     100 copros:   95€ ÷ 100 = 0.95€/copro/mois
-     1,000 copros: 180€ ÷ 1,000 = 0.18€/copro/mois (-81%)
-     5,000 copros: 270€ ÷ 5,000 = 0.054€/copro/mois (-94%)
+   Prix cloud géré: 5€/mois par copropriété
+   Self-hosted: Gratuit (toujours)
 
-**3. Redistribution Statutaire (paliers ASBL)**
+   Principe: Client cloud = Membre ASBL automatiquement
+   - 5€/mois → Accès cloud + Droit de vote AG (1 voix)
+   - 0€ self-hosted → Usage libre, mais pas de droit de vote
+   - Membre self-hosted (5€/mois) → Droit de vote sans utiliser le cloud
+
+**2. Coûts Infrastructure Réels** (recherche OVHcloud Nov 2025)
 
 .. code-block:: text
 
-   Grille tarifaire dégressive (inscrite statuts):
-     0-500 copros:    1.00€/mois (prix lancement)
-     500-1,000:       0.80€/mois (-20%) ← Baisse auto à 500 copros
-     1,000-2,000:     0.60€/mois (-40%) ← Baisse auto à 1,000 copros
-     2,000-5,000:     0.40€/mois (-60%) ← Baisse auto à 2,000 copros
-     5,000-10,000:    0.20€/mois (-80%) ← Baisse auto à 5,000 copros
-     10,000+:         0.10€/mois (-90%) ← Objectif 2032
+   VPS Value (1 vCPU, 2GB RAM, 40GB NVMe): 7.02€/mois TTC
+   Capacité: 2,000-3,000 copropriétés par VPS
+   S3 Storage: 0.007€/GB/mois
 
-   Note: Coût réel à 5,000 copros = 0.054€, facturé 0.40€
-   Surplus (0.346€/copro × 5,000) = 20,760€/an → Réinvesti (voir Budget)
+   Coûts réels par copropriété (infrastructure seule):
+     100 copros cloud (40):    8.20€/mois infra ÷ 40 = 0.205€/copro
+     5,000 copros cloud (2000): 163€/mois infra ÷ 2000 = 0.082€/copro
 
-Tableau Comparatif Évolution Prix
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   → Coût infrastructure diminue de 71% avec l'échelle
+
+**3. Surplus Démocratique** (décidé par vote AG)
+
+.. code-block:: text
+
+   Exemple à 5,000 copropriétés (2,000 cloud, 3,000 self-hosted):
+
+   Revenus: 2,000 copros × 5€ = 10,000€/mois (120,000€/an)
+   Coûts infrastructure: 163€/mois (1,956€/an)
+   Coûts RH (2-3 devs): 100,000€/an
+   Total coûts: 101,956€/an
+
+   Surplus: 18,044€/an (15% marge)
+
+   Vote AG sur allocation surplus:
+   ✅ Option 1: Baisse tarifaire (5€ → 4€ ou 3€)
+   ✅ Option 2: Nouvelles features (vote priorités)
+   ✅ Option 3: Réserve légale (sécurité)
+   ✅ Option 4: R&D PropTech (IA, IoT, Blockchain)
+
+   Décision: Assemblée Générale (1 membre = 1 voix)
+
+Évolution Démocratique du Prix (Vote AG)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. list-table::
    :header-rows: 1
-   :widths: 15 15 20 20 15 15
+   :widths: 15 20 20 20 25
 
-   * - Participants
-     - Coût Infra
-     - Prix Coûtant Réel
-     - Prix ASBL Facturé
-     - Surplus/copro
-     - Surplus Total/an
-   * - 100
-     - 95€/mois
-     - 0.95€
-     - **1.00€**
-     - 0.05€
-     - 60€/an
-   * - 500
-     - 95€/mois
-     - 0.19€
-     - **0.80€**
-     - 0.61€
-     - 3,660€/an
-   * - 1,000
-     - 180€/mois
-     - 0.18€
-     - **0.60€**
-     - 0.42€
-     - 5,040€/an
-   * - 2,000
-     - 180€/mois
-     - 0.09€
-     - **0.60€**
-     - 0.51€
-     - 12,240€/an
-   * - 5,000
-     - 270€/mois
-     - 0.054€
-     - **0.40€**
-     - 0.346€
-     - 20,760€/an
+   * - Palier
+     - Copros Cloud
+     - Prix Facturé
+     - Surplus Annuel
+     - Décision AG Possible
+   * - **Bootstrap**
+     - 100
+     - **5€/mois**
+     - 18,044€/an
+     - Prix maintenu (constitution réserve)
+   * - **Viabilité**
+     - 500
+     - **5€/mois**
+     - 90,220€/an
+     - Prix maintenu (embauche devs)
+   * - **Impact**
+     - 1,000
+     - **5€/mois** ou **4€** (si AG vote)
+     - 180,440€/an
+     - AG peut voter baisse à 4€
+   * - **Leadership**
+     - 2,000
+     - **4€/mois** (après vote AG)
+     - 192,088€/an
+     - Prix ajusté selon surplus
+   * - **Référence**
+     - 5,000
+     - **3€/mois** (après vote AG)
+     - 218,044€/an
+     - AG décide allocation surplus
 
-**Destination Surplus** : Devs temps plein (60-70%) + R&D PropTech (20-30%) + Réserve (10%)
+**Principe** : Le prix **baisse uniquement par vote démocratique** en Assemblée Générale, pas automatiquement.
+
+**Options de vote AG** (selon surplus disponible):
+1. **Baisse tarifaire** (ex: 5€ → 4€ → 3€) si surplus > 25% pendant 2 trimestres
+2. **Nouvelles features** (vote priorités communauté)
+3. **Amélioration infrastructure** (performance, sécurité)
+4. **R&D PropTech** (IA, IoT, Blockchain)
+5. **Constitution réserve légale** (3-6 mois coûts)
 
 Effet Concret pour les Premiers Participants
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -125,16 +141,25 @@ Effet Concret pour les Premiers Participants
 
 .. code-block:: text
 
-   Année 1 (2026): 1.00€/mois → 12€/an
-   Année 2 (2027): 0.80€/mois → 9.60€/an (500 copros atteintes, -20%)
-     → Email: "Bonne nouvelle! 500 copropriétés utilisent KoproGo, votre tarif baisse à 0.80€/mois"
+   Année 1 (2026): 5€/mois → 60€/an
+     → Devient membre ASBL automatiquement (1 voix AG)
 
-   Année 3 (2028): 0.60€/mois → 7.20€/an (1,000 copros, -40%)
-     → Email: "1,000 copropriétés! Votre tarif passe à 0.60€/mois. Merci d'être parmi les pionniers!"
+   Année 2 (2027): 5€/mois → 60€/an (500 copros, ASBL constituée)
+     → Email: "Bonne nouvelle! 500 copropriétés, l'ASBL est créée. Votre voix compte!"
+     → Participe à l'AG, vote budget et roadmap
 
-   Année 5 (2030): 0.40€/mois → 4.80€/an (5,000 copros, -60%)
-     → Économie vs Année 1: 7.20€/an (60%)
-     → Économie vs SaaS concurrent (50€/mois): 595.20€/an (99.2%)
+   Année 3 (2028): 5€/mois → 60€/an (1,000 copros)
+     → AG vote: surplus 25% → Proposition baisse à 4€
+     → Email: "L'AG a voté: votre tarif passe à 4€/mois. Merci d'être parmi les pionniers!"
+
+   Année 4 (2029): 4€/mois → 48€/an (2,000 copros, -20% vs année 1)
+     → Économie: 12€/an vs début
+     → Vote en AG sur allocation surplus (features vs réserve)
+
+   Année 5 (2030): 3€/mois → 36€/an (5,000 copros, -40% vs année 1)
+     → AG décide nouvelle baisse après consultation communauté
+     → Économie: 24€/an vs début (40%)
+     → **Économie vs SaaS concurrent** (50€/mois): 564€/an (99.4%)
 
 Add-ons Optionnels (prix coûtant + marge raisonnable)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -354,7 +379,7 @@ Structure Juridique Évolutive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-   **Détails complets** : Pour le calendrier détaillé et les jalons de chaque phase, voir :doc:`ROADMAP_INTEGREE_2025_2030` (Section "Évolution Gouvernance et Structure Juridique").
+   **Détails complets** : Pour le calendrier détaillé et les jalons de chaque phase, voir :doc:`ROADMAP_PAR_CAPACITES` (Section "Évolution Gouvernance et Structure Juridique").
 
 KoproGo adopte une **approche progressive** alignée sur la maturité du projet :
 
@@ -530,7 +555,7 @@ Modèle Hybride Cloud + Self-Hosted
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-   **Évolution du modèle** : Avec la tarification échelonnée, le modèle n'est plus un simple 20/80 mais évolue selon le mix client (micro/petit/moyen/grand/XL). Voir :doc:`ROADMAP_INTEGREE_2025_2030` pour les projections détaillées.
+   **Évolution du modèle** : Avec la tarification échelonnée, le modèle n'est plus un simple 20/80 mais évolue selon le mix client (micro/petit/moyen/grand/XL). Voir :doc:`ROADMAP_PAR_CAPACITES` pour les projections détaillées.
 
 **Répartition utilisateurs** (évolue selon la croissance) :
 
@@ -610,7 +635,7 @@ Option 2: Cloud KoproGo (Tarifs Échelonnés) ☁️
 **Grille tarifaire échelonnée selon taille et features**
 
 .. note::
-   **Nouveau modèle de pricing** : À partir de 2025, KoproGo adopte une grille tarifaire échelonnée basée sur la taille de la copropriété et les fonctionnalités activées. Pour le détail complet des paliers et de l'évolution des prix, voir :doc:`ROADMAP_INTEGREE_2025_2030`.
+   **Nouveau modèle de pricing** : À partir de 2025, KoproGo adopte une grille tarifaire échelonnée basée sur la taille de la copropriété et les fonctionnalités activées. Pour le détail complet des paliers et de l'évolution des prix, voir :doc:`ROADMAP_PAR_CAPACITES`.
 
 **Tarifs 2025 (Launch - J2)** :
 
@@ -630,7 +655,7 @@ Cette tarification échelonnée permet de :
 **Quotas et services inclus** (adaptés selon la taille) :
 
 .. note::
-   Les quotas de stockage et utilisateurs évoluent selon le segment (micro/petit/moyen/grand/XL) pour refléter les besoins réels. Voir :doc:`ROADMAP_INTEGREE_2025_2030` pour les détails par segment.
+   Les quotas de stockage et utilisateurs évoluent selon le segment (micro/petit/moyen/grand/XL) pour refléter les besoins réels. Voir :doc:`ROADMAP_PAR_CAPACITES` pour les détails par segment.
 
 .. list-table::
    :header-rows: 1
@@ -702,7 +727,7 @@ Calcul du Prix Coûtant par Segment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note::
-   Pour le calcul détaillé des coûts par palier (Nano/Micro/Petit/Moyen/Grand) incluant compute, SSD chiffré, et S3 backup, voir :doc:`ROADMAP_INTEGREE_2025_2030` (Section "Coûts Infrastructure Réels").
+   Pour le calcul détaillé des coûts par palier (Nano/Micro/Petit/Moyen/Grand) incluant compute, SSD chiffré, et S3 backup, voir :doc:`ROADMAP_PAR_CAPACITES` (Section "Coûts Infrastructure Réels").
 
 **Composantes du coût** (exemple palier Micro, 100 copros) :
 
@@ -930,7 +955,7 @@ Scénario Croissance
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-   **Détails complets** : Pour l'évolution des tarifs par segment (Micro/Petit/Moyen/Grand/XL) et par phase (Beta/Launch/Growth/Scale), voir :doc:`ROADMAP_INTEGREE_2025_2030` (Grille Tarifaire Échelonnée).
+   **Détails complets** : Pour l'évolution des tarifs par segment (Micro/Petit/Moyen/Grand/XL) et par phase (Beta/Launch/Growth/Scale), voir :doc:`ROADMAP_PAR_CAPACITES` (Grille Tarifaire Échelonnée).
 
 **Principe** : Les prix **baissent progressivement** grâce aux économies d'échelle, tout en maintenant une tarification équitable selon la taille.
 
@@ -988,7 +1013,7 @@ Budget Prévisionnel 2025-2030
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-   **Projections détaillées** : Pour les projections financières complètes avec mix client, coûts infrastructure (compute + storage), et évolution des revenus, voir :doc:`ROADMAP_INTEGREE_2025_2030` (Section "Projections Financières Complètes").
+   **Projections détaillées** : Pour les projections financières complètes avec mix client, coûts infrastructure (compute + storage), et évolution des revenus, voir :doc:`ROADMAP_PAR_CAPACITES` (Section "Projections Financières Complètes").
 
 **Hypothèses actualisées**\ :
 
@@ -1040,7 +1065,7 @@ Budget Prévisionnel 2025-2030
      - +10,200€
 
 
-**Réserves cumulées 2030**\ : ~150k€ (détails :doc:`ROADMAP_INTEGREE_2025_2030`)
+**Réserves cumulées 2030**\ : ~150k€ (détails :doc:`ROADMAP_PAR_CAPACITES`)
 
 **Impact économique et écologique 2030** :
 
@@ -1129,7 +1154,7 @@ Impact Écologique
 -----------------
 
 .. note::
-   **Impact complet** : Pour une analyse détaillée de l'impact écologique incluant les features communautaires (SEL, partage objets) et leurs bénéfices carbone (10x l'infrastructure), voir :doc:`ROADMAP_INTEGREE_2025_2030` et :doc:`MISSION`.
+   **Impact complet** : Pour une analyse détaillée de l'impact écologique incluant les features communautaires (SEL, partage objets) et leurs bénéfices carbone (10x l'infrastructure), voir :doc:`ROADMAP_PAR_CAPACITES` et :doc:`MISSION`.
 
 Comparaison Carbone Infrastructure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1682,7 +1707,7 @@ L'Équipe et Évolution Organisationnelle
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. note::
-   **Évolution progressive** : L'équipe évolue avec la maturité du projet (voir :doc:`ROADMAP_INTEGREE_2025_2030`).
+   **Évolution progressive** : L'équipe évolue avec la maturité du projet (voir :doc:`ROADMAP_PAR_CAPACITES`).
 
 **Phase Bootstrap (Nov 2025 - Déc 2026)** : Solo dev bénévole
 
@@ -1753,7 +1778,7 @@ Même si tu préfères continuer avec tes solutions actuelles, tu peux quand mê
 
 **Voir aussi** :
 
-* :doc:`ROADMAP_INTEGREE_2025_2030` - Roadmap stratégique complète avec projections financières détaillées et évolution tarifaire
+* :doc:`ROADMAP_PAR_CAPACITES` - Roadmap stratégique complète avec projections financières détaillées et évolution tarifaire
 * :doc:`VISION` - Vision sociétale et impact écologique
 * :doc:`MISSION` - Mission ASBL et valeurs fondamentales
 * :doc:`GOVERNANCE` - Structure de gouvernance et processus de décision

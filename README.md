@@ -1,6 +1,6 @@
-# 🏢 KoproGo - PropTech 2.0 Platform for Property Management
+# 🏢 KoproGo - Plateforme Communautaire pour l'Habitat Collectif
 
-> Plateforme SaaS de gestion de copropriété construite avec une architecture hexagonale, intégrant IA, IoT, Blockchain et achats groupés d'énergie. Modèle participatif ASBL où chaque nouveau participant réduit le coût pour tous.
+> **Trois façons d'utiliser KoproGo** : Gestion complète de copropriété • Modules communautaires seuls (SEL, partage) • Soutien aux valeurs (écologie, opensource, solidarité)
 
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org)
 [![Actix-web](https://img.shields.io/badge/Actix--web-4.9-blue.svg)](https://actix.rs/)
@@ -21,81 +21,155 @@
 [![Contributors](https://img.shields.io/github/contributors/gilmry/koprogo)](https://github.com/gilmry/koprogo/graphs/contributors)
 
 **Performance validée** (1 vCPU / 2GB RAM) :
-[![Success Rate](https://img.shields.io/badge/Success%20Rate-99.74%25-success)](docs/PERFORMANCE_REPORT.md)
-[![Throughput](https://img.shields.io/badge/Throughput-287%20req%2Fs-blue)](docs/PERFORMANCE_REPORT.md)
-[![P50 Latency](https://img.shields.io/badge/P50-69ms-green)](docs/PERFORMANCE_REPORT.md)
-[![P99 Latency](https://img.shields.io/badge/P99-752ms-yellow)](docs/PERFORMANCE_REPORT.md)
-[![CO2 Impact](https://img.shields.io/badge/CO2-0.12g%2Freq-brightgreen)](docs/PERFORMANCE_REPORT.md)
+[![Success Rate](https://img.shields.io/badge/Success%20Rate-99.74%25-success)](docs/PERFORMANCE_REPORT.rst)
+[![Throughput](https://img.shields.io/badge/Throughput-287%20req%2Fs-blue)](docs/PERFORMANCE_REPORT.rst)
+[![P50 Latency](https://img.shields.io/badge/P50-69ms-green)](docs/PERFORMANCE_REPORT.rst)
+[![P99 Latency](https://img.shields.io/badge/P99-752ms-yellow)](docs/PERFORMANCE_REPORT.rst)
+[![CO2 Impact](https://img.shields.io/badge/CO2-0.12g%2Freq-brightgreen)](docs/PERFORMANCE_REPORT.rst)
 
-## 🎯 Vue d'ensemble
+---
 
-KoproGo est une solution complète de gestion de copropriété construite avec une **architecture hexagonale** (Ports & Adapters) et une approche **Domain-Driven Design (DDD)**. Le projet met l'accent sur la performance, la testabilité, la sécurité, la conformité GDPR, et introduit des **fonctionnalités PropTech 2.0** (IA, IoT, Blockchain, achats groupés d'énergie).
+## 🎯 KoproGo Complète Votre Immeuble
 
-### 💡 Le Modèle Participatif - Économies d'Échelle Inversées
+**KoproGo s'adapte à votre situation** - Vous n'avez pas besoin de tout changer pour bénéficier de KoproGo.
 
-**Principe fondamental**: Contrairement aux SaaS classiques où l'échelle enrichit les actionnaires, chez KoproGo **chaque nouveau participant réduit le coût pour tous**.
+### 🧩 Trois Façons d'Utiliser KoproGo
+
+#### **1. Modules Communautaires Seuls** 🤝 (Le Plus Populaire)
+
+**Gardez votre syndic actuel, ajoutez le lien social :**
+
+- ✅ **SEL** (Système d'Échange Local) : Troquez compétences entre voisins (jardinage, bricolage, cours)
+- ✅ **Partage d'Objets** : Prêtez outils, tondeuse, échelle entre habitants
+- ✅ **Bazar de Troc** : Échangez ou donnez objets inutilisés
+- ✅ **Annuaire Compétences** : Qui sait faire quoi dans l'immeuble ?
+- ✅ **Covoiturage & Garde** : Petites annonces locales
+
+**Installation** : 15 minutes • **Coût** : 0€ (self-hosted) ou 5€/mois (cloud avec support)
+**Compatible avec** : Vilogi, Apronet, tableurs Excel, n'importe quel outil de gestion
+
+**Cas d'usage** : *"Mon immeuble de 30 lots utilise Vilogi pour la gestion officielle. On a installé KoproGo juste pour le SEL et le partage d'objets. Ça marche parfaitement ensemble !"*
+
+---
+
+#### **2. Gestion de Copropriété Complète** 🏗️
+
+**Solution complète pour remplacer vos outils actuels :**
+
+- ✅ **CRUD Complet** : Immeubles, lots, copropriétaires, charges, documents
+- ✅ **Multi-propriété Native** : Quote-parts, contact principal, historique complet
+- ✅ **Multi-rôles** : Syndic, comptable, superadmin, switch instantané
+- ✅ **Workflow Facturation** : TVA belge (6%, 12%, 21%), recouvrement automatisé
+- ✅ **Comptabilité Belge** : PCMN (Plan Comptable Normalisé), AR 12/07/2012
+- ✅ **Conseil de Copropriété** : Obligatoire >20 lots (Article 577-8/4)
+- ✅ **Assemblées Générales** : Convocations, PV, votes électroniques
+
+**Installation** : 20 minutes • **Coût** : 0€ (self-hosted) ou 5€/mois (cloud)
+**Target** : Petites copropriétés (< 50 lots), syndics bénévoles, techniciens autonomes
+
+**Cas d'usage** : *"Petite copro 12 lots, on cherchait une alternative gratuite à Vilogi (200€/mois). Self-hosted KoproGo depuis 6 mois, ça fonctionne parfaitement. Économie : 2,400€/an."*
+
+---
+
+#### **3. Soutien aux Valeurs** 💚 (Sympathisants)
+
+**Soutenez l'écologie, l'opensource, la solidarité sans utiliser les outils :**
+
+- ✅ **Écologie** : 0.12g CO₂/req (96% réduction vs concurrents)
+- ✅ **Opensource** : Code AGPL-3.0, auditable, transparent
+- ✅ **Solidarité** : Fonds de Solidarité pour membres en difficulté
+- ✅ **Démocratie** : 1 membre = 1 voix, prix voté en AG
+- ✅ **ASBL Non-Profit** : Surplus réinvesti dans le projet
+
+**Action** : Devenir membre cotisant (5€/mois) = 1 voix en Assemblée Générale
+**Bonus** : Influencez la roadmap, votez l'allocation du surplus, participez aux décisions
+
+**Cas d'usage** : *"Je n'ai pas de copropriété (locataire), mais je soutiens l'opensource et l'écologie. Je cotise 5€/mois et je vote en AG sur la roadmap. C'est ma façon de contribuer."*
+
+---
+
+## 💡 Le Modèle Démocratique ASBL - Prix Fixe Solidaire
+
+**Principe fondamental** : Contrairement aux SaaS classiques où l'échelle enrichit les actionnaires, chez KoproGo **le prix est fixe et démocratiquement décidé**.
 
 ```
-Plus de participants → Coûts infra dilués → Prix baisse pour tous
-         ↑                                              ↓
-    Attractivité ←── Communauté grandit ←── Économies réelles
+Prix fixe 5€/mois → Surplus réinvesti → AG vote baisse
+         ↑                                        ↓
+    Confiance ←── Communauté grandit ←── Transparence totale
 ```
 
-#### Exemples Concrets d'Économies d'Échelle
+### Coûts Infrastructure Réels (Transparence Totale)
 
-| Copropriétés | Coût serveur/mois | Coût/copro/mois | Économie vs 100 copros |
-|-------------|------------------|-----------------|----------------------|
-| 100 copros  | 95€              | **0.95€**       | Référence            |
-| 500 copros  | 95€              | **0.19€**       | **-80%**             |
-| 2,000 copros| 180€ (scale up)  | **0.09€**       | **-90%**             |
-| 5,000 copros| 270€             | **0.054€**      | **-94%**             |
+| Palier | Copros | Infra/mois | Coût réel/copro | Prix facturé | Surplus/mois |
+|--------|--------|------------|-----------------|--------------|--------------|
+| **Validation** | 100 | 8€ | 0.08€ | **5€** | 492€ |
+| **Viabilité** | 500 | 13€ | 0.03€ | **5€** | 2,487€ |
+| **Impact** | 1,000 | 18€ | 0.02€ | **5€** | 4,982€ |
+| **Leadership** | 2,000 | 29€ | 0.01€ | **5€** | 9,971€ |
+| **Référence** | 5,000 | 163€ | 0.03€ | **5€** | 16,037€ |
 
-#### Redistribution Statutaire (ASBL)
+**Marge : 96-99%** → Surplus réinvesti dans développement, salaires dev, Fonds de Solidarité, ou baisse prix (vote AG)
 
-Au-delà du prix coûtant, KoproGo applique une **grille dégressive** inscrite dans les statuts ASBL:
+### Allocation du Surplus (Votée en AG)
 
-- **0-500 copros**: 1.00€/mois (prix lancement)
-- **500-1,000**: 0.80€/mois (-20% automatique)
-- **1,000-2,000**: 0.60€/mois (-40% automatique)
-- **2,000-5,000**: 0.40€/mois (-60% automatique)
-- **5,000+**: 0.20€/mois (-80% automatique)
+**Exemple AG 2028** (1,500 copros, surplus 72,000€/an) :
 
-**Chaque palier est automatique** dès que le nombre de participants est atteint. Les premiers utilisateurs bénéficient donc de toutes les économies générées par les suivants.
+- **30% Fonds de Solidarité** (21,600€) : Aide financière membres en difficulté
+- **25% Baisse tarifaire** (18,000€) : Prix 5€ → 4€/mois
+- **25% Features prioritaires** (18,000€) : Vote communauté
+- **15% Réserve légale** (10,800€) : Sécurité
+- **5% R&D PropTech** (3,600€) : IA, Blockchain, IoT
 
-#### Impact pour les Premiers Participants
+**Vote AG** (1 membre = 1 voix) : ✅ Adopté 87% pour, 13% abstention
 
-**Julie, syndic, copropriété #47 (rejoint en 2026)**:
-- **Année 1** (100 copros): 1.00€/mois → 12€/an
-- **Année 2** (500 copros): 0.80€/mois → 9.60€/an (**-20%** grâce aux 400 nouveaux)
-- **Année 3** (1,000 copros): 0.60€/mois → 7.20€/an (**-40%** grâce aux 900 nouveaux)
-- **Année 5** (5,000 copros): 0.40€/mois → 4.80€/an (**-60%** grâce aux 4,900 nouveaux)
+### 🤝 Fonds de Solidarité (Nouveau !)
 
-**Économie Julie vs concurrent SaaS (50€/mois)**: 595.20€/an (**99.2%**)
+**Objectif** : Garantir l'accès à la justice et prévenir l'exclusion financière.
 
-### 🗺️ Roadmap
+**Types d'aides** :
+- **Aide Litiges AG** (500-2,000€) : Avocat pour contester vote illégal
+- **Prêts 0% Frais Admin** (jusqu'à 5,000€) : Charges impayées, huissiers
+- **Crédits Travaux Solidaires** (5,000-50,000€) : Quote-part travaux urgents (taux 1-2%)
+- **Subventions Urgence** (max 3,000€) : Précarité extrême, non-remboursable
 
-**📅 [Plan de développement Nov 2025 - Août 2026](docs/ROADMAP.rst)**
+**Impact projeté 2030** : 40-60 personnes aidées/an, 20 litiges évités, 5-8 familles sauvées expulsion
 
-- **Phase 1 - Fondations & Légal** (Nov 2025 - Mar 2026): Conformité légale belge, sécurité production (LUKS, IDS, backups), GDPR complet
-- **Phase 2 - PropTech Innovation + K3s** (Mar - Mai 2026): IA/ML, Blockchain, IoT, Energy Buying Groups + K3s deployment
-- **Phase 3 - Scale, K8s & MLOps** (Jun - Août 2026): K8s multi-node, MLOps (Kubeflow, MLflow), Mobile Flutter, Performance P99 < 5ms
-- **Phase 4 - Ecosystem** (Sep 2026+): Multi-region, Marketplace, Partnerships
+📖 **[Documentation complète](docs/FONDS_SOLIDARITE.rst)**
+
+---
+
+## 🗺️ Roadmap par Capacités
+
+**🗺️ [Roadmap complète par jalons](docs/ROADMAP_PAR_CAPACITES.rst)**
+
+**Philosophie** : KoproGo progresse par **jalons de capacités**, pas par dates fixes. Chaque jalon débloque le suivant quand les fonctionnalités sont validées.
+
+- **Jalon 0** ✅ : 10-20 early adopters (Architecture hexagonale, 73 endpoints API)
+- **Jalon 1** : 50-100 copros (LUKS, backups GPG, GDPR basique)
+- **Jalon 2** : 200-500 copros (Facturation TVA, recouvrement, K3s)
+- **Jalon 3** : 500-1,000 copros (IA, Blockchain, IoT → Constitution ASBL)
+- **Jalons 4-5** : 1,000-5,000 copros (Mobile app, API publique, K8s)
+- **Jalons 6-7** : 5,000+ copros (PropTech 2.0 complet, multi-région)
 
 Projets GitHub: [Software (#2)](https://github.com/users/gilmry/projects/2) | [Infrastructure (#3)](https://github.com/users/gilmry/projects/3)
 
-### 📚 Documentation
+---
+
+## 📚 Documentation
 
 **Documentation complète disponible sur [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)**
 - Documentation Sphinx (guides, architecture, déploiement)
 - Documentation Rust API (documentation technique du backend)
-- [Guide de documentation complète](docs/README.md)
+- [Index de la documentation](docs/index.rst)
 
-### ✨ Caractéristiques Principales
+---
 
-#### Core Features
+## ✨ Caractéristiques Principales
+
+### Core Features
 - ⚡ **Performance Prouvée** : 99.74% uptime, 287 req/s sur 1 vCPU, P50=69ms, P99=752ms
-- 🌱 **Ultra-Écologique** : 0.12g CO₂/requête (7-25x mieux que la concurrence)
-- 💰 **Modèle Participatif** : 0.40-1€/copro/mois dégressif (vs 50€ concurrents), self-hosted gratuit
+- 🌱 **Ultra-Écologique** : 0.12g CO₂/requête (7-25x mieux que alternatives)
+- 💰 **Prix Fixe Démocratique** : 5€/mois cloud, self-hosted 0€, baisse par vote AG
 - 🏗️ **Architecture Hexagonale** : Séparation stricte des couches (Domain, Application, Infrastructure)
 - 🧪 **Tests Complets** : Unitaires, Intégration, BDD (Cucumber), E2E, Load tests
 - 🧑‍🤝‍🧑 **Multi-propriété native** : quote-parts cumulées, contact principal, historique complet
@@ -104,50 +178,69 @@ Projets GitHub: [Software (#2)](https://github.com/users/gilmry/projects/2) | [I
 - 🛡️ **GDPR Compliant** : Articles 15, 16, 17 implémentés, audit logging complet
 - 📦 **Stack Moderne** : Rust + Actix-web + Astro + Svelte + PostgreSQL 15
 
-#### 🚀 PropTech 2.0 Features (Phase 2 - Mar-Mai 2026)
+### 🤝 Modules Communautaires (Standalone)
+
+**Utilisables sans changer votre gestion actuelle :**
+
+- ✅ **SEL** (Système d'Échange Local) : Échange de compétences entre voisins
+- ✅ **Partage d'Objets** : Prêt d'outils, tondeuse, échelle
+- ✅ **Bazar de Troc** : Échange/don d'objets inutilisés
+- ✅ **Annuaire Compétences** : Qui sait faire quoi ?
+- ✅ **Covoiturage & Garde** : Petites annonces locales
+- ✅ **Tableau d'affichage numérique** : Communication résidents
+
+**Impact social** (30% adoption, 5,000 copros) :
+- 750k€ économie circulaire (SEL)
+- 600k€ consommation évitée (partage)
+- 12,000 objets partagés
+- -790 tonnes CO₂/an (partage + réduction consommation)
+
+### 🚀 PropTech 2.0 Features (Jalons 3-7)
 
 **🤖 Intelligence Artificielle Éthique**
 - **Assistant conversationnel** pour syndics (réponses FAQ, aide calculs)
 - **OCR automatique** factures et PV d'assemblée générale
 - **Prévisions budget** par machine learning sur historique charges
 - **Maintenance prédictive** (alertes équipements avant panne)
-- **Éthique**: Code open source, GDPR strict, Comité d'Éthique IA, pas de surveillance
+- **Éthique** : Code open source, GDPR strict, Comité d'Éthique IA, pas de surveillance
 
 **🔗 Blockchain & Transparence Radicale**
 - **Votes AG immuables** sur blockchain (Polygon/Avalanche, Layer 2 écologique)
 - **Smart contracts** pour décisions automatiques approuvées en AG
 - **Audit trail complet** et vérifiable publiquement
-- **Pas de crypto-spéculation**: Technologie au service de la gouvernance uniquement
-- **Interface simplifiée**: Aucune connaissance crypto requise
+- **Pas de crypto-spéculation** : Technologie au service de la gouvernance uniquement
+- **Interface simplifiée** : Aucune connaissance crypto requise
 
 **📡 IoT & Smart Buildings**
-- **Capteurs intelligents**: eau, électricité, gaz, température, humidité
-- **DPE automatisé**: diagnostic performance énergétique en temps réel
+- **Capteurs intelligents** : eau, électricité, gaz, température, humidité
+- **DPE automatisé** : diagnostic performance énergétique en temps réel
 - **Monitoring temps réel** consommations et anomalies
-- **Alertes automatiques**: fuites, surconsommations, pannes équipements
-- **ROI 24 mois**: économies énergétiques -15 à -25%
+- **Alertes automatiques** : fuites, surconsommations, pannes équipements
+- **ROI 24 mois** : économies énergétiques -15 à -25%
 
 **⚡ Achats Groupés Énergie**
-- **Plateforme neutre** d'orchestration (pas de concurrent, rôle facilitateur)
-- **Intégration partenaires**: Energie2030, Wikipower, et autres fournisseurs
-- **Gouvernance démocratique**: vote AG obligatoire avant adhésion
-- **GDPR opt-in individuel**: consentement explicite de chaque copropriétaire
-- **Modèle 0€**: mission ASBL, aucune commission sur contrats
-- **Économies cibles**: -20% facture énergie via pouvoir négociation collectif
+- **Plateforme neutre** d'orchestration (rôle facilitateur)
+- **Intégration partenaires** : Energie2030, Wikipower, autres fournisseurs
+- **Gouvernance démocratique** : vote AG obligatoire avant adhésion
+- **GDPR opt-in individuel** : consentement explicite de chaque copropriétaire
+- **Modèle 0€** : mission ASBL, aucune commission sur contrats
+- **Économies cibles** : -20% facture énergie via pouvoir négociation collectif
 
-#### 💶 Add-ons Optionnels (Prix Coûtant)
+### 💶 Tarification Transparente
 
-**Tarif base** (inclus):
-- Self-hosted: **0€** (toujours gratuit)
-- Cloud géré: **0.40-1€/mois** selon palier dégressif
+**Tarif base** (inclus) :
+- **Self-hosted** : **0€** (toujours gratuit, accès code source)
+- **Cloud géré** : **5€/mois** fixe (baisse démocratique par vote AG)
 
-**Add-ons PropTech** (optionnels):
-- **AI Assistant Pack**: +2€/mois (chatbot, OCR, prévisions ML)
-- **IoT Sensors**: Hardware 15-45€/capteur + 1€/mois/capteur service
-- **Blockchain Voting**: +1€/mois (50 votes/mois inclus ≈ 2 AG/an)
-- **Energy Buying Groups**: **0€** (mission ASBL, financé par partenariats)
+**Add-ons PropTech** (optionnels, prix coûtant) :
+- **AI Assistant Pack** : +2€/mois (chatbot, OCR, prévisions ML)
+- **IoT Sensors** : Hardware 15-45€/capteur + 1€/mois/capteur service
+- **Blockchain Voting** : +1€/mois (50 votes/mois inclus ≈ 2 AG/an)
+- **Energy Buying Groups** : **0€** (mission ASBL, financé par partenariats)
 
-**Mutualisation**: 1 GPU IA sert 5,000 copros = 0.01€/copro/mois coût réel. L'add-on +2€ finance la R&D modèles.
+**Mutualisation** : 1 GPU IA sert 5,000 copros = 0.01€/copro/mois coût réel. L'add-on +2€ finance la R&D modèles et rémunération dev.
+
+---
 
 ## 📁 Structure du Projet
 
@@ -190,13 +283,15 @@ koprogo/
 │   ├── VISION.rst
 │   ├── MISSION.rst
 │   ├── ECONOMIC_MODEL.rst
-│   ├── ROADMAP.rst
+│   ├── FONDS_SOLIDARITE.rst
 │   └── ...
 │
 ├── docker-compose.yml        # Environnement de développement
 ├── Makefile                  # Commandes utilitaires
 └── README.md
 ```
+
+---
 
 ## 🏗️ Architecture Hexagonale
 
@@ -226,51 +321,7 @@ koprogo/
 2. **Application** → Dépend uniquement du Domain
 3. **Infrastructure** → Implémente les ports définis par Application
 
-### Exemple : Building Aggregate
-
-```rust
-// Domain Layer - Entité métier pure
-pub struct Building {
-    pub id: Uuid,
-    pub name: String,
-    pub address: String,
-    pub total_units: i32,
-    // ... invariants métier
-}
-
-impl Building {
-    pub fn new(name: String, address: String, ...) -> Result<Self, String> {
-        // Validation des invariants
-        if name.is_empty() {
-            return Err("Building name cannot be empty".to_string());
-        }
-        // Création sécurisée
-        Ok(Self { ... })
-    }
-}
-
-// Application Layer - Port (interface)
-#[async_trait]
-pub trait BuildingRepository: Send + Sync {
-    async fn create(&self, building: &Building) -> Result<Building, String>;
-    async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String>;
-}
-
-// Infrastructure Layer - Adapter PostgreSQL
-pub struct PostgresBuildingRepository {
-    pool: DbPool,
-}
-
-#[async_trait]
-impl BuildingRepository for PostgresBuildingRepository {
-    async fn create(&self, building: &Building) -> Result<Building, String> {
-        sqlx::query("INSERT INTO buildings ...")
-            .execute(&self.pool)
-            .await?;
-        Ok(building.clone())
-    }
-}
-```
+---
 
 ## 🚀 Démarrage Rapide
 
@@ -314,6 +365,8 @@ npm run dev
 - 🔌 **API** : http://localhost:8080/api/v1
 - ❤️ **Health Check** : http://localhost:8080/api/v1/health
 
+---
+
 ## 🧪 Tests
 
 KoproGo dispose d'une suite de tests complète suivant la pyramide de tests :
@@ -326,19 +379,6 @@ cargo test --lib
 
 # Tests avec coverage
 make coverage
-```
-
-Les tests unitaires sont intégrés directement dans les modules du domaine :
-
-```rust
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_create_building_success() { ... }
-
-    #[test]
-    fn test_create_building_validation_fails() { ... }
-}
 ```
 
 ### Tests d'Intégration
@@ -359,16 +399,6 @@ cargo test --test bdd
 
 # Ou
 make test-bdd
-```
-
-Exemple de feature Gherkin :
-
-```gherkin
-Feature: Building Management
-  Scenario: Create a new building
-    Given a coproperty management system
-    When I create a building named "Résidence Les Jardins" in "Paris"
-    Then the building should be created successfully
 ```
 
 ### Tests E2E (End-to-End)
@@ -397,68 +427,9 @@ make bench
 ```
 
 **Résultats validés** : 99.74% success rate, 287 req/s, P50=69ms sur 1 vCPU
-→ Voir [docs/PERFORMANCE_REPORT.md](docs/PERFORMANCE_REPORT.md) pour détails complets
+→ Voir [docs/PERFORMANCE_REPORT.rst](docs/PERFORMANCE_REPORT.rst) pour détails complets
 
-## 🔄 CI/CD Pipelines
-
-KoproGo dispose d'une infrastructure CI/CD complète avec GitHub Actions pour garantir la qualité du code et automatiser les déploiements.
-
-### Workflows Automatiques
-
-#### 🚀 CI Pipeline (`.github/workflows/ci.yml`)
-Se déclenche automatiquement sur chaque push et pull request :
-
-**Tests Backend Rust :**
-- ✅ **Lint & Format** : `cargo fmt --check` + `cargo clippy`
-- ✅ **Unit Tests** : Tests unitaires isolés (`cargo test --lib`)
-- ✅ **Integration Tests** : Tests avec PostgreSQL et migrations
-- ✅ **BDD Tests** : Tests Cucumber/Gherkin
-- ✅ **E2E Tests** : Tests complets des endpoints API
-
-**Tests Frontend :**
-- ✅ **TypeScript Check** : Vérification Astro (`astro check`)
-- ✅ **Build** : Compilation du frontend
-- ✅ **Format Check** : Validation Prettier
-
-**Build Final :**
-- ✅ **Release Build** : Compilation optimisée
-- ✅ **Artifacts** : Upload du binaire (7 jours de rétention)
-
-#### 🔒 Security Audit (`.github/workflows/security.yml`)
-Analyse de sécurité automatique :
-
-- 🛡️ **Cargo Audit** : Scan des vulnérabilités Rust
-- 🛡️ **NPM Audit** : Scan des vulnérabilités JavaScript
-- 🛡️ **Dependency Review** : Analyse des dépendances dans les PR
-- 📅 **Planification** : Hebdomadaire (dimanche minuit)
-
-#### 📊 Benchmarks (`.github/workflows/benchmarks.yml`)
-Tests de performance :
-
-- ⚡ **Criterion Benchmarks** : Mesure des performances
-- 📈 **Rapports HTML** : Visualisations détaillées
-- 📦 **Artifacts** : Résultats conservés 30 jours
-- 🎯 **Déclenchement** : Manuel ou planifié (lundi 2h UTC)
-
-### Optimisations
-
-- **Caching** : Cache intelligent de Cargo (registry, index, build) et NPM
-- **Parallélisation** : Tous les tests s'exécutent en parallèle
-- **Services PostgreSQL** : Configuration automatique pour les tests
-- **Migrations** : Application automatique via SQLx
-
-### Surveiller les Workflows
-
-```bash
-# Via GitHub CLI
-gh run list --workflow=ci.yml
-gh run watch
-
-# Ou visitez directement
-# https://github.com/gilmry/koprogo/actions
-```
-
-Voir [.github/workflows/README.md](.github/workflows/README.md) pour la documentation complète.
+---
 
 ## 📊 Performances Validées (Load Tests Production)
 
@@ -473,62 +444,27 @@ Voir [.github/workflows/README.md](.github/workflows/README.md) pour la document
 | **Latence P50** | 69ms | Médiane |
 | **Latence P90** | 130ms | 90e percentile |
 | **Latence P99** | 752ms | Requêtes POST lourdes |
-| **CO₂ Impact** | **0.12g/req** | **7-25x mieux que concurrents** |
+| **CO₂ Impact** | **0.12g/req** | **7-25x mieux que alternatives** |
 | **RAM** | 128MB max | Sans swap |
 | **CPU** | 8% moyen | Pic à 25% |
 
-### Capacité & Économie
+**📈 Rapport détaillé** : [docs/PERFORMANCE_REPORT.rst](docs/PERFORMANCE_REPORT.rst)
 
-**Infrastructure Tier 1** (95€/mois OVH Cloud VPS) :
-- **Capacité** : 1,000-1,500 copropriétés
-- **Pricing ASBL** : 0.60€/copro/mois (palier 1k-2k)
-- **Revenu** : 720€/mois (1,200 copros × 0.60€)
-- **Coûts** : 95€ infra + 25€ divers = 120€/mois
-- **Surplus** : 600€/mois → Réinvesti (vote AG)
-
-**Comparaison CO₂** (par requête) :
-- KoproGo (OVH France) : **0.12g CO₂** ⭐
-- SaaS cloud Europe (AWS/Azure) : 0.8-1.2g CO₂ (7-10x plus)
-- SaaS cloud US (AWS/Azure) : 1.5-2g CO₂ (12-17x plus)
-- Solutions legacy on-premise : 2-3g CO₂ (17-25x plus)
-
-**Avantage France** : Mix énergétique ultra-bas carbone (60g CO₂/kWh grâce au nucléaire + renouvelables) vs 350g en Allemagne, 400g+ aux USA. L'hébergement OVH France divise les émissions serveur par **5.8x**.
-
-### Optimisations Appliquées
-
-- Rust natif avec compilation LTO (`opt-level=3`)
-- Infrastructure OVH Cloud (datacenter européen)
-- Connection pooling PostgreSQL (max 10 connections)
-- Async/await non-blocking (Tokio runtime)
-- Indexes PostgreSQL optimisés
-- Minimal allocations dans hot paths
-
-### Monitoring Production
-
-Ressources pendant le test (45,070 requêtes en 3 minutes) :
-```
-CPU Usage:     8% average, 25% peak
-RAM Usage:     128MB/2GB (6.3%)
-Disk I/O:      Minimal
-PostgreSQL:    < 10 connections, queries < 5ms
-Network:       1.06MB/s transfer
-```
-
-**📈 Rapport détaillé** : [docs/PERFORMANCE_REPORT.md](docs/PERFORMANCE_REPORT.md)
+---
 
 ## 🔒 Sécurité & Conformité
 
 ### Production Security (Phase 1 - Implémenté)
 
-- ✅ **LUKS Encryption at Rest**: Full-disk encryption PostgreSQL + uploads (AES-XTS-512)
-- ✅ **Encrypted Backups**: Daily GPG-encrypted backups + S3 off-site (7d local, configurable S3 lifecycle)
-- ✅ **Monitoring Stack**: Prometheus + Grafana + Loki + Alertmanager (30d metrics, 7d logs)
-- ✅ **Intrusion Detection**: Suricata IDS avec règles SQL injection, XSS, path traversal
-- ✅ **WAF Protection**: CrowdSec community threat intelligence
-- ✅ **fail2ban**: Jails SSH, Traefik, API abuse, PostgreSQL brute-force
-- ✅ **SSH Hardening**: Key-only, modern ciphers, reduced attack surface
-- ✅ **Kernel Hardening**: sysctl security (SYN cookies, IP spoofing protection, ASLR)
-- ✅ **Security Auditing**: Lynis (weekly), rkhunter (daily), AIDE file integrity
+- ✅ **LUKS Encryption at Rest** : Full-disk encryption PostgreSQL + uploads (AES-XTS-512)
+- ✅ **Encrypted Backups** : Daily GPG-encrypted backups + S3 off-site (7d local, configurable S3 lifecycle)
+- ✅ **Monitoring Stack** : Prometheus + Grafana + Loki + Alertmanager (30d metrics, 7d logs)
+- ✅ **Intrusion Detection** : Suricata IDS avec règles SQL injection, XSS, path traversal
+- ✅ **WAF Protection** : CrowdSec community threat intelligence
+- ✅ **fail2ban** : Jails SSH, Traefik, API abuse, PostgreSQL brute-force
+- ✅ **SSH Hardening** : Key-only, modern ciphers, reduced attack surface
+- ✅ **Kernel Hardening** : sysctl security (SYN cookies, IP spoofing protection, ASLR)
+- ✅ **Security Auditing** : Lynis (weekly), rkhunter (daily), AIDE file integrity
 
 **Documentation** : [infrastructure/SECURITY.md](infrastructure/SECURITY.md)
 
@@ -541,12 +477,7 @@ Network:       1.06MB/s transfer
 - ✅ Consentement explicite
 - 🔄 Articles 18, 21 en cours (Phase 1)
 
-### ISO 27001 (en préparation)
-
-- 🔐 Authentification forte (MFA prévu Phase 2)
-- 🔒 TLS 1.3 obligatoire
-- 📝 Journalisation des accès
-- 🛡️ Tests de sécurité réguliers
+---
 
 ## 📖 API Documentation
 
@@ -599,196 +530,36 @@ GET    /api/v1/board/decisions     # Décisions conseil
 GET    /api/v1/board/dashboard     # Dashboard conseil
 ```
 
-### Exemple de Requête
-
-```bash
-# Créer un immeuble
-curl -X POST http://localhost:8080/api/v1/buildings \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Résidence Les Jardins",
-    "address": "123 Rue de la Paix",
-    "city": "Paris",
-    "postal_code": "75001",
-    "country": "France",
-    "total_units": 50,
-    "construction_year": 1985
-  }'
-```
-
-## 🐳 Docker
-
-### Développement
-
-```bash
-# Démarrer tous les services
-docker-compose up
-
-# Voir les logs
-docker-compose logs -f
-
-# Arrêter
-docker-compose down
-```
-
-### Production
-
-Déploiement via **Infrastructure as Code** :
-- **VPS (Phase 1)**: Terraform + Ansible + Docker Compose + GitOps
-- **K3s (Phase 2)**: K3s + ArgoCD + Traefik
-- **K8s (Phase 3)**: Multi-node K8s + HA PostgreSQL (Patroni) + HPA
-
-Voir [infrastructure/README.md](infrastructure/README.md)
-
-## 🛠️ Commandes Utiles
-
-```bash
-# Makefile helpers
-make help              # Afficher l'aide
-make dev               # Démarrer en mode dev
-make test              # Tous les tests
-make test-unit         # Tests unitaires uniquement
-make test-integration  # Tests d'intégration
-make test-bdd          # Tests BDD
-make test-e2e          # Tests E2E
-make bench             # Benchmarks
-make coverage          # Coverage report
-make lint              # Linters
-make format            # Formatter le code
-make install-hooks     # Installer hooks Git (pre-commit, pre-push)
-make build             # Build release
-make docker-up         # Démarrer Docker
-make docker-down       # Arrêter Docker
-make migrate           # Lancer migrations
-```
-
-## 🗺️ Roadmap Détaillée
-
-### Phase 1 - Fondations & Légal ✅ (Nov 2025 - Mar 2026)
-
-**Infrastructure**:
-- [x] Docker Compose production avec Traefik
-- [x] GitOps auto-deploy (systemd service)
-- [x] LUKS encryption at rest
-- [x] Encrypted backups (GPG + S3)
-- [x] Monitoring stack (Prometheus, Grafana, Loki)
-- [x] IDS/WAF (Suricata, CrowdSec, fail2ban)
-- [x] SSH & kernel hardening
-
-**Software - Conformité Légale Belge**:
-- [ ] #016: Plan Comptable Normalisé Belge (AR 12/07/2012)
-- [ ] #017: État Daté génération (Article 577-2)
-- [x] #022: Conseil de Copropriété (Article 577-8/4 - >20 lots)
-- [ ] #018: Budget prévisionnel annuel
-- [ ] #023: Workflow recouvrement automatisé
-
-**GDPR**:
-- [x] Articles 15, 17 (accès, effacement)
-- [ ] Articles 16, 18, 21 (rectification, limitation, opposition)
-
-### Phase 2 - PropTech Innovation + K3s 🚧 (Mar - Mai 2026)
-
-**Infrastructure K3s**:
-- [ ] Terraform: K3s cluster 1-node OVH
-- [ ] ArgoCD GitOps deployment
-- [ ] Traefik ingress controller
-- [ ] Cert-manager (Let's Encrypt)
-
-**PropTech Features** (10 nouvelles issues):
-
-**🤖 Intelligence Artificielle** (4 issues, 136h):
-- [ ] #100: AI Chatbot Assistant (syndics 24/7) - 40h
-- [ ] #101: OCR Documents (factures, PV AG) - 32h
-- [ ] #102: ML Budget Forecasting (prévisions charges) - 24h
-- [ ] #103: Predictive Maintenance (alertes équipements) - 24h
-- [ ] #111: AI Dashboard Analytics - 16h
-
-**🔗 Blockchain & Gouvernance** (3 issues, 88h):
-- [ ] #104: Blockchain Voting (Polygon Layer 2) - 40h
-- [ ] #105: Smart Contracts AG (décisions automatiques) - 32h
-- [ ] #106: Immutable Audit Trail (timestamping) - 16h
-
-**📡 IoT & Énergie** (3 issues, 112h):
-- [ ] #107: IoT Sensors Integration (MQTT broker) - 40h
-- [ ] #108: Energy Monitoring Dashboard (temps réel) - 24h
-- [ ] #109: Energy Buying Groups Platform (orchestration) - 48h
-
-**Software - Automation**:
-- [ ] #046: Electronic Voting System (AG online)
-- [ ] #047: Extended PDF Generation (PCN, états datés)
-- [ ] #049: Community Features (SEL, prêt objets)
-- [ ] #052: Contractor Backoffice (prestataires)
-
-### Phase 3 - Scale, K8s & MLOps 🎯 (Jun - Août 2026)
-
-**Infrastructure K8s**:
-- [ ] Terraform: Multi-node K8s cluster (3+ nodes)
-- [ ] PostgreSQL HA (Patroni ou CloudNativePG operator)
-- [ ] Redis/Valkey distributed cache
-- [ ] Horizontal Pod Autoscaling (HPA)
-- [ ] Network policies (sécurité inter-pods)
-
-**MLOps Pipeline** (nouveauté):
-- [ ] Kubeflow pipelines (training modèles IA)
-- [ ] MLflow (versioning modèles, experiments tracking)
-- [ ] Model serving (KServe ou Seldon Core)
-- [ ] GPU nodes (NVIDIA operator)
-- [ ] Distributed training (PyTorch DDP)
-- [ ] A/B testing modèles IA
-- [ ] Monitoring drift (Evidently AI)
-
-**Performance**:
-- [ ] P99 latency < 5ms (objectif)
-- [ ] Cache distribué (Redis/Valkey)
-- [ ] Query optimization PostgreSQL
-- [ ] CDN pour assets frontend
-
-**Mobile**:
-- [ ] Application Flutter (iOS/Android)
-- [ ] Push notifications
-- [ ] Offline mode sync
-
-**Analytics**:
-- [ ] Real-time dashboards (websockets)
-- [ ] Distributed tracing (Jaeger/Tempo)
-- [ ] Advanced reporting
-
-### Phase 4 - Ecosystem 🌍 (Sep 2026+)
-
-- [ ] Multi-region deployment (Europe, expansion internationale)
-- [ ] Marketplace add-ons (plugins tiers)
-- [ ] Partner integrations (comptables, assureurs, syndics professionnels)
-- [ ] API publique pour développeurs
-- [ ] Community features avancées (SEL, événements voisins)
-- [ ] White-label solutions
-
-**Objectif Phase 4**: 10,000 copropriétés → Prix 0.10€/mois (-90% vs lancement)
+---
 
 ## 📚 Documentation Complète
 
 Documentation complète disponible dans le dossier `docs/` :
 
 ### Stratégie & Vision
-- **[Vision](docs/VISION.rst)** ⭐ - Vision technologie au service du bien commun + Modèle participatif économies d'échelle
+- **[Vision](docs/VISION.rst)** ⭐ - Vision technologie au service du bien commun + Modèle démocratique ASBL
 - **[Mission](docs/MISSION.rst)** ⭐ - 7 piliers mission ASBL incluant IA éthique, Blockchain, IoT/Énergie
-- **[Modèle Économique](docs/ECONOMIC_MODEL.rst)** ⭐⭐ - Modèle ASBL prix coûtant, grille dégressive, transparence comptable (RECOMMANDÉ)
-- **[Gouvernance](GOVERNANCE.md)** - Structure ASBL, processus décision, Comité d'Éthique IA
-- **[Roadmap Intégrée](docs/ROADMAP.rst)** ⭐ - Plan détaillé 4 phases Nov 2025 - Août 2026
+- **[Modèle Économique](docs/ECONOMIC_MODEL.rst)** ⭐⭐ - Prix fixe 5€/mois, transparence comptable, démocratie AG (RECOMMANDÉ)
+- **[Fonds de Solidarité](docs/FONDS_SOLIDARITE.rst)** 🆕 - Aide financière membres en difficulté (litiges, prêts 0%, travaux)
+- **[Gouvernance](docs/GOVERNANCE.rst)** - Structure ASBL évolutive par jalons, processus décision, Comité d'Éthique IA
+- **[Roadmap par Capacités](docs/ROADMAP_PAR_CAPACITES.rst)** ⭐ - Progression par jalons de capacités (pas de dates fixes)
 
 ### Performance & Tests de Charge
-- **[Performance Report](docs/PERFORMANCE_REPORT.md)** ⭐ - Tests charge production : 99.74% success, 287 req/s, 0.12g CO₂/req
-- **[Infrastructure Roadmap](docs/INFRASTRUCTURE_ROADMAP.md)** - Évolution VPS → K3s → K8s
+- **[Performance Report](docs/PERFORMANCE_REPORT.rst)** ⭐ - Tests charge production : 99.74% success, 287 req/s, 0.12g CO₂/req
+- **[Infrastructure Costs](docs/INFRASTRUCTURE_COST_SIMULATIONS_2025.rst)** - Simulations coûts infrastructure 2025-2030
 
 ### Guides Techniques
 - **[CLAUDE.md](CLAUDE.md)** - Instructions développeurs (Architecture hexagonale, TDD, Commandes)
 - **[Multi-owner Support](docs/MULTI_OWNER_SUPPORT.md)** - Fonctionnement quotes-parts et API multi-copropriétaires
 - **[Multi-role Support](docs/MULTI_ROLE_SUPPORT.md)** - Gestion utilisateurs multi-rôles
-- **[VPS Deployment](docs/VPS_DEPLOYMENT.md)** - Déploiement VPS low-cost
+- **[Deployment Guide](docs/deployment/index.rst)** - Déploiement (Terraform, Ansible, GitOps)
 - **[Security](infrastructure/SECURITY.md)** - Sécurité production (LUKS, IDS, WAF, backups)
 
 ### Monitoring & Opérations
 - **[Monitoring Guide](monitoring/README.md)** - Scripts monitoring VPS (RAM, CPU, PostgreSQL, capacité)
 - **[Capacity Calculator](monitoring/scripts/capacity_calculator.sh)** - Estimation nombre copropriétés supportées
+
+---
 
 ## 📝 Contribuer
 
@@ -799,15 +570,15 @@ Le guide [CONTRIBUTING.md](CONTRIBUTING.md) détaille les conventions de branche
 ### Modèle Participatif
 
 **Vos contributions ont de la valeur** :
-- Contributeur code/docs/traductions: **-50%** tarif cloud
-- Mainteneur actif: **100% gratuit** à vie
+- Contributeur code/docs/traductions : **-50%** tarif cloud
+- Mainteneur actif : **100% gratuit** à vie
 - Plus de contributeurs = Meilleur produit = Bénéfice pour tous
 
 ### Gouvernance ASBL
 
-KoproGo est organisé en **ASBL (Association Sans But Lucratif)** belge garantissant transparence et démocratie. Consultez [GOVERNANCE.md](GOVERNANCE.md) pour comprendre :
-- Structure de l'ASBL (création prévue mi-2027)
-- Processus de décision (CA + AG + communauté)
+KoproGo est organisé en **ASBL (Association Sans But Lucratif)** belge garantissant transparence et démocratie. Consultez [docs/GOVERNANCE.rst](docs/GOVERNANCE.rst) pour comprendre :
+- Structure de l'ASBL (constitution déclenchée au Jalon 3 : 500-1,000 copros)
+- Processus de décision démocratique (CA + AG + communauté, 1 membre = 1 vote)
 - Comment devenir membre ou mainteneur
 - Modèle économique participatif et transparence financière
 - Comité d'Éthique IA (audit algorithmes, prévention biais)
@@ -824,10 +595,12 @@ KoproGo est organisé en **ASBL (Association Sans But Lucratif)** belge garantis
 
 ### Obtenir de l'Aide
 
-- 📚 **Documentation**: [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/gilmry/koprogo/discussions)
-- 🐛 **Bugs**: [Créer une issue](https://github.com/gilmry/koprogo/issues/new/choose)
-- 🔒 **Sécurité**: Voir [SECURITY.md](SECURITY.md)
+- 📚 **Documentation** : [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)
+- 💬 **Discussions** : [GitHub Discussions](https://github.com/gilmry/koprogo/discussions)
+- 🐛 **Bugs** : [Créer une issue](https://github.com/gilmry/koprogo/issues/new/choose)
+- 🔒 **Sécurité** : Voir [SECURITY.md](SECURITY.md)
+
+---
 
 ## 📄 Licence
 
@@ -835,9 +608,16 @@ Ce projet est sous licence AGPL 3.0 (GNU Affero General Public License v3.0). Vo
 
 Cette licence copyleft forte garantit que toute modification du code source, y compris les versions utilisées pour fournir des services réseau, doit être rendue disponible sous la même licence.
 
-## 👥 Auteurs
+---
 
-- **L'équipe Koprogo ASBL** - *contact@koprogo.com*
+## 👥 Auteur
+
+- **Gilles Maury** - Fondateur KoproGo ASBL - *contact@koprogo.com*
+  - 25 ans d'expérience en informatique
+  - Admirateur de la cause libre et des modèles économiques démocratiques, sociaux et solidaires résilients
+  - 🔍 **Recrute** : Co-fondateur(trice) Product avec expertise syndic/copropriété
+
+---
 
 ## 🙏 Remerciements
 
@@ -850,6 +630,8 @@ Cette licence copyleft forte garantit que toute modification du code source, y c
 
 ---
 
-**KoproGo** - PropTech 2.0 pour une gestion de copropriété moderne, participative, performante et écologique 🌱
+**KoproGo** - Complète votre immeuble : Gestion • Communauté • Valeurs 🌱
 
-**Rejoignez le mouvement** : Plus nous sommes nombreux, moins chacun paie. C'est mathématique. 🔄
+**L'engouement est notre moteur** : Gestion performante + Modules communautaires + Valeurs partagées = Croissance organique et durable 🔄
+
+**Rejoignez le mouvement** : Prenez ce qui vous manque, gardez ce qui marche. C'est flexible, c'est ouvert, c'est ensemble. 🤝

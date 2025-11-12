@@ -7,6 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Strategic Documentation Transformation & Solidarity Fund (2025-11-13)
+
+**Complete repositioning of KoproGo messaging from confrontational to collaborative, with introduction of comprehensive Solidarity Fund mechanism.**
+
+#### Documentation - Strategic Vision
+
+- **NEW: FONDS_SOLIDARITE.rst** (13,000+ words) - Comprehensive solidarity fund documentation
+  - Four aid types: Litigation support (500-2,000€), 0% admin loans (up to 5,000€), Solidarity work credits (5,000-50,000€ at 1-2%), Emergency grants (max 3,000€)
+  - Democratic governance with Solidarity Committee (5-7 members)
+  - Financing model: 30% of surplus (44,772€/year at 5,000 coops)
+  - Revolving effect projections: Capital grows from 44k€ to ~200k€ by year 5
+  - Impact projections: 40-60 people helped annually at 5,000 coops
+  - Concrete examples: Marie (facade litigation), Ahmed (unpaid charges), Sofiane (urgent roof work), Fatima (extreme precarity)
+  - Added to Sphinx documentation index under "Vision & Stratégie"
+
+- **VISION.rst** - Removed divisive language, added collaborative messaging
+  - Changed competitive comparison section from "Vilogi/Apronet: 50-500€ vs KoproGo: 5€" to neutral "Notre approche"
+  - Added Solidarity Fund to impact section (40-60 copropriétaires aidés/an)
+  - Emphasized compatibility with existing tools ("utilisez en complément")
+  - Updated infrastructure costs with mutualized pricing (7-163€/month for 500-5,000 coops)
+  - Added note about unmeasured group purchasing savings potential
+
+- **MISSION.rst** - Fixed pricing consistency & integrated solidarity mechanisms
+  - **BREAKING**: Corrected cloud pricing from variable "1.50-8€/mois selon taille" to fixed **5€/month** everywhere
+  - Added complete "Accès à la Justice et Solidarité Financière" section (100+ lines)
+    - Four aid types detailed with eligibility criteria
+    - Solidarity Committee governance structure
+    - Financing model and revolving effect explanation
+    - Concrete eligibility criteria and process flows
+  - Updated AG surplus allocation example to include 30% Solidarity Fund allocation
+  - Added Solidarity Fund KPIs by milestone (Jalons 1-6)
+  - Updated conclusion checklist to include Solidarity Fund
+
+- **ROADMAP_PAR_CAPACITES.rst** - Added three-motor acquisition strategy
+  - **NEW SECTION**: "Les Trois Moteurs d'Acquisition (Engouement)" (250+ lines)
+    - **Moteur 1 - Gestion** 🏗️: Complete property management replacement (linked to Jalons 1-2)
+    - **Moteur 2 - Communauté** 🤝: Standalone community modules compatible with Vilogi/Apronet/Excel (linked to Jalon 3)
+    - **Moteur 3 - Valeurs** 💚: Values supporters contributing 5€/month for voting rights (linked to all milestones)
+  - Added synergy diagram showing how three motors create organic growth virtuous cycle
+  - Concrete example: 800 members (200 full management + 500 community only + 100 sympathizers) = 7,000€/month
+  - Emphasized "l'engouement remplace le marketing" (enthusiasm replaces marketing)
+  - Added "Force de Frappe" section explaining velocity progression
+  - Current realistic starting point: 1 solo dev, 10-15h/week, 65€/month self-funded (15€ infra + 50€ AI tokens)
+  - Explained AI tools strategic importance (×2-3 velocity multiplier)
+
+#### Documentation - Root README
+
+- **README.md** - Complete rewrite with collaborative messaging
+  - Changed title from "PropTech 2.0 Platform for Property Management" to "Plateforme Communautaire pour l'Habitat Collectif"
+  - **NEW SECTION**: "🧩 Trois Façons d'Utiliser KoproGo" prominently featured
+    - 1. Modules Communautaires Seuls (most popular, compatible with existing tools)
+    - 2. Gestion de Copropriété Complète (full replacement solution)
+    - 3. Soutien aux Valeurs (sympathizers without direct usage)
+  - Removed all confrontational "vs Vilogi/Apronet" language
+  - Added collaborative messaging: "KoproGo complète le puzzle, ne casse pas tout"
+  - Integrated Solidarity Fund throughout with impact projections
+  - Added final slogan: "L'engouement est notre moteur : Gestion performante + Modules communautaires + Valeurs partagées = Croissance organique et durable 🔄"
+  - **Fixed 6 broken documentation links**:
+    - `docs/PERFORMANCE_REPORT.md` → `docs/PERFORMANCE_REPORT.rst` (3 occurrences)
+    - `docs/README.md` → `docs/index.rst`
+    - `docs/INFRASTRUCTURE_ROADMAP.md` → `docs/INFRASTRUCTURE_COST_SIMULATIONS_2025.rst`
+    - `docs/VPS_DEPLOYMENT.md` → `docs/deployment/index.rst`
+
+#### Documentation - Index
+
+- **docs/index.rst** - Added FONDS_SOLIDARITE.rst reference
+  - Added to "Vision & Stratégie" toctree section
+  - Updated "Hiérarchie de lecture recommandée" with item 5: "FONDS_SOLIDARITE: Mécanisme d'aide financière aux membres en difficulté"
+
+#### Messaging Philosophy Changes
+
+**From → To**:
+- "Replace expensive proprietary tools" → "Complete your building, keep what works"
+- "Vilogi: 50-500€ vs KoproGo: 5€" → "Our democratic approach: 5€/month transparent pricing"
+- Variable pricing model → **Fixed 5€/month** everywhere (democratic, AG can vote to decrease)
+- Single acquisition driver (property management) → **Three synergistic motors** (Management + Community + Values)
+- Marketing-driven growth → **Enthusiasm/engagement-driven** organic growth ("l'engouement remplace le marketing")
+- Confrontational positioning → Collaborative positioning ("compatible avec vos outils existants")
+
+#### Impact
+
+- **Strategic coherence**: All strategic documents (README, VISION, MISSION, ROADMAP) now aligned on collaborative messaging
+- **Pricing consistency**: Fixed 5€/month mentioned consistently across all documents
+- **Three-motor framework**: Explicitly links acquisition drivers to technical roadmap milestones
+- **Solidarity mechanism**: Concrete financial aid system integrated into economic model
+- **Documentation quality**: All broken links fixed, new document properly indexed in Sphinx
+
 ### Added - GDPR Compliance Implementation (Phases 1-12, 2025-10-29 to 2025-10-30)
 
 **Complete GDPR implementation with Articles 15 & 17 support (Production-ready). Additional Articles 16, 18, 21 domain entities prepared for Phase 2.**
