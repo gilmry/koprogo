@@ -545,16 +545,16 @@ Le Facteur Multiplicateur
 
    Mois 0-3 : Jalon 1 (Sécurité)
      → 50-100 copros débloquées
-     → Premiers revenus: 200-300€/mois
+     → Premiers revenus: 250-500€/mois (5€ × 50-100)
 
    Mois 4-9 : Jalon 2 (Conformité)
      → 200-500 copros débloquées
-     → Revenus: 1.000-1.500€/mois
+     → Revenus: 1.000-2.500€/mois (5€ × 200-500)
      → Peut embaucher 1 dev temps partiel
 
    Mois 10-18 : Jalon 3 (Différenciation)
      → 500-1.000 copros
-     → Revenus: 2.500-3.500€/mois
+     → Revenus: 2.500-5.000€/mois (5€ × 500-1.000)
      → Duo fondateurs possibles
 
    Total: 18-24 mois pour atteindre 1.000 copropriétés
@@ -565,19 +565,19 @@ Le Facteur Multiplicateur
 
    Mois 0-2 : Jalon 1 (Sécurité)
      → 50-100 copros
-     → Revenus: 200-300€/mois
+     → Revenus: 250-500€/mois (5€ × 50-100)
 
    Mois 3-5 : Jalon 2 (Conformité)
      → 200-500 copros
-     → Revenus: 1.000-1.500€/mois
+     → Revenus: 1.000-2.500€/mois (5€ × 200-500)
 
    Mois 6-9 : Jalon 3 (Différenciation)
      → 500-1.000 copros
-     → Revenus: 2.500-3.500€/mois
+     → Revenus: 2.500-5.000€/mois (5€ × 500-1.000)
 
    Mois 10-14 : Jalon 4 (Automation)
      → 1.000-2.000 copros
-     → Revenus: 5.000-7.000€/mois
+     → Revenus: 5.000-10.000€/mois (5€ × 1.000-2.000)
      → Équipe 3-5 personnes possible
 
    Total: 14-18 mois pour atteindre 2.000 copropriétés
@@ -600,7 +600,7 @@ Le Facteur Multiplicateur
 
    Mois 10-14 : Jalon 5 (Mobile + API)
      → 2.000-5.000 copros
-     → Revenus: 15.000-25.000€/mois
+     → Revenus: 10.000-25.000€/mois (5€ × 2.000-5.000)
      → Organisation 10+ personnes
 
    Total: 14-18 mois pour atteindre 5.000 copropriétés
@@ -619,31 +619,33 @@ Effet Boule de Neige
 
 **Phase 2: Premiers Revenus** (100-500 copros)
 
-* Revenus: 200-1.500€/mois
+* Revenus: 500-2.500€/mois (prix fixe 5€ × copros)
 * Autofinancement partiel
 * Contributions OSS augmentent
 * Infrastructure scale up (20€/mois)
 
 **Phase 3: Équipe Viable** (500-1.000 copros)
 
-* Revenus: 1.500-3.500€/mois
+* Revenus: 2.500-5.000€/mois (5€ × copros)
 * 1er emploi temps partiel possible
 * Communauté active (10+ contributeurs)
 * Infrastructure mature (50€/mois)
 
 **Phase 4: Organisation Stable** (1.000-5.000 copros)
 
-* Revenus: 3.500-25.000€/mois
+* Revenus: 5.000-25.000€/mois (5€ × copros)
 * Équipe 3-10 personnes
 * ASBL structurée
 * Infrastructure scalable (100-300€/mois)
+* **AG peut voter baisse tarifaire** si surplus > 25%
 
 **Phase 5: Leadership ESS** (5.000+ copros)
 
-* Revenus: 25.000+€/mois
+* Revenus: 25.000+€/mois (5€ × copros, ou moins si AG vote baisse)
 * Organisation 10-15 ETP
 * Coopérative possible
 * Expansion européenne
+* **Prix réévalué démocratiquement** selon surplus
 
 =========================================================
 Vision Holistique: Tout S'Articule
@@ -689,10 +691,11 @@ Les Trois Piliers Interconnectés
      ↓ Permet
    Infrastructure 99% moins chère (Économique)
      ↓ Permet
-   Prix cassés 2-8€/mois (Social)
+   Prix fixe 5€/mois (Social, voté démocratiquement)
      ↓ Permet
    Adoption massive (Technique)
      → Cercle vertueux
+     → Si surplus > 25%, AG peut voter baisse (ex: 5€ → 4€)
 
 **2. Conformité → Crédibilité → Adoption**
 

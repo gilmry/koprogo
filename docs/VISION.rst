@@ -104,48 +104,55 @@ Regroupés, on peut négocier :
 
 **Ensemble, on a plus de poids.**
 
-Le Modèle Économique : Plus de Monde = Moins Cher
+Le Modèle Économique : Démocratie Tarifaire
 =================================================
 
 Les solutions actuelles facturent **50-500€/mois par copropriété**, avec des marges importantes.
 
-KoproGo propose un autre modèle : **plus de participants = prix baisse pour tous**.
+KoproGo propose un autre modèle : **le prix est décidé collectivement, démocratiquement**.
 
-.. list-table:: Grille Tarifaire Dégressive (Automatique)
-   :header-rows: 1
-   :widths: 30 30 40
+Modèle Tarifaire
+-----------------
 
-   * - Participants
-     - Prix/Mois
-     - Économie
-   * - 0-500
-     - **1.00€**
-     - Référence
-   * - 500-1,000
-     - **0.80€**
-     - -20%
-   * - 1,000-2,000
-     - **0.60€**
-     - -40%
-   * - 2,000-5,000
-     - **0.40€**
-     - -60%
-   * - 5,000-10,000
-     - **0.20€**
-     - -80%
-   * - 10,000+
-     - **0.10€**
-     - -90%
+**Prix de départ** (validé à la création ASBL):
 
-**Chaque palier se déclenche automatiquement.** Tu rejoins, tu bénéficies de l'échelle. Mécaniquement.
+* **Cloud géré**: **5€/mois** par copropriété
+* **Self-hosted**: **Gratuit** (toujours)
 
-Le surplus (prix facturé - coût réel) est voté en Assemblée Générale :
-* 40-50% : Développement features
-* 20-30% : R&D PropTech
-* 20-30% : Réserve légale
-* 0-20% : Baisse tarifaire si surplus > 25%
+**Réévaluation**: Le prix évolue **uniquement par vote en Assemblée Générale** (ASBL → Coopérative)
+
+Comment ça marche?
+~~~~~~~~~~~~~~~~~~
+
+1. **Transparence totale**: Les coûts réels sont publiés chaque trimestre
+2. **Calcul du surplus**: Prix facturé (5€) - Coût réel (infrastructure/RH)
+3. **Vote démocratique**: L'AG décide de l'allocation du surplus
+
+**Exemple d'allocation du surplus** (votée en AG):
+
+* 40-50% : Développement nouvelles features
+* 20-30% : R&D PropTech (IA, IoT, blockchain)
+* 20-30% : Réserve légale (sécurité financière)
+* 0-20% : **Baisse tarifaire** (si surplus > 25%)
+
+**Principe**: Si les revenus dépassent largement les coûts, l'AG peut voter pour baisser le prix (ex: 5€ → 4€ → 3€ selon croissance).
+
+**Objectif**: Baisser les coûts reste notre mission, mais **décidé collectivement**, pas automatiquement.
+
+**Avantages du modèle**:
+
+✅ **Simplicité**: Un seul prix, facile à comprendre (5€)
+✅ **Démocratie**: La communauté décide quand et comment baisser
+✅ **Transparence**: Comptabilité publique trimestrielle
+✅ **Flexibilité**: L'AG choisit entre baisse, features, réserve, ristournes
 
 **Zéro dividende pour des actionnaires. Tout revient à la communauté.**
+
+**Comparaison**:
+
+* Vilogi/Apronet: 50-500€/mois (prix fixe, marges opaques)
+* KoproGo: 5€/mois (prix transparent, surplus voté collectivement)
+* **Économie**: 45-495€/mois (90-99% moins cher)
 
 Même si tu préfères garder ton système actuel, ça fonctionne quand même.
 

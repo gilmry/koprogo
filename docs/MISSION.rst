@@ -21,8 +21,8 @@ Piliers de la Mission
 
 **Objectif** : Démontrer que la croissance profite à **tous** les participants, pas aux actionnaires.
 
-Le Concept d'Économies d'Échelle Inversées
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Le Concept de Démocratie Tarifaire
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Économies d'échelle traditionnelles** :
 
@@ -30,35 +30,35 @@ Le Concept d'Économies d'Échelle Inversées
 * Prix restent fixes ou augmentent
 * Usagers ne bénéficient jamais de l'échelle
 
-**Économies d'échelle inversées (KoproGo ASBL)** :
+**Démocratie tarifaire (KoproGo ASBL)** :
 
-* Plus de participants → Coûts dilués → **Prix baisse pour tous** ↓
-* Surplus réinvesti dans le projet (features, infra)
+* Plus de participants → Coûts dilués → **Prix voté collectivement** ↓
+* Surplus réinvesti dans le projet (features, infra, baisse tarifaire)
 * Chaque nouveau participant **enrichit** les précédents
+* **L'Assemblée Générale décide** de l'évolution du prix
 
 Actions Concrètes
 ~~~~~~~~~~~~~~~~~
 
-**1. Grille Tarifaire Dégressive Statutaire**
+**1. Prix Fixe de Départ + Vote Démocratique**
 
-Inscrite dans statuts ASBL (non modifiable sans AG) :
+**Prix de départ** (validé à la création ASBL):
 
-* **Palier 0-500** : 1.00€/mois (prix lancement)
-* **Palier 500-1,000** : 0.80€/mois (**-20% automatique** dès 500 copros)
-* **Palier 1,000-2,000** : 0.60€/mois (**-40% automatique** dès 1,000 copros)
-* **Palier 2,000-5,000** : 0.40€/mois (**-60% automatique** dès 2,000 copros)
-* **Palier 5,000+** : 0.20€/mois (**-80% automatique** dès 5,000 copros)
+* **Cloud géré**: **5€/mois** par copropriété
+* **Self-hosted**: **Gratuit** (toujours)
 
-**Déclenchement** : Compteur participants automatique, notification email à chaque baisse
+**Évolution du prix**: Uniquement par **vote en Assemblée Générale** (ASBL → Coopérative)
 
-**Exemple** : "Bonne nouvelle! 500 copros atteintes, votre tarif passe de 1€ à 0.80€/mois"
+**Principe**: Si les revenus dépassent largement les coûts, l'AG peut voter pour baisser le prix (ex: 5€ → 4€ → 3€ selon croissance et surplus).
+
+**Exemple**: "Rapport AG: surplus 25.000€/an (marge 80%). Proposition CA: baisse à 4€/mois. Vote: 87% pour, 13% abstention. ✅ Adopté"
 
 **2. Transparence Comptable Trimestrielle**
 
 * **Publication coûts réels** infrastructure (serveurs, bande passante, stockage)
 * **Calcul prix coûtant réel** vs prix facturé (tableau comparatif)
 * **Dashboard public temps réel** : `/transparency` (nb copros, coûts, prix coûtant, surplus)
-* **Si surplus > 20%** : redistribution extraordinaire ou baisse anticipée (vote AG)
+* **Si surplus > 25%** : l'AG peut voter baisse tarifaire ou redistribution
 
 **3. Budget Participatif Annuel**
 
@@ -68,17 +68,25 @@ AG vote allocation surplus (si revenus > coûts+réserve) :
 
 * Nouvelles features (vote priorités communauté)
 * Amélioration infra (performance, sécurité)
-* Baisse tarifaire anticipée
+* **Baisse tarifaire** (si surplus > 25%)
 * Constitution réserve légale (3 mois coûts)
+* Ristournes sociétaires (modèle coopératif)
 
-**Exemple AG 2028** (1,500 copros, surplus 8,640€/an) :
+**Exemple AG** (1.500 copros, prix 5€, surplus 72.000€/an) :
 
 .. code-block:: text
 
+   Rapport CA :
+     • Revenus: 90.000€/an (1.500 copros × 5€/mois × 12)
+     • Coûts infra: 2.160€/an
+     • Coûts RH: 15.840€/an (2 devs temps partiel)
+     • Surplus: 72.000€ (80% marge)
+
    Proposition CA :
-     • 50% Features prioritaires (4,320€) - Vote communauté
-     • 30% Réserve légale (2,592€) - Sécurité
-     • 20% R&D PropTech (1,728€) - IA/Blockchain/IoT
+     • 40% Baisse tarifaire (5€ → 3,50€) - Économies pour tous
+     • 30% Features prioritaires (21.600€) - Vote communauté
+     • 20% Réserve légale (14.400€) - Sécurité
+     • 10% R&D PropTech (7.200€) - IA/Blockchain/IoT
 
    Vote AG (1 membre = 1 voix) :
      ✅ Adopté : 87% pour, 13% abstention
@@ -87,41 +95,44 @@ AG vote allocation surplus (si revenus > coûts+réserve) :
 
 Qui contribue au bien commun en bénéficie davantage :
 
-* **Contributeurs code/docs/traductions** : **-50%** tarif cloud (réduction participative)
+* **Contributeurs code/docs/traductions** : **-50%** tarif cloud (ex: 2,50€ au lieu de 5€)
 * **Mainteneurs actifs** : **Gratuit à vie**
 * **Principe** : Le bénévolat est récompensé concrètement
 
-Impact 2025-2030 (objectif 5,000 copros)
+Impact par Paliers (objectif 5.000 copros)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Scénario Participation Croissante** :
+**Scénario Participation Croissante** (prix fixe 5€, évolution par vote AG):
 
 .. code-block:: text
 
-   Année 1 : 100 copros → 1.00€/mois → Revenus: 1,200€/an
-     Coûts infra : 1,140€/an
-     Surplus : 60€ (5%) → Réserve légale
+   Palier 1 : 100 copros → 5€/mois → Revenus: 60.000€/an
+     Coûts infra : 6.300€/an
+     Surplus : 53.700€ (89%) → Constitution réserve + 1er dev
+     Prix maintenu à 5€ (phase bootstrap)
 
-   Année 3 : 1,500 copros → 0.60€/mois → Revenus: 10,800€/an
-     Coûts infra : 2,160€/an (scale up)
-     Surplus : 8,640€ (80%)
-     → Redistribution :
-       • 50% features (4,320€ = 2 devs temps partiel)
-       • 30% réserve (2,592€)
-       • 20% baisse anticipée palier 2k (1,728€ remboursés pro-rata)
+   Palier 2 : 500 copros → 5€/mois → Revenus: 300.000€/an
+     Coûts infra : 21.200€/an
+     Coûts RH : 72.000€/an (2 devs)
+     Surplus : 206.800€ (69%)
+     → AG vote baisse à 4€/mois (surplus > 25%)
 
-   Année 5 : 5,000 copros → 0.40€/mois → Revenus: 24,000€/an
-     Coûts infra : 3,240€/an
-     Surplus : 20,760€ (87%)
-     → Redistribution :
-       • 40% features (8,304€ = 4 devs temps partiel + MLOps)
-       • 30% réserve (6,228€ = 2 ans autonomie)
-       • 30% baisse palier 10k anticipée (6,228€)
+   Palier 3 : 1.500 copros → 4€/mois → Revenus: 288.000€/an
+     Coûts infra : 52.200€/an
+     Coûts RH : 150.000€/an (5 ETP)
+     Surplus : 85.800€ (30%)
+     → Prix maintenu à 4€ (réinvestissement features)
+
+   Palier 4 : 5.000 copros → 4€/mois → Revenus: 960.000€/an
+     Coûts infra : 348.000€/an
+     Coûts RH : 350.000€/an (10-15 ETP)
+     Surplus : 262.000€ (27%)
+     → AG vote baisse à 3€/mois (surplus > 25%)
 
 Effet Cercle Vertueux
 ~~~~~~~~~~~~~~~~~~~~~~
 
-* **Plus de participants** → Prix baisse → Attractivité ↑
+* **Plus de participants** → Surplus augmente → AG peut voter baisse → Attractivité ↑
 * **Attractivité ↑** → Nouveaux participants → Communauté ↑
 * **Communauté ↑** → Contributions ↑ → Qualité produit ↑
 * **Qualité ↑** → Satisfaction ↑ → Bouche-à-oreille ↑
@@ -138,11 +149,11 @@ Comparaison Modèles
      - SaaS Classique
      - KoproGo ASBL
    * - Prix/copro
-     - 50€/mois fixe
-     - 0.40-1€/mois dégressif
+     - 50-500€/mois fixe
+     - **5€/mois** (voté démocratiquement)
    * - Évolution prix
      - Hausse annuelle
-     - **Baisse avec échelle**
+     - **Baisse si AG vote** (surplus > 25%)
    * - Bénéfice échelle
      - Actionnaires (90%)
      - **Tous participants (100%)**
@@ -156,8 +167,16 @@ Comparaison Modèles
      - Impossible
      - **Valorisée (-50% tarif)**
 
+**Avantages du modèle**:
+
+✅ **Simplicité**: Un seul prix, facile à comprendre (5€)
+✅ **Démocratie**: La communauté décide quand et comment baisser
+✅ **Transparence**: Comptabilité publique trimestrielle
+✅ **Flexibilité**: L'AG choisit entre baisse, features, réserve, ristournes
+✅ **Objectif de baisse**: Reste notre mission, mais décidé collectivement
+
 .. note::
-   **Détails complets** : Projections financières, grille tarifaire, et transparence dans :doc:`ECONOMIC_MODEL` (Section Économies d'Échelle Participatives).
+   **Détails complets** : Projections financières et transparence dans :doc:`ECONOMIC_MODEL` et :doc:`ROADMAP_PAR_CAPACITES`.
 
 2. Résoudre un Problème Sociétal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
