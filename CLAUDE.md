@@ -4,14 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🗺️ Roadmap
 
-**📅 For the complete development roadmap (Nov 2025 - Aug 2026), see [ROADMAP.md](docs/ROADMAP.md)**
+**📅 For the complete development roadmap, see [ROADMAP_PAR_CAPACITES.rst](docs/ROADMAP_PAR_CAPACITES.rst)**
 
-The roadmap covers:
-- **Phase 1 (VPS MVP)**: Security, GDPR, Backups, Board Tools (Nov 2025 - Feb 2026)
-- **Phase 2 (K3s)**: Voting, Community Features, Contractor Backoffice (Mar - May 2026)
-- **Phase 3 (K8s)**: Performance, Real-time, Mobile App (Jun - Aug 2026)
-- Infrastructure progression: VPS (Docker Compose) → K3s → K8s
-- All issues tracked in [GitHub Projects](https://github.com/users/gilmry/projects)
+The roadmap follows a **capacity-based progression** (not fixed dates):
+- **Jalon 0 ✅**: Fondations Techniques (COMPLÉTÉ - Architecture, 73 endpoints API, tests)
+- **Jalon 1 🔒**: Sécurité & GDPR → Débloque 50-100 copros (beta publique)
+- **Jalon 2 📋**: Conformité Légale Belge → Débloque 200-500 copros (production)
+- **Jalon 3 🎯**: Features Différenciantes (Voting, SEL, Contractor) → Débloque 500-1,000 copros
+- **Jalon 4 📅**: Automation & Intégrations → Débloque 1,000-2,000 copros
+- **Jalon 5 📱**: Mobile & API Publique → Débloque 2,000-5,000 copros
+- **Jalon 6-7 🤖**: PropTech 2.0 (IA, IoT, Blockchain) → Débloque 5,000+ copros
+
+**Philosophy**: "We deliver when ready, not according to arbitrary dates" - See [JALONS_MIGRATION.rst](docs/JALONS_MIGRATION.rst)
+
+All issues tracked in [GitHub Projects](https://github.com/users/gilmry/projects) and [GitHub Milestones](https://github.com/gilmry/koprogo/milestones)
 
 ## Project Overview
 
