@@ -14,8 +14,10 @@ pub mod owner_dto;
 pub mod pagination;
 pub mod payment_reminder_dto;
 pub mod pcn_dto;
+pub mod resolution_dto;
 pub mod unit_dto;
 pub mod unit_owner_dto;
+pub mod vote_dto;
 
 pub use account_dto::*;
 pub use auth_dto::*;
@@ -33,5 +35,7 @@ pub use owner_dto::*;
 pub use pagination::*;
 pub use payment_reminder_dto::*;
 pub use pcn_dto::*;
+pub use resolution_dto::*;
 pub use unit_dto::*;
 pub use unit_owner_dto::*;
+pub use vote_dto::*;

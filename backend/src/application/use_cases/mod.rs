@@ -15,6 +15,7 @@ pub mod meeting_use_cases;
 pub mod owner_use_cases;
 pub mod payment_reminder_use_cases;
 pub mod pcn_use_cases;
+pub mod resolution_use_cases;
 pub mod unit_owner_use_cases;
 pub mod unit_use_cases;
 
@@ -35,5 +36,6 @@ pub use meeting_use_cases::MeetingUseCases;
 pub use owner_use_cases::OwnerUseCases;
 pub use payment_reminder_use_cases::PaymentReminderUseCases;
 pub use pcn_use_cases::PcnUseCases;
+pub use resolution_use_cases::{ResolutionUseCases, VoteStatistics};
 pub use unit_owner_use_cases::UnitOwnerUseCases;
 pub use unit_use_cases::UnitUseCases;
