@@ -269,6 +269,16 @@ Base URL: `http://localhost:8080/api/v1`
 **✅ NOUVEAU: Payment Reminders**: `/payment-reminders` (GET, POST), `/payment-reminders/:id` (GET, PUT, DELETE)
    - `/payment-reminders/:id/mark-sent`, `/payment-reminders/:id/escalate`, `/payment-reminders/stats`
    - `/expenses/:id/payment-reminders`, `/owners/:id/payment-reminders`
+**✅ NOUVEAU: Resolutions & Voting** (Issue #46 - Phase 2 - Belgian Copropriété Law):
+   - `POST /meetings/:id/resolutions` - Create resolution
+   - `GET /resolutions/:id` - Get resolution details
+   - `GET /meetings/:id/resolutions` - List meeting resolutions
+   - `DELETE /resolutions/:id` - Delete resolution
+   - `POST /resolutions/:id/vote` - Cast vote (Pour/Contre/Abstention)
+   - `GET /resolutions/:id/votes` - List resolution votes
+   - `PUT /votes/:id` - Change vote
+   - `PUT /resolutions/:id/close` - Close voting & calculate result (Simple/Absolute/Qualified majority)
+   - `GET /meetings/:id/vote-summary` - Get vote summary for meeting
 **Health**: `/health` (GET)
 
 ## Domain Entities
@@ -285,6 +295,8 @@ The system models property management with these aggregates:
 - **✅ NOUVEAU: InvoiceLineItem**: Lignes de facturation avec TVA (6%, 12%, 21%) - Issue #73
 - **✅ NOUVEAU: PaymentReminder**: Relances automatisées (4 niveaux: Gentle → Formal → FinalNotice → LegalAction) - Issue #83
 - **Meeting**: General assemblies (date, agenda, minutes)
+- **✅ NOUVEAU: Resolution**: Meeting resolutions with voting (title, description, type, majority_required, vote_counts, status) - Issue #46
+- **✅ NOUVEAU: Vote**: Individual votes on resolutions (choice: Pour/Contre/Abstention, voting_power, proxy_owner_id) - Issue #46
 - **Document**: File storage (title, file_path, document_type)
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
@@ -324,6 +336,23 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 - Use cases: `backend/src/application/use_cases/payment_reminder_use_cases.rs`
 - Tests: Scénarios d'escalade + calcul pénalités
 - Documentation: `docs/PAYMENT_RECOVERY_WORKFLOW.rst`
+
+### ✅ NOUVEAU: Meeting Voting System - Issue #46 (Phase 2)
+
+- Système de vote pour assemblées générales (conformité loi belge copropriété)
+- **3 types de majorité**: Simple (50%+1 des votes exprimés), Absolute (50%+1 de tous les votes), Qualified (seuil personnalisé, ex: 2/3)
+- **Système de tantièmes/millièmes**: Voting power de 0 à 1000 millièmes par lot
+- **Vote par procuration**: Support mandataire pour propriétaires absents
+- **États des résolutions**: Pending → Adopted/Rejected (calcul automatique selon majorité requise)
+- **Audit complet**: Traçabilité GDPR-compliant de tous les votes (création, modification, clôture)
+- Domain entities: `backend/src/domain/entities/resolution.rs`, `vote.rs`
+- Repositories: `backend/src/infrastructure/database/repositories/resolution_repository_impl.rs`, `vote_repository_impl.rs`
+- Use cases: `backend/src/application/use_cases/resolution_use_cases.rs` (14 méthodes)
+- API handlers: `backend/src/infrastructure/web/handlers/resolution_handlers.rs` (9 endpoints REST)
+- DTOs: `backend/src/application/dto/resolution_dto.rs`, `vote_dto.rs`
+- Migration: `backend/migrations/20251115120000_create_resolutions_and_votes.sql` (10 contraintes + 8 index)
+- Tests: 27 tests unitaires domain + use cases avec mocks
+- Audit events: `ResolutionCreated`, `ResolutionDeleted`, `VoteCast`, `VoteChanged`, `VotingClosed`
 
 ### Multi-owner support
 
