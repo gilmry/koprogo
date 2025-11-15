@@ -13,7 +13,7 @@ Parcours Agile de KoproGo
 Introduction
 ============
 
-Ce document retrace le **parcours Agile** de KoproGo, de sa création en solo (2024) à son évolution vers une coopérative démocratique (2026+).
+Ce document retrace le **parcours Agile** de KoproGo, de sa création en solo (novembre 2025) à son évolution vers une coopérative démocratique (2027+).
 
 Il illustre comment une ASBL open-source peut adopter progressivement TOGAF, Nexus et Scrum tout en restant fidèle à ses valeurs communautaires, écologiques et démocratiques.
 
@@ -25,7 +25,7 @@ Vue d'ensemble
 
 .. code-block:: text
 
-   2024-Q4          2025-Q1        2025-Q2         2025-Q3+        2026+
+   Nov 2025         Déc-Fév 2026   Mar-Mai 2026    Juin-Déc 2026   2027+
    ───────────────┬──────────────┬───────────────┬───────────────┬─────────────
    Solo           │ Fondateurs   │ ASBL          │ Scaling       │ Coopérative
    ───────────────┴──────────────┴───────────────┴───────────────┴─────────────
@@ -34,13 +34,13 @@ Vue d'ensemble
    GitHub Issues  + Planning     + TOGAF ADM     + RFCs/ADRs     + Gouvernance
                   + Sprints      + DoD strict    + Metrics       coopérative
 
-Phase 1 : Solo (2024-Q4)
-========================
+Phase 1 : Solo (Novembre 2025)
+===============================
 
 Contexte
 --------
 
-**Période** : Octobre - Décembre 2024
+**Période** : Novembre 2025
 
 **Équipe** : 1 développeur (fondateur)
 
@@ -96,15 +96,15 @@ Leçons Apprises
 - Solo = 0 feedback, isolation
 - Surcharge cognitive (backend + frontend + infra)
 
-✅ **Décision** : Recruter fondateurs (Q1 2025)
+✅ **Décision** : Recruter fondateurs (Décembre 2025)
 
-Phase 2 : Fondateurs (2025-Q1)
-==============================
+Phase 2 : Fondateurs (Déc 2025 - Fév 2026)
+===========================================
 
 Contexte
 --------
 
-**Période** : Janvier - Mars 2025
+**Période** : Décembre 2025 - Février 2026
 
 **Équipe** : 3-5 fondateurs (2 backend, 1 frontend, 1 infra, 1 product)
 
@@ -167,7 +167,7 @@ Pratiques Introduites
 Réalisations
 ------------
 
-**Jalon 1 atteint** (Février 2025) :
+**Jalon 1 atteint** (Février 2026) :
 
 - 100 copropriétés pilotes
 - 80k€ revenus annuels estimés
@@ -200,21 +200,21 @@ Leçons Apprises
 - PO overload (product + dev)
 - Backlog explose (200+ issues, priorisation difficile)
 
-✅ **Décision** : Passer multi-équipes (Q2 2025), adopter Nexus
+✅ **Décision** : Passer multi-équipes (Mars 2026), adopter Nexus
 
-Phase 3 : ASBL (2025-Q2)
-=========================
+Phase 3 : ASBL (Mar - Mai 2026)
+================================
 
 Contexte
 --------
 
-**Période** : Avril - Juin 2025
+**Période** : Mars - Mai 2026
 
 **Équipe** : 10-20 contributeurs (4 équipes)
 
 **Objectif** : Scaling Scrum, atteindre Jalon 2 (500 copropriétés)
 
-**Statut juridique** : ASBL belge (AG constitutive Mai 2025)
+**Statut juridique** : ASBL belge (AG constitutive Avril 2026)
 
 Adoption Nexus
 --------------
@@ -299,7 +299,7 @@ Introduction RFCs et ADRs
 Réalisations
 ------------
 
-**Jalon 2 atteint** (Juin 2025) :
+**Jalon 2 atteint** (Mai 2026) :
 
 - 500 copropriétés actives
 - 400k€ revenus annuels
@@ -340,15 +340,15 @@ Leçons Apprises
 - Onboarding lent (nouveaux contributeurs perdus)
 - Documentation éparpillée (README, wiki, Sphinx)
 
-✅ **Décision** : Améliorer onboarding (Q3 2025), centraliser docs Sphinx
+✅ **Décision** : Améliorer onboarding (Juin 2026), centraliser docs Sphinx
 
-Phase 4 : Scaling (2025-Q3 - 2025-Q4)
-=====================================
+Phase 4 : Scaling (Juin - Déc 2026)
+====================================
 
 Contexte
 --------
 
-**Période** : Juillet - Décembre 2025
+**Période** : Juin - Décembre 2026
 
 **Équipe** : 20-50 contributeurs (6 équipes)
 
@@ -394,14 +394,14 @@ Amélioration Processus
 Réalisations
 ------------
 
-**Jalon 3 atteint** (Septembre 2025) :
+**Jalon 3 atteint** (Septembre 2026) :
 
 - 1.000 copropriétés actives
 - 800k€ revenus annuels
 - -107 tonnes CO₂ évitées/an
 - Mobile app : 1.200 downloads (iOS + Android)
 
-**Jalon 4 en cours** (Décembre 2025) :
+**Jalon 4 en cours** (Décembre 2026) :
 
 - 1.500 copropriétés
 - Expansion Belgique → France (beta 50 copropriétés)
@@ -428,15 +428,15 @@ Leçons Apprises
 - Dépendances complexes (Mobile ↔ Backend ↔ Frontend)
 - Conflits priorités (PO surchargé)
 
-✅ **Décision** : Évaluer LeSS vs Nexus+ (Q1 2026)
+✅ **Décision** : Évaluer LeSS vs Nexus+ (Janvier 2027)
 
-Phase 5 : Coopérative (2026+)
+Phase 5 : Coopérative (2027+)
 ==============================
 
 Contexte
 --------
 
-**Période** : 2026 et au-delà
+**Période** : 2027 et au-delà
 
 **Équipe** : 50-100+ contributeurs (9+ équipes)
 
@@ -454,8 +454,8 @@ Gouvernance Coopérative
    :widths: 30 35 35
 
    * - Aspect
-     - ASBL (2025)
-     - Coopérative (2026+)
+     - ASBL (2026)
+     - Coopérative (2027+)
    * - **Membres**
      - Copropriétés (clients)
      - Copropriétés (coopérateurs)
@@ -501,19 +501,19 @@ Scaling Framework
 - 1 Product Backlog
 - Sprint Planning multi-niveaux (3 parts)
 
-**Décision** : Évaluer Q1 2026 (basé vélocité, feedback équipes)
+**Décision** : Évaluer Janvier 2027 (basé vélocité, feedback équipes)
 
 Jalons 5-6
 ----------
 
-**Jalon 5** (Mi-2026) :
+**Jalon 5** (Mi-2027) :
 
 - 5.000 copropriétés (Belgique + France + Suisse)
 - 4M€ revenus annuels
 - -840 tonnes CO₂ évitées/an
 - Infrastructure K8s (20 vCPUs)
 
-**Jalon 6** (Fin 2026+) :
+**Jalon 6** (Fin 2027+) :
 
 - 10.000+ copropriétés (expansion Europe)
 - Réseau MCP décentralisé (1.000+ nœuds edge)
@@ -638,7 +638,7 @@ Conclusion
 Parcours Accompli
 -----------------
 
-De **solo ad-hoc (2024)** à **coopérative démocratique Nexus+TOGAF (2026+)** :
+De **solo ad-hoc (Nov 2025)** à **coopérative démocratique Nexus+TOGAF (2027+)** :
 
 - ✅ Scaling organisationnel : 1 → 100+ contributeurs
 - ✅ Scaling technique : 100 → 10.000+ copropriétés
@@ -646,11 +646,11 @@ De **solo ad-hoc (2024)** à **coopérative démocratique Nexus+TOGAF (2026+)** 
 
 **Frameworks adoptés progressivement** :
 
-1. Scrum local (2025-Q1, fondateurs)
-2. Nexus (2025-Q2, ASBL 4 équipes)
-3. TOGAF ADM (2025-Q2, architecture d'entreprise)
-4. RFCs/ADRs (2025-Q2, décisions tracées)
-5. Nexus+ / LeSS (2026+, coopérative 9+ équipes)
+1. Scrum local (Déc 2025 - Fév 2026, fondateurs)
+2. Nexus (Mar - Mai 2026, ASBL 4 équipes)
+3. TOGAF ADM (Mar - Mai 2026, architecture d'entreprise)
+4. RFCs/ADRs (Mar - Mai 2026, décisions tracées)
+5. Nexus+ / LeSS (2027+, coopérative 9+ équipes)
 
 Leçons Clés
 -----------
@@ -668,13 +668,13 @@ Leçons Clés
 Prochaines Étapes
 -----------------
 
-**Court terme (2025)** :
+**Court terme (2026)** :
 
 - Atteindre Jalons 3-4 (1.000-2.000 copropriétés)
 - Stabiliser Nexus 6 équipes
 - Publier 10+ RFCs (features majeures)
 
-**Moyen terme (2026)** :
+**Moyen terme (2027)** :
 
 - Transformation Coopérative
 - Scaling Nexus+ / LeSS

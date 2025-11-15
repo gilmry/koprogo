@@ -720,19 +720,19 @@ Phase Solo → ASBL → Coopérative
      - Équipes
      - Framework
      - Participants
-   * - **Solo** (2024)
+   * - **Solo** (Nov 2025)
      - 1 (full-stack)
      - Scrum local
      - 1 dev
-   * - **Fondateurs** (2025-Q1)
+   * - **Fondateurs** (Déc 2025 - Fév 2026)
      - 2 (backend, frontend)
      - Scrum of Scrums
      - 3-5 devs
-   * - **ASBL** (2025-Q2+)
+   * - **ASBL** (Mar - Mai 2026+)
      - 4 (back, front, infra, IA)
      - **Nexus**
      - 10-20 devs
-   * - **Coopérative** (2026+)
+   * - **Coopérative** (2027+)
      - 6-9 (+ mobile, data, sec)
      - Nexus
      - 50-100 devs

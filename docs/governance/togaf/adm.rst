@@ -70,16 +70,16 @@ Contexte organisationnel
    * - Phase
      - Gouvernance
      - Participants
-   * - **Solo** (2024-Q4)
+   * - **Solo** (Nov 2025)
      - Fondateur unique
      - 1 développeur
-   * - **Fondateurs** (2025-Q1)
+   * - **Fondateurs** (Déc 2025 - Fév 2026)
      - Conseil fondateurs
      - 3-5 fondateurs
-   * - **ASBL** (2025-Q2)
+   * - **ASBL** (Mar - Mai 2026)
      - AG + CA (3 membres)
      - 10-50 contributeurs
-   * - **Coopérative** (2026+)
+   * - **Coopérative** (2027+)
      - Coopérative agréée
      - 100+ membres
 
