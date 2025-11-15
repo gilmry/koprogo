@@ -241,6 +241,80 @@ docs-export-github: ## 📦 Exporter données GitHub (issues, milestones, projec
 	@echo "$(GREEN)📦 Export données GitHub...$(NC)"
 	./scripts/export-github-to-rst.sh
 
+rfc-new: ## 📝 Créer nouveau RFC (usage: make rfc-new TITLE="mon-titre")
+	@if [ -z "$(TITLE)" ]; then \
+		echo "$(YELLOW)❌ Usage: make rfc-new TITLE=\"mon-titre\"$(NC)"; \
+		exit 1; \
+	fi; \
+	LAST_NUM=$$(ls docs/governance/rfc/*.rst 2>/dev/null | grep -oP '\d{4}' | sort -n | tail -1); \
+	if [ -z "$$LAST_NUM" ]; then \
+		NEW_NUM="0001"; \
+	else \
+		NEW_NUM=$$(printf "%04d" $$((10#$$LAST_NUM + 1))); \
+	fi; \
+	NEW_FILE="docs/governance/rfc/$$NEW_NUM-$(TITLE).rst"; \
+	cp docs/governance/rfc/template.rst "$$NEW_FILE"; \
+	sed -i "s/RFC XXXX:/RFC $$NEW_NUM:/" "$$NEW_FILE"; \
+	sed -i "s/:RFC: XXXX/:RFC: $$NEW_NUM/" "$$NEW_FILE"; \
+	sed -i "s/AAAA-MM-JJ/$$(date +%Y-%m-%d)/" "$$NEW_FILE"; \
+	echo "$(GREEN)✅ RFC créé: $$NEW_FILE$(NC)"; \
+	echo "$(YELLOW)📝 Éditer le fichier et remplacer les placeholders [...]$(NC)"
+
+adr-new: ## 📝 Créer nouvel ADR (usage: make adr-new TITLE="mon-titre")
+	@if [ -z "$(TITLE)" ]; then \
+		echo "$(YELLOW)❌ Usage: make adr-new TITLE=\"mon-titre\"$(NC)"; \
+		exit 1; \
+	fi; \
+	LAST_NUM=$$(ls docs/governance/adr/*.rst 2>/dev/null | grep -oP '\d{4}' | sort -n | tail -1); \
+	if [ -z "$$LAST_NUM" ]; then \
+		NEW_NUM="0002"; \
+	else \
+		NEW_NUM=$$(printf "%04d" $$((10#$$LAST_NUM + 1))); \
+	fi; \
+	NEW_FILE="docs/governance/adr/$$NEW_NUM-$(TITLE).rst"; \
+	echo "===============================================" > "$$NEW_FILE"; \
+	echo "ADR-$$NEW_NUM: $(TITLE)" >> "$$NEW_FILE"; \
+	echo "===============================================" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo ":ADR: $$NEW_NUM" >> "$$NEW_FILE"; \
+	echo ":Titre: $(TITLE)" >> "$$NEW_FILE"; \
+	echo ":Date: $$(date +%Y-%m-%d)" >> "$$NEW_FILE"; \
+	echo ":Statut: Draft" >> "$$NEW_FILE"; \
+	echo ":Décideurs: [À compléter]" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo ".. contents:: Table des matières" >> "$$NEW_FILE"; \
+	echo "   :depth: 2" >> "$$NEW_FILE"; \
+	echo "   :local:" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "Contexte" >> "$$NEW_FILE"; \
+	echo "========" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "[Décrire le contexte et le problème]" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "Décision" >> "$$NEW_FILE"; \
+	echo "========" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "[Décrire la décision prise]" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "Conséquences" >> "$$NEW_FILE"; \
+	echo "============" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "Positives" >> "$$NEW_FILE"; \
+	echo "---------" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "- [Conséquence positive 1]" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "Négatives" >> "$$NEW_FILE"; \
+	echo "---------" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "- [Conséquence négative 1]" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "---" >> "$$NEW_FILE"; \
+	echo "" >> "$$NEW_FILE"; \
+	echo "*ADR-$$NEW_NUM KoproGo ASBL*" >> "$$NEW_FILE"; \
+	echo "$(GREEN)✅ ADR créé: $$NEW_FILE$(NC)"; \
+	echo "$(YELLOW)📝 Éditer le fichier et compléter les sections$(NC)"
+
 docs-with-videos: ## 🎥 Générer docs Sphinx avec vidéos E2E (tests ralentis 1s)
 	@echo "$(GREEN)🎥 Génération docs avec vidéos E2E...$(NC)"
 	@echo ""
