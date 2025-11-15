@@ -4,6 +4,7 @@ pub mod board_member;
 pub mod building;
 pub mod charge_distribution;
 pub mod document;
+pub mod etat_date;
 pub mod expense;
 pub mod gdpr_export;
 pub mod gdpr_objection;
@@ -26,6 +27,7 @@ pub use board_member::{BoardMember, BoardPosition};
 pub use building::Building;
 pub use charge_distribution::ChargeDistribution;
 pub use document::{Document, DocumentType};
+pub use etat_date::{EtatDate, EtatDateLanguage, EtatDateStatus};
 pub use expense::{ApprovalStatus, Expense, ExpenseCategory, PaymentStatus};
 pub use gdpr_export::{
     DocumentData, ExpenseData, GdprExport, MeetingData, OwnerData, RelatedData, UnitOwnershipData,
