@@ -11,7 +11,8 @@ use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
 use koprogo_api::infrastructure::web::{
-    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig,
+    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, LoginRateLimiter,
+    SecurityHeaders,
 };
 use std::env;
 use std::sync::Arc;
@@ -22,8 +23,15 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    // JWT Secret with production validation
     let jwt_secret = env::var("JWT_SECRET")
-        .unwrap_or_else(|_| "super-secret-key-change-in-production".to_string());
+        .unwrap_or_else(|_| {
+            log::warn!("JWT_SECRET not set, using default (INSECURE - only for development!)");
+            "super-secret-key-change-in-production".to_string()
+        });
+
+    // Validate JWT secret strength in production
+    validate_jwt_secret(&jwt_secret)?;
     let server_host = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let server_port = env::var("SERVER_PORT")
         .unwrap_or_else(|_| "8080".to_string())
@@ -44,10 +52,16 @@ async fn main() -> std::io::Result<()> {
 
     // Parse allowed CORS origins from environment
     let allowed_origins: Vec<String> = env::var("CORS_ALLOWED_ORIGINS")
-        .unwrap_or_else(|_| "http://localhost:3000".to_string())
+        .unwrap_or_else(|_| {
+            log::warn!("CORS_ALLOWED_ORIGINS not set, defaulting to localhost (dev only!)");
+            "http://localhost:3000".to_string()
+        })
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
+
+    // Validate CORS origins (no wildcards in production)
+    validate_cors_origins(&allowed_origins)?;
 
     log::info!("CORS allowed origins: {:?}", allowed_origins);
     log::info!("Rate limiting enabled: {}", enable_rate_limiting);
@@ -208,6 +222,9 @@ async fn main() -> std::io::Result<()> {
     // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints)
     let gdpr_rate_limit = GdprRateLimit::new(GdprRateLimitConfig::default());
 
+    // Login rate limiting (5 attempts per 15 minutes per IP - anti-brute-force)
+    let login_rate_limiter = LoginRateLimiter::default();
+
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment
         let mut cors = Cors::default();
@@ -226,8 +243,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(app_state.clone())
             .wrap(gdpr_rate_limit.clone())
+            .wrap(login_rate_limiter.clone()) // Login brute-force protection (5/15min)
             .wrap(Governor::new(&governor_conf))
             .wrap(cors)
+            .wrap(SecurityHeaders) // Security headers for all responses
             .wrap(middleware::Logger::default())
             .configure(configure_routes)
     })
@@ -254,4 +273,98 @@ async fn initialize_storage_provider() -> Result<Arc<dyn StorageProvider>, Strin
             Ok(Arc::new(storage))
         }
     }
+}
+
+/// Validate JWT secret strength for production security
+///
+/// Requirements:
+/// - Minimum 32 characters
+/// - Not the default insecure value
+/// - Contains mix of characters (recommended)
+fn validate_jwt_secret(secret: &str) -> std::io::Result<()> {
+    // Check minimum length (256 bits = 32 bytes minimum)
+    if secret.len() < 32 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!(
+                "JWT_SECRET must be at least 32 characters for security. Current length: {}. \
+                 Generate a strong secret with: openssl rand -base64 32",
+                secret.len()
+            ),
+        ));
+    }
+
+    // Check if using the dangerous default value
+    if secret == "super-secret-key-change-in-production" {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "JWT_SECRET is set to the default insecure value. \
+             Set a strong secret in environment: export JWT_SECRET=$(openssl rand -base64 32)",
+        ));
+    }
+
+    // Warn if secret appears weak (all same character, sequential, etc.)
+    let unique_chars: std::collections::HashSet<char> = secret.chars().collect();
+    if unique_chars.len() < 10 {
+        log::warn!(
+            "JWT_SECRET has low character diversity ({} unique chars). \
+             Consider using a stronger random secret.",
+            unique_chars.len()
+        );
+    }
+
+    log::info!("✓ JWT_SECRET validation passed (length: {} chars)", secret.len());
+    Ok(())
+}
+
+/// Validate CORS origins for production security
+///
+/// Requirements:
+/// - No wildcard (*) origins allowed
+/// - Valid URL format
+/// - HTTPS required in production (optional check)
+fn validate_cors_origins(origins: &[String]) -> std::io::Result<()> {
+    if origins.is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "CORS_ALLOWED_ORIGINS cannot be empty. Specify allowed origins explicitly.",
+        ));
+    }
+
+    for origin in origins {
+        // Reject wildcard origins (security risk)
+        if origin == "*" || origin.contains("*") {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "Wildcard CORS origins not allowed for security: '{}'. \
+                     Specify exact origins like: http://localhost:3000,https://app.example.com",
+                    origin
+                ),
+            ));
+        }
+
+        // Validate URL format
+        if !origin.starts_with("http://") && !origin.starts_with("https://") {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "Invalid CORS origin format '{}'. Must start with http:// or https://",
+                    origin
+                ),
+            ));
+        }
+
+        // Warn about HTTP in production (HTTPS recommended)
+        if origin.starts_with("http://") && !origin.contains("localhost") && !origin.contains("127.0.0.1") {
+            log::warn!(
+                "CORS origin '{}' uses HTTP (not HTTPS). \
+                 HTTPS is strongly recommended for production.",
+                origin
+            );
+        }
+    }
+
+    log::info!("✓ CORS origins validation passed ({} origins)", origins.len());
+    Ok(())
 }

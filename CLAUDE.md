@@ -23,7 +23,7 @@ KoproGo is a SaaS property management platform built with **Hexagonal Architectu
 
 KoproGo includes production-grade security and observability:
 
-**Implemented (Issues #39, #40, #41, #43):**
+**Implemented (Issues #39, #40, #41, #43, #78):**
 - ✅ **LUKS Encryption at Rest**: Full-disk encryption for PostgreSQL data and uploads (AES-XTS-512)
 - ✅ **Encrypted Backups**: Daily GPG-encrypted backups with S3 off-site storage (7d local, configurable S3 lifecycle)
 - ✅ **Monitoring Stack**: Prometheus + Grafana + Loki + Alertmanager (30d metrics, 7d logs)
@@ -33,6 +33,9 @@ KoproGo includes production-grade security and observability:
 - ✅ **SSH Hardening**: Key-only authentication, modern ciphers, reduced attack surface
 - ✅ **Kernel Hardening**: sysctl security configuration (SYN cookies, IP spoofing protection, ASLR)
 - ✅ **Security Auditing**: Automated Lynis audits (weekly), rkhunter scans (daily), AIDE file integrity monitoring
+- ✅ **Application Security Headers**: HSTS (1 year), CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- ✅ **Login Rate Limiting**: 5 attempts per 15 minutes per IP (anti-brute-force protection)
+- ✅ **Environment Validation**: JWT secret strength enforcement (min 32 chars), CORS origin validation (no wildcards)
 
 **Monitoring Endpoints:**
 - Prometheus: http://vps-ip:9090

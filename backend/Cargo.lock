@@ -3074,6 +3074,7 @@ dependencies = [
  "dotenvy",
  "env_logger",
  "fake",
+ "futures-util",
  "jsonwebtoken",
  "lettre",
  "log",
