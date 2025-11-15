@@ -541,15 +541,15 @@ mod tests {
         .unwrap();
 
         let result = ed.update_financial_data(
-            Decimal::new(-50000, 2),  // -500.00 EUR (débit)
+            -500.00,  // -500.00 EUR (débit)
             100.0,   // 500.00 EUR arriérés
             100.0,   // 150.00 EUR/mois
-            Decimal::new(-50000, 2),  // -500.00 EUR total
+            -500.00,  // -500.00 EUR total
             100.0,  // 2000.00 EUR travaux votés
         );
 
         assert!(result.is_ok());
-        assert_eq!(ed.owner_balance, Decimal::new(-50000, 2));
+        assert_eq!(ed.owner_balance, -500.00);
         assert_eq!(ed.arrears_amount, 100.0);
     }
 

@@ -61,6 +61,15 @@ pub enum AuditEventType {
     EtatDateAdditionalDataUpdate,
     EtatDateDeleted,
 
+    // Budget events (Annual budget management)
+    BudgetCreated,
+    BudgetUpdated,
+    BudgetSubmitted,
+    BudgetApproved,
+    BudgetRejected,
+    BudgetArchived,
+    BudgetDeleted,
+
     // Security events
     UnauthorizedAccess,
     RateLimitExceeded,

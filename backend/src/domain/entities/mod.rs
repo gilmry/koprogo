@@ -1,6 +1,7 @@
 pub mod account;
 pub mod board_decision;
 pub mod board_member;
+pub mod budget;
 pub mod building;
 pub mod charge_distribution;
 pub mod document;
@@ -24,6 +25,7 @@ pub mod user_role_assignment;
 pub use account::{Account, AccountType};
 pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
+pub use budget::{Budget, BudgetStatus};
 pub use building::Building;
 pub use charge_distribution::ChargeDistribution;
 pub use document::{Document, DocumentType};
