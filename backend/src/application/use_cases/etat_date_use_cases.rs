@@ -5,8 +5,8 @@ use crate::application::dto::{
 use crate::application::ports::{
     BuildingRepository, EtatDateRepository, UnitOwnerRepository, UnitRepository,
 };
-use crate::domain::entities::{EtatDate, EtatDateLanguage, EtatDateStatus};
-use rust_decimal::Decimal;
+use crate::domain::entities::{EtatDate, EtatDateStatus};
+use f64;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -54,7 +54,7 @@ impl EtatDateUseCases {
         // Get unit ownership info (quotes-parts)
         let unit_owners = self
             .unit_owner_repository
-            .find_active_by_unit(request.unit_id)
+            .find_current_owners_by_unit(request.unit_id)
             .await?;
 
         if unit_owners.is_empty() {
@@ -62,11 +62,11 @@ impl EtatDateUseCases {
         }
 
         // Calculate total quote-parts (should be 100% or close)
-        let total_quota: Decimal = unit_owners.iter().map(|uo| uo.percentage).sum();
+        let total_quota: f64 = unit_owners.iter().map(|uo| uo.ownership_percentage).sum();
 
         // For simplicity, use total quota as both ordinary and extraordinary
         // In a real system, these might be stored separately per unit
-        let ordinary_charges_quota = total_quota * Decimal::new(100, 0); // Convert to percentage
+        let ordinary_charges_quota = total_quota * 100.0; // Convert to ownership_percentage
         let extraordinary_charges_quota = ordinary_charges_quota;
 
         // Create état daté
@@ -82,8 +82,8 @@ impl EtatDateUseCases {
             building.name.clone(),
             building.address.clone(),
             unit.unit_number.clone(),
-            unit.floor.clone(),
-            unit.area,
+            unit.floor.map(|f| f.to_string()),
+            Some(unit.surface_area),
             ordinary_charges_quota,
             extraordinary_charges_quota,
         )?;

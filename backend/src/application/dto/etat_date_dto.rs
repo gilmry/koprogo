@@ -1,6 +1,6 @@
 use crate::domain::entities::{EtatDate, EtatDateLanguage, EtatDateStatus};
 use chrono::{DateTime, Utc};
-use rust_decimal::Decimal;
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -20,11 +20,11 @@ pub struct CreateEtatDateRequest {
 /// Request pour mettre à jour les données financières d'un état daté
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateEtatDateFinancialRequest {
-    pub owner_balance: Decimal,
-    pub arrears_amount: Decimal,
-    pub monthly_provision_amount: Decimal,
-    pub total_balance: Decimal,
-    pub approved_works_unpaid: Decimal,
+    pub owner_balance: f64,
+    pub arrears_amount: f64,
+    pub monthly_provision_amount: f64,
+    pub total_balance: f64,
+    pub approved_works_unpaid: f64,
 }
 
 /// Request pour mettre à jour les données additionnelles (sections 7-16)
@@ -54,14 +54,14 @@ pub struct EtatDateResponse {
     pub building_address: String,
     pub unit_number: String,
     pub unit_floor: Option<String>,
-    pub unit_area: Option<Decimal>,
-    pub ordinary_charges_quota: Decimal,
-    pub extraordinary_charges_quota: Decimal,
-    pub owner_balance: Decimal,
-    pub arrears_amount: Decimal,
-    pub monthly_provision_amount: Decimal,
-    pub total_balance: Decimal,
-    pub approved_works_unpaid: Decimal,
+    pub unit_area: Option<f64>,
+    pub ordinary_charges_quota: f64,
+    pub extraordinary_charges_quota: f64,
+    pub owner_balance: f64,
+    pub arrears_amount: f64,
+    pub monthly_provision_amount: f64,
+    pub total_balance: f64,
+    pub approved_works_unpaid: f64,
     pub additional_data: serde_json::Value,
     pub pdf_file_path: Option<String>,
     pub created_at: DateTime<Utc>,

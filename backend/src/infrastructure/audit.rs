@@ -52,6 +52,15 @@ pub enum AuditEventType {
     PaymentRemindersBulkCreated,
     PaymentReminderDeleted,
 
+    // État Daté events (Belgian legal requirement for property sales)
+    EtatDateCreated,
+    EtatDateInProgress,
+    EtatDateGenerated,
+    EtatDateDelivered,
+    EtatDateFinancialUpdate,
+    EtatDateAdditionalDataUpdate,
+    EtatDateDeleted,
+
     // Security events
     UnauthorizedAccess,
     RateLimitExceeded,

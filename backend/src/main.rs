@@ -86,6 +86,7 @@ async fn main() -> std::io::Result<()> {
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
+    let etat_date_repo = Arc::new(PostgresEtatDateRepository::new(pool.clone()));
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
@@ -117,6 +118,12 @@ async fn main() -> std::io::Result<()> {
     );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
+    let etat_date_use_cases = EtatDateUseCases::new(
+        etat_date_repo,
+        unit_repo.clone(),
+        building_repo.clone(),
+        unit_owner_repo.clone(),
+    );
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
     let payment_reminder_use_cases =
         PaymentReminderUseCases::new(payment_reminder_repo, expense_repo.clone());
@@ -151,6 +158,7 @@ async fn main() -> std::io::Result<()> {
         charge_distribution_use_cases,
         meeting_use_cases,
         document_use_cases,
+        etat_date_use_cases,
         pcn_use_cases,
         payment_reminder_use_cases,
         gdpr_use_cases,

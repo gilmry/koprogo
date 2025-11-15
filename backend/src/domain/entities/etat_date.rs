@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use rust_decimal::Decimal;
+use f64;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -68,31 +68,31 @@ pub struct EtatDate {
     pub building_address: String,
     pub unit_number: String,
     pub unit_floor: Option<String>,
-    pub unit_area: Option<Decimal>,
+    pub unit_area: Option<f64>,
 
     // === Section 2: Quote-parts ===
     /// Quote-part charges ordinaires (en %)
-    pub ordinary_charges_quota: Decimal,
+    pub ordinary_charges_quota: f64,
     /// Quote-part charges extraordinaires (en %)
-    pub extraordinary_charges_quota: Decimal,
+    pub extraordinary_charges_quota: f64,
 
     // === Section 3: Situation financière du propriétaire ===
     /// Solde du propriétaire (positif = crédit, négatif = débit)
-    pub owner_balance: Decimal,
+    pub owner_balance: f64,
     /// Montant des arriérés (dettes)
-    pub arrears_amount: Decimal,
+    pub arrears_amount: f64,
 
     // === Section 4: Provisions pour charges ===
     /// Montant mensuel des provisions
-    pub monthly_provision_amount: Decimal,
+    pub monthly_provision_amount: f64,
 
     // === Section 5: Solde créditeur/débiteur ===
     /// Solde total (somme de tous les comptes)
-    pub total_balance: Decimal,
+    pub total_balance: f64,
 
     // === Section 6: Travaux votés non payés ===
     /// Montant total des travaux votés mais non encore payés
-    pub approved_works_unpaid: Decimal,
+    pub approved_works_unpaid: f64,
 
     // === Section 7-16: Données JSONB ===
     /// Données structurées pour les sections complexes
@@ -132,9 +132,9 @@ impl EtatDate {
         building_address: String,
         unit_number: String,
         unit_floor: Option<String>,
-        unit_area: Option<Decimal>,
-        ordinary_charges_quota: Decimal,
-        extraordinary_charges_quota: Decimal,
+        unit_area: Option<f64>,
+        ordinary_charges_quota: f64,
+        extraordinary_charges_quota: f64,
     ) -> Result<Self, String> {
         // Validations
         if notary_name.trim().is_empty() {
@@ -157,12 +157,12 @@ impl EtatDate {
         }
 
         // Quote-parts doivent être entre 0 et 100%
-        if ordinary_charges_quota < Decimal::ZERO || ordinary_charges_quota > Decimal::new(100, 0)
+        if ordinary_charges_quota < 0.0 || ordinary_charges_quota > 100.0
         {
             return Err("Ordinary charges quota must be between 0 and 100%".to_string());
         }
-        if extraordinary_charges_quota < Decimal::ZERO
-            || extraordinary_charges_quota > Decimal::new(100, 0)
+        if extraordinary_charges_quota < 0.0
+            || extraordinary_charges_quota > 100.0
         {
             return Err("Extraordinary charges quota must be between 0 and 100%".to_string());
         }
@@ -192,11 +192,11 @@ impl EtatDate {
             unit_area,
             ordinary_charges_quota,
             extraordinary_charges_quota,
-            owner_balance: Decimal::ZERO,
-            arrears_amount: Decimal::ZERO,
-            monthly_provision_amount: Decimal::ZERO,
-            total_balance: Decimal::ZERO,
-            approved_works_unpaid: Decimal::ZERO,
+            owner_balance: 0.0,
+            arrears_amount: 0.0,
+            monthly_provision_amount: 0.0,
+            total_balance: 0.0,
+            approved_works_unpaid: 0.0,
             additional_data: serde_json::json!({}),
             pdf_file_path: None,
             created_at: now,
@@ -306,20 +306,20 @@ impl EtatDate {
     /// Met à jour les données financières
     pub fn update_financial_data(
         &mut self,
-        owner_balance: Decimal,
-        arrears_amount: Decimal,
-        monthly_provision_amount: Decimal,
-        total_balance: Decimal,
-        approved_works_unpaid: Decimal,
+        owner_balance: f64,
+        arrears_amount: f64,
+        monthly_provision_amount: f64,
+        total_balance: f64,
+        approved_works_unpaid: f64,
     ) -> Result<(), String> {
         // Validation: les arriérés ne peuvent pas être négatifs
-        if arrears_amount < Decimal::ZERO {
+        if arrears_amount < 0.0 {
             return Err("Arrears amount cannot be negative".to_string());
         }
-        if monthly_provision_amount < Decimal::ZERO {
+        if monthly_provision_amount < 0.0 {
             return Err("Monthly provision amount cannot be negative".to_string());
         }
-        if approved_works_unpaid < Decimal::ZERO {
+        if approved_works_unpaid < 0.0 {
             return Err("Approved works unpaid cannot be negative".to_string());
         }
 
@@ -369,9 +369,9 @@ mod tests {
             "Rue de la Loi 123, 1000 Bruxelles".to_string(),
             "101".to_string(),
             Some("1".to_string()),
-            Some(Decimal::new(75, 0)),
-            Decimal::new(5, 0),   // 5%
-            Decimal::new(10, 0),  // 10%
+            Some(100.0),
+            100.0,   // 5%
+            100.0,  // 10%
         );
 
         assert!(etat_date.is_ok());
@@ -402,8 +402,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            Decimal::new(5, 0),
-            Decimal::new(10, 0),
+            100.0,
+            100.0,
         );
 
         assert!(result.is_err());
@@ -431,8 +431,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            Decimal::new(150, 0), // 150% - invalide
-            Decimal::new(10, 0),
+            100.0, // 150% - invalide
+            100.0,
         );
 
         assert!(result.is_err());
@@ -460,8 +460,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            Decimal::new(5, 0),
-            Decimal::new(10, 0),
+            100.0,
+            100.0,
         )
         .unwrap();
 
@@ -504,8 +504,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            Decimal::new(5, 0),
-            Decimal::new(10, 0),
+            100.0,
+            100.0,
         )
         .unwrap();
 
@@ -535,22 +535,22 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            Decimal::new(5, 0),
-            Decimal::new(10, 0),
+            100.0,
+            100.0,
         )
         .unwrap();
 
         let result = ed.update_financial_data(
             Decimal::new(-50000, 2),  // -500.00 EUR (débit)
-            Decimal::new(50000, 2),   // 500.00 EUR arriérés
-            Decimal::new(15000, 2),   // 150.00 EUR/mois
+            100.0,   // 500.00 EUR arriérés
+            100.0,   // 150.00 EUR/mois
             Decimal::new(-50000, 2),  // -500.00 EUR total
-            Decimal::new(200000, 2),  // 2000.00 EUR travaux votés
+            100.0,  // 2000.00 EUR travaux votés
         );
 
         assert!(result.is_ok());
         assert_eq!(ed.owner_balance, Decimal::new(-50000, 2));
-        assert_eq!(ed.arrears_amount, Decimal::new(50000, 2));
+        assert_eq!(ed.arrears_amount, 100.0);
     }
 
     #[test]
@@ -574,8 +574,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            Decimal::new(5, 0),
-            Decimal::new(10, 0),
+            100.0,
+            100.0,
         )
         .unwrap();
 
@@ -606,8 +606,8 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            Decimal::new(5, 0),
-            Decimal::new(10, 0),
+            100.0,
+            100.0,
         )
         .unwrap();
 
