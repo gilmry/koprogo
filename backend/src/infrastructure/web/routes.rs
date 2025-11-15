@@ -77,6 +77,16 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(cancel_meeting)
             .service(reschedule_meeting)
             .service(delete_meeting)
+            // Resolutions & Voting (Issue #46 - Phase 2)
+            .service(create_resolution)
+            .service(get_resolution)
+            .service(list_meeting_resolutions)
+            .service(delete_resolution)
+            .service(cast_vote)
+            .service(list_resolution_votes)
+            .service(change_vote)
+            .service(close_voting)
+            .service(get_meeting_vote_summary)
             // Board Members
             .service(elect_board_member)
             .service(get_my_mandates) // Must be before get_board_member to avoid UUID parsing

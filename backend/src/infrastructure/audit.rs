@@ -41,6 +41,13 @@ pub enum AuditEventType {
     BoardDecisionCompleted,
     BoardDecisionNotesAdded,
 
+    // Voting events (Issue #46 - Phase 2)
+    ResolutionCreated,
+    ResolutionDeleted,
+    VoteCast,
+    VoteChanged,
+    VotingClosed,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
