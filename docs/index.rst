@@ -107,6 +107,17 @@ Documentation
    :caption: 🗺️ Roadmap
 
    ROADMAP_PAR_CAPACITES
+   roadmap/agile-journey
+
+.. toctree::
+   :maxdepth: 2
+   :caption: ⚡ Gouvernance Agile
+
+   governance/togaf/adm
+   governance/nexus/framework
+   governance/scrum/ceremonies
+   governance/rfc/template
+   governance/adr/0001-mcp-integration
 
 .. toctree::
    :maxdepth: 2
