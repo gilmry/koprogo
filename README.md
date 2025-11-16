@@ -19,6 +19,7 @@
 [![GitHub Issues](https://img.shields.io/github/issues/gilmry/koprogo)](https://github.com/gilmry/koprogo/issues)
 [![GitHub Discussions](https://img.shields.io/github/discussions/gilmry/koprogo)](https://github.com/gilmry/koprogo/discussions)
 [![Contributors](https://img.shields.io/github/contributors/gilmry/koprogo)](https://github.com/gilmry/koprogo/graphs/contributors)
+[![YouTube](https://img.shields.io/badge/YouTube-@koprogo-red?logo=youtube)](https://www.youtube.com/@koprogo)
 
 **Performance validée** (1 vCPU / 2GB RAM) :
 [![Success Rate](https://img.shields.io/badge/Success%20Rate-99.74%25-success)](docs/PERFORMANCE_REPORT.rst)
@@ -161,6 +162,12 @@ Projets GitHub: [Software (#2)](https://github.com/users/gilmry/projects/2) | [I
 - Documentation Sphinx (guides, architecture, déploiement)
 - Documentation Rust API (documentation technique du backend)
 - [Index de la documentation](docs/index.rst)
+
+### 🎥 Tutoriels Vidéo
+
+**Chaîne YouTube** : [@koprogo](https://www.youtube.com/@koprogo)
+
+Retrouvez des tutoriels vidéo pour démarrer avec KoproGo, comprendre l'architecture, et découvrir les fonctionnalités avancées
 
 ---
 
@@ -596,6 +603,7 @@ KoproGo est organisé en **ASBL (Association Sans But Lucratif)** belge garantis
 ### Obtenir de l'Aide
 
 - 📚 **Documentation** : [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)
+- 🎥 **Tutoriels vidéo** : [YouTube @koprogo](https://www.youtube.com/@koprogo)
 - 💬 **Discussions** : [GitHub Discussions](https://github.com/gilmry/koprogo/discussions)
 - 🐛 **Bugs** : [Créer une issue](https://github.com/gilmry/koprogo/issues/new/choose)
 - 🔒 **Sécurité** : Voir [SECURITY.md](SECURITY.md)
