@@ -24,6 +24,13 @@ KoproGo est un projet **holistique** qui combine :
 - **Infrastructure**: Terraform + Ansible + GitOps (OVH Cloud)
 - **Architecture**: Hexagonale (DDD) avec tests exhaustifs (Pyramid Strategy)
 
+Ressources
+==========
+
+📺 **Tutoriels Vidéo** : `Chaîne YouTube @koprogo <https://www.youtube.com/@koprogo>`_
+
+Retrouvez des tutoriels vidéo pour démarrer avec KoproGo, comprendre l'architecture hexagonale, et découvrir les fonctionnalités avancées de la plateforme.
+
 =====================================
 Documentation
 =====================================
