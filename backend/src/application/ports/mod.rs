@@ -5,6 +5,8 @@ pub mod board_member_repository;
 pub mod budget_repository;
 pub mod building_repository;
 pub mod charge_distribution_repository;
+pub mod convocation_recipient_repository;
+pub mod convocation_repository;
 pub mod document_repository;
 pub mod etat_date_repository;
 pub mod expense_repository;
@@ -33,6 +35,10 @@ pub use board_member_repository::BoardMemberRepository;
 pub use budget_repository::{BudgetRepository, BudgetStatsResponse, BudgetVarianceResponse};
 pub use building_repository::BuildingRepository;
 pub use charge_distribution_repository::ChargeDistributionRepository;
+pub use convocation_recipient_repository::{
+    ConvocationRecipientRepository, RecipientTrackingSummary,
+};
+pub use convocation_repository::ConvocationRepository;
 pub use document_repository::DocumentRepository;
 pub use etat_date_repository::EtatDateRepository;
 pub use expense_repository::ExpenseRepository;
