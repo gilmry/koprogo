@@ -116,6 +116,17 @@ pub enum AuditEventType {
     CreditBalanceUpdated,
     CreditBalanceCreated,
 
+    // Notice events (Community Notice Board - Issue #49 - Phase 2)
+    NoticeCreated,
+    NoticeUpdated,
+    NoticePublished,
+    NoticeArchived,
+    NoticePinned,
+    NoticeUnpinned,
+    NoticeExpirationSet,
+    NoticeExpired,
+    NoticeDeleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
