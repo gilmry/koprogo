@@ -5,7 +5,7 @@ use crate::application::use_cases::{
     FinancialReportUseCases, GdprUseCases, LocalExchangeUseCases, MeetingUseCases,
     NoticeUseCases, NotificationUseCases, OwnerUseCases, PaymentMethodUseCases,
     PaymentReminderUseCases, PaymentUseCases, PcnUseCases, QuoteUseCases, ResolutionUseCases,
-    TicketUseCases, UnitOwnerUseCases, UnitUseCases,
+    SkillUseCases, TicketUseCases, UnitOwnerUseCases, UnitUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -32,6 +32,7 @@ pub struct AppState {
     pub quote_use_cases: Arc<QuoteUseCases>,
     pub local_exchange_use_cases: Arc<LocalExchangeUseCases>,
     pub notice_use_cases: Arc<NoticeUseCases>,
+    pub skill_use_cases: Arc<SkillUseCases>,
     pub document_use_cases: Arc<DocumentUseCases>,
     pub etat_date_use_cases: Arc<EtatDateUseCases>,
     pub pcn_use_cases: Arc<PcnUseCases>,
@@ -68,6 +69,7 @@ impl AppState {
         quote_use_cases: QuoteUseCases,
         local_exchange_use_cases: LocalExchangeUseCases,
         notice_use_cases: NoticeUseCases,
+        skill_use_cases: SkillUseCases,
         document_use_cases: DocumentUseCases,
         etat_date_use_cases: EtatDateUseCases,
         pcn_use_cases: PcnUseCases,
@@ -101,6 +103,7 @@ impl AppState {
             quote_use_cases: Arc::new(quote_use_cases),
             local_exchange_use_cases: Arc::new(local_exchange_use_cases),
             notice_use_cases: Arc::new(notice_use_cases),
+            skill_use_cases: Arc::new(skill_use_cases),
             document_use_cases: Arc::new(document_use_cases),
             etat_date_use_cases: Arc::new(etat_date_use_cases),
             pcn_use_cases: Arc::new(pcn_use_cases),

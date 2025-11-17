@@ -127,6 +127,13 @@ pub enum AuditEventType {
     NoticeExpired,
     NoticeDeleted,
 
+    // Skill events (Skills Directory - Issue #49 - Phase 3)
+    SkillCreated,
+    SkillUpdated,
+    SkillMarkedAvailable,
+    SkillMarkedUnavailable,
+    SkillDeleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,

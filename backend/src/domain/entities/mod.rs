@@ -27,6 +27,7 @@ pub mod payment_reminder;
 pub mod quote;
 pub mod refresh_token;
 pub mod resolution;
+pub mod skill;
 pub mod ticket;
 pub mod unit;
 pub mod unit_owner;
@@ -69,6 +70,7 @@ pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, Remin
 pub use quote::{Quote, QuoteScore, QuoteStatus};
 pub use refresh_token::RefreshToken;
 pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
+pub use skill::{ExpertiseLevel, Skill, SkillCategory};
 pub use ticket::{Ticket, TicketCategory, TicketPriority, TicketStatus};
 pub use unit::{Unit, UnitType};
 pub use unit_owner::UnitOwner;
