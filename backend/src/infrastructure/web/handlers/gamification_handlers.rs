@@ -580,7 +580,7 @@ pub async fn increment_progress(
 /// # Responses
 /// - 200 OK: User gamification statistics
 #[get("/organizations/{organization_id}/gamification/stats")]
-pub async fn get_user_stats(
+pub async fn get_gamification_user_stats(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
@@ -602,7 +602,7 @@ pub async fn get_user_stats(
 /// # Responses
 /// - 200 OK: Leaderboard with top users
 #[get("/organizations/{organization_id}/gamification/leaderboard")]
-pub async fn get_leaderboard(
+pub async fn get_gamification_leaderboard(
     data: web::Data<AppState>,
     _auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,

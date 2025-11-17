@@ -280,6 +280,39 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_booking)
             .service(check_conflicts)
             .service(get_statistics)
+            // Gamification & Achievements (Issue #49 - Phase 6)
+            // Achievements
+            .service(create_achievement)
+            .service(get_achievement)
+            .service(list_achievements)
+            .service(list_achievements_by_category)
+            .service(list_visible_achievements)
+            .service(update_achievement)
+            .service(delete_achievement)
+            // User Achievements
+            .service(award_achievement)
+            .service(get_user_achievements)
+            .service(get_recent_achievements)
+            // Challenges
+            .service(create_challenge)
+            .service(get_challenge)
+            .service(list_challenges)
+            .service(list_challenges_by_status)
+            .service(list_building_challenges)
+            .service(list_active_challenges)
+            .service(update_challenge)
+            .service(activate_challenge)
+            .service(complete_challenge)
+            .service(cancel_challenge)
+            .service(delete_challenge)
+            // Challenge Progress
+            .service(get_challenge_progress)
+            .service(list_challenge_progress)
+            .service(list_user_active_challenges)
+            .service(increment_progress)
+            // Gamification Stats
+            .service(get_gamification_user_stats)
+            .service(get_gamification_leaderboard)
             // Board Members
             .service(elect_board_member)
             .service(get_my_mandates) // Must be before get_board_member to avoid UUID parsing
