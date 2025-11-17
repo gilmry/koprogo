@@ -68,6 +68,10 @@ fake = { version = "4.4", features = ["derive", "chrono", "uuid", "http"] }
 # Email
 lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-native-tls"] }
 
+# OpenAPI documentation
+utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }
+utoipa-swagger-ui = { version = "8.0", features = ["actix-web"] }
+
 [dev-dependencies]
 # Unit & Integration tests
 mockall = "0.13"

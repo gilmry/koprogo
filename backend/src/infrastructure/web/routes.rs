@@ -1,7 +1,11 @@
+use crate::infrastructure::configure_swagger_ui;
 use crate::infrastructure::web::handlers::*;
 use actix_web::web;
 
 pub fn configure_routes(cfg: &mut web::ServiceConfig) {
+    // OpenAPI Swagger UI (accessible at /swagger-ui/)
+    cfg.service(configure_swagger_ui());
+
     cfg.service(metrics_endpoint);
 
     cfg.service(
