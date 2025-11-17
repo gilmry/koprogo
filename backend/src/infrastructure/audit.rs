@@ -134,6 +134,15 @@ pub enum AuditEventType {
     SkillMarkedUnavailable,
     SkillDeleted,
 
+    // Shared Object events (Object Sharing Library - Issue #49 - Phase 4)
+    SharedObjectCreated,
+    SharedObjectUpdated,
+    SharedObjectMarkedAvailable,
+    SharedObjectMarkedUnavailable,
+    SharedObjectBorrowed,
+    SharedObjectReturned,
+    SharedObjectDeleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,

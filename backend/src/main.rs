@@ -123,6 +123,7 @@ async fn main() -> std::io::Result<()> {
     let owner_credit_balance_repo =
         Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
     let notice_repo = Arc::new(PostgresNoticeRepository::new(pool.clone()));
+    let shared_object_repo = Arc::new(PostgresSharedObjectRepository::new(pool.clone()));
     let skill_repo = Arc::new(PostgresSkillRepository::new(pool.clone()));
     let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
     let convocation_recipient_repo =
@@ -168,6 +169,8 @@ async fn main() -> std::io::Result<()> {
         owner_repo.clone(),
     );
     let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
+    let shared_object_use_cases =
+        SharedObjectUseCases::new(shared_object_repo, owner_repo.clone());
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let etat_date_use_cases = EtatDateUseCases::new(
@@ -224,6 +227,7 @@ async fn main() -> std::io::Result<()> {
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
+        shared_object_use_cases,
         skill_use_cases,
         document_use_cases,
         etat_date_use_cases,
