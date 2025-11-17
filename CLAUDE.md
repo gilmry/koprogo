@@ -386,6 +386,24 @@ Base URL: `http://localhost:8080/api/v1`
    - `PUT /gdpr/rectify` - Correct personal data (Article 16: Right to Rectification)
    - `PUT /gdpr/restrict-processing` - Limit data processing (Article 18: Right to Restriction)
    - `PUT /gdpr/marketing-preference` - Opt-out marketing (Article 21: Right to Object)
+**✅ NOUVEAU: Local Exchanges (SEL - Système d'Échange Local)** (Issue #49 - Phase 1 - Belgian Community Features):
+   - `POST /exchanges` - Create exchange offer (Service/ObjectLoan/SharedPurchase)
+   - `GET /exchanges/:id` - Get exchange details with provider/requester names
+   - `GET /buildings/:building_id/exchanges` - List all building exchanges
+   - `GET /buildings/:building_id/exchanges/available` - List available exchanges (status = Offered)
+   - `GET /owners/:owner_id/exchanges` - List owner exchanges (as provider OR requester)
+   - `GET /buildings/:building_id/exchanges/type/:exchange_type` - List by type (Service/ObjectLoan/SharedPurchase)
+   - `POST /exchanges/:id/request` - Request exchange (Offered → Requested, sets requester_id)
+   - `POST /exchanges/:id/start` - Start exchange (Requested → InProgress, provider only)
+   - `POST /exchanges/:id/complete` - Complete exchange (InProgress → Completed, automatic credit balance updates)
+   - `POST /exchanges/:id/cancel` - Cancel exchange (cancellation reason required)
+   - `PUT /exchanges/:id/rate-provider` - Rate provider (1-5 stars, requester only, completed exchanges)
+   - `PUT /exchanges/:id/rate-requester` - Rate requester (1-5 stars, provider only, completed exchanges)
+   - `DELETE /exchanges/:id` - Delete exchange (provider only, not completed)
+   - `GET /owners/:owner_id/buildings/:building_id/credit-balance` - Get credit balance (time-based currency: 1h = 1 credit)
+   - `GET /buildings/:building_id/leaderboard` - Leaderboard (top contributors, ordered by balance DESC, limit=10 default)
+   - `GET /buildings/:building_id/sel-statistics` - Statistics (total/active/completed exchanges, total credits exchanged, active participants, average rating, most popular type)
+   - `GET /owners/:owner_id/exchange-summary` - Owner summary (total offered/requested/completed, credits earned/spent/balance, average rating, participation level)
 **✅ NOUVEAU: Public Syndic Information** (Issue #92 - Phase 2 - Belgian Legal Requirement):
    - `GET /public/buildings/:slug/syndic` - Get public syndic contact info (no authentication required)
 **Health**: `/health` (GET)
@@ -414,6 +432,8 @@ The system models property management with these aggregates:
 - **✅ NOUVEAU: Payment**: Payment transactions (amount_cents, currency, status, payment_method_type, stripe_payment_intent_id, idempotency_key, refunded_amount_cents) - Issue #84
 - **✅ NOUVEAU: PaymentMethod**: Stored payment methods (method_type, stripe_payment_method_id, display_label, is_default, is_active, expires_at) - Issue #84
 - **✅ NOUVEAU: Quote**: Contractor quotes with Belgian legal compliance (building_id, contractor_id, project_title, amount_excl_vat, vat_rate, amount_incl_vat, validity_date, estimated_duration_days, warranty_years, contractor_rating, status) - Issue #91
+- **✅ NOUVEAU: LocalExchange**: SEL time-based exchange system (building_id, provider_id, requester_id, exchange_type, title, description, credits, status, ratings, timestamps) - Issue #49 Phase 1
+- **✅ NOUVEAU: OwnerCreditBalance**: Time-based currency balance per owner (owner_id, building_id, credits_earned, credits_spent, balance, total_exchanges, average_rating, participation_level) - Issue #49 Phase 1
 - **Document**: File storage (title, file_path, document_type)
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
@@ -622,6 +642,104 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 - Migration: `backend/migrations/20251120150000_create_quotes.sql` (91 lines, custom quote_status ENUM, 8 indexes, 4 constraints, trigger)
 - Total: ~2,161 lines of code, 15 REST endpoints, 20 use case methods
 - Audit events: `QuoteCreated`, `QuoteSubmitted`, `QuoteUnderReview`, `QuoteAccepted`, `QuoteRejected`, `QuoteWithdrawn`, `QuoteExpired`, `QuoteRatingUpdated`, `QuoteComparisonPerformed`, `QuoteDeleted`
+
+### ✅ NOUVEAU: SEL - Système d'Échange Local (Local Exchange Trading System) - Issue #49 (Phase 1)
+
+- Système d'échange local à base de temps (time-based currency: 1 heure = 1 crédit)
+- **Belgian Legal Compliance**: SELs are legal in Belgium, non-taxable if non-commercial
+- **Trust Model**: Negative credit balances allowed (community trust-based system)
+- **3 Exchange Types**:
+  * **Service**: Skills exchange (plumbing, gardening, tutoring, babysitting, IT help, etc.)
+  * **ObjectLoan**: Temporary loan (tools, books, equipment, appliances)
+  * **SharedPurchase**: Co-buying (bulk food, equipment rental sharing, group purchases)
+- **5-State Exchange Workflow**:
+  * **Offered**: Provider creates exchange offer (marketplace listing)
+  * **Requested**: Requester requests exchange (requester_id set, provider can accept/reject)
+  * **InProgress**: Provider starts exchange (service/loan/purchase in progress)
+  * **Completed**: Exchange completed (automatic credit balance updates for both parties)
+  * **Cancelled**: Exchange cancelled (cancellation reason required for audit trail)
+- **Automatic Credit Balance Management**:
+  * Completing exchange automatically updates both parties' balances atomically
+  * Provider earns credits (+credits), Requester spends credits (-credits)
+  * Balance = credits_earned - credits_spent (can be negative)
+- **Mutual Rating System**:
+  * Provider rates requester (1-5 stars, trust/reliability)
+  * Requester rates provider (1-5 stars, quality/service)
+  * Only completed exchanges can be rated
+  * Average rating tracked in OwnerCreditBalance for reputation
+- **Participation Levels** (gamification):
+  * New: 0 exchanges (beginner)
+  * Beginner: 1-5 exchanges (starting to engage)
+  * Active: 6-20 exchanges (regular participant)
+  * Veteran: 21-50 exchanges (experienced contributor)
+  * Expert: 51+ exchanges (community pillar)
+- **Credit Status**:
+  * Positive: net provider (balance > 0, more services offered than received)
+  * Balanced: balanced exchanges (balance ≈ 0)
+  * Negative: net receiver (balance < 0, more services received than offered)
+- **Community Features**:
+  * Leaderboard: Top contributors ordered by balance DESC (limit=10 default)
+  * Statistics: Total/active/completed exchanges, total credits exchanged, active participants, average rating, most popular exchange type
+  * Owner Summary: Total offered/requested/completed, credits earned/spent/balance, average rating, participation level
+- **Domain Entities**:
+  * `LocalExchange` (661 lines): Core exchange aggregate with state machine validation
+  * `OwnerCreditBalance` (273 lines): Time-based currency balance per owner
+- **Repository Pattern**:
+  * `LocalExchangeRepository` trait (18 methods)
+  * `OwnerCreditBalanceRepository` trait (11 methods)
+  * PostgreSQL implementations with complex queries and aggregations
+- **Use Cases** (652 lines):
+  * `LocalExchangeUseCases` - 20 methods with multi-repository orchestration
+  * Requires 3 repositories: LocalExchange, OwnerCreditBalance, Owner (for name lookups)
+  * Owner name enrichment for all DTOs (provider_name, requester_name)
+- **REST API** (17 endpoints, ~400 lines):
+  * Exchange Management: create, get, list (all/available/owner/type), delete
+  * Workflow: request, start, complete, cancel
+  * Rating: rate-provider, rate-requester
+  * Analytics: credit-balance, leaderboard, statistics, owner-summary
+- **Migration** (20251120160000_create_local_exchanges.sql, 143 lines):
+  * Table: `local_exchanges` (15 columns, 8 indexes, 6 constraints)
+  * Table: `owner_credit_balances` (9 columns, 3 indexes, 2 constraints)
+  * Custom ENUMs: `exchange_type` (Service, ObjectLoan, SharedPurchase)
+  * Custom ENUMs: `exchange_status` (Offered, Requested, InProgress, Completed, Cancelled)
+  * Partial indexes for optimization (active exchanges marketplace, leaderboard queries)
+  * Constraints: credits 1-100 hours, ratings 1-5 stars, provider != requester
+- **DTOs** (8 DTOs, 150 lines):
+  * `CreateLocalExchangeDto`, `RequestExchangeDto`, `CompleteExchangeDto`, `CancelExchangeDto`
+  * `RateExchangeDto`, `LocalExchangeResponseDto`, `OwnerCreditBalanceDto`
+  * `SelStatisticsDto`, `OwnerExchangeSummaryDto`
+- **Audit Events** (10 types, GDPR Article 30 compliance):
+  * `ExchangeCreated`, `ExchangeRequested`, `ExchangeStarted`, `ExchangeCompleted`, `ExchangeCancelled`
+  * `ExchangeProviderRated`, `ExchangeRequesterRated`, `ExchangeDeleted`
+  * `CreditBalanceUpdated`, `CreditBalanceCreated`
+- **Total Phase 1 Scope**:
+  * ~3,000 lines of code across 4 layers (Domain, Application, Infrastructure, Migration)
+  * 2 domain entities (31 unit tests)
+  * 8 DTOs
+  * 2 repository traits + 2 PostgreSQL implementations (29 methods total)
+  * 1 use case class (20 methods)
+  * 17 REST endpoints
+  * 1 migration (2 tables, 2 ENUMs, 11 indexes, 6 constraints)
+  * 10 audit event types
+- **Files Created**:
+  * Domain: `local_exchange.rs` (661 lines), `owner_credit_balance.rs` (273 lines)
+  * DTOs: `local_exchange_dto.rs` (150 lines)
+  * Ports: `local_exchange_repository.rs`, `owner_credit_balance_repository.rs`
+  * Implementations: `local_exchange_repository_impl.rs` (466 lines), `owner_credit_balance_repository_impl.rs` (186 lines)
+  * Use Cases: `local_exchange_use_cases.rs` (652 lines)
+  * Handlers: `local_exchange_handlers.rs` (~400 lines)
+  * Migration: `20251120160000_create_local_exchanges.sql` (143 lines)
+- **Commits**:
+  * 6aa4698: Foundation (Domain + DTOs + Repositories) - 1,857 LOC
+  * 686871c: Use Cases (20 methods) - 609 LOC
+  * fc3b325: REST API + Migration (17 endpoints) - 530 LOC
+
+**Next Phases** (Issue #49 - Full Community Features):
+- **Phase 2**: Community Notice Board (announcements, events, lost & found)
+- **Phase 3**: Skills Directory (searchable skills catalog, expertise levels)
+- **Phase 4**: Object Sharing Library (shared equipment, booking system)
+- **Phase 5**: Resource Booking Calendar (common spaces, meeting rooms)
+- **Phase 6**: Gamification & Achievements (badges, challenges, rewards)
 
 ### ✅ NOUVEAU: Public Syndic Information Page - Issue #92 (Phase 2)
 
