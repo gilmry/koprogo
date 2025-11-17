@@ -170,7 +170,7 @@ async fn main() -> std::io::Result<()> {
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
     let payment_reminder_use_cases =
         PaymentReminderUseCases::new(payment_reminder_repo, expense_repo.clone());
-    let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
+    let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
     let board_member_use_cases =
         BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
     let board_decision_use_cases = BoardDecisionUseCases::new(

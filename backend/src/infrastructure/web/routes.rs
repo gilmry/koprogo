@@ -283,6 +283,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(export_user_data)
             .service(erase_user_data)
             .service(can_erase_user)
+            // GDPR Complementary Articles (Issue #90)
+            .service(rectify_user_data) // Article 16: Right to Rectification
+            .service(restrict_user_processing) // Article 18: Right to Restriction
+            .service(set_marketing_preference) // Article 21: Right to Object
             // GDPR Admin (SuperAdmin only)
             .service(list_audit_logs)
             .service(admin_export_user_data)

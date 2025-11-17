@@ -132,6 +132,16 @@ pub enum AuditEventType {
     GdprDataErased,
     GdprDataErasureFailed,
     GdprErasureCheckRequested,
+    // GDPR Article 16: Right to Rectification
+    GdprDataRectified,
+    GdprDataRectificationFailed,
+    // GDPR Article 18: Right to Restriction of Processing
+    GdprProcessingRestricted,
+    GdprProcessingRestrictionFailed,
+    // GDPR Article 21: Right to Object (Marketing)
+    GdprMarketingOptOut,
+    GdprMarketingOptIn,
+    GdprMarketingPreferenceChangeFailed,
 
     // Accounting events
     AccountCreated,
