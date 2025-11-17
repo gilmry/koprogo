@@ -1,9 +1,11 @@
 pub mod account_repository_impl;
+pub mod achievement_repository_impl;
 pub mod audit_log_repository_impl;
 pub mod board_decision_repository_impl;
 pub mod board_member_repository_impl;
 pub mod budget_repository_impl;
 pub mod building_repository_impl;
+pub mod challenge_repository_impl;
 pub mod charge_distribution_repository_impl;
 pub mod convocation_recipient_repository_impl;
 pub mod convocation_repository_impl;
@@ -36,11 +38,17 @@ pub mod user_role_repository_impl;
 pub mod vote_repository_impl;
 
 pub use account_repository_impl::PostgresAccountRepository;
+pub use achievement_repository_impl::{
+    PostgresAchievementRepository, PostgresUserAchievementRepository,
+};
 pub use audit_log_repository_impl::PostgresAuditLogRepository;
 pub use board_decision_repository_impl::PostgresBoardDecisionRepository;
 pub use board_member_repository_impl::PostgresBoardMemberRepository;
 pub use budget_repository_impl::PostgresBudgetRepository;
 pub use building_repository_impl::PostgresBuildingRepository;
+pub use challenge_repository_impl::{
+    PostgresChallengeProgressRepository, PostgresChallengeRepository,
+};
 pub use charge_distribution_repository_impl::PostgresChargeDistributionRepository;
 pub use convocation_recipient_repository_impl::PostgresConvocationRecipientRepository;
 pub use convocation_repository_impl::PostgresConvocationRepository;
