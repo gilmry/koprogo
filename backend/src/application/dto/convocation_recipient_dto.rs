@@ -93,9 +93,9 @@ impl From<ConvocationRecipient> for RecipientSummaryResponse {
         Self {
             id: recipient.id,
             owner_id: recipient.owner_id,
-            email: recipient.email,
+            email: recipient.email.clone(),
             email_opened: recipient.has_opened_email(),
-            attendance_status: recipient.attendance_status,
+            attendance_status: recipient.attendance_status.clone(),
         }
     }
 }

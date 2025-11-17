@@ -16,6 +16,7 @@ pub mod gdpr_restriction;
 pub mod invoice_line_item;
 pub mod local_exchange;
 pub mod meeting;
+pub mod notice;
 pub mod notification;
 pub mod owner_credit_balance;
 pub mod organization;
@@ -54,6 +55,7 @@ pub use gdpr_restriction::{GdprRestrictionRequest, RestrictionReason, Restrictio
 pub use invoice_line_item::InvoiceLineItem;
 pub use local_exchange::{ExchangeStatus, ExchangeType, LocalExchange};
 pub use meeting::{Meeting, MeetingStatus, MeetingType};
+pub use notice::{Notice, NoticeCategory, NoticeStatus, NoticeType};
 pub use notification::{
     Notification, NotificationChannel, NotificationPreference, NotificationPriority,
     NotificationStatus, NotificationType,

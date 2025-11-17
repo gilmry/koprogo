@@ -116,7 +116,7 @@ impl From<Convocation> for ConvocationSummaryResponse {
             id: convocation.id,
             meeting_id: convocation.meeting_id,
             meeting_date: convocation.meeting_date,
-            status: convocation.status,
+            status: convocation.status.clone(),
             total_recipients: convocation.total_recipients,
             opened_count: convocation.opened_count,
             will_attend_count: convocation.will_attend_count,

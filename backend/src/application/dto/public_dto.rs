@@ -27,6 +27,8 @@ pub struct PublicSyndicInfoResponse {
 
 impl From<Building> for PublicSyndicInfoResponse {
     fn from(building: Building) -> Self {
+        let has_syndic_info = building.has_public_syndic_info();
+
         Self {
             building_name: building.name,
             building_address: building.address,
@@ -40,7 +42,7 @@ impl From<Building> for PublicSyndicInfoResponse {
             syndic_address: building.syndic_address,
             syndic_office_hours: building.syndic_office_hours,
             syndic_emergency_contact: building.syndic_emergency_contact,
-            has_syndic_info: building.has_public_syndic_info(),
+            has_syndic_info,
         }
     }
 }
