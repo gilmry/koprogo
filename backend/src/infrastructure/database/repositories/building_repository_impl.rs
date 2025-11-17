@@ -54,7 +54,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, created_at, updated_at
+            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
             FROM buildings
             WHERE id = $1
             "#,
@@ -75,6 +75,13 @@ impl BuildingRepository for PostgresBuildingRepository {
             total_units: row.get("total_units"),
             total_tantiemes: row.get("total_tantiemes"),
             construction_year: row.get("construction_year"),
+            syndic_name: row.get("syndic_name"),
+            syndic_email: row.get("syndic_email"),
+            syndic_phone: row.get("syndic_phone"),
+            syndic_address: row.get("syndic_address"),
+            syndic_office_hours: row.get("syndic_office_hours"),
+            syndic_emergency_contact: row.get("syndic_emergency_contact"),
+            slug: row.get("slug"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         }))
@@ -83,7 +90,7 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn find_all(&self) -> Result<Vec<Building>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, created_at, updated_at
+            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
             FROM buildings
             ORDER BY created_at DESC
             "#,
@@ -105,6 +112,13 @@ impl BuildingRepository for PostgresBuildingRepository {
                 total_units: row.get("total_units"),
                 total_tantiemes: row.get("total_tantiemes"),
                 construction_year: row.get("construction_year"),
+                syndic_name: row.get("syndic_name"),
+                syndic_email: row.get("syndic_email"),
+                syndic_phone: row.get("syndic_phone"),
+                syndic_address: row.get("syndic_address"),
+                syndic_office_hours: row.get("syndic_office_hours"),
+                syndic_emergency_contact: row.get("syndic_emergency_contact"),
+                slug: row.get("slug"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
             })
@@ -200,7 +214,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, created_at, updated_at \
+            "SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at \
              FROM buildings {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -249,6 +263,13 @@ impl BuildingRepository for PostgresBuildingRepository {
                 total_units: row.get("total_units"),
                 total_tantiemes: row.get("total_tantiemes"),
                 construction_year: row.get("construction_year"),
+                syndic_name: row.get("syndic_name"),
+                syndic_email: row.get("syndic_email"),
+                syndic_phone: row.get("syndic_phone"),
+                syndic_address: row.get("syndic_address"),
+                syndic_office_hours: row.get("syndic_office_hours"),
+                syndic_emergency_contact: row.get("syndic_emergency_contact"),
+                slug: row.get("slug"),
                 created_at: row.get("created_at"),
                 updated_at: row.get("updated_at"),
             })
@@ -261,7 +282,7 @@ impl BuildingRepository for PostgresBuildingRepository {
         sqlx::query(
             r#"
             UPDATE buildings
-            SET organization_id = $2, name = $3, address = $4, city = $5, postal_code = $6, country = $7, total_units = $8, total_tantiemes = $9, construction_year = $10, updated_at = $11
+            SET organization_id = $2, name = $3, address = $4, city = $5, postal_code = $6, country = $7, total_units = $8, total_tantiemes = $9, construction_year = $10, syndic_name = $11, syndic_email = $12, syndic_phone = $13, syndic_address = $14, syndic_office_hours = $15, syndic_emergency_contact = $16, slug = $17, updated_at = $18
             WHERE id = $1
             "#,
         )
@@ -275,6 +296,13 @@ impl BuildingRepository for PostgresBuildingRepository {
         .bind(building.total_units)
         .bind(building.total_tantiemes)
         .bind(building.construction_year)
+        .bind(&building.syndic_name)
+        .bind(&building.syndic_email)
+        .bind(&building.syndic_phone)
+        .bind(&building.syndic_address)
+        .bind(&building.syndic_office_hours)
+        .bind(&building.syndic_emergency_contact)
+        .bind(&building.slug)
         .bind(building.updated_at)
         .execute(&self.pool)
         .await
@@ -291,5 +319,41 @@ impl BuildingRepository for PostgresBuildingRepository {
             .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(result.rows_affected() > 0)
+    }
+
+    async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String> {
+        let row = sqlx::query(
+            r#"
+            SELECT id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at
+            FROM buildings
+            WHERE slug = $1
+            "#,
+        )
+        .bind(slug)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+        Ok(row.map(|row| Building {
+            id: row.get("id"),
+            organization_id: row.get("organization_id"),
+            name: row.get("name"),
+            address: row.get("address"),
+            city: row.get("city"),
+            postal_code: row.get("postal_code"),
+            country: row.get("country"),
+            total_units: row.get("total_units"),
+            total_tantiemes: row.get("total_tantiemes"),
+            construction_year: row.get("construction_year"),
+            syndic_name: row.get("syndic_name"),
+            syndic_email: row.get("syndic_email"),
+            syndic_phone: row.get("syndic_phone"),
+            syndic_address: row.get("syndic_address"),
+            syndic_office_hours: row.get("syndic_office_hours"),
+            syndic_emergency_contact: row.get("syndic_emergency_contact"),
+            slug: row.get("slug"),
+            created_at: row.get("created_at"),
+            updated_at: row.get("updated_at"),
+        }))
     }
 }

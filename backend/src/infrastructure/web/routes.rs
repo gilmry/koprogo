@@ -7,6 +7,8 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/api/v1")
             .service(health_check)
+            // Public Endpoints (no authentication required - Issue #92)
+            .service(get_public_syndic_info)
             // Authentication
             .service(login)
             .service(register)

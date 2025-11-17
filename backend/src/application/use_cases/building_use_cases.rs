@@ -104,6 +104,11 @@ impl BuildingUseCases {
         self.repository.delete(id).await
     }
 
+    /// Find building by URL slug (for public pages - Issue #92)
+    pub async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String> {
+        self.repository.find_by_slug(slug).await
+    }
+
     fn to_response_dto(&self, building: &Building) -> BuildingResponseDto {
         BuildingResponseDto {
             id: building.id.to_string(),
@@ -144,6 +149,7 @@ mod tests {
             ) -> Result<(Vec<Building>, i64), String>;
             async fn update(&self, building: &Building) -> Result<Building, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
+            async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String>;
         }
     }
 

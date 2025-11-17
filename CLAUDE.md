@@ -370,6 +370,8 @@ Base URL: `http://localhost:8080/api/v1`
    - `PUT /gdpr/rectify` - Correct personal data (Article 16: Right to Rectification)
    - `PUT /gdpr/restrict-processing` - Limit data processing (Article 18: Right to Restriction)
    - `PUT /gdpr/marketing-preference` - Opt-out marketing (Article 21: Right to Object)
+**✅ NOUVEAU: Public Syndic Information** (Issue #92 - Phase 2 - Belgian Legal Requirement):
+   - `GET /public/buildings/:slug/syndic` - Get public syndic contact info (no authentication required)
 **Health**: `/health` (GET)
 
 ## Domain Entities
@@ -580,6 +582,44 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
   * Validation: Email format, domain business rules enforced
 - **Total**: 1 migration, 4 User methods, 11 unit tests, 4 Use Case methods, 4 DTOs, 3 REST handlers (320 lines), 7 audit events
 - **Belgian Legal Compliance**: Full GDPR compliance for Belgian ASBL operations
+
+### ✅ NOUVEAU: Public Syndic Information Page - Issue #92 (Phase 2)
+
+- Système de page publique d'information syndic conforme à la loi belge
+- **Exigence légale belge**: Les syndics doivent afficher publiquement leurs coordonnées de contact
+- **SEO-friendly URLs**: Génération automatique de slugs URL à partir du nom + ville du bâtiment
+- **Slug generation**: Normalisation des accents (é→e, à→a, etc.), conversion en minuscules, séparation par tirets
+- **Public endpoint**: GET /api/v1/public/buildings/{slug}/syndic (aucune authentification requise)
+- **7 champs syndic publics**: syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug
+- **Migration** (20251120120000_add_syndic_public_info_to_buildings.sql):
+  * 7 colonnes syndic + slug UNIQUE
+  * 2 indexes (idx_buildings_slug, idx_buildings_syndic_name)
+  * Commentaires de colonnes pour documentation légale
+- **Building domain entity** (building.rs):
+  * `generate_slug(name, address, city)` - Génération SEO-friendly avec gestion accents
+  * `update_syndic_info()` - Mise à jour information syndic
+  * `has_public_syndic_info()` - Vérification disponibilité info publique
+  * Slug généré automatiquement lors de la création du bâtiment
+- **DTO** (public_dto.rs):
+  * `PublicSyndicInfoResponse` - DTO sans authentification pour endpoint public
+  * `From<Building>` conversion avec computed field `has_syndic_info`
+  * 2 unit tests (avec/sans info syndic)
+- **BuildingRepository** (building_repository.rs):
+  * `find_by_slug(slug: &str)` - Nouvelle méthode trait
+  * PostgresBuildingRepository: TOUS les queries SQL mis à jour (create, find_by_id, find_all, find_all_paginated, update, find_by_slug)
+  * 19 colonnes totales (12 existantes + 7 syndic fields)
+  * 359 lignes totales de repository (refactoring complet)
+- **BuildingUseCases** (building_use_cases.rs):
+  * `find_by_slug()` - Wrapper use case pour endpoint public
+- **Public handler** (public_handlers.rs):
+  * `get_public_syndic_info()` - Handler Actix-web sans authentification
+  * Codes HTTP: 200 OK, 404 Not Found, 500 Internal Server Error
+  * Documentation inline avec exemple de réponse JSON
+- **Routes** (routes.rs):
+  * Endpoint public ajouté en tête de scope (avant middleware auth)
+  * Position stratégique pour éviter interception par middleware
+- **Conformité**: Loi belge sur transparence des syndics de copropriété
+- **Total**: 1 migration, 7 DB fields, 3 Building methods, 1 DTO, 1 Use Case method, 1 REST handler, 1 public endpoint
 
 ### Multi-owner support
 
