@@ -21,8 +21,8 @@ impl BuildingRepository for PostgresBuildingRepository {
     async fn create(&self, building: &Building) -> Result<Building, String> {
         sqlx::query(
             r#"
-            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, total_tantiemes, construction_year, syndic_name, syndic_email, syndic_phone, syndic_address, syndic_office_hours, syndic_emergency_contact, slug, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
             "#,
         )
         .bind(building.id)
@@ -35,6 +35,13 @@ impl BuildingRepository for PostgresBuildingRepository {
         .bind(building.total_units)
         .bind(building.total_tantiemes)
         .bind(building.construction_year)
+        .bind(&building.syndic_name)
+        .bind(&building.syndic_email)
+        .bind(&building.syndic_phone)
+        .bind(&building.syndic_address)
+        .bind(&building.syndic_office_hours)
+        .bind(&building.syndic_emergency_contact)
+        .bind(&building.slug)
         .bind(building.created_at)
         .bind(building.updated_at)
         .execute(&self.pool)
