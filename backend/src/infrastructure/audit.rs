@@ -152,6 +152,20 @@ pub enum AuditEventType {
     ResourceBookingConfirmed,
     ResourceBookingDeleted,
 
+    // Gamification events (Achievements & Challenges - Issue #49 - Phase 6)
+    AchievementCreated,
+    AchievementUpdated,
+    AchievementDeleted,
+    AchievementAwarded,
+    ChallengeCreated,
+    ChallengeActivated,
+    ChallengeUpdated,
+    ChallengeCompleted,
+    ChallengeCancelled,
+    ChallengeDeleted,
+    ChallengeProgressIncremented,
+    ChallengeProgressCompleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,

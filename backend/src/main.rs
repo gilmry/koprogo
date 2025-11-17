@@ -129,6 +129,11 @@ async fn main() -> std::io::Result<()> {
     let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
     let convocation_recipient_repo =
         Arc::new(PostgresConvocationRecipientRepository::new(pool.clone()));
+    let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
+    let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
+    let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
+    let challenge_progress_repo =
+        Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -206,6 +211,20 @@ async fn main() -> std::io::Result<()> {
     let account_use_cases = AccountUseCases::new(account_repo.clone());
     let financial_report_use_cases =
         FinancialReportUseCases::new(account_repo.clone(), expense_repo.clone());
+    let achievement_use_cases = AchievementUseCases::new(
+        achievement_repo.clone(),
+        user_achievement_repo.clone(),
+        user_repo.clone(),
+    );
+    let challenge_use_cases =
+        ChallengeUseCases::new(challenge_repo.clone(), challenge_progress_repo.clone());
+    let gamification_stats_use_cases = GamificationStatsUseCases::new(
+        achievement_repo,
+        user_achievement_repo,
+        challenge_repo,
+        challenge_progress_repo,
+        user_repo.clone(),
+    );
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");
@@ -242,6 +261,9 @@ async fn main() -> std::io::Result<()> {
         board_decision_use_cases,
         board_dashboard_use_cases,
         financial_report_use_cases,
+        achievement_use_cases,
+        challenge_use_cases,
+        gamification_stats_use_cases,
         audit_logger,
         email_service,
         pool.clone(),
