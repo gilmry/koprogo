@@ -1,9 +1,11 @@
 pub mod account_repository;
+pub mod achievement_repository;
 pub mod audit_log_repository;
 pub mod board_decision_repository;
 pub mod board_member_repository;
 pub mod budget_repository;
 pub mod building_repository;
+pub mod challenge_repository;
 pub mod charge_distribution_repository;
 pub mod convocation_recipient_repository;
 pub mod convocation_repository;
@@ -36,11 +38,13 @@ pub mod user_role_repository;
 pub mod vote_repository;
 
 pub use account_repository::AccountRepository;
+pub use achievement_repository::{AchievementRepository, UserAchievementRepository};
 pub use audit_log_repository::{AuditLogFilters, AuditLogRepository};
 pub use board_decision_repository::BoardDecisionRepository;
 pub use board_member_repository::BoardMemberRepository;
 pub use budget_repository::{BudgetRepository, BudgetStatsResponse, BudgetVarianceResponse};
 pub use building_repository::BuildingRepository;
+pub use challenge_repository::{ChallengeProgressRepository, ChallengeRepository};
 pub use charge_distribution_repository::ChargeDistributionRepository;
 pub use convocation_recipient_repository::{
     ConvocationRecipientRepository, RecipientTrackingSummary,
