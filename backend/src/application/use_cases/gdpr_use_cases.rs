@@ -334,6 +334,7 @@ impl GdprUseCases {
 mod tests {
     use super::*;
     use crate::application::ports::gdpr_repository::MockGdprRepo;
+    use crate::application::ports::user_repository::MockUserRepo;
     use crate::domain::entities::gdpr_export::{GdprExport, UserData};
     use chrono::Utc;
 
@@ -369,7 +370,10 @@ mod tests {
                 Ok(GdprExport::new(user_data))
             });
 
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .export_user_data(user_id, user_id, Some(org_id))
             .await;
@@ -386,7 +390,9 @@ mod tests {
         let org_id = Uuid::new_v4();
 
         let mock_repo = MockGdprRepo::new();
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
 
         let result = use_cases
             .export_user_data(user_id, other_user_id, Some(org_id))
@@ -408,7 +414,10 @@ mod tests {
             .times(1)
             .returning(|_| Ok(true));
 
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .export_user_data(user_id, user_id, Some(Uuid::new_v4()))
             .await;
@@ -466,7 +475,10 @@ mod tests {
             .times(2)
             .returning(|_| Ok(()));
 
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .erase_user_data(user_id, user_id, Some(org_id))
             .await;
@@ -487,7 +499,9 @@ mod tests {
         let org_id = Uuid::new_v4();
 
         let mock_repo = MockGdprRepo::new();
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
 
         let result = use_cases
             .erase_user_data(user_id, other_user_id, Some(org_id))
@@ -509,7 +523,10 @@ mod tests {
             .times(1)
             .returning(|_| Ok(true));
 
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .erase_user_data(user_id, user_id, Some(Uuid::new_v4()))
             .await;
@@ -532,7 +549,10 @@ mod tests {
             .times(1)
             .returning(|_| Ok(vec!["Unpaid expenses".to_string()]));
 
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .erase_user_data(user_id, user_id, Some(Uuid::new_v4()))
             .await;
@@ -551,7 +571,10 @@ mod tests {
             .times(1)
             .returning(|_| Ok(vec![]));
 
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases.can_erase_user(user_id).await;
 
         assert!(result.is_ok());
@@ -568,7 +591,10 @@ mod tests {
             .times(1)
             .returning(|_| Ok(vec!["Unpaid expenses".to_string()]));
 
-        let use_cases = GdprUseCases::new(Arc::new(mock_repo));
+        let mock_user_repo = MockUserRepo::new();
+
+
+        let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases.can_erase_user(user_id).await;
 
         assert!(result.is_ok());

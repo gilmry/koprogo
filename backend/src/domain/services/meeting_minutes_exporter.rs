@@ -346,9 +346,20 @@ mod tests {
         let building = Building {
             id: Uuid::new_v4(),
             name: "Les Jardins de Bruxelles".to_string(),
-            address: "123 Avenue Louise, 1000 Bruxelles".to_string(),
+            address: "123 Avenue Louise".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
             total_units: 10,
+            total_tantiemes: 1000,
             construction_year: Some(1990),
+            syndic_name: None,
+            syndic_email: None,
+            syndic_phone: None,
+            syndic_address: None,
+            syndic_office_hours: None,
+            syndic_emergency_contact: None,
+            slug: None,
             organization_id: Uuid::new_v4(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -397,7 +408,7 @@ mod tests {
             meeting_id: meeting.id,
             title: "Approbation du budget 2025".to_string(),
             description: "Le budget prévisionnel pour l'exercice 2025 est approuvé.".to_string(),
-            resolution_type: ResolutionType::BudgetApproval,
+            resolution_type: ResolutionType::Ordinary,
             majority_required: MajorityType::Simple,
             vote_count_pour: 2,
             vote_count_contre: 0,
@@ -408,7 +419,6 @@ mod tests {
             status: ResolutionStatus::Adopted,
             voted_at: Some(Utc::now()),
             created_at: Utc::now(),
-            updated_at: Utc::now(),
         };
 
         let resolutions = vec![ResolutionWithVotes {

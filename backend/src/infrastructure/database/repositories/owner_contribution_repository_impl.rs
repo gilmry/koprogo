@@ -45,10 +45,10 @@ impl PostgresOwnerContributionRepository {
         let payment_method: Option<String> = row.get("payment_method");
         let payment_method = payment_method
             .map(|pm| match pm.as_str() {
-                "bank_transfer" => Ok(PaymentMethod::BankTransfer),
-                "cash" => Ok(PaymentMethod::Cash),
-                "check" => Ok(PaymentMethod::Check),
-                "domiciliation" => Ok(PaymentMethod::Domiciliation),
+                "bank_transfer" => Ok(ContributionPaymentMethod::BankTransfer),
+                "cash" => Ok(ContributionPaymentMethod::Cash),
+                "check" => Ok(ContributionPaymentMethod::Check),
+                "domiciliation" => Ok(ContributionPaymentMethod::Domiciliation),
                 _ => Err(format!("Unknown payment method: {}", pm)),
             })
             .transpose()?;
