@@ -312,7 +312,7 @@ pub async fn get_leaderboard(
 /// GET /api/v1/buildings/:building_id/sel-statistics
 /// Get SEL statistics for a building
 #[get("/buildings/{building_id}/sel-statistics")]
-pub async fn get_statistics(
+pub async fn get_sel_statistics(
     data: web::Data<AppState>,
     _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,

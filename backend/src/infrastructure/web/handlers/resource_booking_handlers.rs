@@ -590,7 +590,7 @@ pub async fn check_conflicts(
 /// # Responses
 /// - 200 OK: Booking statistics
 #[get("/buildings/{building_id}/resource-bookings/statistics")]
-pub async fn get_statistics(
+pub async fn get_booking_statistics(
     data: web::Data<AppState>,
     _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,

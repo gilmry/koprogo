@@ -44,7 +44,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             RETURNING id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                       email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                      attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                      attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                       created_at, updated_at
             "#,
             recipient.id,
@@ -171,7 +171,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             r#"
             SELECT id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                    email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                   attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                   attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                    created_at, updated_at
             FROM convocation_recipients
             WHERE id = $1
@@ -212,7 +212,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             r#"
             SELECT id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                    email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                   attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                   attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                    created_at, updated_at
             FROM convocation_recipients
             WHERE convocation_id = $1
@@ -256,7 +256,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             r#"
             SELECT id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                    email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                   attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                   attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                    created_at, updated_at
             FROM convocation_recipients
             WHERE convocation_id = $1 AND owner_id = $2
@@ -300,7 +300,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             r#"
             SELECT id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                    email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                   attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                   attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                    created_at, updated_at
             FROM convocation_recipients
             WHERE owner_id = $1
@@ -346,7 +346,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             r#"
             SELECT id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                    email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                   attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                   attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                    created_at, updated_at
             FROM convocation_recipients
             WHERE convocation_id = $1 AND attendance_status = $2
@@ -390,7 +390,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             r#"
             SELECT id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                    email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                   attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                   attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                    created_at, updated_at
             FROM convocation_recipients
             WHERE convocation_id = $1
@@ -437,7 +437,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             r#"
             SELECT id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                    email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                   attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                   attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                    created_at, updated_at
             FROM convocation_recipients
             WHERE convocation_id = $1 AND email_failed = TRUE
@@ -488,7 +488,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             WHERE id = $1
             RETURNING id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                       email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                      attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                      attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                       created_at, updated_at
             "#,
             recipient.id,

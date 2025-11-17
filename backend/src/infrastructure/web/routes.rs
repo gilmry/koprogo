@@ -225,7 +225,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_exchange)
             .service(get_credit_balance)
             .service(get_leaderboard)
-            .service(get_statistics)
+            .service(get_sel_statistics)
             .service(get_owner_summary)
             // Notices (Community Notice Board - Issue #49 - Phase 2)
             .service(create_notice)
@@ -297,7 +297,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(confirm_booking)
             .service(delete_booking)
             .service(check_conflicts)
-            .service(get_statistics)
+            .service(get_booking_statistics)
             // Gamification & Achievements (Issue #49 - Phase 6)
             // Achievements
             .service(create_achievement)
