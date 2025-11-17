@@ -58,6 +58,12 @@ pub enum AuditEventType {
     TicketReopened,
     TicketDeleted,
 
+    // Notification events (Issue #86 - Phase 2)
+    NotificationCreated,
+    NotificationRead,
+    NotificationDeleted,
+    NotificationPreferenceUpdated,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
