@@ -69,6 +69,10 @@ impl UserRepository for PostgresUserRepository {
                     role,
                     organization_id: row.organization_id,
                     is_active: row.is_active,
+                    processing_restricted: false,
+                    processing_restricted_at: None,
+                    marketing_opt_out: false,
+                    marketing_opt_out_at: None,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                 }))
@@ -106,6 +110,10 @@ impl UserRepository for PostgresUserRepository {
                     role,
                     organization_id: row.organization_id,
                     is_active: row.is_active,
+                    processing_restricted: false,
+                    processing_restricted_at: None,
+                    marketing_opt_out: false,
+                    marketing_opt_out_at: None,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                 }))
@@ -139,6 +147,10 @@ impl UserRepository for PostgresUserRepository {
                     role,
                     organization_id: row.organization_id,
                     is_active: row.is_active,
+                    processing_restricted: false,
+                    processing_restricted_at: None,
+                    marketing_opt_out: false,
+                    marketing_opt_out_at: None,
                     processing_restricted: false, // Default: no restriction
                     processing_restricted_at: None,
                     marketing_opt_out: false, // Default: opt-in
@@ -179,6 +191,10 @@ impl UserRepository for PostgresUserRepository {
                     role,
                     organization_id: row.organization_id,
                     is_active: row.is_active,
+                    processing_restricted: false,
+                    processing_restricted_at: None,
+                    marketing_opt_out: false,
+                    marketing_opt_out_at: None,
                     processing_restricted: false, // Default: no restriction
                     processing_restricted_at: None,
                     marketing_opt_out: false, // Default: opt-in

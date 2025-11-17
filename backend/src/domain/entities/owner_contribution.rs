@@ -37,10 +37,10 @@ pub enum ContributionPaymentStatus {
     Cancelled,
 }
 
-/// Payment method
+/// Payment method for contributions
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub enum PaymentMethod {
+pub enum ContributionPaymentMethod {
     /// Bank transfer (virement)
     BankTransfer,
     /// Cash (espèces)
@@ -79,7 +79,7 @@ pub struct OwnerContribution {
     pub payment_date: Option<DateTime<Utc>>, // When actually paid
 
     // Payment details
-    pub payment_method: Option<PaymentMethod>,
+    pub payment_method: Option<ContributionPaymentMethod>,
     pub payment_reference: Option<String>,
 
     // Status

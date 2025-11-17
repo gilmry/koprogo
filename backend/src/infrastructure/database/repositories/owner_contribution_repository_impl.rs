@@ -100,10 +100,10 @@ impl OwnerContributionRepository for PostgresOwnerContributionRepository {
         };
 
         let payment_method = contribution.payment_method.as_ref().map(|pm| match pm {
-            PaymentMethod::BankTransfer => "bank_transfer",
-            PaymentMethod::Cash => "cash",
-            PaymentMethod::Check => "check",
-            PaymentMethod::Domiciliation => "domiciliation",
+            ContributionPaymentMethod::BankTransfer => "bank_transfer",
+            ContributionPaymentMethod::Cash => "cash",
+            ContributionPaymentMethod::Check => "check",
+            ContributionPaymentMethod::Domiciliation => "domiciliation",
         });
 
         let row = sqlx::query(
@@ -201,10 +201,10 @@ impl OwnerContributionRepository for PostgresOwnerContributionRepository {
         };
 
         let payment_method = contribution.payment_method.as_ref().map(|pm| match pm {
-            PaymentMethod::BankTransfer => "bank_transfer",
-            PaymentMethod::Cash => "cash",
-            PaymentMethod::Check => "check",
-            PaymentMethod::Domiciliation => "domiciliation",
+            ContributionPaymentMethod::BankTransfer => "bank_transfer",
+            ContributionPaymentMethod::Cash => "cash",
+            ContributionPaymentMethod::Check => "check",
+            ContributionPaymentMethod::Domiciliation => "domiciliation",
         });
 
         let row = sqlx::query(

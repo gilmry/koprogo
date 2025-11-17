@@ -85,7 +85,7 @@ impl From<Quote> for QuoteResponseDto {
             building_id: quote.building_id.to_string(),
             contractor_id: quote.contractor_id.to_string(),
             project_title: quote.project_title,
-            project_description: quote.project_description,
+            project_description: quote.project_description.clone(),
             amount_excl_vat: quote.amount_excl_vat.to_string(),
             vat_rate: quote.vat_rate.to_string(),
             amount_incl_vat: quote.amount_incl_vat.to_string(),
