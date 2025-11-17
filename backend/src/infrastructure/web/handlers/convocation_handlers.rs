@@ -224,7 +224,7 @@ pub async fn send_convocation(
                 Some(organization_id),
             )
             .with_resource("Convocation", convocation.id)
-            .with_metadata(format!("recipients: {}", convocation.total_recipients))
+            .with_details(format!("recipients: {}", convocation.total_recipients))
             .log();
 
             HttpResponse::Ok().json(convocation)
@@ -337,7 +337,7 @@ pub async fn update_recipient_attendance(
                 Some(organization_id),
             )
             .with_resource("ConvocationRecipient", recipient.id)
-            .with_metadata(format!("status: {:?}", recipient.attendance_status))
+            .with_details(format!("status: {:?}", recipient.attendance_status))
             .log();
 
             HttpResponse::Ok().json(recipient)
@@ -373,7 +373,7 @@ pub async fn set_recipient_proxy(
                 Some(organization_id),
             )
             .with_resource("ConvocationRecipient", recipient.id)
-            .with_metadata(format!(
+            .with_details(format!(
                 "proxy_owner_id: {:?}",
                 recipient.proxy_owner_id
             ))
@@ -407,7 +407,7 @@ pub async fn send_convocation_reminders(
                 Some(organization_id),
             )
             .with_resource("Convocation", *id)
-            .with_metadata(format!("recipients: {}", recipients.len()))
+            .with_details(format!("recipients: {}", recipients.len()))
             .log();
 
             HttpResponse::Ok().json(recipients)

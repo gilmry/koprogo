@@ -1,4 +1,4 @@
-use crate::domain::entities::{PaymentMethod, PaymentMethodType};
+use crate::domain::entities::payment_method::{PaymentMethod, PaymentMethodType};
 use async_trait::async_trait;
 use uuid::Uuid;
 

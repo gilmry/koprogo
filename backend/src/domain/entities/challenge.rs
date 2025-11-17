@@ -306,6 +306,41 @@ impl Challenge {
         self.updated_at = Utc::now();
         Ok(())
     }
+
+    /// Update challenge title
+    pub fn update_title(&mut self, title: String) -> Result<(), String> {
+        self.update(Some(title), None, None, None, None, None, None)
+    }
+
+    /// Update challenge description
+    pub fn update_description(&mut self, description: String) -> Result<(), String> {
+        self.update(None, Some(description), None, None, None, None, None)
+    }
+
+    /// Update challenge icon
+    pub fn update_icon(&mut self, icon: String) -> Result<(), String> {
+        self.update(None, None, Some(icon), None, None, None, None)
+    }
+
+    /// Update challenge start date
+    pub fn update_start_date(&mut self, start_date: DateTime<Utc>) -> Result<(), String> {
+        self.update(None, None, None, Some(start_date), None, None, None)
+    }
+
+    /// Update challenge end date
+    pub fn update_end_date(&mut self, end_date: DateTime<Utc>) -> Result<(), String> {
+        self.update(None, None, None, None, Some(end_date), None, None)
+    }
+
+    /// Update challenge target value
+    pub fn update_target_value(&mut self, target_value: i32) -> Result<(), String> {
+        self.update(None, None, None, None, None, Some(target_value), None)
+    }
+
+    /// Update challenge reward points
+    pub fn update_reward_points(&mut self, reward_points: i32) -> Result<(), String> {
+        self.update(None, None, None, None, None, None, Some(reward_points))
+    }
 }
 
 /// Challenge progress tracking for individual users

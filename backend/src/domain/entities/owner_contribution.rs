@@ -145,7 +145,7 @@ impl OwnerContribution {
     pub fn mark_as_paid(
         &mut self,
         payment_date: DateTime<Utc>,
-        payment_method: PaymentMethod,
+        payment_method: ContributionPaymentMethod,
         payment_reference: Option<String>,
     ) {
         self.payment_date = Some(payment_date);

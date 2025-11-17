@@ -1,5 +1,5 @@
 use crate::application::ports::OwnerContributionRepository;
-use crate::domain::entities::{ContributionType, OwnerContribution, PaymentMethod};
+use crate::domain::entities::{ContributionPaymentMethod, ContributionType, OwnerContribution};
 use chrono::{DateTime, Utc};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -47,7 +47,7 @@ impl OwnerContributionUseCases {
         &self,
         contribution_id: Uuid,
         payment_date: DateTime<Utc>,
-        payment_method: PaymentMethod,
+        payment_method: ContributionPaymentMethod,
         payment_reference: Option<String>,
     ) -> Result<OwnerContribution, String> {
         // Find contribution

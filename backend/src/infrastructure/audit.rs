@@ -312,6 +312,13 @@ impl AuditLogEntry {
         self
     }
 
+    /// Add details to metadata as a string
+    pub fn with_details(mut self, details: String) -> Self {
+        let details_json = serde_json::json!({ "details": details });
+        self.metadata = Some(details_json);
+        self
+    }
+
     /// Log this entry (currently to stdout, can be extended to database/file)
     pub fn log(&self) {
         // Redact sensitive information for logging (GDPR compliance)

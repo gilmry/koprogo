@@ -36,4 +36,5 @@ mod tests {
     }
 }
 
+#[cfg(test)]
 pub use tests::MockUserRepo;

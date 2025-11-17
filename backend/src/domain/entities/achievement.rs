@@ -237,6 +237,31 @@ impl Achievement {
             AchievementTier::Diamond => 250,
         }
     }
+
+    /// Update achievement name
+    pub fn update_name(&mut self, name: String) -> Result<(), String> {
+        self.update(Some(name), None, None, None, None, None, None, None)
+    }
+
+    /// Update achievement description
+    pub fn update_description(&mut self, description: String) -> Result<(), String> {
+        self.update(None, Some(description), None, None, None, None, None, None)
+    }
+
+    /// Update achievement icon
+    pub fn update_icon(&mut self, icon: String) -> Result<(), String> {
+        self.update(None, None, Some(icon), None, None, None, None, None)
+    }
+
+    /// Update achievement points value
+    pub fn update_points_value(&mut self, points_value: i32) -> Result<(), String> {
+        self.update(None, None, None, Some(points_value), None, None, None, None)
+    }
+
+    /// Update achievement requirements
+    pub fn update_requirements(&mut self, requirements: String) -> Result<(), String> {
+        self.update(None, None, None, None, Some(requirements), None, None, None)
+    }
 }
 
 /// User achievement record - Tracks which achievements a user has earned
@@ -270,6 +295,12 @@ impl UserAchievement {
     /// Increment times earned (for repeatable achievements)
     pub fn increment_earned(&mut self) {
         self.times_earned += 1;
+    }
+
+    /// Repeat earn achievement (alias for increment_earned)
+    pub fn repeat_earn(&mut self) -> Result<(), String> {
+        self.increment_earned();
+        Ok(())
     }
 }
 
