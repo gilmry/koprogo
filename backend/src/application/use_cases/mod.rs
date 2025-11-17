@@ -11,6 +11,7 @@ pub mod document_use_cases;
 pub mod etat_date_use_cases;
 pub mod expense_use_cases;
 pub mod financial_report_use_cases;
+pub mod gamification_use_cases;
 pub mod gdpr_use_cases;
 pub mod local_exchange_use_cases;
 pub mod meeting_use_cases;
@@ -43,6 +44,9 @@ pub use document_use_cases::DocumentUseCases;
 pub use etat_date_use_cases::EtatDateUseCases;
 pub use expense_use_cases::ExpenseUseCases;
 pub use financial_report_use_cases::FinancialReportUseCases;
+pub use gamification_use_cases::{
+    AchievementUseCases, ChallengeUseCases, GamificationStatsUseCases,
+};
 pub use gdpr_use_cases::GdprUseCases;
 pub use local_exchange_use_cases::LocalExchangeUseCases;
 pub use meeting_use_cases::MeetingUseCases;
