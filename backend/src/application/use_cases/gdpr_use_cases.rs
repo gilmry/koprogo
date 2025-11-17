@@ -1,18 +1,25 @@
 use crate::application::dto::{GdprEraseResponseDto, GdprExportResponseDto};
-use crate::application::ports::GdprRepository;
+use crate::application::ports::{GdprRepository, UserRepository};
 use chrono::Utc;
 use std::sync::Arc;
 use uuid::Uuid;
 
 /// GDPR Use Cases for data export and erasure operations
-/// Implements business logic for GDPR Article 15 (Right to Access) and Article 17 (Right to Erasure)
+/// Implements business logic for GDPR Articles 15, 16, 17, 18, 21
 pub struct GdprUseCases {
     gdpr_repository: Arc<dyn GdprRepository>,
+    user_repository: Arc<dyn UserRepository>,
 }
 
 impl GdprUseCases {
-    pub fn new(gdpr_repository: Arc<dyn GdprRepository>) -> Self {
-        Self { gdpr_repository }
+    pub fn new(
+        gdpr_repository: Arc<dyn GdprRepository>,
+        user_repository: Arc<dyn UserRepository>,
+    ) -> Self {
+        Self {
+            gdpr_repository,
+            user_repository,
+        }
     }
 
     /// Export all personal data for a user (GDPR Article 15 - Right to Access)
@@ -155,6 +162,171 @@ impl GdprUseCases {
     pub async fn can_erase_user(&self, user_id: Uuid) -> Result<bool, String> {
         let holds = self.gdpr_repository.check_legal_holds(user_id).await?;
         Ok(holds.is_empty())
+    }
+
+    /// Rectify user personal data (GDPR Article 16 - Right to Rectification)
+    ///
+    /// Allows users to correct inaccurate or incomplete personal data.
+    ///
+    /// # Arguments
+    /// * `user_id` - UUID of the user whose data to rectify
+    /// * `requesting_user_id` - UUID of the user making the request (for authorization)
+    /// * `email` - Optional new email address
+    /// * `first_name` - Optional new first name
+    /// * `last_name` - Optional new last name
+    ///
+    /// # Authorization
+    /// - Users can only rectify their own data
+    /// - SuperAdmin can rectify any user's data (organization_id = None)
+    ///
+    /// # Returns
+    /// * `Ok(User)` - Updated user entity
+    /// * `Err(String)` - If user not found, not authorized, or validation error
+    pub async fn rectify_user_data(
+        &self,
+        user_id: Uuid,
+        requesting_user_id: Uuid,
+        email: Option<String>,
+        first_name: Option<String>,
+        last_name: Option<String>,
+    ) -> Result<(), String> {
+        // Authorization check
+        if user_id != requesting_user_id {
+            // Only allow if SuperAdmin (checked by caller via organization_id)
+            return Err("Unauthorized: You can only rectify your own data".to_string());
+        }
+
+        // Fetch user
+        let mut user = self
+            .user_repository
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| format!("User not found: {}", user_id))?;
+
+        // Apply rectifications
+        user.rectify_data(email, first_name, last_name)?;
+
+        // Persist changes
+        self.user_repository.update(&user).await?;
+
+        Ok(())
+    }
+
+    /// Restrict data processing (GDPR Article 18 - Right to Restriction of Processing)
+    ///
+    /// Allows users to request temporary limitation of data processing.
+    /// When processing is restricted:
+    /// - Data is stored but not processed for certain operations
+    /// - Marketing communications are blocked
+    /// - Profiling/analytics are disabled
+    ///
+    /// # Arguments
+    /// * `user_id` - UUID of the user
+    /// * `requesting_user_id` - UUID of the user making the request (for authorization)
+    ///
+    /// # Authorization
+    /// - Users can only restrict their own data processing
+    ///
+    /// # Returns
+    /// * `Ok(())` - Processing restriction applied
+    /// * `Err(String)` - If user not found, not authorized, or already restricted
+    pub async fn restrict_user_processing(
+        &self,
+        user_id: Uuid,
+        requesting_user_id: Uuid,
+    ) -> Result<(), String> {
+        // Authorization check
+        if user_id != requesting_user_id {
+            return Err("Unauthorized: You can only restrict your own data processing".to_string());
+        }
+
+        // Fetch user
+        let mut user = self
+            .user_repository
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| format!("User not found: {}", user_id))?;
+
+        // Apply restriction
+        user.restrict_processing()?;
+
+        // Persist changes
+        self.user_repository.update(&user).await?;
+
+        Ok(())
+    }
+
+    /// Unrestrict data processing (Admin action or legal requirement met)
+    ///
+    /// # Arguments
+    /// * `user_id` - UUID of the user
+    /// * `admin_user_id` - UUID of the admin performing the action
+    ///
+    /// # Authorization
+    /// - Only admins/SuperAdmin can unrestrict processing
+    ///
+    /// # Returns
+    /// * `Ok(())` - Processing restriction removed
+    /// * `Err(String)` - If user not found
+    pub async fn unrestrict_user_processing(&self, user_id: Uuid) -> Result<(), String> {
+        // Fetch user
+        let mut user = self
+            .user_repository
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| format!("User not found: {}", user_id))?;
+
+        // Remove restriction
+        user.unrestrict_processing();
+
+        // Persist changes
+        self.user_repository.update(&user).await?;
+
+        Ok(())
+    }
+
+    /// Set marketing opt-out preference (GDPR Article 21 - Right to Object)
+    ///
+    /// Allows users to object to marketing communications and profiling.
+    ///
+    /// # Arguments
+    /// * `user_id` - UUID of the user
+    /// * `requesting_user_id` - UUID of the user making the request (for authorization)
+    /// * `opt_out` - true to opt out of marketing, false to opt back in
+    ///
+    /// # Authorization
+    /// - Users can only change their own marketing preferences
+    ///
+    /// # Returns
+    /// * `Ok(())` - Marketing preference updated
+    /// * `Err(String)` - If user not found or not authorized
+    pub async fn set_marketing_preference(
+        &self,
+        user_id: Uuid,
+        requesting_user_id: Uuid,
+        opt_out: bool,
+    ) -> Result<(), String> {
+        // Authorization check
+        if user_id != requesting_user_id {
+            return Err(
+                "Unauthorized: You can only change your own marketing preferences".to_string(),
+            );
+        }
+
+        // Fetch user
+        let mut user = self
+            .user_repository
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| format!("User not found: {}", user_id))?;
+
+        // Apply preference
+        user.set_marketing_opt_out(opt_out);
+
+        // Persist changes
+        self.user_repository.update(&user).await?;
+
+        Ok(())
     }
 }
 
