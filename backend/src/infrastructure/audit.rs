@@ -43,6 +43,131 @@ pub enum AuditEventType {
     BoardDecisionCompleted,
     BoardDecisionNotesAdded,
 
+    // Voting events (Issue #46 - Phase 2)
+    ResolutionCreated,
+    ResolutionDeleted,
+    VoteCast,
+    VoteChanged,
+    VotingClosed,
+
+    // Ticketing events (Issue #85 - Phase 2)
+    TicketCreated,
+    TicketAssigned,
+    TicketStatusChanged,
+    TicketResolved,
+    TicketClosed,
+    TicketCancelled,
+    TicketReopened,
+    TicketDeleted,
+
+    // Notification events (Issue #86 - Phase 2)
+    NotificationCreated,
+    NotificationRead,
+    NotificationDeleted,
+    NotificationPreferenceUpdated,
+
+    // Payment events (Issue #84 - Phase 2)
+    PaymentCreated,
+    PaymentProcessing,
+    PaymentRequiresAction,
+    PaymentSucceeded,
+    PaymentFailed,
+    PaymentCancelled,
+    PaymentRefunded,
+    PaymentDeleted,
+
+    // Payment method events (Issue #84 - Phase 2)
+    PaymentMethodCreated,
+    PaymentMethodUpdated,
+    PaymentMethodSetDefault,
+    PaymentMethodDeactivated,
+    PaymentMethodReactivated,
+    PaymentMethodDeleted,
+
+    // Convocation events (Issue #88 - Phase 2)
+    ConvocationCreated,
+    ConvocationScheduled,
+    ConvocationSent,
+    ConvocationCancelled,
+    ConvocationDeleted,
+    ConvocationReminderSent,
+    ConvocationAttendanceUpdated,
+    ConvocationProxySet,
+
+    // Quote events (Contractor Quotes Module - Issue #91 - Phase 2)
+    QuoteCreated,
+    QuoteSubmitted,
+    QuoteUnderReview,
+    QuoteAccepted,
+    QuoteRejected,
+    QuoteWithdrawn,
+    QuoteExpired,
+    QuoteRatingUpdated,
+    QuoteComparisonPerformed,
+    QuoteDeleted,
+
+    // SEL events (Local Exchange Trading System - Issue #49 - Phase 2)
+    ExchangeCreated,
+    ExchangeRequested,
+    ExchangeStarted,
+    ExchangeCompleted,
+    ExchangeCancelled,
+    ExchangeProviderRated,
+    ExchangeRequesterRated,
+    ExchangeDeleted,
+    CreditBalanceUpdated,
+    CreditBalanceCreated,
+
+    // Notice events (Community Notice Board - Issue #49 - Phase 2)
+    NoticeCreated,
+    NoticeUpdated,
+    NoticePublished,
+    NoticeArchived,
+    NoticePinned,
+    NoticeUnpinned,
+    NoticeExpirationSet,
+    NoticeExpired,
+    NoticeDeleted,
+
+    // Skill events (Skills Directory - Issue #49 - Phase 3)
+    SkillCreated,
+    SkillUpdated,
+    SkillMarkedAvailable,
+    SkillMarkedUnavailable,
+    SkillDeleted,
+
+    // Shared Object events (Object Sharing Library - Issue #49 - Phase 4)
+    SharedObjectCreated,
+    SharedObjectUpdated,
+    SharedObjectMarkedAvailable,
+    SharedObjectMarkedUnavailable,
+    SharedObjectBorrowed,
+    SharedObjectReturned,
+    SharedObjectDeleted,
+
+    // Resource Booking events (Resource Booking Calendar - Issue #49 - Phase 5)
+    ResourceBookingCreated,
+    ResourceBookingUpdated,
+    ResourceBookingCancelled,
+    ResourceBookingCompleted,
+    ResourceBookingNoShow,
+    ResourceBookingConfirmed,
+    ResourceBookingDeleted,
+
+    // Gamification events (Achievements & Challenges - Issue #49 - Phase 6)
+    AchievementCreated,
+    AchievementUpdated,
+    AchievementDeleted,
+    AchievementAwarded,
+    ChallengeCreated,
+    ChallengeActivated,
+    ChallengeUpdated,
+    ChallengeCompleted,
+    ChallengeCancelled,
+    ChallengeDeleted,
+    ChallengeProgressIncremented,
+    ChallengeProgressCompleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
@@ -53,6 +178,24 @@ pub enum AuditEventType {
     PaymentReminderTrackingAdded,
     PaymentRemindersBulkCreated,
     PaymentReminderDeleted,
+
+    // État Daté events (Belgian legal requirement for property sales)
+    EtatDateCreated,
+    EtatDateInProgress,
+    EtatDateGenerated,
+    EtatDateDelivered,
+    EtatDateFinancialUpdate,
+    EtatDateAdditionalDataUpdate,
+    EtatDateDeleted,
+
+    // Budget events (Annual budget management)
+    BudgetCreated,
+    BudgetUpdated,
+    BudgetSubmitted,
+    BudgetApproved,
+    BudgetRejected,
+    BudgetArchived,
+    BudgetDeleted,
 
     // Security events
     UnauthorizedAccess,
@@ -65,6 +208,16 @@ pub enum AuditEventType {
     GdprDataErased,
     GdprDataErasureFailed,
     GdprErasureCheckRequested,
+    // GDPR Article 16: Right to Rectification
+    GdprDataRectified,
+    GdprDataRectificationFailed,
+    // GDPR Article 18: Right to Restriction of Processing
+    GdprProcessingRestricted,
+    GdprProcessingRestrictionFailed,
+    // GDPR Article 21: Right to Object (Marketing)
+    GdprMarketingOptOut,
+    GdprMarketingOptIn,
+    GdprMarketingPreferenceChangeFailed,
 
     // Accounting events
     AccountCreated,
