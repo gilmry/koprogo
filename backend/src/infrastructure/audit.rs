@@ -82,6 +82,16 @@ pub enum AuditEventType {
     PaymentMethodReactivated,
     PaymentMethodDeleted,
 
+    // Convocation events (Issue #88 - Phase 2)
+    ConvocationCreated,
+    ConvocationScheduled,
+    ConvocationSent,
+    ConvocationCancelled,
+    ConvocationDeleted,
+    ConvocationReminderSent,
+    ConvocationAttendanceUpdated,
+    ConvocationProxySet,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
