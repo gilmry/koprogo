@@ -1,0 +1,115 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Notification Settings">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <div class="flex items-center space-x-3 mb-2">
+        <a
+          href="/notifications"
+          class="text-gray-500 hover:text-gray-700"
+          aria-label="Back to notifications"
+        >
+          <svg
+            class="h-6 w-6"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900">Notification Settings</h1>
+      </div>
+      <p class="mt-2 text-gray-600">
+        Manage how and when you receive notifications
+      </p>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg
+            class="h-5 w-5 text-blue-400"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-blue-800">
+            About Notification Channels
+          </h3>
+          <div class="mt-2 text-sm text-blue-700">
+            <ul class="list-disc pl-5 space-y-1">
+              <li>
+                <strong>Email:</strong> Sent to your registered email address
+              </li>
+              <li>
+                <strong>SMS:</strong> Text messages to your phone number (Belgian
+                rates apply)
+              </li>
+              <li>
+                <strong>Push:</strong> Browser or mobile app notifications
+              </li>
+              <li>
+                <strong>In-App:</strong> Always enabled, shown in the notification
+                bell icon
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Preferences Component -->
+    <div id="notification-preferences"></div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { mount } from "svelte";
+  import NotificationPreferences from "../../components/notifications/NotificationPreferences.svelte";
+
+  // Mount notification preferences
+  const preferencesContainer = document.getElementById(
+    "notification-preferences",
+  );
+  if (preferencesContainer) {
+    // Get user ID from localStorage or auth context
+    const userId = localStorage.getItem("koprogo_user_id") || "";
+
+    if (userId) {
+      mount(NotificationPreferences, {
+        target: preferencesContainer,
+        props: {
+          userId,
+        },
+      });
+    } else {
+      preferencesContainer.innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-red-900 mb-2">Not Authenticated</h3>
+          <p class="text-red-700">Please log in to manage your notification settings.</p>
+          <a href="/login" class="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+            Log In
+          </a>
+        </div>
+      `;
+    }
+  }
+</script>
