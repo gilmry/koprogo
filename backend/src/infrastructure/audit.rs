@@ -143,6 +143,15 @@ pub enum AuditEventType {
     SharedObjectReturned,
     SharedObjectDeleted,
 
+    // Resource Booking events (Resource Booking Calendar - Issue #49 - Phase 5)
+    ResourceBookingCreated,
+    ResourceBookingUpdated,
+    ResourceBookingCancelled,
+    ResourceBookingCompleted,
+    ResourceBookingNoShow,
+    ResourceBookingConfirmed,
+    ResourceBookingDeleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,

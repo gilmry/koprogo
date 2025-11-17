@@ -123,6 +123,7 @@ async fn main() -> std::io::Result<()> {
     let owner_credit_balance_repo =
         Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
     let notice_repo = Arc::new(PostgresNoticeRepository::new(pool.clone()));
+    let resource_booking_repo = Arc::new(PostgresResourceBookingRepository::new(pool.clone()));
     let shared_object_repo = Arc::new(PostgresSharedObjectRepository::new(pool.clone()));
     let skill_repo = Arc::new(PostgresSkillRepository::new(pool.clone()));
     let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
@@ -169,6 +170,8 @@ async fn main() -> std::io::Result<()> {
         owner_repo.clone(),
     );
     let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
+    let resource_booking_use_cases =
+        ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases =
         SharedObjectUseCases::new(shared_object_repo, owner_repo.clone());
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
@@ -227,6 +230,7 @@ async fn main() -> std::io::Result<()> {
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
+        resource_booking_use_cases,
         shared_object_use_cases,
         skill_use_cases,
         document_use_cases,
