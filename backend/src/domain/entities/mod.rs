@@ -76,7 +76,7 @@ pub use owner_credit_balance::{CreditStatus, OwnerCreditBalance, ParticipationLe
 pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
 pub use owner_contribution::{
-    ContributionPaymentStatus, ContributionType, OwnerContribution, PaymentMethod as ContributionPaymentMethod,
+    ContributionPaymentMethod, ContributionPaymentStatus, ContributionType, OwnerContribution,
 };
 pub use payment::{Payment, PaymentMethodType, TransactionStatus};
 pub use payment_method::PaymentMethod;

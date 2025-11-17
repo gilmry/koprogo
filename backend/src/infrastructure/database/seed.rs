@@ -84,6 +84,10 @@ impl DatabaseSeeder {
             role: UserRole::SuperAdmin,
             organization_id: None,
             is_active: true,
+            processing_restricted: false,
+            processing_restricted_at: None,
+            marketing_opt_out: false,
+            marketing_opt_out_at: None,
             created_at: now,
             updated_at: now,
         })

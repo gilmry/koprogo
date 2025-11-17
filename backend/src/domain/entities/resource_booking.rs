@@ -27,8 +27,9 @@ pub enum BookingStatus {
 }
 
 /// Recurring pattern for repeated bookings
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum RecurringPattern {
+    #[default]
     None,
     Daily,
     Weekly,

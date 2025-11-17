@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::domain::entities::{
-    ContributionPaymentStatus, ContributionType, OwnerContribution, PaymentMethod,
+    ContributionPaymentMethod, ContributionPaymentStatus, ContributionType, OwnerContribution,
 };
 
 /// DTO for creating a new owner contribution
@@ -22,7 +22,7 @@ pub struct CreateOwnerContributionRequest {
 #[derive(Debug, Deserialize)]
 pub struct RecordPaymentRequest {
     pub payment_date: DateTime<Utc>,
-    pub payment_method: PaymentMethod,
+    pub payment_method: ContributionPaymentMethod,
     pub payment_reference: Option<String>,
 }
 
@@ -39,7 +39,7 @@ pub struct OwnerContributionResponse {
     pub contribution_type: ContributionType,
     pub contribution_date: DateTime<Utc>,
     pub payment_date: Option<DateTime<Utc>>,
-    pub payment_method: Option<PaymentMethod>,
+    pub payment_method: Option<ContributionPaymentMethod>,
     pub payment_reference: Option<String>,
     pub payment_status: ContributionPaymentStatus,
     pub notes: Option<String>,

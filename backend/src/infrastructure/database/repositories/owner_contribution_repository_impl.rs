@@ -1,6 +1,6 @@
 use crate::application::ports::OwnerContributionRepository;
 use crate::domain::entities::{
-    ContributionPaymentStatus, ContributionType, OwnerContribution, PaymentMethod,
+    ContributionPaymentMethod, ContributionPaymentStatus, ContributionType, OwnerContribution,
 };
 use async_trait::async_trait;
 use sqlx::PgPool;
