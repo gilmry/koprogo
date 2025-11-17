@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM payment_reminders WHERE organization_id = ANY($1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5aec182e50d28b2d0e0fc7c59c7a2eea4563ba0770cc56a84747109ea49b0ccf"
+}

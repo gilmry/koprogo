@@ -4,6 +4,7 @@ use crate::application::dto::{
     SubmitForApprovalDto, UpdateInvoiceDraftDto,
 };
 use crate::application::ports::ExpenseRepository;
+use crate::application::services::expense_accounting_service::ExpenseAccountingService;
 use crate::domain::entities::{ApprovalStatus, Expense};
 use chrono::DateTime;
 use std::sync::Arc;
@@ -11,11 +12,25 @@ use uuid::Uuid;
 
 pub struct ExpenseUseCases {
     repository: Arc<dyn ExpenseRepository>,
+    accounting_service: Option<Arc<ExpenseAccountingService>>,
 }
 
 impl ExpenseUseCases {
     pub fn new(repository: Arc<dyn ExpenseRepository>) -> Self {
-        Self { repository }
+        Self {
+            repository,
+            accounting_service: None,
+        }
+    }
+
+    pub fn with_accounting_service(
+        repository: Arc<dyn ExpenseRepository>,
+        accounting_service: Arc<ExpenseAccountingService>,
+    ) -> Self {
+        Self {
+            repository,
+            accounting_service: Some(accounting_service),
+        }
     }
 
     pub async fn create_expense(
@@ -79,6 +94,9 @@ impl ExpenseUseCases {
         Ok((dtos, total))
     }
 
+    /// Marquer une charge comme payée
+    ///
+    /// Crée automatiquement l'écriture comptable de paiement (FIN - Financier)
     pub async fn mark_as_paid(&self, id: Uuid) -> Result<ExpenseResponseDto, String> {
         let mut expense = self
             .repository
@@ -89,6 +107,23 @@ impl ExpenseUseCases {
         expense.mark_as_paid()?;
 
         let updated = self.repository.update(&expense).await?;
+
+        // Générer automatiquement l'écriture comptable de paiement
+        if let Some(ref accounting_service) = self.accounting_service {
+            if let Err(e) = accounting_service
+                .generate_payment_entry(&updated, None, None)
+                .await
+            {
+                log::warn!(
+                    "Failed to generate payment journal entry for expense {}: {}",
+                    updated.id,
+                    e
+                );
+                // Ne pas échouer le paiement si la création de l'écriture échoue
+                // L'écriture peut être créée manuellement plus tard
+            }
+        }
+
         Ok(self.to_response_dto(&updated))
     }
 
@@ -272,6 +307,8 @@ impl ExpenseUseCases {
     }
 
     /// Approuver une facture (PendingApproval → Approved)
+    ///
+    /// Crée automatiquement l'écriture comptable correspondante (ACH - Achats)
     pub async fn approve_invoice(
         &self,
         invoice_id: Uuid,
@@ -289,6 +326,23 @@ impl ExpenseUseCases {
         invoice.approve(approved_by_user_id)?;
 
         let updated = self.repository.update(&invoice).await?;
+
+        // Générer automatiquement l'écriture comptable pour la facture approuvée
+        if let Some(ref accounting_service) = self.accounting_service {
+            if let Err(e) = accounting_service
+                .generate_journal_entry_for_expense(&updated, Some(approved_by_user_id))
+                .await
+            {
+                log::warn!(
+                    "Failed to generate journal entry for approved expense {}: {}",
+                    updated.id,
+                    e
+                );
+                // Ne pas échouer l'approbation si la création de l'écriture échoue
+                // L'écriture peut être créée manuellement plus tard
+            }
+        }
+
         Ok(self.to_invoice_response_dto(&updated))
     }
 
@@ -365,6 +419,7 @@ impl ExpenseUseCases {
             amount: expense.amount,
             expense_date: expense.expense_date.to_rfc3339(),
             payment_status: expense.payment_status.clone(),
+            approval_status: expense.approval_status.clone(),
             supplier: expense.supplier.clone(),
             invoice_number: expense.invoice_number.clone(),
             account_code: expense.account_code.clone(),

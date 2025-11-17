@@ -35,6 +35,7 @@ pub struct ExpenseResponseDto {
     pub amount: f64,
     pub expense_date: String,
     pub payment_status: PaymentStatus,
+    pub approval_status: ApprovalStatus,
     pub supplier: Option<String>,
     pub invoice_number: Option<String>,
     /// Belgian PCMN account code if linked to chart of accounts

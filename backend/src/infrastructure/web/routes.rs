@@ -33,6 +33,20 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_owner)
             .service(update_owner)
             .service(link_owner_to_user)
+            // Owner Contributions (Revenue)
+            .service(create_contribution)
+            .service(get_contribution)
+            .service(get_contributions_by_owner)
+            .service(get_outstanding_contributions)
+            .service(record_payment)
+            // Call for Funds (Collective payment requests)
+            .service(create_call_for_funds)
+            .service(get_call_for_funds)
+            .service(list_call_for_funds)
+            .service(get_overdue_calls)
+            .service(send_call_for_funds)
+            .service(cancel_call_for_funds)
+            .service(delete_call_for_funds)
             // Unit-Owner Relationships
             .service(add_owner_to_unit)
             .service(remove_owner_from_unit)
@@ -124,6 +138,34 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // Financial Reports (Belgian PCMN)
             .service(generate_balance_sheet)
             .service(generate_income_statement)
+            .service(generate_balance_sheet_for_building)
+            .service(generate_income_statement_for_building)
+            // Journal Entries (Manual Accounting Operations - Noalyss-inspired)
+            .service(create_journal_entry)
+            .service(list_journal_entries)
+            .service(get_journal_entry)
+            .service(delete_journal_entry)
+            // Dashboard (Accountant)
+            .service(get_accountant_stats)
+            .service(get_recent_transactions)
+            // Payment Reminders (Issue #83)
+            // IMPORTANT: Specific routes BEFORE parameterized routes to avoid UUID conflicts
+            .service(get_recovery_stats) // Must be before get_reminder (/payment-reminders/stats vs /{id})
+            .service(find_overdue_without_reminders) // Must be before get_reminder
+            .service(bulk_create_reminders) // Must be before get_reminder
+            .service(list_by_organization) // /payment-reminders
+            .service(create_reminder) // POST /payment-reminders
+            .service(get_reminder) // /payment-reminders/{id}
+            .service(delete_reminder) // DELETE /payment-reminders/{id}
+            .service(list_by_expense) // /expenses/{id}/payment-reminders
+            .service(list_by_owner) // /owners/{id}/payment-reminders
+            .service(list_active_by_owner) // /owners/{id}/payment-reminders/active
+            .service(mark_as_sent) // PUT /payment-reminders/{id}/mark-sent
+            .service(mark_as_opened) // PUT /payment-reminders/{id}/mark-opened
+            .service(mark_as_paid) // PUT /payment-reminders/{id}/mark-paid
+            .service(cancel_reminder) // PUT /payment-reminders/{id}/cancel
+            .service(escalate_reminder) // POST /payment-reminders/{id}/escalate
+            .service(add_tracking_number) // PUT /payment-reminders/{id}/tracking-number
             // Seed (SuperAdmin only) - ONE seed only
             .service(seed_demo_data)
             // .service(seed_realistic_data) // Disabled: we only use ONE seed

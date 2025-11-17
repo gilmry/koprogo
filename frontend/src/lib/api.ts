@@ -71,8 +71,16 @@ export async function apiFetch<T = any>(
   });
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(error || `API Error: ${response.status}`);
+    let errorMessage = `API Error: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // If JSON parsing fails, try text
+      const errorText = await response.text();
+      if (errorText) errorMessage = errorText;
+    }
+    throw new Error(errorMessage);
   }
 
   // Handle 204 No Content responses (empty body)
@@ -211,6 +219,133 @@ export function getMetricsUrl(): string {
 }
 
 /**
+ * Call for Funds API functions
+ */
+export const callForFundsApi = {
+  /**
+   * List all calls for funds (optionally filtered by building)
+   */
+  async list(buildingId?: string) {
+    const url = buildingId
+      ? `/call-for-funds?building_id=${buildingId}`
+      : "/call-for-funds";
+    return api.get(url);
+  },
+
+  /**
+   * Get a specific call for funds by ID
+   */
+  async getById(id: string) {
+    return api.get(`/call-for-funds/${id}`);
+  },
+
+  /**
+   * Create a new call for funds
+   */
+  async create(data: {
+    building_id: string;
+    title: string;
+    description: string;
+    total_amount: number;
+    contribution_type: string;
+    call_date: string;
+    due_date: string;
+    account_code?: string;
+  }) {
+    return api.post("/call-for-funds", data);
+  },
+
+  /**
+   * Send a call for funds (generates individual contributions)
+   */
+  async send(id: string) {
+    return api.post(`/call-for-funds/${id}/send`, {});
+  },
+
+  /**
+   * Cancel a call for funds
+   */
+  async cancel(id: string) {
+    return api.put(`/call-for-funds/${id}/cancel`, {});
+  },
+
+  /**
+   * Delete a draft call for funds
+   */
+  async delete(id: string) {
+    return api.delete(`/call-for-funds/${id}`);
+  },
+
+  /**
+   * Get overdue calls for funds
+   */
+  async getOverdue() {
+    return api.get("/call-for-funds/overdue");
+  },
+};
+
+/**
+ * Owner Contributions API functions
+ */
+export const ownerContributionsApi = {
+  /**
+   * List all owner contributions (with optional filters)
+   */
+  async list(filters?: {
+    owner_id?: string;
+    building_id?: string;
+    status?: string;
+  }) {
+    let url = "/owner-contributions";
+    if (filters) {
+      const params = new URLSearchParams();
+      if (filters.owner_id) params.append("owner_id", filters.owner_id);
+      if (filters.building_id)
+        params.append("building_id", filters.building_id);
+      if (filters.status) params.append("status", filters.status);
+      if (params.toString()) url += `?${params.toString()}`;
+    }
+    return api.get(url);
+  },
+
+  /**
+   * Get a specific contribution by ID
+   */
+  async getById(id: string) {
+    return api.get(`/owner-contributions/${id}`);
+  },
+
+  /**
+   * Create a manual owner contribution
+   */
+  async create(data: {
+    owner_id: string;
+    unit_id?: string;
+    description: string;
+    amount: number;
+    contribution_type: string;
+    contribution_date: string;
+    account_code?: string;
+  }) {
+    return api.post("/owner-contributions", data);
+  },
+
+  /**
+   * Mark a contribution as paid
+   */
+  async markAsPaid(
+    id: string,
+    data: {
+      payment_date: string;
+      payment_method?: string;
+      payment_reference?: string;
+    },
+  ) {
+    return api.put(`/owner-contributions/${id}/mark-paid`, data);
+  },
+};
+
+/**
  * Example usage:
  *
  * // GET request
@@ -224,4 +359,8 @@ export function getMetricsUrl(): string {
  *
  * // Download PCN report
  * await api.download('/pcn/export/pdf/building-id', 'rapport-pcn.pdf');
+ *
+ * // Call for Funds
+ * const calls = await callForFundsApi.list('building-id');
+ * await callForFundsApi.send('call-id');
  */

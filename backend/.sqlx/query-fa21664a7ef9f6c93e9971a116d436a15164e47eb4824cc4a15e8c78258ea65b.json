@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                jel.account_code,\n                SUM(jel.debit) as total_debit,\n                SUM(jel.credit) as total_credit\n            FROM journal_entry_lines jel\n            JOIN journal_entries je ON jel.journal_entry_id = je.id\n            LEFT JOIN expenses e ON je.expense_id = e.id\n            WHERE jel.organization_id = $1\n              AND (e.building_id = $2 OR e.building_id IS NULL)\n              AND je.entry_date >= $3\n              AND je.entry_date <= $4\n            GROUP BY jel.account_code\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "account_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "total_debit",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 2,
+        "name": "total_credit",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "fa21664a7ef9f6c93e9971a116d436a15164e47eb4824cc4a15e8c78258ea65b"
+}
