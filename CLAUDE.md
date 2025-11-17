@@ -347,6 +347,22 @@ Base URL: `http://localhost:8080/api/v1`
    - `DELETE /payment-methods/:id` - Delete payment method
    - `GET /owners/:id/payment-methods/count` - Count active payment methods
    - `GET /owners/:id/payment-methods/has-active` - Check if has active payment methods
+**✅ NOUVEAU: Convocations (Automatic AG Invitations)** (Issue #88 - Phase 2):
+   - `POST /convocations` - Create convocation with legal deadline validation (15d ordinary, 8d extraordinary)
+   - `GET /convocations/:id` - Get convocation details
+   - `GET /convocations/meeting/:meeting_id` - Get convocation by meeting
+   - `GET /buildings/:id/convocations` - List building convocations
+   - `GET /organizations/:id/convocations` - List organization convocations
+   - `DELETE /convocations/:id` - Delete convocation
+   - `PUT /convocations/:id/schedule` - Schedule send date (validates before legal deadline)
+   - `POST /convocations/:id/send` - Send to owners (generates PDF, creates recipients, triggers emails)
+   - `PUT /convocations/:id/cancel` - Cancel convocation
+   - `GET /convocations/:id/recipients` - List all recipients with tracking data
+   - `GET /convocations/:id/tracking-summary` - Get aggregate statistics (opening rate, attendance rate)
+   - `PUT /convocation-recipients/:id/email-opened` - Mark email opened (tracking pixel endpoint)
+   - `PUT /convocation-recipients/:id/attendance` - Update attendance (Pending → WillAttend/WillNotAttend → Attended/DidNotAttend)
+   - `PUT /convocation-recipients/:id/proxy` - Set proxy delegation (Belgian "procuration")
+   - `POST /convocations/:id/reminders` - Send J-3 reminders to unopened emails
 **Health**: `/health` (GET)
 
 ## Domain Entities
@@ -363,6 +379,8 @@ The system models property management with these aggregates:
 - **✅ NOUVEAU: InvoiceLineItem**: Lignes de facturation avec TVA (6%, 12%, 21%) - Issue #73
 - **✅ NOUVEAU: PaymentReminder**: Relances automatisées (4 niveaux: Gentle → Formal → FinalNotice → LegalAction) - Issue #83
 - **Meeting**: General assemblies (date, agenda, minutes)
+- **✅ NOUVEAU: Convocation**: Automatic AG invitations with legal compliance (meeting_type, meeting_date, minimum_send_date, status, pdf_file_path, language, total_recipients, opened_count, will_attend_count, respects_legal_deadline) - Issue #88
+- **✅ NOUVEAU: ConvocationRecipient**: Email tracking per owner (email_sent_at, email_opened_at, email_failed, reminder_sent_at, attendance_status, proxy_owner_id, needs_reminder) - Issue #88
 - **✅ NOUVEAU: Resolution**: Meeting resolutions with voting (title, description, type, majority_required, vote_counts, status) - Issue #46
 - **✅ NOUVEAU: Vote**: Individual votes on resolutions (choice: Pour/Contre/Abstention, voting_power, proxy_owner_id) - Issue #46
 - **✅ NOUVEAU: Ticket**: Maintenance requests (title, description, priority, status, category, due_date, assigned_contractor_id) - Issue #85
@@ -480,6 +498,30 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 - Migration: `backend/migrations/20251118000000_create_payments.sql` (2 tables, custom ENUMs, 10 indexes, constraints)
 - Total: ~5,500 lines of code, 38 REST endpoints
 - Audit events: `PaymentCreated`, `PaymentProcessing`, `PaymentRequiresAction`, `PaymentSucceeded`, `PaymentFailed`, `PaymentCancelled`, `PaymentRefunded`, `PaymentDeleted`, `PaymentMethodCreated`, `PaymentMethodUpdated`, `PaymentMethodSetDefault`, `PaymentMethodDeactivated`, `PaymentMethodReactivated`, `PaymentMethodDeleted`
+
+### ✅ NOUVEAU: Automatic AG Convocations System - Issue #88 (Phase 2)
+
+- Système de convocations automatiques pour assemblées générales avec conformité légale belge
+- **Délais légaux obligatoires**: Ordinary AG (15 jours minimum avant réunion), Extraordinary AG (8 jours), Second Convocation (8 jours après quorum non atteint)
+- **Validation multi-niveaux**: Domain entity validation, repository checks, database constraints (minimum_send_date calculation)
+- **Workflow complet**: Draft → Scheduled → Sent → Cancelled
+- **Email tracking**: email_sent_at, email_opened_at (tracking pixel/link click), email_failed (bounce handling)
+- **Reminder automation**: J-3 reminders automatiques pour emails non ouverts (3 jours avant meeting)
+- **Attendance workflow**: Pending → WillAttend/WillNotAttend → Attended/DidNotAttend (post-meeting)
+- **Proxy delegation**: Support procuration belge (proxy_owner_id) pour délégation de pouvoir de vote
+- **Multi-language**: Support FR/NL/DE/EN pour génération PDF selon langue du destinataire
+- **Bulk operations**: create_many avec transaction PostgreSQL pour création atomique de recipients
+- **Tracking metrics**: opening_rate, attendance_rate, computed fields in DTOs
+- **Background job support**: process_scheduled_convocations (envoyer convocations schedulées), process_reminder_sending (reminders J-3)
+- Domain entities: `backend/src/domain/entities/convocation.rs` (440 lines), `convocation_recipient.rs` (260 lines)
+- Repositories: `backend/src/infrastructure/database/repositories/convocation_repository_impl.rs` (600 lines, 13 methods), `convocation_recipient_repository_impl.rs` (750 lines, 18 methods)
+- Use cases: `backend/src/application/use_cases/convocation_use_cases.rs` (430 lines, 21 methods avec multi-repo orchestration)
+- API handlers: `backend/src/infrastructure/web/handlers/convocation_handlers.rs` (435 lines, 14 endpoints)
+- DTOs: `backend/src/application/dto/convocation_dto.rs`, `convocation_recipient_dto.rs` (4 DTOs avec computed fields)
+- Migration: `backend/migrations/20251119000000_create_convocations.sql` (2 tables, 3 custom ENUMs, 14 indexes, 10 constraints)
+- Repository tracking: `RecipientTrackingSummary` struct (8 metrics: total, opened, will_attend, will_not_attend, attended, did_not_attend, pending, failed)
+- Total: ~3,650 lines of code, 14 REST endpoints, 19 unit tests domain
+- Audit events: `ConvocationCreated`, `ConvocationScheduled`, `ConvocationSent`, `ConvocationCancelled`, `ConvocationDeleted`, `ConvocationReminderSent`, `ConvocationAttendanceUpdated`, `ConvocationProxySet`
 
 ### Multi-owner support
 
