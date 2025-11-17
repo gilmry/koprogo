@@ -1,0 +1,102 @@
+---
+import Layout from '../layouts/Layout.astro';
+import McpChatbot from '../components/McpChatbot.svelte';
+---
+
+<Layout title="MCP Chat - KoproGo">
+  <div class="container">
+    <h1>🤖 Assistant IA MCP</h1>
+    <p class="subtitle">
+      Modèle Context Protocol - IA décentralisée pour votre copropriété
+    </p>
+
+    <McpChatbot client:load />
+
+    <div class="info-section">
+      <h2>📊 Avantages MCP</h2>
+      <div class="features-grid">
+        <div class="feature">
+          <div class="feature-icon">🍓</div>
+          <h3>Edge Computing</h3>
+          <p>Exécution locale sur Raspberry Pi (0g CO₂)</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">☁️</div>
+          <h3>Multi-modèles</h3>
+          <p>Llama 3, Claude, GPT-4, Mistral</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🌱</div>
+          <h3>Éco-responsable</h3>
+          <p>Économie de CO₂ automatique</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">💰</div>
+          <h3>Revenus passifs</h3>
+          <p>Tokens MCP pour les nœuds grid</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    color: #6b7280;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+  }
+
+  .info-section {
+    margin-top: 3rem;
+  }
+
+  .info-section h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+
+  .feature {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  .feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .feature h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .feature p {
+    color: #6b7280;
+    font-size: 0.95rem;
+  }
+</style>

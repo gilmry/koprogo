@@ -378,6 +378,58 @@ deploy-staging: ## 🧪 Déployer en staging
 	cd deploy/staging && docker compose pull && docker compose up -d
 
 ##
+## 🤖 MCP (Model Context Protocol)
+##
+
+mcp-up: ## 🤖 Démarrer stack MCP complète (backend + edge node + postgres)
+	@echo "$(GREEN)🤖 Démarrage stack MCP...$(NC)"
+	@echo "  📍 Backend MCP: http://localhost:8080/mcp/v1"
+	@echo "  📍 Edge Node:   http://localhost:3031"
+	@echo "  📍 MCP Chat:    http://localhost/mcp-chat"
+	@echo ""
+	docker compose -f docker-compose.mcp.yml up
+
+mcp-down: ## 🛑 Arrêter stack MCP
+	docker compose -f docker-compose.mcp.yml down
+
+node-run: ## 🍓 Lancer edge node (Raspberry Pi simulator)
+	@echo "$(GREEN)🍓 Lancement edge node...$(NC)"
+	cd backend/koprogo-node && cargo run -- --port 3031 --model llama3:8b-instruct-q4
+
+node-build: ## 🔨 Build edge node (optimisé ARM64)
+	@echo "$(GREEN)🔨 Build edge node...$(NC)"
+	cd backend/koprogo-node && cargo build --release
+
+mcp-cli-chat: ## 💬 CLI MCP chat (usage: make mcp-cli-chat MSG="Hello")
+	@echo "$(GREEN)💬 MCP CLI Chat...$(NC)"
+	cd backend/koprogo-mcp && cargo run --bin mcp-cli chat --model llama3:8b "$(MSG)"
+
+mcp-cli-models: ## 📚 Liste des modèles disponibles via CLI
+	@echo "$(GREEN)📚 Modèles MCP...$(NC)"
+	cd backend/koprogo-mcp && cargo run --bin mcp-cli models
+
+mcp-cli-health: ## 🏥 Health check via CLI
+	@echo "$(GREEN)🏥 MCP Health...$(NC)"
+	cd backend/koprogo-mcp && cargo run --bin mcp-cli health
+
+test-mcp: ## 🧪 Tests MCP (unit + integration)
+	@echo "$(GREEN)🧪 Tests MCP core...$(NC)"
+	cd backend/koprogo-mcp && cargo test --lib
+	@echo "$(GREEN)🧪 Tests MCP integration...$(NC)"
+	cd backend/koprogo-mcp && cargo test --test integration
+
+mcp-stats: ## 📊 Statistiques MCP (via API)
+	@echo "$(GREEN)📊 MCP Statistics...$(NC)"
+	curl -s http://localhost:8080/mcp/v1/stats | jq .
+
+mcp-download-model: ## 📥 Télécharger modèle Llama 3 8B Q4 (~4.5GB)
+	@echo "$(GREEN)📥 Téléchargement Llama 3 8B Q4...$(NC)"
+	@mkdir -p models
+	wget -P models/ https://huggingface.co/QuantFactory/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf
+	mv models/Meta-Llama-3-8B-Instruct.Q4_K_M.gguf models/llama3-8b-instruct-q4.gguf
+	@echo "$(GREEN)✅ Modèle téléchargé: models/llama3-8b-instruct-q4.gguf$(NC)"
+
+##
 ## 🔧 Utilitaires
 ##
 
