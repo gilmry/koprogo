@@ -13,7 +13,7 @@ use uuid::Uuid;
 #[post("/exchanges")]
 pub async fn create_exchange(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     request: web::Json<CreateLocalExchangeDto>,
 ) -> impl Responder {
     match data
@@ -81,7 +81,7 @@ pub async fn list_available_exchanges(
 #[get("/owners/{owner_id}/exchanges")]
 pub async fn list_owner_exchanges(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
     let owner_id = owner_id.into_inner();
@@ -137,7 +137,7 @@ pub async fn list_exchanges_by_type(
 #[post("/exchanges/{id}/request")]
 pub async fn request_exchange(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<RequestExchangeDto>,
 ) -> impl Responder {
@@ -157,7 +157,7 @@ pub async fn request_exchange(
 #[post("/exchanges/{id}/start")]
 pub async fn start_exchange(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
@@ -176,7 +176,7 @@ pub async fn start_exchange(
 #[post("/exchanges/{id}/complete")]
 pub async fn complete_exchange(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<CompleteExchangeDto>,
 ) -> impl Responder {
@@ -195,7 +195,7 @@ pub async fn complete_exchange(
 #[post("/exchanges/{id}/cancel")]
 pub async fn cancel_exchange(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<CancelExchangeDto>,
 ) -> impl Responder {
@@ -214,7 +214,7 @@ pub async fn cancel_exchange(
 #[put("/exchanges/{id}/rate-provider")]
 pub async fn rate_provider(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<RateExchangeDto>,
 ) -> impl Responder {
@@ -233,7 +233,7 @@ pub async fn rate_provider(
 #[put("/exchanges/{id}/rate-requester")]
 pub async fn rate_requester(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<RateExchangeDto>,
 ) -> impl Responder {
@@ -252,7 +252,7 @@ pub async fn rate_requester(
 #[delete("/exchanges/{id}")]
 pub async fn delete_exchange(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data

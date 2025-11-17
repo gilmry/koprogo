@@ -30,7 +30,7 @@ impl QuoteUseCases {
             .map_err(|_| "Invalid validity_date format".to_string())?
             .with_timezone(&Utc);
 
-        let estimated_start_date = if let Some(date_str) = &dto.estimated_start_date {
+        let _estimated_start_date = if let Some(date_str) = &dto.estimated_start_date {
             Some(
                 DateTime::parse_from_rfc3339(date_str)
                     .map_err(|_| "Invalid estimated_start_date format".to_string())?

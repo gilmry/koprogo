@@ -11,7 +11,7 @@ use uuid::Uuid;
 #[post("/quotes")]
 pub async fn create_quote(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     request: web::Json<CreateQuoteDto>,
 ) -> impl Responder {
     match data.quote_use_cases.create_quote(request.into_inner()).await {
@@ -27,7 +27,7 @@ pub async fn create_quote(
 #[get("/quotes/{id}")]
 pub async fn get_quote(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data.quote_use_cases.get_quote(id.into_inner()).await {
@@ -46,7 +46,7 @@ pub async fn get_quote(
 #[get("/buildings/{building_id}/quotes")]
 pub async fn list_building_quotes(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
@@ -66,7 +66,7 @@ pub async fn list_building_quotes(
 #[get("/contractors/{contractor_id}/quotes")]
 pub async fn list_contractor_quotes(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     contractor_id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
@@ -86,7 +86,7 @@ pub async fn list_contractor_quotes(
 #[get("/buildings/{building_id}/quotes/status/{status}")]
 pub async fn list_quotes_by_status(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
     let (building_id, status) = path.into_inner();
@@ -108,7 +108,7 @@ pub async fn list_quotes_by_status(
 #[post("/quotes/{id}/submit")]
 pub async fn submit_quote(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data.quote_use_cases.submit_quote(id.into_inner()).await {
@@ -124,7 +124,7 @@ pub async fn submit_quote(
 #[post("/quotes/{id}/review")]
 pub async fn start_review(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data.quote_use_cases.start_review(id.into_inner()).await {
@@ -140,7 +140,7 @@ pub async fn start_review(
 #[post("/quotes/{id}/accept")]
 pub async fn accept_quote(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<QuoteDecisionDto>,
 ) -> impl Responder {
@@ -161,7 +161,7 @@ pub async fn accept_quote(
 #[post("/quotes/{id}/reject")]
 pub async fn reject_quote(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<QuoteDecisionDto>,
 ) -> impl Responder {
@@ -182,7 +182,7 @@ pub async fn reject_quote(
 #[post("/quotes/{id}/withdraw")]
 pub async fn withdraw_quote(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data.quote_use_cases.withdraw_quote(id.into_inner()).await {
@@ -199,7 +199,7 @@ pub async fn withdraw_quote(
 #[post("/quotes/compare")]
 pub async fn compare_quotes(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     request: web::Json<QuoteComparisonRequestDto>,
 ) -> impl Responder {
     match data
@@ -219,7 +219,7 @@ pub async fn compare_quotes(
 #[put("/quotes/{id}/contractor-rating")]
 pub async fn update_contractor_rating(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<serde_json::Value>,
 ) -> impl Responder {
@@ -249,7 +249,7 @@ pub async fn update_contractor_rating(
 #[delete("/quotes/{id}")]
 pub async fn delete_quote(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data.quote_use_cases.delete_quote(id.into_inner()).await {
@@ -268,7 +268,7 @@ pub async fn delete_quote(
 #[get("/buildings/{building_id}/quotes/count")]
 pub async fn count_building_quotes(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
@@ -290,7 +290,7 @@ pub async fn count_building_quotes(
 #[get("/buildings/{building_id}/quotes/status/{status}/count")]
 pub async fn count_quotes_by_status(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
     let (building_id, status) = path.into_inner();

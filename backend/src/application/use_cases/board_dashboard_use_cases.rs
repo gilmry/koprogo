@@ -534,6 +534,13 @@ mod tests {
                     total_units: 25,
                     total_tantiemes: 1000,
                     construction_year: Some(2020),
+                    syndic_name: None,
+                    syndic_email: None,
+                    syndic_phone: None,
+                    syndic_address: None,
+                    syndic_office_hours: None,
+                    syndic_emergency_contact: None,
+                    slug: None,
                     created_at: Utc::now(),
                     updated_at: Utc::now(),
                 }))
