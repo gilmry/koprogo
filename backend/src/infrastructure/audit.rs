@@ -48,6 +48,16 @@ pub enum AuditEventType {
     VoteChanged,
     VotingClosed,
 
+    // Ticketing events (Issue #85 - Phase 2)
+    TicketCreated,
+    TicketAssigned,
+    TicketStatusChanged,
+    TicketResolved,
+    TicketClosed,
+    TicketCancelled,
+    TicketReopened,
+    TicketDeleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
