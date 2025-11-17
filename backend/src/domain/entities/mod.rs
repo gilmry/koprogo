@@ -14,8 +14,10 @@ pub mod gdpr_objection;
 pub mod gdpr_rectification;
 pub mod gdpr_restriction;
 pub mod invoice_line_item;
+pub mod local_exchange;
 pub mod meeting;
 pub mod notification;
+pub mod owner_credit_balance;
 pub mod organization;
 pub mod owner;
 pub mod payment;
@@ -50,11 +52,13 @@ pub use gdpr_objection::{GdprObjectionRequest, ObjectionStatus, ObjectionType, P
 pub use gdpr_rectification::{FieldChange, GdprRectificationRequest, RectificationStatus};
 pub use gdpr_restriction::{GdprRestrictionRequest, RestrictionReason, RestrictionStatus};
 pub use invoice_line_item::InvoiceLineItem;
+pub use local_exchange::{ExchangeStatus, ExchangeType, LocalExchange};
 pub use meeting::{Meeting, MeetingStatus, MeetingType};
 pub use notification::{
     Notification, NotificationChannel, NotificationPreference, NotificationPriority,
     NotificationStatus, NotificationType,
 };
+pub use owner_credit_balance::{CreditStatus, OwnerCreditBalance, ParticipationLevel};
 pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
 pub use payment::{Payment, PaymentMethodType, TransactionStatus};
