@@ -127,7 +127,7 @@ impl Building {
 
     /// Generate SEO-friendly slug from building name, address, and city
     /// Example: "Residence Les Jardins, 123 Rue de la Paix, Paris" -> "residence-les-jardins-paris"
-    fn generate_slug(name: &str, _address: address: &str,str, city: &str) -> String {
+    fn generate_slug(name: &str, _address: &str, city: &str) -> String {
         let combined = format!("{} {}", name, city);
 
         combined
