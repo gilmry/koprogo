@@ -64,6 +64,24 @@ pub enum AuditEventType {
     NotificationDeleted,
     NotificationPreferenceUpdated,
 
+    // Payment events (Issue #84 - Phase 2)
+    PaymentCreated,
+    PaymentProcessing,
+    PaymentRequiresAction,
+    PaymentSucceeded,
+    PaymentFailed,
+    PaymentCancelled,
+    PaymentRefunded,
+    PaymentDeleted,
+
+    // Payment method events (Issue #84 - Phase 2)
+    PaymentMethodCreated,
+    PaymentMethodUpdated,
+    PaymentMethodSetDefault,
+    PaymentMethodDeactivated,
+    PaymentMethodReactivated,
+    PaymentMethodDeleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
