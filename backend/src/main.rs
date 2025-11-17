@@ -116,6 +116,8 @@ async fn main() -> std::io::Result<()> {
     let notification_repo = Arc::new(PostgresNotificationRepository::new(pool.clone()));
     let notification_preference_repo =
         Arc::new(PostgresNotificationPreferenceRepository::new(pool.clone()));
+    let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
+    let payment_method_repo = Arc::new(PostgresPaymentMethodRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -142,6 +144,9 @@ async fn main() -> std::io::Result<()> {
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
+    let payment_use_cases =
+        PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
+    let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let etat_date_use_cases = EtatDateUseCases::new(
         etat_date_repo,
@@ -191,6 +196,8 @@ async fn main() -> std::io::Result<()> {
         resolution_use_cases,
         ticket_use_cases,
         notification_use_cases,
+        payment_use_cases,
+        payment_method_use_cases,
         document_use_cases,
         etat_date_use_cases,
         pcn_use_cases,
