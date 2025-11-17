@@ -77,6 +77,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(cancel_meeting)
             .service(reschedule_meeting)
             .service(delete_meeting)
+            .service(export_meeting_minutes_pdf)
             // Resolutions & Voting (Issue #46 - Phase 2)
             .service(create_resolution)
             .service(get_resolution)
