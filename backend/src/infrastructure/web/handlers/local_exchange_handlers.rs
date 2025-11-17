@@ -81,7 +81,7 @@ pub async fn list_available_exchanges(
 #[get("/owners/{owner_id}/exchanges")]
 pub async fn list_owner_exchanges(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
     let owner_id = owner_id.into_inner();
@@ -105,7 +105,7 @@ pub async fn list_owner_exchanges(
 #[get("/buildings/{building_id}/exchanges/type/{exchange_type}")]
 pub async fn list_exchanges_by_type(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
     let (building_id, exchange_type_str) = path.into_inner();
@@ -270,7 +270,7 @@ pub async fn delete_exchange(
 #[get("/owners/{owner_id}/buildings/{building_id}/credit-balance")]
 pub async fn get_credit_balance(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
     let (owner_id, building_id) = path.into_inner();
@@ -290,7 +290,7 @@ pub async fn get_credit_balance(
 #[get("/buildings/{building_id}/leaderboard")]
 pub async fn get_leaderboard(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
     query: web::Query<std::collections::HashMap<String, String>>,
 ) -> impl Responder {
@@ -314,7 +314,7 @@ pub async fn get_leaderboard(
 #[get("/buildings/{building_id}/sel-statistics")]
 pub async fn get_statistics(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
@@ -332,7 +332,7 @@ pub async fn get_statistics(
 #[get("/owners/{owner_id}/exchange-summary")]
 pub async fn get_owner_summary(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
