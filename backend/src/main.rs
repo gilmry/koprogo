@@ -118,6 +118,7 @@ async fn main() -> std::io::Result<()> {
         Arc::new(PostgresNotificationPreferenceRepository::new(pool.clone()));
     let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
     let payment_method_repo = Arc::new(PostgresPaymentMethodRepository::new(pool.clone()));
+    let quote_repo = Arc::new(PostgresQuoteRepository::new(pool.clone()));
     let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
     let convocation_recipient_repo =
         Arc::new(PostgresConvocationRecipientRepository::new(pool.clone()));
@@ -155,6 +156,7 @@ async fn main() -> std::io::Result<()> {
     let payment_use_cases =
         PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
+    let quote_use_cases = QuoteUseCases::new(quote_repo);
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let etat_date_use_cases = EtatDateUseCases::new(
         etat_date_repo,
@@ -207,6 +209,7 @@ async fn main() -> std::io::Result<()> {
         notification_use_cases,
         payment_use_cases,
         payment_method_use_cases,
+        quote_use_cases,
         document_use_cases,
         etat_date_use_cases,
         pcn_use_cases,

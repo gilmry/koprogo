@@ -92,6 +92,18 @@ pub enum AuditEventType {
     ConvocationAttendanceUpdated,
     ConvocationProxySet,
 
+    // Quote events (Contractor Quotes Module - Issue #91 - Phase 2)
+    QuoteCreated,
+    QuoteSubmitted,
+    QuoteUnderReview,
+    QuoteAccepted,
+    QuoteRejected,
+    QuoteWithdrawn,
+    QuoteExpired,
+    QuoteRatingUpdated,
+    QuoteComparisonPerformed,
+    QuoteDeleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,

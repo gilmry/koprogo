@@ -347,6 +347,22 @@ Base URL: `http://localhost:8080/api/v1`
    - `DELETE /payment-methods/:id` - Delete payment method
    - `GET /owners/:id/payment-methods/count` - Count active payment methods
    - `GET /owners/:id/payment-methods/has-active` - Check if has active payment methods
+**✅ NOUVEAU: Quotes (Contractor Quotes Module)** (Issue #91 - Phase 2 - Belgian Legal Compliance):
+   - `POST /quotes` - Create quote request (Syndic action)
+   - `GET /quotes/:id` - Get quote details
+   - `GET /buildings/:building_id/quotes` - List building quotes
+   - `GET /contractors/:contractor_id/quotes` - List contractor quotes
+   - `GET /buildings/:building_id/quotes/status/:status` - List by status (Requested/Received/UnderReview/Accepted/Rejected/Expired/Withdrawn)
+   - `POST /quotes/:id/submit` - Contractor submits quote with pricing
+   - `POST /quotes/:id/review` - Syndic starts review (Received → UnderReview)
+   - `POST /quotes/:id/accept` - Accept quote (decision audit trail)
+   - `POST /quotes/:id/reject` - Reject quote (decision audit trail)
+   - `POST /quotes/:id/withdraw` - Contractor withdraws quote
+   - `POST /quotes/compare` - Compare multiple quotes (Belgian law: 3 quotes minimum for works >5000€, automatic scoring: price 40%, delay 30%, warranty 20%, reputation 10%)
+   - `PUT /quotes/:id/contractor-rating` - Update contractor rating (0-100)
+   - `DELETE /quotes/:id` - Delete quote
+   - `GET /buildings/:building_id/quotes/count` - Count building quotes
+   - `GET /buildings/:building_id/quotes/status/:status/count` - Count quotes by status
 **✅ NOUVEAU: Convocations (Automatic AG Invitations)** (Issue #88 - Phase 2):
    - `POST /convocations` - Create convocation with legal deadline validation (15d ordinary, 8d extraordinary)
    - `GET /convocations/:id` - Get convocation details
@@ -397,6 +413,7 @@ The system models property management with these aggregates:
 - **✅ NOUVEAU: NotificationPreference**: User notification settings per type (enabled, email_enabled, sms_enabled, push_enabled) - Issue #86
 - **✅ NOUVEAU: Payment**: Payment transactions (amount_cents, currency, status, payment_method_type, stripe_payment_intent_id, idempotency_key, refunded_amount_cents) - Issue #84
 - **✅ NOUVEAU: PaymentMethod**: Stored payment methods (method_type, stripe_payment_method_id, display_label, is_default, is_active, expires_at) - Issue #84
+- **✅ NOUVEAU: Quote**: Contractor quotes with Belgian legal compliance (building_id, contractor_id, project_title, amount_excl_vat, vat_rate, amount_incl_vat, validity_date, estimated_duration_days, warranty_years, contractor_rating, status) - Issue #91
 - **Document**: File storage (title, file_path, document_type)
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
@@ -582,6 +599,29 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
   * Validation: Email format, domain business rules enforced
 - **Total**: 1 migration, 4 User methods, 11 unit tests, 4 Use Case methods, 4 DTOs, 3 REST handlers (320 lines), 7 audit events
 - **Belgian Legal Compliance**: Full GDPR compliance for Belgian ASBL operations
+
+### ✅ NOUVEAU: Contractor Quotes Module - Issue #91 (Phase 2)
+
+- Système complet de gestion des devis entrepreneurs avec conformité légale belge
+- **Belgian Legal Requirement**: 3 quotes mandatory for construction works >5000€
+- **Automatic Scoring Algorithm**:
+  * Price: 40% weight (lower price = higher score, inverted normalization)
+  * Delay: 30% weight (shorter estimated_duration_days = higher score)
+  * Warranty: 20% weight (longer warranty_years = higher score)
+  * Reputation: 10% weight (contractor_rating 0-100 scale)
+- **Quote Workflow State Machine**: Requested → Received → UnderReview → Accepted/Rejected/Expired/Withdrawn
+- **Belgian VAT Rates**: 6% reduced (renovations), 21% standard (new construction)
+- **Belgian Warranty Standards**: 2 years (apparent defects), 10 years (structural - "décennale")
+- **Expiration Tracking**: validity_date field with automatic expiration detection (find_expired query)
+- **Decision Audit Trail**: decision_at, decision_by, decision_notes fields for legal compliance
+- Domain entity: `backend/src/domain/entities/quote.rs` (661 lines, 7 state transitions, validation logic)
+- Repository: `backend/src/infrastructure/database/repositories/quote_repository_impl.rs` (373 lines, 15 methods)
+- Use cases: `backend/src/application/use_cases/quote_use_cases.rs` (433 lines, 20 methods including compare_quotes)
+- API handlers: `backend/src/infrastructure/web/handlers/quote_handlers.rs` (376 lines, 15 REST endpoints)
+- DTOs: `backend/src/application/dto/quote_dto.rs` (227 lines, 5 DTOs including QuoteComparisonResponseDto)
+- Migration: `backend/migrations/20251120150000_create_quotes.sql` (91 lines, custom quote_status ENUM, 8 indexes, 4 constraints, trigger)
+- Total: ~2,161 lines of code, 15 REST endpoints, 20 use case methods
+- Audit events: `QuoteCreated`, `QuoteSubmitted`, `QuoteUnderReview`, `QuoteAccepted`, `QuoteRejected`, `QuoteWithdrawn`, `QuoteExpired`, `QuoteRatingUpdated`, `QuoteComparisonPerformed`, `QuoteDeleted`
 
 ### ✅ NOUVEAU: Public Syndic Information Page - Issue #92 (Phase 2)
 
