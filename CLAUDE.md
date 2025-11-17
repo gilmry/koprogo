@@ -279,6 +279,74 @@ Base URL: `http://localhost:8080/api/v1`
    - `PUT /votes/:id` - Change vote
    - `PUT /resolutions/:id/close` - Close voting & calculate result (Simple/Absolute/Qualified majority)
    - `GET /meetings/:id/vote-summary` - Get vote summary for meeting
+**✅ NOUVEAU: Tickets (Maintenance Requests)** (Issue #85 - Phase 2):
+   - `POST /tickets` - Create maintenance ticket
+   - `GET /tickets/:id` - Get ticket details
+   - `GET /buildings/:id/tickets` - List building tickets
+   - `GET /organizations/:id/tickets` - List organization tickets
+   - `GET /tickets/my` - List my tickets (requester)
+   - `GET /tickets/assigned` - List assigned tickets (contractor)
+   - `GET /tickets/status/:status` - List by status (Open/Assigned/InProgress/Resolved/Closed/Cancelled)
+   - `DELETE /tickets/:id` - Delete ticket
+   - `PUT /tickets/:id/assign` - Assign to contractor
+   - `PUT /tickets/:id/start` - Start work
+   - `PUT /tickets/:id/resolve` - Mark resolved
+   - `PUT /tickets/:id/close` - Close ticket
+   - `PUT /tickets/:id/cancel` - Cancel ticket
+   - `PUT /tickets/:id/reopen` - Reopen ticket
+   - `GET /tickets/statistics` - Get statistics
+   - `GET /tickets/overdue` - List overdue tickets
+**✅ NOUVEAU: Notifications (Multi-Channel System)** (Issue #86 - Phase 2):
+   - `POST /notifications` - Create notification
+   - `GET /notifications/:id` - Get notification
+   - `GET /notifications/my` - List my notifications
+   - `GET /notifications/unread` - List unread notifications
+   - `PUT /notifications/:id/read` - Mark as read
+   - `PUT /notifications/read-all` - Mark all as read
+   - `DELETE /notifications/:id` - Delete notification
+   - `GET /notifications/stats` - Get notification statistics
+   - `GET /notification-preferences/:user_id` - Get all user preferences
+   - `GET /notification-preferences/:user_id/:notification_type` - Get specific preference
+   - `PUT /notification-preferences/:user_id/:notification_type` - Update preference
+**✅ NOUVEAU: Payments (Stripe + SEPA Integration)** (Issue #84 - Phase 2):
+   - `POST /payments` - Create payment
+   - `GET /payments/:id` - Get payment
+   - `GET /payments/stripe/:stripe_payment_intent_id` - Get by Stripe intent ID
+   - `GET /owners/:id/payments` - List owner payments
+   - `GET /buildings/:id/payments` - List building payments
+   - `GET /expenses/:id/payments` - List expense payments
+   - `GET /organizations/:id/payments` - List organization payments
+   - `GET /payments/status/:status` - List by status (Pending/Processing/RequiresAction/Succeeded/Failed/Cancelled/Refunded)
+   - `GET /payments/pending` - List pending payments
+   - `GET /payments/failed` - List failed payments
+   - `PUT /payments/:id/processing` - Mark as processing
+   - `PUT /payments/:id/requires-action` - Mark as requires action
+   - `PUT /payments/:id/succeeded` - Mark as succeeded
+   - `PUT /payments/:id/failed` - Mark as failed
+   - `PUT /payments/:id/cancelled` - Mark as cancelled
+   - `POST /payments/:id/refund` - Process refund
+   - `DELETE /payments/:id` - Delete payment
+   - `GET /owners/:id/payments/stats` - Owner payment statistics
+   - `GET /buildings/:id/payments/stats` - Building payment statistics
+   - `GET /expenses/:id/payments/total` - Expense total paid
+   - `GET /owners/:id/payments/total` - Owner total paid
+   - `GET /buildings/:id/payments/total` - Building total paid
+**✅ NOUVEAU: Payment Methods** (Issue #84 - Phase 2):
+   - `POST /payment-methods` - Create payment method
+   - `GET /payment-methods/:id` - Get payment method
+   - `GET /payment-methods/stripe/:stripe_payment_method_id` - Get by Stripe ID
+   - `GET /owners/:id/payment-methods` - List owner payment methods
+   - `GET /owners/:id/payment-methods/active` - List active payment methods
+   - `GET /owners/:id/payment-methods/default` - Get default payment method
+   - `GET /organizations/:id/payment-methods` - List organization payment methods
+   - `GET /owners/:id/payment-methods/type/:method_type` - List by type (Card/SepaDebit/BankTransfer/Cash)
+   - `PUT /payment-methods/:id` - Update payment method
+   - `PUT /payment-methods/:id/set-default` - Set as default
+   - `PUT /payment-methods/:id/deactivate` - Deactivate payment method
+   - `PUT /payment-methods/:id/reactivate` - Reactivate payment method
+   - `DELETE /payment-methods/:id` - Delete payment method
+   - `GET /owners/:id/payment-methods/count` - Count active payment methods
+   - `GET /owners/:id/payment-methods/has-active` - Check if has active payment methods
 **Health**: `/health` (GET)
 
 ## Domain Entities
@@ -297,6 +365,11 @@ The system models property management with these aggregates:
 - **Meeting**: General assemblies (date, agenda, minutes)
 - **✅ NOUVEAU: Resolution**: Meeting resolutions with voting (title, description, type, majority_required, vote_counts, status) - Issue #46
 - **✅ NOUVEAU: Vote**: Individual votes on resolutions (choice: Pour/Contre/Abstention, voting_power, proxy_owner_id) - Issue #46
+- **✅ NOUVEAU: Ticket**: Maintenance requests (title, description, priority, status, category, due_date, assigned_contractor_id) - Issue #85
+- **✅ NOUVEAU: Notification**: Multi-channel notifications (title, message, notification_type, channel, is_read, sent_at) - Issue #86
+- **✅ NOUVEAU: NotificationPreference**: User notification settings per type (enabled, email_enabled, sms_enabled, push_enabled) - Issue #86
+- **✅ NOUVEAU: Payment**: Payment transactions (amount_cents, currency, status, payment_method_type, stripe_payment_intent_id, idempotency_key, refunded_amount_cents) - Issue #84
+- **✅ NOUVEAU: PaymentMethod**: Stored payment methods (method_type, stripe_payment_method_id, display_label, is_default, is_active, expires_at) - Issue #84
 - **Document**: File storage (title, file_path, document_type)
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
@@ -353,6 +426,60 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 - Migration: `backend/migrations/20251115120000_create_resolutions_and_votes.sql` (10 contraintes + 8 index)
 - Tests: 27 tests unitaires domain + use cases avec mocks
 - Audit events: `ResolutionCreated`, `ResolutionDeleted`, `VoteCast`, `VoteChanged`, `VotingClosed`
+
+### ✅ NOUVEAU: Ticket Management System - Issue #85 (Phase 2)
+
+- Système de gestion des demandes de maintenance et interventions
+- **États du workflow**: Open → Assigned → InProgress → Resolved → Closed/Cancelled
+- **Priorités**: Low (7 jours), Medium (3 jours), High (24h), Urgent (4h), Critical (1h)
+- **Catégories**: Plumbing, Electrical, Heating, Cleaning, Security, General, Emergency
+- **Due dates automatiques**: Calculées selon priorité (Critical: 1h, Urgent: 4h, High: 24h, etc.)
+- **Gestion contractor**: Assignment, start work, resolution workflow
+- **Statistiques complètes**: Count par statut, temps moyen résolution, tickets en retard
+- **Multi-tenancy**: Isolation par organisation avec permissions
+- Domain entity: `backend/src/domain/entities/ticket.rs` (310 lines)
+- Repository: `backend/src/infrastructure/database/repositories/ticket_repository_impl.rs` (18 methods)
+- Use cases: `backend/src/application/use_cases/ticket_use_cases.rs` (18 methods)
+- API handlers: `backend/src/infrastructure/web/handlers/ticket_handlers.rs` (17 endpoints)
+- Migration: `backend/migrations/20251117000000_create_tickets.sql` (custom ENUMs, 8 indexes)
+- Audit events: `TicketCreated`, `TicketAssigned`, `TicketStatusChanged`, `TicketResolved`, `TicketClosed`, `TicketCancelled`, `TicketReopened`, `TicketDeleted`
+
+### ✅ NOUVEAU: Multi-Channel Notification System - Issue #86 (Phase 2)
+
+- Système de notifications multi-canal (Email, SMS, Push, In-App)
+- **Types de notifications**: MeetingReminder, PaymentDue, DocumentShared, TicketUpdate, SystemAlert, etc. (22 types)
+- **Canaux**: Email (primary), SMS (urgent), Push (mobile), InApp (web dashboard)
+- **Préférences utilisateur**: Configuration granulaire par type de notification et canal
+- **États**: Pending → Sent → Delivered/Failed, Read tracking
+- **Métadonnées**: Support JSON pour contexte spécifique (meeting_id, ticket_id, payment_id, etc.)
+- **Statistiques**: Total count, unread count, count par type/canal
+- Domain entities: `backend/src/domain/entities/notification.rs`, `notification_preference.rs`
+- Repositories: `backend/src/infrastructure/database/repositories/notification_repository_impl.rs`, `notification_preference_repository_impl.rs`
+- Use cases: `backend/src/application/use_cases/notification_use_cases.rs` (13 methods)
+- API handlers: `backend/src/infrastructure/web/handlers/notification_handlers.rs` (11 endpoints)
+- Migration: `backend/migrations/20251117000001_create_notifications.sql` (2 tables, custom ENUMs, 9 indexes)
+- Audit events: `NotificationCreated`, `NotificationRead`, `NotificationDeleted`, `NotificationPreferenceUpdated`
+
+### ✅ NOUVEAU: Payment Integration System - Issue #84 (Phase 2)
+
+- Système de paiement intégré avec Stripe Payment Intents et SEPA Direct Debit
+- **Lifecycle de transaction**: Pending → Processing → RequiresAction → Succeeded/Failed/Cancelled/Refunded
+- **Types de paiement**: Card (Visa, Mastercard), SepaDebit (IBAN belge), BankTransfer, Cash
+- **Idempotency keys**: Prévention des charges dupliquées sur retry (minimum 16 chars)
+- **PCI-DSS Compliance**: Pas de stockage de données carte raw, uniquement Stripe tokens (pm_xxx, sepa_debit_xxx)
+- **Remboursements**: Support partiel/complet avec tracking (`refunded_amount_cents`) et validation anti-over-refund
+- **Payment Methods**: Gestion cartes et mandats SEPA stockés avec expiration, activation, default management
+- **Atomic Default Management**: Un seul payment method default par owner (transaction PostgreSQL)
+- **Statistiques complètes**: Total paid, succeeded count, net amount (amount - refunded), par owner/building/expense/organization
+- **Multi-tenancy**: Isolation EUR-only pour contexte belge
+- Domain entities: `backend/src/domain/entities/payment.rs` (530 lines), `payment_method.rs` (273 lines)
+- Repositories: `backend/src/infrastructure/database/repositories/payment_repository_impl.rs` (21 methods), `payment_method_repository_impl.rs` (13 methods)
+- Use cases: `backend/src/application/use_cases/payment_use_cases.rs` (26 methods), `payment_method_use_cases.rs` (14 methods)
+- API handlers: `backend/src/infrastructure/web/handlers/payment_handlers.rs` (22 endpoints), `payment_method_handlers.rs` (16 endpoints)
+- DTOs: `backend/src/application/dto/payment_dto.rs`, `payment_method_dto.rs` (4 DTOs)
+- Migration: `backend/migrations/20251118000000_create_payments.sql` (2 tables, custom ENUMs, 10 indexes, constraints)
+- Total: ~5,500 lines of code, 38 REST endpoints
+- Audit events: `PaymentCreated`, `PaymentProcessing`, `PaymentRequiresAction`, `PaymentSucceeded`, `PaymentFailed`, `PaymentCancelled`, `PaymentRefunded`, `PaymentDeleted`, `PaymentMethodCreated`, `PaymentMethodUpdated`, `PaymentMethodSetDefault`, `PaymentMethodDeactivated`, `PaymentMethodReactivated`, `PaymentMethodDeleted`
 
 ### Multi-owner support
 
