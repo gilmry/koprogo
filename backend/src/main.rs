@@ -119,6 +119,9 @@ async fn main() -> std::io::Result<()> {
     let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
     let payment_method_repo = Arc::new(PostgresPaymentMethodRepository::new(pool.clone()));
     let quote_repo = Arc::new(PostgresQuoteRepository::new(pool.clone()));
+    let local_exchange_repo = Arc::new(PostgresLocalExchangeRepository::new(pool.clone()));
+    let owner_credit_balance_repo =
+        Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
     let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
     let convocation_recipient_repo =
         Arc::new(PostgresConvocationRecipientRepository::new(pool.clone()));
@@ -157,6 +160,11 @@ async fn main() -> std::io::Result<()> {
         PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
     let quote_use_cases = QuoteUseCases::new(quote_repo);
+    let local_exchange_use_cases = LocalExchangeUseCases::new(
+        local_exchange_repo,
+        owner_credit_balance_repo,
+        owner_repo.clone(),
+    );
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let etat_date_use_cases = EtatDateUseCases::new(
         etat_date_repo,
@@ -210,6 +218,7 @@ async fn main() -> std::io::Result<()> {
         payment_use_cases,
         payment_method_use_cases,
         quote_use_cases,
+        local_exchange_use_cases,
         document_use_cases,
         etat_date_use_cases,
         pcn_use_cases,

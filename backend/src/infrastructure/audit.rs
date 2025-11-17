@@ -104,6 +104,18 @@ pub enum AuditEventType {
     QuoteComparisonPerformed,
     QuoteDeleted,
 
+    // SEL events (Local Exchange Trading System - Issue #49 - Phase 2)
+    ExchangeCreated,
+    ExchangeRequested,
+    ExchangeStarted,
+    ExchangeCompleted,
+    ExchangeCancelled,
+    ExchangeProviderRated,
+    ExchangeRequesterRated,
+    ExchangeDeleted,
+    CreditBalanceUpdated,
+    CreditBalanceCreated,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
