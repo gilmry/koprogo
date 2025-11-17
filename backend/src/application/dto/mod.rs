@@ -39,3 +39,6 @@ pub use resolution_dto::*;
 pub use unit_dto::*;
 pub use unit_owner_dto::*;
 pub use vote_dto::*;
+
+pub mod ticket_dto;
+pub use ticket_dto::*;
