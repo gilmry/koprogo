@@ -140,7 +140,7 @@ pub async fn start_review(
 #[post("/quotes/{id}/accept")]
 pub async fn accept_quote(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<QuoteDecisionDto>,
 ) -> impl Responder {
@@ -161,7 +161,7 @@ pub async fn accept_quote(
 #[post("/quotes/{id}/reject")]
 pub async fn reject_quote(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<QuoteDecisionDto>,
 ) -> impl Responder {

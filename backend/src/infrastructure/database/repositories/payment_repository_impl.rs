@@ -718,7 +718,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn get_total_paid_for_expense(&self, expense_id: Uuid) -> Result<i64, String> {
         let row = sqlx::query!(
             r#"
-            SELECT COALESCE(SUM(amount_cents - refunded_amount_cents), 0) AS "total!"
+            SELECT COALESCE(SUM(amount_cents - refunded_amount_cents), 0)::BIGINT AS "total!"
             FROM payments
             WHERE expense_id = $1 AND status = 'succeeded'
             "#,
@@ -734,7 +734,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn get_total_paid_by_owner(&self, owner_id: Uuid) -> Result<i64, String> {
         let row = sqlx::query!(
             r#"
-            SELECT COALESCE(SUM(amount_cents - refunded_amount_cents), 0) AS "total!"
+            SELECT COALESCE(SUM(amount_cents - refunded_amount_cents), 0)::BIGINT AS "total!"
             FROM payments
             WHERE owner_id = $1 AND status = 'succeeded'
             "#,
@@ -750,7 +750,7 @@ impl PaymentRepository for PostgresPaymentRepository {
     async fn get_total_paid_for_building(&self, building_id: Uuid) -> Result<i64, String> {
         let row = sqlx::query!(
             r#"
-            SELECT COALESCE(SUM(amount_cents - refunded_amount_cents), 0) AS "total!"
+            SELECT COALESCE(SUM(amount_cents - refunded_amount_cents), 0)::BIGINT AS "total!"
             FROM payments
             WHERE building_id = $1 AND status = 'succeeded'
             "#,
@@ -771,9 +771,9 @@ impl PaymentRepository for PostgresPaymentRepository {
                 COUNT(*) FILTER (WHERE status = 'succeeded') AS "succeeded_count!",
                 COUNT(*) FILTER (WHERE status = 'failed') AS "failed_count!",
                 COUNT(*) FILTER (WHERE status = 'pending') AS "pending_count!",
-                COALESCE(SUM(amount_cents), 0) AS "total_amount_cents!",
-                COALESCE(SUM(amount_cents) FILTER (WHERE status = 'succeeded'), 0) AS "total_succeeded_cents!",
-                COALESCE(SUM(refunded_amount_cents), 0) AS "total_refunded_cents!"
+                COALESCE(SUM(amount_cents)::BIGINT, 0) AS "total_amount_cents!",
+                COALESCE((SUM(amount_cents) FILTER (WHERE status = 'succeeded'))::BIGINT, 0) AS "total_succeeded_cents!",
+                COALESCE(SUM(refunded_amount_cents)::BIGINT, 0) AS "total_refunded_cents!"
             FROM payments
             WHERE owner_id = $1
             "#,
@@ -806,9 +806,9 @@ impl PaymentRepository for PostgresPaymentRepository {
                 COUNT(*) FILTER (WHERE status = 'succeeded') AS "succeeded_count!",
                 COUNT(*) FILTER (WHERE status = 'failed') AS "failed_count!",
                 COUNT(*) FILTER (WHERE status = 'pending') AS "pending_count!",
-                COALESCE(SUM(amount_cents), 0) AS "total_amount_cents!",
-                COALESCE(SUM(amount_cents) FILTER (WHERE status = 'succeeded'), 0) AS "total_succeeded_cents!",
-                COALESCE(SUM(refunded_amount_cents), 0) AS "total_refunded_cents!"
+                COALESCE(SUM(amount_cents)::BIGINT, 0) AS "total_amount_cents!",
+                COALESCE((SUM(amount_cents) FILTER (WHERE status = 'succeeded'))::BIGINT, 0) AS "total_succeeded_cents!",
+                COALESCE(SUM(refunded_amount_cents)::BIGINT, 0) AS "total_refunded_cents!"
             FROM payments
             WHERE building_id = $1
             "#,
