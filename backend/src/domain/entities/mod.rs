@@ -27,6 +27,7 @@ pub mod payment_reminder;
 pub mod quote;
 pub mod refresh_token;
 pub mod resolution;
+pub mod resource_booking;
 pub mod shared_object;
 pub mod skill;
 pub mod ticket;
@@ -71,6 +72,7 @@ pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, Remin
 pub use quote::{Quote, QuoteScore, QuoteStatus};
 pub use refresh_token::RefreshToken;
 pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
+pub use resource_booking::{BookingStatus, RecurringPattern, ResourceBooking, ResourceType};
 pub use shared_object::{ObjectCondition, SharedObject, SharedObjectCategory};
 pub use skill::{ExpertiseLevel, Skill, SkillCategory};
 pub use ticket::{Ticket, TicketCategory, TicketPriority, TicketStatus};
