@@ -920,6 +920,12 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 - Junction table `unit_owners` (see `backend/migrations/20250127000000_refactor_owners_multitenancy.sql`) enables many-to-many between units and owners.
 - Domain entity: `backend/src/domain/entities/unit_owner.rs` (pourcentage `0.0 < p ≤ 1.0`, timestamps, primary contact).
 - Use cases: `backend/src/application/use_cases/unit_owner_use_cases.rs` (somme des quotes-parts ≤ 100 %, transfert, historique, contact principal unique).
+- **✅ NOUVEAU: Validation stricte des quotes-parts** (Issue #29 - migration `20251120230000_add_unit_ownership_validation.sql`):
+  * Règle métier belge: Total des quotes-parts actives = 100% (Article 577-2 §4 Code Civil)
+  * Trigger PostgreSQL `validate_unit_ownership_total()` avec tolérance ±0.01% pour arrondis
+  * BLOQUE les dépassements > 100% (erreur 23514: check_violation)
+  * AVERTIT si < 100% (permet états transitoires lors d'ajouts séquentiels)
+  * Validation uniquement sur propriétaires actifs (`end_date IS NULL`)
 - Web handlers: `backend/src/infrastructure/web/handlers/unit_owner_handlers.rs` exposent les routes `/api/v1/units/{id}/owners`, `/unit-owners/{id}`, `/units/{id}/owners/transfer`, etc.
 - Tests : `backend/tests/integration_unit_owner.rs` (PostgreSQL) + BDD multi-tenant.
 - Frontend Svelte : `frontend/src/components/UnitOwners.svelte`, `OwnerList.svelte`, `OwnerCreateModal.svelte`, `OwnerEditModal.svelte`.
