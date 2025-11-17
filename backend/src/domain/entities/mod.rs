@@ -1,8 +1,10 @@
 pub mod account;
+pub mod achievement;
 pub mod board_decision;
 pub mod board_member;
 pub mod budget;
 pub mod building;
+pub mod challenge;
 pub mod charge_distribution;
 pub mod convocation;
 pub mod convocation_recipient;
@@ -38,10 +40,12 @@ pub mod user_role_assignment;
 pub mod vote;
 
 pub use account::{Account, AccountType};
+pub use achievement::{Achievement, AchievementCategory, AchievementTier, UserAchievement};
 pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
 pub use budget::{Budget, BudgetStatus};
 pub use building::Building;
+pub use challenge::{Challenge, ChallengeProgress, ChallengeStatus, ChallengeType};
 pub use charge_distribution::ChargeDistribution;
 pub use convocation::{Convocation, ConvocationStatus, ConvocationType};
 pub use convocation_recipient::{AttendanceStatus, ConvocationRecipient};
