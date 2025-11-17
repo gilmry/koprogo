@@ -1,0 +1,111 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Tickets - Maintenance Requests">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Maintenance Tickets</h1>
+      <p class="mt-2 text-gray-600">
+        Manage maintenance requests and track resolutions
+      </p>
+    </div>
+
+    <!-- Statistics Widget -->
+    <div class="mb-6">
+      <div id="ticket-statistics"></div>
+    </div>
+
+    <!-- Create Ticket Button -->
+    <div class="mb-6">
+      <button
+        id="create-ticket-btn"
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        <svg
+          class="-ml-1 mr-2 h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Create New Ticket
+      </button>
+    </div>
+
+    <!-- Tickets List -->
+    <div id="tickets-list"></div>
+
+    <!-- Create Ticket Modal Placeholder -->
+    <div id="create-ticket-modal"></div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { mount } from "svelte";
+  import TicketList from "../components/tickets/TicketList.svelte";
+  import TicketStatistics from "../components/tickets/TicketStatistics.svelte";
+  import TicketCreateModal from "../components/tickets/TicketCreateModal.svelte";
+
+  // Mount statistics widget
+  const statsContainer = document.getElementById("ticket-statistics");
+  if (statsContainer) {
+    mount(TicketStatistics, { target: statsContainer });
+  }
+
+  // Mount tickets list
+  const listContainer = document.getElementById("tickets-list");
+  if (listContainer) {
+    const ticketList = mount(TicketList, {
+      target: listContainer,
+      props: {
+        view: "all",
+      },
+    });
+
+    // Listen for ticket created event to refresh list
+    const modalContainer = document.getElementById("create-ticket-modal");
+    if (modalContainer) {
+      const createModal = mount(TicketCreateModal, {
+        target: modalContainer,
+        props: {
+          open: false,
+          buildingId: "", // Will be set when button clicked
+          requesterId: "", // Will be set from auth context
+        },
+      });
+
+      // Handle create button click
+      document
+        .getElementById("create-ticket-btn")
+        ?.addEventListener("click", () => {
+          // In a real app, get these from auth store
+          const buildingId = new URLSearchParams(window.location.search).get(
+            "building_id",
+          );
+          const userId = localStorage.getItem("koprogo_user_id") || "";
+
+          if (!buildingId) {
+            alert("Please select a building first");
+            return;
+          }
+
+          createModal.$set({
+            open: true,
+            buildingId: buildingId,
+            requesterId: userId,
+          });
+        });
+
+      // Refresh list when ticket created
+      modalContainer.addEventListener("created", () => {
+        // Trigger refresh by re-mounting (in real app, use reactive stores)
+        window.location.reload();
+      });
+    }
+  }
+</script>
