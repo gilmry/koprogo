@@ -363,6 +363,13 @@ Base URL: `http://localhost:8080/api/v1`
    - `PUT /convocation-recipients/:id/attendance` - Update attendance (Pending → WillAttend/WillNotAttend → Attended/DidNotAttend)
    - `PUT /convocation-recipients/:id/proxy` - Set proxy delegation (Belgian "procuration")
    - `POST /convocations/:id/reminders` - Send J-3 reminders to unopened emails
+**✅ NOUVEAU: GDPR Complementary Articles** (Issue #90 - Phase 2):
+   - `GET /gdpr/export` - Export user data (Article 15: Right to Access)
+   - `DELETE /gdpr/erase` - Anonymize user data (Article 17: Right to Erasure)
+   - `GET /gdpr/can-erase` - Check erasure eligibility (legal holds)
+   - `PUT /gdpr/rectify` - Correct personal data (Article 16: Right to Rectification)
+   - `PUT /gdpr/restrict-processing` - Limit data processing (Article 18: Right to Restriction)
+   - `PUT /gdpr/marketing-preference` - Opt-out marketing (Article 21: Right to Object)
 **Health**: `/health` (GET)
 
 ## Domain Entities
@@ -522,6 +529,57 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 - Repository tracking: `RecipientTrackingSummary` struct (8 metrics: total, opened, will_attend, will_not_attend, attended, did_not_attend, pending, failed)
 - Total: ~3,650 lines of code, 14 REST endpoints, 19 unit tests domain
 - Audit events: `ConvocationCreated`, `ConvocationScheduled`, `ConvocationSent`, `ConvocationCancelled`, `ConvocationDeleted`, `ConvocationReminderSent`, `ConvocationAttendanceUpdated`, `ConvocationProxySet`
+
+### ✅ NOUVEAU: GDPR Complementary Articles System - Issue #90 (Phase 2)
+
+- Système complet de conformité GDPR avec Articles 16, 18, 21 (complémentaires à 15 & 17 existants)
+- **Database fields** (migration 20251120000000_add_gdpr_complementary_fields.sql):
+  * `processing_restricted` (BOOLEAN, default FALSE) - Article 18
+  * `processing_restricted_at` (TIMESTAMPTZ) - Audit trail for restriction
+  * `marketing_opt_out` (BOOLEAN, default FALSE) - Article 21
+  * `marketing_opt_out_at` (TIMESTAMPTZ) - Audit trail for opt-out
+  * 2 partial indexes for admin queries (WHERE processing_restricted = TRUE, WHERE marketing_opt_out = TRUE)
+- **User domain entity methods** (user.rs):
+  * Article 16: `rectify_data(email?, first_name?, last_name?)` - Correct inaccurate data with validation
+  * Article 18: `restrict_processing()`, `unrestrict_processing()` - Limit data processing temporarily
+  * Article 21: `set_marketing_opt_out(opt_out: bool)` - Object to marketing/profiling
+  * Helpers: `can_process_data()`, `can_send_marketing()` - Check restrictions
+  * 11 unit tests (3 Article 16, 4 Article 18, 3 Article 21, 1 defaults)
+- **GDPR use cases** (gdpr_use_cases.rs):
+  * Requires 2 repositories: GdprRepository + UserRepository
+  * Article 16: `rectify_user_data()` - Fetch user, apply rectifications, persist
+  * Article 18: `restrict_user_processing()`, `unrestrict_user_processing()` - Apply restrictions
+  * Article 21: `set_marketing_preference()` - Set opt-out preference
+  * All methods include authorization (users can only modify their own data)
+  * Audit trail preservation (timestamps kept when unrestricting or opting back in)
+- **REST API handlers** (gdpr_handlers.rs - 320 lines):
+  * PUT /gdpr/rectify - Article 16 (200 OK, 400 Bad Request validation, 403 Forbidden, 404 Not Found)
+  * PUT /gdpr/restrict-processing - Article 18 (200 OK, 400 already restricted, 403, 404)
+  * PUT /gdpr/marketing-preference - Article 21 (200 OK, 403, 404)
+  * All handlers: async audit logging, IP/user-agent tracking, user-friendly messages
+- **DTOs** (gdpr_dto.rs):
+  * GdprRectifyRequest (email?, first_name?, last_name?)
+  * GdprRestrictProcessingRequest (empty body)
+  * GdprMarketingPreferenceRequest (opt_out: bool)
+  * GdprActionResponse (success, message, updated_at) - Generic success response
+- **Audit events** (7 types added to audit.rs):
+  * Article 16: GdprDataRectified, GdprDataRectificationFailed
+  * Article 18: GdprProcessingRestricted, GdprProcessingRestrictionFailed
+  * Article 21: GdprMarketingOptOut, GdprMarketingOptIn, GdprMarketingPreferenceChangeFailed
+- **Complete GDPR Compliance**:
+  * ✅ Article 15: Right to Access (GET /gdpr/export) - Existing
+  * ✅ Article 16: Right to Rectification (PUT /gdpr/rectify) - NEW
+  * ✅ Article 17: Right to Erasure (DELETE /gdpr/erase) - Existing
+  * ✅ Article 18: Right to Restriction of Processing (PUT /gdpr/restrict-processing) - NEW
+  * ✅ Article 21: Right to Object to Marketing (PUT /gdpr/marketing-preference) - NEW
+  * ✅ Article 30: Records of Processing (all actions logged with IP/user-agent)
+- **Architecture**:
+  * Hexagonal: Domain validation → Use Cases authorization → REST handlers
+  * Authorization: Self-service (users modify their own data)
+  * Async: Non-blocking audit logging with spawn()
+  * Validation: Email format, domain business rules enforced
+- **Total**: 1 migration, 4 User methods, 11 unit tests, 4 Use Case methods, 4 DTOs, 3 REST handlers (320 lines), 7 audit events
+- **Belgian Legal Compliance**: Full GDPR compliance for Belgian ASBL operations
 
 ### Multi-owner support
 
