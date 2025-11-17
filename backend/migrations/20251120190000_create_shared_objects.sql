@@ -58,13 +58,11 @@ CREATE INDEX idx_shared_objects_building ON shared_objects(building_id, is_avail
 CREATE INDEX idx_shared_objects_available ON shared_objects(building_id, object_name ASC)
 WHERE is_available = TRUE;
 
--- Partial index for borrowed objects
+-- Partial index for borrowed objects (includes overdue check at query time)
+-- Note: Cannot use due_back_at < NOW() in index predicate (NOW() is not IMMUTABLE)
+-- Background jobs will filter on due_back_at < NOW() at runtime
 CREATE INDEX idx_shared_objects_borrowed ON shared_objects(building_id, due_back_at ASC)
 WHERE current_borrower_id IS NOT NULL;
-
--- Partial index for overdue objects (background job: send reminders)
-CREATE INDEX idx_shared_objects_overdue ON shared_objects(building_id, due_back_at ASC)
-WHERE current_borrower_id IS NOT NULL AND due_back_at < NOW();
 
 -- Index for filtering by category (e.g., find all tools)
 CREATE INDEX idx_shared_objects_category ON shared_objects(building_id, object_category, is_available DESC, object_name ASC);

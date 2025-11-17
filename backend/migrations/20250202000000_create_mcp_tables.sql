@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS mcp_models (
     is_available BOOLEAN NOT NULL DEFAULT true,
     supports_streaming BOOLEAN NOT NULL DEFAULT true,
     edge_compatible BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_mcp_models_provider ON mcp_models(provider);
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS mcp_requests (
     temperature REAL,
     stream BOOLEAN NOT NULL DEFAULT false,
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+    created_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE INDEX idx_mcp_requests_user ON mcp_requests(user_id);
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS mcp_responses (
     completion_tokens INTEGER NOT NULL,
     total_tokens INTEGER NOT NULL,
     execution_info JSONB NOT NULL, -- ExecutionInfo object
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL
+    created_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE INDEX idx_mcp_responses_request ON mcp_responses(request_id);
@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS mcp_tasks (
     status VARCHAR(50) NOT NULL DEFAULT 'pending', -- JSON serialized TaskStatus
     result JSONB,
     assigned_node VARCHAR(255),
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_mcp_tasks_status ON mcp_tasks(status);

@@ -9,7 +9,8 @@ use utoipa::{
 use utoipa_swagger_ui::SwaggerUi;
 
 // Import annotated handlers
-use crate::infrastructure::web::handlers::health::health_check;
+// TODO: Re-enable when health_check handler is implemented
+// use crate::infrastructure::web::handlers::health::health_check;
 
 /// Main OpenAPI documentation structure
 #[derive(OpenApi)]
@@ -53,7 +54,8 @@ use crate::infrastructure::web::handlers::health::health_check;
     ),
     paths(
         // Health & Monitoring
-        health_check,
+        // TODO: Re-enable when health_check handler is implemented
+        // health_check,
     ),
     components(
         schemas(
@@ -129,7 +131,7 @@ pub fn configure_swagger_ui() -> SwaggerUi {
                 .display_operation_id(true)
                 .default_models_expand_depth(1)
                 .default_model_expand_depth(1)
-                .doc_expansion(utoipa_swagger_ui::DocExpansion::List)
+                // .doc_expansion(utoipa_swagger_ui::DocExpansion::List) // Removed: DocExpansion no longer exists in utoipa_swagger_ui
         )
 }
 

@@ -14,9 +14,9 @@ CREATE TABLE IF NOT EXISTS notifications (
     message TEXT NOT NULL,
     link_url TEXT,
     metadata JSONB,
-    sent_at TIMESTAMP,
-    read_at TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    sent_at TIMESTAMPTZ,
+    read_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     error_message TEXT,
 
     -- Constraints
@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
     email_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     in_app_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     push_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     -- Constraints
     CONSTRAINT notification_preferences_type_valid CHECK (notification_type IN (

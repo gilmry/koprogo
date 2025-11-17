@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS resolutions (
     total_voting_power_contre DECIMAL(10,4) NOT NULL DEFAULT 0,
     total_voting_power_abstention DECIMAL(10,4) NOT NULL DEFAULT 0,
     status VARCHAR(50) NOT NULL DEFAULT 'Pending', -- 'Pending', 'Adopted', 'Rejected'
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    voted_at TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    voted_at TIMESTAMPTZ,
 
     CONSTRAINT resolutions_title_not_empty CHECK (LENGTH(TRIM(title)) > 0),
     CONSTRAINT resolutions_description_not_empty CHECK (LENGTH(TRIM(description)) > 0),
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS votes (
     vote_choice VARCHAR(50) NOT NULL, -- 'Pour', 'Contre', 'Abstention'
     voting_power DECIMAL(10,4) NOT NULL,
     proxy_owner_id UUID REFERENCES owners(id) ON DELETE SET NULL, -- Mandataire si vote par procuration
-    voted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    voted_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT votes_valid_choice CHECK (vote_choice IN ('Pour', 'Contre', 'Abstention')),
     CONSTRAINT votes_positive_voting_power CHECK (voting_power > 0),

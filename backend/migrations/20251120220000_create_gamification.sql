@@ -139,11 +139,13 @@ CREATE INDEX idx_challenges_status ON challenges(organization_id, status, start_
 CREATE INDEX idx_challenges_dates ON challenges(start_date ASC, end_date ASC);
 
 -- Partial indexes for common queries
-CREATE INDEX idx_challenges_active ON challenges(organization_id, start_date ASC)
-    WHERE status = 'Active' AND start_date <= NOW() AND end_date > NOW();
+-- Note: Cannot use NOW() in index predicate (NOW() is not IMMUTABLE)
+-- Queries will filter on time conditions at runtime
+CREATE INDEX idx_challenges_active ON challenges(organization_id, start_date ASC, end_date ASC)
+    WHERE status = 'Active';
 
 CREATE INDEX idx_challenges_ended_not_completed ON challenges(end_date ASC)
-    WHERE status = 'Active' AND end_date <= NOW();
+    WHERE status = 'Active';
 
 -- ============================================================================
 -- CHALLENGE_PROGRESS TABLE

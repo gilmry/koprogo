@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT COALESCE(SUM(amount_cents - refunded_amount_cents), 0) AS \"total!\"\n            FROM payments\n            WHERE owner_id = $1 AND status = 'succeeded'\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "total!",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "26f69b167644ad19a8e30151fb030e9229d06647ada0b108216171443f7d8206"
+}

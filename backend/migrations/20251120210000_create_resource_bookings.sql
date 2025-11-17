@@ -73,11 +73,13 @@ CREATE INDEX idx_resource_bookings_start_time ON resource_bookings(start_time AS
 CREATE INDEX idx_resource_bookings_end_time ON resource_bookings(end_time ASC);
 
 -- Partial indexes for performance optimization (common queries)
-CREATE INDEX idx_resource_bookings_active ON resource_bookings(building_id, start_time ASC)
-    WHERE status = 'Confirmed' AND start_time <= NOW() AND end_time > NOW();
+-- Note: Cannot use NOW() in index predicate (NOW() is not IMMUTABLE)
+-- Queries will filter on time conditions at runtime
+CREATE INDEX idx_resource_bookings_active ON resource_bookings(building_id, start_time ASC, end_time ASC)
+    WHERE status = 'Confirmed';
 
 CREATE INDEX idx_resource_bookings_upcoming ON resource_bookings(building_id, start_time ASC)
-    WHERE start_time > NOW() AND status IN ('Confirmed', 'Pending');
+    WHERE status IN ('Confirmed', 'Pending');
 
 CREATE INDEX idx_resource_bookings_conflict_check ON resource_bookings(building_id, resource_type, resource_name, start_time ASC, end_time ASC)
     WHERE status IN ('Pending', 'Confirmed');
