@@ -16,6 +16,8 @@ pub mod meeting;
 pub mod notification;
 pub mod organization;
 pub mod owner;
+pub mod payment;
+pub mod payment_method;
 pub mod payment_reminder;
 pub mod refresh_token;
 pub mod resolution;
@@ -50,6 +52,8 @@ pub use notification::{
 };
 pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
+pub use payment::{Payment, PaymentMethodType, TransactionStatus};
+pub use payment_method::PaymentMethod;
 pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
 pub use refresh_token::RefreshToken;
 pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
