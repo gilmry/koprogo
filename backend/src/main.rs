@@ -118,6 +118,9 @@ async fn main() -> std::io::Result<()> {
         Arc::new(PostgresNotificationPreferenceRepository::new(pool.clone()));
     let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
     let payment_method_repo = Arc::new(PostgresPaymentMethodRepository::new(pool.clone()));
+    let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
+    let convocation_recipient_repo =
+        Arc::new(PostgresConvocationRecipientRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -140,6 +143,11 @@ async fn main() -> std::io::Result<()> {
         unit_owner_repo.clone(),
     );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+    let convocation_use_cases = ConvocationUseCases::new(
+        convocation_repo,
+        convocation_recipient_repo,
+        owner_repo.clone(),
+    );
     let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo);
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
     let notification_use_cases =
@@ -193,6 +201,7 @@ async fn main() -> std::io::Result<()> {
         expense_use_cases,
         charge_distribution_use_cases,
         meeting_use_cases,
+        convocation_use_cases,
         resolution_use_cases,
         ticket_use_cases,
         notification_use_cases,

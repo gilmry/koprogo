@@ -1,10 +1,10 @@
 use crate::application::use_cases::{
     AccountUseCases, AuthUseCases, BoardDashboardUseCases, BoardDecisionUseCases,
     BoardMemberUseCases, BudgetUseCases, BuildingUseCases, ChargeDistributionUseCases,
-    DocumentUseCases, EtatDateUseCases, ExpenseUseCases, FinancialReportUseCases, GdprUseCases,
-    MeetingUseCases, NotificationUseCases, OwnerUseCases, PaymentMethodUseCases,
-    PaymentReminderUseCases, PaymentUseCases, PcnUseCases, ResolutionUseCases, TicketUseCases,
-    UnitOwnerUseCases, UnitUseCases,
+    ConvocationUseCases, DocumentUseCases, EtatDateUseCases, ExpenseUseCases,
+    FinancialReportUseCases, GdprUseCases, MeetingUseCases, NotificationUseCases, OwnerUseCases,
+    PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases,
+    ResolutionUseCases, TicketUseCases, UnitOwnerUseCases, UnitUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -22,6 +22,7 @@ pub struct AppState {
     pub expense_use_cases: Arc<ExpenseUseCases>,
     pub charge_distribution_use_cases: Arc<ChargeDistributionUseCases>,
     pub meeting_use_cases: Arc<MeetingUseCases>,
+    pub convocation_use_cases: Arc<ConvocationUseCases>,
     pub resolution_use_cases: Arc<ResolutionUseCases>,
     pub ticket_use_cases: Arc<TicketUseCases>,
     pub notification_use_cases: Arc<NotificationUseCases>,
@@ -54,6 +55,7 @@ impl AppState {
         expense_use_cases: ExpenseUseCases,
         charge_distribution_use_cases: ChargeDistributionUseCases,
         meeting_use_cases: MeetingUseCases,
+        convocation_use_cases: ConvocationUseCases,
         resolution_use_cases: ResolutionUseCases,
         ticket_use_cases: TicketUseCases,
         notification_use_cases: NotificationUseCases,
@@ -83,6 +85,7 @@ impl AppState {
             expense_use_cases: Arc::new(expense_use_cases),
             charge_distribution_use_cases: Arc::new(charge_distribution_use_cases),
             meeting_use_cases: Arc::new(meeting_use_cases),
+            convocation_use_cases: Arc::new(convocation_use_cases),
             resolution_use_cases: Arc::new(resolution_use_cases),
             ticket_use_cases: Arc::new(ticket_use_cases),
             notification_use_cases: Arc::new(notification_use_cases),
