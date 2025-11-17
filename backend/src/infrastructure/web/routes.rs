@@ -105,6 +105,19 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(reopen_ticket)
             .service(get_ticket_statistics)
             .service(get_overdue_tickets)
+            // Notifications (Multi-Channel System - Issue #86 - Phase 2)
+            .service(create_notification)
+            .service(get_notification)
+            .service(list_my_notifications)
+            .service(list_unread_notifications)
+            .service(mark_notification_read)
+            .service(mark_all_notifications_read)
+            .service(delete_notification)
+            .service(get_notification_stats)
+            // Notification Preferences
+            .service(get_user_preferences)
+            .service(get_preference)
+            .service(update_preference)
             // Board Members
             .service(elect_board_member)
             .service(get_my_mandates) // Must be before get_board_member to avoid UUID parsing
