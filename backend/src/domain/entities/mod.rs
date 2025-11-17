@@ -13,6 +13,7 @@ pub mod gdpr_rectification;
 pub mod gdpr_restriction;
 pub mod invoice_line_item;
 pub mod meeting;
+pub mod notification;
 pub mod organization;
 pub mod owner;
 pub mod payment_reminder;
@@ -43,6 +44,10 @@ pub use gdpr_rectification::{FieldChange, GdprRectificationRequest, Rectificatio
 pub use gdpr_restriction::{GdprRestrictionRequest, RestrictionReason, RestrictionStatus};
 pub use invoice_line_item::InvoiceLineItem;
 pub use meeting::{Meeting, MeetingStatus, MeetingType};
+pub use notification::{
+    Notification, NotificationChannel, NotificationPreference, NotificationPriority,
+    NotificationStatus, NotificationType,
+};
 pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
 pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
