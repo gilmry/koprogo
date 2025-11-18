@@ -296,6 +296,7 @@ async fn main() -> std::io::Result<()> {
         poll_repo.clone(),
         poll_vote_repo.clone(),
         owner_repo.clone(),
+        unit_owner_repo.clone(),
     );
     let achievement_use_cases = AchievementUseCases::new(
         achievement_repo.clone(),

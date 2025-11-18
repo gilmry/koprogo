@@ -2,16 +2,18 @@ use crate::application::dto::{
     CreatePollDto, PollFilters, PollListResponseDto, PollResponseDto, UpdatePollDto,
     CastVoteDto, PollResultsDto, PollOptionDto, PageRequest,
 };
-use crate::application::ports::{PollRepository, PollVoteRepository, OwnerRepository};
+use crate::application::ports::{PollRepository, PollVoteRepository, OwnerRepository, UnitOwnerRepository};
 use crate::domain::entities::{Poll, PollVote, PollStatus, PollType};
 use chrono::{DateTime, Utc};
 use std::sync::Arc;
+use std::collections::HashSet;
 use uuid::Uuid;
 
 pub struct PollUseCases {
     poll_repository: Arc<dyn PollRepository>,
     poll_vote_repository: Arc<dyn PollVoteRepository>,
     owner_repository: Arc<dyn OwnerRepository>,
+    unit_owner_repository: Arc<dyn UnitOwnerRepository>,
 }
 
 impl PollUseCases {
@@ -19,11 +21,13 @@ impl PollUseCases {
         poll_repository: Arc<dyn PollRepository>,
         poll_vote_repository: Arc<dyn PollVoteRepository>,
         owner_repository: Arc<dyn OwnerRepository>,
+        unit_owner_repository: Arc<dyn UnitOwnerRepository>,
     ) -> Self {
         Self {
             poll_repository,
             poll_vote_repository,
             owner_repository,
+            unit_owner_repository,
         }
     }
 
@@ -69,9 +73,20 @@ impl PollUseCases {
             })
             .collect();
 
-        // TODO: Count eligible voters by querying unit_owners for building
-        // For now, use a default value or require it in the DTO
-        let total_eligible_voters = 10; // Default placeholder
+        // Count eligible voters by querying active unit_owners for building
+        // Each unique owner in the building counts as 1 eligible voter
+        let active_unit_owners = self
+            .unit_owner_repository
+            .find_active_by_building(building_id)
+            .await?;
+
+        // Count unique owner IDs (each owner counts once regardless of how many units they own)
+        let unique_owner_ids: HashSet<Uuid> = active_unit_owners
+            .iter()
+            .map(|(_, owner_id, _)| *owner_id)
+            .collect();
+
+        let total_eligible_voters = unique_owner_ids.len() as i32;
 
         // Create poll entity
         let mut poll = Poll::new(
@@ -697,6 +712,63 @@ mod tests {
         }
     }
 
+    struct MockUnitOwnerRepository;
+
+    #[async_trait]
+    impl UnitOwnerRepository for MockUnitOwnerRepository {
+        async fn create(&self, _unit_owner: &crate::domain::entities::UnitOwner) -> Result<crate::domain::entities::UnitOwner, String> {
+            unimplemented!()
+        }
+
+        async fn find_by_id(&self, _id: Uuid) -> Result<Option<crate::domain::entities::UnitOwner>, String> {
+            unimplemented!()
+        }
+
+        async fn find_current_owners_by_unit(&self, _unit_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
+            unimplemented!()
+        }
+
+        async fn find_current_units_by_owner(&self, _owner_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
+            unimplemented!()
+        }
+
+        async fn find_all_owners_by_unit(&self, _unit_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
+            unimplemented!()
+        }
+
+        async fn find_all_units_by_owner(&self, _owner_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
+            unimplemented!()
+        }
+
+        async fn update(&self, _unit_owner: &crate::domain::entities::UnitOwner) -> Result<crate::domain::entities::UnitOwner, String> {
+            unimplemented!()
+        }
+
+        async fn delete(&self, _id: Uuid) -> Result<(), String> {
+            unimplemented!()
+        }
+
+        async fn has_active_owners(&self, _unit_id: Uuid) -> Result<bool, String> {
+            unimplemented!()
+        }
+
+        async fn get_total_ownership_percentage(&self, _unit_id: Uuid) -> Result<f64, String> {
+            unimplemented!()
+        }
+
+        async fn find_active_by_unit_and_owner(&self, _unit_id: Uuid, _owner_id: Uuid) -> Result<Option<crate::domain::entities::UnitOwner>, String> {
+            unimplemented!()
+        }
+
+        async fn find_active_by_building(&self, _building_id: Uuid) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
+            // Return 10 unique owners (unit_id, owner_id, ownership_percentage)
+            // This matches the old hardcoded total_eligible_voters = 10
+            Ok((0..10)
+                .map(|_| (Uuid::new_v4(), Uuid::new_v4(), 0.1))
+                .collect())
+        }
+    }
+
     struct MockOwnerRepository;
 
     #[async_trait]
@@ -758,6 +830,7 @@ mod tests {
             Arc::new(MockPollRepository::new()),
             Arc::new(MockPollVoteRepository::new()),
             Arc::new(MockOwnerRepository),
+            Arc::new(MockUnitOwnerRepository),
         )
     }
 
