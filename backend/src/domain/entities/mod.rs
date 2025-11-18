@@ -31,6 +31,8 @@ pub mod owner_contribution;
 pub mod payment;
 pub mod payment_method;
 pub mod payment_reminder;
+pub mod poll;
+pub mod poll_vote;
 pub mod quote;
 pub mod refresh_token;
 pub mod resolution;
@@ -88,6 +90,8 @@ pub use owner_contribution::{
 pub use payment::{Payment, PaymentMethodType, TransactionStatus};
 pub use payment_method::PaymentMethod;
 pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
+pub use poll::{Poll, PollOption, PollStatus, PollType};
+pub use poll_vote::PollVote;
 pub use quote::{Quote, QuoteScore, QuoteStatus};
 pub use refresh_token::RefreshToken;
 pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
