@@ -2,6 +2,7 @@ use crate::application::dto::{CreateOwnerDto, PageRequest, PageResponse};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, Responder};
+use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
@@ -403,5 +404,304 @@ pub async fn link_owner_to_user(
                 "error": format!("Database error: {}", err)
             }))
         }
+    }
+}
+
+/// Export Owner Financial Statement to PDF
+///
+/// GET /owners/{owner_id}/export-statement-pdf?building_id={uuid}&start_date={iso8601}&end_date={iso8601}
+///
+/// Generates a "Relevé de Charges" PDF for an owner's expenses over a period.
+#[derive(Debug, Deserialize)]
+pub struct ExportStatementQuery {
+    pub building_id: Uuid,
+    pub start_date: String, // ISO8601
+    pub end_date: String,   // ISO8601
+}
+
+#[get("/owners/{id}/export-statement-pdf")]
+pub async fn export_owner_statement_pdf(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    query: web::Query<ExportStatementQuery>,
+) -> impl Responder {
+    use crate::domain::entities::{Building, Expense, Owner, Unit};
+    use crate::domain::services::{OwnerStatementExporter, UnitWithOwnership};
+
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
+    };
+
+    let owner_id = *id;
+    let building_id = query.building_id;
+
+    // Parse dates
+    let start_date = match DateTime::parse_from_rfc3339(&query.start_date) {
+        Ok(dt) => dt.with_timezone(&Utc),
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid start_date format. Use ISO8601 (e.g., 2025-01-01T00:00:00Z)"
+            }))
+        }
+    };
+
+    let end_date = match DateTime::parse_from_rfc3339(&query.end_date) {
+        Ok(dt) => dt.with_timezone(&Utc),
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid end_date format. Use ISO8601 (e.g., 2025-12-31T23:59:59Z)"
+            }))
+        }
+    };
+
+    // 1. Get owner
+    let owner_dto = match state.owner_use_cases.get_owner(owner_id).await {
+        Ok(Some(dto)) => dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Owner not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // 2. Get building
+    let building_dto = match state.building_use_cases.get_building(building_id).await {
+        Ok(Some(dto)) => dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // 3. Get units owned by this owner
+    let unit_owners = match state
+        .unit_owner_use_cases
+        .get_owner_units(owner_id)
+        .await
+    {
+        Ok(units) => units,
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to get owner units: {}", err)
+            }))
+        }
+    };
+
+    // Filter units for this building only by fetching unit details
+    let mut building_unit_owners = Vec::new();
+    for uo in unit_owners {
+        if let Ok(Some(unit_dto)) = state.unit_use_cases.get_unit(uo.unit_id).await {
+            if unit_dto.building_id == building_id {
+                building_unit_owners.push((uo, unit_dto));
+            }
+        }
+    }
+
+    if building_unit_owners.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Owner does not own any units in this building"
+        }));
+    }
+
+    // 4. Get expenses for this building in the period
+    let expenses_dto = match state
+        .expense_use_cases
+        .list_expenses_by_building(building_id)
+        .await
+    {
+        Ok(expenses) => expenses,
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to get expenses: {}", err)
+            }))
+        }
+    };
+
+    // Filter expenses by date range (using expense_date)
+    use crate::domain::entities::PaymentStatus;
+    let period_expenses: Vec<_> = expenses_dto
+        .into_iter()
+        .filter(|e| {
+            // Parse expense_date to check if in range
+            if let Ok(exp_date) = DateTime::parse_from_rfc3339(&e.expense_date) {
+                let exp_date_utc = exp_date.with_timezone(&Utc);
+                exp_date_utc >= start_date && exp_date_utc <= end_date
+            } else {
+                false
+            }
+        })
+        .collect();
+
+    // Convert DTOs to domain entities
+    let owner_entity = Owner {
+        id: owner_dto.id,
+        organization_id,
+        first_name: owner_dto.first_name,
+        last_name: owner_dto.last_name,
+        email: owner_dto.email,
+        phone: owner_dto.phone,
+        address: owner_dto.address,
+        user_id: owner_dto.user_id.and_then(|s| Uuid::parse_str(&s).ok()),
+        is_anonymized: false,
+        created_at: owner_dto.created_at,
+        updated_at: owner_dto.updated_at,
+    };
+
+    let building_org_id = Uuid::parse_str(&building_dto.organization_id)
+        .unwrap_or(organization_id);
+
+    let building_created_at = DateTime::parse_from_rfc3339(&building_dto.created_at)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now());
+
+    let building_updated_at = DateTime::parse_from_rfc3339(&building_dto.updated_at)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now());
+
+    let building_entity = Building {
+        id: Uuid::parse_str(&building_dto.id).unwrap_or(building_id),
+        name: building_dto.name.clone(),
+        address: building_dto.address,
+        city: building_dto.city,
+        postal_code: building_dto.postal_code,
+        country: building_dto.country,
+        total_units: building_dto.total_units,
+        total_tantiemes: building_dto.total_tantiemes,
+        construction_year: building_dto.construction_year,
+        syndic_name: None,
+        syndic_email: None,
+        syndic_phone: None,
+        syndic_address: None,
+        syndic_office_hours: None,
+        syndic_emergency_contact: None,
+        slug: None,
+        organization_id: building_org_id,
+        created_at: building_created_at,
+        updated_at: building_updated_at,
+    };
+
+    // Convert unit_owners to UnitWithOwnership (we already have the unit DTOs)
+    let mut units_with_ownership = Vec::new();
+    for (uo, unit_dto) in building_unit_owners {
+        let unit_entity = Unit {
+            id: unit_dto.id,
+            building_id: unit_dto.building_id,
+            unit_number: unit_dto.unit_number,
+            floor: unit_dto.floor,
+            unit_type: unit_dto.unit_type,
+            area_sqm: unit_dto.area_sqm,
+            tantiemes: unit_dto.tantiemes,
+            co_owner_count: unit_dto.co_owner_count,
+            created_at: unit_dto.created_at,
+            updated_at: unit_dto.updated_at,
+        };
+
+        units_with_ownership.push(UnitWithOwnership {
+            unit: unit_entity,
+            ownership_percentage: uo.ownership_percentage,
+        });
+    }
+
+    // Convert expenses to domain entities
+    use crate::domain::entities::ApprovalStatus;
+    let expense_entities: Vec<Expense> = period_expenses
+        .iter()
+        .filter_map(|e| {
+            let exp_id = Uuid::parse_str(&e.id).ok()?;
+            let bldg_id = Uuid::parse_str(&e.building_id).ok()?;
+            let exp_date = DateTime::parse_from_rfc3339(&e.expense_date)
+                .ok()?
+                .with_timezone(&Utc);
+
+            Some(Expense {
+                id: exp_id,
+                organization_id,
+                building_id: bldg_id,
+                category: e.category.clone(),
+                description: e.description.clone(),
+                amount: e.amount,
+                amount_excl_vat: None,
+                vat_rate: None,
+                vat_amount: None,
+                amount_incl_vat: None,
+                expense_date: exp_date,
+                invoice_date: None,
+                due_date: None,
+                paid_date: None,
+                approval_status: e.approval_status.clone(),
+                submitted_at: None,
+                approved_by: None,
+                approved_at: None,
+                rejection_reason: None,
+                payment_status: e.payment_status.clone(),
+                supplier: e.supplier.clone(),
+                invoice_number: e.invoice_number.clone(),
+                account_code: e.account_code.clone(),
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+            })
+        })
+        .collect();
+
+    // 5. Generate PDF
+    match OwnerStatementExporter::export_to_pdf(
+        &owner_entity,
+        &building_entity,
+        &units_with_ownership,
+        &expense_entities,
+        start_date,
+        end_date,
+    ) {
+        Ok(pdf_bytes) => {
+            // Audit log
+            AuditLogEntry::new(
+                AuditEventType::ReportGenerated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Owner", owner_id)
+            .with_metadata(serde_json::json!({
+                "report_type": "owner_statement_pdf",
+                "building_id": building_id,
+                "building_name": building_entity.name,
+                "start_date": start_date.to_rfc3339(),
+                "end_date": end_date.to_rfc3339()
+            }))
+            .log();
+
+            HttpResponse::Ok()
+                .content_type("application/pdf")
+                .insert_header((
+                    "Content-Disposition",
+                    format!(
+                        "attachment; filename=\"Releve_Charges_{}_{}_{}_{}.pdf\"",
+                        owner_entity.last_name.replace(' ', "_"),
+                        building_entity.name.replace(' ', "_"),
+                        start_date.format("%Y%m%d"),
+                        end_date.format("%Y%m%d")
+                    ),
+                ))
+                .body(pdf_bytes)
+        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Failed to generate PDF: {}", err)
+        })),
     }
 }
