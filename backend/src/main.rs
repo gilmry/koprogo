@@ -170,6 +170,8 @@ async fn main() -> std::io::Result<()> {
     let resource_booking_repo = Arc::new(PostgresResourceBookingRepository::new(pool.clone()));
     let shared_object_repo = Arc::new(PostgresSharedObjectRepository::new(pool.clone()));
     let skill_repo = Arc::new(PostgresSkillRepository::new(pool.clone()));
+    let technical_inspection_repo = Arc::new(PostgresTechnicalInspectionRepository::new(pool.clone()));
+    let work_report_repo = Arc::new(PostgresWorkReportRepository::new(pool.clone()));
     let iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
 
     // Linky API Client configuration
@@ -250,6 +252,8 @@ async fn main() -> std::io::Result<()> {
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases = SharedObjectUseCases::new(shared_object_repo, owner_repo.clone());
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
+    let technical_inspection_use_cases = TechnicalInspectionUseCases::new(technical_inspection_repo);
+    let work_report_use_cases = WorkReportUseCases::new(work_report_repo);
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let etat_date_use_cases = EtatDateUseCases::new(
         etat_date_repo,
@@ -343,6 +347,8 @@ async fn main() -> std::io::Result<()> {
         resource_booking_use_cases,
         shared_object_use_cases,
         skill_use_cases,
+        technical_inspection_use_cases,
+        work_report_use_cases,
         document_use_cases,
         etat_date_use_cases,
         pcn_use_cases,

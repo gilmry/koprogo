@@ -36,6 +36,7 @@ pub mod resolution_repository_impl;
 pub mod resource_booking_repository_impl;
 pub mod shared_object_repository_impl;
 pub mod skill_repository_impl;
+pub mod technical_inspection_repository_impl;
 pub mod ticket_repository_impl;
 pub mod two_factor_repository_impl;
 pub mod unit_owner_repository_impl;
@@ -43,6 +44,7 @@ pub mod unit_repository_impl;
 pub mod user_repository_impl;
 pub mod user_role_repository_impl;
 pub mod vote_repository_impl;
+pub mod work_report_repository_impl;
 
 pub use account_repository_impl::PostgresAccountRepository;
 pub use achievement_repository_impl::{
@@ -86,6 +88,7 @@ pub use resolution_repository_impl::PostgresResolutionRepository;
 pub use resource_booking_repository_impl::PostgresResourceBookingRepository;
 pub use shared_object_repository_impl::PostgresSharedObjectRepository;
 pub use skill_repository_impl::PostgresSkillRepository;
+pub use technical_inspection_repository_impl::PostgresTechnicalInspectionRepository;
 pub use ticket_repository_impl::PostgresTicketRepository;
 pub use two_factor_repository_impl::PostgresTwoFactorRepository;
 pub use unit_owner_repository_impl::PostgresUnitOwnerRepository;
@@ -93,3 +96,4 @@ pub use unit_repository_impl::PostgresUnitRepository;
 pub use user_repository_impl::PostgresUserRepository;
 pub use user_role_repository_impl::PostgresUserRoleRepository;
 pub use vote_repository_impl::PostgresVoteRepository;
+pub use work_report_repository_impl::PostgresWorkReportRepository;
