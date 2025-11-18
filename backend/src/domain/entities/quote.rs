@@ -312,7 +312,15 @@ impl Quote {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use rust_decimal_macros::dec;
+    use rust_decimal::Decimal;
+    use std::str::FromStr;
+
+    // Helper macro since dec! is not available in rust_decimal 1.36
+    macro_rules! dec {
+        ($val:expr) => {
+            Decimal::from_str(stringify!($val)).unwrap()
+        };
+    }
 
     #[test]
     fn test_create_quote_success() {

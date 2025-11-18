@@ -24,6 +24,7 @@ use uuid::Uuid;
 pub struct AchievementUseCases {
     achievement_repo: Arc<dyn AchievementRepository>,
     user_achievement_repo: Arc<dyn UserAchievementRepository>,
+    #[allow(dead_code)]
     user_repo: Arc<dyn UserRepository>,
 }
 
@@ -555,6 +556,7 @@ impl ChallengeUseCases {
 pub struct GamificationStatsUseCases {
     achievement_repo: Arc<dyn AchievementRepository>,
     user_achievement_repo: Arc<dyn UserAchievementRepository>,
+    #[allow(dead_code)]
     challenge_repo: Arc<dyn ChallengeRepository>,
     progress_repo: Arc<dyn ChallengeProgressRepository>,
     user_repo: Arc<dyn UserRepository>,

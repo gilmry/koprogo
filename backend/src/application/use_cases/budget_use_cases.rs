@@ -12,6 +12,7 @@ use uuid::Uuid;
 pub struct BudgetUseCases {
     repository: Arc<dyn BudgetRepository>,
     building_repository: Arc<dyn BuildingRepository>,
+    #[allow(dead_code)]
     expense_repository: Arc<dyn ExpenseRepository>,
 }
 

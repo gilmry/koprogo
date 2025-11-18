@@ -371,7 +371,15 @@ mod tests {
     use crate::domain::entities::{Quote, QuoteStatus};
     use async_trait::async_trait;
     use mockall::mock;
-    use rust_decimal_macros::dec;
+    use rust_decimal::Decimal;
+    use std::str::FromStr;
+
+    // Helper macro since dec! is not available in rust_decimal 1.36
+    macro_rules! dec {
+        ($val:expr) => {
+            Decimal::from_str(stringify!($val)).unwrap()
+        };
+    }
 
     mock! {
         QuoteRepo {}

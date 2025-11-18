@@ -57,6 +57,7 @@ struct ConsumptionResponse {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct MeterReading {
     usage_point_id: String,
     start: String,
@@ -67,6 +68,7 @@ struct MeterReading {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ReadingType {
     unit: String,
     aggregate: String,
@@ -74,6 +76,7 @@ struct ReadingType {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct IntervalReading {
     value: String,
     date: String,
@@ -87,6 +90,7 @@ struct PowerResponse {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PowerMeterReading {
     usage_point_id: String,
     start: String,

@@ -169,6 +169,7 @@ impl OwnerContribution {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::entities::payment_method::PaymentMethod;
 
     #[test]
     fn test_create_contribution_success() {
