@@ -8,7 +8,8 @@ use crate::application::use_cases::{
     NotificationUseCases, OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases,
     PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases, QuoteUseCases,
     ResolutionUseCases, ResourceBookingUseCases, SharedObjectUseCases, SkillUseCases,
-    TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases,
+    TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases,
+    UnitUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -40,6 +41,8 @@ pub struct AppState {
     pub resource_booking_use_cases: Arc<ResourceBookingUseCases>,
     pub shared_object_use_cases: Arc<SharedObjectUseCases>,
     pub skill_use_cases: Arc<SkillUseCases>,
+    pub technical_inspection_use_cases: Arc<TechnicalInspectionUseCases>,
+    pub work_report_use_cases: Arc<WorkReportUseCases>,
     pub document_use_cases: Arc<DocumentUseCases>,
     pub etat_date_use_cases: Arc<EtatDateUseCases>,
     pub pcn_use_cases: Arc<PcnUseCases>,
@@ -90,6 +93,8 @@ impl AppState {
         resource_booking_use_cases: ResourceBookingUseCases,
         shared_object_use_cases: SharedObjectUseCases,
         skill_use_cases: SkillUseCases,
+        technical_inspection_use_cases: TechnicalInspectionUseCases,
+        work_report_use_cases: WorkReportUseCases,
         document_use_cases: DocumentUseCases,
         etat_date_use_cases: EtatDateUseCases,
         pcn_use_cases: PcnUseCases,
@@ -137,6 +142,8 @@ impl AppState {
             resource_booking_use_cases: Arc::new(resource_booking_use_cases),
             shared_object_use_cases: Arc::new(shared_object_use_cases),
             skill_use_cases: Arc::new(skill_use_cases),
+            technical_inspection_use_cases: Arc::new(technical_inspection_use_cases),
+            work_report_use_cases: Arc::new(work_report_use_cases),
             document_use_cases: Arc::new(document_use_cases),
             etat_date_use_cases: Arc::new(etat_date_use_cases),
             pcn_use_cases: Arc::new(pcn_use_cases),

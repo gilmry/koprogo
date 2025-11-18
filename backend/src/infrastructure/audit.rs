@@ -197,6 +197,21 @@ pub enum AuditEventType {
     BudgetArchived,
     BudgetDeleted,
 
+    // Work Report events (Digital Maintenance Logbook - Issue #134)
+    WorkReportCreated,
+    WorkReportUpdated,
+    WorkReportDeleted,
+    WorkReportPhotoAdded,
+    WorkReportDocumentAdded,
+
+    // Technical Inspection events (Digital Maintenance Logbook - Issue #134)
+    TechnicalInspectionCreated,
+    TechnicalInspectionUpdated,
+    TechnicalInspectionDeleted,
+    TechnicalInspectionReportAdded,
+    TechnicalInspectionPhotoAdded,
+    TechnicalInspectionCertificateAdded,
+
     // Security events
     UnauthorizedAccess,
     RateLimitExceeded,

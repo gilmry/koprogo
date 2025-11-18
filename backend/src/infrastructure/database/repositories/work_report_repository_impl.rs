@@ -3,7 +3,6 @@ use crate::application::ports::WorkReportRepository;
 use crate::domain::entities::{WarrantyType, WorkReport, WorkType};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
 use sqlx::Row;
 use uuid::Uuid;
 
