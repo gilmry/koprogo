@@ -6,9 +6,9 @@ use crate::application::use_cases::{
     FinancialReportUseCases, GamificationStatsUseCases, GdprUseCases, IoTUseCases,
     JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases, MeetingUseCases, NoticeUseCases,
     NotificationUseCases, OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases,
-    PaymentReminderUseCases, PaymentUseCases, PcnUseCases, QuoteUseCases, ResolutionUseCases,
-    ResourceBookingUseCases, SharedObjectUseCases, SkillUseCases, TicketUseCases,
-    TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases,
+    PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases, QuoteUseCases,
+    ResolutionUseCases, ResourceBookingUseCases, SharedObjectUseCases, SkillUseCases,
+    TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -33,6 +33,7 @@ pub struct AppState {
     pub notification_use_cases: Arc<NotificationUseCases>,
     pub payment_use_cases: Arc<PaymentUseCases>,
     pub payment_method_use_cases: Arc<PaymentMethodUseCases>,
+    pub poll_use_cases: Arc<PollUseCases>,
     pub quote_use_cases: Arc<QuoteUseCases>,
     pub local_exchange_use_cases: Arc<LocalExchangeUseCases>,
     pub notice_use_cases: Arc<NoticeUseCases>,
@@ -82,6 +83,7 @@ impl AppState {
         notification_use_cases: NotificationUseCases,
         payment_use_cases: PaymentUseCases,
         payment_method_use_cases: PaymentMethodUseCases,
+        poll_use_cases: PollUseCases,
         quote_use_cases: QuoteUseCases,
         local_exchange_use_cases: LocalExchangeUseCases,
         notice_use_cases: NoticeUseCases,
@@ -128,6 +130,7 @@ impl AppState {
             notification_use_cases: Arc::new(notification_use_cases),
             payment_use_cases: Arc::new(payment_use_cases),
             payment_method_use_cases: Arc::new(payment_method_use_cases),
+            poll_use_cases: Arc::new(poll_use_cases),
             quote_use_cases: Arc::new(quote_use_cases),
             local_exchange_use_cases: Arc::new(local_exchange_use_cases),
             notice_use_cases: Arc::new(notice_use_cases),

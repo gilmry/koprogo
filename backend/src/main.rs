@@ -156,6 +156,8 @@ async fn main() -> std::io::Result<()> {
     let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
     let payment_method_repo = Arc::new(PostgresPaymentMethodRepository::new(pool.clone()));
     let quote_repo = Arc::new(PostgresQuoteRepository::new(pool.clone()));
+    let poll_repo = Arc::new(PostgresPollRepository::new(pool.clone()));
+    let poll_vote_repo = Arc::new(PostgresPollVoteRepository::new(pool.clone()));
     let local_exchange_repo = Arc::new(PostgresLocalExchangeRepository::new(pool.clone()));
     let owner_credit_balance_repo =
         Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
@@ -290,6 +292,11 @@ async fn main() -> std::io::Result<()> {
         unit_owner_repo.clone(),
     );
     let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
+    let poll_use_cases = PollUseCases::new(
+        poll_repo.clone(),
+        poll_vote_repo.clone(),
+        owner_repo.clone(),
+    );
     let achievement_use_cases = AchievementUseCases::new(
         achievement_repo.clone(),
         user_achievement_repo.clone(),
@@ -326,6 +333,7 @@ async fn main() -> std::io::Result<()> {
         notification_use_cases,
         payment_use_cases,
         payment_method_use_cases,
+        poll_use_cases,
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
