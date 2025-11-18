@@ -6,6 +6,7 @@ import ToastContainer from '../components/ui/ToastContainer.svelte';
 import SessionManager from '../components/SessionManager.svelte';
 import LanguageSelector from '../components/LanguageSelector.svelte';
 import SyncStatus from '../components/SyncStatus.svelte';
+import PWAInstallPrompt from '../components/PWAInstallPrompt.svelte';
 
 interface Props {
 	title: string;
@@ -21,10 +22,27 @@ const { title, showNav = true, requireAuth = false } = Astro.props;
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="description" content="KoproGo - Plateforme SaaS de Gestion de Copropriété" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+
+		<!-- PWA Manifest -->
+		<link rel="manifest" href="/manifest.json" />
+
+		<!-- PWA Meta Tags -->
+		<meta name="theme-color" content="#10b981" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="KoproGo" />
+
+		<!-- Apple Touch Icons -->
+		<link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+		<link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192x192.png" />
+
+		<!-- Startup Images (optional) -->
+		<link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
 		<!-- Runtime configuration - loaded from external file for post-build configuration -->
 		<script is:inline src="/config.js"></script>
 		<!-- Privacy-friendly analytics by Plausible -->
@@ -32,6 +50,40 @@ const { title, showNav = true, requireAuth = false } = Astro.props;
 		<script is:inline>
 			window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
 			plausible.init()
+		</script>
+
+		<!-- PWA Initialization -->
+		<script>
+			import { initializePWA } from '../lib/pwa';
+
+			// Initialize PWA when DOM is ready
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', async () => {
+					await initializePWA({
+						onOnline: () => {
+							console.log('[App] Back online');
+							// Trigger sync or refresh data
+							window.dispatchEvent(new CustomEvent('app-online'));
+						},
+						onOffline: () => {
+							console.log('[App] Gone offline');
+							// Show offline indicator
+							window.dispatchEvent(new CustomEvent('app-offline'));
+						}
+					});
+				});
+			} else {
+				initializePWA({
+					onOnline: () => {
+						console.log('[App] Back online');
+						window.dispatchEvent(new CustomEvent('app-online'));
+					},
+					onOffline: () => {
+						console.log('[App] Gone offline');
+						window.dispatchEvent(new CustomEvent('app-offline'));
+					}
+				});
+			}
 		</script>
 
 	</head>
@@ -42,6 +94,7 @@ const { title, showNav = true, requireAuth = false } = Astro.props;
 			<slot />
 		</main>
 		<ToastContainer client:load />
+		<PWAInstallPrompt client:load />
 		<footer class="bg-white mt-12 border-t">
 			<div class="container mx-auto px-4 py-6">
 				<div class="flex flex-col md:flex-row items-center justify-between gap-4">
