@@ -410,8 +410,9 @@ mod tests {
     async fn test_get_2fa_status_not_enabled() {
         let two_factor_repo = Arc::new(MockTwoFactorRepo::new());
         let user_repo = Arc::new(MockUserRepo::new());
+        let encryption_key = [0u8; 32]; // Dummy encryption key for testing
 
-        let use_cases = Arc::new(TwoFactorUseCases::new(two_factor_repo, user_repo));
+        let use_cases = Arc::new(TwoFactorUseCases::new(two_factor_repo, user_repo, encryption_key));
 
         let app = test::init_service(
             App::new()
