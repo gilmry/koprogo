@@ -377,25 +377,40 @@ async fn main() -> std::io::Result<()> {
         actix_workers
     );
 
-    // Configure rate limiter: 100 requests per minute per IP
-    // Allows bursts up to 100 requests, then refills at 100/60000ms rate
-    // When rate limiting is disabled, set a very high limit (effectively unlimited)
-    let rate_limit_ms = if enable_rate_limiting {
-        100 * 60 * 1000 // 100 requests per minute (60,000ms)
+    // Configure three-tier rate limiting strategy:
+    // 1. Public endpoints: 100 req/min per IP (DDoS prevention)
+    // 2. Authenticated endpoints: 1000 req/min per user (higher trust)
+    // 3. Login endpoint: 5 attempts per 15min per IP (brute-force prevention - already configured below)
+
+    // Public rate limiter (100 requests per minute per IP)
+    let public_rate_limit_config = if enable_rate_limiting {
+        GovernorConfigBuilder::default()
+            .per_second(100) // 100 requests per second = 6000/min (very permissive for now)
+            .burst_size(100)
+            .finish()
+            .unwrap()
     } else {
-        1 // 1ms = 1000 requests per second (effectively unlimited)
-    };
-    let burst_size = if enable_rate_limiting {
-        100
-    } else {
-        u32::MAX // Effectively unlimited burst
+        GovernorConfigBuilder::default()
+            .per_second(u64::MAX)
+            .burst_size(u32::MAX)
+            .finish()
+            .unwrap()
     };
 
-    let governor_conf = GovernorConfigBuilder::default()
-        .milliseconds_per_request(rate_limit_ms)
-        .burst_size(burst_size)
-        .finish()
-        .unwrap();
+    // Authenticated rate limiter (1000 requests per minute per user)
+    let authenticated_rate_limit_config = if enable_rate_limiting {
+        GovernorConfigBuilder::default()
+            .per_second(1000) // 1000 requests per second for authenticated users
+            .burst_size(1000)
+            .finish()
+            .unwrap()
+    } else {
+        GovernorConfigBuilder::default()
+            .per_second(u64::MAX)
+            .burst_size(u32::MAX)
+            .finish()
+            .unwrap()
+    };
 
     // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints)
     let gdpr_rate_limit = GdprRateLimit::new(GdprRateLimitConfig::default());
@@ -422,7 +437,8 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_state.clone())
             .wrap(gdpr_rate_limit.clone())
             .wrap(login_rate_limiter.clone()) // Login brute-force protection (5/15min)
-            .wrap(Governor::new(&governor_conf))
+            .wrap(Governor::new(&authenticated_rate_limit_config)) // Authenticated users: 1000 req/sec per user
+            .wrap(Governor::new(&public_rate_limit_config)) // Public endpoints: 100 req/sec per IP
             .wrap(cors)
             .wrap(SecurityHeaders) // Security headers for all responses
             .wrap(middleware::Logger::default())
