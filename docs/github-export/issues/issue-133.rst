@@ -2,7 +2,7 @@
 Issue #133: feat: Linky/Ores API Integration for Smart Electricity Monitoring
 =============================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
 :Labels: enhancement,phase:vps track:software,priority:high automation,proptech:iot
 :Assignees: Unassigned

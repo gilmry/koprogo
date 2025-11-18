@@ -5,8 +5,8 @@ Jalon 4: Automation & Intégrations 📅
 :Number: 9
 :State: open
 :Due Date: No due date
-:Open Issues: 7
-:Closed Issues: 6
+:Open Issues: 5
+:Closed Issues: 8
 :Total Issues: 13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/9>`_
 
@@ -40,16 +40,16 @@ Description
 Issues (13)
 ========
 
-🔵 Issue #64: GDPR Article 21: Implement direct marketing objection features (Phase 2 - K3s)
+✅ Issue #64: GDPR Article 21: Implement direct marketing objection features (Phase 2 - K3s)
 --------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#64 <../issues/issue-64.rst>`_
 
-🔵 Issue #65: GDPR Articles 16 & 18: Implement rectification and restriction features (Phase 2 - K3s)
+✅ Issue #65: GDPR Articles 16 & 18: Implement rectification and restriction features (Phase 2 - K3s)
 -----------------------------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#65 <../issues/issue-65.rst>`_
 
 🔵 Issue #67: Phase 13-14: Final GDPR Documentation and QA Review

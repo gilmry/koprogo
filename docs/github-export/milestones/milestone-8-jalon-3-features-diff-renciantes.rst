@@ -5,9 +5,9 @@ Jalon 3: Features Différenciantes 🎯
 :Number: 8
 :State: open
 :Due Date: No due date
-:Open Issues: 4
-:Closed Issues: 3
-:Total Issues: 7
+:Open Issues: 3
+:Closed Issues: 5
+:Total Issues: 8
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/8>`_
 
 Description
@@ -39,7 +39,7 @@ Description
 
 **Effort estimé**: Solo = 5-8 mois | Duo = 10-14 sem | Équipe = 5-7 sem
 
-Issues (7)
+Issues (8)
 ========
 
 ✅ Issue #46: feat: Implement meeting voting system (Résolutions & votes)
@@ -72,15 +72,21 @@ Issues (7)
 :State: CLOSED
 :Link: `#84 <../issues/issue-84.rst>`_
 
-🔵 Issue #99: feat: Community Modules (SEL, Swap Shop, Skills, Object Lending)
+✅ Issue #99: feat: Community Modules (SEL, Swap Shop, Skills, Object Lending)
 ------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#99 <../issues/issue-99.rst>`_
 
-🔵 Issue #133: feat: Linky/Ores API Integration for Smart Electricity Monitoring
+✅ Issue #133: feat: Linky/Ores API Integration for Smart Electricity Monitoring
 -------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#133 <../issues/issue-133.rst>`_
+
+🔵 Issue #134: feat: Complete Work Reports & Technical Inspections REST API
+--------------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#134 <../issues/issue-134.rst>`_
 

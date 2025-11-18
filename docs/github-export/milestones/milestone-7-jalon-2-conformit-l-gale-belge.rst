@@ -5,8 +5,8 @@ Jalon 2: Conformité Légale Belge 📋
 :Number: 7
 :State: open
 :Due Date: No due date
-:Open Issues: 1
-:Closed Issues: 12
+:Open Issues: 0
+:Closed Issues: 13
 :Total Issues: 13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/7>`_
 
@@ -56,10 +56,10 @@ Issues (13)
 :State: CLOSED
 :Link: `#45 <../issues/issue-45.rst>`_
 
-🔵 Issue #51: feat: Board tools (Polls, task management, issue reporting)
+✅ Issue #51: feat: Board tools (Polls, task management, issue reporting)
 -------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#51 <../issues/issue-51.rst>`_
 
 ✅ Issue #73: Système Complet d'Encodage de Factures avec Workflow de Validation
