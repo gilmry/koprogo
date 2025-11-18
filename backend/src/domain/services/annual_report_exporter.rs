@@ -1,9 +1,8 @@
 use crate::domain::entities::{Building, Expense, ExpenseCategory};
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use printpdf::*;
 use std::collections::HashMap;
 use std::io::BufWriter;
-use uuid::Uuid;
 
 /// Annual Financial Report Exporter - Generates PDF for Rapport Financier Annuel
 ///

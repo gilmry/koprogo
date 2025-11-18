@@ -1,7 +1,6 @@
 use crate::application::dto::{
     CreateQuoteDto, QuoteComparisonItemDto, QuoteComparisonRequestDto,
     QuoteComparisonResponseDto, QuoteDecisionDto, QuoteResponseDto, QuoteScoreResponseDto,
-    UpdateQuoteDto,
 };
 use crate::application::ports::QuoteRepository;
 use crate::domain::entities::{Quote, QuoteScore};

@@ -1,8 +1,6 @@
 use crate::domain::entities::{Building, Expense, ExpenseCategory};
-use chrono::{DateTime, Utc};
 use printpdf::*;
 use std::io::BufWriter;
-use uuid::Uuid;
 
 /// Work Quote Document Exporter - Generates PDF for Devis de Travaux
 ///

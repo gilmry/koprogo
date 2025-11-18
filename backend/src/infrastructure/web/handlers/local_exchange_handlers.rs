@@ -1,7 +1,6 @@
 use crate::application::dto::{
     CancelExchangeDto, CompleteExchangeDto, CreateLocalExchangeDto,
-    LocalExchangeResponseDto, OwnerCreditBalanceDto, OwnerExchangeSummaryDto,
-    RateExchangeDto, RequestExchangeDto, SelStatisticsDto,
+    RateExchangeDto, RequestExchangeDto,
 };
 use crate::domain::entities::ExchangeType;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};

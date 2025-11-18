@@ -1,7 +1,6 @@
 use crate::domain::entities::TwoFactorSecret;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 // ========================================
 // 2FA Setup DTOs

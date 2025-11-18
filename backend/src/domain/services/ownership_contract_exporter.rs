@@ -2,7 +2,6 @@ use crate::domain::entities::{Building, Owner, Unit};
 use chrono::{DateTime, Utc};
 use printpdf::*;
 use std::io::BufWriter;
-use uuid::Uuid;
 
 /// Ownership Contract Exporter - Generates PDF for Contrat de Copropriété
 ///

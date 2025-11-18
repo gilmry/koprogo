@@ -2,7 +2,6 @@ use crate::application::ports::LocalExchangeRepository;
 use crate::domain::entities::{ExchangeStatus, ExchangeType, LocalExchange};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
 use sqlx::Row;
 use uuid::Uuid;
 

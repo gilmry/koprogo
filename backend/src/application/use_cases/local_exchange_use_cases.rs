@@ -4,7 +4,7 @@ use crate::application::dto::{
     RateExchangeDto, RequestExchangeDto, SelStatisticsDto,
 };
 use crate::application::ports::{LocalExchangeRepository, OwnerCreditBalanceRepository, OwnerRepository};
-use crate::domain::entities::{ExchangeStatus, ExchangeType, LocalExchange, OwnerCreditBalance};
+use crate::domain::entities::{ExchangeStatus, ExchangeType, LocalExchange};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -490,7 +490,7 @@ impl LocalExchangeUseCases {
         };
 
         // Get recent 5 exchanges
-        let mut recent: Vec<_> = exchanges.into_iter().take(5).collect();
+        let recent: Vec<_> = exchanges.into_iter().take(5).collect();
         let recent_dtos = self.enrich_exchanges_with_names(recent).await?;
 
         Ok(OwnerExchangeSummaryDto {

@@ -2,7 +2,6 @@ use crate::domain::entities::{Building, Expense, Owner, Unit};
 use chrono::{DateTime, Utc};
 use printpdf::*;
 use std::io::BufWriter;
-use uuid::Uuid;
 
 /// Owner Financial Statement Exporter - Generates PDF for Relevé de Charges
 ///

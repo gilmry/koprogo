@@ -8,10 +8,8 @@ use crate::application::ports::{
     AchievementRepository, ChallengeProgressRepository, ChallengeRepository, UserAchievementRepository, UserRepository,
 };
 use crate::domain::entities::{
-    Achievement, AchievementCategory, Challenge, ChallengeProgress, ChallengeStatus,
-    ChallengeType, UserAchievement,
+    Achievement, AchievementCategory, Challenge, ChallengeProgress, ChallengeStatus, UserAchievement,
 };
-use chrono::Utc;
 use std::sync::Arc;
 use uuid::Uuid;
 

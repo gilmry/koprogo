@@ -1,5 +1,4 @@
 use crate::application::dto::{CreateSkillDto, UpdateSkillDto};
-use crate::application::use_cases::SkillUseCases;
 use crate::domain::entities::{ExpertiseLevel, SkillCategory};
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;

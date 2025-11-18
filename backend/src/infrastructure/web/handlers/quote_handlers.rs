@@ -1,5 +1,5 @@
 use crate::application::dto::{
-    CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto, UpdateQuoteDto,
+    CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto,
 };
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;

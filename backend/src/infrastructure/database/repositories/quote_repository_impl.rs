@@ -2,8 +2,6 @@ use crate::application::ports::QuoteRepository;
 use crate::domain::entities::{Quote, QuoteStatus};
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use rust_decimal::Decimal;
 use sqlx::Row;
 use uuid::Uuid;
 

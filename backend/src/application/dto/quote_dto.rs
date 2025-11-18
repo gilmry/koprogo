@@ -1,5 +1,4 @@
-use crate::domain::entities::{Quote, QuoteScore, QuoteStatus};
-use chrono::{DateTime, Utc};
+use crate::domain::entities::{Quote, QuoteScore};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 

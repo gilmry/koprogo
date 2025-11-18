@@ -3,7 +3,7 @@ use crate::application::dto::{
     ResolveTicketRequest, TicketResponse,
 };
 use crate::application::ports::TicketRepository;
-use crate::domain::entities::{Ticket, TicketCategory, TicketPriority, TicketStatus};
+use crate::domain::entities::{Ticket, TicketStatus};
 use std::sync::Arc;
 use uuid::Uuid;
 

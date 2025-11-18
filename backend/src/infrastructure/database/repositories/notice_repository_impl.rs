@@ -2,7 +2,7 @@ use crate::application::ports::NoticeRepository;
 use crate::domain::entities::{Notice, NoticeCategory, NoticeStatus, NoticeType};
 use crate::infrastructure::database::DbPool;
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use sqlx::Row;
 use uuid::Uuid;
 

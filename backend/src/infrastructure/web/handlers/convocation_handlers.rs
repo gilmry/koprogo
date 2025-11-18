@@ -1,9 +1,7 @@
 use crate::application::dto::{
-    ConvocationRecipientResponse, ConvocationResponse, CreateConvocationRequest,
-    RecipientTrackingSummaryResponse, ScheduleConvocationRequest, SendConvocationRequest,
+    CreateConvocationRequest, ScheduleConvocationRequest, SendConvocationRequest,
     SetProxyRequest, UpdateAttendanceRequest,
 };
-use crate::domain::entities::{AttendanceStatus, ConvocationStatus};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};

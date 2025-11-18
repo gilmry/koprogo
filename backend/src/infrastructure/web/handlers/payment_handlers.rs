@@ -1,4 +1,4 @@
-use crate::application::dto::{CreatePaymentRequest, PaymentResponse, RefundPaymentRequest};
+use crate::application::dto::{CreatePaymentRequest, RefundPaymentRequest};
 use crate::domain::entities::TransactionStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};

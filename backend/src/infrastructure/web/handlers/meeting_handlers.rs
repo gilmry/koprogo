@@ -379,7 +379,7 @@ pub async fn export_meeting_minutes_pdf(
         }
 
         // Convert DTOs to domain entities for PDF generation
-        use crate::domain::entities::{Resolution, Vote, MajorityType, ResolutionStatus, ResolutionType, VoteChoice};
+        use crate::domain::entities::{Resolution, Vote};
 
         let resolution_entity = Resolution {
             id: resolution_dto.id,

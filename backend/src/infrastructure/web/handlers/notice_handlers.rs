@@ -1,7 +1,6 @@
 use crate::application::dto::{
-    CreateNoticeDto, NoticeResponseDto, NoticeSummaryDto, SetExpirationDto, UpdateNoticeDto,
+    CreateNoticeDto, SetExpirationDto, UpdateNoticeDto,
 };
-use crate::application::use_cases::{NoticeStatistics, NoticeUseCases};
 use crate::domain::entities::{NoticeCategory, NoticeStatus, NoticeType};
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;

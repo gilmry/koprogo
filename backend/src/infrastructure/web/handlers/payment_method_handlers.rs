@@ -1,5 +1,5 @@
 use crate::application::dto::{
-    CreatePaymentMethodRequest, PaymentMethodResponse, UpdatePaymentMethodRequest,
+    CreatePaymentMethodRequest, UpdatePaymentMethodRequest,
 };
 use crate::domain::entities::payment_method::PaymentMethodType;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};

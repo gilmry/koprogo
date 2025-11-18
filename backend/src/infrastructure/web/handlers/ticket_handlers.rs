@@ -1,6 +1,6 @@
 use crate::application::dto::{
     AssignTicketRequest, CancelTicketRequest, CreateTicketRequest, ReopenTicketRequest,
-    ResolveTicketRequest, TicketResponse,
+    ResolveTicketRequest,
 };
 use crate::domain::entities::TicketStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};

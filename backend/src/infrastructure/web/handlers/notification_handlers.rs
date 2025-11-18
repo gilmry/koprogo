@@ -1,5 +1,5 @@
 use crate::application::dto::{
-    CreateNotificationRequest, MarkReadRequest, NotificationResponse, UpdatePreferenceRequest,
+    CreateNotificationRequest, MarkReadRequest, UpdatePreferenceRequest,
 };
 use crate::domain::entities::NotificationType;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};

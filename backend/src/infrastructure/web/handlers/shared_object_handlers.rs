@@ -1,5 +1,4 @@
 use crate::application::dto::{BorrowObjectDto, CreateSharedObjectDto, UpdateSharedObjectDto};
-use crate::application::use_cases::SharedObjectUseCases;
 use crate::domain::entities::SharedObjectCategory;
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;

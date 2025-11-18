@@ -1,5 +1,5 @@
 use crate::application::dto::{
-    Disable2FADto, Enable2FADto, RegenerateBackupCodesDto, TwoFactorStatusDto, Verify2FADto,
+    Disable2FADto, Enable2FADto, RegenerateBackupCodesDto, Verify2FADto,
 };
 use crate::application::use_cases::TwoFactorUseCases;
 use crate::infrastructure::web::middleware::AuthenticatedUser;

@@ -1,4 +1,4 @@
-use crate::domain::entities::{Notification, NotificationChannel, NotificationStatus, NotificationType};
+use crate::domain::entities::{Notification, NotificationChannel, NotificationStatus};
 use async_trait::async_trait;
 use uuid::Uuid;
 
