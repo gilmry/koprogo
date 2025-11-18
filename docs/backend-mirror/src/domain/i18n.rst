@@ -1,0 +1,43 @@
+==============
+domain/i18n.rs
+==============
+
+:File: ``domain/i18n.rs``
+:Lines of Code: 290
+:Layer: Domain
+:Has Tests: ✅ Yes
+
+Public API
+==========
+
+Structures
+----------
+
+- ``I18n``
+
+Enumerations
+------------
+
+- ``Language``
+- ``TranslationKey``
+
+Functions
+---------
+
+- ``from_code()``
+- ``code()``
+- ``translate()``
+
+Source Code
+===========
+
+See: ``backend/src/domain/i18n.rs``
+
+Related Documentation
+=====================
+
+.. seealso::
+
+   - :doc:`/ARCHITECTURE`
+   - :doc:`/CLAUDE`
+
