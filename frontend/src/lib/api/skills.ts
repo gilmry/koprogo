@@ -115,19 +115,30 @@ export const skillsApi = {
     return api.get(`/buildings/${buildingId}/skill-offers/available`);
   },
 
-  async listOffersByCategory(buildingId: string, category: SkillCategory): Promise<SkillOffer[]> {
-    return api.get(`/buildings/${buildingId}/skill-offers/category/${category}`);
+  async listOffersByCategory(
+    buildingId: string,
+    category: SkillCategory,
+  ): Promise<SkillOffer[]> {
+    return api.get(
+      `/buildings/${buildingId}/skill-offers/category/${category}`,
+    );
   },
 
   async listOffersByOwner(ownerId: string): Promise<SkillOffer[]> {
     return api.get(`/owners/${ownerId}/skill-offers`);
   },
 
-  async updateOffer(id: string, data: Partial<SkillOffer>): Promise<SkillOffer> {
+  async updateOffer(
+    id: string,
+    data: Partial<SkillOffer>,
+  ): Promise<SkillOffer> {
     return api.put(`/skill-offers/${id}`, data);
   },
 
-  async setOfferAvailability(id: string, status: SkillStatus): Promise<SkillOffer> {
+  async setOfferAvailability(
+    id: string,
+    status: SkillStatus,
+  ): Promise<SkillOffer> {
     return api.put(`/skill-offers/${id}/status`, { status });
   },
 
@@ -168,7 +179,11 @@ export const skillsApi = {
     return api.put(`/skill-requests/${id}/cancel`, {});
   },
 
-  async rateRequest(id: string, rating: number, feedback?: string): Promise<SkillRequest> {
+  async rateRequest(
+    id: string,
+    rating: number,
+    feedback?: string,
+  ): Promise<SkillRequest> {
     return api.put(`/skill-requests/${id}/rate`, { rating, feedback });
   },
 

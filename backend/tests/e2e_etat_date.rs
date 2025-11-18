@@ -70,12 +70,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let financial_report_use_cases =
         FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let etat_date_use_cases = EtatDateUseCases::new(
@@ -153,7 +149,12 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
 #[serial]
 async fn test_create_etat_date_request() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let building_id = Uuid::new_v4();
     let unit_id = Uuid::new_v4();
@@ -188,7 +189,12 @@ async fn test_create_etat_date_request() {
 #[serial]
 async fn test_etat_date_workflow_requested_to_delivered() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let etat_date_id = Uuid::new_v4();
 
@@ -216,7 +222,10 @@ async fn test_etat_date_workflow_requested_to_delivered() {
     });
 
     let req = test::TestRequest::put()
-        .uri(&format!("/api/v1/etats-dates/{}/financial-data", etat_date_id))
+        .uri(&format!(
+            "/api/v1/etats-dates/{}/financial-data",
+            etat_date_id
+        ))
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .set_json(&financial_data)
@@ -250,7 +259,12 @@ async fn test_etat_date_workflow_requested_to_delivered() {
 #[serial]
 async fn test_list_overdue_etats_dates() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/etats-dates/overdue")
@@ -268,7 +282,12 @@ async fn test_list_overdue_etats_dates() {
 #[serial]
 async fn test_list_expired_etats_dates() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/etats-dates/expired")
@@ -286,7 +305,12 @@ async fn test_list_expired_etats_dates() {
 #[serial]
 async fn test_get_etat_date_by_reference_number() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let reference = "ED-2026-001";
 
@@ -305,12 +329,20 @@ async fn test_get_etat_date_by_reference_number() {
 #[serial]
 async fn test_etat_date_statistics() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let building_id = Uuid::new_v4();
 
     let req = test::TestRequest::get()
-        .uri(&format!("/api/v1/etats-dates/stats?building_id={}", building_id))
+        .uri(&format!(
+            "/api/v1/etats-dates/stats?building_id={}",
+            building_id
+        ))
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
@@ -324,7 +356,12 @@ async fn test_etat_date_statistics() {
 #[serial]
 async fn test_etat_date_16_legal_sections_validation() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let etat_date_id = Uuid::new_v4();
 
@@ -343,7 +380,10 @@ async fn test_etat_date_16_legal_sections_validation() {
     });
 
     let req = test::TestRequest::put()
-        .uri(&format!("/api/v1/etats-dates/{}/additional-data", etat_date_id))
+        .uri(&format!(
+            "/api/v1/etats-dates/{}/additional-data",
+            etat_date_id
+        ))
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .set_json(&additional_data)

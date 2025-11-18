@@ -1,9 +1,11 @@
 use crate::application::dto::{
-    CancelExchangeDto, CompleteExchangeDto, CreateLocalExchangeDto,
-    LocalExchangeResponseDto, OwnerCreditBalanceDto, OwnerExchangeSummaryDto,
-    RateExchangeDto, RequestExchangeDto, SelStatisticsDto,
+    CancelExchangeDto, CompleteExchangeDto, CreateLocalExchangeDto, LocalExchangeResponseDto,
+    OwnerCreditBalanceDto, OwnerExchangeSummaryDto, RateExchangeDto, RequestExchangeDto,
+    SelStatisticsDto,
 };
-use crate::application::ports::{LocalExchangeRepository, OwnerCreditBalanceRepository, OwnerRepository};
+use crate::application::ports::{
+    LocalExchangeRepository, OwnerCreditBalanceRepository, OwnerRepository,
+};
 use crate::domain::entities::{ExchangeStatus, ExchangeType, LocalExchange};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -354,7 +356,10 @@ impl LocalExchangeUseCases {
         building_id: Uuid,
         limit: i32,
     ) -> Result<Vec<OwnerCreditBalanceDto>, String> {
-        let balances = self.balance_repo.get_leaderboard(building_id, limit).await?;
+        let balances = self
+            .balance_repo
+            .get_leaderboard(building_id, limit)
+            .await?;
 
         let mut dtos = Vec::new();
         for balance in balances {
@@ -418,15 +423,14 @@ impl LocalExchangeUseCases {
             .count_by_building_and_status(building_id, ExchangeType::SharedPurchase.to_sql())
             .await?;
 
-        let most_popular_exchange_type = if service_count >= object_loan_count
-            && service_count >= shared_purchase_count
-        {
-            Some(ExchangeType::Service)
-        } else if object_loan_count >= shared_purchase_count {
-            Some(ExchangeType::ObjectLoan)
-        } else {
-            Some(ExchangeType::SharedPurchase)
-        };
+        let most_popular_exchange_type =
+            if service_count >= object_loan_count && service_count >= shared_purchase_count {
+                Some(ExchangeType::Service)
+            } else if object_loan_count >= shared_purchase_count {
+                Some(ExchangeType::ObjectLoan)
+            } else {
+                Some(ExchangeType::SharedPurchase)
+            };
 
         Ok(SelStatisticsDto {
             building_id,
@@ -535,11 +539,7 @@ impl LocalExchangeUseCases {
     }
 
     /// Update average rating for an owner
-    async fn update_average_rating(
-        &self,
-        owner_id: Uuid,
-        building_id: Uuid,
-    ) -> Result<(), String> {
+    async fn update_average_rating(&self, owner_id: Uuid, building_id: Uuid) -> Result<(), String> {
         let exchanges = self.exchange_repo.find_by_owner(owner_id).await?;
 
         let mut total_ratings = 0;
@@ -563,7 +563,10 @@ impl LocalExchangeUseCases {
         if rating_count > 0 {
             let average = total_ratings as f32 / rating_count as f32;
 
-            let mut balance = self.balance_repo.get_or_create(owner_id, building_id).await?;
+            let mut balance = self
+                .balance_repo
+                .get_or_create(owner_id, building_id)
+                .await?;
             balance.update_rating(average)?;
             self.balance_repo.update(&balance).await?;
         }

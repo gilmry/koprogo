@@ -43,19 +43,19 @@ pub struct Poll {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum PollType {
-    YesNo,           // Simple yes/no question
-    MultipleChoice,  // Choose one or multiple options
-    Rating,          // Rate 1-5 stars
-    OpenEnded,       // Free text responses
+    YesNo,          // Simple yes/no question
+    MultipleChoice, // Choose one or multiple options
+    Rating,         // Rate 1-5 stars
+    OpenEnded,      // Free text responses
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum PollStatus {
-    Draft,      // Not yet published
-    Active,     // Currently accepting votes
-    Closed,     // Voting period ended
-    Cancelled,  // Poll cancelled before completion
+    Draft,     // Not yet published
+    Active,    // Currently accepting votes
+    Closed,    // Voting period ended
+    Cancelled, // Poll cancelled before completion
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

@@ -16,9 +16,11 @@ This directory should contain PWA icons in the following sizes:
 You can use online tools or command-line tools to generate all sizes from a single source image:
 
 ### Option 1: Online Tool
+
 Use [PWA Asset Generator](https://www.pwabuilder.com/imageGenerator) or [Real Favicon Generator](https://realfavicongenerator.net/)
 
 ### Option 2: ImageMagick (Command Line)
+
 ```bash
 # Install ImageMagick if not already installed
 # Ubuntu/Debian: sudo apt-get install imagemagick
@@ -36,6 +38,7 @@ convert source.png -resize 512x512 icon-512x512.png
 ```
 
 ### Option 3: Sharp (Node.js)
+
 ```bash
 npm install -g sharp-cli
 

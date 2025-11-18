@@ -206,9 +206,7 @@ where
                     "retry_after": 900 // 15 minutes in seconds
                 }));
 
-            return Box::pin(async move {
-                Ok(req.into_response(response).map_into_right_body())
-            });
+            return Box::pin(async move { Ok(req.into_response(response).map_into_right_body()) });
         }
 
         // Not rate limited, proceed
@@ -228,7 +226,11 @@ mod tests {
 
         // First 5 attempts should be allowed
         for i in 1..=5 {
-            assert!(!limiter.check_rate_limit(ip), "Attempt {} should be allowed", i);
+            assert!(
+                !limiter.check_rate_limit(ip),
+                "Attempt {} should be allowed",
+                i
+            );
         }
 
         // 6th attempt should be rate limited

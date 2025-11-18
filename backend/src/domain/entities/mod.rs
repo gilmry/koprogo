@@ -24,10 +24,10 @@ pub mod local_exchange;
 pub mod meeting;
 pub mod notice;
 pub mod notification;
-pub mod owner_credit_balance;
 pub mod organization;
 pub mod owner;
 pub mod owner_contribution;
+pub mod owner_credit_balance;
 pub mod payment;
 pub mod payment_method;
 pub mod payment_reminder;
@@ -81,12 +81,12 @@ pub use notification::{
     Notification, NotificationChannel, NotificationPreference, NotificationPriority,
     NotificationStatus, NotificationType,
 };
-pub use owner_credit_balance::{CreditStatus, OwnerCreditBalance, ParticipationLevel};
 pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
 pub use owner_contribution::{
     ContributionPaymentMethod, ContributionPaymentStatus, ContributionType, OwnerContribution,
 };
+pub use owner_credit_balance::{CreditStatus, OwnerCreditBalance, ParticipationLevel};
 pub use payment::{Payment, PaymentMethodType, TransactionStatus};
 pub use payment_method::PaymentMethod;
 pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};

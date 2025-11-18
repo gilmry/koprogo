@@ -38,16 +38,14 @@ impl WorkQuoteExporter {
             expense.category,
             ExpenseCategory::Maintenance | ExpenseCategory::Repairs | ExpenseCategory::Insurance
         ) {
-            return Err("Expense must be work-related category (Maintenance/Repairs/Insurance)".to_string());
+            return Err(
+                "Expense must be work-related category (Maintenance/Repairs/Insurance)".to_string(),
+            );
         }
 
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) = PdfDocument::new(
-            "Devis de Travaux",
-            Mm(210.0),
-            Mm(297.0),
-            "Layer 1",
-        );
+        let (doc, page1, layer1) =
+            PdfDocument::new("Devis de Travaux", Mm(210.0), Mm(297.0), "Layer 1");
         let current_layer = doc.get_page(page1).get_layer(layer1);
 
         // Load fonts
@@ -92,26 +90,17 @@ impl WorkQuoteExporter {
         y -= 10.0;
 
         // Building information
-        current_layer.use_text(
-            "COPROPRIÉTÉ".to_string(),
-            14.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.use_text("COPROPRIÉTÉ".to_string(), 14.0, Mm(20.0), Mm(y), &font_bold);
         y -= 8.0;
 
-        current_layer.use_text(
-            building.name.clone(),
-            11.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.use_text(building.name.clone(), 11.0, Mm(20.0), Mm(y), &font);
         y -= 6.0;
 
         current_layer.use_text(
-            format!("{}, {} {}", building.address, building.postal_code, building.city),
+            format!(
+                "{}, {} {}",
+                building.address, building.postal_code, building.city
+            ),
             10.0,
             Mm(20.0),
             Mm(y),
@@ -120,31 +109,13 @@ impl WorkQuoteExporter {
         y -= 10.0;
 
         // Contractor information
-        current_layer.use_text(
-            "PRESTATAIRE".to_string(),
-            14.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.use_text("PRESTATAIRE".to_string(), 14.0, Mm(20.0), Mm(y), &font_bold);
         y -= 8.0;
 
-        current_layer.use_text(
-            contractor_name.to_string(),
-            11.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.use_text(contractor_name.to_string(), 11.0, Mm(20.0), Mm(y), &font);
         y -= 6.0;
 
-        current_layer.use_text(
-            contractor_contact.to_string(),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.use_text(contractor_contact.to_string(), 10.0, Mm(20.0), Mm(y), &font);
         y -= 10.0;
 
         // Work description
@@ -223,13 +194,7 @@ impl WorkQuoteExporter {
                 &font,
             );
 
-            current_layer.use_text(
-                format!("{:.2} €", item.total),
-                9.0,
-                Mm(170.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.use_text(format!("{:.2} €", item.total), 9.0, Mm(170.0), Mm(y), &font);
 
             subtotal += item.total;
             y -= 5.0;
@@ -270,17 +235,13 @@ impl WorkQuoteExporter {
         let approval_text = match expense.approval_status {
             crate::domain::entities::ApprovalStatus::Approved => "✓ Devis APPROUVÉ",
             crate::domain::entities::ApprovalStatus::Rejected => "✗ Devis REJETÉ",
-            crate::domain::entities::ApprovalStatus::PendingApproval => "○ En attente d'approbation",
+            crate::domain::entities::ApprovalStatus::PendingApproval => {
+                "○ En attente d'approbation"
+            }
             crate::domain::entities::ApprovalStatus::Draft => "○ Brouillon",
         };
 
-        current_layer.use_text(
-            approval_text.to_string(),
-            11.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.use_text(approval_text.to_string(), 11.0, Mm(20.0), Mm(y), &font_bold);
         y -= 15.0;
 
         // === SIGNATURES ===
@@ -288,13 +249,7 @@ impl WorkQuoteExporter {
             y = 40.0;
         }
 
-        current_layer.use_text(
-            "SIGNATURES".to_string(),
-            12.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.use_text("SIGNATURES".to_string(), 12.0, Mm(20.0), Mm(y), &font_bold);
         y -= 10.0;
 
         current_layer.use_text(
@@ -360,6 +315,8 @@ impl WorkQuoteExporter {
 mod tests {
     use super::*;
     use crate::domain::entities::ApprovalStatus;
+    use chrono::Utc;
+    use uuid::Uuid;
 
     #[test]
     fn test_export_work_quote_pdf() {
@@ -391,14 +348,24 @@ mod tests {
             organization_id: building.organization_id,
             description: "Rénovation de la façade principale".to_string(),
             amount: 15000.0,
-            date: Utc::now(),
+            amount_excl_vat: Some(12396.69),
+            vat_rate: Some(21.0),
+            vat_amount: Some(2603.31),
+            amount_incl_vat: Some(15000.0),
+            expense_date: Utc::now(),
+            invoice_date: None,
+            due_date: None,
+            paid_date: None,
             category: ExpenseCategory::Maintenance,
-            paid_by: None,
-            payment_date: None,
-            is_paid: false,
-            invoice_number: Some("DEV-2025-001".to_string()),
-            invoice_file_path: None,
             approval_status: ApprovalStatus::PendingApproval,
+            submitted_at: None,
+            approved_by: None,
+            approved_at: None,
+            rejection_reason: None,
+            payment_status: crate::domain::entities::PaymentStatus::Pending,
+            supplier: None,
+            invoice_number: Some("DEV-2025-001".to_string()),
+            account_code: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };

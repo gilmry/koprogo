@@ -114,7 +114,10 @@ impl OwnerCreditBalanceRepository for PostgresOwnerCreditBalanceRepository {
         building_id: Uuid,
     ) -> Result<OwnerCreditBalance, String> {
         // Try to find existing balance
-        if let Some(balance) = self.find_by_owner_and_building(owner_id, building_id).await? {
+        if let Some(balance) = self
+            .find_by_owner_and_building(owner_id, building_id)
+            .await?
+        {
             return Ok(balance);
         }
 

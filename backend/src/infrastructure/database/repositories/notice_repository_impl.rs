@@ -32,8 +32,7 @@ fn map_row_to_notice(row: &sqlx::postgres::PgRow) -> Notice {
             .unwrap_or(NoticeCategory::General),
         title: row.get("title"),
         content: row.get("content"),
-        status: serde_json::from_str(&format!("\"{}\"", status_str))
-            .unwrap_or(NoticeStatus::Draft),
+        status: serde_json::from_str(&format!("\"{}\"", status_str)).unwrap_or(NoticeStatus::Draft),
         is_pinned: row.get("is_pinned"),
         published_at: row.get("published_at"),
         expires_at: row.get("expires_at"),
@@ -140,10 +139,7 @@ impl NoticeRepository for PostgresNoticeRepository {
         Ok(rows.iter().map(map_row_to_notice).collect())
     }
 
-    async fn find_published_by_building(
-        &self,
-        building_id: Uuid,
-    ) -> Result<Vec<Notice>, String> {
+    async fn find_published_by_building(&self, building_id: Uuid) -> Result<Vec<Notice>, String> {
         let rows = sqlx::query(
             r#"
             SELECT id, building_id, author_id, notice_type::text AS notice_type,

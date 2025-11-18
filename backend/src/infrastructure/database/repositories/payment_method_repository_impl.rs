@@ -242,10 +242,7 @@ impl PaymentMethodRepository for PostgresPaymentMethodRepository {
             .collect()
     }
 
-    async fn find_default_by_owner(
-        &self,
-        owner_id: Uuid,
-    ) -> Result<Option<PaymentMethod>, String> {
+    async fn find_default_by_owner(&self, owner_id: Uuid) -> Result<Option<PaymentMethod>, String> {
         let row = sqlx::query!(
             r#"
             SELECT id, organization_id, owner_id,
@@ -404,7 +401,10 @@ impl PaymentMethodRepository for PostgresPaymentMethodRepository {
             &payment_method.display_label,
             payment_method.is_default,
             payment_method.is_active,
-            payment_method.metadata.as_deref().and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()),
+            payment_method
+                .metadata
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()),
             payment_method.expires_at,
             payment_method.updated_at,
         )

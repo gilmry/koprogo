@@ -68,7 +68,9 @@ impl IoTReading {
     /// Validate value based on metric type
     fn validate_value(metric_type: &MetricType, value: f64) -> Result<(), String> {
         match metric_type {
-            MetricType::ElectricityConsumption | MetricType::WaterConsumption | MetricType::GasConsumption => {
+            MetricType::ElectricityConsumption
+            | MetricType::WaterConsumption
+            | MetricType::GasConsumption => {
                 if value < 0.0 {
                     return Err(format!("Consumption value cannot be negative: {}", value));
                 }
@@ -78,7 +80,10 @@ impl IoTReading {
             }
             MetricType::Temperature => {
                 if value < -40.0 || value > 80.0 {
-                    return Err(format!("Temperature value out of range (-40 to +80°C): {}", value));
+                    return Err(format!(
+                        "Temperature value out of range (-40 to +80°C): {}",
+                        value
+                    ));
                 }
             }
             MetricType::Humidity => {
@@ -146,8 +151,8 @@ impl IoTReading {
             },
             MetricType::Temperature => match self.unit.as_str() {
                 "F" | "°F" => (self.value - 32.0) * 5.0 / 9.0, // Convert to °C
-                "K" => self.value - 273.15, // Convert to °C
-                _ => self.value, // Already °C
+                "K" => self.value - 273.15,                    // Convert to °C
+                _ => self.value,                               // Already °C
             },
             _ => self.value, // No conversion needed
         }

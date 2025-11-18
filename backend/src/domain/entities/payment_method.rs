@@ -313,8 +313,8 @@ mod tests {
         let mut card = create_test_card();
         assert!(card.metadata.is_none());
 
-        let metadata = r#"{"brand": "visa", "last4": "4242", "exp_month": 12, "exp_year": 2025}"#
-            .to_string();
+        let metadata =
+            r#"{"brand": "visa", "last4": "4242", "exp_month": 12, "exp_year": 2025}"#.to_string();
         card.set_metadata(metadata.clone());
         assert_eq!(card.metadata, Some(metadata));
     }

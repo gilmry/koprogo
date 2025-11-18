@@ -144,7 +144,6 @@ pub struct ExpertiseCount {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::Utc;
 
     #[test]
     fn test_skill_response_dto_from_skill() {

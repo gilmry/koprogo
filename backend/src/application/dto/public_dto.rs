@@ -103,13 +103,7 @@ mod tests {
 
         assert!(response.has_syndic_info);
         assert_eq!(response.syndic_name, Some("Syndic ASBL".to_string()));
-        assert_eq!(
-            response.syndic_email,
-            Some("contact@syndic.be".to_string())
-        );
-        assert_eq!(
-            response.syndic_phone,
-            Some("+32 2 123 4567".to_string())
-        );
+        assert_eq!(response.syndic_email, Some("contact@syndic.be".to_string()));
+        assert_eq!(response.syndic_phone, Some("+32 2 123 4567".to_string()));
     }
 }

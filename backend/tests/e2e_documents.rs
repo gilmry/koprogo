@@ -75,12 +75,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let financial_report_use_cases =
         FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -290,11 +286,7 @@ async fn test_upload_document_success() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        201,
-        "Should upload document successfully"
-    );
+    assert_eq!(resp.status(), 201, "Should upload document successfully");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(body["building_id"], building_id.to_string());
@@ -852,11 +844,7 @@ async fn test_invalid_document_type_fails() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        400,
-        "Should reject invalid document type"
-    );
+    assert_eq!(resp.status(), 400, "Should reject invalid document type");
 }
 
 //

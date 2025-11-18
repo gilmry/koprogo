@@ -112,7 +112,9 @@ export interface CreateBookingDto {
 
 export const bookingsApi = {
   // Resources
-  async createResource(data: CreateBookableResourceDto): Promise<BookableResource> {
+  async createResource(
+    data: CreateBookableResourceDto,
+  ): Promise<BookableResource> {
     return api.post("/bookable-resources", data);
   },
 
@@ -120,23 +122,38 @@ export const bookingsApi = {
     return api.get(`/bookable-resources/${id}`);
   },
 
-  async listResourcesByBuilding(buildingId: string): Promise<BookableResource[]> {
+  async listResourcesByBuilding(
+    buildingId: string,
+  ): Promise<BookableResource[]> {
     return api.get(`/buildings/${buildingId}/bookable-resources`);
   },
 
-  async listAvailableResources(buildingId: string): Promise<BookableResource[]> {
+  async listAvailableResources(
+    buildingId: string,
+  ): Promise<BookableResource[]> {
     return api.get(`/buildings/${buildingId}/bookable-resources/available`);
   },
 
-  async listResourcesByType(buildingId: string, resourceType: ResourceType): Promise<BookableResource[]> {
-    return api.get(`/buildings/${buildingId}/bookable-resources/type/${resourceType}`);
+  async listResourcesByType(
+    buildingId: string,
+    resourceType: ResourceType,
+  ): Promise<BookableResource[]> {
+    return api.get(
+      `/buildings/${buildingId}/bookable-resources/type/${resourceType}`,
+    );
   },
 
-  async updateResource(id: string, data: Partial<BookableResource>): Promise<BookableResource> {
+  async updateResource(
+    id: string,
+    data: Partial<BookableResource>,
+  ): Promise<BookableResource> {
     return api.put(`/bookable-resources/${id}`, data);
   },
 
-  async setResourceStatus(id: string, status: ResourceStatus): Promise<BookableResource> {
+  async setResourceStatus(
+    id: string,
+    status: ResourceStatus,
+  ): Promise<BookableResource> {
     return api.put(`/bookable-resources/${id}/status`, { status });
   },
 
@@ -197,7 +214,7 @@ export const bookingsApi = {
   async checkAvailability(
     resourceId: string,
     startTime: string,
-    endTime: string
+    endTime: string,
   ): Promise<{ is_available: boolean; conflicting_bookings?: Booking[] }> {
     return api.post(`/bookable-resources/${resourceId}/check-availability`, {
       start_time: startTime,
@@ -207,9 +224,11 @@ export const bookingsApi = {
 
   async getAvailabilitySlots(
     resourceId: string,
-    date: string
+    date: string,
   ): Promise<AvailabilitySlot[]> {
-    return api.get(`/bookable-resources/${resourceId}/availability-slots?date=${date}`);
+    return api.get(
+      `/bookable-resources/${resourceId}/availability-slots?date=${date}`,
+    );
   },
 
   // Statistics

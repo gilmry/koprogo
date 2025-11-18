@@ -43,8 +43,5 @@ pub trait ResolutionRepository: Send + Sync {
     ) -> Result<(), String>;
 
     /// Get vote summary for all resolutions in a meeting
-    async fn get_meeting_vote_summary(
-        &self,
-        meeting_id: Uuid,
-    ) -> Result<Vec<Resolution>, String>;
+    async fn get_meeting_vote_summary(&self, meeting_id: Uuid) -> Result<Vec<Resolution>, String>;
 }

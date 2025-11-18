@@ -33,10 +33,7 @@ pub trait PaymentRepository: Send + Sync {
     async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<Payment>, String>;
 
     /// Find all payments for an organization
-    async fn find_by_organization(
-        &self,
-        organization_id: Uuid,
-    ) -> Result<Vec<Payment>, String>;
+    async fn find_by_organization(&self, organization_id: Uuid) -> Result<Vec<Payment>, String>;
 
     /// Find payments by status
     async fn find_by_status(
@@ -74,16 +71,10 @@ pub trait PaymentRepository: Send + Sync {
     async fn get_total_paid_for_building(&self, building_id: Uuid) -> Result<i64, String>;
 
     /// Get payment statistics for owner
-    async fn get_owner_payment_stats(
-        &self,
-        owner_id: Uuid,
-    ) -> Result<PaymentStats, String>;
+    async fn get_owner_payment_stats(&self, owner_id: Uuid) -> Result<PaymentStats, String>;
 
     /// Get payment statistics for building
-    async fn get_building_payment_stats(
-        &self,
-        building_id: Uuid,
-    ) -> Result<PaymentStats, String>;
+    async fn get_building_payment_stats(&self, building_id: Uuid) -> Result<PaymentStats, String>;
 }
 
 /// Payment statistics

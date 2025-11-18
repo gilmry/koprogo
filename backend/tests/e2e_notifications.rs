@@ -94,8 +94,7 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
     let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
     let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
-    let challenge_progress_repo =
-        Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
+    let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
 
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
 
@@ -106,12 +105,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let financial_report_use_cases =
         FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let budget_use_cases = BudgetUseCases::new(budget_repo, building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
@@ -141,11 +136,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
-    let payment_reminder_use_cases = PaymentReminderUseCases::new(
-        payment_reminder_repo,
-        expense_repo,
-        owner_repo.clone(),
-    );
+    let payment_reminder_use_cases =
+        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo, owner_repo.clone());
     let board_member_use_cases = BoardMemberUseCases::new(board_member_repo);
     let board_decision_use_cases =
         BoardDecisionUseCases::new(board_decision_repo, user_repo.clone());
@@ -299,7 +291,11 @@ async fn test_create_notification_success() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 201, "Should create notification successfully");
+    assert_eq!(
+        resp.status(),
+        201,
+        "Should create notification successfully"
+    );
 
     let notification: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(notification["title"], "New expense created");
@@ -651,7 +647,10 @@ async fn test_mark_notification_read() {
 
     // Mark as read
     let mark_read_req = test::TestRequest::put()
-        .uri(&format!("/api/v1/notifications/{}/mark-read", notification_id))
+        .uri(&format!(
+            "/api/v1/notifications/{}/mark-read",
+            notification_id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -659,7 +658,10 @@ async fn test_mark_notification_read() {
     assert_eq!(mark_read_resp.status(), 200);
 
     let marked: serde_json::Value = test::read_body_json(mark_read_resp).await;
-    assert!(marked["read_at"].is_string(), "Should have read_at timestamp");
+    assert!(
+        marked["read_at"].is_string(),
+        "Should have read_at timestamp"
+    );
 }
 
 #[actix_web::test]
@@ -957,7 +959,10 @@ async fn test_complete_notification_lifecycle() {
 
     // 3. Mark notification as read
     let mark_read_req = test::TestRequest::put()
-        .uri(&format!("/api/v1/notifications/{}/mark-read", notification_id))
+        .uri(&format!(
+            "/api/v1/notifications/{}/mark-read",
+            notification_id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 

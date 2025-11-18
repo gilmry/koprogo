@@ -22,8 +22,9 @@ impl PostgresResourceBookingRepository {
         let resource_type_str: String = row
             .try_get("resource_type")
             .map_err(|e| format!("Failed to get resource_type: {}", e))?;
-        let resource_type: ResourceType = serde_json::from_str(&format!("\"{}\"", resource_type_str))
-            .map_err(|e| format!("Failed to parse resource_type: {}", e))?;
+        let resource_type: ResourceType =
+            serde_json::from_str(&format!("\"{}\"", resource_type_str))
+                .map_err(|e| format!("Failed to parse resource_type: {}", e))?;
 
         let status_str: String = row
             .try_get("status")
@@ -190,7 +191,12 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
         .bind(&resource_type_str)
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| format!("Failed to find bookings by building and resource type: {}", e))?;
+        .map_err(|e| {
+            format!(
+                "Failed to find bookings by building and resource type: {}",
+                e
+            )
+        })?;
 
         rows.iter().map(Self::row_to_entity).collect()
     }

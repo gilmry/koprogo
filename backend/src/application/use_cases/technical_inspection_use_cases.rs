@@ -92,7 +92,10 @@ impl TechnicalInspectionUseCases {
         &self,
         organization_id: Uuid,
     ) -> Result<Vec<TechnicalInspectionResponseDto>, String> {
-        let inspections = self.repository.find_by_organization(organization_id).await?;
+        let inspections = self
+            .repository
+            .find_by_organization(organization_id)
+            .await?;
         Ok(inspections
             .iter()
             .map(|i| self.to_response_dto(i))

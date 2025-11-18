@@ -100,10 +100,10 @@ pub struct BudgetVarianceResponse {
     pub variance_total_pct: f64,
 
     // Alertes
-    pub has_overruns: bool,                  // Dépassements > 10%
-    pub overrun_categories: Vec<String>,     // Catégories en dépassement
-    pub months_elapsed: i32,                 // Mois écoulés dans l'exercice
-    pub projected_year_end_total: f64,       // Projection fin d'année
+    pub has_overruns: bool,              // Dépassements > 10%
+    pub overrun_categories: Vec<String>, // Catégories en dépassement
+    pub months_elapsed: i32,             // Mois écoulés dans l'exercice
+    pub projected_year_end_total: f64,   // Projection fin d'année
 }
 
 /// Response avec statistiques budgétaires

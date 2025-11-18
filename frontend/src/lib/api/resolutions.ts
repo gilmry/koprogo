@@ -70,7 +70,10 @@ export interface CastVoteDto {
 }
 
 export const resolutionsApi = {
-  async create(meetingId: string, data: CreateResolutionDto): Promise<Resolution> {
+  async create(
+    meetingId: string,
+    data: CreateResolutionDto,
+  ): Promise<Resolution> {
     return api.post(`/meetings/${meetingId}/resolutions`, data);
   },
 

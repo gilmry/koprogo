@@ -5,34 +5,34 @@ use uuid::Uuid;
 /// Ticket Category - Types of maintenance requests
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TicketCategory {
-    Plumbing,       // Plomberie
-    Electrical,     // Électricité
-    Heating,        // Chauffage
-    CommonAreas,    // Parties communes
-    Elevator,       // Ascenseur
-    Security,       // Sécurité
-    Cleaning,       // Nettoyage
-    Landscaping,    // Espaces verts
-    Other,          // Autre
+    Plumbing,    // Plomberie
+    Electrical,  // Électricité
+    Heating,     // Chauffage
+    CommonAreas, // Parties communes
+    Elevator,    // Ascenseur
+    Security,    // Sécurité
+    Cleaning,    // Nettoyage
+    Landscaping, // Espaces verts
+    Other,       // Autre
 }
 
 /// Ticket Priority
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum TicketPriority {
-    Low,       // Basse
-    Medium,    // Moyenne
-    High,      // Haute
-    Critical,  // Critique/Urgente
+    Low,      // Basse
+    Medium,   // Moyenne
+    High,     // Haute
+    Critical, // Critique/Urgente
 }
 
 /// Ticket Status - Workflow states
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TicketStatus {
-    Open,         // Ouvert (nouveau ticket)
-    InProgress,   // En cours de traitement
-    Resolved,     // Résolu (intervention terminée)
-    Closed,       // Fermé (validé par le demandeur)
-    Cancelled,    // Annulé
+    Open,       // Ouvert (nouveau ticket)
+    InProgress, // En cours de traitement
+    Resolved,   // Résolu (intervention terminée)
+    Closed,     // Fermé (validé par le demandeur)
+    Cancelled,  // Annulé
 }
 
 /// Ticket Entity - Maintenance request from owners
@@ -45,7 +45,7 @@ pub struct Ticket {
     pub organization_id: Uuid,
     pub building_id: Uuid,
     pub unit_id: Option<Uuid>, // If specific to a unit, None for common areas
-    pub created_by: Uuid,       // Owner who created the ticket
+    pub created_by: Uuid,      // Owner who created the ticket
     pub assigned_to: Option<Uuid>, // User (syndic, contractor) assigned
     pub title: String,
     pub description: String,
@@ -136,7 +136,10 @@ impl Ticket {
                 Ok(())
             }
             TicketStatus::InProgress => Ok(()), // Already in progress
-            _ => Err(format!("Cannot start work on ticket in status {:?}", self.status)),
+            _ => Err(format!(
+                "Cannot start work on ticket in status {:?}",
+                self.status
+            )),
         }
     }
 

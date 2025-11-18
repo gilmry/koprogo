@@ -322,7 +322,11 @@ pub async fn list_overdue(state: web::Data<AppState>, user: AuthenticatedUser) -
         }
     };
 
-    match state.etat_date_use_cases.list_overdue(organization_id).await {
+    match state
+        .etat_date_use_cases
+        .list_overdue(organization_id)
+        .await
+    {
         Ok(etats) => HttpResponse::Ok().json(etats),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
@@ -342,7 +346,11 @@ pub async fn list_expired(state: web::Data<AppState>, user: AuthenticatedUser) -
         }
     };
 
-    match state.etat_date_use_cases.list_expired(organization_id).await {
+    match state
+        .etat_date_use_cases
+        .list_expired(organization_id)
+        .await
+    {
         Ok(etats) => HttpResponse::Ok().json(etats),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err

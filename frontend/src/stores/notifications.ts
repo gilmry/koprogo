@@ -1,8 +1,5 @@
 import { writable } from "svelte/store";
-import {
-  notificationsApi,
-  type Notification,
-} from "../lib/api/notifications";
+import { notificationsApi, type Notification } from "../lib/api/notifications";
 
 interface NotificationStore {
   notifications: Notification[];

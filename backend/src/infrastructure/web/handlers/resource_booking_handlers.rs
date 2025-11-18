@@ -234,8 +234,7 @@ pub async fn list_building_bookings_by_status(
     let (building_id, status_str) = path.into_inner();
 
     // Parse status from string
-    let booking_status: BookingStatus = match serde_json::from_str(&format!("\"{}\"", status_str))
-    {
+    let booking_status: BookingStatus = match serde_json::from_str(&format!("\"{}\"", status_str)) {
         Ok(s) => s,
         Err(_) => {
             return HttpResponse::BadRequest().json(serde_json::json!({

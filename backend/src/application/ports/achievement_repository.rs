@@ -43,10 +43,7 @@ pub trait AchievementRepository: Send + Sync {
 #[async_trait]
 pub trait UserAchievementRepository: Send + Sync {
     /// Award achievement to user
-    async fn create(
-        &self,
-        user_achievement: &UserAchievement,
-    ) -> Result<UserAchievement, String>;
+    async fn create(&self, user_achievement: &UserAchievement) -> Result<UserAchievement, String>;
 
     /// Find user achievement by ID
     async fn find_by_id(&self, id: Uuid) -> Result<Option<UserAchievement>, String>;
@@ -62,10 +59,7 @@ pub trait UserAchievementRepository: Send + Sync {
     ) -> Result<Option<UserAchievement>, String>;
 
     /// Update user achievement (for repeatable achievements)
-    async fn update(
-        &self,
-        user_achievement: &UserAchievement,
-    ) -> Result<UserAchievement, String>;
+    async fn update(&self, user_achievement: &UserAchievement) -> Result<UserAchievement, String>;
 
     /// Calculate total points for user
     async fn calculate_total_points(&self, user_id: Uuid) -> Result<i32, String>;

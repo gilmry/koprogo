@@ -82,7 +82,10 @@ impl WorkReportUseCases {
         &self,
         organization_id: Uuid,
     ) -> Result<Vec<WorkReportResponseDto>, String> {
-        let work_reports = self.repository.find_by_organization(organization_id).await?;
+        let work_reports = self
+            .repository
+            .find_by_organization(organization_id)
+            .await?;
         Ok(work_reports
             .iter()
             .map(|w| self.to_response_dto(w))
@@ -230,7 +233,11 @@ impl WorkReportUseCases {
         Ok(self.to_response_dto(&updated))
     }
 
-    pub async fn add_photo(&self, id: Uuid, dto: AddPhotoDto) -> Result<WorkReportResponseDto, String> {
+    pub async fn add_photo(
+        &self,
+        id: Uuid,
+        dto: AddPhotoDto,
+    ) -> Result<WorkReportResponseDto, String> {
         let mut work_report = self
             .repository
             .find_by_id(id)
@@ -275,10 +282,7 @@ impl WorkReportUseCases {
             contractor_name: work_report.contractor_name.clone(),
             contractor_contact: work_report.contractor_contact.clone(),
             work_date: work_report.work_date.to_rfc3339(),
-            completion_date: work_report
-                .completion_date
-                .as_ref()
-                .map(|d| d.to_rfc3339()),
+            completion_date: work_report.completion_date.as_ref().map(|d| d.to_rfc3339()),
             cost: work_report.cost,
             invoice_number: work_report.invoice_number.clone(),
             photos: work_report.photos.clone(),

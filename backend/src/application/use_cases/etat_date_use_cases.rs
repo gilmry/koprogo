@@ -253,10 +253,7 @@ impl EtatDateUseCases {
     }
 
     /// Get statistics for dashboard
-    pub async fn get_stats(
-        &self,
-        organization_id: Uuid,
-    ) -> Result<EtatDateStatsResponse, String> {
+    pub async fn get_stats(&self, organization_id: Uuid) -> Result<EtatDateStatsResponse, String> {
         self.repository.get_stats(organization_id).await
     }
 }

@@ -1,6 +1,6 @@
 use crate::application::dto::{
-    CreateQuoteDto, QuoteComparisonItemDto, QuoteComparisonRequestDto,
-    QuoteComparisonResponseDto, QuoteDecisionDto, QuoteResponseDto, QuoteScoreResponseDto,
+    CreateQuoteDto, QuoteComparisonItemDto, QuoteComparisonRequestDto, QuoteComparisonResponseDto,
+    QuoteDecisionDto, QuoteResponseDto, QuoteScoreResponseDto,
 };
 use crate::application::ports::QuoteRepository;
 use crate::domain::entities::{Quote, QuoteScore};
@@ -150,8 +150,7 @@ impl QuoteUseCases {
             .quote_ids
             .iter()
             .map(|id_str| {
-                Uuid::parse_str(id_str)
-                    .map_err(|_| format!("Invalid quote_id format: {}", id_str))
+                Uuid::parse_str(id_str).map_err(|_| format!("Invalid quote_id format: {}", id_str))
             })
             .collect();
         let quote_ids = quote_ids?;
@@ -189,8 +188,8 @@ impl QuoteUseCases {
             .map(|q| q.amount_incl_vat)
             .max()
             .unwrap_or(Decimal::ZERO);
-        let avg_price = quotes.iter().map(|q| q.amount_incl_vat).sum::<Decimal>()
-            / Decimal::from(quotes.len());
+        let avg_price =
+            quotes.iter().map(|q| q.amount_incl_vat).sum::<Decimal>() / Decimal::from(quotes.len());
 
         let min_duration_days = quotes
             .iter()
@@ -202,15 +201,13 @@ impl QuoteUseCases {
             .map(|q| q.estimated_duration_days)
             .max()
             .unwrap_or(0);
-        let avg_duration_days = quotes.iter().map(|q| q.estimated_duration_days).sum::<i32>()
-            as f32
+        let avg_duration_days = quotes
+            .iter()
+            .map(|q| q.estimated_duration_days)
+            .sum::<i32>() as f32
             / quotes.len() as f32;
 
-        let max_warranty = quotes
-            .iter()
-            .map(|q| q.warranty_years)
-            .max()
-            .unwrap_or(0);
+        let max_warranty = quotes.iter().map(|q| q.warranty_years).max().unwrap_or(0);
 
         // Calculate scores for each quote
         let mut scored_quotes: Vec<(Quote, QuoteScore)> = Vec::new();
@@ -244,9 +241,7 @@ impl QuoteUseCases {
             .collect();
 
         // Recommend top-ranked quote
-        let recommended_quote_id = comparison_items
-            .first()
-            .map(|item| item.quote.id.clone());
+        let recommended_quote_id = comparison_items.first().map(|item| item.quote.id.clone());
 
         Ok(QuoteComparisonResponseDto {
             project_title,
@@ -355,11 +350,7 @@ impl QuoteUseCases {
     }
 
     /// Count quotes by status
-    pub async fn count_by_status(
-        &self,
-        building_id: Uuid,
-        status: &str,
-    ) -> Result<i64, String> {
+    pub async fn count_by_status(&self, building_id: Uuid, status: &str) -> Result<i64, String> {
         self.repository.count_by_status(building_id, status).await
     }
 }
@@ -368,7 +359,7 @@ impl QuoteUseCases {
 mod tests {
     use super::*;
     use crate::application::ports::QuoteRepository;
-    use crate::domain::entities::{Quote, QuoteStatus};
+    use crate::domain::entities::Quote;
     use async_trait::async_trait;
     use mockall::mock;
     use rust_decimal::Decimal;

@@ -372,7 +372,6 @@ mod tests {
 
         let mock_user_repo = MockUserRepo::new();
 
-
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .export_user_data(user_id, user_id, Some(org_id))
@@ -415,7 +414,6 @@ mod tests {
             .returning(|_| Ok(true));
 
         let mock_user_repo = MockUserRepo::new();
-
 
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
@@ -477,7 +475,6 @@ mod tests {
 
         let mock_user_repo = MockUserRepo::new();
 
-
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .erase_user_data(user_id, user_id, Some(org_id))
@@ -525,7 +522,6 @@ mod tests {
 
         let mock_user_repo = MockUserRepo::new();
 
-
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .erase_user_data(user_id, user_id, Some(Uuid::new_v4()))
@@ -551,7 +547,6 @@ mod tests {
 
         let mock_user_repo = MockUserRepo::new();
 
-
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases
             .erase_user_data(user_id, user_id, Some(Uuid::new_v4()))
@@ -573,7 +568,6 @@ mod tests {
 
         let mock_user_repo = MockUserRepo::new();
 
-
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases.can_erase_user(user_id).await;
 
@@ -592,7 +586,6 @@ mod tests {
             .returning(|_| Ok(vec!["Unpaid expenses".to_string()]));
 
         let mock_user_repo = MockUserRepo::new();
-
 
         let use_cases = GdprUseCases::new(Arc::new(mock_repo), Arc::new(mock_user_repo));
         let result = use_cases.can_erase_user(user_id).await;

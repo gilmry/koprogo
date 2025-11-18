@@ -5,10 +5,10 @@ use uuid::Uuid;
 /// Challenge status lifecycle
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ChallengeStatus {
-    Draft,      // Challenge being created
-    Active,     // Challenge is live
-    Completed,  // Challenge period ended
-    Cancelled,  // Challenge cancelled
+    Draft,     // Challenge being created
+    Active,    // Challenge is live
+    Completed, // Challenge period ended
+    Cancelled, // Challenge cancelled
 }
 
 /// Challenge type for different engagement patterns
@@ -42,14 +42,14 @@ pub struct Challenge {
     pub building_id: Option<Uuid>, // None = organization-wide
     pub challenge_type: ChallengeType,
     pub status: ChallengeStatus,
-    pub title: String,              // e.g., "Community Booking Week", "SEL Exchange Marathon"
-    pub description: String,        // Challenge details and rules
-    pub icon: String,               // Emoji or icon URL
+    pub title: String, // e.g., "Community Booking Week", "SEL Exchange Marathon"
+    pub description: String, // Challenge details and rules
+    pub icon: String,  // Emoji or icon URL
     pub start_date: DateTime<Utc>,
     pub end_date: DateTime<Utc>,
-    pub target_metric: String,      // e.g., "bookings_created", "sel_exchanges_completed"
-    pub target_value: i32,          // Target count to achieve
-    pub reward_points: i32,         // Points awarded for completion (0-10000)
+    pub target_metric: String, // e.g., "bookings_created", "sel_exchanges_completed"
+    pub target_value: i32,     // Target count to achieve
+    pub reward_points: i32,    // Points awarded for completion (0-10000)
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -172,9 +172,7 @@ impl Challenge {
             }
             ChallengeStatus::Active => Err("Challenge is already active".to_string()),
             ChallengeStatus::Completed => Err("Cannot activate a completed challenge".to_string()),
-            ChallengeStatus::Cancelled => {
-                Err("Cannot activate a cancelled challenge".to_string())
-            }
+            ChallengeStatus::Cancelled => Err("Cannot activate a cancelled challenge".to_string()),
         }
     }
 
@@ -188,9 +186,7 @@ impl Challenge {
             }
             ChallengeStatus::Draft => Err("Cannot complete a draft challenge".to_string()),
             ChallengeStatus::Completed => Err("Challenge is already completed".to_string()),
-            ChallengeStatus::Cancelled => {
-                Err("Cannot complete a cancelled challenge".to_string())
-            }
+            ChallengeStatus::Cancelled => Err("Cannot complete a cancelled challenge".to_string()),
         }
     }
 
@@ -220,7 +216,9 @@ impl Challenge {
 
     /// Calculate duration in days
     pub fn duration_days(&self) -> i64 {
-        self.end_date.signed_duration_since(self.start_date).num_days()
+        self.end_date
+            .signed_duration_since(self.start_date)
+            .num_days()
     }
 
     /// Update challenge details (only allowed for Draft challenges)
@@ -349,8 +347,8 @@ pub struct ChallengeProgress {
     pub id: Uuid,
     pub challenge_id: Uuid,
     pub user_id: Uuid,
-    pub current_value: i32,     // Current progress (e.g., 5 bookings out of 10)
-    pub completed: bool,        // Has user completed the challenge?
+    pub current_value: i32, // Current progress (e.g., 5 bookings out of 10)
+    pub completed: bool,    // Has user completed the challenge?
     pub completed_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -484,7 +482,9 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Start date must be before end date"));
+        assert!(result
+            .unwrap_err()
+            .contains("Start date must be before end date"));
     }
 
     #[test]
@@ -508,7 +508,9 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Challenge start date must be in the future"));
+        assert!(result
+            .unwrap_err()
+            .contains("Challenge start date must be in the future"));
     }
 
     #[test]
@@ -607,6 +609,8 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Can only update draft challenges"));
+        assert!(result
+            .unwrap_err()
+            .contains("Can only update draft challenges"));
     }
 }

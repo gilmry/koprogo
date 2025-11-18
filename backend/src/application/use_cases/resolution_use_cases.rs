@@ -47,8 +47,13 @@ impl ResolutionUseCases {
     }
 
     /// Get all resolutions for a meeting
-    pub async fn get_meeting_resolutions(&self, meeting_id: Uuid) -> Result<Vec<Resolution>, String> {
-        self.resolution_repository.find_by_meeting_id(meeting_id).await
+    pub async fn get_meeting_resolutions(
+        &self,
+        meeting_id: Uuid,
+    ) -> Result<Vec<Resolution>, String> {
+        self.resolution_repository
+            .find_by_meeting_id(meeting_id)
+            .await
     }
 
     /// Get resolutions by status
@@ -128,11 +133,7 @@ impl ResolutionUseCases {
     }
 
     /// Change a vote (if allowed by business rules)
-    pub async fn change_vote(
-        &self,
-        vote_id: Uuid,
-        new_choice: VoteChoice,
-    ) -> Result<Vote, String> {
+    pub async fn change_vote(&self, vote_id: Uuid, new_choice: VoteChoice) -> Result<Vote, String> {
         let mut vote = self
             .vote_repository
             .find_by_id(vote_id)
@@ -243,21 +244,12 @@ impl ResolutionUseCases {
     }
 
     /// Check if a unit has voted on a resolution
-    pub async fn has_unit_voted(
-        &self,
-        resolution_id: Uuid,
-        unit_id: Uuid,
-    ) -> Result<bool, String> {
-        self.vote_repository
-            .has_voted(resolution_id, unit_id)
-            .await
+    pub async fn has_unit_voted(&self, resolution_id: Uuid, unit_id: Uuid) -> Result<bool, String> {
+        self.vote_repository.has_voted(resolution_id, unit_id).await
     }
 
     /// Get vote statistics for a resolution
-    pub async fn get_vote_statistics(
-        &self,
-        resolution_id: Uuid,
-    ) -> Result<VoteStatistics, String> {
+    pub async fn get_vote_statistics(&self, resolution_id: Uuid) -> Result<VoteStatistics, String> {
         let resolution = self
             .resolution_repository
             .find_by_id(resolution_id)
@@ -343,7 +335,10 @@ mod tests {
                 .collect())
         }
 
-        async fn find_by_status(&self, status: ResolutionStatus) -> Result<Vec<Resolution>, String> {
+        async fn find_by_status(
+            &self,
+            status: ResolutionStatus,
+        ) -> Result<Vec<Resolution>, String> {
             Ok(self
                 .resolutions
                 .lock()
@@ -399,7 +394,10 @@ mod tests {
             Ok(())
         }
 
-        async fn get_meeting_vote_summary(&self, meeting_id: Uuid) -> Result<Vec<Resolution>, String> {
+        async fn get_meeting_vote_summary(
+            &self,
+            meeting_id: Uuid,
+        ) -> Result<Vec<Resolution>, String> {
             self.find_by_meeting_id(meeting_id).await
         }
     }
@@ -484,9 +482,18 @@ mod tests {
             resolution_id: Uuid,
         ) -> Result<(i32, i32, i32), String> {
             let votes = self.find_by_resolution_id(resolution_id).await?;
-            let pour = votes.iter().filter(|v| v.vote_choice == VoteChoice::Pour).count() as i32;
-            let contre = votes.iter().filter(|v| v.vote_choice == VoteChoice::Contre).count() as i32;
-            let abstention = votes.iter().filter(|v| v.vote_choice == VoteChoice::Abstention).count() as i32;
+            let pour = votes
+                .iter()
+                .filter(|v| v.vote_choice == VoteChoice::Pour)
+                .count() as i32;
+            let contre = votes
+                .iter()
+                .filter(|v| v.vote_choice == VoteChoice::Contre)
+                .count() as i32;
+            let abstention = votes
+                .iter()
+                .filter(|v| v.vote_choice == VoteChoice::Abstention)
+                .count() as i32;
             Ok((pour, contre, abstention))
         }
 
@@ -495,9 +502,21 @@ mod tests {
             resolution_id: Uuid,
         ) -> Result<(f64, f64, f64), String> {
             let votes = self.find_by_resolution_id(resolution_id).await?;
-            let pour: f64 = votes.iter().filter(|v| v.vote_choice == VoteChoice::Pour).map(|v| v.voting_power).sum();
-            let contre: f64 = votes.iter().filter(|v| v.vote_choice == VoteChoice::Contre).map(|v| v.voting_power).sum();
-            let abstention: f64 = votes.iter().filter(|v| v.vote_choice == VoteChoice::Abstention).map(|v| v.voting_power).sum();
+            let pour: f64 = votes
+                .iter()
+                .filter(|v| v.vote_choice == VoteChoice::Pour)
+                .map(|v| v.voting_power)
+                .sum();
+            let contre: f64 = votes
+                .iter()
+                .filter(|v| v.vote_choice == VoteChoice::Contre)
+                .map(|v| v.voting_power)
+                .sum();
+            let abstention: f64 = votes
+                .iter()
+                .filter(|v| v.vote_choice == VoteChoice::Abstention)
+                .map(|v| v.voting_power)
+                .sum();
             Ok((pour, contre, abstention))
         }
     }
@@ -548,13 +567,24 @@ mod tests {
         let owner_id = Uuid::new_v4();
         let unit_id = Uuid::new_v4();
         let result = use_cases
-            .cast_vote(resolution.id, owner_id, unit_id, VoteChoice::Pour, 100.0, None)
+            .cast_vote(
+                resolution.id,
+                owner_id,
+                unit_id,
+                VoteChoice::Pour,
+                100.0,
+                None,
+            )
             .await;
 
         assert!(result.is_ok());
 
         // Check that vote counts were updated
-        let updated_resolution = use_cases.get_resolution(resolution.id).await.unwrap().unwrap();
+        let updated_resolution = use_cases
+            .get_resolution(resolution.id)
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(updated_resolution.vote_count_pour, 1);
         assert_eq!(updated_resolution.total_voting_power_pour, 100.0);
     }
@@ -583,13 +613,27 @@ mod tests {
 
         // First vote succeeds
         let result1 = use_cases
-            .cast_vote(resolution.id, owner_id, unit_id, VoteChoice::Pour, 100.0, None)
+            .cast_vote(
+                resolution.id,
+                owner_id,
+                unit_id,
+                VoteChoice::Pour,
+                100.0,
+                None,
+            )
             .await;
         assert!(result1.is_ok());
 
         // Second vote from same unit fails
         let result2 = use_cases
-            .cast_vote(resolution.id, owner_id, unit_id, VoteChoice::Contre, 100.0, None)
+            .cast_vote(
+                resolution.id,
+                owner_id,
+                unit_id,
+                VoteChoice::Contre,
+                100.0,
+                None,
+            )
             .await;
         assert!(result2.is_err());
         assert!(result2.unwrap_err().contains("already voted"));

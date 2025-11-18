@@ -1,6 +1,6 @@
 use crate::application::dto::{
-    CancelExchangeDto, CompleteExchangeDto, CreateLocalExchangeDto,
-    RateExchangeDto, RequestExchangeDto,
+    CancelExchangeDto, CompleteExchangeDto, CreateLocalExchangeDto, RateExchangeDto,
+    RequestExchangeDto,
 };
 use crate::domain::entities::ExchangeType;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -33,7 +33,11 @@ pub async fn get_exchange(
     _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.local_exchange_use_cases.get_exchange(id.into_inner()).await {
+    match data
+        .local_exchange_use_cases
+        .get_exchange(id.into_inner())
+        .await
+    {
         Ok(exchange) => HttpResponse::Ok().json(exchange),
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
     }

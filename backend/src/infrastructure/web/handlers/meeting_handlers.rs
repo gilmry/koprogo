@@ -345,9 +345,12 @@ pub async fn export_meeting_minutes_pdf(
 
         // Collect attendees from votes
         for vote_dto in &votes_dto {
-            if !attendees_map.contains_key(&vote_dto.owner_id) {
+            if let std::collections::hash_map::Entry::Vacant(e) =
+                attendees_map.entry(vote_dto.owner_id)
+            {
                 // Get owner info
-                if let Ok(Some(owner_dto)) = state.owner_use_cases.get_owner(vote_dto.owner_id).await
+                if let Ok(Some(owner_dto)) =
+                    state.owner_use_cases.get_owner(vote_dto.owner_id).await
                 {
                     let proxy_for_name = if let Some(proxy_id) = vote_dto.proxy_owner_id {
                         state
@@ -363,17 +366,14 @@ pub async fn export_meeting_minutes_pdf(
 
                     let full_name = format!("{} {}", owner_dto.first_name, owner_dto.last_name);
 
-                    attendees_map.insert(
-                        vote_dto.owner_id,
-                        AttendeeInfo {
-                            owner_id: vote_dto.owner_id,
-                            name: full_name,
-                            email: owner_dto.email.clone(),
-                            voting_power: vote_dto.voting_power,
-                            is_proxy: vote_dto.proxy_owner_id.is_some(),
-                            proxy_for: proxy_for_name,
-                        },
-                    );
+                    e.insert(AttendeeInfo {
+                        owner_id: vote_dto.owner_id,
+                        name: full_name,
+                        email: owner_dto.email.clone(),
+                        voting_power: vote_dto.voting_power,
+                        is_proxy: vote_dto.proxy_owner_id.is_some(),
+                        proxy_for: proxy_for_name,
+                    });
                 }
             }
         }
@@ -399,16 +399,19 @@ pub async fn export_meeting_minutes_pdf(
             created_at: resolution_dto.created_at,
         };
 
-        let votes: Vec<Vote> = votes_dto.iter().map(|v| Vote {
-            id: v.id,
-            resolution_id: v.resolution_id,
-            owner_id: v.owner_id,
-            unit_id: v.unit_id,
-            vote_choice: v.vote_choice.clone(),
-            voting_power: v.voting_power,
-            proxy_owner_id: v.proxy_owner_id,
-            voted_at: v.voted_at,
-        }).collect();
+        let votes: Vec<Vote> = votes_dto
+            .iter()
+            .map(|v| Vote {
+                id: v.id,
+                resolution_id: v.resolution_id,
+                owner_id: v.owner_id,
+                unit_id: v.unit_id,
+                vote_choice: v.vote_choice.clone(),
+                voting_power: v.voting_power,
+                proxy_owner_id: v.proxy_owner_id,
+                voted_at: v.voted_at,
+            })
+            .collect();
 
         resolutions_with_votes.push(ResolutionWithVotes {
             resolution: resolution_entity,

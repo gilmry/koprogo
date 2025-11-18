@@ -21,7 +21,7 @@ pub struct CreateWorkReportDto {
     #[validate(length(max = 255))]
     pub contractor_contact: Option<String>,
 
-    pub work_date: String, // ISO 8601 format
+    pub work_date: String,               // ISO 8601 format
     pub completion_date: Option<String>, // ISO 8601 format
 
     #[validate(range(min = 0.0))]

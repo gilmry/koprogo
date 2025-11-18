@@ -4,8 +4,7 @@ use crate::application::dto::{
 };
 use crate::application::ports::{NotificationPreferenceRepository, NotificationRepository};
 use crate::domain::entities::{
-    Notification, NotificationChannel, NotificationPreference, NotificationStatus,
-    NotificationType,
+    Notification, NotificationChannel, NotificationPreference, NotificationStatus, NotificationType,
 };
 use std::sync::Arc;
 use uuid::Uuid;
@@ -35,7 +34,11 @@ impl NotificationUseCases {
         // Check if user has enabled this channel for this notification type
         let is_enabled = self
             .preference_repository
-            .is_channel_enabled(request.user_id, request.notification_type.clone(), request.channel.clone())
+            .is_channel_enabled(
+                request.user_id,
+                request.notification_type.clone(),
+                request.channel.clone(),
+            )
             .await?;
 
         if !is_enabled {

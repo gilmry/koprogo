@@ -8,29 +8,36 @@ let deferredPrompt: any = null;
  * Register service worker
  */
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
-  if (!('serviceWorker' in navigator)) {
-    console.warn('Service Worker not supported');
+  if (!("serviceWorker" in navigator)) {
+    console.warn("Service Worker not supported");
     return null;
   }
 
   try {
-    const registration = await navigator.serviceWorker.register('/service-worker.js');
-    console.log('[PWA] Service Worker registered:', registration.scope);
+    const registration =
+      await navigator.serviceWorker.register("/service-worker.js");
+    console.log("[PWA] Service Worker registered:", registration.scope);
 
     // Check for updates periodically
-    setInterval(() => {
-      registration.update();
-    }, 60 * 60 * 1000); // Every hour
+    setInterval(
+      () => {
+        registration.update();
+      },
+      60 * 60 * 1000,
+    ); // Every hour
 
     // Listen for updates
-    registration.addEventListener('updatefound', () => {
+    registration.addEventListener("updatefound", () => {
       const newWorker = registration.installing;
       if (!newWorker) return;
 
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+      newWorker.addEventListener("statechange", () => {
+        if (
+          newWorker.state === "installed" &&
+          navigator.serviceWorker.controller
+        ) {
           // New service worker available
-          console.log('[PWA] New service worker available');
+          console.log("[PWA] New service worker available");
           notifyUpdate();
         }
       });
@@ -38,7 +45,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
     return registration;
   } catch (error) {
-    console.error('[PWA] Service Worker registration failed:', error);
+    console.error("[PWA] Service Worker registration failed:", error);
     return null;
   }
 }
@@ -47,7 +54,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
  * Unregister service worker (for development/testing)
  */
 export async function unregisterServiceWorker(): Promise<boolean> {
-  if (!('serviceWorker' in navigator)) {
+  if (!("serviceWorker" in navigator)) {
     return false;
   }
 
@@ -64,9 +71,9 @@ export async function unregisterServiceWorker(): Promise<boolean> {
  */
 export function isPWA(): boolean {
   return (
-    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia("(display-mode: standalone)").matches ||
     (window.navigator as any).standalone === true ||
-    document.referrer.includes('android-app://')
+    document.referrer.includes("android-app://")
   );
 }
 
@@ -81,7 +88,7 @@ export function canInstall(): boolean {
  * Setup install prompt
  */
 export function setupInstallPrompt(): void {
-  window.addEventListener('beforeinstallprompt', (e) => {
+  window.addEventListener("beforeinstallprompt", (e) => {
     // Prevent the mini-infobar from appearing
     e.preventDefault();
 
@@ -89,17 +96,17 @@ export function setupInstallPrompt(): void {
     deferredPrompt = e;
 
     // Emit custom event for UI to show install button
-    window.dispatchEvent(new CustomEvent('pwa-installable'));
+    window.dispatchEvent(new CustomEvent("pwa-installable"));
 
-    console.log('[PWA] Install prompt available');
+    console.log("[PWA] Install prompt available");
   });
 
-  window.addEventListener('appinstalled', () => {
+  window.addEventListener("appinstalled", () => {
     deferredPrompt = null;
-    console.log('[PWA] App installed');
+    console.log("[PWA] App installed");
 
     // Emit custom event
-    window.dispatchEvent(new CustomEvent('pwa-installed'));
+    window.dispatchEvent(new CustomEvent("pwa-installed"));
   });
 }
 
@@ -108,7 +115,7 @@ export function setupInstallPrompt(): void {
  */
 export async function showInstallPrompt(): Promise<boolean> {
   if (!deferredPrompt) {
-    console.warn('[PWA] No install prompt available');
+    console.warn("[PWA] No install prompt available");
     return false;
   }
 
@@ -124,9 +131,9 @@ export async function showInstallPrompt(): Promise<boolean> {
     // Clear the prompt
     deferredPrompt = null;
 
-    return outcome === 'accepted';
+    return outcome === "accepted";
   } catch (error) {
-    console.error('[PWA] Install prompt failed:', error);
+    console.error("[PWA] Install prompt failed:", error);
     return false;
   }
 }
@@ -143,15 +150,15 @@ export function isOnline(): boolean {
  */
 export function setupConnectivityListeners(
   onOnline?: () => void,
-  onOffline?: () => void
+  onOffline?: () => void,
 ): void {
-  window.addEventListener('online', () => {
-    console.log('[PWA] Network online');
+  window.addEventListener("online", () => {
+    console.log("[PWA] Network online");
     onOnline?.();
   });
 
-  window.addEventListener('offline', () => {
-    console.log('[PWA] Network offline');
+  window.addEventListener("offline", () => {
+    console.log("[PWA] Network offline");
     onOffline?.();
   });
 }
@@ -161,14 +168,14 @@ export function setupConnectivityListeners(
  */
 function notifyUpdate(): void {
   // Emit custom event for UI to show update notification
-  window.dispatchEvent(new CustomEvent('pwa-update-available'));
+  window.dispatchEvent(new CustomEvent("pwa-update-available"));
 
   // Could also use browser notification
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification('KoproGo - Mise à jour disponible', {
-      body: 'Une nouvelle version est disponible. Actualisez pour mettre à jour.',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification("KoproGo - Mise à jour disponible", {
+      body: "Une nouvelle version est disponible. Actualisez pour mettre à jour.",
+      icon: "/icons/icon-192x192.png",
+      badge: "/icons/icon-72x72.png",
     });
   }
 }
@@ -177,15 +184,15 @@ function notifyUpdate(): void {
  * Request notification permission
  */
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
-  if (!('Notification' in window)) {
-    return 'denied';
+  if (!("Notification" in window)) {
+    return "denied";
   }
 
-  if (Notification.permission === 'granted') {
-    return 'granted';
+  if (Notification.permission === "granted") {
+    return "granted";
   }
 
-  if (Notification.permission !== 'denied') {
+  if (Notification.permission !== "denied") {
     const permission = await Notification.requestPermission();
     return permission;
   }
@@ -197,13 +204,13 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
  * Subscribe to push notifications
  */
 export async function subscribeToPushNotifications(
-  registration: ServiceWorkerRegistration
+  registration: ServiceWorkerRegistration,
 ): Promise<PushSubscription | null> {
   try {
     const permission = await requestNotificationPermission();
 
-    if (permission !== 'granted') {
-      console.warn('[PWA] Notification permission denied');
+    if (permission !== "granted") {
+      console.warn("[PWA] Notification permission denied");
       return null;
     }
 
@@ -213,10 +220,10 @@ export async function subscribeToPushNotifications(
     if (!subscription) {
       // Subscribe to push notifications
       // Note: You'll need to provide your VAPID public key here
-      const vapidPublicKey = import.meta.env.PUBLIC_VAPID_KEY || '';
+      const vapidPublicKey = import.meta.env.PUBLIC_VAPID_KEY || "";
 
       if (!vapidPublicKey) {
-        console.warn('[PWA] VAPID public key not configured');
+        console.warn("[PWA] VAPID public key not configured");
         return null;
       }
 
@@ -225,12 +232,12 @@ export async function subscribeToPushNotifications(
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       });
 
-      console.log('[PWA] Subscribed to push notifications');
+      console.log("[PWA] Subscribed to push notifications");
     }
 
     return subscription;
   } catch (error) {
-    console.error('[PWA] Failed to subscribe to push notifications:', error);
+    console.error("[PWA] Failed to subscribe to push notifications:", error);
     return null;
   }
 }
@@ -239,20 +246,23 @@ export async function subscribeToPushNotifications(
  * Unsubscribe from push notifications
  */
 export async function unsubscribeFromPushNotifications(
-  registration: ServiceWorkerRegistration
+  registration: ServiceWorkerRegistration,
 ): Promise<boolean> {
   try {
     const subscription = await registration.pushManager.getSubscription();
 
     if (subscription) {
       await subscription.unsubscribe();
-      console.log('[PWA] Unsubscribed from push notifications');
+      console.log("[PWA] Unsubscribed from push notifications");
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error('[PWA] Failed to unsubscribe from push notifications:', error);
+    console.error(
+      "[PWA] Failed to unsubscribe from push notifications:",
+      error,
+    );
     return false;
   }
 }
@@ -261,8 +271,8 @@ export async function unsubscribeFromPushNotifications(
  * Helper to convert VAPID key
  */
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -281,13 +291,13 @@ export async function initializePWA(options?: {
   onOnline?: () => void;
   onOffline?: () => void;
 }): Promise<void> {
-  console.log('[PWA] Initializing...');
+  console.log("[PWA] Initializing...");
 
   // Register service worker
   const registration = await registerServiceWorker();
 
   if (registration) {
-    console.log('[PWA] Service Worker registered successfully');
+    console.log("[PWA] Service Worker registered successfully");
   }
 
   // Setup install prompt
@@ -296,7 +306,7 @@ export async function initializePWA(options?: {
   // Setup connectivity listeners
   setupConnectivityListeners(options?.onOnline, options?.onOffline);
 
-  console.log('[PWA] Initialization complete');
-  console.log('[PWA] Running as PWA:', isPWA());
-  console.log('[PWA] Online status:', isOnline());
+  console.log("[PWA] Initialization complete");
+  console.log("[PWA] Running as PWA:", isPWA());
+  console.log("[PWA] Online status:", isOnline());
 }

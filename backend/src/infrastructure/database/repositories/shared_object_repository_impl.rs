@@ -234,10 +234,7 @@ impl SharedObjectRepository for PostgresSharedObjectRepository {
         Ok(rows.iter().map(map_row_to_shared_object).collect())
     }
 
-    async fn find_borrowed_by_user(
-        &self,
-        borrower_id: Uuid,
-    ) -> Result<Vec<SharedObject>, String> {
+    async fn find_borrowed_by_user(&self, borrower_id: Uuid) -> Result<Vec<SharedObject>, String> {
         let rows = sqlx::query(
             r#"
             SELECT id, owner_id, building_id, object_category::text AS object_category,
@@ -291,10 +288,7 @@ impl SharedObjectRepository for PostgresSharedObjectRepository {
         Ok(rows.iter().map(map_row_to_shared_object).collect())
     }
 
-    async fn find_free_by_building(
-        &self,
-        building_id: Uuid,
-    ) -> Result<Vec<SharedObject>, String> {
+    async fn find_free_by_building(&self, building_id: Uuid) -> Result<Vec<SharedObject>, String> {
         let rows = sqlx::query(
             r#"
             SELECT id, owner_id, building_id, object_category::text AS object_category,
@@ -412,7 +406,12 @@ impl SharedObjectRepository for PostgresSharedObjectRepository {
         .bind(building_id)
         .fetch_one(&self.pool)
         .await
-        .map_err(|e| format!("Failed to count available shared objects by building: {}", e))?;
+        .map_err(|e| {
+            format!(
+                "Failed to count available shared objects by building: {}",
+                e
+            )
+        })?;
 
         Ok(row.get("count"))
     }

@@ -79,7 +79,7 @@ pub struct TwoFactorStatusDto {
     pub verified_at: Option<DateTime<Utc>>,
     pub last_used_at: Option<DateTime<Utc>>,
     pub backup_codes_remaining: usize,
-    pub backup_codes_low: bool, // True if < 3 codes remaining
+    pub backup_codes_low: bool,     // True if < 3 codes remaining
     pub needs_reverification: bool, // True if not used in 90 days
 }
 
@@ -103,11 +103,8 @@ mod tests {
 
     #[test]
     fn test_two_factor_status_dto_from_entity() {
-        let mut secret = TwoFactorSecret::new(
-            Uuid::new_v4(),
-            "JBSWY3DPEHPK3PXP".to_string(),
-        )
-        .unwrap();
+        let mut secret =
+            TwoFactorSecret::new(Uuid::new_v4(), "JBSWY3DPEHPK3PXP".to_string()).unwrap();
 
         secret.enable().unwrap();
 
@@ -123,11 +120,8 @@ mod tests {
     #[test]
     fn test_two_factor_status_dto_backup_codes_low() {
         let codes: Vec<String> = vec!["CODE1".to_string(), "CODE2".to_string()]; // Only 2 codes
-        let mut secret = TwoFactorSecret::new(
-            Uuid::new_v4(),
-            "JBSWY3DPEHPK3PXP".to_string(),
-        )
-        .unwrap();
+        let mut secret =
+            TwoFactorSecret::new(Uuid::new_v4(), "JBSWY3DPEHPK3PXP".to_string()).unwrap();
 
         // Remove 8 codes to leave 2
         for _ in 0..8 {

@@ -86,7 +86,10 @@ impl ResourceBookingUseCases {
     }
 
     /// Get booking by ID with owner name enrichment
-    pub async fn get_booking(&self, booking_id: Uuid) -> Result<ResourceBookingResponseDto, String> {
+    pub async fn get_booking(
+        &self,
+        booking_id: Uuid,
+    ) -> Result<ResourceBookingResponseDto, String> {
         let booking = self
             .booking_repo
             .find_by_id(booking_id)
@@ -331,11 +334,7 @@ impl ResourceBookingUseCases {
     /// # Authorization
     /// - Only booking owner can delete their booking
     /// - Or admin for any booking
-    pub async fn delete_booking(
-        &self,
-        booking_id: Uuid,
-        deleter_id: Uuid,
-    ) -> Result<(), String> {
+    pub async fn delete_booking(&self, booking_id: Uuid, deleter_id: Uuid) -> Result<(), String> {
         let booking = self
             .booking_repo
             .find_by_id(booking_id)

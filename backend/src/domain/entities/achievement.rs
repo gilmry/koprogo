@@ -5,14 +5,14 @@ use uuid::Uuid;
 /// Achievement category for organizational purposes
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum AchievementCategory {
-    Community,     // Community participation achievements
-    Sel,           // SEL (Local Exchange) achievements
-    Booking,       // Resource booking achievements
-    Sharing,       // Object sharing achievements
-    Skills,        // Skills directory achievements
-    Notice,        // Notice board achievements
-    Governance,    // Meeting/voting participation achievements
-    Milestone,     // Platform usage milestones
+    Community,  // Community participation achievements
+    Sel,        // SEL (Local Exchange) achievements
+    Booking,    // Resource booking achievements
+    Sharing,    // Object sharing achievements
+    Skills,     // Skills directory achievements
+    Notice,     // Notice board achievements
+    Governance, // Meeting/voting participation achievements
+    Milestone,  // Platform usage milestones
 }
 
 /// Achievement tier for progression
@@ -47,14 +47,14 @@ pub struct Achievement {
     pub organization_id: Uuid,
     pub category: AchievementCategory,
     pub tier: AchievementTier,
-    pub name: String,                  // e.g., "SEL Pioneer", "First Booking", "Community Helper"
-    pub description: String,           // What this achievement represents
-    pub icon: String,                  // Emoji or icon URL
-    pub points_value: i32,             // Points awarded when earned (0-1000)
-    pub requirements: String,          // JSON criteria (e.g., {"action": "sel_exchange", "count": 10})
-    pub is_secret: bool,               // Hidden until earned
-    pub is_repeatable: bool,           // Can be earned multiple times
-    pub display_order: i32,            // For sorting in UI
+    pub name: String, // e.g., "SEL Pioneer", "First Booking", "Community Helper"
+    pub description: String, // What this achievement represents
+    pub icon: String, // Emoji or icon URL
+    pub points_value: i32, // Points awarded when earned (0-1000)
+    pub requirements: String, // JSON criteria (e.g., {"action": "sel_exchange", "count": 10})
+    pub is_secret: bool, // Hidden until earned
+    pub is_repeatable: bool, // Can be earned multiple times
+    pub display_order: i32, // For sorting in UI
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -272,16 +272,12 @@ pub struct UserAchievement {
     pub achievement_id: Uuid,
     pub earned_at: DateTime<Utc>,
     pub progress_data: Option<String>, // JSON for tracking progress towards repeatable achievements
-    pub times_earned: i32,              // For repeatable achievements
+    pub times_earned: i32,             // For repeatable achievements
 }
 
 impl UserAchievement {
     /// Award achievement to user
-    pub fn new(
-        user_id: Uuid,
-        achievement_id: Uuid,
-        progress_data: Option<String>,
-    ) -> Self {
+    pub fn new(user_id: Uuid, achievement_id: Uuid, progress_data: Option<String>) -> Self {
         Self {
             id: Uuid::new_v4(),
             user_id,
@@ -376,7 +372,9 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Achievement description must be"));
+        assert!(result
+            .unwrap_err()
+            .contains("Achievement description must be"));
     }
 
     #[test]
@@ -397,7 +395,9 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Achievement icon cannot be empty"));
+        assert!(result
+            .unwrap_err()
+            .contains("Achievement icon cannot be empty"));
     }
 
     #[test]
@@ -439,7 +439,9 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Achievement requirements cannot be empty"));
+        assert!(result
+            .unwrap_err()
+            .contains("Achievement requirements cannot be empty"));
     }
 
     #[test]
@@ -483,11 +485,26 @@ mod tests {
 
     #[test]
     fn test_default_points_for_tier() {
-        assert_eq!(Achievement::default_points_for_tier(&AchievementTier::Bronze), 10);
-        assert_eq!(Achievement::default_points_for_tier(&AchievementTier::Silver), 25);
-        assert_eq!(Achievement::default_points_for_tier(&AchievementTier::Gold), 50);
-        assert_eq!(Achievement::default_points_for_tier(&AchievementTier::Platinum), 100);
-        assert_eq!(Achievement::default_points_for_tier(&AchievementTier::Diamond), 250);
+        assert_eq!(
+            Achievement::default_points_for_tier(&AchievementTier::Bronze),
+            10
+        );
+        assert_eq!(
+            Achievement::default_points_for_tier(&AchievementTier::Silver),
+            25
+        );
+        assert_eq!(
+            Achievement::default_points_for_tier(&AchievementTier::Gold),
+            50
+        );
+        assert_eq!(
+            Achievement::default_points_for_tier(&AchievementTier::Platinum),
+            100
+        );
+        assert_eq!(
+            Achievement::default_points_for_tier(&AchievementTier::Diamond),
+            250
+        );
     }
 
     #[test]

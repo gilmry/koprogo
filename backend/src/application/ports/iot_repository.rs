@@ -1,5 +1,5 @@
-use crate::domain::entities::{DeviceType, IoTReading, LinkyDevice, MetricType};
 use crate::application::dto::{ConsumptionStatsDto, DailyAggregateDto, MonthlyAggregateDto};
+use crate::domain::entities::{DeviceType, IoTReading, LinkyDevice, MetricType};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
@@ -74,13 +74,21 @@ pub trait IoTRepository: Send + Sync {
     async fn create_linky_device(&self, device: &LinkyDevice) -> Result<LinkyDevice, String>;
 
     /// Find Linky device by ID
-    async fn find_linky_device_by_id(&self, device_id: Uuid) -> Result<Option<LinkyDevice>, String>;
+    async fn find_linky_device_by_id(&self, device_id: Uuid)
+        -> Result<Option<LinkyDevice>, String>;
 
     /// Find Linky device by building ID
-    async fn find_linky_device_by_building(&self, building_id: Uuid) -> Result<Option<LinkyDevice>, String>;
+    async fn find_linky_device_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Option<LinkyDevice>, String>;
 
     /// Find Linky device by PRM and provider
-    async fn find_linky_device_by_prm(&self, prm: &str, provider: &str) -> Result<Option<LinkyDevice>, String>;
+    async fn find_linky_device_by_prm(
+        &self,
+        prm: &str,
+        provider: &str,
+    ) -> Result<Option<LinkyDevice>, String>;
 
     /// Update Linky device (tokens, sync status, etc.)
     async fn update_linky_device(&self, device: &LinkyDevice) -> Result<LinkyDevice, String>;

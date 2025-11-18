@@ -59,10 +59,8 @@ pub trait BudgetRepository: Send + Sync {
     async fn get_stats(&self, organization_id: Uuid) -> Result<BudgetStatsResponse, String>;
 
     /// Get budget variance analysis (budget vs actual expenses)
-    async fn get_variance(
-        &self,
-        budget_id: Uuid,
-    ) -> Result<Option<BudgetVarianceResponse>, String>;
+    async fn get_variance(&self, budget_id: Uuid)
+        -> Result<Option<BudgetVarianceResponse>, String>;
 }
 
 /// Statistics response for budgets

@@ -254,10 +254,7 @@ impl SkillRepository for PostgresSkillRepository {
         Ok(rows.iter().map(map_row_to_skill).collect())
     }
 
-    async fn find_professional_by_building(
-        &self,
-        building_id: Uuid,
-    ) -> Result<Vec<Skill>, String> {
+    async fn find_professional_by_building(&self, building_id: Uuid) -> Result<Vec<Skill>, String> {
         let rows = sqlx::query(
             r#"
             SELECT id, owner_id, building_id, skill_category::text AS skill_category,

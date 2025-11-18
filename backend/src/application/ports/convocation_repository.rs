@@ -18,10 +18,8 @@ pub trait ConvocationRepository: Send + Sync {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Convocation>, String>;
 
     /// Find all convocations for an organization
-    async fn find_by_organization(
-        &self,
-        organization_id: Uuid,
-    ) -> Result<Vec<Convocation>, String>;
+    async fn find_by_organization(&self, organization_id: Uuid)
+        -> Result<Vec<Convocation>, String>;
 
     /// Find convocations by status
     async fn find_by_status(

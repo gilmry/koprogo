@@ -81,12 +81,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let financial_report_use_cases =
         FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -104,13 +100,11 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo);
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
-    let payment_reminder_use_cases = PaymentReminderUseCases::new(
-        payment_reminder_repo,
-        expense_repo,
-        owner_repo.clone(),
-    );
+    let payment_reminder_use_cases =
+        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo, owner_repo.clone());
     let board_member_use_cases = BoardMemberUseCases::new(board_member_repo);
-    let board_decision_use_cases = BoardDecisionUseCases::new(board_decision_repo, user_repo.clone());
+    let board_decision_use_cases =
+        BoardDecisionUseCases::new(board_decision_repo, user_repo.clone());
 
     let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
     let organization_use_cases = OrganizationUseCases::new(organization_repo);
@@ -341,11 +335,7 @@ async fn test_create_resolution_success() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        201,
-        "Should create resolution successfully"
-    );
+    assert_eq!(resp.status(), 201, "Should create resolution successfully");
 
     let resolution: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(resolution["title"], "Approve Annual Budget");
@@ -448,7 +438,11 @@ async fn test_get_resolution_not_found() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 404, "Should return 404 for non-existent resolution");
+    assert_eq!(
+        resp.status(),
+        404,
+        "Should return 404 for non-existent resolution"
+    );
 }
 
 #[actix_web::test]
@@ -546,11 +540,7 @@ async fn test_delete_resolution_success() {
         .to_request();
 
     let get_resp = test::call_service(&app, get_req).await;
-    assert_eq!(
-        get_resp.status(),
-        404,
-        "Should return 404 after deletion"
-    );
+    assert_eq!(get_resp.status(), 404, "Should return 404 after deletion");
 }
 
 // ==================== Vote Tests ====================
@@ -1231,7 +1221,11 @@ async fn test_get_meeting_vote_summary() {
 
     let summary: serde_json::Value = test::read_body_json(resp).await;
     let summary_array = summary.as_array().unwrap();
-    assert_eq!(summary_array.len(), 2, "Should return summary for 2 resolutions");
+    assert_eq!(
+        summary_array.len(),
+        2,
+        "Should return summary for 2 resolutions"
+    );
 
     // Verify all resolutions have status
     for resolution_summary in summary_array {

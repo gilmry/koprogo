@@ -62,7 +62,7 @@ pub trait LinkyApiClient: Send + Sync {
 pub struct OAuth2TokenResponse {
     pub access_token: String,
     pub refresh_token: Option<String>,
-    pub expires_in: i64, // Seconds
+    pub expires_in: i64,    // Seconds
     pub token_type: String, // Usually "Bearer"
 }
 
@@ -70,7 +70,7 @@ pub struct OAuth2TokenResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConsumptionDataPoint {
     pub timestamp: DateTime<Utc>,
-    pub value: f64, // kWh
+    pub value: f64,              // kWh
     pub quality: Option<String>, // Data quality indicator (e.g., "good", "estimated")
 }
 
@@ -78,7 +78,7 @@ pub struct ConsumptionDataPoint {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PowerDataPoint {
     pub timestamp: DateTime<Utc>,
-    pub value: f64, // kW
+    pub value: f64,                // kW
     pub direction: Option<String>, // "consumption" or "production" (for solar panels)
 }
 

@@ -16,8 +16,7 @@ pub async fn create_payment(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -58,9 +57,7 @@ pub async fn get_payment(state: web::Data<AppState>, id: web::Path<Uuid>) -> imp
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -78,9 +75,7 @@ pub async fn get_payment_by_stripe_intent(
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -89,15 +84,9 @@ pub async fn list_owner_payments(
     state: web::Data<AppState>,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match state
-        .payment_use_cases
-        .list_owner_payments(*owner_id)
-        .await
-    {
+    match state.payment_use_cases.list_owner_payments(*owner_id).await {
         Ok(payments) => HttpResponse::Ok().json(payments),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -112,9 +101,7 @@ pub async fn list_building_payments(
         .await
     {
         Ok(payments) => HttpResponse::Ok().json(payments),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -129,9 +116,7 @@ pub async fn list_expense_payments(
         .await
     {
         Ok(payments) => HttpResponse::Ok().json(payments),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -146,9 +131,7 @@ pub async fn list_organization_payments(
         .await
     {
         Ok(payments) => HttpResponse::Ok().json(payments),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -161,8 +144,7 @@ pub async fn list_payments_by_status(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -188,9 +170,7 @@ pub async fn list_payments_by_status(
         .await
     {
         Ok(payments) => HttpResponse::Ok().json(payments),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -202,8 +182,7 @@ pub async fn list_pending_payments(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -213,9 +192,7 @@ pub async fn list_pending_payments(
         .await
     {
         Ok(payments) => HttpResponse::Ok().json(payments),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -227,8 +204,7 @@ pub async fn list_failed_payments(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -238,9 +214,7 @@ pub async fn list_failed_payments(
         .await
     {
         Ok(payments) => HttpResponse::Ok().json(payments),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -255,8 +229,7 @@ pub async fn mark_payment_processing(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -285,8 +258,7 @@ pub async fn mark_payment_requires_action(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -315,8 +287,7 @@ pub async fn mark_payment_succeeded(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -346,8 +317,7 @@ pub async fn mark_payment_failed(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -382,8 +352,7 @@ pub async fn mark_payment_cancelled(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -413,8 +382,7 @@ pub async fn refund_payment(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -457,8 +425,7 @@ pub async fn delete_payment(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -494,9 +461,7 @@ pub async fn get_owner_payment_stats(
         .await
     {
         Ok(stats) => HttpResponse::Ok().json(stats),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -511,9 +476,7 @@ pub async fn get_building_payment_stats(
         .await
     {
         Ok(stats) => HttpResponse::Ok().json(stats),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -531,9 +494,7 @@ pub async fn get_expense_total_paid(
             "expense_id": *expense_id,
             "total_paid_cents": total
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -551,9 +512,7 @@ pub async fn get_owner_total_paid(
             "owner_id": *owner_id,
             "total_paid_cents": total
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -571,8 +530,6 @@ pub async fn get_building_total_paid(
             "building_id": *building_id,
             "total_paid_cents": total
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }

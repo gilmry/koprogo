@@ -11,7 +11,7 @@ pub struct CreateQuoteDto {
     pub project_description: String,
     pub amount_excl_vat: Decimal,
     pub vat_rate: Decimal,
-    pub validity_date: String,      // ISO 8601 string
+    pub validity_date: String, // ISO 8601 string
     pub estimated_start_date: Option<String>,
     pub estimated_duration_days: i32,
     pub warranty_years: i32,
@@ -49,9 +49,9 @@ pub struct QuoteResponseDto {
     pub project_description: String,
 
     // Quote details
-    pub amount_excl_vat: String,    // Decimal as string
-    pub vat_rate: String,           // Decimal as string
-    pub amount_incl_vat: String,    // Decimal as string
+    pub amount_excl_vat: String, // Decimal as string
+    pub vat_rate: String,        // Decimal as string
+    pub amount_incl_vat: String, // Decimal as string
     pub validity_date: String,
     pub estimated_start_date: Option<String>,
     pub estimated_duration_days: i32,
@@ -136,7 +136,7 @@ impl From<QuoteScore> for QuoteScoreResponseDto {
 pub struct QuoteComparisonItemDto {
     pub quote: QuoteResponseDto,
     pub score: Option<QuoteScoreResponseDto>,
-    pub rank: usize,            // 1, 2, 3, etc. (sorted by score)
+    pub rank: usize, // 1, 2, 3, etc. (sorted by score)
 }
 
 /// Quote comparison response DTO (Belgian legal requirement: 3 quotes minimum)
@@ -148,7 +148,7 @@ pub struct QuoteComparisonResponseDto {
     pub comparison_items: Vec<QuoteComparisonItemDto>,
 
     // Aggregated statistics
-    pub min_price: String,      // Decimal as string
+    pub min_price: String, // Decimal as string
     pub max_price: String,
     pub avg_price: String,
     pub min_duration_days: i32,
@@ -163,10 +163,10 @@ pub struct QuoteComparisonResponseDto {
 mod tests {
     use super::*;
     use crate::domain::entities::Quote;
+    use chrono::Utc;
     use rust_decimal::Decimal;
     use std::str::FromStr;
     use uuid::Uuid;
-    use chrono::Utc;
 
     // Helper macro since dec! is not available in rust_decimal 1.36
     macro_rules! dec {

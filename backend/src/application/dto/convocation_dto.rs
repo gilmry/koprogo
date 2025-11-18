@@ -29,10 +29,10 @@ pub struct ConvocationResponse {
     pub will_not_attend_count: i32,
 
     // Computed fields
-    pub opening_rate: f64,        // opened / total * 100
-    pub attendance_rate: f64,     // will_attend / total * 100
-    pub days_until_meeting: i64,  // Computed from meeting_date
-    pub respects_legal_deadline: bool,  // Computed: actual_send_date <= minimum_send_date
+    pub opening_rate: f64,             // opened / total * 100
+    pub attendance_rate: f64,          // will_attend / total * 100
+    pub days_until_meeting: i64,       // Computed from meeting_date
+    pub respects_legal_deadline: bool, // Computed: actual_send_date <= minimum_send_date
 
     // Reminders
     pub reminder_sent_at: Option<DateTime<Utc>>,
@@ -85,7 +85,7 @@ pub struct CreateConvocationRequest {
     pub meeting_id: Uuid,
     pub meeting_type: ConvocationType,
     pub meeting_date: DateTime<Utc>,
-    pub language: String,  // FR, NL, DE, EN
+    pub language: String, // FR, NL, DE, EN
 }
 
 #[derive(Debug, Deserialize)]
@@ -95,7 +95,7 @@ pub struct ScheduleConvocationRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct SendConvocationRequest {
-    pub recipient_owner_ids: Vec<Uuid>,  // List of owner IDs to send to
+    pub recipient_owner_ids: Vec<Uuid>, // List of owner IDs to send to
 }
 
 #[derive(Debug, Serialize)]

@@ -227,10 +227,7 @@ mod tests {
         );
 
         assert!(resolution.is_err());
-        assert_eq!(
-            resolution.unwrap_err(),
-            "Resolution title cannot be empty"
-        );
+        assert_eq!(resolution.unwrap_err(), "Resolution title cannot be empty");
     }
 
     #[test]

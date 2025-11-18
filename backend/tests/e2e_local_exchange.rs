@@ -55,7 +55,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
     let local_exchange_repo = Arc::new(PostgresLocalExchangeRepository::new(pool.clone()));
-    let owner_credit_balance_repo = Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
+    let owner_credit_balance_repo =
+        Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
     let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
 
@@ -65,12 +66,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let jwt_secret = "e2e-sel-secret".to_string();
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let local_exchange_use_cases = LocalExchangeUseCases::new(
         local_exchange_repo.clone(),
@@ -145,7 +142,12 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
 #[serial]
 async fn test_create_service_exchange_offer() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let building_id = Uuid::new_v4();
     let provider_id = Uuid::new_v4();
@@ -181,7 +183,12 @@ async fn test_create_service_exchange_offer() {
 #[serial]
 async fn test_exchange_workflow_offered_to_completed() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let exchange_id = Uuid::new_v4();
     let requester_id = Uuid::new_v4();
@@ -222,7 +229,12 @@ async fn test_exchange_workflow_offered_to_completed() {
 #[serial]
 async fn test_mutual_rating_system() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let exchange_id = Uuid::new_v4();
 
@@ -260,13 +272,21 @@ async fn test_mutual_rating_system() {
 #[serial]
 async fn test_get_credit_balance() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let owner_id = Uuid::new_v4();
     let building_id = Uuid::new_v4();
 
     let req = test::TestRequest::get()
-        .uri(&format!("/api/v1/owners/{}/buildings/{}/credit-balance", owner_id, building_id))
+        .uri(&format!(
+            "/api/v1/owners/{}/buildings/{}/credit-balance",
+            owner_id, building_id
+        ))
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
@@ -287,12 +307,20 @@ async fn test_get_credit_balance() {
 #[serial]
 async fn test_leaderboard() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let building_id = Uuid::new_v4();
 
     let req = test::TestRequest::get()
-        .uri(&format!("/api/v1/buildings/{}/leaderboard?limit=10", building_id))
+        .uri(&format!(
+            "/api/v1/buildings/{}/leaderboard?limit=10",
+            building_id
+        ))
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
@@ -307,7 +335,12 @@ async fn test_leaderboard() {
 #[serial]
 async fn test_sel_statistics() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let building_id = Uuid::new_v4();
 
@@ -330,7 +363,12 @@ async fn test_sel_statistics() {
 #[serial]
 async fn test_owner_exchange_summary() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let owner_id = Uuid::new_v4();
 
@@ -351,12 +389,20 @@ async fn test_owner_exchange_summary() {
 #[serial]
 async fn test_list_available_exchanges() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let building_id = Uuid::new_v4();
 
     let req = test::TestRequest::get()
-        .uri(&format!("/api/v1/buildings/{}/exchanges/available", building_id))
+        .uri(&format!(
+            "/api/v1/buildings/{}/exchanges/available",
+            building_id
+        ))
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
@@ -371,7 +417,12 @@ async fn test_list_available_exchanges() {
 #[serial]
 async fn test_cancel_exchange_with_reason() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let exchange_id = Uuid::new_v4();
 

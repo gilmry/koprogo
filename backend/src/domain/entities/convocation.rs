@@ -93,13 +93,13 @@ pub struct Convocation {
     pub status: ConvocationStatus,
 
     // Legal deadline tracking
-    pub minimum_send_date: DateTime<Utc>,  // Latest date to send (meeting_date - minimum_notice_days)
-    pub actual_send_date: Option<DateTime<Utc>>,  // When actually sent
-    pub scheduled_send_date: Option<DateTime<Utc>>,  // When scheduled to be sent
+    pub minimum_send_date: DateTime<Utc>, // Latest date to send (meeting_date - minimum_notice_days)
+    pub actual_send_date: Option<DateTime<Utc>>, // When actually sent
+    pub scheduled_send_date: Option<DateTime<Utc>>, // When scheduled to be sent
 
     // PDF generation
-    pub pdf_file_path: Option<String>,  // Path to generated PDF
-    pub language: String,  // FR, NL, DE, EN
+    pub pdf_file_path: Option<String>, // Path to generated PDF
+    pub language: String,              // FR, NL, DE, EN
 
     // Tracking
     pub total_recipients: i32,
@@ -108,7 +108,7 @@ pub struct Convocation {
     pub will_not_attend_count: i32,
 
     // Reminders
-    pub reminder_sent_at: Option<DateTime<Utc>>,  // J-3 reminder
+    pub reminder_sent_at: Option<DateTime<Utc>>, // J-3 reminder
 
     // Audit
     pub created_at: DateTime<Utc>,
@@ -215,7 +215,11 @@ impl Convocation {
     }
 
     /// Mark convocation as sent
-    pub fn mark_sent(&mut self, pdf_file_path: String, total_recipients: i32) -> Result<(), String> {
+    pub fn mark_sent(
+        &mut self,
+        pdf_file_path: String,
+        total_recipients: i32,
+    ) -> Result<(), String> {
         if self.status != ConvocationStatus::Draft && self.status != ConvocationStatus::Scheduled {
             return Err(format!(
                 "Cannot send convocation in status '{:?}'",
@@ -274,7 +278,7 @@ impl Convocation {
     pub fn respects_legal_deadline(&self) -> bool {
         match &self.actual_send_date {
             Some(sent_at) => *sent_at <= self.minimum_send_date,
-            None => false,  // Not sent yet
+            None => false, // Not sent yet
         }
     }
 
@@ -292,7 +296,7 @@ impl Convocation {
         }
 
         if self.reminder_sent_at.is_some() {
-            return false;  // Already sent
+            return false; // Already sent
         }
 
         let days_until = self.days_until_meeting();
@@ -355,13 +359,13 @@ mod tests {
 
     #[test]
     fn test_create_convocation_meeting_too_soon() {
-        let meeting_date = Utc::now() + Duration::days(5);  // Only 5 days notice for ordinary meeting
+        let meeting_date = Utc::now() + Duration::days(5); // Only 5 days notice for ordinary meeting
 
         let result = Convocation::new(
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
-            ConvocationType::Ordinary,  // Requires 15 days
+            ConvocationType::Ordinary, // Requires 15 days
             meeting_date,
             "FR".to_string(),
             Uuid::new_v4(),
@@ -381,7 +385,7 @@ mod tests {
             Uuid::new_v4(),
             ConvocationType::Ordinary,
             meeting_date,
-            "ES".to_string(),  // Spanish not supported
+            "ES".to_string(), // Spanish not supported
             Uuid::new_v4(),
         );
 
@@ -403,7 +407,7 @@ mod tests {
         )
         .unwrap();
 
-        let send_date = Utc::now() + Duration::days(3);  // Send in 3 days
+        let send_date = Utc::now() + Duration::days(3); // Send in 3 days
         let result = convocation.schedule(send_date);
 
         assert!(result.is_ok());
@@ -426,7 +430,7 @@ mod tests {
         .unwrap();
 
         // Try to schedule send date after minimum_send_date
-        let send_date = meeting_date - Duration::days(10);  // Only 10 days before (needs 15)
+        let send_date = meeting_date - Duration::days(10); // Only 10 days before (needs 15)
         let result = convocation.schedule(send_date);
 
         assert!(result.is_err());
@@ -453,24 +457,29 @@ mod tests {
         assert_eq!(convocation.status, ConvocationStatus::Sent);
         assert!(convocation.actual_send_date.is_some());
         assert_eq!(convocation.total_recipients, 50);
-        assert_eq!(convocation.pdf_file_path, Some("/uploads/convocations/conv-123.pdf".to_string()));
+        assert_eq!(
+            convocation.pdf_file_path,
+            Some("/uploads/convocations/conv-123.pdf".to_string())
+        );
     }
 
     #[test]
     fn test_should_send_reminder() {
-        let meeting_date = Utc::now() + Duration::days(2);  // 2 days until meeting
+        let meeting_date = Utc::now() + Duration::days(2); // 2 days until meeting
         let mut convocation = Convocation::new(
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
-            ConvocationType::Extraordinary,  // 8 days notice
+            ConvocationType::Extraordinary, // 8 days notice
             meeting_date,
             "FR".to_string(),
             Uuid::new_v4(),
         )
         .unwrap();
 
-        convocation.mark_sent("/uploads/conv.pdf".to_string(), 30).unwrap();
+        convocation
+            .mark_sent("/uploads/conv.pdf".to_string(), 30)
+            .unwrap();
 
         assert!(convocation.should_send_reminder());
 
@@ -493,7 +502,9 @@ mod tests {
         )
         .unwrap();
 
-        convocation.mark_sent("/uploads/conv.pdf".to_string(), 100).unwrap();
+        convocation
+            .mark_sent("/uploads/conv.pdf".to_string(), 100)
+            .unwrap();
         convocation.update_tracking_counts(75, 50, 10);
 
         assert_eq!(convocation.opening_rate(), 75.0);
@@ -518,7 +529,9 @@ mod tests {
         assert!(!convocation.respects_legal_deadline());
 
         // After sending (now is definitely before minimum_send_date)
-        convocation.mark_sent("/uploads/conv.pdf".to_string(), 30).unwrap();
+        convocation
+            .mark_sent("/uploads/conv.pdf".to_string(), 30)
+            .unwrap();
         assert!(convocation.respects_legal_deadline());
     }
 }

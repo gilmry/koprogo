@@ -456,7 +456,11 @@ impl IoTRepository for PostgresIoTRepository {
             id: record.id,
             building_id: record.building_id,
             prm: record.prm,
-            provider: record.provider.ok_or("Provider is required")?.parse().map_err(|e| format!("Invalid provider: {}", e))?,
+            provider: record
+                .provider
+                .ok_or("Provider is required")?
+                .parse()
+                .map_err(|e| format!("Invalid provider: {}", e))?,
             api_key_encrypted: record.api_key_encrypted,
             refresh_token_encrypted: record.refresh_token_encrypted,
             token_expires_at: record.token_expires_at,
@@ -467,7 +471,10 @@ impl IoTRepository for PostgresIoTRepository {
         })
     }
 
-    async fn find_linky_device_by_id(&self, device_id: Uuid) -> Result<Option<LinkyDevice>, String> {
+    async fn find_linky_device_by_id(
+        &self,
+        device_id: Uuid,
+    ) -> Result<Option<LinkyDevice>, String> {
         let record = sqlx::query!(
             r#"
             SELECT id, building_id, prm, provider::TEXT as provider, api_key_encrypted, refresh_token_encrypted,
@@ -481,24 +488,27 @@ impl IoTRepository for PostgresIoTRepository {
         .await
         .map_err(|e| format!("Failed to find Linky device: {}", e))?;
 
-        record.map(|r| -> Result<LinkyDevice, String> {
-            Ok(LinkyDevice {
-                id: r.id,
-                building_id: r.building_id,
-                prm: r.prm,
-                provider: r.provider
-                    .ok_or("Provider is required")?
-                    .parse()
-                    .map_err(|e| format!("Invalid provider: {}", e))?,
-                api_key_encrypted: r.api_key_encrypted,
-                refresh_token_encrypted: r.refresh_token_encrypted,
-                token_expires_at: r.token_expires_at,
-                sync_enabled: r.sync_enabled,
-                last_sync_at: r.last_sync_at,
-                created_at: r.created_at,
-                updated_at: r.updated_at,
+        record
+            .map(|r| -> Result<LinkyDevice, String> {
+                Ok(LinkyDevice {
+                    id: r.id,
+                    building_id: r.building_id,
+                    prm: r.prm,
+                    provider: r
+                        .provider
+                        .ok_or("Provider is required")?
+                        .parse()
+                        .map_err(|e| format!("Invalid provider: {}", e))?,
+                    api_key_encrypted: r.api_key_encrypted,
+                    refresh_token_encrypted: r.refresh_token_encrypted,
+                    token_expires_at: r.token_expires_at,
+                    sync_enabled: r.sync_enabled,
+                    last_sync_at: r.last_sync_at,
+                    created_at: r.created_at,
+                    updated_at: r.updated_at,
+                })
             })
-        }).transpose()
+            .transpose()
     }
 
     async fn find_linky_device_by_building(
@@ -518,24 +528,27 @@ impl IoTRepository for PostgresIoTRepository {
         .await
         .map_err(|e| format!("Failed to find Linky device by building: {}", e))?;
 
-        record.map(|r| -> Result<LinkyDevice, String> {
-            Ok(LinkyDevice {
-                id: r.id,
-                building_id: r.building_id,
-                prm: r.prm,
-                provider: r.provider
-                    .ok_or("Provider is required")?
-                    .parse()
-                    .map_err(|e| format!("Invalid provider: {}", e))?,
-                api_key_encrypted: r.api_key_encrypted,
-                refresh_token_encrypted: r.refresh_token_encrypted,
-                token_expires_at: r.token_expires_at,
-                sync_enabled: r.sync_enabled,
-                last_sync_at: r.last_sync_at,
-                created_at: r.created_at,
-                updated_at: r.updated_at,
+        record
+            .map(|r| -> Result<LinkyDevice, String> {
+                Ok(LinkyDevice {
+                    id: r.id,
+                    building_id: r.building_id,
+                    prm: r.prm,
+                    provider: r
+                        .provider
+                        .ok_or("Provider is required")?
+                        .parse()
+                        .map_err(|e| format!("Invalid provider: {}", e))?,
+                    api_key_encrypted: r.api_key_encrypted,
+                    refresh_token_encrypted: r.refresh_token_encrypted,
+                    token_expires_at: r.token_expires_at,
+                    sync_enabled: r.sync_enabled,
+                    last_sync_at: r.last_sync_at,
+                    created_at: r.created_at,
+                    updated_at: r.updated_at,
+                })
             })
-        }).transpose()
+            .transpose()
     }
 
     async fn find_linky_device_by_prm(
@@ -557,24 +570,27 @@ impl IoTRepository for PostgresIoTRepository {
         .await
         .map_err(|e| format!("Failed to find Linky device by PRM: {}", e))?;
 
-        record.map(|r| -> Result<LinkyDevice, String> {
-            Ok(LinkyDevice {
-                id: r.id,
-                building_id: r.building_id,
-                prm: r.prm,
-                provider: r.provider
-                    .ok_or("Provider is required")?
-                    .parse()
-                    .map_err(|e| format!("Invalid provider: {}", e))?,
-                api_key_encrypted: r.api_key_encrypted,
-                refresh_token_encrypted: r.refresh_token_encrypted,
-                token_expires_at: r.token_expires_at,
-                sync_enabled: r.sync_enabled,
-                last_sync_at: r.last_sync_at,
-                created_at: r.created_at,
-                updated_at: r.updated_at,
+        record
+            .map(|r| -> Result<LinkyDevice, String> {
+                Ok(LinkyDevice {
+                    id: r.id,
+                    building_id: r.building_id,
+                    prm: r.prm,
+                    provider: r
+                        .provider
+                        .ok_or("Provider is required")?
+                        .parse()
+                        .map_err(|e| format!("Invalid provider: {}", e))?,
+                    api_key_encrypted: r.api_key_encrypted,
+                    refresh_token_encrypted: r.refresh_token_encrypted,
+                    token_expires_at: r.token_expires_at,
+                    sync_enabled: r.sync_enabled,
+                    last_sync_at: r.last_sync_at,
+                    created_at: r.created_at,
+                    updated_at: r.updated_at,
+                })
             })
-        }).transpose()
+            .transpose()
     }
 
     async fn update_linky_device(&self, device: &LinkyDevice) -> Result<LinkyDevice, String> {
@@ -615,7 +631,11 @@ impl IoTRepository for PostgresIoTRepository {
             id: record.id,
             building_id: record.building_id,
             prm: record.prm,
-            provider: record.provider.ok_or("Provider is required")?.parse().map_err(|e| format!("Invalid provider: {}", e))?,
+            provider: record
+                .provider
+                .ok_or("Provider is required")?
+                .parse()
+                .map_err(|e| format!("Invalid provider: {}", e))?,
             api_key_encrypted: record.api_key_encrypted,
             refresh_token_encrypted: record.refresh_token_encrypted,
             token_expires_at: record.token_expires_at,
@@ -663,7 +683,8 @@ impl IoTRepository for PostgresIoTRepository {
                     id: r.id,
                     building_id: r.building_id,
                     prm: r.prm,
-                    provider: r.provider
+                    provider: r
+                        .provider
                         .ok_or("Provider is required")?
                         .parse()
                         .map_err(|e| format!("Invalid provider: {}", e))?,
@@ -700,7 +721,8 @@ impl IoTRepository for PostgresIoTRepository {
                     id: r.id,
                     building_id: r.building_id,
                     prm: r.prm,
-                    provider: r.provider
+                    provider: r
+                        .provider
                         .ok_or("Provider is required")?
                         .parse()
                         .map_err(|e| format!("Invalid provider: {}", e))?,

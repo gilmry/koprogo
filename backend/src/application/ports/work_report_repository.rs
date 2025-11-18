@@ -19,10 +19,8 @@ pub trait WorkReportRepository: Send + Sync {
     ) -> Result<(Vec<WorkReport>, i64), String>;
 
     /// Find work reports with active warranties
-    async fn find_with_active_warranty(
-        &self,
-        building_id: Uuid,
-    ) -> Result<Vec<WorkReport>, String>;
+    async fn find_with_active_warranty(&self, building_id: Uuid)
+        -> Result<Vec<WorkReport>, String>;
 
     /// Find work reports with expiring warranties (within N days)
     async fn find_with_expiring_warranty(

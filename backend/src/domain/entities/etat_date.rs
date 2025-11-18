@@ -157,13 +157,10 @@ impl EtatDate {
         }
 
         // Quote-parts doivent être entre 0 et 100%
-        if ordinary_charges_quota < 0.0 || ordinary_charges_quota > 100.0
-        {
+        if ordinary_charges_quota < 0.0 || ordinary_charges_quota > 100.0 {
             return Err("Ordinary charges quota must be between 0 and 100%".to_string());
         }
-        if extraordinary_charges_quota < 0.0
-            || extraordinary_charges_quota > 100.0
-        {
+        if extraordinary_charges_quota < 0.0 || extraordinary_charges_quota > 100.0 {
             return Err("Extraordinary charges quota must be between 0 and 100%".to_string());
         }
 
@@ -370,8 +367,8 @@ mod tests {
             "101".to_string(),
             Some("1".to_string()),
             Some(100.0),
-            100.0,   // 5%
-            100.0,  // 10%
+            100.0, // 5%
+            100.0, // 10%
         );
 
         assert!(etat_date.is_ok());
@@ -541,11 +538,11 @@ mod tests {
         .unwrap();
 
         let result = ed.update_financial_data(
-            -500.00,  // -500.00 EUR (débit)
+            -500.00, // -500.00 EUR (débit)
             100.0,   // 500.00 EUR arriérés
             100.0,   // 150.00 EUR/mois
-            -500.00,  // -500.00 EUR total
-            100.0,  // 2000.00 EUR travaux votés
+            -500.00, // -500.00 EUR total
+            100.0,   // 2000.00 EUR travaux votés
         );
 
         assert!(result.is_ok());

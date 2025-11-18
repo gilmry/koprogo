@@ -326,9 +326,7 @@ impl SharedObject {
             return Err("Owner cannot borrow their own object".to_string());
         }
 
-        let duration = duration_days
-            .or(self.borrowing_duration_days)
-            .unwrap_or(7); // Default 7 days
+        let duration = duration_days.or(self.borrowing_duration_days).unwrap_or(7); // Default 7 days
 
         if duration < 1 || duration > 90 {
             return Err("Borrowing duration must be between 1 and 90 days".to_string());
@@ -392,14 +390,13 @@ impl SharedObject {
     ///
     /// Returns (rental_cost, deposit)
     pub fn calculate_total_cost(&self) -> (i32, i32) {
-        let rental_cost = if let (Some(borrowed), Some(rate)) =
-            (self.borrowed_at, self.rental_credits_per_day)
-        {
-            let days_borrowed = (Utc::now() - borrowed).num_days() + 1; // At least 1 day
-            (days_borrowed as i32) * rate
-        } else {
-            0
-        };
+        let rental_cost =
+            if let (Some(borrowed), Some(rate)) = (self.borrowed_at, self.rental_credits_per_day) {
+                let days_borrowed = (Utc::now() - borrowed).num_days() + 1; // At least 1 day
+                (days_borrowed as i32) * rate
+            } else {
+                0
+            };
 
         let deposit = self.deposit_credits.unwrap_or(0);
 

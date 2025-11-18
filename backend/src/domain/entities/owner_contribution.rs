@@ -169,7 +169,6 @@ impl OwnerContribution {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::entities::payment_method::PaymentMethod;
 
     #[test]
     fn test_create_contribution_success() {
@@ -243,13 +242,16 @@ mod tests {
 
         contrib.mark_as_paid(
             Utc::now(),
-            PaymentMethod::BankTransfer,
+            ContributionPaymentMethod::BankTransfer,
             Some("REF-123".to_string()),
         );
 
         assert!(contrib.is_paid());
         assert!(contrib.payment_date.is_some());
-        assert_eq!(contrib.payment_method, Some(PaymentMethod::BankTransfer));
+        assert_eq!(
+            contrib.payment_method,
+            Some(ContributionPaymentMethod::BankTransfer)
+        );
         assert_eq!(contrib.payment_reference, Some("REF-123".to_string()));
     }
 

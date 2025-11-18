@@ -19,11 +19,11 @@ pub enum ResourceType {
 /// Booking status lifecycle
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum BookingStatus {
-    Pending,    // Awaiting confirmation (if approval required)
-    Confirmed,  // Booking confirmed
-    Cancelled,  // Cancelled by user or admin
-    Completed,  // Booking completed (auto-set after end_time)
-    NoShow,     // User didn't show up (admin-set)
+    Pending,   // Awaiting confirmation (if approval required)
+    Confirmed, // Booking confirmed
+    Cancelled, // Cancelled by user or admin
+    Completed, // Booking completed (auto-set after end_time)
+    NoShow,    // User didn't show up (admin-set)
 }
 
 /// Recurring pattern for repeated bookings
@@ -258,12 +258,8 @@ impl ResourceBooking {
                 Ok(())
             }
             BookingStatus::Pending => Err("Cannot mark pending booking as no-show".to_string()),
-            BookingStatus::Cancelled => {
-                Err("Cannot mark cancelled booking as no-show".to_string())
-            }
-            BookingStatus::Completed => {
-                Err("Cannot mark completed booking as no-show".to_string())
-            }
+            BookingStatus::Cancelled => Err("Cannot mark cancelled booking as no-show".to_string()),
+            BookingStatus::Completed => Err("Cannot mark completed booking as no-show".to_string()),
             BookingStatus::NoShow => Err("Booking is already marked as no-show".to_string()),
         }
     }
@@ -474,7 +470,9 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Start time must be before end time"));
+        assert!(result
+            .unwrap_err()
+            .contains("Start time must be before end time"));
     }
 
     #[test]
@@ -499,7 +497,9 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Cannot book resources in the past"));
+        assert!(result
+            .unwrap_err()
+            .contains("Cannot book resources in the past"));
     }
 
     #[test]
@@ -524,7 +524,9 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Booking duration cannot exceed"));
+        assert!(result
+            .unwrap_err()
+            .contains("Booking duration cannot exceed"));
     }
 
     #[test]

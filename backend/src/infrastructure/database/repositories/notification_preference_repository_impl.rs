@@ -174,7 +174,12 @@ impl NotificationPreferenceRepository for PostgresNotificationPreferenceReposito
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| format!("Database error finding notification preferences by user: {}", e))?;
+        .map_err(|e| {
+            format!(
+                "Database error finding notification preferences by user: {}",
+                e
+            )
+        })?;
 
         rows.into_iter()
             .map(|r| {
@@ -320,9 +325,7 @@ mod tests {
     #[test]
     fn test_type_conversion() {
         assert_eq!(
-            PostgresNotificationPreferenceRepository::type_to_db(
-                &NotificationType::ExpenseCreated
-            ),
+            PostgresNotificationPreferenceRepository::type_to_db(&NotificationType::ExpenseCreated),
             "ExpenseCreated"
         );
         assert_eq!(

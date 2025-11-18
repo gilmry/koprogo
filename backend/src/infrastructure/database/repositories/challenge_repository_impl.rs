@@ -468,7 +468,10 @@ impl ChallengeProgressRepository for PostgresChallengeProgressRepository {
         rows.iter().map(Self::row_to_progress).collect()
     }
 
-    async fn find_by_challenge(&self, challenge_id: Uuid) -> Result<Vec<ChallengeProgress>, String> {
+    async fn find_by_challenge(
+        &self,
+        challenge_id: Uuid,
+    ) -> Result<Vec<ChallengeProgress>, String> {
         let rows = sqlx::query(
             r#"
             SELECT id, challenge_id, user_id, current_value, completed,
@@ -486,10 +489,7 @@ impl ChallengeProgressRepository for PostgresChallengeProgressRepository {
         rows.iter().map(Self::row_to_progress).collect()
     }
 
-    async fn find_active_by_user(
-        &self,
-        user_id: Uuid,
-    ) -> Result<Vec<ChallengeProgress>, String> {
+    async fn find_active_by_user(&self, user_id: Uuid) -> Result<Vec<ChallengeProgress>, String> {
         let rows = sqlx::query(
             r#"
             SELECT cp.id, cp.challenge_id, cp.user_id, cp.current_value,

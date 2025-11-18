@@ -188,7 +188,9 @@ impl Payment {
     /// Mark payment as succeeded
     pub fn mark_succeeded(&mut self) -> Result<(), String> {
         match self.status {
-            TransactionStatus::Pending | TransactionStatus::Processing | TransactionStatus::RequiresAction => {
+            TransactionStatus::Pending
+            | TransactionStatus::Processing
+            | TransactionStatus::RequiresAction => {
                 self.status = TransactionStatus::Succeeded;
                 self.succeeded_at = Some(Utc::now());
                 self.updated_at = Utc::now();
@@ -223,7 +225,9 @@ impl Payment {
     /// Mark payment as cancelled
     pub fn mark_cancelled(&mut self) -> Result<(), String> {
         match self.status {
-            TransactionStatus::Pending | TransactionStatus::Processing | TransactionStatus::RequiresAction => {
+            TransactionStatus::Pending
+            | TransactionStatus::Processing
+            | TransactionStatus::RequiresAction => {
                 self.status = TransactionStatus::Cancelled;
                 self.cancelled_at = Some(Utc::now());
                 self.updated_at = Utc::now();

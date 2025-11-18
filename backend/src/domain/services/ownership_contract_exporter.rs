@@ -28,12 +28,8 @@ impl OwnershipContractExporter {
         ownership_start_date: DateTime<Utc>,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) = PdfDocument::new(
-            "Contrat de Copropriété",
-            Mm(210.0),
-            Mm(297.0),
-            "Layer 1",
-        );
+        let (doc, page1, layer1) =
+            PdfDocument::new("Contrat de Copropriété", Mm(210.0), Mm(297.0), "Layer 1");
         let current_layer = doc.get_page(page1).get_layer(layer1);
 
         // Load fonts
@@ -85,11 +81,9 @@ impl OwnershipContractExporter {
         y -= 6.0;
 
         current_layer.use_text(
-            format!("Adresse: {}, {} {}, {}",
-                building.address,
-                building.postal_code,
-                building.city,
-                building.country
+            format!(
+                "Adresse: {}, {} {}, {}",
+                building.address, building.postal_code, building.city, building.country
             ),
             10.0,
             Mm(20.0),
@@ -139,13 +133,7 @@ impl OwnershipContractExporter {
         y -= 6.0;
 
         if let Some(floor) = unit.floor {
-            current_layer.use_text(
-                format!("Étage: {}", floor),
-                10.0,
-                Mm(20.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.use_text(format!("Étage: {}", floor), 10.0, Mm(20.0), Mm(y), &font);
             y -= 6.0;
         }
 
@@ -198,13 +186,7 @@ impl OwnershipContractExporter {
 
         let owner_name = format!("{} {}", owner.first_name, owner.last_name);
 
-        current_layer.use_text(
-            format!("Nom: {}", owner_name),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        current_layer.use_text(format!("Nom: {}", owner_name), 10.0, Mm(20.0), Mm(y), &font);
         y -= 6.0;
 
         current_layer.use_text(
@@ -228,7 +210,10 @@ impl OwnershipContractExporter {
         }
 
         current_layer.use_text(
-            format!("Date d'entrée en copropriété: {}", ownership_start_date.format("%d/%m/%Y")),
+            format!(
+                "Date d'entrée en copropriété: {}",
+                ownership_start_date.format("%d/%m/%Y")
+            ),
             10.0,
             Mm(20.0),
             Mm(y),
@@ -264,13 +249,7 @@ impl OwnershipContractExporter {
             if y < 80.0 {
                 break;
             }
-            current_layer.use_text(
-                line.to_string(),
-                9.0,
-                Mm(20.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.use_text(line.to_string(), 9.0, Mm(20.0), Mm(y), &font);
             y -= 5.0;
         }
         y -= 5.0;
@@ -311,13 +290,7 @@ impl OwnershipContractExporter {
             y = 40.0;
         }
 
-        current_layer.use_text(
-            "SIGNATURES".to_string(),
-            12.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.use_text("SIGNATURES".to_string(), 12.0, Mm(20.0), Mm(y), &font_bold);
         y -= 10.0;
 
         current_layer.use_text(
@@ -365,6 +338,7 @@ impl OwnershipContractExporter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use uuid::Uuid;
 
     #[test]
     fn test_export_ownership_contract_pdf() {
@@ -395,24 +369,27 @@ mod tests {
             organization_id: building.organization_id,
             building_id: building.id,
             unit_number: "A1".to_string(),
+            unit_type: crate::domain::entities::UnitType::Apartment,
             floor: Some(1),
-            area: Some(75.5),
-            unit_type: Some("Appartement".to_string()),
+            surface_area: 75.5,
+            quota: 150.0,
+            owner_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
 
         let owner = Owner {
             id: Uuid::new_v4(),
+            organization_id: building.organization_id,
+            user_id: None,
             first_name: "Jean".to_string(),
             last_name: "Dupont".to_string(),
-            email: Some("jean@example.com".to_string()),
+            email: "jean@example.com".to_string(),
             phone: Some("+32 2 123 45 67".to_string()),
-            is_company: false,
-            company_name: None,
-            vat_number: None,
-            national_register_number: Some("12345678901".to_string()),
-            organization_id: building.organization_id,
+            address: "123 Rue de Test".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -421,7 +398,7 @@ mod tests {
             &building,
             &unit,
             &owner,
-            0.15, // 15% ownership
+            0.15,                                     // 15% ownership
             Utc::now() - chrono::Duration::days(365), // Started 1 year ago
         );
 

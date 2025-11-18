@@ -33,12 +33,8 @@ impl OwnerStatementExporter {
         end_date: DateTime<Utc>,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) = PdfDocument::new(
-            "Relevé de Charges",
-            Mm(210.0),
-            Mm(297.0),
-            "Layer 1",
-        );
+        let (doc, page1, layer1) =
+            PdfDocument::new("Relevé de Charges", Mm(210.0), Mm(297.0), "Layer 1");
         let current_layer = doc.get_page(page1).get_layer(layer1);
 
         // Load fonts
@@ -151,22 +147,10 @@ impl OwnerStatementExporter {
                 break;
             }
 
-            current_layer.use_text(
-                &unit_info.unit.unit_number,
-                9.0,
-                Mm(20.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.use_text(&unit_info.unit.unit_number, 9.0, Mm(20.0), Mm(y), &font);
 
             if let Some(floor) = unit_info.unit.floor {
-                current_layer.use_text(
-                    floor.to_string(),
-                    9.0,
-                    Mm(60.0),
-                    Mm(y),
-                    &font,
-                );
+                current_layer.use_text(floor.to_string(), 9.0, Mm(60.0), Mm(y), &font);
             }
 
             current_layer.use_text(
@@ -236,7 +220,11 @@ impl OwnerStatementExporter {
                 &font,
             );
 
-            let status = if expense.is_paid() { "Payée" } else { "En attente" };
+            let status = if expense.is_paid() {
+                "Payée"
+            } else {
+                "En attente"
+            };
             current_layer.use_text(status.to_string(), 9.0, Mm(170.0), Mm(y), &font);
 
             total_amount += expense.amount;
@@ -328,20 +316,22 @@ impl OwnerStatementExporter {
 mod tests {
     use super::*;
     use crate::domain::entities::ExpenseCategory;
+    use uuid::Uuid;
 
     #[test]
     fn test_export_owner_statement_pdf() {
         let owner = Owner {
             id: Uuid::new_v4(),
+            organization_id: Uuid::new_v4(),
+            user_id: None,
             first_name: "Jean".to_string(),
             last_name: "Dupont".to_string(),
-            email: Some("jean@example.com".to_string()),
+            email: "jean@example.com".to_string(),
             phone: Some("+32 2 123 45 67".to_string()),
-            is_company: false,
-            company_name: None,
-            vat_number: None,
-            national_register_number: Some("12345678901".to_string()),
-            organization_id: Uuid::new_v4(),
+            address: "123 Rue de Test".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -373,9 +363,11 @@ mod tests {
             organization_id: building.organization_id,
             building_id: building.id,
             unit_number: "A1".to_string(),
+            unit_type: crate::domain::entities::UnitType::Apartment,
             floor: Some(1),
-            area: Some(75.5),
-            unit_type: Some("Appartement".to_string()),
+            surface_area: 75.5,
+            quota: 150.0,
+            owner_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -391,14 +383,24 @@ mod tests {
             organization_id: building.organization_id,
             description: "Entretien ascenseur".to_string(),
             amount: 150.0,
-            date: Utc::now(),
+            amount_excl_vat: Some(123.97),
+            vat_rate: Some(21.0),
+            vat_amount: Some(26.03),
+            amount_incl_vat: Some(150.0),
+            expense_date: Utc::now(),
+            invoice_date: None,
+            due_date: None,
+            paid_date: None,
             category: ExpenseCategory::Maintenance,
-            paid_by: None,
-            payment_date: None,
-            is_paid: false,
-            invoice_number: Some("INV-001".to_string()),
-            invoice_file_path: None,
             approval_status: crate::domain::entities::ApprovalStatus::Approved,
+            submitted_at: None,
+            approved_by: None,
+            approved_at: None,
+            rejection_reason: None,
+            payment_status: crate::domain::entities::PaymentStatus::Pending,
+            supplier: None,
+            invoice_number: Some("INV-001".to_string()),
+            account_code: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         }];

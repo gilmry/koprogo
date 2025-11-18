@@ -41,5 +41,8 @@ pub trait NotificationPreferenceRepository: Send + Sync {
     ) -> Result<bool, String>;
 
     /// Create default preferences for a new user
-    async fn create_defaults_for_user(&self, user_id: Uuid) -> Result<Vec<NotificationPreference>, String>;
+    async fn create_defaults_for_user(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<NotificationPreference>, String>;
 }

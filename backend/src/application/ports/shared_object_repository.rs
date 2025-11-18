@@ -27,15 +27,16 @@ pub trait SharedObjectRepository: Send + Sync {
     ) -> Result<Vec<SharedObject>, String>;
 
     /// Find all overdue shared objects for a building
-    async fn find_overdue_by_building(&self, building_id: Uuid)
-        -> Result<Vec<SharedObject>, String>;
+    async fn find_overdue_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<SharedObject>, String>;
 
     /// Find all shared objects by owner
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<SharedObject>, String>;
 
     /// Find all shared objects borrowed by a specific user
-    async fn find_borrowed_by_user(&self, borrower_id: Uuid)
-        -> Result<Vec<SharedObject>, String>;
+    async fn find_borrowed_by_user(&self, borrower_id: Uuid) -> Result<Vec<SharedObject>, String>;
 
     /// Find shared objects by category (Tools, Books, Electronics, etc.)
     async fn find_by_category(
@@ -45,8 +46,7 @@ pub trait SharedObjectRepository: Send + Sync {
     ) -> Result<Vec<SharedObject>, String>;
 
     /// Find free/volunteer shared objects for a building (rental_credits_per_day IS NULL OR = 0)
-    async fn find_free_by_building(&self, building_id: Uuid)
-        -> Result<Vec<SharedObject>, String>;
+    async fn find_free_by_building(&self, building_id: Uuid) -> Result<Vec<SharedObject>, String>;
 
     /// Update an existing shared object
     async fn update(&self, object: &SharedObject) -> Result<SharedObject, String>;

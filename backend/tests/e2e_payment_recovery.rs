@@ -66,12 +66,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let jwt_secret = "e2e-payment-recovery-secret".to_string();
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let payment_reminder_use_cases = PaymentReminderUseCases::new(
         payment_reminder_repo.clone(),
@@ -146,7 +142,12 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
 #[serial]
 async fn test_create_gentle_reminder() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let expense_id = Uuid::new_v4();
     let owner_id = Uuid::new_v4();
@@ -180,13 +181,21 @@ async fn test_create_gentle_reminder() {
 #[serial]
 async fn test_escalation_workflow() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let reminder_id = Uuid::new_v4();
 
     // Escalate from Gentle to Formal (J+30)
     let req = test::TestRequest::post()
-        .uri(&format!("/api/v1/payment-reminders/{}/escalate", reminder_id))
+        .uri(&format!(
+            "/api/v1/payment-reminders/{}/escalate",
+            reminder_id
+        ))
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .set_json(&json!({
@@ -205,12 +214,20 @@ async fn test_escalation_workflow() {
 #[serial]
 async fn test_calculate_late_payment_penalty() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let reminder_id = Uuid::new_v4();
 
     let req = test::TestRequest::get()
-        .uri(&format!("/api/v1/payment-reminders/{}?include_penalty=true", reminder_id))
+        .uri(&format!(
+            "/api/v1/payment-reminders/{}?include_penalty=true",
+            reminder_id
+        ))
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
@@ -225,12 +242,20 @@ async fn test_calculate_late_payment_penalty() {
 #[serial]
 async fn test_mark_reminder_as_sent() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let reminder_id = Uuid::new_v4();
 
     let req = test::TestRequest::put()
-        .uri(&format!("/api/v1/payment-reminders/{}/mark-sent", reminder_id))
+        .uri(&format!(
+            "/api/v1/payment-reminders/{}/mark-sent",
+            reminder_id
+        ))
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .set_json(&json!({
@@ -247,12 +272,20 @@ async fn test_mark_reminder_as_sent() {
 #[serial]
 async fn test_add_tracking_number_for_registered_letter() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let reminder_id = Uuid::new_v4();
 
     let req = test::TestRequest::put()
-        .uri(&format!("/api/v1/payment-reminders/{}/tracking-number", reminder_id))
+        .uri(&format!(
+            "/api/v1/payment-reminders/{}/tracking-number",
+            reminder_id
+        ))
         .insert_header(header::ContentType::json())
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .set_json(&json!({
@@ -270,7 +303,12 @@ async fn test_add_tracking_number_for_registered_letter() {
 #[serial]
 async fn test_bulk_create_reminders_for_overdue_expenses() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let building_id = Uuid::new_v4();
 
@@ -295,7 +333,12 @@ async fn test_bulk_create_reminders_for_overdue_expenses() {
 #[serial]
 async fn test_get_recovery_statistics() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/payment-reminders/stats")
@@ -316,12 +359,20 @@ async fn test_get_recovery_statistics() {
 #[serial]
 async fn test_list_active_reminders_by_owner() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let owner_id = Uuid::new_v4();
 
     let req = test::TestRequest::get()
-        .uri(&format!("/api/v1/owners/{}/payment-reminders/active", owner_id))
+        .uri(&format!(
+            "/api/v1/owners/{}/payment-reminders/active",
+            owner_id
+        ))
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
@@ -335,7 +386,12 @@ async fn test_list_active_reminders_by_owner() {
 #[serial]
 async fn test_cancel_reminder_if_paid() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let reminder_id = Uuid::new_v4();
 
@@ -358,7 +414,12 @@ async fn test_cancel_reminder_if_paid() {
 #[serial]
 async fn test_find_overdue_expenses_without_reminders() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/payment-reminders/find-overdue-without-reminders")
@@ -375,12 +436,20 @@ async fn test_find_overdue_expenses_without_reminders() {
 #[serial]
 async fn test_mark_reminder_as_opened() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let reminder_id = Uuid::new_v4();
 
     let req = test::TestRequest::put()
-        .uri(&format!("/api/v1/payment-reminders/{}/mark-opened", reminder_id))
+        .uri(&format!(
+            "/api/v1/payment-reminders/{}/mark-opened",
+            reminder_id
+        ))
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 

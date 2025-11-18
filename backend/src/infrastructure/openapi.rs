@@ -106,7 +106,7 @@ impl Modify for SecurityAddon {
                             1. Click 'Authorize' button above\n\
                             2. Enter token (with or without 'Bearer ' prefix)\n\
                             3. Click 'Authorize' in dialog\n\
-                            4. Try endpoints"
+                            4. Try endpoints",
                         ))
                         .build(),
                 ),
@@ -129,8 +129,7 @@ pub fn configure_swagger_ui() -> SwaggerUi {
                 .deep_linking(true)
                 .display_operation_id(true)
                 .default_models_expand_depth(1)
-                .default_model_expand_depth(1)
-                // .doc_expansion(utoipa_swagger_ui::DocExpansion::List) // Removed: DocExpansion no longer exists in utoipa_swagger_ui
+                .default_model_expand_depth(1), // .doc_expansion(utoipa_swagger_ui::DocExpansion::List) // Removed: DocExpansion no longer exists in utoipa_swagger_ui
         )
 }
 
@@ -164,7 +163,7 @@ mod tests {
 
     #[test]
     fn test_swagger_ui_configuration() {
-        let swagger = configure_swagger_ui();
+        let _swagger = configure_swagger_ui();
         // SwaggerUi is configured, this test ensures it compiles
         assert!(true);
     }

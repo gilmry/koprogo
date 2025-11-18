@@ -35,12 +35,8 @@ impl AnnualReportExporter {
         reserve_fund: f64,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
-        let (doc, page1, layer1) = PdfDocument::new(
-            "Rapport Financier Annuel",
-            Mm(210.0),
-            Mm(297.0),
-            "Layer 1",
-        );
+        let (doc, page1, layer1) =
+            PdfDocument::new("Rapport Financier Annuel", Mm(210.0), Mm(297.0), "Layer 1");
         let current_layer = doc.get_page(page1).get_layer(layer1);
 
         // Load fonts
@@ -113,7 +109,10 @@ impl AnnualReportExporter {
         let total_expenses: f64 = expenses.iter().map(|e| e.amount).sum();
 
         current_layer.use_text(
-            format!("Total des produits (charges perçues): {:.2} €", total_income),
+            format!(
+                "Total des produits (charges perçues): {:.2} €",
+                total_income
+            ),
             11.0,
             Mm(20.0),
             Mm(y),
@@ -131,7 +130,11 @@ impl AnnualReportExporter {
         y -= 6.0;
 
         let balance = total_income - total_expenses;
-        let balance_label = if balance >= 0.0 { "Excédent" } else { "Déficit" };
+        let balance_label = if balance >= 0.0 {
+            "Excédent"
+        } else {
+            "Déficit"
+        };
         current_layer.use_text(
             format!("{}: {:.2} €", balance_label, balance.abs()),
             12.0,
@@ -190,20 +193,8 @@ impl AnnualReportExporter {
             };
 
             current_layer.use_text(category.clone(), 9.0, Mm(20.0), Mm(y), &font);
-            current_layer.use_text(
-                format!("{:.2} €", amount),
-                9.0,
-                Mm(120.0),
-                Mm(y),
-                &font,
-            );
-            current_layer.use_text(
-                format!("{:.1}%", percentage),
-                9.0,
-                Mm(160.0),
-                Mm(y),
-                &font,
-            );
+            current_layer.use_text(format!("{:.2} €", amount), 9.0, Mm(120.0), Mm(y), &font);
+            current_layer.use_text(format!("{:.1}%", percentage), 9.0, Mm(160.0), Mm(y), &font);
             y -= 5.0;
         }
         y -= 10.0;
@@ -300,13 +291,7 @@ impl AnnualReportExporter {
             y = 40.0;
         }
 
-        current_layer.use_text(
-            "SIGNATURES".to_string(),
-            12.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.use_text("SIGNATURES".to_string(), 12.0, Mm(20.0), Mm(y), &font_bold);
         y -= 10.0;
 
         current_layer.use_text(
@@ -360,6 +345,7 @@ impl AnnualReportExporter {
 mod tests {
     use super::*;
     use crate::domain::entities::ApprovalStatus;
+    use uuid::Uuid;
 
     #[test]
     fn test_export_annual_report_pdf() {
@@ -392,14 +378,24 @@ mod tests {
                 organization_id: building.organization_id,
                 description: "Entretien ascenseur".to_string(),
                 amount: 1500.0,
-                date: Utc::now(),
+                amount_excl_vat: Some(1239.67),
+                vat_rate: Some(21.0),
+                vat_amount: Some(260.33),
+                amount_incl_vat: Some(1500.0),
+                expense_date: Utc::now(),
+                invoice_date: None,
+                due_date: None,
+                paid_date: Some(Utc::now()),
                 category: ExpenseCategory::Maintenance,
-                paid_by: None,
-                payment_date: None,
-                is_paid: true,
-                invoice_number: Some("INV-001".to_string()),
-                invoice_file_path: None,
                 approval_status: ApprovalStatus::Approved,
+                submitted_at: None,
+                approved_by: None,
+                approved_at: None,
+                rejection_reason: None,
+                payment_status: crate::domain::entities::PaymentStatus::Paid,
+                supplier: None,
+                invoice_number: Some("INV-001".to_string()),
+                account_code: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
             },
@@ -409,14 +405,24 @@ mod tests {
                 organization_id: building.organization_id,
                 description: "Électricité parties communes".to_string(),
                 amount: 800.0,
-                date: Utc::now(),
+                amount_excl_vat: Some(661.16),
+                vat_rate: Some(21.0),
+                vat_amount: Some(138.84),
+                amount_incl_vat: Some(800.0),
+                expense_date: Utc::now(),
+                invoice_date: None,
+                due_date: None,
+                paid_date: Some(Utc::now()),
                 category: ExpenseCategory::Utilities,
-                paid_by: None,
-                payment_date: None,
-                is_paid: true,
-                invoice_number: Some("INV-002".to_string()),
-                invoice_file_path: None,
                 approval_status: ApprovalStatus::Approved,
+                submitted_at: None,
+                approved_by: None,
+                approved_at: None,
+                rejection_reason: None,
+                payment_status: crate::domain::entities::PaymentStatus::Paid,
+                supplier: None,
+                invoice_number: Some("INV-002".to_string()),
+                account_code: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
             },

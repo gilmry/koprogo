@@ -12,7 +12,7 @@ export function trapFocus(container: HTMLElement): () => void {
   const lastFocusable = focusableElements[focusableElements.length - 1];
 
   const handleTab = (e: KeyboardEvent) => {
-    if (e.key !== 'Tab') return;
+    if (e.key !== "Tab") return;
 
     if (e.shiftKey) {
       // Shift + Tab
@@ -29,14 +29,14 @@ export function trapFocus(container: HTMLElement): () => void {
     }
   };
 
-  container.addEventListener('keydown', handleTab);
+  container.addEventListener("keydown", handleTab);
 
   // Focus first element
   firstFocusable?.focus();
 
   // Return cleanup function
   return () => {
-    container.removeEventListener('keydown', handleTab);
+    container.removeEventListener("keydown", handleTab);
   };
 }
 
@@ -45,13 +45,13 @@ export function trapFocus(container: HTMLElement): () => void {
  */
 export function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const selector = [
-    'a[href]',
-    'button:not([disabled])',
-    'textarea:not([disabled])',
-    'input:not([disabled])',
-    'select:not([disabled])',
+    "a[href]",
+    "button:not([disabled])",
+    "textarea:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
     '[tabindex]:not([tabindex="-1"])',
-  ].join(',');
+  ].join(",");
 
   return Array.from(container.querySelectorAll<HTMLElement>(selector));
 }
@@ -61,30 +61,33 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
  * @param message - The message to announce
  * @param priority - 'polite' (default) or 'assertive'
  */
-export function announce(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
+export function announce(
+  message: string,
+  priority: "polite" | "assertive" = "polite",
+): void {
   const announcer = getAnnouncer(priority);
   announcer.textContent = message;
 
   // Clear after a short delay to allow re-announcing the same message
   setTimeout(() => {
-    announcer.textContent = '';
+    announcer.textContent = "";
   }, 1000);
 }
 
 /**
  * Get or create a screen reader announcer element
  */
-function getAnnouncer(priority: 'polite' | 'assertive'): HTMLElement {
+function getAnnouncer(priority: "polite" | "assertive"): HTMLElement {
   const id = `sr-announcer-${priority}`;
   let announcer = document.getElementById(id);
 
   if (!announcer) {
-    announcer = document.createElement('div');
+    announcer = document.createElement("div");
     announcer.id = id;
-    announcer.setAttribute('role', 'status');
-    announcer.setAttribute('aria-live', priority);
-    announcer.setAttribute('aria-atomic', 'true');
-    announcer.className = 'sr-only';
+    announcer.setAttribute("role", "status");
+    announcer.setAttribute("aria-live", priority);
+    announcer.setAttribute("aria-atomic", "true");
+    announcer.className = "sr-only";
     document.body.appendChild(announcer);
   }
 
@@ -101,7 +104,7 @@ function getAnnouncer(priority: 'polite' | 'assertive'): HTMLElement {
 export function meetsContrastRatio(
   foreground: string,
   background: string,
-  isLargeText: boolean = false
+  isLargeText: boolean = false,
 ): boolean {
   const ratio = getContrastRatio(foreground, background);
   const minimumRatio = isLargeText ? 3 : 4.5;
@@ -136,8 +139,8 @@ function getLuminance(color: string): number {
  */
 function parseColor(color: string): [number, number, number] {
   // Handle hex colors
-  if (color.startsWith('#')) {
-    const hex = color.replace('#', '');
+  if (color.startsWith("#")) {
+    const hex = color.replace("#", "");
     if (hex.length === 3) {
       const r = parseInt(hex[0] + hex[0], 16);
       const g = parseInt(hex[1] + hex[1], 16);
@@ -172,29 +175,29 @@ export function handleListKeyboard(
   event: KeyboardEvent,
   items: any[],
   currentIndex: number,
-  onSelect?: (index: number) => void
+  onSelect?: (index: number) => void,
 ): number {
   let newIndex = currentIndex;
 
   switch (event.key) {
-    case 'ArrowDown':
+    case "ArrowDown":
       event.preventDefault();
       newIndex = Math.min(currentIndex + 1, items.length - 1);
       break;
-    case 'ArrowUp':
+    case "ArrowUp":
       event.preventDefault();
       newIndex = Math.max(currentIndex - 1, 0);
       break;
-    case 'Home':
+    case "Home":
       event.preventDefault();
       newIndex = 0;
       break;
-    case 'End':
+    case "End":
       event.preventDefault();
       newIndex = items.length - 1;
       break;
-    case 'Enter':
-    case ' ':
+    case "Enter":
+    case " ":
       event.preventDefault();
       if (onSelect) {
         onSelect(currentIndex);
@@ -209,7 +212,7 @@ export function handleListKeyboard(
  * Generate a unique ID for ARIA associations
  */
 let idCounter = 0;
-export function generateId(prefix: string = 'a11y'): string {
+export function generateId(prefix: string = "a11y"): string {
   return `${prefix}-${++idCounter}`;
 }
 

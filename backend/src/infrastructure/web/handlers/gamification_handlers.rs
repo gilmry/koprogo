@@ -1,4 +1,6 @@
-use crate::application::dto::{CreateAchievementDto, CreateChallengeDto, UpdateAchievementDto, UpdateChallengeDto};
+use crate::application::dto::{
+    CreateAchievementDto, CreateChallengeDto, UpdateAchievementDto, UpdateChallengeDto,
+};
 use crate::domain::entities::{AchievementCategory, ChallengeStatus};
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
@@ -36,7 +38,11 @@ pub async fn create_achievement(
     _auth: AuthenticatedUser, // TODO: Check admin role
     request: web::Json<CreateAchievementDto>,
 ) -> impl Responder {
-    match data.achievement_use_cases.create_achievement(request.into_inner()).await {
+    match data
+        .achievement_use_cases
+        .create_achievement(request.into_inner())
+        .await
+    {
         Ok(achievement) => HttpResponse::Created().json(achievement),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
@@ -55,7 +61,11 @@ pub async fn get_achievement(
     _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.achievement_use_cases.get_achievement(id.into_inner()).await {
+    match data
+        .achievement_use_cases
+        .get_achievement(id.into_inner())
+        .await
+    {
         Ok(achievement) => HttpResponse::Ok().json(achievement),
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
     }
@@ -73,7 +83,11 @@ pub async fn list_achievements(
     _auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.achievement_use_cases.list_achievements(organization_id.into_inner()).await {
+    match data
+        .achievement_use_cases
+        .list_achievements(organization_id.into_inner())
+        .await
+    {
         Ok(achievements) => HttpResponse::Ok().json(achievements),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -94,12 +108,20 @@ pub async fn list_achievements_by_category(
     let (organization_id, category_str) = path.into_inner();
 
     // Parse category
-    let category: AchievementCategory = match serde_json::from_str(&format!("\"{}\"", category_str)) {
+    let category: AchievementCategory = match serde_json::from_str(&format!("\"{}\"", category_str))
+    {
         Ok(cat) => cat,
-        Err(_) => return HttpResponse::BadRequest().json(serde_json::json!({"error": "Invalid category"})),
+        Err(_) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": "Invalid category"}))
+        }
     };
 
-    match data.achievement_use_cases.list_achievements_by_category(organization_id, category).await {
+    match data
+        .achievement_use_cases
+        .list_achievements_by_category(organization_id, category)
+        .await
+    {
         Ok(achievements) => HttpResponse::Ok().json(achievements),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -117,7 +139,11 @@ pub async fn list_visible_achievements(
     auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.achievement_use_cases.list_visible_achievements(organization_id.into_inner(), auth.user_id).await {
+    match data
+        .achievement_use_cases
+        .list_visible_achievements(organization_id.into_inner(), auth.user_id)
+        .await
+    {
         Ok(achievements) => HttpResponse::Ok().json(achievements),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -138,9 +164,15 @@ pub async fn update_achievement(
     id: web::Path<Uuid>,
     request: web::Json<UpdateAchievementDto>,
 ) -> impl Responder {
-    match data.achievement_use_cases.update_achievement(id.into_inner(), request.into_inner()).await {
+    match data
+        .achievement_use_cases
+        .update_achievement(id.into_inner(), request.into_inner())
+        .await
+    {
         Ok(achievement) => HttpResponse::Ok().json(achievement),
-        Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
+        Err(e) if e.contains("not found") => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+        }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
 }
@@ -158,7 +190,11 @@ pub async fn delete_achievement(
     _auth: AuthenticatedUser, // TODO: Check admin role
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.achievement_use_cases.delete_achievement(id.into_inner()).await {
+    match data
+        .achievement_use_cases
+        .delete_achievement(id.into_inner())
+        .await
+    {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
     }
@@ -193,9 +229,15 @@ pub async fn award_achievement(
     request: web::Json<AwardAchievementRequest>,
 ) -> impl Responder {
     let req = request.into_inner();
-    match data.achievement_use_cases.award_achievement(auth.user_id, req.achievement_id, req.progress_data).await {
+    match data
+        .achievement_use_cases
+        .award_achievement(auth.user_id, req.achievement_id, req.progress_data)
+        .await
+    {
         Ok(user_achievement) => HttpResponse::Created().json(user_achievement),
-        Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
+        Err(e) if e.contains("not found") => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+        }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
 }
@@ -211,7 +253,11 @@ pub async fn get_user_achievements(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
-    match data.achievement_use_cases.get_user_achievements(auth.user_id).await {
+    match data
+        .achievement_use_cases
+        .get_user_achievements(auth.user_id)
+        .await
+    {
         Ok(achievements) => HttpResponse::Ok().json(achievements),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -232,11 +278,13 @@ pub async fn get_recent_achievements(
     auth: AuthenticatedUser,
     query: web::Query<serde_json::Value>,
 ) -> impl Responder {
-    let limit = query.get("limit")
-        .and_then(|v| v.as_i64())
-        .unwrap_or(5);
+    let limit = query.get("limit").and_then(|v| v.as_i64()).unwrap_or(5);
 
-    match data.achievement_use_cases.get_recent_achievements(auth.user_id, limit).await {
+    match data
+        .achievement_use_cases
+        .get_recent_achievements(auth.user_id, limit)
+        .await
+    {
         Ok(achievements) => HttpResponse::Ok().json(achievements),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -272,7 +320,11 @@ pub async fn create_challenge(
     _auth: AuthenticatedUser, // TODO: Check admin role
     request: web::Json<CreateChallengeDto>,
 ) -> impl Responder {
-    match data.challenge_use_cases.create_challenge(request.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .create_challenge(request.into_inner())
+        .await
+    {
         Ok(challenge) => HttpResponse::Created().json(challenge),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
@@ -291,7 +343,11 @@ pub async fn get_challenge(
     _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.get_challenge(id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .get_challenge(id.into_inner())
+        .await
+    {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
     }
@@ -309,7 +365,11 @@ pub async fn list_challenges(
     _auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.list_challenges(organization_id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .list_challenges(organization_id.into_inner())
+        .await
+    {
         Ok(challenges) => HttpResponse::Ok().json(challenges),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -332,10 +392,16 @@ pub async fn list_challenges_by_status(
     // Parse status
     let status: ChallengeStatus = match serde_json::from_str(&format!("\"{}\"", status_str)) {
         Ok(s) => s,
-        Err(_) => return HttpResponse::BadRequest().json(serde_json::json!({"error": "Invalid status"})),
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({"error": "Invalid status"}))
+        }
     };
 
-    match data.challenge_use_cases.list_challenges_by_status(organization_id, status).await {
+    match data
+        .challenge_use_cases
+        .list_challenges_by_status(organization_id, status)
+        .await
+    {
         Ok(challenges) => HttpResponse::Ok().json(challenges),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -353,7 +419,11 @@ pub async fn list_building_challenges(
     _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.list_building_challenges(building_id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .list_building_challenges(building_id.into_inner())
+        .await
+    {
         Ok(challenges) => HttpResponse::Ok().json(challenges),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -371,7 +441,11 @@ pub async fn list_active_challenges(
     _auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.list_active_challenges(organization_id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .list_active_challenges(organization_id.into_inner())
+        .await
+    {
         Ok(challenges) => HttpResponse::Ok().json(challenges),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -392,9 +466,15 @@ pub async fn update_challenge(
     id: web::Path<Uuid>,
     request: web::Json<UpdateChallengeDto>,
 ) -> impl Responder {
-    match data.challenge_use_cases.update_challenge(id.into_inner(), request.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .update_challenge(id.into_inner(), request.into_inner())
+        .await
+    {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
+        Err(e) if e.contains("not found") => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+        }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
 }
@@ -413,9 +493,15 @@ pub async fn activate_challenge(
     _auth: AuthenticatedUser, // TODO: Check admin role
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.activate_challenge(id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .activate_challenge(id.into_inner())
+        .await
+    {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
+        Err(e) if e.contains("not found") => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+        }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
 }
@@ -434,9 +520,15 @@ pub async fn complete_challenge(
     _auth: AuthenticatedUser, // TODO: Check admin role
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.complete_challenge(id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .complete_challenge(id.into_inner())
+        .await
+    {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
+        Err(e) if e.contains("not found") => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+        }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
 }
@@ -455,9 +547,15 @@ pub async fn cancel_challenge(
     _auth: AuthenticatedUser, // TODO: Check admin role
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.cancel_challenge(id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .cancel_challenge(id.into_inner())
+        .await
+    {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
-        Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
+        Err(e) if e.contains("not found") => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+        }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
 }
@@ -475,7 +573,11 @@ pub async fn delete_challenge(
     _auth: AuthenticatedUser, // TODO: Check admin role
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.delete_challenge(id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .delete_challenge(id.into_inner())
+        .await
+    {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
     }
@@ -498,7 +600,11 @@ pub async fn get_challenge_progress(
     auth: AuthenticatedUser,
     challenge_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.get_challenge_progress(auth.user_id, challenge_id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .get_challenge_progress(auth.user_id, challenge_id.into_inner())
+        .await
+    {
         Ok(progress) => HttpResponse::Ok().json(progress),
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
     }
@@ -516,7 +622,11 @@ pub async fn list_challenge_progress(
     _auth: AuthenticatedUser,
     challenge_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.challenge_use_cases.list_challenge_progress(challenge_id.into_inner()).await {
+    match data
+        .challenge_use_cases
+        .list_challenge_progress(challenge_id.into_inner())
+        .await
+    {
         Ok(progress_list) => HttpResponse::Ok().json(progress_list),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -533,7 +643,11 @@ pub async fn list_user_active_challenges(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
-    match data.challenge_use_cases.list_user_active_progress(auth.user_id).await {
+    match data
+        .challenge_use_cases
+        .list_user_active_progress(auth.user_id)
+        .await
+    {
         Ok(progress_list) => HttpResponse::Ok().json(progress_list),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -562,9 +676,15 @@ pub async fn increment_progress(
     challenge_id: web::Path<Uuid>,
     request: web::Json<IncrementProgressRequest>,
 ) -> impl Responder {
-    match data.challenge_use_cases.increment_progress(auth.user_id, challenge_id.into_inner(), request.increment).await {
+    match data
+        .challenge_use_cases
+        .increment_progress(auth.user_id, challenge_id.into_inner(), request.increment)
+        .await
+    {
         Ok(progress) => HttpResponse::Ok().json(progress),
-        Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
+        Err(e) if e.contains("not found") => {
+            HttpResponse::NotFound().json(serde_json::json!({"error": e}))
+        }
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
     }
 }
@@ -585,7 +705,11 @@ pub async fn get_gamification_user_stats(
     auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match data.gamification_stats_use_cases.get_user_stats(auth.user_id, organization_id.into_inner()).await {
+    match data
+        .gamification_stats_use_cases
+        .get_user_stats(auth.user_id, organization_id.into_inner())
+        .await
+    {
         Ok(stats) => HttpResponse::Ok().json(stats),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
@@ -608,15 +732,18 @@ pub async fn get_gamification_leaderboard(
     organization_id: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
 ) -> impl Responder {
-    let building_id = query.get("building_id")
+    let building_id = query
+        .get("building_id")
         .and_then(|v| v.as_str())
         .and_then(|s| Uuid::parse_str(s).ok());
 
-    let limit = query.get("limit")
-        .and_then(|v| v.as_i64())
-        .unwrap_or(10);
+    let limit = query.get("limit").and_then(|v| v.as_i64()).unwrap_or(10);
 
-    match data.gamification_stats_use_cases.get_leaderboard(organization_id.into_inner(), building_id, limit).await {
+    match data
+        .gamification_stats_use_cases
+        .get_leaderboard(organization_id.into_inner(), building_id, limit)
+        .await
+    {
         Ok(leaderboard) => HttpResponse::Ok().json(leaderboard),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }

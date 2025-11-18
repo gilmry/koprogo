@@ -217,10 +217,7 @@ mod tests {
         let pool = PgPool::connect(&connection_string).await.unwrap();
 
         // Run migrations
-        sqlx::migrate!("./migrations")
-            .run(&pool)
-            .await
-            .unwrap();
+        sqlx::migrate!("./migrations").run(&pool).await.unwrap();
 
         pool
     }
@@ -280,8 +277,7 @@ mod tests {
         .await
         .unwrap();
 
-        let secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string())
-            .unwrap();
+        let secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string()).unwrap();
 
         repo.create(&secret).await.unwrap();
 
@@ -309,8 +305,7 @@ mod tests {
         .await
         .unwrap();
 
-        let mut secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string())
-            .unwrap();
+        let mut secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string()).unwrap();
 
         let created = repo.create(&secret).await.unwrap();
 
@@ -341,8 +336,7 @@ mod tests {
         .await
         .unwrap();
 
-        let secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string())
-            .unwrap();
+        let secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string()).unwrap();
 
         repo.create(&secret).await.unwrap();
         repo.delete(user_id).await.unwrap();
@@ -370,8 +364,7 @@ mod tests {
         .await
         .unwrap();
 
-        let mut secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string())
-            .unwrap();
+        let mut secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string()).unwrap();
 
         secret.enable().unwrap();
         let created = repo.create(&secret).await.unwrap();
@@ -411,10 +404,7 @@ mod tests {
 
         let mut secret = TwoFactorSecret::new(user_id, "encrypted_secret".to_string())
             .unwrap()
-            .with_backup_codes(vec![
-                "code1".to_string(),
-                "code2".to_string(),
-            ])
+            .with_backup_codes(vec!["code1".to_string(), "code2".to_string()])
             .unwrap();
 
         secret.enable().unwrap();

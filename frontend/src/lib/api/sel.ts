@@ -81,7 +81,10 @@ export const selApi = {
     return api.get(`/owners/${ownerId}/exchanges`);
   },
 
-  async listByType(buildingId: string, exchangeType: ExchangeType): Promise<LocalExchange[]> {
+  async listByType(
+    buildingId: string,
+    exchangeType: ExchangeType,
+  ): Promise<LocalExchange[]> {
     return api.get(`/buildings/${buildingId}/exchanges/type/${exchangeType}`);
   },
 
@@ -113,11 +116,17 @@ export const selApi = {
     return api.delete(`/exchanges/${id}`);
   },
 
-  async getCreditBalance(ownerId: string, buildingId: string): Promise<OwnerCreditBalance> {
+  async getCreditBalance(
+    ownerId: string,
+    buildingId: string,
+  ): Promise<OwnerCreditBalance> {
     return api.get(`/owners/${ownerId}/buildings/${buildingId}/credit-balance`);
   },
 
-  async getLeaderboard(buildingId: string, limit = 10): Promise<OwnerCreditBalance[]> {
+  async getLeaderboard(
+    buildingId: string,
+    limit = 10,
+  ): Promise<OwnerCreditBalance[]> {
     return api.get(`/buildings/${buildingId}/leaderboard?limit=${limit}`);
   },
 

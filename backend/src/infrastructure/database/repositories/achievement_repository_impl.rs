@@ -346,10 +346,7 @@ impl PostgresUserAchievementRepository {
 
 #[async_trait]
 impl UserAchievementRepository for PostgresUserAchievementRepository {
-    async fn create(
-        &self,
-        user_achievement: &UserAchievement,
-    ) -> Result<UserAchievement, String> {
+    async fn create(&self, user_achievement: &UserAchievement) -> Result<UserAchievement, String> {
         sqlx::query(
             r#"
             INSERT INTO user_achievements (
@@ -384,9 +381,7 @@ impl UserAchievementRepository for PostgresUserAchievementRepository {
         .await
         .map_err(|e| format!("Failed to find user achievement by id: {}", e))?;
 
-        row.as_ref()
-            .map(Self::row_to_user_achievement)
-            .transpose()
+        row.as_ref().map(Self::row_to_user_achievement).transpose()
     }
 
     async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<UserAchievement>, String> {
@@ -424,15 +419,10 @@ impl UserAchievementRepository for PostgresUserAchievementRepository {
         .await
         .map_err(|e| format!("Failed to find user achievement: {}", e))?;
 
-        row.as_ref()
-            .map(Self::row_to_user_achievement)
-            .transpose()
+        row.as_ref().map(Self::row_to_user_achievement).transpose()
     }
 
-    async fn update(
-        &self,
-        user_achievement: &UserAchievement,
-    ) -> Result<UserAchievement, String> {
+    async fn update(&self, user_achievement: &UserAchievement) -> Result<UserAchievement, String> {
         let result = sqlx::query(
             r#"
             UPDATE user_achievements

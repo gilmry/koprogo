@@ -1,6 +1,6 @@
 use crate::application::dto::{
     ConfigureLinkyDeviceDto, ConsumptionStatsDto, CreateIoTReadingDto, DailyAggregateDto,
-    IoTReadingResponseDto, LinkySyncResponseDto, LinkyDeviceResponseDto, MonthlyAggregateDto,
+    IoTReadingResponseDto, LinkyDeviceResponseDto, LinkySyncResponseDto, MonthlyAggregateDto,
     QueryIoTReadingsDto, SyncLinkyDataDto,
 };
 use crate::application::ports::{IoTRepository, LinkyApiClient};
@@ -132,7 +132,10 @@ impl IoTUseCases {
             )
             .await?;
 
-        Ok(readings.into_iter().map(IoTReadingResponseDto::from).collect())
+        Ok(readings
+            .into_iter()
+            .map(IoTReadingResponseDto::from)
+            .collect())
     }
 
     /// Get consumption statistics for a building and metric type
@@ -210,10 +213,18 @@ impl IoTUseCases {
 
         let anomalies = self
             .iot_repo
-            .detect_anomalies(building_id, metric_type, threshold_percentage, lookback_days)
+            .detect_anomalies(
+                building_id,
+                metric_type,
+                threshold_percentage,
+                lookback_days,
+            )
             .await?;
 
-        Ok(anomalies.into_iter().map(IoTReadingResponseDto::from).collect())
+        Ok(anomalies
+            .into_iter()
+            .map(IoTReadingResponseDto::from)
+            .collect())
     }
 
     /// Validate that a metric type is compatible with a device type
@@ -223,9 +234,9 @@ impl IoTUseCases {
     ) -> Result<(), String> {
         match device_type {
             DeviceType::ElectricityMeter => match metric_type {
-                MetricType::ElectricityConsumption
-                | MetricType::Power
-                | MetricType::Voltage => Ok(()),
+                MetricType::ElectricityConsumption | MetricType::Power | MetricType::Voltage => {
+                    Ok(())
+                }
                 _ => Err(format!(
                     "Metric type {:?} is not compatible with Linky device",
                     metric_type
@@ -327,7 +338,8 @@ impl LinkyUseCases {
 
         // Add refresh token if present
         if let Some(refresh_token) = token_response.refresh_token {
-            let expires_at = chrono::Utc::now() + chrono::Duration::seconds(token_response.expires_in);
+            let expires_at =
+                chrono::Utc::now() + chrono::Duration::seconds(token_response.expires_in);
             device = device.with_refresh_token(refresh_token, expires_at);
         }
 
@@ -374,7 +386,8 @@ impl LinkyUseCases {
         // Refresh token if expired
         if device.is_token_expired() {
             // Unwrap refresh token (must exist if token is expired)
-            let refresh_token = device.refresh_token_encrypted
+            let refresh_token = device
+                .refresh_token_encrypted
                 .as_ref()
                 .ok_or("Refresh token not available")?;
 
@@ -385,7 +398,8 @@ impl LinkyUseCases {
                 .map_err(|e| format!("Failed to refresh access token: {:?}", e))?;
 
             // Convert expires_in to DateTime
-            let expires_at = chrono::Utc::now() + chrono::Duration::seconds(token_response.expires_in);
+            let expires_at =
+                chrono::Utc::now() + chrono::Duration::seconds(token_response.expires_in);
 
             device.update_tokens(
                 token_response.access_token,
@@ -543,7 +557,10 @@ impl LinkyUseCases {
                 AuditEventType::LinkySyncToggled,
                 Some(user_id),
                 Some(organization_id),
-                Some(format!("Linky sync {}", if enabled { "enabled" } else { "disabled" })),
+                Some(format!(
+                    "Linky sync {}",
+                    if enabled { "enabled" } else { "disabled" }
+                )),
                 None,
             )
             .await;
@@ -555,7 +572,10 @@ impl LinkyUseCases {
     /// Find devices that need syncing (enabled, not synced recently)
     pub async fn find_devices_needing_sync(&self) -> Result<Vec<LinkyDeviceResponseDto>, String> {
         let devices = self.iot_repo.find_devices_needing_sync().await?;
-        Ok(devices.into_iter().map(LinkyDeviceResponseDto::from).collect())
+        Ok(devices
+            .into_iter()
+            .map(LinkyDeviceResponseDto::from)
+            .collect())
     }
 
     /// Find devices with expired tokens
@@ -563,7 +583,10 @@ impl LinkyUseCases {
         &self,
     ) -> Result<Vec<LinkyDeviceResponseDto>, String> {
         let devices = self.iot_repo.find_devices_with_expired_tokens().await?;
-        Ok(devices.into_iter().map(LinkyDeviceResponseDto::from).collect())
+        Ok(devices
+            .into_iter()
+            .map(LinkyDeviceResponseDto::from)
+            .collect())
     }
 }
 

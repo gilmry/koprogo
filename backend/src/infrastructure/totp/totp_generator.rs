@@ -342,7 +342,9 @@ mod tests {
     fn test_generate_secret() {
         let secret = TotpGenerator::generate_secret();
         assert_eq!(secret.len(), 52); // Base32 encoding of 32 bytes
-        assert!(secret.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()));
+        assert!(secret
+            .chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()));
     }
 
     #[test]
@@ -402,7 +404,7 @@ mod tests {
     #[test]
     fn test_encrypt_decrypt_secret() {
         let secret = TotpGenerator::generate_secret();
-        let key: [u8; 32] = rand::thread_rng().gen();
+        let key: [u8; 32] = rand::rng().random();
 
         let encrypted = TotpGenerator::encrypt_secret(&secret, &key).unwrap();
         assert_ne!(encrypted, secret); // Encrypted should differ
@@ -414,8 +416,8 @@ mod tests {
     #[test]
     fn test_decrypt_with_wrong_key() {
         let secret = TotpGenerator::generate_secret();
-        let key1: [u8; 32] = rand::thread_rng().gen();
-        let key2: [u8; 32] = rand::thread_rng().gen();
+        let key1: [u8; 32] = rand::rng().random();
+        let key2: [u8; 32] = rand::rng().random();
 
         let encrypted = TotpGenerator::encrypt_secret(&secret, &key1).unwrap();
         let result = TotpGenerator::decrypt_secret(&encrypted, &key2);

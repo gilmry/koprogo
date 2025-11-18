@@ -9,9 +9,7 @@ use testcontainers::{runners::AsyncRunner, ContainerAsync, GenericImage};
 use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
-use koprogo::application::dto::{
-    QuoteComparisonResponseDto, QuoteResponseDto,
-};
+use koprogo::application::dto::{QuoteComparisonResponseDto, QuoteResponseDto};
 use koprogo::application::ports::*;
 use koprogo::application::use_cases::*;
 use koprogo::infrastructure::database::repositories::*;
@@ -56,8 +54,7 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
     let unit_owner_repo = Arc::new(PostgresUnitOwnerRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
-    let invoice_line_item_repo =
-        Arc::new(PostgresInvoiceLineItemRepository::new(pool.clone()));
+    let invoice_line_item_repo = Arc::new(PostgresInvoiceLineItemRepository::new(pool.clone()));
     let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
@@ -84,8 +81,7 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
     let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
     let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
     let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
-    let challenge_progress_repo =
-        Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
+    let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
 
     // Initialize email service and storage provider
     let email_service = Arc::new(MockEmailService::new());
@@ -133,8 +129,11 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
         notification_repo.clone(),
         notification_preference_repo.clone(),
     );
-    let payment_use_cases =
-        PaymentUseCases::new(payment_repo.clone(), expense_repo.clone(), owner_repo.clone());
+    let payment_use_cases = PaymentUseCases::new(
+        payment_repo.clone(),
+        expense_repo.clone(),
+        owner_repo.clone(),
+    );
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo.clone());
     let quote_use_cases = QuoteUseCases::new(quote_repo.clone(), building_repo.clone());
     let convocation_use_cases = ConvocationUseCases::new(
@@ -171,14 +170,10 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
         building_repo.clone(),
         auth_repo.clone(),
     );
-    let achievement_use_cases = AchievementUseCases::new(
-        achievement_repo.clone(),
-        user_achievement_repo.clone(),
-    );
-    let challenge_use_cases = ChallengeUseCases::new(
-        challenge_repo.clone(),
-        challenge_progress_repo.clone(),
-    );
+    let achievement_use_cases =
+        AchievementUseCases::new(achievement_repo.clone(), user_achievement_repo.clone());
+    let challenge_use_cases =
+        ChallengeUseCases::new(challenge_repo.clone(), challenge_progress_repo.clone());
     let gamification_stats_use_cases = GamificationStatsUseCases::new(
         user_achievement_repo.clone(),
         achievement_repo.clone(),
@@ -241,10 +236,7 @@ async fn create_test_user(app_state: &web::Data<AppState>) -> (Uuid, String) {
     (register_result.id, login_result.token)
 }
 
-async fn create_test_building(
-    app_state: &web::Data<AppState>,
-    organization_id: Uuid,
-) -> Uuid {
+async fn create_test_building(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
     let building_name = format!("Test Building {}", Uuid::new_v4());
     let building = app_state
         .building_use_cases
@@ -264,9 +256,7 @@ async fn create_test_building(
     building.id
 }
 
-async fn create_test_contractor(
-    app_state: &web::Data<AppState>,
-) -> Uuid {
+async fn create_test_contractor(app_state: &web::Data<AppState>) -> Uuid {
     let email = format!("contractor_{}@example.com", Uuid::new_v4());
     let contractor = app_state
         .auth_use_cases
@@ -395,8 +385,8 @@ async fn test_create_quote_belgian_vat_rates() {
     .await;
 
     let vat_rates = vec![
-        ("0.06", "5300.00"),  // 6% reduced rate (renovations)
-        ("0.21", "6050.00"),  // 21% standard rate (new construction)
+        ("0.06", "5300.00"), // 6% reduced rate (renovations)
+        ("0.21", "6050.00"), // 21% standard rate (new construction)
     ];
 
     for (vat_rate, expected_incl_vat) in vat_rates {
@@ -705,7 +695,10 @@ async fn test_list_quotes_by_status() {
 
     // List by status (Requested)
     let list_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/buildings/{}/quotes/status/Requested", building_id))
+        .uri(&format!(
+            "/api/v1/buildings/{}/quotes/status/Requested",
+            building_id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -713,7 +706,10 @@ async fn test_list_quotes_by_status() {
     assert_eq!(list_resp.status(), 200);
 
     let quotes: Vec<QuoteResponseDto> = test::read_body_json(list_resp).await;
-    assert!(quotes.len() >= 1, "Expected at least 1 quote with Requested status");
+    assert!(
+        quotes.len() >= 1,
+        "Expected at least 1 quote with Requested status"
+    );
 }
 
 #[actix_web::test]
@@ -966,7 +962,10 @@ async fn test_accept_quote() {
     let accepted_quote: QuoteResponseDto = test::read_body_json(accept_resp).await;
     assert_eq!(accepted_quote.status, "Accepted");
     assert!(accepted_quote.decision_at.is_some());
-    assert_eq!(accepted_quote.decision_notes, Some("Best price and warranty combination".to_string()));
+    assert_eq!(
+        accepted_quote.decision_notes,
+        Some("Best price and warranty combination".to_string())
+    );
 }
 
 #[actix_web::test]
@@ -1037,7 +1036,10 @@ async fn test_reject_quote() {
     let rejected_quote: QuoteResponseDto = test::read_body_json(reject_resp).await;
     assert_eq!(rejected_quote.status, "Rejected");
     assert!(rejected_quote.decision_at.is_some());
-    assert_eq!(rejected_quote.decision_notes, Some("Price too high compared to other quotes".to_string()));
+    assert_eq!(
+        rejected_quote.decision_notes,
+        Some("Price too high compared to other quotes".to_string())
+    );
 }
 
 #[actix_web::test]
@@ -1234,7 +1236,10 @@ async fn test_compare_quotes_minimum_three() {
     assert_eq!(comparison.comparison_items.len(), 3);
     assert_eq!(comparison.min_price, "4500.00");
     assert_eq!(comparison.max_price, "5500.00");
-    assert!(comparison.recommended_quote_id.is_some(), "Expected recommended quote");
+    assert!(
+        comparison.recommended_quote_id.is_some(),
+        "Expected recommended quote"
+    );
 
     // Verify scoring order (rank 1 = best score)
     assert_eq!(comparison.comparison_items[0].rank, 1);
@@ -1248,8 +1253,14 @@ async fn test_compare_quotes_minimum_three() {
         assert!(score.total_score > 0.0, "Expected positive total score");
         assert!(score.price_score > 0.0, "Expected positive price score");
         assert!(score.delay_score > 0.0, "Expected positive delay score");
-        assert!(score.warranty_score > 0.0, "Expected positive warranty score");
-        assert!(score.reputation_score > 0.0, "Expected positive reputation score");
+        assert!(
+            score.warranty_score > 0.0,
+            "Expected positive warranty score"
+        );
+        assert!(
+            score.reputation_score > 0.0,
+            "Expected positive reputation score"
+        );
     }
 }
 
@@ -1270,9 +1281,9 @@ async fn test_compare_quotes_automatic_scoring() {
 
     // Create 3 quotes with clear winner: lowest price, shortest duration, longest warranty, highest rating
     let quote_configs = vec![
-        ("4000.00", 5, 10, 100),   // WINNER: Best on all dimensions
-        ("5000.00", 14, 5, 70),    // Average
-        ("6000.00", 21, 2, 50),    // Worst
+        ("4000.00", 5, 10, 100), // WINNER: Best on all dimensions
+        ("5000.00", 14, 5, 70),  // Average
+        ("6000.00", 21, 2, 50),  // Worst
     ];
 
     let mut quote_ids = Vec::new();
@@ -1335,14 +1346,23 @@ async fn test_compare_quotes_automatic_scoring() {
 
     // The first quote (4000.00, 5 days, 10 years warranty, 100 rating) should be rank 1 (best)
     assert_eq!(comparison.comparison_items[0].rank, 1);
-    assert_eq!(comparison.comparison_items[0].quote.amount_excl_vat, "4000.00");
-    assert_eq!(comparison.recommended_quote_id, Some(quote_ids[0].to_string()));
+    assert_eq!(
+        comparison.comparison_items[0].quote.amount_excl_vat,
+        "4000.00"
+    );
+    assert_eq!(
+        comparison.recommended_quote_id,
+        Some(quote_ids[0].to_string())
+    );
 
     // Verify scoring algorithm weights: Price 40%, Delay 30%, Warranty 20%, Reputation 10%
     // The best quote should have the highest total score
     let best_score = comparison.comparison_items[0].score.as_ref().unwrap();
     let worst_score = comparison.comparison_items[2].score.as_ref().unwrap();
-    assert!(best_score.total_score > worst_score.total_score, "Best quote should have higher total score");
+    assert!(
+        best_score.total_score > worst_score.total_score,
+        "Best quote should have higher total score"
+    );
 }
 
 // ==================== Complete Lifecycle Test ====================
@@ -1439,7 +1459,12 @@ async fn test_complete_quote_lifecycle() {
     assert_eq!(accepted_quote.status, "Accepted");
     assert!(accepted_quote.decision_at.is_some());
     assert!(accepted_quote.decision_by.is_some());
-    assert_eq!(accepted_quote.decision_notes, Some("Best price and warranty combination. Contractor has excellent reputation.".to_string()));
+    assert_eq!(
+        accepted_quote.decision_notes,
+        Some(
+            "Best price and warranty combination. Contractor has excellent reputation.".to_string()
+        )
+    );
 
     // 6. Verify final quote state
     let get_req = test::TestRequest::get()
@@ -1554,7 +1579,10 @@ async fn test_count_quotes_by_status() {
 
     // Count quotes by status (Requested)
     let count_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/buildings/{}/quotes/status/Requested/count", building_id))
+        .uri(&format!(
+            "/api/v1/buildings/{}/quotes/status/Requested/count",
+            building_id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 

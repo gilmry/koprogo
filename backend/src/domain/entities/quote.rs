@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
-use rust_decimal::Decimal;
 use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -22,8 +22,8 @@ pub struct Quote {
     pub estimated_duration_days: i32,
 
     // Scoring factors (Belgian best practices)
-    pub warranty_years: i32,              // 2 years (apparent defects), 10 years (structural)
-    pub contractor_rating: Option<i32>,   // 0-100 based on history
+    pub warranty_years: i32, // 2 years (apparent defects), 10 years (structural)
+    pub contractor_rating: Option<i32>, // 0-100 based on history
 
     // Status & workflow
     pub status: QuoteStatus,
@@ -31,7 +31,7 @@ pub struct Quote {
     pub submitted_at: Option<DateTime<Utc>>,
     pub reviewed_at: Option<DateTime<Utc>>,
     pub decision_at: Option<DateTime<Utc>>,
-    pub decision_by: Option<Uuid>,        // User who made decision
+    pub decision_by: Option<Uuid>, // User who made decision
     pub decision_notes: Option<String>,
 
     // Audit trail
@@ -41,13 +41,13 @@ pub struct Quote {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum QuoteStatus {
-    Requested,      // Quote requested from contractor
-    Received,       // Contractor submitted quote
-    UnderReview,    // Syndic reviewing/comparing quotes
-    Accepted,       // Quote accepted (winner)
-    Rejected,       // Quote rejected (loser or unqualified)
-    Expired,        // Validity date passed
-    Withdrawn,      // Contractor withdrew quote
+    Requested,   // Quote requested from contractor
+    Received,    // Contractor submitted quote
+    UnderReview, // Syndic reviewing/comparing quotes
+    Accepted,    // Quote accepted (winner)
+    Rejected,    // Quote rejected (loser or unqualified)
+    Expired,     // Validity date passed
+    Withdrawn,   // Contractor withdrew quote
 }
 
 impl QuoteStatus {
@@ -82,11 +82,11 @@ impl QuoteStatus {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct QuoteScore {
     pub quote_id: Uuid,
-    pub total_score: f32,           // 0-100
-    pub price_score: f32,           // 0-100 (lower price = higher score)
-    pub delay_score: f32,           // 0-100 (shorter delay = higher score)
-    pub warranty_score: f32,        // 0-100 (longer warranty = higher score)
-    pub reputation_score: f32,      // 0-100 (contractor rating)
+    pub total_score: f32,      // 0-100
+    pub price_score: f32,      // 0-100 (lower price = higher score)
+    pub delay_score: f32,      // 0-100 (shorter delay = higher score)
+    pub warranty_score: f32,   // 0-100 (longer warranty = higher score)
+    pub reputation_score: f32, // 0-100 (contractor rating)
 }
 
 impl Quote {
@@ -150,7 +150,10 @@ impl Quote {
     /// Submit quote (contractor action)
     pub fn submit(&mut self) -> Result<(), String> {
         if self.status != QuoteStatus::Requested {
-            return Err(format!("Cannot submit quote with status: {:?}", self.status));
+            return Err(format!(
+                "Cannot submit quote with status: {:?}",
+                self.status
+            ));
         }
         self.status = QuoteStatus::Received;
         self.submitted_at = Some(Utc::now());
@@ -161,7 +164,10 @@ impl Quote {
     /// Mark quote under review (Syndic action)
     pub fn start_review(&mut self) -> Result<(), String> {
         if self.status != QuoteStatus::Received {
-            return Err(format!("Cannot review quote with status: {:?}", self.status));
+            return Err(format!(
+                "Cannot review quote with status: {:?}",
+                self.status
+            ));
         }
         self.status = QuoteStatus::UnderReview;
         self.reviewed_at = Some(Utc::now());
@@ -170,9 +176,16 @@ impl Quote {
     }
 
     /// Accept quote (winning bid)
-    pub fn accept(&mut self, decision_by: Uuid, decision_notes: Option<String>) -> Result<(), String> {
+    pub fn accept(
+        &mut self,
+        decision_by: Uuid,
+        decision_notes: Option<String>,
+    ) -> Result<(), String> {
         if self.status != QuoteStatus::UnderReview && self.status != QuoteStatus::Received {
-            return Err(format!("Cannot accept quote with status: {:?}", self.status));
+            return Err(format!(
+                "Cannot accept quote with status: {:?}",
+                self.status
+            ));
         }
         if self.is_expired() {
             return Err("Cannot accept expired quote".to_string());
@@ -186,7 +199,11 @@ impl Quote {
     }
 
     /// Reject quote (losing bid or unqualified)
-    pub fn reject(&mut self, decision_by: Uuid, decision_notes: Option<String>) -> Result<(), String> {
+    pub fn reject(
+        &mut self,
+        decision_by: Uuid,
+        decision_notes: Option<String>,
+    ) -> Result<(), String> {
         if self.status == QuoteStatus::Accepted {
             return Err("Cannot reject already accepted quote".to_string());
         }
@@ -268,7 +285,9 @@ impl Quote {
         } else {
             let price_range = max_price - min_price;
             let price_delta = max_price - self.amount_incl_vat;
-            (price_delta / price_range * Decimal::from(100)).to_f32().unwrap_or(0.0)
+            (price_delta / price_range * Decimal::from(100))
+                .to_f32()
+                .unwrap_or(0.0)
         };
 
         // Delay score: shorter duration = higher score (inverted normalization)
@@ -336,8 +355,8 @@ mod tests {
             dec!(5000.00),
             dec!(0.21), // 21% VAT (Belgian standard)
             validity_date,
-            14,          // 14 days estimated duration
-            10,          // 10 years warranty (structural work)
+            14, // 14 days estimated duration
+            10, // 10 years warranty (structural work)
         );
 
         assert!(quote.is_ok());
@@ -458,10 +477,7 @@ mod tests {
 
         let result = quote.reject(Uuid::new_v4(), None);
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "Cannot reject already accepted quote"
-        );
+        assert_eq!(result.unwrap_err(), "Cannot reject already accepted quote");
     }
 
     #[test]

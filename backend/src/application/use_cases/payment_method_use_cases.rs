@@ -46,7 +46,10 @@ impl PaymentMethodUseCases {
             payment_method.set_expiry(expires_at)?;
         }
 
-        let created = self.payment_method_repository.create(&payment_method).await?;
+        let created = self
+            .payment_method_repository
+            .create(&payment_method)
+            .await?;
 
         // If set as default, ensure it's the only default for this owner
         if created.is_default {
@@ -90,7 +93,10 @@ impl PaymentMethodUseCases {
         &self,
         owner_id: Uuid,
     ) -> Result<Vec<PaymentMethodResponse>, String> {
-        let methods = self.payment_method_repository.find_by_owner(owner_id).await?;
+        let methods = self
+            .payment_method_repository
+            .find_by_owner(owner_id)
+            .await?;
         Ok(methods
             .into_iter()
             .map(PaymentMethodResponse::from)
@@ -199,7 +205,10 @@ impl PaymentMethodUseCases {
             }
         }
 
-        let updated = self.payment_method_repository.update(&payment_method).await?;
+        let updated = self
+            .payment_method_repository
+            .update(&payment_method)
+            .await?;
         Ok(PaymentMethodResponse::from(updated))
     }
 
@@ -229,7 +238,10 @@ impl PaymentMethodUseCases {
 
         payment_method.deactivate()?;
 
-        let updated = self.payment_method_repository.update(&payment_method).await?;
+        let updated = self
+            .payment_method_repository
+            .update(&payment_method)
+            .await?;
         Ok(PaymentMethodResponse::from(updated))
     }
 
@@ -246,7 +258,10 @@ impl PaymentMethodUseCases {
 
         payment_method.reactivate()?;
 
-        let updated = self.payment_method_repository.update(&payment_method).await?;
+        let updated = self
+            .payment_method_repository
+            .update(&payment_method)
+            .await?;
         Ok(PaymentMethodResponse::from(updated))
     }
 

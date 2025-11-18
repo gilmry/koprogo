@@ -15,8 +15,7 @@ pub trait NoticeRepository: Send + Sync {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Notice>, String>;
 
     /// Find all published notices for a building (visible to members)
-    async fn find_published_by_building(&self, building_id: Uuid)
-        -> Result<Vec<Notice>, String>;
+    async fn find_published_by_building(&self, building_id: Uuid) -> Result<Vec<Notice>, String>;
 
     /// Find all pinned notices for a building (important announcements)
     async fn find_pinned_by_building(&self, building_id: Uuid) -> Result<Vec<Notice>, String>;

@@ -280,8 +280,8 @@ impl PollRepository for PostgresPollRepository {
             count_query_builder = count_query_builder.bind(id);
         }
         if let Some(ref created_by) = filters.created_by {
-            let id = Uuid::parse_str(created_by)
-                .map_err(|_| "Invalid created_by format".to_string())?;
+            let id =
+                Uuid::parse_str(created_by).map_err(|_| "Invalid created_by format".to_string())?;
             count_query_builder = count_query_builder.bind(id);
         }
         if let Some(ref status) = filters.status {
@@ -307,7 +307,8 @@ impl PollRepository for PostgresPollRepository {
             .fetch_one(&self.pool)
             .await
             .map_err(|e| format!("Failed to count polls: {}", e))?;
-        let total: i64 = count_row.try_get("count")
+        let total: i64 = count_row
+            .try_get("count")
             .map_err(|e| format!("Failed to get count: {}", e))?;
 
         // Fetch paginated results
@@ -325,8 +326,8 @@ impl PollRepository for PostgresPollRepository {
             data_query_builder = data_query_builder.bind(id);
         }
         if let Some(ref created_by) = filters.created_by {
-            let id = Uuid::parse_str(created_by)
-                .map_err(|_| "Invalid created_by format".to_string())?;
+            let id =
+                Uuid::parse_str(created_by).map_err(|_| "Invalid created_by format".to_string())?;
             data_query_builder = data_query_builder.bind(id);
         }
         if let Some(ref status) = filters.status {
@@ -387,11 +388,7 @@ impl PollRepository for PostgresPollRepository {
             .collect::<Result<Vec<Poll>, String>>()
     }
 
-    async fn find_by_status(
-        &self,
-        building_id: Uuid,
-        status: &str,
-    ) -> Result<Vec<Poll>, String> {
+    async fn find_by_status(&self, building_id: Uuid, status: &str) -> Result<Vec<Poll>, String> {
         let rows = sqlx::query(
             r#"
             SELECT * FROM polls 
@@ -514,13 +511,17 @@ impl PollRepository for PostgresPollRepository {
         .map_err(|e| format!("Failed to fetch poll statistics: {}", e))?;
 
         Ok(PollStatistics {
-            total_polls: row.try_get("total_polls")
+            total_polls: row
+                .try_get("total_polls")
                 .map_err(|e| format!("Failed to get total_polls: {}", e))?,
-            active_polls: row.try_get("active_polls")
+            active_polls: row
+                .try_get("active_polls")
                 .map_err(|e| format!("Failed to get active_polls: {}", e))?,
-            closed_polls: row.try_get("closed_polls")
+            closed_polls: row
+                .try_get("closed_polls")
                 .map_err(|e| format!("Failed to get closed_polls: {}", e))?,
-            average_participation_rate: row.try_get("avg_participation")
+            average_participation_rate: row
+                .try_get("avg_participation")
                 .map_err(|e| format!("Failed to get avg_participation: {}", e))?,
         })
     }

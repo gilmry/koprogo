@@ -1,6 +1,6 @@
 use crate::application::dto::{
-    CreateConvocationRequest, ScheduleConvocationRequest, SendConvocationRequest,
-    SetProxyRequest, UpdateAttendanceRequest,
+    CreateConvocationRequest, ScheduleConvocationRequest, SendConvocationRequest, SetProxyRequest,
+    UpdateAttendanceRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -18,8 +18,7 @@ pub async fn create_convocation(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -56,10 +55,7 @@ pub async fn create_convocation(
 }
 
 #[get("/convocations/{id}")]
-pub async fn get_convocation(
-    state: web::Data<AppState>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_convocation(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
     match state.convocation_use_cases.get_convocation(*id).await {
         Ok(convocation) => HttpResponse::Ok().json(convocation),
         Err(err) => HttpResponse::NotFound().json(serde_json::json!({"error": err})),
@@ -80,9 +76,7 @@ pub async fn get_convocation_by_meeting(
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Convocation not found for this meeting"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -97,9 +91,7 @@ pub async fn list_building_convocations(
         .await
     {
         Ok(convocations) => HttpResponse::Ok().json(convocations),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -114,9 +106,7 @@ pub async fn list_organization_convocations(
         .await
     {
         Ok(convocations) => HttpResponse::Ok().json(convocations),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -129,8 +119,7 @@ pub async fn delete_convocation(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -149,9 +138,7 @@ pub async fn delete_convocation(
         Ok(false) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Convocation not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -167,8 +154,7 @@ pub async fn schedule_convocation(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -202,8 +188,7 @@ pub async fn send_convocation(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -240,8 +225,7 @@ pub async fn cancel_convocation(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -274,9 +258,7 @@ pub async fn list_convocation_recipients(
         .await
     {
         Ok(recipients) => HttpResponse::Ok().json(recipients),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -287,9 +269,7 @@ pub async fn get_convocation_tracking_summary(
 ) -> impl Responder {
     match state.convocation_use_cases.get_tracking_summary(*id).await {
         Ok(summary) => HttpResponse::Ok().json(summary),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -318,8 +298,7 @@ pub async fn update_recipient_attendance(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -354,8 +333,7 @@ pub async fn set_recipient_proxy(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -371,10 +349,7 @@ pub async fn set_recipient_proxy(
                 Some(organization_id),
             )
             .with_resource("ConvocationRecipient", recipient.id)
-            .with_details(format!(
-                "proxy_owner_id: {:?}",
-                recipient.proxy_owner_id
-            ))
+            .with_details(format!("proxy_owner_id: {:?}", recipient.proxy_owner_id))
             .log();
 
             HttpResponse::Ok().json(recipient)
@@ -392,8 +367,7 @@ pub async fn send_convocation_reminders(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 

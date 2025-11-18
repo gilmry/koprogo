@@ -116,7 +116,10 @@ export const quotesApi = {
   /**
    * List quotes by status for building
    */
-  async listByStatus(buildingId: string, status: QuoteStatus): Promise<Quote[]> {
+  async listByStatus(
+    buildingId: string,
+    status: QuoteStatus,
+  ): Promise<Quote[]> {
     return api.get(`/buildings/${buildingId}/quotes/status/${status}`);
   },
 

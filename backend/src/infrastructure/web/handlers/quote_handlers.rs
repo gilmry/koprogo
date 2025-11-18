@@ -1,6 +1,4 @@
-use crate::application::dto::{
-    CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto,
-};
+use crate::application::dto::{CreateQuoteDto, QuoteComparisonRequestDto, QuoteDecisionDto};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use crate::infrastructure::web::AppState;
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
@@ -14,7 +12,11 @@ pub async fn create_quote(
     _auth: AuthenticatedUser,
     request: web::Json<CreateQuoteDto>,
 ) -> impl Responder {
-    match data.quote_use_cases.create_quote(request.into_inner()).await {
+    match data
+        .quote_use_cases
+        .create_quote(request.into_inner())
+        .await
+    {
         Ok(quote) => HttpResponse::Created().json(quote),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": e

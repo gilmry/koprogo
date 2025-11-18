@@ -67,7 +67,11 @@ pub struct LocalExchangeResponseDto {
 }
 
 impl LocalExchangeResponseDto {
-    pub fn from_entity(exchange: LocalExchange, provider_name: String, requester_name: Option<String>) -> Self {
+    pub fn from_entity(
+        exchange: LocalExchange,
+        provider_name: String,
+        requester_name: Option<String>,
+    ) -> Self {
         LocalExchangeResponseDto {
             id: exchange.id,
             building_id: exchange.building_id,

@@ -55,43 +55,43 @@ pub struct TechnicalInspection {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum InspectionType {
-    Elevator,           // Ascenseur (annuel)
-    Boiler,             // Chaudière (annuel)
-    Electrical,         // Installation électrique (5 ans)
-    FireExtinguisher,   // Extincteurs (annuel)
-    FireAlarm,          // Système d'alarme incendie (annuel)
-    GasInstallation,    // Installation gaz (annuel)
-    RoofStructure,      // Structure toiture (5 ans)
-    Facade,             // Façade (quinquennal)
-    WaterQuality,       // Qualité eau (annuel)
+    Elevator,               // Ascenseur (annuel)
+    Boiler,                 // Chaudière (annuel)
+    Electrical,             // Installation électrique (5 ans)
+    FireExtinguisher,       // Extincteurs (annuel)
+    FireAlarm,              // Système d'alarme incendie (annuel)
+    GasInstallation,        // Installation gaz (annuel)
+    RoofStructure,          // Structure toiture (5 ans)
+    Facade,                 // Façade (quinquennal)
+    WaterQuality,           // Qualité eau (annuel)
     Other { name: String }, // Autre type d'inspection
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum InspectionStatus {
-    Scheduled,          // Planifiée
-    InProgress,         // En cours
-    Completed,          // Terminée
-    Failed,             // Échec (non conforme)
-    Overdue,            // En retard
-    Cancelled,          // Annulée
+    Scheduled,  // Planifiée
+    InProgress, // En cours
+    Completed,  // Terminée
+    Failed,     // Échec (non conforme)
+    Overdue,    // En retard
+    Cancelled,  // Annulée
 }
 
 impl InspectionType {
     /// Get the required inspection frequency in days
     pub fn frequency_days(&self) -> i64 {
         match self {
-            InspectionType::Elevator => 365,           // Annual
-            InspectionType::Boiler => 365,             // Annual
-            InspectionType::Electrical => 365 * 5,     // Every 5 years
-            InspectionType::FireExtinguisher => 365,   // Annual
-            InspectionType::FireAlarm => 365,          // Annual
-            InspectionType::GasInstallation => 365,    // Annual
-            InspectionType::RoofStructure => 365 * 5,  // Every 5 years
-            InspectionType::Facade => 365 * 5,         // Every 5 years
-            InspectionType::WaterQuality => 365,       // Annual
-            InspectionType::Other { .. } => 365,       // Default annual
+            InspectionType::Elevator => 365,          // Annual
+            InspectionType::Boiler => 365,            // Annual
+            InspectionType::Electrical => 365 * 5,    // Every 5 years
+            InspectionType::FireExtinguisher => 365,  // Annual
+            InspectionType::FireAlarm => 365,         // Annual
+            InspectionType::GasInstallation => 365,   // Annual
+            InspectionType::RoofStructure => 365 * 5, // Every 5 years
+            InspectionType::Facade => 365 * 5,        // Every 5 years
+            InspectionType::WaterQuality => 365,      // Annual
+            InspectionType::Other { .. } => 365,      // Default annual
         }
     }
 
@@ -126,7 +126,8 @@ impl TechnicalInspection {
         let now = Utc::now();
 
         // Calculate next due date based on inspection type
-        let next_due_date = inspection_date + chrono::Duration::days(inspection_type.frequency_days());
+        let next_due_date =
+            inspection_date + chrono::Duration::days(inspection_type.frequency_days());
 
         Self {
             id: Uuid::new_v4(),

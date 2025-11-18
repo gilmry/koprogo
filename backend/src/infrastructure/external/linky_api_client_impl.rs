@@ -140,7 +140,9 @@ impl LinkyApiClient for LinkyApiClientImpl {
             })?;
 
         if response.status() == 401 {
-            return Err(LinkyApiError::InvalidAuthorizationCode("Invalid or expired authorization code".to_string()));
+            return Err(LinkyApiError::InvalidAuthorizationCode(
+                "Invalid or expired authorization code".to_string(),
+            ));
         }
 
         if !response.status().is_success() {
@@ -192,7 +194,9 @@ impl LinkyApiClient for LinkyApiClientImpl {
             })?;
 
         if response.status() == 401 {
-            return Err(LinkyApiError::TokenExpired("Refresh token expired or invalid".to_string()));
+            return Err(LinkyApiError::TokenExpired(
+                "Refresh token expired or invalid".to_string(),
+            ));
         }
 
         if !response.status().is_success() {
@@ -227,10 +231,7 @@ impl LinkyApiClient for LinkyApiClientImpl {
             ));
         }
 
-        let url = format!(
-            "{}/metering_data_dc/v5/daily_consumption",
-            self.base_url
-        );
+        let url = format!("{}/metering_data_dc/v5/daily_consumption", self.base_url);
 
         let response = self
             .client
@@ -252,11 +253,15 @@ impl LinkyApiClient for LinkyApiClientImpl {
             })?;
 
         if response.status() == 401 {
-            return Err(LinkyApiError::TokenExpired("Access token expired".to_string()));
+            return Err(LinkyApiError::TokenExpired(
+                "Access token expired".to_string(),
+            ));
         }
 
         if response.status() == 403 {
-            return Err(LinkyApiError::AuthenticationFailed("Access denied".to_string()));
+            return Err(LinkyApiError::AuthenticationFailed(
+                "Access denied".to_string(),
+            ));
         }
 
         if response.status() == 404 {
@@ -264,7 +269,9 @@ impl LinkyApiClient for LinkyApiClientImpl {
         }
 
         if response.status() == 429 {
-            return Err(LinkyApiError::RateLimitExceeded("API rate limit exceeded".to_string()));
+            return Err(LinkyApiError::RateLimitExceeded(
+                "API rate limit exceeded".to_string(),
+            ));
         }
 
         if !response.status().is_success() {
@@ -281,8 +288,14 @@ impl LinkyApiClient for LinkyApiClientImpl {
             ))
         })?;
 
-        if consumption_response.meter_reading.interval_reading.is_empty() {
-            return Err(LinkyApiError::NoDataAvailable("No data available for the specified period".to_string()));
+        if consumption_response
+            .meter_reading
+            .interval_reading
+            .is_empty()
+        {
+            return Err(LinkyApiError::NoDataAvailable(
+                "No data available for the specified period".to_string(),
+            ));
         }
 
         let data_points: Result<Vec<ConsumptionDataPoint>, LinkyApiError> = consumption_response
@@ -323,10 +336,7 @@ impl LinkyApiClient for LinkyApiClientImpl {
             ));
         }
 
-        let url = format!(
-            "{}/metering_data_dc/v5/monthly_consumption",
-            self.base_url
-        );
+        let url = format!("{}/metering_data_dc/v5/monthly_consumption", self.base_url);
 
         let response = self
             .client
@@ -348,11 +358,15 @@ impl LinkyApiClient for LinkyApiClientImpl {
             })?;
 
         if response.status() == 401 {
-            return Err(LinkyApiError::TokenExpired("Access token expired".to_string()));
+            return Err(LinkyApiError::TokenExpired(
+                "Access token expired".to_string(),
+            ));
         }
 
         if response.status() == 403 {
-            return Err(LinkyApiError::AuthenticationFailed("Access denied".to_string()));
+            return Err(LinkyApiError::AuthenticationFailed(
+                "Access denied".to_string(),
+            ));
         }
 
         if response.status() == 404 {
@@ -360,7 +374,9 @@ impl LinkyApiClient for LinkyApiClientImpl {
         }
 
         if response.status() == 429 {
-            return Err(LinkyApiError::RateLimitExceeded("API rate limit exceeded".to_string()));
+            return Err(LinkyApiError::RateLimitExceeded(
+                "API rate limit exceeded".to_string(),
+            ));
         }
 
         if !response.status().is_success() {
@@ -377,8 +393,14 @@ impl LinkyApiClient for LinkyApiClientImpl {
             ))
         })?;
 
-        if consumption_response.meter_reading.interval_reading.is_empty() {
-            return Err(LinkyApiError::NoDataAvailable("No data available for the specified period".to_string()));
+        if consumption_response
+            .meter_reading
+            .interval_reading
+            .is_empty()
+        {
+            return Err(LinkyApiError::NoDataAvailable(
+                "No data available for the specified period".to_string(),
+            ));
         }
 
         let data_points: Result<Vec<ConsumptionDataPoint>, LinkyApiError> = consumption_response
@@ -444,11 +466,15 @@ impl LinkyApiClient for LinkyApiClientImpl {
             })?;
 
         if response.status() == 401 {
-            return Err(LinkyApiError::TokenExpired("Access token expired".to_string()));
+            return Err(LinkyApiError::TokenExpired(
+                "Access token expired".to_string(),
+            ));
         }
 
         if response.status() == 403 {
-            return Err(LinkyApiError::AuthenticationFailed("Access denied".to_string()));
+            return Err(LinkyApiError::AuthenticationFailed(
+                "Access denied".to_string(),
+            ));
         }
 
         if response.status() == 404 {
@@ -456,7 +482,9 @@ impl LinkyApiClient for LinkyApiClientImpl {
         }
 
         if response.status() == 429 {
-            return Err(LinkyApiError::RateLimitExceeded("API rate limit exceeded".to_string()));
+            return Err(LinkyApiError::RateLimitExceeded(
+                "API rate limit exceeded".to_string(),
+            ));
         }
 
         if !response.status().is_success() {
@@ -467,11 +495,20 @@ impl LinkyApiClient for LinkyApiClientImpl {
         }
 
         let consumption_response: ConsumptionResponse = response.json().await.map_err(|e| {
-            LinkyApiError::DeserializationError(format!("Failed to parse load curve response: {}", e))
+            LinkyApiError::DeserializationError(format!(
+                "Failed to parse load curve response: {}",
+                e
+            ))
         })?;
 
-        if consumption_response.meter_reading.interval_reading.is_empty() {
-            return Err(LinkyApiError::NoDataAvailable("No data available for the specified period".to_string()));
+        if consumption_response
+            .meter_reading
+            .interval_reading
+            .is_empty()
+        {
+            return Err(LinkyApiError::NoDataAvailable(
+                "No data available for the specified period".to_string(),
+            ));
         }
 
         let data_points: Result<Vec<ConsumptionDataPoint>, LinkyApiError> = consumption_response
@@ -534,11 +571,15 @@ impl LinkyApiClient for LinkyApiClientImpl {
             })?;
 
         if response.status() == 401 {
-            return Err(LinkyApiError::TokenExpired("Access token expired".to_string()));
+            return Err(LinkyApiError::TokenExpired(
+                "Access token expired".to_string(),
+            ));
         }
 
         if response.status() == 403 {
-            return Err(LinkyApiError::AuthenticationFailed("Access denied".to_string()));
+            return Err(LinkyApiError::AuthenticationFailed(
+                "Access denied".to_string(),
+            ));
         }
 
         if response.status() == 404 {
@@ -546,7 +587,9 @@ impl LinkyApiClient for LinkyApiClientImpl {
         }
 
         if response.status() == 429 {
-            return Err(LinkyApiError::RateLimitExceeded("API rate limit exceeded".to_string()));
+            return Err(LinkyApiError::RateLimitExceeded(
+                "API rate limit exceeded".to_string(),
+            ));
         }
 
         if !response.status().is_success() {
@@ -557,11 +600,16 @@ impl LinkyApiClient for LinkyApiClientImpl {
         }
 
         let power_response: PowerResponse = response.json().await.map_err(|e| {
-            LinkyApiError::DeserializationError(format!("Failed to parse max power response: {}", e))
+            LinkyApiError::DeserializationError(format!(
+                "Failed to parse max power response: {}",
+                e
+            ))
         })?;
 
         if power_response.meter_reading.interval_reading.is_empty() {
-            return Err(LinkyApiError::NoDataAvailable("No data available for the specified period".to_string()));
+            return Err(LinkyApiError::NoDataAvailable(
+                "No data available for the specified period".to_string(),
+            ));
         }
 
         let data_points: Result<Vec<PowerDataPoint>, LinkyApiError> = power_response

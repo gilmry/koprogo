@@ -155,10 +155,7 @@ impl ConvocationUseCases {
         }
 
         // Create recipients in database (bulk insert)
-        let created_recipients = self
-            .recipient_repository
-            .create_many(&recipients)
-            .await?;
+        let created_recipients = self.recipient_repository.create_many(&recipients).await?;
 
         // Mark convocation as sent
         convocation.mark_sent(pdf_file_path, created_recipients.len() as i32)?;
@@ -345,9 +342,7 @@ impl ConvocationUseCases {
 
     /// Process scheduled convocations (called by background job)
     /// Returns list of convocations that were sent
-    pub async fn process_scheduled_convocations(
-        &self,
-    ) -> Result<Vec<ConvocationResponse>, String> {
+    pub async fn process_scheduled_convocations(&self) -> Result<Vec<ConvocationResponse>, String> {
         let now = Utc::now();
         let scheduled = self
             .convocation_repository

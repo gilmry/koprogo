@@ -35,7 +35,9 @@ pub async fn create_iot_reading(
     dto: web::Json<CreateIoTReadingDto>,
     iot_use_cases: web::Data<Arc<IoTUseCases>>,
 ) -> Result<HttpResponse> {
-    let organization_id = auth.organization_id.ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
+    let organization_id = auth
+        .organization_id
+        .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
     match iot_use_cases
         .create_reading(dto.into_inner(), auth.user_id, organization_id)
@@ -73,7 +75,9 @@ pub async fn create_iot_readings_bulk(
     dtos: web::Json<Vec<CreateIoTReadingDto>>,
     iot_use_cases: web::Data<Arc<IoTUseCases>>,
 ) -> Result<HttpResponse> {
-    let organization_id = auth.organization_id.ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
+    let organization_id = auth
+        .organization_id
+        .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
     match iot_use_cases
         .create_readings_bulk(dtos.into_inner(), auth.user_id, organization_id)
@@ -294,7 +298,12 @@ pub async fn detect_anomalies(
         .unwrap_or(30);
 
     match iot_use_cases
-        .detect_anomalies(building_id, metric_type, threshold_percentage, lookback_days)
+        .detect_anomalies(
+            building_id,
+            metric_type,
+            threshold_percentage,
+            lookback_days,
+        )
         .await
     {
         Ok(anomalies) => Ok(HttpResponse::Ok().json(anomalies)),
@@ -326,7 +335,9 @@ pub async fn configure_linky_device(
     dto: web::Json<ConfigureLinkyDeviceDto>,
     linky_use_cases: web::Data<Arc<LinkyUseCases>>,
 ) -> Result<HttpResponse> {
-    let organization_id = auth.organization_id.ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
+    let organization_id = auth
+        .organization_id
+        .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
     match linky_use_cases
         .configure_linky_device(dto.into_inner(), auth.user_id, organization_id)
@@ -367,7 +378,9 @@ pub async fn delete_linky_device(
     linky_use_cases: web::Data<Arc<LinkyUseCases>>,
 ) -> Result<HttpResponse> {
     let building_id = path.into_inner();
-    let organization_id = auth.organization_id.ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
+    let organization_id = auth
+        .organization_id
+        .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
     match linky_use_cases
         .delete_linky_device(building_id, auth.user_id, organization_id)
@@ -399,7 +412,9 @@ pub async fn sync_linky_data(
     linky_use_cases: web::Data<Arc<LinkyUseCases>>,
 ) -> Result<HttpResponse> {
     let _building_id = path.into_inner();
-    let organization_id = auth.organization_id.ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
+    let organization_id = auth
+        .organization_id
+        .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
     match linky_use_cases
         .sync_linky_data(dto.into_inner(), auth.user_id, organization_id)
@@ -433,7 +448,9 @@ pub async fn toggle_linky_sync(
         .get("enabled")
         .and_then(|v| v.as_bool())
         .ok_or_else(|| ErrorBadRequest("enabled field required (boolean)"))?;
-    let organization_id = auth.organization_id.ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
+    let organization_id = auth
+        .organization_id
+        .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
     match linky_use_cases
         .toggle_sync(building_id, enabled, auth.user_id, organization_id)
@@ -481,7 +498,7 @@ pub async fn find_devices_with_expired_tokens(
 }
 
 /// Configure IoT routes
-pub fn configure_routes(cfg: &mut web::ServiceConfig) {
+pub fn configure_iot_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/iot")
             // IoT Readings

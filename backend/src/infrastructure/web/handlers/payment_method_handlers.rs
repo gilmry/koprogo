@@ -1,6 +1,4 @@
-use crate::application::dto::{
-    CreatePaymentMethodRequest, UpdatePaymentMethodRequest,
-};
+use crate::application::dto::{CreatePaymentMethodRequest, UpdatePaymentMethodRequest};
 use crate::domain::entities::payment_method::PaymentMethodType;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -18,8 +16,7 @@ pub async fn create_payment_method(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -54,18 +51,13 @@ pub async fn create_payment_method(
 }
 
 #[get("/payment-methods/{id}")]
-pub async fn get_payment_method(
-    state: web::Data<AppState>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_payment_method(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
     match state.payment_method_use_cases.get_payment_method(*id).await {
         Ok(Some(method)) => HttpResponse::Ok().json(method),
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment method not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -83,9 +75,7 @@ pub async fn get_payment_method_by_stripe_id(
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment method not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -100,9 +90,7 @@ pub async fn list_owner_payment_methods(
         .await
     {
         Ok(methods) => HttpResponse::Ok().json(methods),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -117,9 +105,7 @@ pub async fn list_active_owner_payment_methods(
         .await
     {
         Ok(methods) => HttpResponse::Ok().json(methods),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -137,9 +123,7 @@ pub async fn get_default_payment_method(
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "No default payment method found for owner"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -154,9 +138,7 @@ pub async fn list_organization_payment_methods(
         .await
     {
         Ok(methods) => HttpResponse::Ok().json(methods),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -184,9 +166,7 @@ pub async fn list_payment_methods_by_type(
         .await
     {
         Ok(methods) => HttpResponse::Ok().json(methods),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -200,8 +180,7 @@ pub async fn update_payment_method(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -235,8 +214,7 @@ pub async fn set_payment_method_as_default(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -285,8 +263,7 @@ pub async fn deactivate_payment_method(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -319,8 +296,7 @@ pub async fn reactivate_payment_method(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -353,8 +329,7 @@ pub async fn delete_payment_method(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -397,9 +372,7 @@ pub async fn count_active_payment_methods(
             "owner_id": *owner_id,
             "active_payment_methods_count": count
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -417,8 +390,6 @@ pub async fn has_active_payment_methods(
             "owner_id": *owner_id,
             "has_active_payment_methods": has_active
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }

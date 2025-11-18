@@ -125,19 +125,30 @@ export const sharingApi = {
     return api.get(`/buildings/${buildingId}/shared-objects/available`);
   },
 
-  async listObjectsByCategory(buildingId: string, category: ObjectCategory): Promise<SharedObject[]> {
-    return api.get(`/buildings/${buildingId}/shared-objects/category/${category}`);
+  async listObjectsByCategory(
+    buildingId: string,
+    category: ObjectCategory,
+  ): Promise<SharedObject[]> {
+    return api.get(
+      `/buildings/${buildingId}/shared-objects/category/${category}`,
+    );
   },
 
   async listObjectsByOwner(ownerId: string): Promise<SharedObject[]> {
     return api.get(`/owners/${ownerId}/shared-objects`);
   },
 
-  async updateObject(id: string, data: Partial<SharedObject>): Promise<SharedObject> {
+  async updateObject(
+    id: string,
+    data: Partial<SharedObject>,
+  ): Promise<SharedObject> {
     return api.put(`/shared-objects/${id}`, data);
   },
 
-  async updateAvailability(id: string, status: AvailabilityStatus): Promise<SharedObject> {
+  async updateAvailability(
+    id: string,
+    status: AvailabilityStatus,
+  ): Promise<SharedObject> {
     return api.put(`/shared-objects/${id}/availability`, { status });
   },
 
@@ -178,8 +189,13 @@ export const sharingApi = {
     return api.put(`/loans/${id}/start`, {});
   },
 
-  async returnLoan(id: string, conditionAtReturn: ObjectCondition): Promise<Loan> {
-    return api.put(`/loans/${id}/return`, { condition_at_return: conditionAtReturn });
+  async returnLoan(
+    id: string,
+    conditionAtReturn: ObjectCondition,
+  ): Promise<Loan> {
+    return api.put(`/loans/${id}/return`, {
+      condition_at_return: conditionAtReturn,
+    });
   },
 
   async cancelLoan(id: string): Promise<Loan> {

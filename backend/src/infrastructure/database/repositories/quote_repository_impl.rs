@@ -102,7 +102,7 @@ impl QuoteRepository for PostgresQuoteRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_quote(row)).collect())
+        Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
     async fn find_by_contractor(&self, contractor_id: Uuid) -> Result<Vec<Quote>, String> {
@@ -125,14 +125,10 @@ impl QuoteRepository for PostgresQuoteRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_quote(row)).collect())
+        Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
-    async fn find_by_status(
-        &self,
-        building_id: Uuid,
-        status: &str,
-    ) -> Result<Vec<Quote>, String> {
+    async fn find_by_status(&self, building_id: Uuid, status: &str) -> Result<Vec<Quote>, String> {
         let rows = sqlx::query(
             r#"
             SELECT
@@ -153,7 +149,7 @@ impl QuoteRepository for PostgresQuoteRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_quote(row)).collect())
+        Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
     async fn find_by_ids(&self, ids: Vec<Uuid>) -> Result<Vec<Quote>, String> {
@@ -180,7 +176,7 @@ impl QuoteRepository for PostgresQuoteRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_quote(row)).collect())
+        Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
     async fn find_by_project_title(
@@ -208,7 +204,7 @@ impl QuoteRepository for PostgresQuoteRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_quote(row)).collect())
+        Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
     async fn find_expired(&self) -> Result<Vec<Quote>, String> {
@@ -231,7 +227,7 @@ impl QuoteRepository for PostgresQuoteRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_quote(row)).collect())
+        Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
     async fn update(&self, quote: &Quote) -> Result<Quote, String> {
@@ -310,11 +306,7 @@ impl QuoteRepository for PostgresQuoteRepository {
         Ok(count)
     }
 
-    async fn count_by_status(
-        &self,
-        building_id: Uuid,
-        status: &str,
-    ) -> Result<i64, String> {
+    async fn count_by_status(&self, building_id: Uuid, status: &str) -> Result<i64, String> {
         let count: i64 = sqlx::query_scalar(
             "SELECT COUNT(*) FROM quotes WHERE building_id = $1 AND status = $2",
         )

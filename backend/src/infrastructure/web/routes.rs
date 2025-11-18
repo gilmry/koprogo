@@ -491,8 +491,8 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(admin_export_user_data)
             .service(admin_erase_user_data)
             // Two-Factor Authentication (2FA TOTP - Issue #78)
-            .configure(two_factor_handlers::configure_routes)
+            .configure(two_factor_handlers::configure_two_factor_routes)
             // IoT Smart Meters (Linky/Ores - Issue #133 - IoT Phase 0)
-            .configure(iot_handlers::configure_routes),
+            .configure(iot_handlers::configure_iot_routes),
     );
 }

@@ -16,7 +16,7 @@ use uuid::Uuid;
 pub struct LocalExchange {
     pub id: Uuid,
     pub building_id: Uuid,
-    pub provider_id: Uuid,  // Owner offering the exchange
+    pub provider_id: Uuid,          // Owner offering the exchange
     pub requester_id: Option<Uuid>, // Owner requesting (None if still offered)
     pub exchange_type: ExchangeType,
     pub title: String,
@@ -29,7 +29,7 @@ pub struct LocalExchange {
     pub completed_at: Option<DateTime<Utc>>,
     pub cancelled_at: Option<DateTime<Utc>>,
     pub cancellation_reason: Option<String>,
-    pub provider_rating: Option<i32>, // 1-5 stars from requester
+    pub provider_rating: Option<i32>,  // 1-5 stars from requester
     pub requester_rating: Option<i32>, // 1-5 stars from provider
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -38,9 +38,9 @@ pub struct LocalExchange {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub enum ExchangeType {
-    Service,         // Skills (plumbing, gardening, tutoring, etc.)
-    ObjectLoan,      // Temporary loan (tools, books, equipment)
-    SharedPurchase,  // Co-buying (bulk food, equipment rental)
+    Service,        // Skills (plumbing, gardening, tutoring, etc.)
+    ObjectLoan,     // Temporary loan (tools, books, equipment)
+    SharedPurchase, // Co-buying (bulk food, equipment rental)
 }
 
 impl ExchangeType {
@@ -65,11 +65,11 @@ impl ExchangeType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "PascalCase")]
 pub enum ExchangeStatus {
-    Offered,     // Available for anyone to request
-    Requested,   // Someone claimed it (pending provider acceptance)
-    InProgress,  // Exchange is happening
-    Completed,   // Both parties confirmed completion
-    Cancelled,   // Exchange was cancelled
+    Offered,    // Available for anyone to request
+    Requested,  // Someone claimed it (pending provider acceptance)
+    InProgress, // Exchange is happening
+    Completed,  // Both parties confirmed completion
+    Cancelled,  // Exchange was cancelled
 }
 
 impl ExchangeStatus {
@@ -205,9 +205,7 @@ impl LocalExchange {
         }
 
         // Only provider or requester can complete
-        if self.provider_id != actor_id
-            && self.requester_id != Some(actor_id)
-        {
+        if self.provider_id != actor_id && self.requester_id != Some(actor_id) {
             return Err("Only provider or requester can complete the exchange".to_string());
         }
 
@@ -230,9 +228,7 @@ impl LocalExchange {
         }
 
         // Only provider or requester can cancel
-        if self.provider_id != actor_id
-            && self.requester_id != Some(actor_id)
-        {
+        if self.provider_id != actor_id && self.requester_id != Some(actor_id) {
             return Err("Only provider or requester can cancel the exchange".to_string());
         }
 
@@ -438,7 +434,10 @@ mod tests {
             .is_ok());
         assert_eq!(exchange.status, ExchangeStatus::Cancelled);
         assert!(exchange.cancelled_at.is_some());
-        assert_eq!(exchange.cancellation_reason, Some("Changed my mind".to_string()));
+        assert_eq!(
+            exchange.cancellation_reason,
+            Some("Changed my mind".to_string())
+        );
     }
 
     #[test]

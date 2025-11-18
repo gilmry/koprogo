@@ -234,7 +234,9 @@ export const paymentsApi = {
   /**
    * Get expense total paid
    */
-  async getExpenseTotal(expenseId: string): Promise<{ total_paid_cents: number }> {
+  async getExpenseTotal(
+    expenseId: string,
+  ): Promise<{ total_paid_cents: number }> {
     return api.get(`/expenses/${expenseId}/payments/total`);
   },
 
@@ -248,7 +250,9 @@ export const paymentsApi = {
   /**
    * Get building total paid
    */
-  async getBuildingTotal(buildingId: string): Promise<{ total_paid_cents: number }> {
+  async getBuildingTotal(
+    buildingId: string,
+  ): Promise<{ total_paid_cents: number }> {
     return api.get(`/buildings/${buildingId}/payments/total`);
   },
 };

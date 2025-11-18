@@ -10,7 +10,7 @@ use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
 use koprogo::application::dto::{
-    ConvocationResponse, ConvocationRecipientResponse, RecipientTrackingSummaryResponse,
+    ConvocationRecipientResponse, ConvocationResponse, RecipientTrackingSummaryResponse,
 };
 use koprogo::application::ports::*;
 use koprogo::application::use_cases::*;
@@ -57,8 +57,7 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
     let unit_owner_repo = Arc::new(PostgresUnitOwnerRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
-    let invoice_line_item_repo =
-        Arc::new(PostgresInvoiceLineItemRepository::new(pool.clone()));
+    let invoice_line_item_repo = Arc::new(PostgresInvoiceLineItemRepository::new(pool.clone()));
     let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
@@ -85,8 +84,7 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
     let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
     let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
     let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
-    let challenge_progress_repo =
-        Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
+    let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
 
     // Initialize email service and storage provider
     let email_service = Arc::new(MockEmailService::new());
@@ -134,8 +132,11 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
         notification_repo.clone(),
         notification_preference_repo.clone(),
     );
-    let payment_use_cases =
-        PaymentUseCases::new(payment_repo.clone(), expense_repo.clone(), owner_repo.clone());
+    let payment_use_cases = PaymentUseCases::new(
+        payment_repo.clone(),
+        expense_repo.clone(),
+        owner_repo.clone(),
+    );
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo.clone());
     let quote_use_cases = QuoteUseCases::new(quote_repo.clone(), building_repo.clone());
     let convocation_use_cases = ConvocationUseCases::new(
@@ -172,14 +173,10 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
         building_repo.clone(),
         auth_repo.clone(),
     );
-    let achievement_use_cases = AchievementUseCases::new(
-        achievement_repo.clone(),
-        user_achievement_repo.clone(),
-    );
-    let challenge_use_cases = ChallengeUseCases::new(
-        challenge_repo.clone(),
-        challenge_progress_repo.clone(),
-    );
+    let achievement_use_cases =
+        AchievementUseCases::new(achievement_repo.clone(), user_achievement_repo.clone());
+    let challenge_use_cases =
+        ChallengeUseCases::new(challenge_repo.clone(), challenge_progress_repo.clone());
     let gamification_stats_use_cases = GamificationStatsUseCases::new(
         user_achievement_repo.clone(),
         achievement_repo.clone(),
@@ -242,10 +239,7 @@ async fn create_test_user(app_state: &web::Data<AppState>) -> (Uuid, String) {
     (register_result.id, login_result.token)
 }
 
-async fn create_test_building(
-    app_state: &web::Data<AppState>,
-    organization_id: Uuid,
-) -> Uuid {
+async fn create_test_building(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
     let building_name = format!("Test Building {}", Uuid::new_v4());
     let building = app_state
         .building_use_cases
@@ -288,10 +282,7 @@ async fn create_test_meeting(
     meeting.id
 }
 
-async fn create_test_owner(
-    app_state: &web::Data<AppState>,
-    organization_id: Uuid,
-) -> Uuid {
+async fn create_test_owner(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
     let email = format!("owner_{}@example.com", Uuid::new_v4());
     let owner = app_state
         .owner_use_cases
@@ -320,7 +311,8 @@ async fn test_create_convocation_success() {
 
     // Create meeting 30 days in future (well beyond 15d requirement)
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -353,7 +345,10 @@ async fn test_create_convocation_success() {
     assert_eq!(convocation.meeting_id, meeting_id);
     assert_eq!(convocation.language, "FR");
     assert_eq!(convocation.status, ConvocationStatus::Draft);
-    assert!(convocation.respects_legal_deadline, "Should respect 15-day deadline for Ordinary AG");
+    assert!(
+        convocation.respects_legal_deadline,
+        "Should respect 15-day deadline for Ordinary AG"
+    );
 }
 
 #[actix_web::test]
@@ -365,7 +360,8 @@ async fn test_create_convocation_without_auth() {
     let building_id = create_test_building(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -409,14 +405,15 @@ async fn test_create_convocation_all_meeting_types() {
     .await;
 
     let meeting_types = vec![
-        ("Ordinary", 30),            // 15-day requirement
-        ("Extraordinary", 20),       // 8-day requirement
-        ("SecondConvocation", 20),   // 8-day requirement
+        ("Ordinary", 30),          // 15-day requirement
+        ("Extraordinary", 20),     // 8-day requirement
+        ("SecondConvocation", 20), // 8-day requirement
     ];
 
     for (meeting_type, days_ahead) in meeting_types {
         let meeting_date = Utc::now() + Duration::days(days_ahead);
-        let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+        let meeting_id =
+            create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
         let create_req = test::TestRequest::post()
             .uri("/api/v1/convocations")
@@ -466,7 +463,8 @@ async fn test_create_convocation_all_languages() {
 
     for language in languages {
         let meeting_date = Utc::now() + Duration::days(30);
-        let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+        let meeting_id =
+            create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
         let create_req = test::TestRequest::post()
             .uri("/api/v1/convocations")
@@ -502,7 +500,8 @@ async fn test_get_convocation_by_id() {
     let building_id = create_test_building(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -573,7 +572,8 @@ async fn test_get_convocation_by_meeting() {
     let building_id = create_test_building(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -630,7 +630,8 @@ async fn test_list_building_convocations() {
     // Create 3 convocations for the same building
     for i in 0..3 {
         let meeting_date = Utc::now() + Duration::days(30 + i);
-        let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+        let meeting_id =
+            create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
         let create_req = test::TestRequest::post()
             .uri("/api/v1/convocations")
@@ -657,7 +658,11 @@ async fn test_list_building_convocations() {
     assert_eq!(list_resp.status(), 200);
 
     let convocations: Vec<ConvocationResponse> = test::read_body_json(list_resp).await;
-    assert_eq!(convocations.len(), 3, "Expected 3 convocations for building");
+    assert_eq!(
+        convocations.len(),
+        3,
+        "Expected 3 convocations for building"
+    );
 }
 
 #[actix_web::test]
@@ -679,7 +684,8 @@ async fn test_list_organization_convocations() {
     // Create 2 convocations for building1
     for _ in 0..2 {
         let meeting_date = Utc::now() + Duration::days(30);
-        let meeting_id = create_test_meeting(&app_state, organization_id, building1_id, meeting_date).await;
+        let meeting_id =
+            create_test_meeting(&app_state, organization_id, building1_id, meeting_date).await;
 
         let create_req = test::TestRequest::post()
             .uri("/api/v1/convocations")
@@ -698,7 +704,8 @@ async fn test_list_organization_convocations() {
 
     // Create 1 convocation for building2
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building2_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building2_id, meeting_date).await;
 
     let create_req = test::TestRequest::post()
         .uri("/api/v1/convocations")
@@ -716,7 +723,10 @@ async fn test_list_organization_convocations() {
 
     // List organization convocations
     let list_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/organizations/{}/convocations", organization_id))
+        .uri(&format!(
+            "/api/v1/organizations/{}/convocations",
+            organization_id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -739,7 +749,8 @@ async fn test_delete_convocation() {
     let building_id = create_test_building(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -794,7 +805,8 @@ async fn test_schedule_convocation() {
     let building_id = create_test_building(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -851,7 +863,8 @@ async fn test_send_convocation() {
     let owner2_id = create_test_owner(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -903,7 +916,8 @@ async fn test_cancel_convocation() {
     let building_id = create_test_building(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -955,7 +969,8 @@ async fn test_list_convocation_recipients() {
     let owner2_id = create_test_owner(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -992,7 +1007,10 @@ async fn test_list_convocation_recipients() {
 
     // List recipients
     let list_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/convocations/{}/recipients", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/recipients",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1015,7 +1033,8 @@ async fn test_get_tracking_summary() {
     let owner2_id = create_test_owner(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1052,7 +1071,10 @@ async fn test_get_tracking_summary() {
 
     // Get tracking summary
     let summary_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/convocations/{}/tracking-summary", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/tracking-summary",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1075,7 +1097,8 @@ async fn test_mark_recipient_email_opened() {
     let owner_id = create_test_owner(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1112,7 +1135,10 @@ async fn test_mark_recipient_email_opened() {
 
     // Get recipient
     let list_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/convocations/{}/recipients", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/recipients",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1122,14 +1148,18 @@ async fn test_mark_recipient_email_opened() {
 
     // Mark email opened
     let mark_opened_req = test::TestRequest::put()
-        .uri(&format!("/api/v1/convocation-recipients/{}/email-opened", recipient.id))
+        .uri(&format!(
+            "/api/v1/convocation-recipients/{}/email-opened",
+            recipient.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let mark_opened_resp = test::call_service(&app, mark_opened_req).await;
     assert_eq!(mark_opened_resp.status(), 200);
 
-    let updated_recipient: ConvocationRecipientResponse = test::read_body_json(mark_opened_resp).await;
+    let updated_recipient: ConvocationRecipientResponse =
+        test::read_body_json(mark_opened_resp).await;
     assert!(updated_recipient.has_opened_email);
     assert!(updated_recipient.email_opened_at.is_some());
 }
@@ -1145,7 +1175,8 @@ async fn test_update_recipient_attendance() {
     let owner_id = create_test_owner(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1182,7 +1213,10 @@ async fn test_update_recipient_attendance() {
 
     // Get recipient
     let list_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/convocations/{}/recipients", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/recipients",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1192,7 +1226,10 @@ async fn test_update_recipient_attendance() {
 
     // Update attendance to WillAttend
     let update_req = test::TestRequest::put()
-        .uri(&format!("/api/v1/convocation-recipients/{}/attendance", recipient.id))
+        .uri(&format!(
+            "/api/v1/convocation-recipients/{}/attendance",
+            recipient.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "attendance_status": "WillAttend"
@@ -1203,7 +1240,10 @@ async fn test_update_recipient_attendance() {
     assert_eq!(update_resp.status(), 200);
 
     let updated_recipient: ConvocationRecipientResponse = test::read_body_json(update_resp).await;
-    assert_eq!(updated_recipient.attendance_status, AttendanceStatus::WillAttend);
+    assert_eq!(
+        updated_recipient.attendance_status,
+        AttendanceStatus::WillAttend
+    );
     assert!(updated_recipient.has_confirmed_attendance);
 }
 
@@ -1216,7 +1256,8 @@ async fn test_update_recipient_attendance_all_statuses() {
     let building_id = create_test_building(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1264,7 +1305,10 @@ async fn test_update_recipient_attendance_all_statuses() {
 
         // Get recipient
         let list_req = test::TestRequest::get()
-            .uri(&format!("/api/v1/convocations/{}/recipients", convocation.id))
+            .uri(&format!(
+                "/api/v1/convocations/{}/recipients",
+                convocation.id
+            ))
             .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
             .to_request();
 
@@ -1274,7 +1318,10 @@ async fn test_update_recipient_attendance_all_statuses() {
 
         // Update attendance
         let update_req = test::TestRequest::put()
-            .uri(&format!("/api/v1/convocation-recipients/{}/attendance", recipient.id))
+            .uri(&format!(
+                "/api/v1/convocation-recipients/{}/attendance",
+                recipient.id
+            ))
             .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
             .set_json(json!({
                 "attendance_status": status
@@ -1303,7 +1350,8 @@ async fn test_set_recipient_proxy() {
     let owner2_id = create_test_owner(&app_state, organization_id).await; // Proxy
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1340,7 +1388,10 @@ async fn test_set_recipient_proxy() {
 
     // Get recipient
     let list_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/convocations/{}/recipients", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/recipients",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1350,7 +1401,10 @@ async fn test_set_recipient_proxy() {
 
     // Set proxy
     let proxy_req = test::TestRequest::put()
-        .uri(&format!("/api/v1/convocation-recipients/{}/proxy", recipient.id))
+        .uri(&format!(
+            "/api/v1/convocation-recipients/{}/proxy",
+            recipient.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "proxy_owner_id": owner2_id.to_string()
@@ -1375,7 +1429,8 @@ async fn test_send_convocation_reminders() {
     let owner_id = create_test_owner(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1412,7 +1467,10 @@ async fn test_send_convocation_reminders() {
 
     // Send reminders
     let reminder_req = test::TestRequest::post()
-        .uri(&format!("/api/v1/convocations/{}/reminders", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/reminders",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1434,7 +1492,8 @@ async fn test_complete_convocation_lifecycle() {
     let owner2_id = create_test_owner(&app_state, organization_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1490,7 +1549,10 @@ async fn test_complete_convocation_lifecycle() {
 
     // 4. Get recipients
     let list_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/convocations/{}/recipients", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/recipients",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1500,7 +1562,10 @@ async fn test_complete_convocation_lifecycle() {
 
     // 5. Owner 1 opens email
     let mark_opened_req = test::TestRequest::put()
-        .uri(&format!("/api/v1/convocation-recipients/{}/email-opened", recipients[0].id))
+        .uri(&format!(
+            "/api/v1/convocation-recipients/{}/email-opened",
+            recipients[0].id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1508,7 +1573,10 @@ async fn test_complete_convocation_lifecycle() {
 
     // 6. Owner 1 confirms attendance
     let attendance_req = test::TestRequest::put()
-        .uri(&format!("/api/v1/convocation-recipients/{}/attendance", recipients[0].id))
+        .uri(&format!(
+            "/api/v1/convocation-recipients/{}/attendance",
+            recipients[0].id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "attendance_status": "WillAttend"
@@ -1519,7 +1587,10 @@ async fn test_complete_convocation_lifecycle() {
 
     // 7. Get tracking summary
     let summary_req = test::TestRequest::get()
-        .uri(&format!("/api/v1/convocations/{}/tracking-summary", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/tracking-summary",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1534,7 +1605,10 @@ async fn test_complete_convocation_lifecycle() {
 
     // 8. Send reminders to unopened emails
     let reminder_req = test::TestRequest::post()
-        .uri(&format!("/api/v1/convocations/{}/reminders", convocation.id))
+        .uri(&format!(
+            "/api/v1/convocations/{}/reminders",
+            convocation.id
+        ))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -1555,7 +1629,8 @@ async fn test_legal_deadline_ordinary_ag() {
     // Ordinary AG requires 15 days minimum notice
     // Meeting 16 days from now = respects deadline
     let meeting_date = Utc::now() + Duration::days(16);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1603,7 +1678,8 @@ async fn test_legal_deadline_extraordinary_ag() {
     // Extraordinary AG requires 8 days minimum notice
     // Meeting 10 days from now = respects deadline
     let meeting_date = Utc::now() + Duration::days(10);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
@@ -1651,7 +1727,8 @@ async fn test_legal_deadline_second_convocation() {
     // Second convocation requires 8 days minimum notice (after quorum not reached)
     // Meeting 9 days from now = respects deadline
     let meeting_date = Utc::now() + Duration::days(9);
-    let meeting_id = create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id =
+        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()

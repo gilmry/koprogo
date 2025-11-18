@@ -5,12 +5,11 @@ use uuid::Uuid;
 
 #[async_trait]
 pub trait TechnicalInspectionRepository: Send + Sync {
-    async fn create(
-        &self,
-        inspection: &TechnicalInspection,
-    ) -> Result<TechnicalInspection, String>;
+    async fn create(&self, inspection: &TechnicalInspection)
+        -> Result<TechnicalInspection, String>;
     async fn find_by_id(&self, id: Uuid) -> Result<Option<TechnicalInspection>, String>;
-    async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<TechnicalInspection>, String>;
+    async fn find_by_building(&self, building_id: Uuid)
+        -> Result<Vec<TechnicalInspection>, String>;
     async fn find_by_organization(
         &self,
         organization_id: Uuid,
@@ -41,6 +40,7 @@ pub trait TechnicalInspectionRepository: Send + Sync {
         inspection_type: &str,
     ) -> Result<Vec<TechnicalInspection>, String>;
 
-    async fn update(&self, inspection: &TechnicalInspection) -> Result<TechnicalInspection, String>;
+    async fn update(&self, inspection: &TechnicalInspection)
+        -> Result<TechnicalInspection, String>;
     async fn delete(&self, id: Uuid) -> Result<bool, String>;
 }

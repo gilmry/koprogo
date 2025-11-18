@@ -18,7 +18,9 @@ pub async fn create_resolution(
 ) -> impl Responder {
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
-        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()})),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
     };
 
     let meeting_id = *meeting_id;
@@ -60,10 +62,7 @@ pub async fn create_resolution(
 }
 
 #[get("/resolutions/{id}")]
-pub async fn get_resolution(
-    state: web::Data<AppState>,
-    id: web::Path<Uuid>,
-) -> impl Responder {
+pub async fn get_resolution(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
     match state.resolution_use_cases.get_resolution(*id).await {
         Ok(Some(resolution)) => HttpResponse::Ok().json(ResolutionResponse::from(resolution)),
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
@@ -106,7 +105,9 @@ pub async fn delete_resolution(
 ) -> impl Responder {
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
-        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()})),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
     };
 
     match state.resolution_use_cases.delete_resolution(*id).await {
@@ -149,7 +150,9 @@ pub async fn cast_vote(
 ) -> impl Responder {
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
-        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()})),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
     };
 
     match state
@@ -204,10 +207,7 @@ pub async fn list_resolution_votes(
         .await
     {
         Ok(votes) => {
-            let responses: Vec<VoteResponse> = votes
-                .into_iter()
-                .map(VoteResponse::from)
-                .collect();
+            let responses: Vec<VoteResponse> = votes.into_iter().map(VoteResponse::from).collect();
             HttpResponse::Ok().json(responses)
         }
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
@@ -225,7 +225,9 @@ pub async fn change_vote(
 ) -> impl Responder {
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
-        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()})),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
     };
 
     match state
@@ -270,7 +272,9 @@ pub async fn close_voting(
 ) -> impl Responder {
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
-        Err(e) => return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()})),
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
     };
 
     match state

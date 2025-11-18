@@ -103,14 +103,11 @@ impl MeetingMinutesExporter {
         );
         y -= 6.0;
 
-        let date_str = meeting.scheduled_date.format("%d/%m/%Y à %H:%M").to_string();
-        current_layer.use_text(
-            format!("Date: {}", date_str),
-            10.0,
-            Mm(20.0),
-            Mm(y),
-            &font,
-        );
+        let date_str = meeting
+            .scheduled_date
+            .format("%d/%m/%Y à %H:%M")
+            .to_string();
+        current_layer.use_text(format!("Date: {}", date_str), 10.0, Mm(20.0), Mm(y), &font);
         y -= 6.0;
 
         current_layer.use_text(
@@ -194,13 +191,7 @@ impl MeetingMinutesExporter {
             "✗ QUORUM NON ATTEINT"
         };
 
-        current_layer.use_text(
-            quorum_status.to_string(),
-            11.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.use_text(quorum_status.to_string(), 11.0, Mm(20.0), Mm(y), &font_bold);
         y -= 12.0;
 
         // === RESOLUTIONS SECTION ===
@@ -301,13 +292,7 @@ impl MeetingMinutesExporter {
             y -= 10.0;
         }
 
-        current_layer.use_text(
-            "SIGNATURES".to_string(),
-            12.0,
-            Mm(20.0),
-            Mm(y),
-            &font_bold,
-        );
+        current_layer.use_text("SIGNATURES".to_string(), 12.0, Mm(20.0), Mm(y), &font_bold);
         y -= 10.0;
 
         current_layer.use_text(
@@ -426,7 +411,8 @@ mod tests {
             votes: vec![],
         }];
 
-        let result = MeetingMinutesExporter::export_to_pdf(&building, &meeting, &attendees, &resolutions);
+        let result =
+            MeetingMinutesExporter::export_to_pdf(&building, &meeting, &attendees, &resolutions);
 
         assert!(result.is_ok());
         let pdf_bytes = result.unwrap();

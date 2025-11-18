@@ -19,7 +19,7 @@ pub struct Vote {
     pub owner_id: Uuid,
     pub unit_id: Uuid,
     pub vote_choice: VoteChoice,
-    pub voting_power: f64, // Tantièmes/millièmes du lot
+    pub voting_power: f64,            // Tantièmes/millièmes du lot
     pub proxy_owner_id: Option<Uuid>, // ID du mandataire si vote par procuration
     pub voted_at: DateTime<Utc>,
 }

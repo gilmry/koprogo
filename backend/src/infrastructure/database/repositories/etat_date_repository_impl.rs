@@ -179,7 +179,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.into_iter().map(|row| self.row_to_etat_date(row)).collect())
+        Ok(rows
+            .into_iter()
+            .map(|row| self.row_to_etat_date(row))
+            .collect())
     }
 
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<EtatDate>, String> {
@@ -206,7 +209,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.into_iter().map(|row| self.row_to_etat_date(row)).collect())
+        Ok(rows
+            .into_iter()
+            .map(|row| self.row_to_etat_date(row))
+            .collect())
     }
 
     async fn find_all_paginated(
@@ -243,9 +249,19 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         }
 
         if status.is_some() {
-            let param_num = if organization_id.is_some() { "$2" } else { "$1" };
-            query_str.push_str(&format!(" AND status = CAST({} AS etat_date_status)", param_num));
-            count_query_str.push_str(&format!(" AND status = CAST({} AS etat_date_status)", param_num));
+            let param_num = if organization_id.is_some() {
+                "$2"
+            } else {
+                "$1"
+            };
+            query_str.push_str(&format!(
+                " AND status = CAST({} AS etat_date_status)",
+                param_num
+            ));
+            count_query_str.push_str(&format!(
+                " AND status = CAST({} AS etat_date_status)",
+                param_num
+            ));
         }
 
         query_str.push_str(" ORDER BY requested_date DESC");
@@ -261,7 +277,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
             (false, false) => "$2",
         };
 
-        query_str.push_str(&format!(" OFFSET {} LIMIT {}", param_num_offset, param_num_limit));
+        query_str.push_str(&format!(
+            " OFFSET {} LIMIT {}",
+            param_num_offset, param_num_limit
+        ));
 
         // Build query with dynamic bindings
         let mut query = sqlx::query(&query_str);
@@ -296,7 +315,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
             .await
             .map_err(|e| format!("Database error: {}", e))?;
 
-        let etats = rows.into_iter().map(|row| self.row_to_etat_date(row)).collect();
+        let etats = rows
+            .into_iter()
+            .map(|row| self.row_to_etat_date(row))
+            .collect();
 
         Ok((etats, total))
     }
@@ -327,7 +349,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.into_iter().map(|row| self.row_to_etat_date(row)).collect())
+        Ok(rows
+            .into_iter()
+            .map(|row| self.row_to_etat_date(row))
+            .collect())
     }
 
     async fn find_expired(&self, organization_id: Uuid) -> Result<Vec<EtatDate>, String> {
@@ -355,7 +380,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.into_iter().map(|row| self.row_to_etat_date(row)).collect())
+        Ok(rows
+            .into_iter()
+            .map(|row| self.row_to_etat_date(row))
+            .collect())
     }
 
     async fn update(&self, etat_date: &EtatDate) -> Result<EtatDate, String> {

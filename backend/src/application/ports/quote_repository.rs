@@ -18,11 +18,7 @@ pub trait QuoteRepository: Send + Sync {
     async fn find_by_contractor(&self, contractor_id: Uuid) -> Result<Vec<Quote>, String>;
 
     /// Find quotes by status
-    async fn find_by_status(
-        &self,
-        building_id: Uuid,
-        status: &str,
-    ) -> Result<Vec<Quote>, String>;
+    async fn find_by_status(&self, building_id: Uuid, status: &str) -> Result<Vec<Quote>, String>;
 
     /// Find multiple quotes by IDs (for comparison)
     async fn find_by_ids(&self, ids: Vec<Uuid>) -> Result<Vec<Quote>, String>;
@@ -47,9 +43,5 @@ pub trait QuoteRepository: Send + Sync {
     async fn count_by_building(&self, building_id: Uuid) -> Result<i64, String>;
 
     /// Count quotes by status for a building
-    async fn count_by_status(
-        &self,
-        building_id: Uuid,
-        status: &str,
-    ) -> Result<i64, String>;
+    async fn count_by_status(&self, building_id: Uuid, status: &str) -> Result<i64, String>;
 }

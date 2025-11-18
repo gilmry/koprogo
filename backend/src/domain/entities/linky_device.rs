@@ -51,7 +51,11 @@ impl LinkyDevice {
     }
 
     /// Set refresh token (for OAuth2 token rotation)
-    pub fn with_refresh_token(mut self, refresh_token_encrypted: String, expires_at: DateTime<Utc>) -> Self {
+    pub fn with_refresh_token(
+        mut self,
+        refresh_token_encrypted: String,
+        expires_at: DateTime<Utc>,
+    ) -> Self {
         self.refresh_token_encrypted = Some(refresh_token_encrypted);
         self.token_expires_at = Some(expires_at);
         self
@@ -139,7 +143,10 @@ impl LinkyDevice {
         // Validate length (14 for France, 18 for Belgium)
         let len = prm.len();
         if len != 14 && len != 18 {
-            return Err(format!("PRM must be 14 digits (France) or 18 digits (Belgium), got {}: {}", len, prm));
+            return Err(format!(
+                "PRM must be 14 digits (France) or 18 digits (Belgium), got {}: {}",
+                len, prm
+            ));
         }
 
         Ok(())
@@ -288,7 +295,10 @@ mod tests {
         .with_refresh_token("encrypted_refresh_token".to_string(), expires_at);
 
         assert!(device.refresh_token_encrypted.is_some());
-        assert_eq!(device.refresh_token_encrypted.unwrap(), "encrypted_refresh_token");
+        assert_eq!(
+            device.refresh_token_encrypted.unwrap(),
+            "encrypted_refresh_token"
+        );
         assert_eq!(device.token_expires_at.unwrap(), expires_at);
     }
 
@@ -426,7 +436,10 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(device_ores.api_endpoint(), "https://ext.prod-eu.oresnet.be/v1");
+        assert_eq!(
+            device_ores.api_endpoint(),
+            "https://ext.prod-eu.oresnet.be/v1"
+        );
 
         let device_enedis = LinkyDevice::new(
             sample_building_id(),
@@ -436,6 +449,9 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(device_enedis.api_endpoint(), "https://ext.hml.myelectricaldata.fr/v1");
+        assert_eq!(
+            device_enedis.api_endpoint(),
+            "https://ext.hml.myelectricaldata.fr/v1"
+        );
     }
 }

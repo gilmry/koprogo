@@ -111,28 +111,29 @@ impl BudgetRepository for PostgresBudgetRepository {
         building_id: Uuid,
         fiscal_year: i32,
     ) -> Result<Option<Budget>, String> {
-        let result = sqlx::query(
-            "SELECT * FROM budgets WHERE building_id = $1 AND fiscal_year = $2",
-        )
-        .bind(building_id)
-        .bind(fiscal_year)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to find budget: {}", e))?;
+        let result =
+            sqlx::query("SELECT * FROM budgets WHERE building_id = $1 AND fiscal_year = $2")
+                .bind(building_id)
+                .bind(fiscal_year)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to find budget: {}", e))?;
 
         Ok(result.map(|row| self.row_to_budget(row)))
     }
 
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Budget>, String> {
-        let rows = sqlx::query(
-            "SELECT * FROM budgets WHERE building_id = $1 ORDER BY fiscal_year DESC",
-        )
-        .bind(building_id)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to find budgets: {}", e))?;
+        let rows =
+            sqlx::query("SELECT * FROM budgets WHERE building_id = $1 ORDER BY fiscal_year DESC")
+                .bind(building_id)
+                .fetch_all(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to find budgets: {}", e))?;
 
-        Ok(rows.into_iter().map(|row| self.row_to_budget(row)).collect())
+        Ok(rows
+            .into_iter()
+            .map(|row| self.row_to_budget(row))
+            .collect())
     }
 
     async fn find_active_by_building(&self, building_id: Uuid) -> Result<Option<Budget>, String> {
@@ -170,7 +171,10 @@ impl BudgetRepository for PostgresBudgetRepository {
         .await
         .map_err(|e| format!("Failed to find budgets: {}", e))?;
 
-        Ok(rows.into_iter().map(|row| self.row_to_budget(row)).collect())
+        Ok(rows
+            .into_iter()
+            .map(|row| self.row_to_budget(row))
+            .collect())
     }
 
     async fn find_by_status(
@@ -199,7 +203,10 @@ impl BudgetRepository for PostgresBudgetRepository {
         .await
         .map_err(|e| format!("Failed to find budgets: {}", e))?;
 
-        Ok(rows.into_iter().map(|row| self.row_to_budget(row)).collect())
+        Ok(rows
+            .into_iter()
+            .map(|row| self.row_to_budget(row))
+            .collect())
     }
 
     async fn find_all_paginated(
@@ -247,7 +254,11 @@ impl BudgetRepository for PostgresBudgetRepository {
         }
 
         query.push_str(" ORDER BY fiscal_year DESC, created_at DESC");
-        query.push_str(&format!(" LIMIT ${} OFFSET ${}", bind_index, bind_index + 1));
+        query.push_str(&format!(
+            " LIMIT ${} OFFSET ${}",
+            bind_index,
+            bind_index + 1
+        ));
 
         // Execute count query
         let mut count_q = sqlx::query(&count_query);
@@ -273,7 +284,10 @@ impl BudgetRepository for PostgresBudgetRepository {
             .await
             .map_err(|e| format!("Failed to fetch budgets: {}", e))?;
 
-        let budgets = rows.into_iter().map(|row| self.row_to_budget(row)).collect();
+        let budgets = rows
+            .into_iter()
+            .map(|row| self.row_to_budget(row))
+            .collect();
 
         Ok((budgets, total))
     }

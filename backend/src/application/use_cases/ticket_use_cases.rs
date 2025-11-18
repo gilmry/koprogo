@@ -69,7 +69,10 @@ impl TicketUseCases {
 
     /// List tickets created by a specific owner
     pub async fn list_my_tickets(&self, created_by: Uuid) -> Result<Vec<TicketResponse>, String> {
-        let tickets = self.ticket_repository.find_by_created_by(created_by).await?;
+        let tickets = self
+            .ticket_repository
+            .find_by_created_by(created_by)
+            .await?;
         Ok(tickets.into_iter().map(TicketResponse::from).collect())
     }
 
@@ -219,7 +222,10 @@ impl TicketUseCases {
         &self,
         building_id: Uuid,
     ) -> Result<TicketStatistics, String> {
-        let total = self.ticket_repository.count_by_building(building_id).await?;
+        let total = self
+            .ticket_repository
+            .count_by_building(building_id)
+            .await?;
 
         let open = self
             .ticket_repository

@@ -8,7 +8,6 @@ use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
 use koprogo_api::infrastructure::email::EmailService;
-use koprogo_api::infrastructure::LinkyApiClientImpl;
 use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
@@ -16,6 +15,7 @@ use koprogo_api::infrastructure::web::{
     configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, LoginRateLimiter,
     SecurityHeaders,
 };
+use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
 use std::sync::Arc;
 
@@ -26,33 +26,38 @@ async fn main() -> std::io::Result<()> {
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     // JWT Secret with production validation
-    let jwt_secret = env::var("JWT_SECRET")
-        .unwrap_or_else(|_| {
-            log::warn!("JWT_SECRET not set, using default (INSECURE - only for development!)");
-            "super-secret-key-change-in-production".to_string()
-        });
+    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| {
+        log::warn!("JWT_SECRET not set, using default (INSECURE - only for development!)");
+        "super-secret-key-change-in-production".to_string()
+    });
 
     // Validate JWT secret strength in production
     validate_jwt_secret(&jwt_secret)?;
 
     // TOTP encryption key (32 bytes = 64 hex chars)
-    let totp_encryption_key = env::var("TOTP_ENCRYPTION_KEY")
-        .unwrap_or_else(|_| {
-            log::warn!("TOTP_ENCRYPTION_KEY not set, using default (INSECURE - only for development!)");
-            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string()
-        });
+    let totp_encryption_key = env::var("TOTP_ENCRYPTION_KEY").unwrap_or_else(|_| {
+        log::warn!("TOTP_ENCRYPTION_KEY not set, using default (INSECURE - only for development!)");
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string()
+    });
 
     // Parse encryption key from hex string to [u8; 32]
-    let encryption_key_bytes = hex::decode(&totp_encryption_key)
-        .map_err(|e| std::io::Error::new(
+    let encryption_key_bytes = hex::decode(&totp_encryption_key).map_err(|e| {
+        std::io::Error::new(
             std::io::ErrorKind::InvalidData,
-            format!("Invalid TOTP_ENCRYPTION_KEY (must be 64 hex characters): {}", e)
-        ))?;
+            format!(
+                "Invalid TOTP_ENCRYPTION_KEY (must be 64 hex characters): {}",
+                e
+            ),
+        )
+    })?;
 
     if encryption_key_bytes.len() != 32 {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
-            format!("TOTP_ENCRYPTION_KEY must be exactly 32 bytes (64 hex chars), got {} bytes", encryption_key_bytes.len())
+            format!(
+                "TOTP_ENCRYPTION_KEY must be exactly 32 bytes (64 hex chars), got {} bytes",
+                encryption_key_bytes.len()
+            ),
         ));
     }
 
@@ -170,10 +175,9 @@ async fn main() -> std::io::Result<()> {
     // Linky API Client configuration
     let linky_api_base_url = env::var("LINKY_API_BASE_URL")
         .unwrap_or_else(|_| "https://ext.hml.myelectricaldata.fr".to_string());
-    let linky_client_id = env::var("LINKY_CLIENT_ID")
-        .expect("LINKY_CLIENT_ID must be set");
-    let linky_client_secret = env::var("LINKY_CLIENT_SECRET")
-        .expect("LINKY_CLIENT_SECRET must be set");
+    let linky_client_id = env::var("LINKY_CLIENT_ID").expect("LINKY_CLIENT_ID must be set");
+    let linky_client_secret =
+        env::var("LINKY_CLIENT_SECRET").expect("LINKY_CLIENT_SECRET must be set");
     let linky_client = Arc::new(LinkyApiClientImpl::new(
         linky_api_base_url,
         linky_client_id,
@@ -185,16 +189,19 @@ async fn main() -> std::io::Result<()> {
     let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
     let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
     let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
-    let challenge_progress_repo =
-        Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
+    let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
     let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
 
     // Initialize use cases
-    let auth_use_cases =
-        AuthUseCases::new(user_repo.clone(), refresh_token_repo, user_role_repo, jwt_secret);
+    let auth_use_cases = AuthUseCases::new(
+        user_repo.clone(),
+        refresh_token_repo,
+        user_role_repo,
+        jwt_secret,
+    );
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -230,8 +237,7 @@ async fn main() -> std::io::Result<()> {
     let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
-    let payment_use_cases =
-        PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
+    let payment_use_cases = PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
     let quote_use_cases = QuoteUseCases::new(quote_repo);
     let local_exchange_use_cases = LocalExchangeUseCases::new(
@@ -242,8 +248,7 @@ async fn main() -> std::io::Result<()> {
     let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
-    let shared_object_use_cases =
-        SharedObjectUseCases::new(shared_object_repo, owner_repo.clone());
+    let shared_object_use_cases = SharedObjectUseCases::new(shared_object_repo, owner_repo.clone());
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
     let etat_date_use_cases = EtatDateUseCases::new(
@@ -252,11 +257,8 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
         unit_owner_repo.clone(),
     );
-    let budget_use_cases = BudgetUseCases::new(
-        budget_repo,
-        building_repo.clone(),
-        expense_repo.clone(),
-    );
+    let budget_use_cases =
+        BudgetUseCases::new(budget_repo, building_repo.clone(), expense_repo.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
     let payment_reminder_use_cases = PaymentReminderUseCases::new(
         payment_reminder_repo,
@@ -485,7 +487,10 @@ fn validate_jwt_secret(secret: &str) -> std::io::Result<()> {
         );
     }
 
-    log::info!("✓ JWT_SECRET validation passed (length: {} chars)", secret.len());
+    log::info!(
+        "✓ JWT_SECRET validation passed (length: {} chars)",
+        secret.len()
+    );
     Ok(())
 }
 
@@ -528,7 +533,10 @@ fn validate_cors_origins(origins: &[String]) -> std::io::Result<()> {
         }
 
         // Warn about HTTP in production (HTTPS recommended)
-        if origin.starts_with("http://") && !origin.contains("localhost") && !origin.contains("127.0.0.1") {
+        if origin.starts_with("http://")
+            && !origin.contains("localhost")
+            && !origin.contains("127.0.0.1")
+        {
             log::warn!(
                 "CORS origin '{}' uses HTTP (not HTTPS). \
                  HTTPS is strongly recommended for production.",
@@ -537,6 +545,9 @@ fn validate_cors_origins(origins: &[String]) -> std::io::Result<()> {
         }
     }
 
-    log::info!("✓ CORS origins validation passed ({} origins)", origins.len());
+    log::info!(
+        "✓ CORS origins validation passed ({} origins)",
+        origins.len()
+    );
     Ok(())
 }

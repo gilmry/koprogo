@@ -75,7 +75,10 @@ export const noticesApi = {
     return api.get(`/buildings/${buildingId}/notices/active`);
   },
 
-  async listByType(buildingId: string, noticeType: NoticeType): Promise<Notice[]> {
+  async listByType(
+    buildingId: string,
+    noticeType: NoticeType,
+  ): Promise<Notice[]> {
     return api.get(`/buildings/${buildingId}/notices/type/${noticeType}`);
   },
 

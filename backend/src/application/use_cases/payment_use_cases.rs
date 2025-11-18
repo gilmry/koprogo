@@ -1,9 +1,7 @@
 use crate::application::dto::{
     CreatePaymentRequest, PaymentResponse, PaymentStatsResponse, RefundPaymentRequest,
 };
-use crate::application::ports::{
-    PaymentMethodRepository, PaymentRepository, PaymentStats,
-};
+use crate::application::ports::{PaymentMethodRepository, PaymentRepository, PaymentStats};
 use crate::domain::entities::{Payment, TransactionStatus};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -92,7 +90,10 @@ impl PaymentUseCases {
     }
 
     /// List payments for an owner
-    pub async fn list_owner_payments(&self, owner_id: Uuid) -> Result<Vec<PaymentResponse>, String> {
+    pub async fn list_owner_payments(
+        &self,
+        owner_id: Uuid,
+    ) -> Result<Vec<PaymentResponse>, String> {
         let payments = self.payment_repository.find_by_owner(owner_id).await?;
         Ok(payments.into_iter().map(PaymentResponse::from).collect())
     }
@@ -102,7 +103,10 @@ impl PaymentUseCases {
         &self,
         building_id: Uuid,
     ) -> Result<Vec<PaymentResponse>, String> {
-        let payments = self.payment_repository.find_by_building(building_id).await?;
+        let payments = self
+            .payment_repository
+            .find_by_building(building_id)
+            .await?;
         Ok(payments.into_iter().map(PaymentResponse::from).collect())
     }
 
@@ -145,7 +149,10 @@ impl PaymentUseCases {
         &self,
         organization_id: Uuid,
     ) -> Result<Vec<PaymentResponse>, String> {
-        let payments = self.payment_repository.find_pending(organization_id).await?;
+        let payments = self
+            .payment_repository
+            .find_pending(organization_id)
+            .await?;
         Ok(payments.into_iter().map(PaymentResponse::from).collect())
     }
 

@@ -77,12 +77,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let financial_report_use_cases =
         FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -146,9 +142,7 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
 }
 
 /// Helper: Create organization, user, and building for tests
-async fn create_test_fixtures(
-    app_state: &actix_web::web::Data<AppState>,
-) -> (String, Uuid, Uuid) {
+async fn create_test_fixtures(app_state: &actix_web::web::Data<AppState>) -> (String, Uuid, Uuid) {
     let pool = &app_state.pool;
 
     // Create organization
@@ -369,7 +363,11 @@ async fn test_get_meeting_not_found() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 404, "Should return 404 for non-existent meeting");
+    assert_eq!(
+        resp.status(),
+        404,
+        "Should return 404 for non-existent meeting"
+    );
 }
 
 //
@@ -774,11 +772,7 @@ async fn test_reschedule_meeting_success() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        200,
-        "Should reschedule meeting successfully"
-    );
+    assert_eq!(resp.status(), 200, "Should reschedule meeting successfully");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
     // Verify new date is different from original
@@ -951,13 +945,11 @@ async fn test_meeting_complete_lifecycle() {
     assert_eq!(completed["status"], "Completed");
     assert_eq!(completed["attendees_count"], 35);
     assert_eq!(
-        completed["title"],
-        "Lifecycle Test Meeting - Updated",
+        completed["title"], "Lifecycle Test Meeting - Updated",
         "Title should remain updated"
     );
     assert_eq!(
-        completed["location"],
-        "Updated Hall",
+        completed["location"], "Updated Hall",
         "Location should remain updated"
     );
 }

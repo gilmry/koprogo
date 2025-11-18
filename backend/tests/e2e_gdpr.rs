@@ -8,9 +8,7 @@ use testcontainers::{runners::AsyncRunner, ContainerAsync};
 use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
-use koprogo::application::dto::{
-    GdprActionResponse, GdprEraseResponseDto, GdprExportResponseDto,
-};
+use koprogo::application::dto::{GdprActionResponse, GdprEraseResponseDto, GdprExportResponseDto};
 use koprogo::application::ports::*;
 use koprogo::application::use_cases::*;
 use koprogo::infrastructure::database::repositories::*;
@@ -55,8 +53,7 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
     let unit_owner_repo = Arc::new(PostgresUnitOwnerRepository::new(pool.clone()));
     let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
-    let invoice_line_item_repo =
-        Arc::new(PostgresInvoiceLineItemRepository::new(pool.clone()));
+    let invoice_line_item_repo = Arc::new(PostgresInvoiceLineItemRepository::new(pool.clone()));
     let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
@@ -83,8 +80,7 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
     let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
     let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
     let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
-    let challenge_progress_repo =
-        Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
+    let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
 
     // Initialize email service and storage provider
     let email_service = Arc::new(MockEmailService::new());
@@ -132,8 +128,11 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
         notification_repo.clone(),
         notification_preference_repo.clone(),
     );
-    let payment_use_cases =
-        PaymentUseCases::new(payment_repo.clone(), expense_repo.clone(), owner_repo.clone());
+    let payment_use_cases = PaymentUseCases::new(
+        payment_repo.clone(),
+        expense_repo.clone(),
+        owner_repo.clone(),
+    );
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo.clone());
     let quote_use_cases = QuoteUseCases::new(quote_repo.clone(), building_repo.clone());
     let convocation_use_cases = ConvocationUseCases::new(
@@ -170,14 +169,10 @@ async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
         building_repo.clone(),
         auth_repo.clone(),
     );
-    let achievement_use_cases = AchievementUseCases::new(
-        achievement_repo.clone(),
-        user_achievement_repo.clone(),
-    );
-    let challenge_use_cases = ChallengeUseCases::new(
-        challenge_repo.clone(),
-        challenge_progress_repo.clone(),
-    );
+    let achievement_use_cases =
+        AchievementUseCases::new(achievement_repo.clone(), user_achievement_repo.clone());
+    let challenge_use_cases =
+        ChallengeUseCases::new(challenge_repo.clone(), challenge_progress_repo.clone());
     let gamification_stats_use_cases = GamificationStatsUseCases::new(
         user_achievement_repo.clone(),
         achievement_repo.clone(),
@@ -240,10 +235,7 @@ async fn create_test_user(app_state: &web::Data<AppState>) -> (Uuid, String) {
     (register_result.id, login_result.token)
 }
 
-async fn create_test_building(
-    app_state: &web::Data<AppState>,
-    organization_id: Uuid,
-) -> Uuid {
+async fn create_test_building(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
     let building_name = format!("Test Building {}", Uuid::new_v4());
     let building = app_state
         .building_use_cases
@@ -263,10 +255,7 @@ async fn create_test_building(
     building.id
 }
 
-async fn create_test_owner(
-    app_state: &web::Data<AppState>,
-    organization_id: Uuid,
-) -> Uuid {
+async fn create_test_owner(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
     let email = format!("owner_{}@example.com", Uuid::new_v4());
     let owner = app_state
         .owner_use_cases
@@ -309,11 +298,7 @@ async fn test_export_user_data_success() {
         .to_request();
 
     let export_resp = test::call_service(&app, export_req).await;
-    assert_eq!(
-        export_resp.status(),
-        200,
-        "Expected 200 OK for GDPR export"
-    );
+    assert_eq!(export_resp.status(), 200, "Expected 200 OK for GDPR export");
 
     let export_data: GdprExportResponseDto = test::read_body_json(export_resp).await;
     assert_eq!(export_data.user.id, user_id.to_string());
@@ -592,11 +577,7 @@ async fn test_erase_user_data_success() {
             .to_request();
 
         let erase_resp = test::call_service(&app, erase_req).await;
-        assert_eq!(
-            erase_resp.status(),
-            200,
-            "Expected 200 OK for data erasure"
-        );
+        assert_eq!(erase_resp.status(), 200, "Expected 200 OK for data erasure");
 
         let erase_data: GdprEraseResponseDto = test::read_body_json(erase_resp).await;
         assert!(erase_data.success);
@@ -975,7 +956,10 @@ async fn test_belgian_gdpr_compliance() {
 
     // Verify Belgian data is present
     assert!(
-        export_data.owners.iter().any(|o| o.id == owner.id.to_string()),
+        export_data
+            .owners
+            .iter()
+            .any(|o| o.id == owner.id.to_string()),
         "Expected Belgian owner in export"
     );
 

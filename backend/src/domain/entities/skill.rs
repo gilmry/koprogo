@@ -401,10 +401,7 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "Hourly rate cannot exceed 100 credits"
-        );
+        assert_eq!(result.unwrap_err(), "Hourly rate cannot exceed 100 credits");
     }
 
     #[test]

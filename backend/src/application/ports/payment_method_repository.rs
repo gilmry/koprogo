@@ -23,10 +23,7 @@ pub trait PaymentMethodRepository: Send + Sync {
     async fn find_active_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentMethod>, String>;
 
     /// Find default payment method for an owner
-    async fn find_default_by_owner(
-        &self,
-        owner_id: Uuid,
-    ) -> Result<Option<PaymentMethod>, String>;
+    async fn find_default_by_owner(&self, owner_id: Uuid) -> Result<Option<PaymentMethod>, String>;
 
     /// Find all payment methods for an organization
     async fn find_by_organization(

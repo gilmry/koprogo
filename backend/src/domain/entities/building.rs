@@ -161,9 +161,7 @@ impl Building {
 
     /// Check if building has public syndic information available
     pub fn has_public_syndic_info(&self) -> bool {
-        self.syndic_name.is_some()
-            || self.syndic_email.is_some()
-            || self.syndic_phone.is_some()
+        self.syndic_name.is_some() || self.syndic_email.is_some() || self.syndic_phone.is_some()
     }
 }
 

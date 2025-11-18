@@ -64,7 +64,7 @@ where
             headers.insert(
                 actix_web::http::header::HeaderName::from_static("strict-transport-security"),
                 actix_web::http::header::HeaderValue::from_static(
-                    "max-age=31536000; includeSubDomains; preload"
+                    "max-age=31536000; includeSubDomains; preload",
                 ),
             );
 
@@ -107,14 +107,16 @@ where
                      connect-src 'self'; \
                      frame-ancestors 'none'; \
                      base-uri 'self'; \
-                     form-action 'self'"
+                     form-action 'self'",
                 ),
             );
 
             // Referrer Policy: Don't send referrer to cross-origin requests
             headers.insert(
                 actix_web::http::header::HeaderName::from_static("referrer-policy"),
-                actix_web::http::header::HeaderValue::from_static("strict-origin-when-cross-origin"),
+                actix_web::http::header::HeaderValue::from_static(
+                    "strict-origin-when-cross-origin",
+                ),
             );
 
             // Permissions Policy (formerly Feature-Policy)
@@ -122,7 +124,7 @@ where
             headers.insert(
                 actix_web::http::header::HeaderName::from_static("permissions-policy"),
                 actix_web::http::header::HeaderValue::from_static(
-                    "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+                    "geolocation=(), microphone=(), camera=(), payment=(), usb=()",
                 ),
             );
 
@@ -138,11 +140,10 @@ mod tests {
 
     #[actix_web::test]
     async fn test_security_headers_are_added() {
-        let app = test::init_service(
-            App::new()
-                .wrap(SecurityHeaders)
-                .route("/test", web::get().to(|| async { HttpResponse::Ok().finish() })),
-        )
+        let app = test::init_service(App::new().wrap(SecurityHeaders).route(
+            "/test",
+            web::get().to(|| async { HttpResponse::Ok().finish() }),
+        ))
         .await;
 
         let req = test::TestRequest::get().uri("/test").to_request();

@@ -5,42 +5,42 @@ use uuid::Uuid;
 /// Notification Type - Different categories of notifications
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum NotificationType {
-    ExpenseCreated,      // Nouvel appel de fonds
-    MeetingConvocation,  // Convocation AG
-    PaymentReceived,     // Paiement reçu
-    TicketResolved,      // Ticket résolu
-    DocumentAdded,       // Document ajouté
-    BoardMessage,        // Message conseil copropriété
-    PaymentReminder,     // Relance paiement
-    BudgetApproved,      // Budget approuvé
-    ResolutionVote,      // Vote sur résolution
-    System,              // Notification système
+    ExpenseCreated,     // Nouvel appel de fonds
+    MeetingConvocation, // Convocation AG
+    PaymentReceived,    // Paiement reçu
+    TicketResolved,     // Ticket résolu
+    DocumentAdded,      // Document ajouté
+    BoardMessage,       // Message conseil copropriété
+    PaymentReminder,    // Relance paiement
+    BudgetApproved,     // Budget approuvé
+    ResolutionVote,     // Vote sur résolution
+    System,             // Notification système
 }
 
 /// Notification Channel - Delivery method
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum NotificationChannel {
-    Email,   // Email notification
-    InApp,   // In-app notification (dashboard)
-    Push,    // Web Push notification (service worker)
+    Email, // Email notification
+    InApp, // In-app notification (dashboard)
+    Push,  // Web Push notification (service worker)
 }
 
 /// Notification Status
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum NotificationStatus {
-    Pending,   // Waiting to be sent
-    Sent,      // Successfully sent
-    Failed,    // Failed to send
-    Read,      // Read by user (for in-app only)
+    Pending, // Waiting to be sent
+    Sent,    // Successfully sent
+    Failed,  // Failed to send
+    Read,    // Read by user (for in-app only)
 }
 
 /// Notification Priority
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub enum NotificationPriority {
-    Low,       // Basse
-    Medium,    // Moyenne
-    High,      // Haute
-    Critical,  // Critique/Urgente
+    Low,      // Basse
+    Medium,   // Moyenne
+    High,     // Haute
+    Critical, // Critique/Urgente
 }
 
 /// Notification Entity
@@ -51,19 +51,19 @@ pub enum NotificationPriority {
 pub struct Notification {
     pub id: Uuid,
     pub organization_id: Uuid,
-    pub user_id: Uuid,                  // Recipient
+    pub user_id: Uuid, // Recipient
     pub notification_type: NotificationType,
     pub channel: NotificationChannel,
     pub priority: NotificationPriority,
     pub status: NotificationStatus,
     pub title: String,
     pub message: String,
-    pub link_url: Option<String>,       // Optional link to resource
-    pub metadata: Option<String>,       // JSON metadata for rich notifications
+    pub link_url: Option<String>, // Optional link to resource
+    pub metadata: Option<String>, // JSON metadata for rich notifications
     pub sent_at: Option<DateTime<Utc>>,
     pub read_at: Option<DateTime<Utc>>, // For in-app notifications
     pub created_at: DateTime<Utc>,
-    pub error_message: Option<String>,  // Error details if failed
+    pub error_message: Option<String>, // Error details if failed
 }
 
 impl Notification {
@@ -395,10 +395,7 @@ mod tests {
 
     #[test]
     fn test_notification_preference() {
-        let pref = NotificationPreference::new(
-            Uuid::new_v4(),
-            NotificationType::ExpenseCreated,
-        );
+        let pref = NotificationPreference::new(Uuid::new_v4(), NotificationType::ExpenseCreated);
 
         assert!(pref.email_enabled);
         assert!(pref.in_app_enabled);
@@ -407,10 +404,8 @@ mod tests {
 
     #[test]
     fn test_set_channel_enabled() {
-        let mut pref = NotificationPreference::new(
-            Uuid::new_v4(),
-            NotificationType::MeetingConvocation,
-        );
+        let mut pref =
+            NotificationPreference::new(Uuid::new_v4(), NotificationType::MeetingConvocation);
 
         pref.set_channel_enabled(NotificationChannel::Email, false);
 
@@ -421,10 +416,7 @@ mod tests {
 
     #[test]
     fn test_is_channel_enabled() {
-        let pref = NotificationPreference::new(
-            Uuid::new_v4(),
-            NotificationType::TicketResolved,
-        );
+        let pref = NotificationPreference::new(Uuid::new_v4(), NotificationType::TicketResolved);
 
         assert!(pref.is_channel_enabled(&NotificationChannel::Email));
         assert!(pref.is_channel_enabled(&NotificationChannel::InApp));

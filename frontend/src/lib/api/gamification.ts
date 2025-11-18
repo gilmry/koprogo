@@ -113,8 +113,13 @@ export const gamificationApi = {
     return api.get(`/organizations/${organizationId}/achievements`);
   },
 
-  async listByCategory(organizationId: string, category: AchievementCategory): Promise<Achievement[]> {
-    return api.get(`/organizations/${organizationId}/achievements/category/${category}`);
+  async listByCategory(
+    organizationId: string,
+    category: AchievementCategory,
+  ): Promise<Achievement[]> {
+    return api.get(
+      `/organizations/${organizationId}/achievements/category/${category}`,
+    );
   },
 
   async getVisibleAchievements(organizationId: string): Promise<Achievement[]> {
@@ -130,7 +135,10 @@ export const gamificationApi = {
   },
 
   // User Achievements (3 endpoints)
-  async awardAchievement(data: { user_id: string; achievement_id: string }): Promise<UserAchievement> {
+  async awardAchievement(data: {
+    user_id: string;
+    achievement_id: string;
+  }): Promise<UserAchievement> {
     return api.post("/users/achievements", data);
   },
 
@@ -138,7 +146,10 @@ export const gamificationApi = {
     return api.get(`/users/${userId}/achievements`);
   },
 
-  async getRecentAchievements(userId: string, limit = 10): Promise<UserAchievement[]> {
+  async getRecentAchievements(
+    userId: string,
+    limit = 10,
+  ): Promise<UserAchievement[]> {
     return api.get(`/users/${userId}/achievements/recent?limit=${limit}`);
   },
 
@@ -155,8 +166,13 @@ export const gamificationApi = {
     return api.get(`/organizations/${organizationId}/challenges`);
   },
 
-  async listByStatus(organizationId: string, status: ChallengeStatus): Promise<Challenge[]> {
-    return api.get(`/organizations/${organizationId}/challenges/status/${status}`);
+  async listByStatus(
+    organizationId: string,
+    status: ChallengeStatus,
+  ): Promise<Challenge[]> {
+    return api.get(
+      `/organizations/${organizationId}/challenges/status/${status}`,
+    );
   },
 
   async getActiveChallenges(organizationId: string): Promise<Challenge[]> {
@@ -180,11 +196,16 @@ export const gamificationApi = {
   },
 
   // Challenge Progress (4 endpoints)
-  async getChallengeProgress(challengeId: string, userId: string): Promise<ChallengeProgress> {
+  async getChallengeProgress(
+    challengeId: string,
+    userId: string,
+  ): Promise<ChallengeProgress> {
     return api.get(`/challenges/${challengeId}/progress/${userId}`);
   },
 
-  async listChallengeProgress(challengeId: string): Promise<ChallengeProgress[]> {
+  async listChallengeProgress(
+    challengeId: string,
+  ): Promise<ChallengeProgress[]> {
     return api.get(`/challenges/${challengeId}/progress`);
   },
 
@@ -192,8 +213,13 @@ export const gamificationApi = {
     return api.get(`/users/${userId}/challenges/active`);
   },
 
-  async incrementProgress(challengeId: string, userId: string): Promise<ChallengeProgress> {
-    return api.post(`/challenges/${challengeId}/progress/increment`, { user_id: userId });
+  async incrementProgress(
+    challengeId: string,
+    userId: string,
+  ): Promise<ChallengeProgress> {
+    return api.post(`/challenges/${challengeId}/progress/increment`, {
+      user_id: userId,
+    });
   },
 
   // Statistics (2 endpoints)
@@ -201,7 +227,11 @@ export const gamificationApi = {
     return api.get(`/users/${userId}/gamification/stats`);
   },
 
-  async getLeaderboard(organizationId: string, buildingId?: string, limit = 10): Promise<LeaderboardEntry[]> {
+  async getLeaderboard(
+    organizationId: string,
+    buildingId?: string,
+    limit = 10,
+  ): Promise<LeaderboardEntry[]> {
     let url = `/organizations/${organizationId}/gamification/leaderboard?limit=${limit}`;
     if (buildingId) url += `&building_id=${buildingId}`;
     return api.get(url);

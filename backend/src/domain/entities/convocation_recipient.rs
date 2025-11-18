@@ -52,7 +52,7 @@ pub struct ConvocationRecipient {
 
     // Email tracking
     pub email_sent_at: Option<DateTime<Utc>>,
-    pub email_opened_at: Option<DateTime<Utc>>,  // Email read receipt
+    pub email_opened_at: Option<DateTime<Utc>>, // Email read receipt
     pub email_failed: bool,
     pub email_failure_reason: Option<String>,
 
@@ -65,7 +65,7 @@ pub struct ConvocationRecipient {
     pub attendance_updated_at: Option<DateTime<Utc>>,
 
     // Proxy delegation (if owner delegates voting power)
-    pub proxy_owner_id: Option<Uuid>,  // Delegated to this owner
+    pub proxy_owner_id: Option<Uuid>, // Delegated to this owner
 
     // Audit
     pub created_at: DateTime<Utc>,
@@ -74,11 +74,7 @@ pub struct ConvocationRecipient {
 
 impl ConvocationRecipient {
     /// Create a new convocation recipient
-    pub fn new(
-        convocation_id: Uuid,
-        owner_id: Uuid,
-        email: String,
-    ) -> Result<Self, String> {
+    pub fn new(convocation_id: Uuid, owner_id: Uuid, email: String) -> Result<Self, String> {
         // Validate email
         if email.is_empty() || !email.contains('@') {
             return Err(format!("Invalid email address: {}", email));
@@ -125,7 +121,7 @@ impl ConvocationRecipient {
         }
 
         if self.email_opened_at.is_some() {
-            return Ok(());  // Already marked as opened, idempotent
+            return Ok(()); // Already marked as opened, idempotent
         }
 
         self.email_opened_at = Some(Utc::now());
@@ -235,11 +231,8 @@ mod tests {
         let conv_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let recipient = ConvocationRecipient::new(
-            conv_id,
-            owner_id,
-            "owner@example.com".to_string(),
-        );
+        let recipient =
+            ConvocationRecipient::new(conv_id, owner_id, "owner@example.com".to_string());
 
         assert!(recipient.is_ok());
         let r = recipient.unwrap();
@@ -252,11 +245,8 @@ mod tests {
 
     #[test]
     fn test_create_recipient_invalid_email() {
-        let result = ConvocationRecipient::new(
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            "invalid-email".to_string(),
-        );
+        let result =
+            ConvocationRecipient::new(Uuid::new_v4(), Uuid::new_v4(), "invalid-email".to_string());
 
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Invalid email"));

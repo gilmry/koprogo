@@ -374,10 +374,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
         Ok(())
     }
 
-    async fn get_meeting_vote_summary(
-        &self,
-        meeting_id: Uuid,
-    ) -> Result<Vec<Resolution>, String> {
+    async fn get_meeting_vote_summary(&self, meeting_id: Uuid) -> Result<Vec<Resolution>, String> {
         // Same as find_by_meeting_id, but could be enhanced with additional stats
         self.find_by_meeting_id(meeting_id).await
     }

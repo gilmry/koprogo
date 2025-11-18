@@ -116,7 +116,10 @@ impl NoticeUseCases {
         &self,
         building_id: Uuid,
     ) -> Result<Vec<NoticeSummaryDto>, String> {
-        let notices = self.notice_repo.find_pinned_by_building(building_id).await?;
+        let notices = self
+            .notice_repo
+            .find_pinned_by_building(building_id)
+            .await?;
         self.enrich_notices_summary(notices).await
     }
 
@@ -152,10 +155,7 @@ impl NoticeUseCases {
         building_id: Uuid,
         status: NoticeStatus,
     ) -> Result<Vec<NoticeSummaryDto>, String> {
-        let notices = self
-            .notice_repo
-            .find_by_status(building_id, status)
-            .await?;
+        let notices = self.notice_repo.find_by_status(building_id, status).await?;
         self.enrich_notices_summary(notices).await
     }
 
@@ -354,11 +354,7 @@ impl NoticeUseCases {
     /// # Authorization
     /// - Only author can delete their notice
     /// - Cannot delete Published/Archived notices (must archive first)
-    pub async fn delete_notice(
-        &self,
-        notice_id: Uuid,
-        actor_id: Uuid,
-    ) -> Result<(), String> {
+    pub async fn delete_notice(&self, notice_id: Uuid, actor_id: Uuid) -> Result<(), String> {
         let notice = self
             .notice_repo
             .find_by_id(notice_id)
@@ -401,11 +397,7 @@ impl NoticeUseCases {
         for mut notice in expired_notices {
             // Expire notice (domain validates state transition)
             if let Err(e) = notice.expire() {
-                log::warn!(
-                    "Failed to expire notice {}: {}. Skipping.",
-                    notice.id,
-                    e
-                );
+                log::warn!("Failed to expire notice {}: {}. Skipping.", notice.id, e);
                 continue;
             }
 

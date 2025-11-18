@@ -20,7 +20,7 @@ pub struct WorkReport {
     pub contractor_contact: Option<String>,
 
     // Dates
-    pub work_date: DateTime<Utc>, // Date of work
+    pub work_date: DateTime<Utc>,               // Date of work
     pub completion_date: Option<DateTime<Utc>>, // If different from work_date
 
     // Financial
@@ -28,7 +28,7 @@ pub struct WorkReport {
     pub invoice_number: Option<String>,
 
     // Documentation
-    pub photos: Vec<String>, // File paths to photos
+    pub photos: Vec<String>,    // File paths to photos
     pub documents: Vec<String>, // File paths to related documents
     pub notes: Option<String>,
 
@@ -44,23 +44,23 @@ pub struct WorkReport {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum WorkType {
-    Maintenance,       // Entretien régulier
-    Repair,            // Réparation
-    Renovation,        // Rénovation
-    Emergency,         // Intervention d'urgence
-    Inspection,        // Inspection avec travaux
-    Installation,      // Installation nouvel équipement
+    Maintenance,  // Entretien régulier
+    Repair,       // Réparation
+    Renovation,   // Rénovation
+    Emergency,    // Intervention d'urgence
+    Inspection,   // Inspection avec travaux
+    Installation, // Installation nouvel équipement
     Other,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum WarrantyType {
-    None,                          // Pas de garantie
-    Standard,                      // 2 ans (vices apparents)
-    Decennial,                     // 10 ans (garantie décennale)
-    Extended,                      // Garantie étendue (matériel)
-    Custom { years: i32 },         // Garantie personnalisée
+    None,                  // Pas de garantie
+    Standard,              // 2 ans (vices apparents)
+    Decennial,             // 10 ans (garantie décennale)
+    Extended,              // Garantie étendue (matériel)
+    Custom { years: i32 }, // Garantie personnalisée
 }
 
 impl WorkReport {
@@ -84,7 +84,9 @@ impl WorkReport {
             WarrantyType::Standard => work_date + chrono::Duration::days(2 * 365), // 2 years
             WarrantyType::Decennial => work_date + chrono::Duration::days(10 * 365), // 10 years
             WarrantyType::Extended => work_date + chrono::Duration::days(3 * 365), // 3 years default
-            WarrantyType::Custom { years } => work_date + chrono::Duration::days(years as i64 * 365),
+            WarrantyType::Custom { years } => {
+                work_date + chrono::Duration::days(years as i64 * 365)
+            }
         };
 
         Self {

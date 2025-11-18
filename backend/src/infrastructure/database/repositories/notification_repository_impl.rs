@@ -1,7 +1,6 @@
 use crate::application::ports::NotificationRepository;
 use crate::domain::entities::{
-    Notification, NotificationChannel, NotificationPriority, NotificationStatus,
-    NotificationType,
+    Notification, NotificationChannel, NotificationPriority, NotificationStatus, NotificationType,
 };
 use async_trait::async_trait;
 use sqlx::PgPool;
@@ -263,7 +262,12 @@ impl NotificationRepository for PostgresNotificationRepository {
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| format!("Database error finding notifications by user and status: {}", e))?;
+        .map_err(|e| {
+            format!(
+                "Database error finding notifications by user and status: {}",
+                e
+            )
+        })?;
 
         rows.into_iter()
             .map(|r| {
@@ -308,7 +312,12 @@ impl NotificationRepository for PostgresNotificationRepository {
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| format!("Database error finding notifications by user and channel: {}", e))?;
+        .map_err(|e| {
+            format!(
+                "Database error finding notifications by user and channel: {}",
+                e
+            )
+        })?;
 
         rows.into_iter()
             .map(|r| {
@@ -461,7 +470,12 @@ impl NotificationRepository for PostgresNotificationRepository {
         )
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| format!("Database error finding notifications by organization: {}", e))?;
+        .map_err(|e| {
+            format!(
+                "Database error finding notifications by organization: {}",
+                e
+            )
+        })?;
 
         rows.into_iter()
             .map(|r| {

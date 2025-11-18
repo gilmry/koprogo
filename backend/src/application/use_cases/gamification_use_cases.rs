@@ -1,14 +1,15 @@
 use crate::application::dto::{
     AchievementResponseDto, ChallengeProgressResponseDto, ChallengeResponseDto,
     CreateAchievementDto, CreateChallengeDto, LeaderboardEntryDto, LeaderboardResponseDto,
-    UpdateAchievementDto, UpdateChallengeDto, UserAchievementResponseDto,
-    UserGamificationStatsDto,
+    UpdateAchievementDto, UpdateChallengeDto, UserAchievementResponseDto, UserGamificationStatsDto,
 };
 use crate::application::ports::{
-    AchievementRepository, ChallengeProgressRepository, ChallengeRepository, UserAchievementRepository, UserRepository,
+    AchievementRepository, ChallengeProgressRepository, ChallengeRepository,
+    UserAchievementRepository, UserRepository,
 };
 use crate::domain::entities::{
-    Achievement, AchievementCategory, Challenge, ChallengeProgress, ChallengeStatus, UserAchievement,
+    Achievement, AchievementCategory, Challenge, ChallengeProgress, ChallengeStatus,
+    UserAchievement,
 };
 use std::sync::Arc;
 use uuid::Uuid;
@@ -86,8 +87,14 @@ impl AchievementUseCases {
         &self,
         organization_id: Uuid,
     ) -> Result<Vec<AchievementResponseDto>, String> {
-        let achievements = self.achievement_repo.find_by_organization(organization_id).await?;
-        Ok(achievements.into_iter().map(AchievementResponseDto::from).collect())
+        let achievements = self
+            .achievement_repo
+            .find_by_organization(organization_id)
+            .await?;
+        Ok(achievements
+            .into_iter()
+            .map(AchievementResponseDto::from)
+            .collect())
     }
 
     /// List achievements by category
@@ -100,7 +107,10 @@ impl AchievementUseCases {
             .achievement_repo
             .find_by_organization_and_category(organization_id, category)
             .await?;
-        Ok(achievements.into_iter().map(AchievementResponseDto::from).collect())
+        Ok(achievements
+            .into_iter()
+            .map(AchievementResponseDto::from)
+            .collect())
     }
 
     /// List visible achievements for a user (non-secret or already earned)
@@ -113,7 +123,10 @@ impl AchievementUseCases {
             .achievement_repo
             .find_visible_for_user(organization_id, user_id)
             .await?;
-        Ok(achievements.into_iter().map(AchievementResponseDto::from).collect())
+        Ok(achievements
+            .into_iter()
+            .map(AchievementResponseDto::from)
+            .collect())
     }
 
     /// Update achievement (admin only)
@@ -193,14 +206,20 @@ impl AchievementUseCases {
             // Increment times_earned for repeatable achievements
             existing.repeat_earn()?;
             let updated = self.user_achievement_repo.update(&existing).await?;
-            return Ok(UserAchievementResponseDto::from_entities(updated, achievement));
+            return Ok(UserAchievementResponseDto::from_entities(
+                updated,
+                achievement,
+            ));
         }
 
         // Award new achievement
         let user_achievement = UserAchievement::new(user_id, achievement_id, progress_data);
         let created = self.user_achievement_repo.create(&user_achievement).await?;
 
-        Ok(UserAchievementResponseDto::from_entities(created, achievement))
+        Ok(UserAchievementResponseDto::from_entities(
+            created,
+            achievement,
+        ))
     }
 
     /// Get all achievements earned by a user (enriched with achievement data)
@@ -310,8 +329,14 @@ impl ChallengeUseCases {
         &self,
         organization_id: Uuid,
     ) -> Result<Vec<ChallengeResponseDto>, String> {
-        let challenges = self.challenge_repo.find_by_organization(organization_id).await?;
-        Ok(challenges.into_iter().map(ChallengeResponseDto::from).collect())
+        let challenges = self
+            .challenge_repo
+            .find_by_organization(organization_id)
+            .await?;
+        Ok(challenges
+            .into_iter()
+            .map(ChallengeResponseDto::from)
+            .collect())
     }
 
     /// List challenges by status
@@ -324,7 +349,10 @@ impl ChallengeUseCases {
             .challenge_repo
             .find_by_organization_and_status(organization_id, status)
             .await?;
-        Ok(challenges.into_iter().map(ChallengeResponseDto::from).collect())
+        Ok(challenges
+            .into_iter()
+            .map(ChallengeResponseDto::from)
+            .collect())
     }
 
     /// List challenges for a building
@@ -333,7 +361,10 @@ impl ChallengeUseCases {
         building_id: Uuid,
     ) -> Result<Vec<ChallengeResponseDto>, String> {
         let challenges = self.challenge_repo.find_by_building(building_id).await?;
-        Ok(challenges.into_iter().map(ChallengeResponseDto::from).collect())
+        Ok(challenges
+            .into_iter()
+            .map(ChallengeResponseDto::from)
+            .collect())
     }
 
     /// List active challenges (Active status + date range)
@@ -342,7 +373,10 @@ impl ChallengeUseCases {
         organization_id: Uuid,
     ) -> Result<Vec<ChallengeResponseDto>, String> {
         let challenges = self.challenge_repo.find_active(organization_id).await?;
-        Ok(challenges.into_iter().map(ChallengeResponseDto::from).collect())
+        Ok(challenges
+            .into_iter()
+            .map(ChallengeResponseDto::from)
+            .collect())
     }
 
     /// Update challenge (Draft only)
@@ -397,7 +431,10 @@ impl ChallengeUseCases {
     ///
     /// # Authorization
     /// - Only organization admins can activate challenges
-    pub async fn activate_challenge(&self, challenge_id: Uuid) -> Result<ChallengeResponseDto, String> {
+    pub async fn activate_challenge(
+        &self,
+        challenge_id: Uuid,
+    ) -> Result<ChallengeResponseDto, String> {
         let mut challenge = self
             .challenge_repo
             .find_by_id(challenge_id)
@@ -413,7 +450,10 @@ impl ChallengeUseCases {
     ///
     /// # Authorization
     /// - Only organization admins can complete challenges
-    pub async fn complete_challenge(&self, challenge_id: Uuid) -> Result<ChallengeResponseDto, String> {
+    pub async fn complete_challenge(
+        &self,
+        challenge_id: Uuid,
+    ) -> Result<ChallengeResponseDto, String> {
         let mut challenge = self
             .challenge_repo
             .find_by_id(challenge_id)
@@ -429,7 +469,10 @@ impl ChallengeUseCases {
     ///
     /// # Authorization
     /// - Only organization admins can cancel challenges
-    pub async fn cancel_challenge(&self, challenge_id: Uuid) -> Result<ChallengeResponseDto, String> {
+    pub async fn cancel_challenge(
+        &self,
+        challenge_id: Uuid,
+    ) -> Result<ChallengeResponseDto, String> {
         let mut challenge = self
             .challenge_repo
             .find_by_id(challenge_id)
@@ -464,7 +507,9 @@ impl ChallengeUseCases {
             .await?
             .ok_or("Challenge not found".to_string())?;
 
-        Ok(ChallengeProgressResponseDto::from_entities(progress, challenge))
+        Ok(ChallengeProgressResponseDto::from_entities(
+            progress, challenge,
+        ))
     }
 
     /// List all progress for a challenge
@@ -496,8 +541,14 @@ impl ChallengeUseCases {
         // Enrich with challenge data
         let mut enriched = Vec::new();
         for progress in progress_list {
-            if let Some(challenge) = self.challenge_repo.find_by_id(progress.challenge_id).await? {
-                enriched.push(ChallengeProgressResponseDto::from_entities(progress, challenge));
+            if let Some(challenge) = self
+                .challenge_repo
+                .find_by_id(progress.challenge_id)
+                .await?
+            {
+                enriched.push(ChallengeProgressResponseDto::from_entities(
+                    progress, challenge,
+                ));
             }
         }
 
@@ -542,7 +593,9 @@ impl ChallengeUseCases {
         }
 
         let updated = self.progress_repo.update(&progress).await?;
-        Ok(ChallengeProgressResponseDto::from_entities(updated, challenge))
+        Ok(ChallengeProgressResponseDto::from_entities(
+            updated, challenge,
+        ))
     }
 }
 
@@ -586,27 +639,33 @@ impl GamificationStatsUseCases {
         organization_id: Uuid,
     ) -> Result<UserGamificationStatsDto, String> {
         // Calculate achievement points
-        let total_points = self.user_achievement_repo.calculate_total_points(user_id).await?;
+        let total_points = self
+            .user_achievement_repo
+            .calculate_total_points(user_id)
+            .await?;
 
         // Count achievements
         let achievements_earned = self.user_achievement_repo.count_by_user(user_id).await? as i32;
-        let achievements_available =
-            self.achievement_repo.count_by_organization(organization_id).await? as i32;
+        let achievements_available = self
+            .achievement_repo
+            .count_by_organization(organization_id)
+            .await? as i32;
 
         // Count challenges
-        let challenges_completed = self.progress_repo.count_completed_by_user(user_id).await? as i32;
-        let challenges_active = self
-            .progress_repo
-            .find_active_by_user(user_id)
-            .await?
-            .len() as i32;
+        let challenges_completed =
+            self.progress_repo.count_completed_by_user(user_id).await? as i32;
+        let challenges_active = self.progress_repo.find_active_by_user(user_id).await?.len() as i32;
 
         // Get recent achievements (last 5)
-        let recent = self.user_achievement_repo.find_recent_by_user(user_id, 5).await?;
+        let recent = self
+            .user_achievement_repo
+            .find_recent_by_user(user_id, 5)
+            .await?;
         let mut recent_achievements = Vec::new();
         for ua in recent {
             if let Some(achievement) = self.achievement_repo.find_by_id(ua.achievement_id).await? {
-                recent_achievements.push(UserAchievementResponseDto::from_entities(ua, achievement));
+                recent_achievements
+                    .push(UserAchievementResponseDto::from_entities(ua, achievement));
             }
         }
 
@@ -643,11 +702,16 @@ impl GamificationStatsUseCases {
         let mut rank = 1;
         for (user_id, challenge_points) in leaderboard_data {
             // Get achievement points
-            let achievement_points = self.user_achievement_repo.calculate_total_points(user_id).await?;
+            let achievement_points = self
+                .user_achievement_repo
+                .calculate_total_points(user_id)
+                .await?;
 
             // Get counts
-            let achievements_count = self.user_achievement_repo.count_by_user(user_id).await? as i32;
-            let challenges_completed = self.progress_repo.count_completed_by_user(user_id).await? as i32;
+            let achievements_count =
+                self.user_achievement_repo.count_by_user(user_id).await? as i32;
+            let challenges_completed =
+                self.progress_repo.count_completed_by_user(user_id).await? as i32;
 
             // Get username
             let username = if let Some(user) = self.user_repo.find_by_id(user_id).await? {

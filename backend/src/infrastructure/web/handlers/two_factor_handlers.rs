@@ -38,15 +38,14 @@ pub async fn setup_2fa(
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Organization ID is required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Organization ID is required"
+            }))
+        }
     };
 
-    match use_cases
-        .setup_2fa(auth.user_id, organization_id)
-        .await
-    {
+    match use_cases.setup_2fa(auth.user_id, organization_id).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) if e.contains("already enabled") => {
             HttpResponse::BadRequest().json(serde_json::json!({
@@ -91,9 +90,11 @@ pub async fn enable_2fa(
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Organization ID is required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Organization ID is required"
+            }))
+        }
     };
 
     match use_cases
@@ -101,21 +102,19 @@ pub async fn enable_2fa(
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) if e.contains("Invalid TOTP") => HttpResponse::BadRequest().json(
-            serde_json::json!({
+        Err(e) if e.contains("Invalid TOTP") => {
+            HttpResponse::BadRequest().json(serde_json::json!({
                 "error": "Invalid TOTP code. Please check your authenticator app and try again."
-            }),
-        ),
+            }))
+        }
         Err(e) if e.contains("already enabled") => {
             HttpResponse::BadRequest().json(serde_json::json!({
                 "error": e
             }))
         }
-        Err(e) if e.contains("not found") => HttpResponse::BadRequest().json(
-            serde_json::json!({
-                "error": "2FA setup not found. Please run setup first."
-            }),
-        ),
+        Err(e) if e.contains("not found") => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "2FA setup not found. Please run setup first."
+        })),
         Err(e) => {
             log::error!("Failed to enable 2FA for user {}: {}", auth.user_id, e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -156,9 +155,11 @@ pub async fn verify_2fa(
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Organization ID is required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Organization ID is required"
+            }))
+        }
     };
 
     match use_cases
@@ -166,16 +167,14 @@ pub async fn verify_2fa(
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) if e.contains("Invalid TOTP") => HttpResponse::BadRequest().json(
-            serde_json::json!({
+        Err(e) if e.contains("Invalid TOTP") => {
+            HttpResponse::BadRequest().json(serde_json::json!({
                 "error": "Invalid code. Please try again or use a backup code."
-            }),
-        ),
-        Err(e) if e.contains("not enabled") => HttpResponse::BadRequest().json(
-            serde_json::json!({
-                "error": "2FA is not enabled for this account"
-            }),
-        ),
+            }))
+        }
+        Err(e) if e.contains("not enabled") => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "2FA is not enabled for this account"
+        })),
         Err(e) => {
             log::error!("Failed to verify 2FA for user {}: {}", auth.user_id, e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -214,9 +213,11 @@ pub async fn disable_2fa(
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Organization ID is required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Organization ID is required"
+            }))
+        }
     };
 
     match use_cases
@@ -227,11 +228,11 @@ pub async fn disable_2fa(
             "success": true,
             "message": "2FA successfully disabled"
         })),
-        Err(e) if e.contains("Invalid password") => HttpResponse::BadRequest().json(
-            serde_json::json!({
+        Err(e) if e.contains("Invalid password") => {
+            HttpResponse::BadRequest().json(serde_json::json!({
                 "error": "Invalid password. Please verify your password and try again."
-            }),
-        ),
+            }))
+        }
         Err(e) => {
             log::error!("Failed to disable 2FA for user {}: {}", auth.user_id, e);
             HttpResponse::InternalServerError().json(serde_json::json!({
@@ -279,9 +280,11 @@ pub async fn regenerate_backup_codes(
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Organization ID is required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Organization ID is required"
+            }))
+        }
     };
 
     match use_cases
@@ -289,16 +292,14 @@ pub async fn regenerate_backup_codes(
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) if e.contains("Invalid TOTP") => HttpResponse::BadRequest().json(
-            serde_json::json!({
+        Err(e) if e.contains("Invalid TOTP") => {
+            HttpResponse::BadRequest().json(serde_json::json!({
                 "error": "Invalid TOTP code. Please check your authenticator app and try again."
-            }),
-        ),
-        Err(e) if e.contains("not enabled") => HttpResponse::BadRequest().json(
-            serde_json::json!({
-                "error": "2FA is not enabled for this account"
-            }),
-        ),
+            }))
+        }
+        Err(e) if e.contains("not enabled") => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "2FA is not enabled for this account"
+        })),
         Err(e) => {
             log::error!(
                 "Failed to regenerate backup codes for user {}: {}",
@@ -356,14 +357,17 @@ pub async fn get_2fa_status(
 }
 
 /// Configure 2FA routes
-pub fn configure_routes(cfg: &mut web::ServiceConfig) {
+pub fn configure_two_factor_routes(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/2fa")
             .route("/setup", web::post().to(setup_2fa))
             .route("/enable", web::post().to(enable_2fa))
             .route("/verify", web::post().to(verify_2fa))
             .route("/disable", web::post().to(disable_2fa))
-            .route("/regenerate-backup-codes", web::post().to(regenerate_backup_codes))
+            .route(
+                "/regenerate-backup-codes",
+                web::post().to(regenerate_backup_codes),
+            )
             .route("/status", web::get().to(get_2fa_status)),
     );
 }
@@ -374,8 +378,8 @@ mod tests {
     use crate::application::ports::{TwoFactorRepository, UserRepository};
     use crate::domain::entities::User;
     use actix_web::{test, web, App};
-    use mockall::predicate::*;
     use mockall::mock;
+    use mockall::predicate::*;
     use std::sync::Arc;
     use uuid::Uuid;
 
@@ -401,8 +405,10 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, String>;
             async fn find_by_email(&self, email: &str) -> Result<Option<User>, String>;
             async fn find_all(&self) -> Result<Vec<User>, String>;
+            async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<User>, String>;
             async fn update(&self, user: &User) -> Result<User, String>;
-            async fn delete(&self, id: Uuid) -> Result<(), String>;
+            async fn delete(&self, id: Uuid) -> Result<bool, String>;
+            async fn count_by_organization(&self, org_id: Uuid) -> Result<i64, String>;
         }
     }
 
@@ -410,13 +416,18 @@ mod tests {
     async fn test_get_2fa_status_not_enabled() {
         let two_factor_repo = Arc::new(MockTwoFactorRepo::new());
         let user_repo = Arc::new(MockUserRepo::new());
+        let encryption_key: [u8; 32] = [0u8; 32]; // Test encryption key
 
-        let use_cases = Arc::new(TwoFactorUseCases::new(two_factor_repo, user_repo));
+        let use_cases = Arc::new(TwoFactorUseCases::new(
+            two_factor_repo,
+            user_repo,
+            encryption_key,
+        ));
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(use_cases))
-                .configure(configure_routes),
+                .configure(configure_two_factor_routes),
         )
         .await;
 

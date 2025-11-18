@@ -438,10 +438,7 @@ mod tests {
         );
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "Event notices must have an event_date"
-        );
+        assert_eq!(result.unwrap_err(), "Event notices must have an event_date");
     }
 
     #[test]
@@ -878,10 +875,7 @@ mod tests {
         let result = notice.set_expiration(Some(past_date));
 
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "Expiration date must be in the future"
-        );
+        assert_eq!(result.unwrap_err(), "Expiration date must be in the future");
     }
 
     #[test]

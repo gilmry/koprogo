@@ -35,7 +35,11 @@ pub trait OwnerCreditBalanceRepository: Send + Sync {
     async fn delete(&self, owner_id: Uuid, building_id: Uuid) -> Result<bool, String>;
 
     /// Get leaderboard (top contributors by balance)
-    async fn get_leaderboard(&self, building_id: Uuid, limit: i32) -> Result<Vec<OwnerCreditBalance>, String>;
+    async fn get_leaderboard(
+        &self,
+        building_id: Uuid,
+        limit: i32,
+    ) -> Result<Vec<OwnerCreditBalance>, String>;
 
     /// Get active participants count (owners with at least 1 exchange)
     async fn count_active_participants(&self, building_id: Uuid) -> Result<i64, String>;

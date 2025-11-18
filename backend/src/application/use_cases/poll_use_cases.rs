@@ -1,12 +1,14 @@
 use crate::application::dto::{
-    CreatePollDto, PollFilters, PollListResponseDto, PollResponseDto, UpdatePollDto,
-    CastVoteDto, PollResultsDto, PollOptionDto, PageRequest,
+    CastVoteDto, CreatePollDto, PageRequest, PollFilters, PollListResponseDto, PollOptionDto,
+    PollResponseDto, PollResultsDto, UpdatePollDto,
 };
-use crate::application::ports::{PollRepository, PollVoteRepository, OwnerRepository, UnitOwnerRepository};
-use crate::domain::entities::{Poll, PollVote, PollStatus, PollType};
+use crate::application::ports::{
+    OwnerRepository, PollRepository, PollVoteRepository, UnitOwnerRepository,
+};
+use crate::domain::entities::{Poll, PollStatus, PollType, PollVote};
 use chrono::{DateTime, Utc};
-use std::sync::Arc;
 use std::collections::HashSet;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct PollUseCases {
@@ -318,8 +320,8 @@ impl PollUseCases {
         owner_id: Option<Uuid>,
     ) -> Result<String, String> {
         // Parse poll ID
-        let poll_id = Uuid::parse_str(&dto.poll_id)
-            .map_err(|_| "Invalid poll ID format".to_string())?;
+        let poll_id =
+            Uuid::parse_str(&dto.poll_id).map_err(|_| "Invalid poll ID format".to_string())?;
 
         // Fetch poll
         let mut poll = self
@@ -375,21 +377,42 @@ impl PollUseCases {
                     return Err("This poll does not allow multiple votes".to_string());
                 }
 
-                PollVote::new(poll_id, owner_id, poll.building_id, selected_ids, None, None)?
+                PollVote::new(
+                    poll_id,
+                    owner_id,
+                    poll.building_id,
+                    selected_ids,
+                    None,
+                    None,
+                )?
             }
             PollType::Rating => {
                 let rating = dto
                     .rating_value
                     .ok_or_else(|| "Rating value required for rating poll".to_string())?;
 
-                PollVote::new(poll_id, owner_id, poll.building_id, vec![], Some(rating), None)?
+                PollVote::new(
+                    poll_id,
+                    owner_id,
+                    poll.building_id,
+                    vec![],
+                    Some(rating),
+                    None,
+                )?
             }
             PollType::OpenEnded => {
                 let text = dto
                     .open_text
                     .ok_or_else(|| "Open text required for open-ended poll".to_string())?;
 
-                PollVote::new(poll_id, owner_id, poll.building_id, vec![], None, Some(text))?
+                PollVote::new(
+                    poll_id,
+                    owner_id,
+                    poll.building_id,
+                    vec![],
+                    None,
+                    Some(text),
+                )?
             }
         };
 
@@ -620,8 +643,10 @@ mod tests {
             building_id: Uuid,
         ) -> Result<PollStatistics, String> {
             let polls = self.polls.lock().unwrap();
-            let building_polls: Vec<&Poll> =
-                polls.values().filter(|p| p.building_id == building_id).collect();
+            let building_polls: Vec<&Poll> = polls
+                .values()
+                .filter(|p| p.building_id == building_id)
+                .collect();
 
             let total = building_polls.len() as i64;
             let active = building_polls
@@ -717,31 +742,52 @@ mod tests {
 
     #[async_trait]
     impl UnitOwnerRepository for MockUnitOwnerRepository {
-        async fn create(&self, _unit_owner: &crate::domain::entities::UnitOwner) -> Result<crate::domain::entities::UnitOwner, String> {
+        async fn create(
+            &self,
+            _unit_owner: &crate::domain::entities::UnitOwner,
+        ) -> Result<crate::domain::entities::UnitOwner, String> {
             unimplemented!()
         }
 
-        async fn find_by_id(&self, _id: Uuid) -> Result<Option<crate::domain::entities::UnitOwner>, String> {
+        async fn find_by_id(
+            &self,
+            _id: Uuid,
+        ) -> Result<Option<crate::domain::entities::UnitOwner>, String> {
             unimplemented!()
         }
 
-        async fn find_current_owners_by_unit(&self, _unit_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
+        async fn find_current_owners_by_unit(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
             unimplemented!()
         }
 
-        async fn find_current_units_by_owner(&self, _owner_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
+        async fn find_current_units_by_owner(
+            &self,
+            _owner_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
             unimplemented!()
         }
 
-        async fn find_all_owners_by_unit(&self, _unit_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
+        async fn find_all_owners_by_unit(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
             unimplemented!()
         }
 
-        async fn find_all_units_by_owner(&self, _owner_id: Uuid) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
+        async fn find_all_units_by_owner(
+            &self,
+            _owner_id: Uuid,
+        ) -> Result<Vec<crate::domain::entities::UnitOwner>, String> {
             unimplemented!()
         }
 
-        async fn update(&self, _unit_owner: &crate::domain::entities::UnitOwner) -> Result<crate::domain::entities::UnitOwner, String> {
+        async fn update(
+            &self,
+            _unit_owner: &crate::domain::entities::UnitOwner,
+        ) -> Result<crate::domain::entities::UnitOwner, String> {
             unimplemented!()
         }
 
@@ -757,11 +803,18 @@ mod tests {
             unimplemented!()
         }
 
-        async fn find_active_by_unit_and_owner(&self, _unit_id: Uuid, _owner_id: Uuid) -> Result<Option<crate::domain::entities::UnitOwner>, String> {
+        async fn find_active_by_unit_and_owner(
+            &self,
+            _unit_id: Uuid,
+            _owner_id: Uuid,
+        ) -> Result<Option<crate::domain::entities::UnitOwner>, String> {
             unimplemented!()
         }
 
-        async fn find_active_by_building(&self, _building_id: Uuid) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
+        async fn find_active_by_building(
+            &self,
+            _building_id: Uuid,
+        ) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
             // Return 10 unique owners (unit_id, owner_id, ownership_percentage)
             // This matches the old hardcoded total_eligible_voters = 10
             Ok((0..10)
@@ -774,15 +827,24 @@ mod tests {
 
     #[async_trait]
     impl OwnerRepository for MockOwnerRepository {
-        async fn create(&self, _owner: &crate::domain::entities::Owner) -> Result<crate::domain::entities::Owner, String> {
+        async fn create(
+            &self,
+            _owner: &crate::domain::entities::Owner,
+        ) -> Result<crate::domain::entities::Owner, String> {
             unimplemented!()
         }
 
-        async fn find_by_id(&self, _id: Uuid) -> Result<Option<crate::domain::entities::Owner>, String> {
+        async fn find_by_id(
+            &self,
+            _id: Uuid,
+        ) -> Result<Option<crate::domain::entities::Owner>, String> {
             unimplemented!()
         }
 
-        async fn find_by_email(&self, _email: &str) -> Result<Option<crate::domain::entities::Owner>, String> {
+        async fn find_by_email(
+            &self,
+            _email: &str,
+        ) -> Result<Option<crate::domain::entities::Owner>, String> {
             unimplemented!()
         }
 
@@ -798,7 +860,10 @@ mod tests {
             unimplemented!()
         }
 
-        async fn update(&self, _owner: &crate::domain::entities::Owner) -> Result<crate::domain::entities::Owner, String> {
+        async fn update(
+            &self,
+            _owner: &crate::domain::entities::Owner,
+        ) -> Result<crate::domain::entities::Owner, String> {
             unimplemented!()
         }
 
@@ -829,11 +894,13 @@ mod tests {
             poll_type: "yes_no".to_string(),
             options: vec![
                 CreatePollOptionDto {
+                    id: None,
                     option_text: "Yes".to_string(),
                     attachment_url: None,
                     display_order: 0,
                 },
                 CreatePollOptionDto {
+                    id: None,
                     option_text: "No".to_string(),
                     attachment_url: None,
                     display_order: 1,

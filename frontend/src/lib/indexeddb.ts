@@ -3,21 +3,21 @@
  * Provides a simple interface for caching data locally
  */
 
-const DB_NAME = 'koprogo-offline';
+const DB_NAME = "koprogo-offline";
 const DB_VERSION = 1;
 
 // Object store names
 export const STORES = {
-  BUILDINGS: 'buildings',
-  UNITS: 'units',
-  OWNERS: 'owners',
-  DOCUMENTS: 'documents',
-  NOTIFICATIONS: 'notifications',
-  USER_PROFILE: 'userProfile',
-  PENDING_REQUESTS: 'pendingRequests',
+  BUILDINGS: "buildings",
+  UNITS: "units",
+  OWNERS: "owners",
+  DOCUMENTS: "documents",
+  NOTIFICATIONS: "notifications",
+  USER_PROFILE: "userProfile",
+  PENDING_REQUESTS: "pendingRequests",
 } as const;
 
-export type StoreNames = typeof STORES[keyof typeof STORES];
+export type StoreNames = (typeof STORES)[keyof typeof STORES];
 
 /**
  * Open IndexedDB database
@@ -34,36 +34,40 @@ export async function openDB(): Promise<IDBDatabase> {
 
       // Create object stores if they don't exist
       if (!db.objectStoreNames.contains(STORES.BUILDINGS)) {
-        db.createObjectStore(STORES.BUILDINGS, { keyPath: 'id' });
+        db.createObjectStore(STORES.BUILDINGS, { keyPath: "id" });
       }
 
       if (!db.objectStoreNames.contains(STORES.UNITS)) {
-        const unitStore = db.createObjectStore(STORES.UNITS, { keyPath: 'id' });
-        unitStore.createIndex('building_id', 'building_id', { unique: false });
+        const unitStore = db.createObjectStore(STORES.UNITS, { keyPath: "id" });
+        unitStore.createIndex("building_id", "building_id", { unique: false });
       }
 
       if (!db.objectStoreNames.contains(STORES.OWNERS)) {
-        db.createObjectStore(STORES.OWNERS, { keyPath: 'id' });
+        db.createObjectStore(STORES.OWNERS, { keyPath: "id" });
       }
 
       if (!db.objectStoreNames.contains(STORES.DOCUMENTS)) {
-        const docStore = db.createObjectStore(STORES.DOCUMENTS, { keyPath: 'id' });
-        docStore.createIndex('created_at', 'created_at', { unique: false });
+        const docStore = db.createObjectStore(STORES.DOCUMENTS, {
+          keyPath: "id",
+        });
+        docStore.createIndex("created_at", "created_at", { unique: false });
       }
 
       if (!db.objectStoreNames.contains(STORES.NOTIFICATIONS)) {
-        const notifStore = db.createObjectStore(STORES.NOTIFICATIONS, { keyPath: 'id' });
-        notifStore.createIndex('created_at', 'created_at', { unique: false });
-        notifStore.createIndex('is_read', 'is_read', { unique: false });
+        const notifStore = db.createObjectStore(STORES.NOTIFICATIONS, {
+          keyPath: "id",
+        });
+        notifStore.createIndex("created_at", "created_at", { unique: false });
+        notifStore.createIndex("is_read", "is_read", { unique: false });
       }
 
       if (!db.objectStoreNames.contains(STORES.USER_PROFILE)) {
-        db.createObjectStore(STORES.USER_PROFILE, { keyPath: 'id' });
+        db.createObjectStore(STORES.USER_PROFILE, { keyPath: "id" });
       }
 
       if (!db.objectStoreNames.contains(STORES.PENDING_REQUESTS)) {
         db.createObjectStore(STORES.PENDING_REQUESTS, {
-          keyPath: 'id',
+          keyPath: "id",
           autoIncrement: true,
         });
       }
@@ -76,12 +80,12 @@ export async function openDB(): Promise<IDBDatabase> {
  */
 export async function saveItem<T>(
   storeName: StoreNames,
-  item: T
+  item: T,
 ): Promise<void> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readwrite');
+    const transaction = db.transaction([storeName], "readwrite");
     const store = transaction.objectStore(storeName);
     const request = store.put(item);
 
@@ -95,12 +99,12 @@ export async function saveItem<T>(
  */
 export async function saveItems<T>(
   storeName: StoreNames,
-  items: T[]
+  items: T[],
 ): Promise<void> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readwrite');
+    const transaction = db.transaction([storeName], "readwrite");
     const store = transaction.objectStore(storeName);
 
     let completed = 0;
@@ -128,12 +132,12 @@ export async function saveItems<T>(
  */
 export async function getItem<T>(
   storeName: StoreNames,
-  id: string
+  id: string,
 ): Promise<T | undefined> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readonly');
+    const transaction = db.transaction([storeName], "readonly");
     const store = transaction.objectStore(storeName);
     const request = store.get(id);
 
@@ -145,13 +149,11 @@ export async function getItem<T>(
 /**
  * Get all items from IndexedDB
  */
-export async function getAllItems<T>(
-  storeName: StoreNames
-): Promise<T[]> {
+export async function getAllItems<T>(storeName: StoreNames): Promise<T[]> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readonly');
+    const transaction = db.transaction([storeName], "readonly");
     const store = transaction.objectStore(storeName);
     const request = store.getAll();
 
@@ -165,12 +167,12 @@ export async function getAllItems<T>(
  */
 export async function deleteItem(
   storeName: StoreNames,
-  id: string
+  id: string,
 ): Promise<void> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readwrite');
+    const transaction = db.transaction([storeName], "readwrite");
     const store = transaction.objectStore(storeName);
     const request = store.delete(id);
 
@@ -186,7 +188,7 @@ export async function clearStore(storeName: StoreNames): Promise<void> {
   const db = await openDB();
 
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([storeName], 'readwrite');
+    const transaction = db.transaction([storeName], "readwrite");
     const store = transaction.objectStore(storeName);
     const request = store.clear();
 
@@ -206,7 +208,9 @@ export interface PendingRequest {
   timestamp: number;
 }
 
-export async function queueRequest(request: Omit<PendingRequest, 'timestamp'>): Promise<void> {
+export async function queueRequest(
+  request: Omit<PendingRequest, "timestamp">,
+): Promise<void> {
   const requestWithTimestamp: PendingRequest = {
     ...request,
     timestamp: Date.now(),
@@ -215,12 +219,15 @@ export async function queueRequest(request: Omit<PendingRequest, 'timestamp'>): 
   await saveItem(STORES.PENDING_REQUESTS, requestWithTimestamp);
 
   // Register background sync if supported
-  if ('serviceWorker' in navigator && 'sync' in ServiceWorkerRegistration.prototype) {
+  if (
+    "serviceWorker" in navigator &&
+    "sync" in ServiceWorkerRegistration.prototype
+  ) {
     try {
       const registration = await navigator.serviceWorker.ready;
-      await registration.sync.register('sync-data');
+      await registration.sync.register("sync-data");
     } catch (error) {
-      console.error('Failed to register background sync:', error);
+      console.error("Failed to register background sync:", error);
     }
   }
 }

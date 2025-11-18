@@ -6,11 +6,11 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "budget_status", rename_all = "snake_case")]
 pub enum BudgetStatus {
-    Draft,          // Brouillon (en préparation)
-    Submitted,      // Soumis pour vote en AG
-    Approved,       // Approuvé par l'AG (actif)
-    Rejected,       // Rejeté par l'AG
-    Archived,       // Archivé (exercice terminé)
+    Draft,     // Brouillon (en préparation)
+    Submitted, // Soumis pour vote en AG
+    Approved,  // Approuvé par l'AG (actif)
+    Rejected,  // Rejeté par l'AG
+    Archived,  // Archivé (exercice terminé)
 }
 
 /// Représente un budget annuel de copropriété (ordinaire + extraordinaire)
@@ -135,7 +135,10 @@ impl Budget {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            _ => Err(format!("Cannot approve budget with status {:?}", self.status)),
+            _ => Err(format!(
+                "Cannot approve budget with status {:?}",
+                self.status
+            )),
         }
     }
 
@@ -147,7 +150,10 @@ impl Budget {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            _ => Err(format!("Cannot reject budget with status {:?}", self.status)),
+            _ => Err(format!(
+                "Cannot reject budget with status {:?}",
+                self.status
+            )),
         }
     }
 
@@ -159,7 +165,10 @@ impl Budget {
                 self.updated_at = Utc::now();
                 Ok(())
             }
-            _ => Err(format!("Cannot archive budget with status {:?}", self.status)),
+            _ => Err(format!(
+                "Cannot archive budget with status {:?}",
+                self.status
+            )),
         }
     }
 

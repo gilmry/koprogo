@@ -13,7 +13,7 @@ pub struct CreateSharedObjectDto {
     pub condition: ObjectCondition,
     pub is_available: bool,
     pub rental_credits_per_day: Option<i32>, // 0-20 (SEL integration)
-    pub deposit_credits: Option<i32>,         // 0-100
+    pub deposit_credits: Option<i32>,        // 0-100
     pub borrowing_duration_days: Option<i32>, // 1-90
     pub photos: Option<Vec<String>>,
     pub location_details: Option<String>,
@@ -235,7 +235,8 @@ mod tests {
         )
         .unwrap();
 
-        let dto = SharedObjectSummaryDto::from_shared_object(object.clone(), "Jane Smith".to_string());
+        let dto =
+            SharedObjectSummaryDto::from_shared_object(object.clone(), "Jane Smith".to_string());
 
         assert_eq!(dto.owner_name, "Jane Smith");
         assert_eq!(dto.object_name, "Book Title");

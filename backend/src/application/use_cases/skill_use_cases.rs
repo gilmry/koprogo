@@ -13,10 +13,7 @@ pub struct SkillUseCases {
 }
 
 impl SkillUseCases {
-    pub fn new(
-        skill_repo: Arc<dyn SkillRepository>,
-        owner_repo: Arc<dyn OwnerRepository>,
-    ) -> Self {
+    pub fn new(skill_repo: Arc<dyn SkillRepository>, owner_repo: Arc<dyn OwnerRepository>) -> Self {
         Self {
             skill_repo,
             owner_repo,
@@ -108,10 +105,7 @@ impl SkillUseCases {
     }
 
     /// List all skills created by an owner
-    pub async fn list_owner_skills(
-        &self,
-        owner_id: Uuid,
-    ) -> Result<Vec<SkillSummaryDto>, String> {
+    pub async fn list_owner_skills(&self, owner_id: Uuid) -> Result<Vec<SkillSummaryDto>, String> {
         let skills = self.skill_repo.find_by_owner(owner_id).await?;
         self.enrich_skills_summary(skills).await
     }

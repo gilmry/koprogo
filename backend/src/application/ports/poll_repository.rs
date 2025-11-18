@@ -23,11 +23,7 @@ pub trait PollRepository: Send + Sync {
     async fn find_active(&self, building_id: Uuid) -> Result<Vec<Poll>, String>;
 
     /// Find polls by status
-    async fn find_by_status(
-        &self,
-        building_id: Uuid,
-        status: &str,
-    ) -> Result<Vec<Poll>, String>;
+    async fn find_by_status(&self, building_id: Uuid, status: &str) -> Result<Vec<Poll>, String>;
 
     /// Find expired polls that should be auto-closed
     async fn find_expired_active(&self) -> Result<Vec<Poll>, String>;

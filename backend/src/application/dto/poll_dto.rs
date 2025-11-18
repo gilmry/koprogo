@@ -50,8 +50,8 @@ pub struct CastVoteDto {
 
     // Only one of these should be populated based on poll_type
     pub selected_option_ids: Option<Vec<String>>, // For YesNo/MultipleChoice
-    pub rating_value: Option<i32>,                 // For Rating (1-5)
-    pub open_text: Option<String>,                 // For OpenEnded
+    pub rating_value: Option<i32>,                // For Rating (1-5)
+    pub open_text: Option<String>,                // For OpenEnded
 }
 
 /// Poll response DTO
@@ -158,7 +158,8 @@ impl From<Poll> for PollResponseDto {
         let is_ended = Utc::now() > poll.ends_at;
 
         // Calculate winning option for YesNo/MultipleChoice polls
-        let winning_option = if matches!(poll.poll_type, PollType::YesNo | PollType::MultipleChoice) {
+        let winning_option = if matches!(poll.poll_type, PollType::YesNo | PollType::MultipleChoice)
+        {
             poll.options
                 .iter()
                 .max_by_key(|opt| opt.vote_count)

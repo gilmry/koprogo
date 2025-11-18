@@ -571,6 +571,13 @@ mod tests {
         async fn delete(&self, _id: Uuid) -> Result<bool, String> {
             unimplemented!()
         }
+
+        async fn find_by_slug(
+            &self,
+            _slug: &str,
+        ) -> Result<Option<crate::domain::entities::Building>, String> {
+            unimplemented!()
+        }
     }
 
     #[tokio::test]

@@ -72,12 +72,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let financial_report_use_cases =
         FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let budget_use_cases = BudgetUseCases::new(
         budget_repo.clone(),
@@ -153,9 +149,7 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
 }
 
 /// Helper to create organization, user, and get JWT token
-async fn create_test_user_and_login(
-    app: &actix_web::web::Data<AppState>,
-) -> (Uuid, Uuid, String) {
+async fn create_test_user_and_login(app: &actix_web::web::Data<AppState>) -> (Uuid, Uuid, String) {
     // Create organization
     let org_id = Uuid::new_v4();
     let org = koprogo_api::domain::entities::Organization::new(
@@ -191,7 +185,12 @@ async fn create_test_user_and_login(
 #[serial]
 async fn test_create_budget_draft() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     // Create building first
     let building_id = Uuid::new_v4();
@@ -226,7 +225,12 @@ async fn test_create_budget_draft() {
 #[serial]
 async fn test_budget_workflow_draft_to_approved() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let building_id = Uuid::new_v4();
     let budget_id = Uuid::new_v4();
@@ -258,7 +262,12 @@ async fn test_budget_workflow_draft_to_approved() {
 #[serial]
 async fn test_get_budget_variance_analysis() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let budget_id = Uuid::new_v4();
 
@@ -277,7 +286,12 @@ async fn test_get_budget_variance_analysis() {
 #[serial]
 async fn test_list_budgets_by_fiscal_year() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let req = test::TestRequest::get()
         .uri("/api/v1/budgets/fiscal-year/2026")
@@ -292,7 +306,12 @@ async fn test_list_budgets_by_fiscal_year() {
 #[serial]
 async fn test_reject_budget_with_reason() {
     let (app_state, _postgres_container) = setup_app().await;
-    let app = test::init_service(App::new().app_data(app_state.clone()).configure(configure_routes)).await;
+    let app = test::init_service(
+        App::new()
+            .app_data(app_state.clone())
+            .configure(configure_routes),
+    )
+    .await;
 
     let budget_id = Uuid::new_v4();
 

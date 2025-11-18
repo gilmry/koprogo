@@ -12,10 +12,10 @@ use uuid::Uuid;
 pub struct OwnerCreditBalance {
     pub owner_id: Uuid,
     pub building_id: Uuid,
-    pub credits_earned: i32,   // Services provided (positive)
-    pub credits_spent: i32,    // Services received (positive)
-    pub balance: i32,          // earned - spent (can be negative)
-    pub total_exchanges: i32,  // Total number of completed exchanges
+    pub credits_earned: i32,         // Services provided (positive)
+    pub credits_spent: i32,          // Services received (positive)
+    pub balance: i32,                // earned - spent (can be negative)
+    pub total_exchanges: i32,        // Total number of completed exchanges
     pub average_rating: Option<f32>, // Average rating received (1-5 stars)
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -120,18 +120,18 @@ impl OwnerCreditBalance {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum CreditStatus {
-    Positive,  // Balance > 0 (net provider)
-    Balanced,  // Balance = 0
-    Negative,  // Balance < 0 (net receiver)
+    Positive, // Balance > 0 (net provider)
+    Balanced, // Balance = 0
+    Negative, // Balance < 0 (net receiver)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ParticipationLevel {
-    New,       // 0 exchanges
-    Beginner,  // 1-5 exchanges
-    Active,    // 6-20 exchanges
-    Veteran,   // 21-50 exchanges
-    Expert,    // 51+ exchanges
+    New,      // 0 exchanges
+    Beginner, // 1-5 exchanges
+    Active,   // 6-20 exchanges
+    Veteran,  // 21-50 exchanges
+    Expert,   // 51+ exchanges
 }
 
 #[cfg(test)]

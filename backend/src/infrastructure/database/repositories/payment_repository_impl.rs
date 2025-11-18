@@ -668,7 +668,10 @@ impl PaymentRepository for PostgresPaymentRepository {
             payment.payment_method_id,
             &payment.idempotency_key,
             payment.description.as_deref(),
-            payment.metadata.as_deref().and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()),
+            payment
+                .metadata
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()),
             payment.failure_reason.as_deref(),
             payment.refunded_amount_cents,
             payment.succeeded_at,
@@ -795,10 +798,7 @@ impl PaymentRepository for PostgresPaymentRepository {
         })
     }
 
-    async fn get_building_payment_stats(
-        &self,
-        building_id: Uuid,
-    ) -> Result<PaymentStats, String> {
+    async fn get_building_payment_stats(&self, building_id: Uuid) -> Result<PaymentStats, String> {
         let row = sqlx::query!(
             r#"
             SELECT

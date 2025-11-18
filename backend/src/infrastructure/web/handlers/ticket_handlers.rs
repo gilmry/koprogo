@@ -19,8 +19,7 @@ pub async fn create_ticket(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -64,9 +63,7 @@ pub async fn get_ticket(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Ticket not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -81,9 +78,7 @@ pub async fn list_building_tickets(
         .await
     {
         Ok(tickets) => HttpResponse::Ok().json(tickets),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -98,9 +93,7 @@ pub async fn list_organization_tickets(
         .await
     {
         Ok(tickets) => HttpResponse::Ok().json(tickets),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -113,9 +106,7 @@ pub async fn list_my_tickets(
 
     match state.ticket_use_cases.list_my_tickets(created_by).await {
         Ok(tickets) => HttpResponse::Ok().json(tickets),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -132,9 +123,7 @@ pub async fn list_assigned_tickets(
         .await
     {
         Ok(tickets) => HttpResponse::Ok().json(tickets),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -164,9 +153,7 @@ pub async fn list_tickets_by_status(
         .await
     {
         Ok(tickets) => HttpResponse::Ok().json(tickets),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -179,8 +166,7 @@ pub async fn delete_ticket(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -225,8 +211,7 @@ pub async fn assign_ticket(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -269,8 +254,7 @@ pub async fn start_work(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -310,8 +294,7 @@ pub async fn resolve_ticket(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -354,8 +337,7 @@ pub async fn close_ticket(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -395,8 +377,7 @@ pub async fn cancel_ticket(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -440,8 +421,7 @@ pub async fn reopen_ticket(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -488,9 +468,7 @@ pub async fn get_ticket_statistics(
         .await
     {
         Ok(stats) => HttpResponse::Ok().json(stats),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -508,9 +486,7 @@ pub async fn get_overdue_tickets(
         .await
     {
         Ok(tickets) => HttpResponse::Ok().json(tickets),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 

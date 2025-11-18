@@ -42,7 +42,10 @@ impl TwoFactorSecret {
     }
 
     /// Set backup codes (encrypted/hashed by caller)
-    pub fn with_backup_codes(mut self, backup_codes_encrypted: Vec<String>) -> Result<Self, String> {
+    pub fn with_backup_codes(
+        mut self,
+        backup_codes_encrypted: Vec<String>,
+    ) -> Result<Self, String> {
         if backup_codes_encrypted.len() != 10 {
             return Err("Must provide exactly 10 backup codes".to_string());
         }
@@ -77,7 +80,10 @@ impl TwoFactorSecret {
     }
 
     /// Regenerate backup codes (caller must hash/encrypt new codes)
-    pub fn regenerate_backup_codes(&mut self, new_backup_codes_encrypted: Vec<String>) -> Result<(), String> {
+    pub fn regenerate_backup_codes(
+        &mut self,
+        new_backup_codes_encrypted: Vec<String>,
+    ) -> Result<(), String> {
         if new_backup_codes_encrypted.len() != 10 {
             return Err("Must provide exactly 10 backup codes".to_string());
         }
@@ -181,7 +187,9 @@ mod tests {
             .with_backup_codes(codes);
 
         assert!(secret.is_err());
-        assert!(secret.unwrap_err().contains("Must provide exactly 10 backup codes"));
+        assert!(secret
+            .unwrap_err()
+            .contains("Must provide exactly 10 backup codes"));
     }
 
     #[test]

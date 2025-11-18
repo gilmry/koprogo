@@ -100,10 +100,7 @@ impl BudgetUseCases {
     }
 
     /// List budgets for a building
-    pub async fn list_by_building(
-        &self,
-        building_id: Uuid,
-    ) -> Result<Vec<BudgetResponse>, String> {
+    pub async fn list_by_building(&self, building_id: Uuid) -> Result<Vec<BudgetResponse>, String> {
         let budgets = self.repository.find_by_building(building_id).await?;
         Ok(budgets.into_iter().map(BudgetResponse::from).collect())
     }
@@ -127,7 +124,10 @@ impl BudgetUseCases {
         organization_id: Uuid,
         status: BudgetStatus,
     ) -> Result<Vec<BudgetResponse>, String> {
-        let budgets = self.repository.find_by_status(organization_id, status).await?;
+        let budgets = self
+            .repository
+            .find_by_status(organization_id, status)
+            .await?;
         Ok(budgets.into_iter().map(BudgetResponse::from).collect())
     }
 

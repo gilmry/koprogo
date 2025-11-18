@@ -76,12 +76,8 @@ async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres
     let financial_report_use_cases =
         FinancialReportUseCases::new(account_repo, expense_repo.clone());
 
-    let auth_use_cases = AuthUseCases::new(
-        user_repo.clone(),
-        refresh_repo,
-        user_role_repo,
-        jwt_secret,
-    );
+    let auth_use_cases =
+        AuthUseCases::new(user_repo.clone(), refresh_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -372,10 +368,7 @@ async fn test_add_owner_to_unit_exceeds_100_percent() {
 
     let body: serde_json::Value = test::read_body_json(resp).await;
     assert!(
-        body["error"]
-            .as_str()
-            .unwrap()
-            .contains("exceed 100%"),
+        body["error"].as_str().unwrap().contains("exceed 100%"),
         "Error message should mention exceeding 100%"
     );
 }
@@ -464,10 +457,7 @@ async fn test_remove_owner_from_unit_success() {
 
     // Remove owner
     let req = test::TestRequest::delete()
-        .uri(&format!(
-            "/api/v1/units/{}/owners/{}",
-            unit_id, owner_id
-        ))
+        .uri(&format!("/api/v1/units/{}/owners/{}", unit_id, owner_id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -475,7 +465,10 @@ async fn test_remove_owner_from_unit_success() {
     assert_eq!(resp.status(), 200, "Should remove owner successfully");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert_eq!(body["is_active"], false, "Ownership should be marked inactive");
+    assert_eq!(
+        body["is_active"], false,
+        "Ownership should be marked inactive"
+    );
     assert!(body["end_date"].is_string(), "end_date should be set");
 }
 
@@ -615,10 +608,7 @@ async fn test_get_unit_ownership_history_success() {
 
     // Remove owner (creates history)
     let req = test::TestRequest::delete()
-        .uri(&format!(
-            "/api/v1/units/{}/owners/{}",
-            unit_id, owner_id
-        ))
+        .uri(&format!("/api/v1/units/{}/owners/{}", unit_id, owner_id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -649,8 +639,7 @@ async fn test_get_unit_ownership_history_success() {
 #[serial]
 async fn test_transfer_ownership_success() {
     let (app_state, _container) = setup_app().await;
-    let (token, org_id, _building_id, unit_id, owner1_id) =
-        create_test_fixtures(&app_state).await;
+    let (token, org_id, _building_id, unit_id, owner1_id) = create_test_fixtures(&app_state).await;
 
     let app = test::init_service(
         App::new()

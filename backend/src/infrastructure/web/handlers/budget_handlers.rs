@@ -1,4 +1,6 @@
-use crate::application::dto::{CreateBudgetRequest, PageRequest, PageResponse, UpdateBudgetRequest};
+use crate::application::dto::{
+    CreateBudgetRequest, PageRequest, PageResponse, UpdateBudgetRequest,
+};
 use crate::domain::entities::BudgetStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -98,11 +100,7 @@ pub async fn get_active_budget(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match state
-        .budget_use_cases
-        .get_active_budget(*building_id)
-        .await
-    {
+    match state.budget_use_cases.get_active_budget(*building_id).await {
         Ok(Some(budget)) => HttpResponse::Ok().json(budget),
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "No active budget found for this building"
@@ -119,11 +117,7 @@ pub async fn list_budgets_by_building(
     state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
-    match state
-        .budget_use_cases
-        .list_by_building(*building_id)
-        .await
-    {
+    match state.budget_use_cases.list_by_building(*building_id).await {
         Ok(budgets) => HttpResponse::Ok().json(budgets),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err

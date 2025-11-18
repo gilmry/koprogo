@@ -44,10 +44,7 @@ pub trait ChallengeRepository: Send + Sync {
 #[async_trait]
 pub trait ChallengeProgressRepository: Send + Sync {
     /// Create new challenge progress tracking
-    async fn create(
-        &self,
-        progress: &ChallengeProgress,
-    ) -> Result<ChallengeProgress, String>;
+    async fn create(&self, progress: &ChallengeProgress) -> Result<ChallengeProgress, String>;
 
     /// Find progress by ID
     async fn find_by_id(&self, id: Uuid) -> Result<Option<ChallengeProgress>, String>;
@@ -63,14 +60,11 @@ pub trait ChallengeProgressRepository: Send + Sync {
     async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<ChallengeProgress>, String>;
 
     /// Find all progress for a challenge
-    async fn find_by_challenge(
-        &self,
-        challenge_id: Uuid,
-    ) -> Result<Vec<ChallengeProgress>, String>;
+    async fn find_by_challenge(&self, challenge_id: Uuid)
+        -> Result<Vec<ChallengeProgress>, String>;
 
     /// Find active progress for user (challenge is Active and not completed)
-    async fn find_active_by_user(&self, user_id: Uuid)
-        -> Result<Vec<ChallengeProgress>, String>;
+    async fn find_active_by_user(&self, user_id: Uuid) -> Result<Vec<ChallengeProgress>, String>;
 
     /// Update progress
     async fn update(&self, progress: &ChallengeProgress) -> Result<ChallengeProgress, String>;

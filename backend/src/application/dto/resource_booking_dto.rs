@@ -103,9 +103,9 @@ pub struct BookingStatisticsDto {
     pub completed_bookings: i64,
     pub cancelled_bookings: i64,
     pub no_show_bookings: i64,
-    pub active_bookings: i64,         // Currently in progress
-    pub upcoming_bookings: i64,       // Future bookings
-    pub total_hours_booked: f64,      // Sum of all booking durations
+    pub active_bookings: i64,                  // Currently in progress
+    pub upcoming_bookings: i64,                // Future bookings
+    pub total_hours_booked: f64,               // Sum of all booking durations
     pub most_popular_resource: Option<String>, // Most booked resource name
 }
 

@@ -18,8 +18,7 @@ pub async fn create_notification(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -64,9 +63,7 @@ pub async fn get_notification(
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Notification not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -81,9 +78,7 @@ pub async fn list_my_notifications(
         .await
     {
         Ok(notifications) => HttpResponse::Ok().json(notifications),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -98,9 +93,7 @@ pub async fn list_unread_notifications(
         .await
     {
         Ok(notifications) => HttpResponse::Ok().json(notifications),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -114,8 +107,7 @@ pub async fn mark_notification_read(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -153,8 +145,7 @@ pub async fn mark_all_notifications_read(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -174,9 +165,7 @@ pub async fn mark_all_notifications_read(
 
             HttpResponse::Ok().json(serde_json::json!({"marked_read": count}))
         }
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -189,8 +178,7 @@ pub async fn delete_notification(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -234,9 +222,7 @@ pub async fn get_notification_stats(
         .await
     {
         Ok(stats) => HttpResponse::Ok().json(stats),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -253,9 +239,7 @@ pub async fn get_user_preferences(
         .await
     {
         Ok(preferences) => HttpResponse::Ok().json(preferences),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -292,9 +276,7 @@ pub async fn get_preference(
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Preference not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -308,8 +290,7 @@ pub async fn update_preference(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 

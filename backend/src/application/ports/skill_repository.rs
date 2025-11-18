@@ -38,8 +38,7 @@ pub trait SkillRepository: Send + Sync {
     async fn find_free_by_building(&self, building_id: Uuid) -> Result<Vec<Skill>, String>;
 
     /// Find professional skills for a building (Expert level OR has certifications)
-    async fn find_professional_by_building(&self, building_id: Uuid)
-        -> Result<Vec<Skill>, String>;
+    async fn find_professional_by_building(&self, building_id: Uuid) -> Result<Vec<Skill>, String>;
 
     /// Update an existing skill
     async fn update(&self, skill: &Skill) -> Result<Skill, String>;
