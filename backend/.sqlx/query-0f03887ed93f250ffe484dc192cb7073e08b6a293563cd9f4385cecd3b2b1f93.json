@@ -1,0 +1,61 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                COUNT(*) as \"reading_count!\",\n                SUM(value) as total_consumption,\n                AVG(value) as average_daily,\n                MIN(value) as min_value,\n                MAX(value) as max_value,\n                unit,\n                source\n            FROM iot_readings\n            WHERE building_id = $1\n              AND metric_type::TEXT = $2\n              AND timestamp >= $3\n              AND timestamp <= $4\n            GROUP BY unit, source\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "reading_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "total_consumption",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 2,
+        "name": "average_daily",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "min_value",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "max_value",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "unit",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "source",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      false,
+      false
+    ]
+  },
+  "hash": "0f03887ed93f250ffe484dc192cb7073e08b6a293563cd9f4385cecd3b2b1f93"
+}

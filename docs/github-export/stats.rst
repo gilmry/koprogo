@@ -1,10 +1,10 @@
-**Total Issues:** 57
+**Total Issues:** 58
 
-**Open Issues:** 46
+**Open Issues:** 30
 
-**Closed Issues:** 11
+**Closed Issues:** 28
 
-**Milestones:** 4
+**Milestones:** 8
 
 **Labels:** 38
 

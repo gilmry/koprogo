@@ -3,11 +3,11 @@ Issue #47: feat: Extend PDF generation (Meeting minutes, contracts, financial re
 =======================================================================================
 
 :State: **OPEN**
-:Milestone: Phase 2: K3s + Automation
+:Milestone: Jalon 3: Features Différenciantes 🎯
 :Labels: phase:vps,track:software priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-08
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/47>`_
 
 Description

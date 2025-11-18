@@ -45,7 +45,7 @@ impl PaymentMethodRepository for PostgresPaymentMethodRepository {
                 is_default, is_active, metadata, expires_at,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4::payment_method_type, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            VALUES ($1, $2, $3, $4::TEXT::payment_method_type, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING id, organization_id, owner_id,
                       method_type AS "method_type: String",
                       stripe_payment_method_id, stripe_customer_id, display_label,
@@ -61,7 +61,7 @@ impl PaymentMethodRepository for PostgresPaymentMethodRepository {
             &payment_method.display_label,
             payment_method.is_default,
             payment_method.is_active,
-            payment_method.metadata.as_deref(),
+            payment_method.metadata.as_deref().and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()),
             payment_method.expires_at,
             payment_method.created_at,
             payment_method.updated_at,
@@ -340,7 +340,7 @@ impl PaymentMethodRepository for PostgresPaymentMethodRepository {
                    is_default, is_active, metadata, expires_at,
                    created_at, updated_at
             FROM payment_methods
-            WHERE owner_id = $1 AND method_type = $2::payment_method_type
+            WHERE owner_id = $1 AND method_type = $2::TEXT::payment_method_type
             ORDER BY is_default DESC, created_at DESC
             "#,
             owner_id,
@@ -379,7 +379,7 @@ impl PaymentMethodRepository for PostgresPaymentMethodRepository {
             UPDATE payment_methods
             SET organization_id = $2,
                 owner_id = $3,
-                method_type = $4::payment_method_type,
+                method_type = $4::TEXT::payment_method_type,
                 stripe_payment_method_id = $5,
                 stripe_customer_id = $6,
                 display_label = $7,
@@ -404,7 +404,7 @@ impl PaymentMethodRepository for PostgresPaymentMethodRepository {
             &payment_method.display_label,
             payment_method.is_default,
             payment_method.is_active,
-            payment_method.metadata.as_deref(),
+            payment_method.metadata.as_deref().and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()),
             payment_method.expires_at,
             payment_method.updated_at,
         )

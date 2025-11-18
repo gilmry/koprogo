@@ -41,7 +41,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
                 attendance_status, attendance_updated_at, proxy_owner_id,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::TEXT::attendance_status, $12, $13, $14, $15)
             RETURNING id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                       email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
                       attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
@@ -114,10 +114,10 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
                     attendance_status, attendance_updated_at, proxy_owner_id,
                     created_at, updated_at
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::TEXT::attendance_status, $12, $13, $14, $15)
                 RETURNING id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
                           email_failed, email_failure_reason, reminder_sent_at, reminder_opened_at,
-                          attendance_status AS "attendance_status!", attendance_updated_at, proxy_owner_id,
+                          attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                           created_at, updated_at
                 "#,
                 recipient.id,
@@ -349,7 +349,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
                    attendance_status::text AS "attendance_status!", attendance_updated_at, proxy_owner_id,
                    created_at, updated_at
             FROM convocation_recipients
-            WHERE convocation_id = $1 AND attendance_status = $2
+            WHERE convocation_id = $1 AND attendance_status = $2::TEXT::attendance_status
             ORDER BY created_at ASC
             "#,
             convocation_id,
@@ -483,7 +483,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             UPDATE convocation_recipients
             SET convocation_id = $2, owner_id = $3, email = $4, email_sent_at = $5, email_opened_at = $6,
                 email_failed = $7, email_failure_reason = $8, reminder_sent_at = $9, reminder_opened_at = $10,
-                attendance_status = $11, attendance_updated_at = $12, proxy_owner_id = $13,
+                attendance_status = $11::TEXT::attendance_status, attendance_updated_at = $12, proxy_owner_id = $13,
                 updated_at = $14
             WHERE id = $1
             RETURNING id, convocation_id, owner_id, email, email_sent_at, email_opened_at,
@@ -587,7 +587,7 @@ impl ConvocationRecipientRepository for PostgresConvocationRecipientRepository {
             r#"
             SELECT COUNT(*) AS "count!"
             FROM convocation_recipients
-            WHERE convocation_id = $1 AND attendance_status = $2
+            WHERE convocation_id = $1 AND attendance_status = $2::TEXT::attendance_status
             "#,
             convocation_id,
             status_str

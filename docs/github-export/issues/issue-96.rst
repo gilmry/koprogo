@@ -3,11 +3,11 @@ Issue #96: feat: Sustainability & Ecology Tracking (Carbon footprint, DPE)
 ===========================================================================
 
 :State: **OPEN**
-:Milestone: Phase 3: K8s Production
+:Milestone: Jalon 6: Intelligence & Expansion (PropTech 2.0) 🤖
 :Labels: enhancement,phase:k8s track:software,priority:low community,proptech:iot proptech:energy
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-07
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/96>`_
 
 Description

@@ -37,6 +37,15 @@ chrono = { version = "0.4", features = ["serde"] }
 validator = { version = "0.20", features = ["derive"] }
 bcrypt = "0.17"
 jsonwebtoken = { version = "10.2", default-features = false, features = ["aws_lc_rs"] }
+hex = "0.4"
+
+# Two-Factor Authentication (2FA)
+totp-lite = "2.0"
+qrcode = "0.14"
+image = "0.25"
+base64 = "0.22"
+aes-gcm = "0.10"
+urlencoding = "2.1"
 
 # Async trait support
 async-trait = "0.1"
@@ -67,6 +76,9 @@ fake = { version = "4.4", features = ["derive", "chrono", "uuid", "http"] }
 
 # Email
 lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-native-tls"] }
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
 
 # OpenAPI documentation
 utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }

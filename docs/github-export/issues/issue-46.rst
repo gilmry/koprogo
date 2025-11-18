@@ -2,12 +2,12 @@
 Issue #46: feat: Implement meeting voting system (Résolutions & votes)
 =======================================================================
 
-:State: **OPEN**
-:Milestone: Phase 2: K3s + Automation
+:State: **CLOSED**
+:Milestone: Jalon 3: Features Différenciantes 🎯
 :Labels: phase:vps,track:software priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-08
+:Updated: 2025-11-17
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/46>`_
 
 Description

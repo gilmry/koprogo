@@ -1,0 +1,155 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO convocations (\n                id, organization_id, building_id, meeting_id, meeting_type, meeting_date,\n                status, minimum_send_date, actual_send_date, scheduled_send_date,\n                pdf_file_path, language, total_recipients, opened_count,\n                will_attend_count, will_not_attend_count, reminder_sent_at,\n                created_at, updated_at, created_by\n            )\n            VALUES ($1, $2, $3, $4, $5::TEXT::convocation_type, $6, $7::TEXT::convocation_status, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)\n            RETURNING id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                      status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                      pdf_file_path, language, total_recipients, opened_count,\n                      will_attend_count, will_not_attend_count, reminder_sent_at,\n                      created_at, updated_at, created_by\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "meeting_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "meeting_type!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "meeting_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "minimum_send_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "actual_send_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "scheduled_send_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "pdf_file_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "language",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "total_recipients",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 13,
+        "name": "opened_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 14,
+        "name": "will_attend_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 15,
+        "name": "will_not_attend_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 16,
+        "name": "reminder_sent_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 19,
+        "name": "created_by",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null,
+      false,
+      null,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6b5437d9bebdc004d499f1a72f710f911218119d6b5851883a261eb4491d074b"
+}

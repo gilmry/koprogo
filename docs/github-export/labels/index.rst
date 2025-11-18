@@ -22,7 +22,7 @@ Total: 38 labels
      - 0
    * - **enhancement**
      - New feature or request
-     - 33
+     - 34
    * - **good first issue**
      - Good for newcomers
      - 0
@@ -49,7 +49,7 @@ Total: 38 labels
      - 1
    * - **phase:vps**
      - Phase VPS (Q4 2025 - Q2 2026) - Docker Compose deployment
-     - 28
+     - 29
    * - **phase:k3s**
      - Phase K3s (Q3 2026 - Q1 2027) - Kubernetes lightweight
      - 8
@@ -58,7 +58,7 @@ Total: 38 labels
      - 9
    * - **track:software**
      - Software development track (features, API, frontend)
-     - 41
+     - 42
    * - **track:infrastructure**
      - Infrastructure track (IaC, CI/CD, deployment)
      - 6
@@ -67,7 +67,7 @@ Total: 38 labels
      - 14
    * - **priority:high**
      - High priority - important for next release
-     - 18
+     - 19
    * - **priority:medium**
      - Medium priority - planned work
      - 6
@@ -91,7 +91,7 @@ Total: 38 labels
      - 1
    * - **automation**
      - Automation workflows
-     - 6
+     - 7
    * - **pdf**
      - PDF generation features
      - 2
@@ -115,7 +115,7 @@ Total: 38 labels
      - 1
    * - **proptech:iot**
      - PropTech 2.0 - IoT sensors (energy, water, security)
-     - 2
+     - 3
    * - **proptech:energy**
      - PropTech 2.0 - Energy buying groups & optimization
      - 3
@@ -140,7 +140,7 @@ Phase Labels
      - Count
    * - **phase:vps**
      - Phase VPS (Q4 2025 - Q2 2026) - Docker Compose deployment
-     - 28
+     - 29
    * - **phase:k3s**
      - Phase K3s (Q3 2026 - Q1 2027) - Kubernetes lightweight
      - 8
@@ -162,7 +162,7 @@ Priority Labels
      - 14
    * - **priority:high**
      - High priority - important for next release
-     - 18
+     - 19
    * - **priority:medium**
      - Medium priority - planned work
      - 6

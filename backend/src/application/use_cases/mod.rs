@@ -15,6 +15,7 @@ pub mod expense_use_cases;
 pub mod financial_report_use_cases;
 pub mod gamification_use_cases;
 pub mod gdpr_use_cases;
+pub mod iot_use_cases;
 pub mod journal_entry_use_cases;
 pub mod local_exchange_use_cases;
 pub mod meeting_use_cases;
@@ -32,6 +33,7 @@ pub mod resource_booking_use_cases;
 pub mod shared_object_use_cases;
 pub mod skill_use_cases;
 pub mod ticket_use_cases;
+pub mod two_factor_use_cases;
 pub mod unit_owner_use_cases;
 pub mod unit_use_cases;
 
@@ -54,6 +56,7 @@ pub use gamification_use_cases::{
     AchievementUseCases, ChallengeUseCases, GamificationStatsUseCases,
 };
 pub use gdpr_use_cases::GdprUseCases;
+pub use iot_use_cases::{IoTUseCases, LinkyUseCases};
 pub use journal_entry_use_cases::JournalEntryUseCases;
 pub use local_exchange_use_cases::LocalExchangeUseCases;
 pub use meeting_use_cases::MeetingUseCases;
@@ -71,5 +74,6 @@ pub use resource_booking_use_cases::ResourceBookingUseCases;
 pub use shared_object_use_cases::SharedObjectUseCases;
 pub use skill_use_cases::SkillUseCases;
 pub use ticket_use_cases::{TicketStatistics, TicketUseCases};
+pub use two_factor_use_cases::TwoFactorUseCases;
 pub use unit_owner_use_cases::UnitOwnerUseCases;
 pub use unit_use_cases::UnitUseCases;

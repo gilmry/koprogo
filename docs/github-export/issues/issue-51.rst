@@ -3,11 +3,11 @@ Issue #51: feat: Board tools (Polls, task management, issue reporting)
 =======================================================================
 
 :State: **OPEN**
-:Milestone: Phase 1: VPS MVP + Legal Compliance
+:Milestone: Jalon 2: Conformité Légale Belge 📋
 :Labels: phase:vps,track:software priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-01
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/51>`_
 
 Description

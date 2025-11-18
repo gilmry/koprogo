@@ -202,6 +202,24 @@ pub enum AuditEventType {
     RateLimitExceeded,
     InvalidToken,
 
+    // Two-Factor Authentication events (Issue #78 - Security Hardening)
+    TwoFactorSetupInitiated,
+    TwoFactorEnabled,
+    TwoFactorDisabled,
+    TwoFactorVerified,
+    TwoFactorVerificationFailed,
+    BackupCodeUsed,
+    BackupCodesRegenerated,
+    TwoFactorReverificationRequired,
+
+    // IoT events (Linky/Ores Smart Meter Integration - Issue #133 - IoT Phase 0)
+    IoTReadingCreated,
+    IoTReadingsBulkCreated,
+    LinkyDeviceConfigured,
+    LinkyDataSynced,
+    LinkyDeviceDeleted,
+    LinkySyncToggled,
+
     // GDPR events (Data Privacy Compliance - Article 30: Records of Processing)
     GdprDataExported,
     GdprDataExportFailed,
@@ -358,6 +376,37 @@ impl AuditLogEntry {
         // Note: Full audit data (including IP, error messages) should only be
         // stored in secure, access-controlled systems for compliance and forensics
     }
+}
+
+/// Helper function to log audit events asynchronously
+///
+/// This is a convenience function for background audit logging
+/// without database persistence (logs to stdout/file only).
+///
+/// Parameters:
+/// - event_type: Type of audit event
+/// - user_id: Optional user ID who performed the action
+/// - organization_id: Optional organization ID for multi-tenant isolation
+/// - details: Optional details string
+/// - metadata: Optional additional metadata as JSON
+pub async fn log_audit_event(
+    event_type: AuditEventType,
+    user_id: Option<Uuid>,
+    organization_id: Option<Uuid>,
+    details: Option<String>,
+    metadata: Option<serde_json::Value>,
+) {
+    let mut entry = AuditLogEntry::new(event_type, user_id, organization_id);
+
+    if let Some(details_str) = details {
+        entry = entry.with_details(details_str);
+    }
+
+    if let Some(meta) = metadata {
+        entry.metadata = Some(meta);
+    }
+
+    entry.log();
 }
 
 /// Helper macro to create and log audit entries

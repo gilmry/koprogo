@@ -476,6 +476,10 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // GDPR Admin (SuperAdmin only)
             .service(list_audit_logs)
             .service(admin_export_user_data)
-            .service(admin_erase_user_data),
+            .service(admin_erase_user_data)
+            // Two-Factor Authentication (2FA TOTP - Issue #78)
+            .configure(two_factor_handlers::configure_routes)
+            // IoT Smart Meters (Linky/Ores - Issue #133 - IoT Phase 0)
+            .configure(iot_handlers::configure_routes),
     );
 }

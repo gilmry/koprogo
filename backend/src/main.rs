@@ -8,6 +8,7 @@ use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
 use koprogo_api::infrastructure::email::EmailService;
+use koprogo_api::infrastructure::LinkyApiClientImpl;
 use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
@@ -33,6 +34,31 @@ async fn main() -> std::io::Result<()> {
 
     // Validate JWT secret strength in production
     validate_jwt_secret(&jwt_secret)?;
+
+    // TOTP encryption key (32 bytes = 64 hex chars)
+    let totp_encryption_key = env::var("TOTP_ENCRYPTION_KEY")
+        .unwrap_or_else(|_| {
+            log::warn!("TOTP_ENCRYPTION_KEY not set, using default (INSECURE - only for development!)");
+            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string()
+        });
+
+    // Parse encryption key from hex string to [u8; 32]
+    let encryption_key_bytes = hex::decode(&totp_encryption_key)
+        .map_err(|e| std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("Invalid TOTP_ENCRYPTION_KEY (must be 64 hex characters): {}", e)
+        ))?;
+
+    if encryption_key_bytes.len() != 32 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("TOTP_ENCRYPTION_KEY must be exactly 32 bytes (64 hex chars), got {} bytes", encryption_key_bytes.len())
+        ));
+    }
+
+    let mut encryption_key = [0u8; 32];
+    encryption_key.copy_from_slice(&encryption_key_bytes);
+
     let server_host = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let server_port = env::var("SERVER_PORT")
         .unwrap_or_else(|_| "8080".to_string())
@@ -137,6 +163,20 @@ async fn main() -> std::io::Result<()> {
     let resource_booking_repo = Arc::new(PostgresResourceBookingRepository::new(pool.clone()));
     let shared_object_repo = Arc::new(PostgresSharedObjectRepository::new(pool.clone()));
     let skill_repo = Arc::new(PostgresSkillRepository::new(pool.clone()));
+    let iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
+
+    // Linky API Client configuration
+    let linky_api_base_url = env::var("LINKY_API_BASE_URL")
+        .unwrap_or_else(|_| "https://ext.hml.myelectricaldata.fr".to_string());
+    let linky_client_id = env::var("LINKY_CLIENT_ID")
+        .expect("LINKY_CLIENT_ID must be set");
+    let linky_client_secret = env::var("LINKY_CLIENT_SECRET")
+        .expect("LINKY_CLIENT_SECRET must be set");
+    let linky_client = Arc::new(LinkyApiClientImpl::new(
+        linky_api_base_url,
+        linky_client_id,
+        linky_client_secret,
+    ));
     let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
     let convocation_recipient_repo =
         Arc::new(PostgresConvocationRecipientRepository::new(pool.clone()));
@@ -145,13 +185,14 @@ async fn main() -> std::io::Result<()> {
     let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
     let challenge_progress_repo =
         Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
+    let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
 
     // Initialize use cases
     let auth_use_cases =
-        AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
+        AuthUseCases::new(user_repo.clone(), refresh_token_repo, user_role_repo, jwt_secret);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -181,6 +222,10 @@ async fn main() -> std::io::Result<()> {
     );
     let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo);
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
+    let two_factor_use_cases =
+        TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
+    let iot_use_cases = IoTUseCases::new(iot_repo.clone());
+    let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
     let payment_use_cases =
@@ -277,6 +322,7 @@ async fn main() -> std::io::Result<()> {
         convocation_use_cases,
         resolution_use_cases,
         ticket_use_cases,
+        two_factor_use_cases,
         notification_use_cases,
         payment_use_cases,
         payment_method_use_cases,
@@ -291,6 +337,8 @@ async fn main() -> std::io::Result<()> {
         pcn_use_cases,
         payment_reminder_use_cases,
         gdpr_use_cases,
+        iot_use_cases,
+        linky_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
         board_dashboard_use_cases,

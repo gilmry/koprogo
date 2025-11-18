@@ -51,7 +51,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                 will_attend_count, will_not_attend_count, reminder_sent_at,
                 created_at, updated_at, created_by
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            VALUES ($1, $2, $3, $4, $5::TEXT::convocation_type, $6, $7::TEXT::convocation_status, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
             RETURNING id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                       status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                       pdf_file_path, language, total_recipients, opened_count,
@@ -305,7 +305,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    will_attend_count, will_not_attend_count, reminder_sent_at,
                    created_at, updated_at, created_by
             FROM convocations
-            WHERE organization_id = $1 AND status = $2
+            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status
             ORDER BY meeting_date DESC
             "#,
             organization_id,
@@ -454,8 +454,8 @@ impl ConvocationRepository for PostgresConvocationRepository {
         let row = sqlx::query!(
             r#"
             UPDATE convocations
-            SET organization_id = $2, building_id = $3, meeting_id = $4, meeting_type = $5, meeting_date = $6,
-                status = $7, minimum_send_date = $8, actual_send_date = $9, scheduled_send_date = $10,
+            SET organization_id = $2, building_id = $3, meeting_id = $4, meeting_type = $5::TEXT::convocation_type, meeting_date = $6,
+                status = $7::TEXT::convocation_status, minimum_send_date = $8, actual_send_date = $9, scheduled_send_date = $10,
                 pdf_file_path = $11, language = $12, total_recipients = $13, opened_count = $14,
                 will_attend_count = $15, will_not_attend_count = $16, reminder_sent_at = $17,
                 updated_at = $18
@@ -555,7 +555,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             r#"
             SELECT COUNT(*) AS "count!"
             FROM convocations
-            WHERE organization_id = $1 AND status = $2
+            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status
             "#,
             organization_id,
             status_str
