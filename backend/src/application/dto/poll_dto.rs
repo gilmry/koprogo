@@ -1,4 +1,5 @@
-use crate::domain::entities::{PollOption, PollStatus, PollType};
+use crate::domain::entities::{Poll, PollOption, PollStatus, PollType, PollVote};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -11,11 +12,11 @@ pub struct CreatePollDto {
     pub title: String,
 
     pub description: Option<String>,
-    pub poll_type: PollType,
+    pub poll_type: String, // "yes_no", "multiple_choice", "rating", "open_ended"
     pub options: Vec<CreatePollOptionDto>,
-    pub is_anonymous: bool,
-    pub allow_multiple_votes: bool,
-    pub require_all_owners: bool,
+    pub is_anonymous: Option<bool>,
+    pub allow_multiple_votes: Option<bool>,
+    pub require_all_owners: Option<bool>,
     pub ends_at: String, // ISO 8601 format
 }
 
@@ -128,15 +129,11 @@ pub struct PollListResponseDto {
 #[derive(Debug, Serialize)]
 pub struct PollResultsDto {
     pub poll_id: String,
-    pub title: String,
-    pub poll_type: PollType,
-    pub status: PollStatus,
-    pub total_eligible_voters: i32,
     pub total_votes_cast: i32,
+    pub total_eligible_voters: i32,
     pub participation_rate: f64,
     pub options: Vec<PollOptionDto>,
     pub winning_option: Option<PollOptionDto>,
-    pub closed_at: Option<String>,
 }
 
 /// Poll filters for queries
@@ -148,4 +145,107 @@ pub struct PollFilters {
     pub poll_type: Option<PollType>,
     pub ends_before: Option<String>,
     pub ends_after: Option<String>,
+}
+
+// ============================================================================
+// From implementations for converting domain entities to DTOs
+// ============================================================================
+
+impl From<Poll> for PollResponseDto {
+    fn from(poll: Poll) -> Self {
+        let status_clone = poll.status.clone();
+        let is_active = status_clone == PollStatus::Active && Utc::now() <= poll.ends_at;
+        let is_ended = Utc::now() > poll.ends_at;
+
+        // Calculate winning option for YesNo/MultipleChoice polls
+        let winning_option = if matches!(poll.poll_type, PollType::YesNo | PollType::MultipleChoice) {
+            poll.options
+                .iter()
+                .max_by_key(|opt| opt.vote_count)
+                .map(|opt| {
+                    let vote_percentage = if poll.total_votes_cast > 0 {
+                        (opt.vote_count as f64 / poll.total_votes_cast as f64) * 100.0
+                    } else {
+                        0.0
+                    };
+                    PollOptionDto {
+                        id: opt.id.to_string(),
+                        option_text: opt.option_text.clone(),
+                        attachment_url: opt.attachment_url.clone(),
+                        vote_count: opt.vote_count,
+                        vote_percentage,
+                        display_order: opt.display_order,
+                    }
+                })
+        } else {
+            None
+        };
+
+        // Convert options with vote percentages
+        let options = poll
+            .options
+            .iter()
+            .map(|opt| {
+                let vote_percentage = if poll.total_votes_cast > 0 {
+                    (opt.vote_count as f64 / poll.total_votes_cast as f64) * 100.0
+                } else {
+                    0.0
+                };
+                PollOptionDto {
+                    id: opt.id.to_string(),
+                    option_text: opt.option_text.clone(),
+                    attachment_url: opt.attachment_url.clone(),
+                    vote_count: opt.vote_count,
+                    vote_percentage,
+                    display_order: opt.display_order,
+                }
+            })
+            .collect();
+
+        // Calculate participation rate before moving poll
+        let participation_rate = poll.participation_rate();
+
+        Self {
+            id: poll.id.to_string(),
+            building_id: poll.building_id.to_string(),
+            created_by: poll.created_by.to_string(),
+            title: poll.title,
+            description: poll.description,
+            poll_type: poll.poll_type,
+            options,
+            is_anonymous: poll.is_anonymous,
+            allow_multiple_votes: poll.allow_multiple_votes,
+            require_all_owners: poll.require_all_owners,
+            starts_at: poll.starts_at.to_rfc3339(),
+            ends_at: poll.ends_at.to_rfc3339(),
+            status: status_clone,
+            total_eligible_voters: poll.total_eligible_voters,
+            total_votes_cast: poll.total_votes_cast,
+            participation_rate,
+            is_active,
+            is_ended,
+            winning_option,
+            created_at: poll.created_at.to_rfc3339(),
+            updated_at: poll.updated_at.to_rfc3339(),
+        }
+    }
+}
+
+impl From<PollVote> for PollVoteResponseDto {
+    fn from(vote: PollVote) -> Self {
+        Self {
+            id: vote.id.to_string(),
+            poll_id: vote.poll_id.to_string(),
+            owner_id: vote.owner_id.map(|id| id.to_string()),
+            building_id: vote.building_id.to_string(),
+            selected_option_ids: vote
+                .selected_option_ids
+                .iter()
+                .map(|id| id.to_string())
+                .collect(),
+            rating_value: vote.rating_value,
+            open_text: vote.open_text,
+            voted_at: vote.voted_at.to_rfc3339(),
+        }
+    }
 }

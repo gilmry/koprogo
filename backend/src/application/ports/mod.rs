@@ -81,7 +81,7 @@ pub use payment_method_repository::PaymentMethodRepository;
 pub use payment_reminder_repository::PaymentReminderRepository;
 pub use payment_repository::{PaymentRepository, PaymentStats};
 pub use poll_repository::{PollRepository, PollStatistics};
-pub use poll_vote_repository::{OptionVoteCount, PollVoteRepository};
+pub use poll_vote_repository::PollVoteRepository;
 pub use quote_repository::QuoteRepository;
 pub use refresh_token_repository::RefreshTokenRepository;
 pub use resolution_repository::ResolutionRepository;

@@ -1,6 +1,7 @@
 use crate::application::dto::{PageRequest, PollFilters};
 use crate::domain::entities::Poll;
 use async_trait::async_trait;
+use serde::Serialize;
 use uuid::Uuid;
 
 #[async_trait]
@@ -38,7 +39,7 @@ pub trait PollRepository: Send + Sync {
     async fn get_building_statistics(&self, building_id: Uuid) -> Result<PollStatistics, String>;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PollStatistics {
     pub total_polls: i64,
     pub active_polls: i64,
