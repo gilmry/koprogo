@@ -32,10 +32,12 @@ pub mod resolution_dto;
 pub mod resource_booking_dto;
 pub mod shared_object_dto;
 pub mod skill_dto;
+pub mod technical_inspection_dto;
 pub mod two_factor_dto;
 pub mod unit_dto;
 pub mod unit_owner_dto;
 pub mod vote_dto;
+pub mod work_report_dto;
 
 pub use account_dto::*;
 pub use auth_dto::*;
@@ -71,10 +73,12 @@ pub use resolution_dto::*;
 pub use resource_booking_dto::*;
 pub use shared_object_dto::*;
 pub use skill_dto::*;
+pub use technical_inspection_dto::*;
 pub use two_factor_dto::*;
 pub use unit_dto::*;
 pub use unit_owner_dto::*;
 pub use vote_dto::*;
+pub use work_report_dto::*;
 
 pub mod ticket_dto;
 pub use ticket_dto::*;

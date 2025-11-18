@@ -37,6 +37,7 @@ pub mod resolution;
 pub mod resource_booking;
 pub mod shared_object;
 pub mod skill;
+pub mod technical_inspection;
 pub mod ticket;
 pub mod two_factor_secret;
 pub mod unit;
@@ -44,6 +45,7 @@ pub mod unit_owner;
 pub mod user;
 pub mod user_role_assignment;
 pub mod vote;
+pub mod work_report;
 
 pub use account::{Account, AccountType};
 pub use achievement::{Achievement, AchievementCategory, AchievementTier, UserAchievement};
@@ -92,6 +94,7 @@ pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType}
 pub use resource_booking::{BookingStatus, RecurringPattern, ResourceBooking, ResourceType};
 pub use shared_object::{ObjectCondition, SharedObject, SharedObjectCategory};
 pub use skill::{ExpertiseLevel, Skill, SkillCategory};
+pub use technical_inspection::{InspectionStatus, InspectionType, TechnicalInspection};
 pub use ticket::{Ticket, TicketCategory, TicketPriority, TicketStatus};
 pub use two_factor_secret::TwoFactorSecret;
 pub use unit::{Unit, UnitType};
@@ -99,3 +102,4 @@ pub use unit_owner::UnitOwner;
 pub use user::{User, UserRole};
 pub use user_role_assignment::UserRoleAssignment;
 pub use vote::{Vote, VoteChoice};
+pub use work_report::{WarrantyType, WorkReport, WorkType};
