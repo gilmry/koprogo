@@ -33,8 +33,8 @@ impl TotpGenerator {
     /// assert_eq!(secret.len(), 52); // Base32 encoding of 32 bytes
     /// ```
     pub fn generate_secret() -> String {
-        let mut rng = rand::thread_rng();
-        let bytes: Vec<u8> = (0..32).map(|_| rng.gen()).collect();
+        let mut rng = rand::rng();
+        let bytes: Vec<u8> = (0..32).map(|_| rng.random()).collect();
         Self::base32_encode(&bytes)
     }
 
@@ -146,7 +146,7 @@ impl TotpGenerator {
     /// assert!(codes[0].len() == 9); // "XXXX-XXXX"
     /// ```
     pub fn generate_backup_codes() -> Vec<String> {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         const CHARSET: &[u8] = b"23456789ABCDEFGHJKMNPQRSTUVWXYZ"; // No 0,O,1,I,L
         const CODE_LENGTH: usize = 8;
 
@@ -154,7 +154,7 @@ impl TotpGenerator {
             .map(|_| {
                 let code: String = (0..CODE_LENGTH)
                     .map(|_| {
-                        let idx = rng.gen_range(0..CHARSET.len());
+                        let idx = rng.random_range(0..CHARSET.len());
                         CHARSET[idx] as char
                     })
                     .collect();
@@ -212,7 +212,7 @@ impl TotpGenerator {
 
         // Generate random 96-bit nonce
         let mut nonce_bytes = [0u8; 12];
-        rand::thread_rng().fill(&mut nonce_bytes);
+        rand::rng().fill(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         // Encrypt secret

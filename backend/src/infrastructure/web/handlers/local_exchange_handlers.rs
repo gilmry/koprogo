@@ -30,7 +30,7 @@ pub async fn create_exchange(
 #[get("/exchanges/{id}")]
 pub async fn get_exchange(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
     match data.local_exchange_use_cases.get_exchange(id.into_inner()).await {
@@ -44,7 +44,7 @@ pub async fn get_exchange(
 #[get("/buildings/{building_id}/exchanges")]
 pub async fn list_building_exchanges(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
@@ -62,7 +62,7 @@ pub async fn list_building_exchanges(
 #[get("/buildings/{building_id}/exchanges/available")]
 pub async fn list_available_exchanges(
     data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _auth: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
     match data
