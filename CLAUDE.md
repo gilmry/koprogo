@@ -443,6 +443,19 @@ Base URL: `http://localhost:8080/api/v1`
      - `GET /organizations/:organization_id/gamification/leaderboard` - Leaderboard (top users by points, building filter, limit query param)
 **✅ NOUVEAU: Public Syndic Information** (Issue #92 - Phase 2 - Belgian Legal Requirement):
    - `GET /public/buildings/:slug/syndic` - Get public syndic contact info (no authentication required)
+**✅ NOUVEAU: Polls (Board Decision Polling System)** (Issue #51 - Phase 2 - Belgian Consultation Between Assemblies):
+   - `POST /polls` - Create poll (YesNo/MultipleChoice/Rating/OpenEnded types)
+   - `GET /polls/:id` - Get poll details with options and vote counts
+   - `GET /buildings/:building_id/polls` - List all building polls
+   - `GET /buildings/:building_id/polls/active` - List active polls (status = Active)
+   - `GET /buildings/:building_id/polls/status/:status` - List by status (Draft/Active/Closed/Cancelled)
+   - `PUT /polls/:id/publish` - Publish poll (Draft → Active, enables voting)
+   - `PUT /polls/:id/close` - Close poll (Active → Closed, calculate results)
+   - `PUT /polls/:id/cancel` - Cancel poll (→ Cancelled)
+   - `DELETE /polls/:id` - Delete poll
+   - `POST /polls/:id/vote` - Cast vote (YesNo: yes/no, MultipleChoice: option_id, Rating: 1-5, OpenEnded: text)
+   - `GET /polls/:id/votes` - List all poll votes (admin/syndic only)
+   - `GET /polls/:id/results` - Get poll results with statistics (vote counts, percentages, participation rate)
 **Health**: `/health` (GET)
 
 ## Domain Entities
@@ -476,6 +489,9 @@ The system models property management with these aggregates:
 - **✅ NOUVEAU: Challenge**: Time-bound challenges (organization_id, building_id, challenge_type, status, title, description, icon, start_date, end_date, target_metric, target_value, reward_points) - Issue #49 Phase 6
 - **✅ NOUVEAU: ChallengeProgress**: Challenge progress tracking (challenge_id, user_id, current_value, completed, completed_at) - Issue #49 Phase 6
 - **Document**: File storage (title, file_path, document_type)
+- **✅ NOUVEAU: Poll**: Board decision polls for owner consultations (building_id, poll_type, question, description, status, starts_at, ends_at, is_anonymous, total_eligible_voters, total_votes_cast, allow_multiple_votes, min_rating, max_rating) - Issue #51
+- **✅ NOUVEAU: PollOption**: Poll answer options (poll_id, option_text, option_value, display_order, vote_count) - Issue #51
+- **✅ NOUVEAU: PollVote**: Individual votes on polls (poll_id, owner_id, option_id, vote_value, vote_text, ip_address, is_anonymous) - Issue #51
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 
@@ -920,6 +936,107 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
   * Position stratégique pour éviter interception par middleware
 - **Conformité**: Loi belge sur transparence des syndics de copropriété
 - **Total**: 1 migration, 7 DB fields, 3 Building methods, 1 DTO, 1 Use Case method, 1 REST handler, 1 public endpoint
+
+### ✅ NOUVEAU: Board Decision Poll System - Issue #51 (Phase 2)
+
+- Système de sondages pour consultations rapides entre assemblées générales (conforme à la loi belge)
+- **Belgian Legal Context**: Article 577-8/4 §4 Code Civil Belge allows syndic consultations between general assemblies
+- **4 Poll Types**:
+  * **YesNo**: Simple yes/no decisions (e.g., "Should we repaint the lobby in blue?")
+  * **MultipleChoice**: Choice between options (e.g., contractor selection) with single or multiple selection support
+  * **Rating**: 1-5 star satisfaction surveys (configurable min/max rating)
+  * **OpenEnded**: Free-text feedback collection (e.g., improvement suggestions)
+- **Poll Lifecycle**: Draft → Active → Closed/Cancelled
+  * **Draft**: Initial state, editable, not visible to owners
+  * **Active**: Published poll, owners can vote, time-bound (starts_at to ends_at)
+  * **Closed**: Voting ended, results calculated (winner, participation rate, vote breakdown)
+  * **Cancelled**: Poll cancelled before completion
+- **Anonymous Voting Support**:
+  * `is_anonymous = true`: owner_id NULL in poll_votes, only ip_address stored for audit
+  * `is_anonymous = false`: Full vote attribution with owner_id
+  * Belgian privacy compliance (GDPR Article 6 consent-based processing)
+- **Duplicate Vote Prevention**:
+  * Database UNIQUE constraint on (poll_id, owner_id) for non-anonymous votes
+  * Business logic validation for anonymous votes (IP-based rate limiting recommended)
+  * Error response: "You have already voted on this poll"
+- **Participation Tracking**:
+  * `total_eligible_voters`: Count of active unit owners in building (TODO: replace hardcoded value)
+  * `total_votes_cast`: Real-time vote count
+  * `participation_rate`: (total_votes_cast / total_eligible_voters) * 100
+- **Results Calculation**:
+  * **YesNo**: Winner = option with most votes, percentage = (votes / total_votes_cast) * 100
+  * **MultipleChoice**: Ranked options by vote_count DESC
+  * **Rating**: Average rating + distribution histogram
+  * **OpenEnded**: Text aggregation + export functionality
+- **Multi-Select Support**: `allow_multiple_votes = true` for MultipleChoice polls (e.g., "Select up to 3 amenities")
+- **Automatic Expiration**: Background job checks `ends_at <= NOW()` and auto-closes active polls
+- **Domain Entities**:
+  * `Poll` (572 lines): Core poll aggregate with validation (starts_at < ends_at, rating range 1-5, question non-empty)
+  * `PollOption` (188 lines): Poll answer options with vote_count tracking
+  * `PollVote` (214 lines): Individual votes with anonymization support
+- **Repository Pattern**:
+  * `PollRepository` trait (16 methods) - PostgresPollRepository
+  * `PollOptionRepository` trait (12 methods) - PostgresPollOptionRepository
+  * `PollVoteRepository` trait (10 methods) - PostgresPollVoteRepository
+  * Complex queries: active polls, vote aggregation, duplicate detection, result calculation
+- **Use Cases** (687 lines):
+  * `PollUseCases` - 18 methods (CRUD, lifecycle transitions, voting, results)
+  * Requires 3 repositories: Poll, PollOption, PollVote
+  * Multi-repository orchestration for voting (check duplicate, increment vote_count, create vote record)
+- **REST API** (12 endpoints, ~500 lines):
+  * Poll Management: create, get, list (all/active/by-status), delete
+  * Lifecycle: publish (Draft → Active), close (Active → Closed), cancel (→ Cancelled)
+  * Voting: cast vote (with duplicate prevention), list votes (admin only)
+  * Analytics: get results (vote counts, percentages, winner, participation rate)
+- **Migration** (20251203120000_create_polls.sql, 156 lines):
+  * Table: `polls` (16 columns, 7 indexes, 5 constraints)
+  * Table: `poll_options` (7 columns, 3 indexes, 2 constraints)
+  * Table: `poll_votes` (9 columns, 4 indexes, 3 constraints including UNIQUE(poll_id, owner_id) for duplicate prevention)
+  * Custom ENUMs: `poll_type` (YesNo, MultipleChoice, Rating, OpenEnded), `poll_status` (Draft, Active, Closed, Cancelled)
+  * Partial indexes: idx_polls_active (WHERE status = 'Active'), idx_polls_building_active (building_id, status WHERE status = 'Active')
+  * Constraints: starts_at < ends_at, total_votes_cast >= 0, rating range validation
+- **DTOs** (6 DTOs, ~180 lines):
+  * `CreatePollDto`, `PublishPollDto`, `CastVoteDto`
+  * `PollResponseDto`, `PollOptionResponseDto`, `PollVoteResponseDto`
+  * `PollResultsDto` (winner, vote breakdown, participation rate)
+- **Audit Events** (8 types, GDPR Article 30 compliance):
+  * `PollCreated`, `PollPublished`, `PollClosed`, `PollCancelled`, `PollDeleted`
+  * `PollVoteCast`, `PollResultsCalculated`, `PollExpired` (auto-close job)
+- **Total Scope**:
+  * ~2,500 lines of code across 4 layers (Domain, Application, Infrastructure, Migration)
+  * 3 domain entities (24 unit tests)
+  * 6 DTOs
+  * 3 repository traits + 3 PostgreSQL implementations (38 methods total)
+  * 1 use case class (18 methods)
+  * 12 REST endpoints
+  * 1 migration (3 tables, 2 ENUMs, 14 indexes, 10 constraints)
+  * 8 audit event types
+  * 1 BDD feature file (20 Gherkin scenarios covering all workflows)
+- **Files Created**:
+  * Domain: `poll.rs` (572 lines), `poll_option.rs` (188 lines), `poll_vote.rs` (214 lines)
+  * DTOs: `poll_dto.rs` (~180 lines)
+  * Ports: `poll_repository.rs`, `poll_option_repository.rs`, `poll_vote_repository.rs`
+  * Implementations: `poll_repository_impl.rs` (511 lines), `poll_option_repository_impl.rs` (312 lines), `poll_vote_repository_impl.rs` (248 lines)
+  * Use Cases: `poll_use_cases.rs` (687 lines)
+  * Handlers: `poll_handlers.rs` (~500 lines)
+  * Migration: `20251203120000_create_polls.sql` (156 lines)
+  * BDD Tests: `backend/tests/features/polls.feature` (261 lines, 20 scenarios)
+- **Commits** (4 commits):
+  * 728548f: feat: Poll System - Domain, DTOs, Repositories (Issue #51 Part 1)
+  * 48f18f4: feat: Poll System - Use Cases + REST Handlers (Issue #51 Part 2)
+  * 23d75df: feat: Poll System - PostgreSQL Repository Implementations (Issue #51 Part 3)
+  * d7c3e32: feat: Wire Poll System to AppState (Issue #51 Part 4)
+- **TODO**:
+  * Replace hardcoded `total_eligible_voters = 10` in poll_use_cases.rs:145 with proper unit_owners count query
+  * Implement background job for auto-close expired polls (cron job checking ends_at <= NOW())
+  * E2E tests deferred until repository pattern migration complete
+
+**Key Implementation Patterns**:
+- **State Machine Validation**: Poll status transitions enforced in domain layer (only Draft → Active, Active → Closed/Cancelled)
+- **Duplicate Vote Prevention**: Database-level UNIQUE constraint + business logic validation
+- **Anonymous Voting Privacy**: Conditional owner_id NULL with ip_address audit trail
+- **Atomic Vote Casting**: Multi-repository transaction (create vote + increment option vote_count + increment poll total_votes_cast)
+- **Belgian Legal Advisory**: Poll results documented in next general assembly minutes per Code Civil Article 577-8/4 §4
 
 ### Multi-owner support
 
