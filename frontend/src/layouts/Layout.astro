@@ -25,7 +25,7 @@ const { title, showNav = true, requireAuth = false } = Astro.props;
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
+		<title>{title} - KoproGo</title>
 
 		<!-- PWA Manifest -->
 		<link rel="manifest" href="/manifest.json" />
@@ -86,16 +86,59 @@ const { title, showNav = true, requireAuth = false } = Astro.props;
 			}
 		</script>
 
+		<!-- Accessibility: Screen reader styles -->
+		<style is:global>
+			.sr-only {
+				position: absolute;
+				width: 1px;
+				height: 1px;
+				padding: 0;
+				margin: -1px;
+				overflow: hidden;
+				clip: rect(0, 0, 0, 0);
+				white-space: nowrap;
+				border-width: 0;
+			}
+
+			.skip-link {
+				position: absolute;
+				top: -40px;
+				left: 0;
+				background: #10b981;
+				color: white;
+				padding: 8px 16px;
+				text-decoration: none;
+				z-index: 100;
+				border-radius: 0 0 4px 0;
+			}
+
+			.skip-link:focus {
+				top: 0;
+			}
+		</style>
 	</head>
 	<body class="bg-gray-50 min-h-screen flex flex-col">
-		{showNav && <Navigation client:load />}
+		<!-- Skip navigation link for keyboard users -->
+		<a href="#main-content" class="skip-link">
+			Passer au contenu principal
+		</a>
+
+		<!-- Screen reader announcements -->
+		<div id="sr-announcer-polite" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+		<div id="sr-announcer-assertive" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+
+		{showNav && (
+			<header role="banner">
+				<Navigation client:load />
+			</header>
+		)}
 		{requireAuth && <SessionManager client:load />}
-		<main class="flex-1">
+		<main id="main-content" class="flex-1" role="main" tabindex="-1">
 			<slot />
 		</main>
 		<ToastContainer client:load />
 		<PWAInstallPrompt client:load />
-		<footer class="bg-white mt-12 border-t">
+		<footer class="bg-white mt-12 border-t" role="contentinfo">
 			<div class="container mx-auto px-4 py-6">
 				<div class="flex flex-col md:flex-row items-center justify-between gap-4">
 					<!-- Left: Language selector -->
