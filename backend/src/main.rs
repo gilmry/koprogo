@@ -1,9 +1,11 @@
 use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
-use actix_web::{middleware, web, App, HttpServer};
+use actix_web::{web, App, HttpServer};
 use dotenvy::dotenv;
-use env_logger::Env;
 use koprogo_api::application::services::ExpenseAccountingService;
+use tracing_actix_web::TracingLogger;
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{fmt, EnvFilter};
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
@@ -22,7 +24,10 @@ use std::sync::Arc;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    env_logger::init_from_env(Env::default().default_filter_or("info"));
+
+    // Configure structured logging (Issue #78)
+    // Supports both JSON and text formats via LOG_FORMAT env var
+    init_tracing()?;
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     // JWT Secret with production validation
@@ -90,8 +95,15 @@ async fn main() -> std::io::Result<()> {
     // Validate CORS origins (no wildcards in production)
     validate_cors_origins(&allowed_origins)?;
 
-    log::info!("CORS allowed origins: {:?}", allowed_origins);
-    log::info!("Rate limiting enabled: {}", enable_rate_limiting);
+    tracing::info!(
+        cors_origins = ?allowed_origins,
+        cors_count = allowed_origins.len(),
+        "CORS configuration loaded"
+    );
+    tracing::info!(
+        rate_limiting_enabled = enable_rate_limiting,
+        "Rate limiting configuration loaded"
+    );
 
     let pool = create_pool(&database_url)
         .await
@@ -104,18 +116,25 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to run migrations");
 
     // Seed superadmin account
-    log::info!("Seeding superadmin account...");
+    tracing::info!("Seeding superadmin account...");
     let seeder = DatabaseSeeder::new(pool.clone());
     match seeder.seed_superadmin().await {
-        Ok(user) => log::info!("SuperAdmin account ready: {}", user.email),
-        Err(e) => log::error!("Failed to seed superadmin: {}", e),
+        Ok(user) => tracing::info!(
+            email = %user.email,
+            user_id = %user.id,
+            "SuperAdmin account ready"
+        ),
+        Err(e) => tracing::error!(
+            error = %e,
+            "Failed to seed superadmin"
+        ),
     }
 
     // Seed Belgian PCMN for all organizations (idempotent)
-    log::info!("Seeding Belgian PCMN chart of accounts...");
+    tracing::info!("Seeding Belgian PCMN chart of accounts...");
     match seeder.seed_belgian_pcmn_for_all_organizations().await {
-        Ok(message) => log::info!("{}", message),
-        Err(e) => log::warn!("PCMN seed skipped or failed: {}", e),
+        Ok(message) => tracing::info!(message = %message, "PCMN seeding completed"),
+        Err(e) => tracing::warn!(error = %e, "PCMN seed skipped or failed"),
     }
 
     // Initialize storage provider (local filesystem by default)
@@ -370,11 +389,12 @@ async fn main() -> std::io::Result<()> {
         pool.clone(),
     ));
 
-    log::info!(
-        "Starting server at {}:{} with {} workers",
-        server_host,
-        server_port,
-        actix_workers
+    tracing::info!(
+        host = %server_host,
+        port = server_port,
+        workers = actix_workers,
+        rate_limiting = enable_rate_limiting,
+        "Starting KoproGo API server"
     );
 
     // Configure three-tier rate limiting strategy:
@@ -441,13 +461,71 @@ async fn main() -> std::io::Result<()> {
             .wrap(Governor::new(&public_rate_limit_config)) // Public endpoints: 100 req/sec per IP
             .wrap(cors)
             .wrap(SecurityHeaders) // Security headers for all responses
-            .wrap(middleware::Logger::default())
+            .wrap(TracingLogger::default()) // Structured logging middleware (Issue #78)
             .configure(configure_routes)
     })
     .bind((server_host.as_str(), server_port))?
     .workers(actix_workers)
     .run()
     .await
+}
+
+/// Initialize structured tracing/logging (Issue #78)
+///
+/// Supports two output formats:
+/// - JSON: Structured JSON logs for production (machine-readable)
+/// - Text: Human-readable logs for development
+///
+/// Configuration via environment variables:
+/// - `LOG_FORMAT`: "json" or "text" (default: "text")
+/// - `RUST_LOG`: Log level filter (default: "info")
+///
+/// Examples:
+/// ```bash
+/// # Development (human-readable)
+/// export LOG_FORMAT=text
+/// export RUST_LOG=debug
+///
+/// # Production (structured JSON)
+/// export LOG_FORMAT=json
+/// export RUST_LOG=info
+/// ```
+fn init_tracing() -> std::io::Result<()> {
+    let log_format = env::var("LOG_FORMAT")
+        .unwrap_or_else(|_| "text".to_string())
+        .to_lowercase();
+
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info"));
+
+    match log_format.as_str() {
+        "json" => {
+            // JSON format for production (structured logging)
+            tracing_subscriber::registry()
+                .with(env_filter)
+                .with(fmt::layer().json().flatten_event(true))
+                .init();
+
+            tracing::info!(
+                log_format = "json",
+                message = "Structured JSON logging initialized"
+            );
+        }
+        _ => {
+            // Text format for development (human-readable)
+            tracing_subscriber::registry()
+                .with(env_filter)
+                .with(fmt::layer().with_target(true).with_thread_ids(false))
+                .init();
+
+            tracing::info!(
+                log_format = "text",
+                "Human-readable text logging initialized"
+            );
+        }
+    }
+
+    Ok(())
 }
 
 async fn initialize_storage_provider() -> Result<Arc<dyn StorageProvider>, String> {
@@ -500,14 +578,16 @@ fn validate_jwt_secret(secret: &str) -> std::io::Result<()> {
     // Warn if secret appears weak (all same character, sequential, etc.)
     let unique_chars: std::collections::HashSet<char> = secret.chars().collect();
     if unique_chars.len() < 10 {
-        log::warn!(
-            "JWT_SECRET has low character diversity ({} unique chars). \
-             Consider using a stronger random secret.",
-            unique_chars.len()
+        tracing::warn!(
+            unique_chars = unique_chars.len(),
+            "JWT_SECRET has low character diversity. Consider using a stronger random secret."
         );
     }
 
-    log::info!("✓ JWT_SECRET validation passed (length: {} chars)", secret.len());
+    tracing::info!(
+        secret_length = secret.len(),
+        "✓ JWT_SECRET validation passed"
+    );
     Ok(())
 }
 
@@ -551,14 +631,16 @@ fn validate_cors_origins(origins: &[String]) -> std::io::Result<()> {
 
         // Warn about HTTP in production (HTTPS recommended)
         if origin.starts_with("http://") && !origin.contains("localhost") && !origin.contains("127.0.0.1") {
-            log::warn!(
-                "CORS origin '{}' uses HTTP (not HTTPS). \
-                 HTTPS is strongly recommended for production.",
-                origin
+            tracing::warn!(
+                origin = %origin,
+                "CORS origin uses HTTP (not HTTPS). HTTPS is strongly recommended for production."
             );
         }
     }
 
-    log::info!("✓ CORS origins validation passed ({} origins)", origins.len());
+    tracing::info!(
+        origin_count = origins.len(),
+        "✓ CORS origins validation passed"
+    );
     Ok(())
 }
