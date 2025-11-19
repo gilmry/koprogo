@@ -80,14 +80,34 @@ pub async fn list_available_exchanges(
 #[get("/owners/{owner_id}/exchanges")]
 pub async fn list_owner_exchanges(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
     let owner_id = owner_id.into_inner();
 
-    // Authorization: users can only see their own exchanges (owner_id = user_id for simplicity)
-    // TODO: Implement proper owner-to-user mapping via UnitOwner relationships
-    // For now, we allow any authenticated user to query
+    // Authorization: users can only see their own exchanges
+    // Fetch owner to verify user_id mapping
+    let owner = match data.owner_use_cases.get_owner(owner_id).await {
+        Ok(Some(owner)) => owner,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": format!("Owner not found: {}", owner_id)
+            }))
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to fetch owner: {}", e)
+            }))
+        }
+    };
+
+    // Check if the authenticated user owns this owner record
+    let owner_user_id = owner.user_id.as_ref().and_then(|id| Uuid::parse_str(id).ok());
+    if owner_user_id != Some(auth.user_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "You can only view your own exchanges"
+        }));
+    }
 
     match data
         .local_exchange_use_cases
@@ -269,10 +289,32 @@ pub async fn delete_exchange(
 #[get("/owners/{owner_id}/buildings/{building_id}/credit-balance")]
 pub async fn get_credit_balance(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
     let (owner_id, building_id) = path.into_inner();
+
+    // Authorization: users can only view their own credit balance
+    let owner = match data.owner_use_cases.get_owner(owner_id).await {
+        Ok(Some(owner)) => owner,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": format!("Owner not found: {}", owner_id)
+            }))
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to fetch owner: {}", e)
+            }))
+        }
+    };
+
+    let owner_user_id = owner.user_id.as_ref().and_then(|id| Uuid::parse_str(id).ok());
+    if owner_user_id != Some(auth.user_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "You can only view your own credit balance"
+        }));
+    }
 
     match data
         .local_exchange_use_cases
@@ -331,12 +373,36 @@ pub async fn get_sel_statistics(
 #[get("/owners/{owner_id}/exchange-summary")]
 pub async fn get_owner_summary(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     owner_id: web::Path<Uuid>,
 ) -> impl Responder {
+    let owner_id = owner_id.into_inner();
+
+    // Authorization: users can only view their own exchange summary
+    let owner = match data.owner_use_cases.get_owner(owner_id).await {
+        Ok(Some(owner)) => owner,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": format!("Owner not found: {}", owner_id)
+            }))
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to fetch owner: {}", e)
+            }))
+        }
+    };
+
+    let owner_user_id = owner.user_id.as_ref().and_then(|id| Uuid::parse_str(id).ok());
+    if owner_user_id != Some(auth.user_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "You can only view your own exchange summary"
+        }));
+    }
+
     match data
         .local_exchange_use_cases
-        .get_owner_summary(owner_id.into_inner())
+        .get_owner_summary(owner_id)
         .await
     {
         Ok(summary) => HttpResponse::Ok().json(summary),
