@@ -608,8 +608,14 @@ impl GamificationStatsUseCases {
             }
         }
 
-        // Calculate rank (optional - requires leaderboard data)
-        let rank = None; // TODO: Calculate from leaderboard
+        // Calculate rank from leaderboard
+        // Get leaderboard with large limit to find user's rank
+        let leaderboard = self.get_leaderboard(organization_id, None, 10000).await?;
+        let rank = leaderboard
+            .entries
+            .iter()
+            .find(|entry| entry.user_id == user_id)
+            .map(|entry| entry.rank);
 
         Ok(UserGamificationStatsDto {
             user_id,
