@@ -1,0 +1,544 @@
+====================================
+Roadmap KoproGo 2025-2030
+====================================
+
+:Version: 1.0
+:Date: 2025-01-19
+:Modèle: Progression par capacités et métriques
+
+.. contents:: Table des matières
+   :depth: 3
+   :local:
+
+Introduction
+============
+
+**Notre chemin vers 5 000 copropriétés belges**
+
+Cette roadmap présente l'évolution de KoproGo de 2025 à 2030, organisée par **capacités mesurables** et **paliers de progression**, pas par dates fixes.
+
+.. important::
+   **Philosophie** : Nous livrons quand les capacités sont atteintes, pas selon un calendrier arbitraire.
+
+   "Tout ce qui est dans cette roadmap sera livré tôt ou tard. La seule question est : QUAND ?"
+
+   La réponse dépend de la **force de frappe collective** : plus de clients, partenaires et contributeurs → plus vite.
+
+Vue d'Ensemble 2025-2030
+=========================
+
+Objectif Final
+--------------
+
+**5 000 copropriétés belges utilisant KoproGo d'ici 2030**
+
+À ce palier :
+
+* **4M€/an économisés** collectivement
+* **840 tonnes CO₂/an évitées**
+* **40-60 copropriétaires aidés/an** (Fonds de Solidarité)
+* **100 000 personnes** impactées positivement
+
+Progression par Paliers
+------------------------
+
+.. list-table:: Progression Mesurable 2025-2030
+   :header-rows: 1
+   :widths: 15 15 15 15 20 20
+
+   * - Palier
+     - Copros
+     - Prix/mois
+     - Économies/an
+     - CO₂ évité/an
+     - Infrastructure
+   * - **Validation**
+     - 100
+     - 5€
+     - 80k€
+     - -2 tonnes
+     - VPS s1-2 (6€/mois)
+   * - **Viabilité**
+     - 500
+     - 5€
+     - 400k€
+     - -15 tonnes
+     - VPS s1-4 (18€/mois)
+   * - **Impact**
+     - 1 000
+     - 5€
+     - 800k€
+     - -107 tonnes
+     - VPS b2-7 (44€/mois)
+   * - **Leadership**
+     - 2 000
+     - 4€*
+     - 1,6M€
+     - -214 tonnes
+     - VPS b2-15 (87€/mois)
+   * - **Référence**
+     - 5 000
+     - 3€*
+     - **4M€**
+     - **-840 tonnes**
+     - K8s (163€/mois)
+
+*Prix indicatif après baisse votée en AG si surplus > 25%
+
+Les 3 Phases de Développement
+==============================
+
+Phase 1 : VPS MVP (2025-2026)
+------------------------------
+
+**Objectif** : 100 → 500 copropriétés
+
+**Technologies**
+
+* Backend : Rust 1.83 + Actix-web + PostgreSQL 15
+* Frontend : Astro 4.x + Svelte 4.x (PWA)
+* Infrastructure : VPS OVH (s1-2 → s1-4)
+* Déploiement : Docker + GitOps (auto-deploy)
+* Monitoring : Prometheus + Grafana + Loki
+
+**Modules Fonctionnels**
+
+✅ **Gestion de Base** (Jalon 0-1 atteint)
+
+* CRUD complet (Building, Unit, Owner, Expense, Meeting, Document)
+* 73 endpoints REST API
+* Multi-owner support (pourcentages de propriété)
+* Multi-role support (syndic, copropriétaire, comptable)
+* Tests E2E automatisés (Playwright)
+
+🔄 **Sécurité & GDPR** (Jalon 1 - En cours)
+
+* LUKS Encryption at-rest ✅
+* Backups GPG + S3 ✅
+* Monitoring/Alerting ✅
+* GDPR basique (export, effacement)
+* Auth forte (itsme®)
+
+📋 **Conformité Légale Belge** (Jalon 2)
+
+* Plan Comptable Normalisé Belge (PCMN) ✅
+* État Daté (ventes immobilières)
+* Budget Prévisionnel Annuel
+* Conseil de Copropriété (>20 lots)
+* Workflow Recouvrement Impayés ✅
+
+**Infrastructure**
+
+* **0-100 copros** : VPS s1-2 (1 vCPU, 2GB RAM) - 6,30€/mois
+* **100-500 copros** : VPS s1-4 (1 vCPU, 4GB RAM) - 17,70€/mois
+* Hébergement : OVH GRA11 (Gravelines, France)
+* CO₂ : 60g CO₂/kWh (datacenter bas carbone)
+
+**Équipe**
+
+* **0-100 copros** : Solo dev (Gilles) + IA (10-20h/sem, bénévole)
+* **100-500 copros** : Solo + contributeurs (20-30h/sem)
+* Communauté : 10-50 contributeurs
+
+**Statut Juridique**
+
+* 2025 : Projet opensource (solo dev)
+* 2026 : Préparation ASBL
+
+Phase 2 : K3s + Automation (2026)
+----------------------------------
+
+**Objectif** : 500 → 1 000 copropriétés
+
+**Technologies**
+
+* Orchestration : K3s (Kubernetes lightweight)
+* CI/CD : GitHub Actions + ArgoCD (GitOps)
+* Databases : PostgreSQL 15 HA (réplication)
+* Caching : Redis (sessions, cache API)
+* Backups : Velero (K8s backups automatiques)
+
+**Modules Fonctionnels**
+
+🎯 **Features Différenciantes** (Jalon 3)
+
+* Voting Digital Basique (scrutins AG conformes)
+* PDF Generation étendue (tous documents légaux)
+* Module SEL (Système d'Échange Local)
+* Partage d'Objets (bibliothèque communautaire)
+* Contractor Backoffice (espace prestataires)
+
+⚡ **Automation & Intégrations** (Jalon 4)
+
+* Convocations AG automatiques
+* Carnet d'Entretien Digital
+* GDPR complet (Articles 16, 18, 21)
+* Module Devis Travaux
+* Affichage Public Syndic (SEO)
+* Accessibilité WCAG 2.1 AA
+
+**Infrastructure**
+
+* **500-1 000 copros** : VPS b2-7 (2 vCPU, 7GB RAM) - 43,50€/mois
+* **1 000-1 500 copros** : VPS b2-15 (4 vCPU, 15GB RAM) - 87€/mois
+* Orchestration : K3s (3 nodes)
+* HA : PostgreSQL streaming replication
+* CO₂ : 0,12g CO₂/requête maintenu
+
+**Équipe**
+
+* 1-2 ETP (devs Rust/Svelte)
+* 50-100 contributeurs actifs
+* Communauté : 500-1 000 membres
+
+**Statut Juridique**
+
+* **2026 : Création ASBL belge**
+* Assemblée Générale annuelle
+* Conseil d'Administration (3-7 membres)
+* Comptabilité publique trimestrielle
+
+Phase 3 : K8s Production + PropTech 2.0 (2026-2030)
+----------------------------------------------------
+
+**Objectif** : 1 000 → 5 000+ copropriétés
+
+**Technologies**
+
+* Orchestration : K8s (Kubernetes production)
+* Databases : PostgreSQL 15 HA + TimescaleDB (IoT)
+* Search : Meilisearch / Elasticsearch
+* Messaging : MQTT (IoT sensors)
+* AI : OVH AI Endpoints (GPT-4/Claude @ Gravelines)
+* Blockchain : Polygon RPC (voting immutable)
+
+**Modules Fonctionnels**
+
+📱 **Mobile & API Publique** (Jalon 5)
+
+* Progressive Web App installable
+* API publique v1 documentée (OpenAPI)
+* Multi-langue NL/FR/DE/EN complet
+* Intégrations comptables (Winbooks, Exact)
+* Notifications intelligentes
+* Analytics & Dashboards syndic
+
+🤖 **PropTech 2.0 - Intelligence** (Jalon 6)
+
+* IA Assistant Syndic (chatbot réglementaire)
+* API Bancaire PSD2 (réconciliation auto)
+* IoT Sensors (capteurs énergie/eau temps réel)
+* Marketplace Services Locaux
+* Prédictions budgétaires (ML)
+* Multi-region (Benelux, adaptation législative)
+
+🌐 **Platform Economy** (Jalon 7)
+
+* SDK multi-langages (Python, JS, PHP, Ruby)
+* Store modules tiers (marketplace plugins)
+* Blockchain Voting (immutabilité Polygon)
+* Carbon Credits Trading (tokenisation CO₂)
+* White-label pour fédérations
+* Interopérabilité EU (API standards CEN)
+
+**Infrastructure**
+
+* **2 000-5 000 copros** : K8s cluster (6-12 nodes)
+* **5 000-10 000 copros** : K8s multi-AZ (18-24 nodes)
+* Auto-scaling : Horizontal Pod Autoscaler
+* Load balancing : Traefik / Nginx Ingress
+* Observability : OpenTelemetry + Grafana Stack
+* CO₂ : 0,12g CO₂/requête maintenu (infrastructure) + -790t/an (modules communautaires)
+
+**Équipe**
+
+* 3-10 ETP (devs, DevOps, data scientist, IoT engineer)
+* 100-500 contributeurs actifs
+* Communauté : 2 000-10 000 membres
+
+**Statut Juridique**
+
+* 2028+ : **Transition optionnelle ASBL → Coopérative**
+* Membres deviennent sociétaires (parts sociales)
+* Gouvernance renforcée (1 personne = 1 voix maintenue)
+* Éligibilité subventions économie sociale
+
+Évolution Tarifaire Démocratique
+=================================
+
+Modèle de Démocratie Tarifaire
+-------------------------------
+
+**Prix de Départ** (validé à la création ASBL)
+
+* **Cloud géré** : 5€/mois par copropriété
+* **Self-hosted** : Gratuit (toujours)
+
+**Évolution du Prix** : Uniquement par vote en Assemblée Générale
+
+**Principe** : Si les revenus dépassent largement les coûts (surplus > 25%), l'AG peut voter pour baisser le prix.
+
+Exemples d'Évolution Tarifaire
+-------------------------------
+
+**Scénario 1 : 500 copros (Palier Viabilité)**
+
+.. code-block:: text
+
+   Revenus : 1 000€/mois (500 × 40% cloud × 5€)
+   Coûts infra : 18€/mois
+   Coûts RH : 1 500€/mois (2 devs temps partiel)
+   Surplus : -518€/mois (déficit)
+   → Prix maintenu à 5€/mois (phase bootstrap)
+
+**Scénario 2 : 1 500 copros (Palier Impact)**
+
+.. code-block:: text
+
+   Revenus : 3 000€/mois (1 500 × 40% cloud × 5€)
+   Coûts infra : 44€/mois
+   Coûts RH : 3 000€/mois (2 ETP)
+   Surplus : -44€/mois (équilibre)
+   → Prix maintenu à 5€/mois (réinvestissement features)
+
+**Scénario 3 : 2 500 copros (Palier Leadership)**
+
+.. code-block:: text
+
+   Revenus : 5 000€/mois (2 500 × 40% cloud × 5€)
+   Coûts infra : 87€/mois
+   Coûts RH : 3 500€/mois (3 ETP)
+   Surplus : 1 413€/mois (28%)
+   → AG vote baisse à 4€/mois (surplus > 25%)
+
+**Scénario 4 : 5 000 copros (Palier Référence)**
+
+.. code-block:: text
+
+   Revenus : 8 000€/mois (5 000 × 40% cloud × 4€ après baisse)
+   Coûts infra : 163€/mois
+   Coûts RH : 5 000€/mois (5 ETP)
+   Surplus : 2 837€/mois (35%)
+   → AG vote baisse à 3€/mois (surplus > 25%)
+
+**Avantages du Modèle**
+
+✅ **Simplicité** : Prix unique, facile à comprendre
+✅ **Démocratie** : La communauté décide quand et comment baisser
+✅ **Transparence** : Comptabilité publique trimestrielle
+✅ **Flexibilité** : L'AG choisit entre baisse, features, réserves
+
+Jalons Techniques Détaillés
+============================
+
+Jalon 0 : Fondations Techniques ✅
+-----------------------------------
+
+**État** : Achevé (Automne 2025)
+
+* ✅ Architecture hexagonale implémentée
+* ✅ 73 endpoints API REST
+* ✅ Tests E2E Playwright
+* ✅ Load tests validés (287 req/s, 99,74% uptime)
+* ✅ Documentation Sphinx complète
+
+**Capacité débloquée** : 10-20 early adopters (beta fermée)
+
+Jalon 1 : Sécurité & GDPR 🔄
+-----------------------------
+
+**Débloque** : 50-100 copropriétés (beta publique)
+
+**Issues critiques**
+
+* ✅ #39 : LUKS Encryption at-rest
+* ✅ #40 : Backups GPG + S3
+* ⏳ #42 : GDPR basique (export + effacement)
+* ⏳ #48 : Auth forte (itsme®)
+
+**Effort estimé** : 2-6 semaines (selon force de travail)
+
+Jalon 2 : Conformité Légale Belge
+----------------------------------
+
+**Débloque** : 200-500 copropriétés (production ouverte)
+
+**Issues critiques**
+
+* ✅ #79 : PCMN (Plan Comptable Normalisé Belge)
+* ⏳ #17 : État Daté (ventes immobilières)
+* ⏳ #18 : Budget Prévisionnel Annuel
+* ⏳ #22 : Conseil de Copropriété (>20 lots)
+* ✅ #83 : Workflow Recouvrement Impayés
+
+**Effort estimé** : 4-12 semaines (selon force de travail)
+
+Jalon 3 : Features Différenciantes
+-----------------------------------
+
+**Débloque** : 500-1 000 copropriétés
+
+**Issues importantes**
+
+* ⏳ #46 : Voting Digital Basique
+* ⏳ #47 : PDF Generation étendue
+* ⏳ #49 : Module SEL
+* ⏳ #26 : Partage d'Objets
+* ⏳ #52 : Contractor Backoffice
+
+**Effort estimé** : 5-14 semaines (selon force de travail)
+
+Jalons 4-7 : Voir :doc:`jalons-a-venir`
+
+Force de Frappe et Vélocité
+============================
+
+Abaque d'Estimation
+--------------------
+
+.. list-table:: Progression Force de Frappe
+   :header-rows: 1
+   :widths: 20 20 20 20 20
+
+   * - Config Équipe
+     - Heures/sem
+     - Budget/mois
+     - Vélocité
+     - Durée Jalon
+   * - **Solo dev + IA**
+     - 10-20h
+     - 65€ (bénévole)
+     - 2-3 feat/mois
+     - **4-6 mois/jalon**
+   * - **Solo + contributeurs**
+     - 30-40h
+     - 200€
+     - 8-12 feat/mois
+     - **6-8 sem/jalon**
+   * - **2 devs temps partiel**
+     - 60-80h
+     - 1 000€
+     - 15-25 feat/mois
+     - **4-6 sem/jalon**
+   * - **1-2 ETP**
+     - 140-160h
+     - 4 000€
+     - 30-50 feat/mois
+     - **2-4 sem/jalon**
+   * - **3-5 ETP + R&D**
+     - 280-320h
+     - 10 000€
+     - 60-100 feat/mois
+     - **1-2 sem/jalon**
+
+**Principe** : Chaque nouveau client/membre/partenaire accélère la vélocité.
+
+Scénarios de Croissance
+------------------------
+
+**Scénario Conservateur** : Solo dev, croissance lente (5 ans)
+
+.. code-block:: text
+
+   Année 1 : 50 copros, Jalon 1 livré
+   Année 2 : 100 copros, Jalon 2 livré
+   Année 3 : 500 copros, Jalon 3 livré
+   Année 5 : 2 000 copros, Jalon 4 livré
+
+**Scénario Réaliste** : Duo fondateurs, croissance organique (3 ans)
+
+.. code-block:: text
+
+   Trimestre 3 : 100 copros, Jalon 1 livré
+   Trimestre 6 : 200 copros, Jalon 2 livré
+   Année 2 : 1 000 copros, Jalon 3 livré
+   Année 3 : 5 000 copros, Jalons 4-5 livrés
+
+**Scénario Optimiste** : Équipe structurée, partenaires (2 ans)
+
+.. code-block:: text
+
+   Mois 3 : 50 copros, Jalon 1 livré
+   Mois 6 : 500 copros, Jalon 2 livré
+   Année 1 : 2 000 copros, Jalon 3 livré
+   Année 2 : 10 000 copros, Jalons 4-6 livrés
+
+Impact Attendu par Palier
+==========================
+
+.. list-table:: Impact Mesurable par Palier
+   :header-rows: 1
+   :widths: 15 15 15 15 20 20
+
+   * - Palier
+     - Copros
+     - Économies/an
+     - CO₂ évité/an
+     - Personnes Aidées/an
+     - Contributeurs
+   * - **Validation**
+     - 100
+     - 80k€
+     - -2 tonnes
+     - 3-5
+     - 10
+   * - **Viabilité**
+     - 500
+     - 400k€
+     - -15 tonnes
+     - 10-15
+     - 50
+   * - **Impact**
+     - 1 000
+     - 800k€
+     - -107 tonnes
+     - 20-30
+     - 100
+   * - **Leadership**
+     - 2 000
+     - 1,6M€
+     - -214 tonnes
+     - 30-40
+     - 200
+   * - **Référence**
+     - **5 000**
+     - **4M€**
+     - **-840 tonnes**
+     - **40-60**
+     - **500**
+
+Conclusion
+==========
+
+**Notre Engagement**
+
+✅ **Qualité avant vitesse** : Livraison quand c'est prêt, pas selon un calendrier
+✅ **Transparence totale** : Conditions de déblocage publiques, progression mesurable
+✅ **Flexibilité assumée** : Vélocité dépend de la force de travail
+
+**Ce Que Nous NE Promettons PAS**
+
+❌ **Dates fixes** : Préférons "livré quand sécurité validée" à "livré en décembre"
+❌ **Roadmap rigide** : Priorités peuvent changer selon feedback communauté
+❌ **Croissance à tout prix** : Qualité > quantité, pas de dette technique
+
+**Prochaines Étapes**
+
+1. **Complétez Jalon 1** : GDPR + Auth forte → Beta publique
+2. **Attaquez Jalon 2** : Conformité légale → Production ouverte
+3. **Recrutez contributeurs** : Plus de force de travail → Plus vite
+
+----
+
+**Documents de Référence**
+
+* :doc:`jalons-atteints` - Ce qui est déjà fait
+* :doc:`jalons-a-venir` - Ce qui vient ensuite
+* :doc:`../ROADMAP_PAR_CAPACITES` - Roadmap détaillée par capacités
+* :doc:`../vision-strategie/vision` - Vision à long terme
+
+----
+
+*Roadmap KoproGo 2025-2030 - Progression par Capacités*
+
+*Contact : contact@koprogo.com - GitHub : github.com/gilmry/koprogo*
