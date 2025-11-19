@@ -284,7 +284,7 @@ async fn main() -> std::io::Result<()> {
     );
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
     let payment_reminder_use_cases = PaymentReminderUseCases::new(
-        payment_reminder_repo,
+        payment_reminder_repo.clone(),
         expense_repo.clone(),
         owner_repo.clone(),
     );
@@ -307,8 +307,11 @@ async fn main() -> std::io::Result<()> {
         expense_repo.clone(),
         journal_entry_repo.clone(),
     );
-    let dashboard_use_cases =
-        DashboardUseCases::new(expense_repo.clone(), owner_contribution_repo.clone());
+    let dashboard_use_cases = DashboardUseCases::new(
+        expense_repo.clone(),
+        owner_contribution_repo.clone(),
+        payment_reminder_repo.clone(),
+    );
     let owner_contribution_use_cases =
         OwnerContributionUseCases::new(owner_contribution_repo.clone());
     let call_for_funds_use_cases = CallForFundsUseCases::new(
