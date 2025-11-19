@@ -773,29 +773,6 @@ mod tests {
 
     #[async_trait]
     impl OwnerRepository for MockOwnerRepository {
-        async fn find_by_building(&self, _building_id: Uuid) -> Result<Vec<crate::domain::entities::Owner>, String> {
-            // Return 10 mock owners
-            Ok((0..10)
-                .map(|i| crate::domain::entities::Owner {
-                    id: Uuid::new_v4(),
-                    organization_id: Uuid::new_v4(),
-                    first_name: format!("Owner{}", i),
-                    last_name: "Test".to_string(),
-                    email: format!("owner{}@test.com", i),
-                    phone: None,
-                    national_id: None,
-                    address: None,
-                    created_at: Utc::now(),
-                    updated_at: Utc::now(),
-                    is_active: true,
-                    processing_restricted: false,
-                    processing_restricted_at: None,
-                    marketing_opt_out: false,
-                    marketing_opt_out_at: None,
-                })
-                .collect())
-        }
-
         async fn create(&self, _owner: &crate::domain::entities::Owner) -> Result<crate::domain::entities::Owner, String> {
             unimplemented!()
         }
@@ -805,10 +782,35 @@ mod tests {
         }
 
         async fn find_all(&self) -> Result<Vec<crate::domain::entities::Owner>, String> {
-            unimplemented!()
+            // Return 10 mock owners
+            Ok((0..10)
+                .map(|i| crate::domain::entities::Owner {
+                    id: Uuid::new_v4(),
+                    organization_id: Uuid::new_v4(),
+                    first_name: format!("Owner{}", i),
+                    last_name: "Test".to_string(),
+                    email: format!("owner{}@test.com", i),
+                    phone: None,
+                    address: "Test Address".to_string(),
+                    city: "Test City".to_string(),
+                    postal_code: "1000".to_string(),
+                    country: "Belgium".to_string(),
+                    user_id: None,
+                    created_at: Utc::now(),
+                    updated_at: Utc::now(),
+                })
+                .collect())
         }
 
         async fn find_by_email(&self, _email: &str) -> Result<Option<crate::domain::entities::Owner>, String> {
+            unimplemented!()
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &crate::application::dto::PageRequest,
+            _filters: &crate::application::dto::OwnerFilters,
+        ) -> Result<(Vec<crate::domain::entities::Owner>, i64), String> {
             unimplemented!()
         }
 
@@ -817,10 +819,6 @@ mod tests {
         }
 
         async fn delete(&self, _id: Uuid) -> Result<bool, String> {
-            unimplemented!()
-        }
-
-        async fn find_by_organization(&self, _organization_id: Uuid) -> Result<Vec<crate::domain::entities::Owner>, String> {
             unimplemented!()
         }
     }
@@ -847,11 +845,13 @@ mod tests {
             poll_type: "yes_no".to_string(),
             options: vec![
                 CreatePollOptionDto {
+                    id: None,
                     option_text: "Yes".to_string(),
                     attachment_url: None,
                     display_order: 0,
                 },
                 CreatePollOptionDto {
+                    id: None,
                     option_text: "No".to_string(),
                     attachment_url: None,
                     display_order: 1,

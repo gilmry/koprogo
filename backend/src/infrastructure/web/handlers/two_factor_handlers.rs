@@ -401,8 +401,10 @@ mod tests {
             async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, String>;
             async fn find_by_email(&self, email: &str) -> Result<Option<User>, String>;
             async fn find_all(&self) -> Result<Vec<User>, String>;
+            async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<User>, String>;
             async fn update(&self, user: &User) -> Result<User, String>;
-            async fn delete(&self, id: Uuid) -> Result<(), String>;
+            async fn delete(&self, id: Uuid) -> Result<bool, String>;
+            async fn count_by_organization(&self, org_id: Uuid) -> Result<i64, String>;
         }
     }
 
@@ -414,7 +416,7 @@ mod tests {
 
         let use_cases = Arc::new(TwoFactorUseCases::new(two_factor_repo, user_repo, encryption_key));
 
-        let app = test::init_service(
+        let _app = test::init_service(
             App::new()
                 .app_data(web::Data::new(use_cases))
                 .configure(configure_routes),

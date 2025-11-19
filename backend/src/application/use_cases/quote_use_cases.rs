@@ -372,6 +372,7 @@ mod tests {
     use async_trait::async_trait;
     use mockall::mock;
     use rust_decimal_macros::dec;
+    use uuid::Uuid;
 
     mock! {
         QuoteRepo {}

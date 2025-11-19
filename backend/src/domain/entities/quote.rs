@@ -312,7 +312,9 @@ impl Quote {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::Utc;
     use rust_decimal_macros::dec;
+    use uuid::Uuid;
 
     #[test]
     fn test_create_quote_success() {

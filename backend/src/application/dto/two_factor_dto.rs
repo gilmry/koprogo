@@ -99,6 +99,7 @@ impl From<TwoFactorSecret> for TwoFactorStatusDto {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use uuid::Uuid;
 
     #[test]
     fn test_two_factor_status_dto_from_entity() {

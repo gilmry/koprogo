@@ -163,6 +163,7 @@ pub struct QuoteComparisonResponseDto {
 mod tests {
     use super::*;
     use crate::domain::entities::Quote;
+    use chrono::Utc;
     use rust_decimal_macros::dec;
     use uuid::Uuid;
 

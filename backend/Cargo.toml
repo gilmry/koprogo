@@ -91,6 +91,7 @@ utoipa-swagger-ui = { version = "8.0", features = ["actix-web"] }
 mockall = "0.13"
 tokio-test = "0.4"
 testcontainers-modules = { version = "0.13", features = ["postgres", "minio"] }
+rust_decimal_macros = "1.36"
 
 # BDD tests
 cucumber = { version = "0.21", features = ["macros"] }

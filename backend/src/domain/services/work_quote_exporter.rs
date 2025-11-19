@@ -360,6 +360,8 @@ impl WorkQuoteExporter {
 mod tests {
     use super::*;
     use crate::domain::entities::ApprovalStatus;
+    use chrono::Utc;
+    use uuid::Uuid;
 
     #[test]
     fn test_export_work_quote_pdf() {
@@ -391,14 +393,24 @@ mod tests {
             organization_id: building.organization_id,
             description: "Rénovation de la façade principale".to_string(),
             amount: 15000.0,
-            date: Utc::now(),
+            amount_excl_vat: Some(12396.69),
+            vat_rate: Some(21.0),
+            vat_amount: Some(2603.31),
+            amount_incl_vat: Some(15000.0),
+            expense_date: Utc::now(),
+            invoice_date: Some(Utc::now()),
+            due_date: None,
+            paid_date: None,
             category: ExpenseCategory::Maintenance,
-            paid_by: None,
-            payment_date: None,
-            is_paid: false,
-            invoice_number: Some("DEV-2025-001".to_string()),
-            invoice_file_path: None,
             approval_status: ApprovalStatus::PendingApproval,
+            submitted_at: None,
+            approved_by: None,
+            approved_at: None,
+            rejection_reason: None,
+            payment_status: crate::domain::entities::PaymentStatus::Pending,
+            supplier: None,
+            invoice_number: Some("DEV-2025-001".to_string()),
+            account_code: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };

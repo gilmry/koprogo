@@ -365,6 +365,7 @@ impl OwnershipContractExporter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use uuid::Uuid;
 
     #[test]
     fn test_export_ownership_contract_pdf() {
@@ -395,24 +396,27 @@ mod tests {
             organization_id: building.organization_id,
             building_id: building.id,
             unit_number: "A1".to_string(),
+            unit_type: crate::domain::entities::UnitType::Apartment,
             floor: Some(1),
-            area: Some(75.5),
-            unit_type: Some("Appartement".to_string()),
+            surface_area: 75.5,
+            quota: 150.0, // 150 millièmes (15%)
+            owner_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
 
         let owner = Owner {
             id: Uuid::new_v4(),
+            organization_id: building.organization_id,
+            user_id: None,
             first_name: "Jean".to_string(),
             last_name: "Dupont".to_string(),
-            email: Some("jean@example.com".to_string()),
+            email: "jean@example.com".to_string(),
             phone: Some("+32 2 123 45 67".to_string()),
-            is_company: false,
-            company_name: None,
-            vat_number: None,
-            national_register_number: Some("12345678901".to_string()),
-            organization_id: building.organization_id,
+            address: "123 Rue Example".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "Belgium".to_string(),
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
