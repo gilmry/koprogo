@@ -7,6 +7,24 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 // ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/// Helper function to check if user has admin role (for managing achievements/challenges)
+///
+/// Gamification management requires admin or superadmin privileges to prevent
+/// abuse of the points/achievements system.
+fn check_admin_role(user: &AuthenticatedUser) -> Option<HttpResponse> {
+    if user.role != "admin" && user.role != "superadmin" {
+        Some(HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only admin or superadmin can manage achievements and challenges"
+        })))
+    } else {
+        None
+    }
+}
+
+// ============================================================================
 // ACHIEVEMENT HANDLERS
 // ============================================================================
 
@@ -33,9 +51,13 @@ use uuid::Uuid;
 #[post("/achievements")]
 pub async fn create_achievement(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     request: web::Json<CreateAchievementDto>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.achievement_use_cases.create_achievement(request.into_inner()).await {
         Ok(achievement) => HttpResponse::Created().json(achievement),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -134,10 +156,14 @@ pub async fn list_visible_achievements(
 #[put("/achievements/{id}")]
 pub async fn update_achievement(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<UpdateAchievementDto>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.achievement_use_cases.update_achievement(id.into_inner(), request.into_inner()).await {
         Ok(achievement) => HttpResponse::Ok().json(achievement),
         Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
@@ -155,9 +181,13 @@ pub async fn update_achievement(
 #[delete("/achievements/{id}")]
 pub async fn delete_achievement(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.achievement_use_cases.delete_achievement(id.into_inner()).await {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
@@ -269,9 +299,13 @@ pub async fn get_recent_achievements(
 #[post("/challenges")]
 pub async fn create_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     request: web::Json<CreateChallengeDto>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.challenge_use_cases.create_challenge(request.into_inner()).await {
         Ok(challenge) => HttpResponse::Created().json(challenge),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
@@ -388,10 +422,14 @@ pub async fn list_active_challenges(
 #[put("/challenges/{id}")]
 pub async fn update_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<UpdateChallengeDto>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.challenge_use_cases.update_challenge(id.into_inner(), request.into_inner()).await {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
         Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
@@ -410,9 +448,13 @@ pub async fn update_challenge(
 #[put("/challenges/{id}/activate")]
 pub async fn activate_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.challenge_use_cases.activate_challenge(id.into_inner()).await {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
         Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
@@ -431,9 +473,13 @@ pub async fn activate_challenge(
 #[put("/challenges/{id}/complete")]
 pub async fn complete_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.challenge_use_cases.complete_challenge(id.into_inner()).await {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
         Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
@@ -452,9 +498,13 @@ pub async fn complete_challenge(
 #[put("/challenges/{id}/cancel")]
 pub async fn cancel_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.challenge_use_cases.cancel_challenge(id.into_inner()).await {
         Ok(challenge) => HttpResponse::Ok().json(challenge),
         Err(e) if e.contains("not found") => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
@@ -472,9 +522,13 @@ pub async fn cancel_challenge(
 #[delete("/challenges/{id}")]
 pub async fn delete_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Some(response) = check_admin_role(&auth) {
+        return response;
+    }
+
     match data.challenge_use_cases.delete_challenge(id.into_inner()).await {
         Ok(_) => HttpResponse::NoContent().finish(),
         Err(e) => HttpResponse::NotFound().json(serde_json::json!({"error": e})),
