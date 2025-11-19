@@ -3,9 +3,11 @@ use crate::application::dto::{
     RecipientTrackingSummaryResponse, ScheduleConvocationRequest, SendConvocationRequest,
 };
 use crate::application::ports::{
-    ConvocationRecipientRepository, ConvocationRepository, OwnerRepository,
+    BuildingRepository, ConvocationRecipientRepository, ConvocationRepository, MeetingRepository,
+    OwnerRepository,
 };
 use crate::domain::entities::{AttendanceStatus, Convocation, ConvocationRecipient};
+use crate::domain::services::ConvocationExporter;
 use chrono::Utc;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -14,6 +16,8 @@ pub struct ConvocationUseCases {
     convocation_repository: Arc<dyn ConvocationRepository>,
     recipient_repository: Arc<dyn ConvocationRecipientRepository>,
     owner_repository: Arc<dyn OwnerRepository>,
+    building_repository: Arc<dyn BuildingRepository>,
+    meeting_repository: Arc<dyn MeetingRepository>,
 }
 
 impl ConvocationUseCases {
@@ -21,11 +25,15 @@ impl ConvocationUseCases {
         convocation_repository: Arc<dyn ConvocationRepository>,
         recipient_repository: Arc<dyn ConvocationRecipientRepository>,
         owner_repository: Arc<dyn OwnerRepository>,
+        building_repository: Arc<dyn BuildingRepository>,
+        meeting_repository: Arc<dyn MeetingRepository>,
     ) -> Self {
         Self {
             convocation_repository,
             recipient_repository,
             owner_repository,
+            building_repository,
+            meeting_repository,
         }
     }
 
@@ -133,13 +141,35 @@ impl ConvocationUseCases {
         &self,
         id: Uuid,
         request: SendConvocationRequest,
-        pdf_file_path: String,
     ) -> Result<ConvocationResponse, String> {
         let mut convocation = self
             .convocation_repository
             .find_by_id(id)
             .await?
             .ok_or_else(|| format!("Convocation not found: {}", id))?;
+
+        // Fetch building for PDF generation
+        let building = self
+            .building_repository
+            .find_by_id(convocation.building_id)
+            .await?
+            .ok_or_else(|| format!("Building not found: {}", convocation.building_id))?;
+
+        // Fetch meeting for PDF generation
+        let meeting = self
+            .meeting_repository
+            .find_by_id(convocation.meeting_id)
+            .await?
+            .ok_or_else(|| format!("Meeting not found: {}", convocation.meeting_id))?;
+
+        // Generate PDF
+        let pdf_bytes = ConvocationExporter::export_to_pdf(&building, &meeting, &convocation)
+            .map_err(|e| format!("Failed to generate PDF: {}", e))?;
+
+        // Save PDF to file
+        let pdf_file_path = format!("/uploads/convocations/conv-{}.pdf", id);
+        ConvocationExporter::save_to_file(&pdf_bytes, &pdf_file_path)
+            .map_err(|e| format!("Failed to save PDF: {}", e))?;
 
         // Fetch owner emails
         let mut recipients = Vec::new();

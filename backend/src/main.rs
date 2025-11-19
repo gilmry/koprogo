@@ -242,6 +242,8 @@ async fn main() -> std::io::Result<()> {
         convocation_repo,
         convocation_recipient_repo,
         owner_repo.clone(),
+        building_repo.clone(),
+        meeting_repo.clone(),
     );
     let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo);
     let ticket_use_cases = TicketUseCases::new(ticket_repo);

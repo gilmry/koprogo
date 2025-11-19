@@ -2,6 +2,7 @@ use crate::application::dto::{
     CreateConvocationRequest, ScheduleConvocationRequest, SendConvocationRequest,
     SetProxyRequest, UpdateAttendanceRequest,
 };
+use crate::domain::services::ConvocationExporter;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
@@ -207,12 +208,10 @@ pub async fn send_convocation(
         }
     };
 
-    // TODO: Generate PDF file path (placeholder for now)
-    let pdf_file_path = format!("/uploads/convocations/conv-{}.pdf", id);
-
+    // PDF generation now happens in the use case layer
     match state
         .convocation_use_cases
-        .send_convocation(*id, request.into_inner(), pdf_file_path)
+        .send_convocation(*id, request.into_inner())
         .await
     {
         Ok(convocation) => {
