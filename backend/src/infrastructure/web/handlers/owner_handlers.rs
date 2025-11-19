@@ -535,7 +535,6 @@ pub async fn export_owner_statement_pdf(
     };
 
     // Filter expenses by date range (using expense_date)
-    use crate::domain::entities::PaymentStatus;
     let period_expenses: Vec<_> = expenses_dto
         .into_iter()
         .filter(|e| {
@@ -620,7 +619,6 @@ pub async fn export_owner_statement_pdf(
     }
 
     // Convert expenses to domain entities
-    use crate::domain::entities::ApprovalStatus;
     let expense_entities: Vec<Expense> = period_expenses
         .iter()
         .filter_map(|e| {

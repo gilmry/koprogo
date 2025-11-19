@@ -410,7 +410,6 @@ pub async fn export_annual_report_pdf(
     };
 
     // Convert expenses to domain entities
-    use crate::domain::entities::ApprovalStatus;
     let expense_entities: Vec<Expense> = year_expenses
         .iter()
         .filter_map(|e| {

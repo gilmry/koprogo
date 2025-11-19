@@ -683,7 +683,6 @@ pub async fn export_work_quote_pdf(
         .map(|dt| dt.with_timezone(&Utc))
         .unwrap_or_else(|_| Utc::now());
 
-    use crate::domain::entities::ApprovalStatus;
     let expense_entity = Expense {
         id: expense_id_uuid,
         organization_id,
