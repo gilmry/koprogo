@@ -250,7 +250,12 @@ async fn main() -> std::io::Result<()> {
     let two_factor_use_cases =
         TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
     let iot_use_cases = IoTUseCases::new(iot_repo.clone());
-    let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client);
+
+    // Linky OAuth redirect URI (configurable for different environments)
+    let linky_oauth_redirect_uri = env::var("LINKY_OAUTH_REDIRECT_URI")
+        .unwrap_or_else(|_| "https://koprogo.be/oauth/linky/callback".to_string());
+
+    let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client, linky_oauth_redirect_uri);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
     let payment_use_cases =
