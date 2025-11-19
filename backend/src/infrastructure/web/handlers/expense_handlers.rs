@@ -387,7 +387,7 @@ pub async fn update_invoice_draft(
     {
         Ok(invoice) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceUpdated event type
+                AuditEventType::InvoiceUpdated,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -420,7 +420,7 @@ pub async fn submit_invoice_for_approval(
     {
         Ok(invoice) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceSubmitted event type
+                AuditEventType::InvoiceSubmitted,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -454,7 +454,7 @@ pub async fn approve_invoice(
     match state.expense_use_cases.approve_invoice(*id, dto).await {
         Ok(invoice) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceApproved event type
+                AuditEventType::InvoiceApproved,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -499,7 +499,7 @@ pub async fn reject_invoice(
     {
         Ok(invoice) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceRejected event type
+                AuditEventType::InvoiceRejected,
                 Some(user.user_id),
                 user.organization_id,
             )
