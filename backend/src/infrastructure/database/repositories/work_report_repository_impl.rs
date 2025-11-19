@@ -133,12 +133,12 @@ impl WorkReportRepository for PostgresWorkReportRepository {
         let mut where_clauses = vec![];
         let mut bind_count = 0;
 
-        if let Some(building_id) = filters.building_id {
+        if let Some(_building_id) = filters.building_id {
             bind_count += 1;
             where_clauses.push(format!("building_id = ${}", bind_count));
         }
 
-        if let Some(ref work_type) = filters.work_type {
+        if let Some(ref _work_type) = filters.work_type {
             bind_count += 1;
             where_clauses.push(format!("work_type = ${}", bind_count));
         }

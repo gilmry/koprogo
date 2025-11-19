@@ -151,17 +151,17 @@ impl TechnicalInspectionRepository for PostgresTechnicalInspectionRepository {
         let mut where_clauses = vec![];
         let mut bind_count = 0;
 
-        if let Some(building_id) = filters.building_id {
+        if let Some(_building_id) = filters.building_id {
             bind_count += 1;
             where_clauses.push(format!("building_id = ${}", bind_count));
         }
 
-        if let Some(ref inspection_type) = filters.inspection_type {
+        if let Some(ref _inspection_type) = filters.inspection_type {
             bind_count += 1;
             where_clauses.push(format!("inspection_type = ${}", bind_count));
         }
 
-        if let Some(ref status) = filters.status {
+        if let Some(ref _status) = filters.status {
             bind_count += 1;
             where_clauses.push(format!("status = ${}", bind_count));
         }
@@ -474,7 +474,7 @@ fn inspection_type_to_sql(inspection_type: &InspectionType) -> String {
         InspectionType::RoofStructure => "roof".to_string(),
         InspectionType::Facade => "facade".to_string(),
         InspectionType::WaterQuality => "water_tank".to_string(),
-        InspectionType::Other { name } => {
+        InspectionType::Other { name: _ } => {
             // Store custom inspection types as "other" in the DB
             // The name is stored in the title field
             "other".to_string()
