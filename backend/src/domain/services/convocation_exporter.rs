@@ -36,7 +36,7 @@ impl ConvocationExporter {
 
         // Load fonts
         let font_bold = doc
-            .add_builtin_font(BuiltinFont::Helvetica_Bold)
+            .add_builtin_font(BuiltinFont::HelveticaBold)
             .map_err(|e| format!("Failed to load bold font: {}", e))?;
         let font_regular = doc
             .add_builtin_font(BuiltinFont::Helvetica)
@@ -51,8 +51,8 @@ impl ConvocationExporter {
                         size: f64,
                         x: f64,
                         y: &mut f64,
-                        bold: bool| {
-            layer.use_text(text, size, Mm(x), Mm(*y), font);
+                        _bold: bool| {
+            layer.use_text(text, size as f32, Mm(x as f32), Mm(*y as f32), font);
             *y -= size * 0.5; // Line spacing (approx 1.5x font size)
         };
 
@@ -71,8 +71,8 @@ impl ConvocationExporter {
         let address_line = format!(
             "{}, {} {}",
             building.address,
-            building.postal_code.as_deref().unwrap_or(""),
-            building.city.as_deref().unwrap_or("")
+            building.postal_code,
+            building.city
         );
         add_text(
             &current_layer,
@@ -484,12 +484,13 @@ mod tests {
             organization_id: Uuid::new_v4(),
             name: "Résidence Les Lilas".to_string(),
             address: "Avenue Louise 123".to_string(),
-            city: Some("Bruxelles".to_string()),
-            postal_code: Some("1050".to_string()),
-            country: Some("Belgium".to_string()),
+            city: "Bruxelles".to_string(),
+            postal_code: "1050".to_string(),
+            country: "Belgium".to_string(),
             total_units: 20,
+            total_tantiemes: 1000,
             construction_year: Some(1995),
-            slug: "residence-les-lilas-bruxelles".to_string(),
+            slug: Some("residence-les-lilas-bruxelles".to_string()),
             syndic_name: Some("Syndic Pro SPRL".to_string()),
             syndic_email: Some("contact@syndicpro.be".to_string()),
             syndic_phone: Some("+32 2 123 45 67".to_string()),
