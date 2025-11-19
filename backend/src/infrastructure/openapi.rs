@@ -1,7 +1,6 @@
 /// OpenAPI Documentation Module
 /// Generates OpenAPI 3.0 specification for KoproGo API
 /// Access Swagger UI at: http://localhost:8080/swagger-ui/
-
 use utoipa::{
     openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
