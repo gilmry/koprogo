@@ -47,9 +47,9 @@
 - ✅ **Covoiturage & Garde** : Petites annonces locales
 
 **Installation** : 15 minutes • **Coût** : 0€ (self-hosted) ou 5€/mois (cloud avec support)
-**Compatible avec** : Vilogi, Apronet, tableurs Excel, n'importe quel outil de gestion
+**Compatible avec** : Solutions SaaS existantes, tableurs Excel, n'importe quel outil de gestion
 
-**Cas d'usage** : *"Mon immeuble de 30 lots utilise Vilogi pour la gestion officielle. On a installé KoproGo juste pour le SEL et le partage d'objets. Ça marche parfaitement ensemble !"*
+**Cas d'usage** : *"Mon immeuble de 30 lots utilise un logiciel SaaS pour la gestion officielle. On a installé KoproGo juste pour le SEL et le partage d'objets. Ça marche parfaitement ensemble !"*
 
 ---
 
@@ -68,7 +68,7 @@
 **Installation** : 20 minutes • **Coût** : 0€ (self-hosted) ou 5€/mois (cloud)
 **Target** : Petites copropriétés (< 50 lots), syndics bénévoles, techniciens autonomes
 
-**Cas d'usage** : *"Petite copro 12 lots, on cherchait une alternative gratuite à Vilogi (200€/mois). Self-hosted KoproGo depuis 6 mois, ça fonctionne parfaitement. Économie : 2,400€/an."*
+**Cas d'usage** : *"Petite copro 12 lots, on cherchait une alternative gratuite aux solutions SaaS classiques (200€/mois). Self-hosted KoproGo depuis 6 mois, ça fonctionne parfaitement. Économie : 2,400€/an."*
 
 ---
 
@@ -76,7 +76,7 @@
 
 **Soutenez l'écologie, l'opensource, la solidarité sans utiliser les outils :**
 
-- ✅ **Écologie** : 0.12g CO₂/req (96% réduction vs concurrents)
+- ✅ **Écologie** : 0.12g CO₂/req (96% réduction vs solutions SaaS classiques)
 - ✅ **Opensource** : Code AGPL-3.0, auditable, transparent
 - ✅ **Solidarité** : Fonds de Solidarité pour membres en difficulté
 - ✅ **Démocratie** : 1 membre = 1 voix, prix voté en AG
@@ -159,9 +159,20 @@ Projets GitHub: [Software (#2)](https://github.com/users/gilmry/projects/2) | [I
 ## 📚 Documentation
 
 **Documentation complète disponible sur [gilmry.github.io/koprogo](https://gilmry.github.io/koprogo)**
-- Documentation Sphinx (guides, architecture, déploiement)
-- Documentation Rust API (documentation technique du backend)
-- [Index de la documentation](docs/index.rst)
+
+### 🎯 Parcours Dédiés (Choisissez le Vôtre)
+
+La documentation propose **4 parcours de lecture** adaptés à votre profil :
+
+- 💼 **[Parcours Investisseur](docs/parcours-investisseur.rst)** (5-10 min) - Évaluation impact social, viabilité financière, opportunités
+- 🧑‍💻 **[Parcours Développeur](docs/parcours-contributeur.rst)** (15-30 min) - Architecture hexagonale, stack technique, contribuer
+- 🏢 **[Parcours Syndic/Copropriétaire](docs/index.rst)** (10-20 min) - Fonctionnalités, mise en route, support
+- 🤔 **[Parcours Curieux](docs/vision-strategie/de-gestion-a-symbiose.rst)** (20-30 min) - Vision long terme, impact sociétal
+
+**Documents clés** :
+- [De la Gestion à la Symbiose](docs/vision-strategie/de-gestion-a-symbiose.rst) - Comment un outil de gestion devient un réseau symbiotique
+- [Roadmap par Jalons](docs/roadmap/roadmap-2025-2030.rst) - Progression par capacités 2025-2030
+- [Index complet](docs/index.rst) - Point d'entrée pour toute la documentation
 
 ### 🎥 Tutoriels Vidéo
 
@@ -175,7 +186,7 @@ Retrouvez des tutoriels vidéo pour démarrer avec KoproGo, comprendre l'archite
 
 ### Core Features
 - ⚡ **Performance Prouvée** : 99.74% uptime, 287 req/s sur 1 vCPU, P50=69ms, P99=752ms
-- 🌱 **Ultra-Écologique** : 0.12g CO₂/requête (7-25x mieux que alternatives)
+- 🌱 **Ultra-Écologique** : 0.12g CO₂/requête (7-25x mieux que solutions SaaS classiques)
 - 💰 **Prix Fixe Démocratique** : 5€/mois cloud, self-hosted 0€, baisse par vote AG
 - 🏗️ **Architecture Hexagonale** : Séparation stricte des couches (Domain, Application, Infrastructure)
 - 🧪 **Tests Complets** : Unitaires, Intégration, BDD (Cucumber), E2E, Load tests
@@ -451,7 +462,7 @@ make bench
 | **Latence P50** | 69ms | Médiane |
 | **Latence P90** | 130ms | 90e percentile |
 | **Latence P99** | 752ms | Requêtes POST lourdes |
-| **CO₂ Impact** | **0.12g/req** | **7-25x mieux que alternatives** |
+| **CO₂ Impact** | **0.12g/req** | **7-25x mieux que solutions SaaS classiques** |
 | **RAM** | 128MB max | Sans swap |
 | **CPU** | 8% moyen | Pic à 25% |
 
