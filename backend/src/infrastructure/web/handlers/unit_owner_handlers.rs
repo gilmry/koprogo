@@ -539,7 +539,7 @@ pub async fn export_ownership_contract_pdf(
     // 1. Get the UnitOwner relationship
     let unit_owner = match state
         .unit_owner_use_cases
-        .get_unit_owner_by_id(relationship_id)
+        .get_unit_owner(relationship_id)
         .await
     {
         Ok(Some(uo)) => uo,
@@ -586,7 +586,15 @@ pub async fn export_ownership_contract_pdf(
     };
 
     // 4. Get building
-    let building_dto = match state.building_use_cases.get_building(unit_dto.building_id).await {
+    let building_uuid = match Uuid::parse_str(&unit_dto.building_id) {
+        Ok(uuid) => uuid,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid building ID format"
+            }))
+        }
+    };
+    let building_dto = match state.building_use_cases.get_building(building_uuid).await {
         Ok(Some(dto)) => dto,
         Ok(None) => {
             return HttpResponse::NotFound().json(serde_json::json!({
@@ -613,7 +621,7 @@ pub async fn export_ownership_contract_pdf(
         .unwrap_or_else(|_| Utc::now());
 
     let building_entity = Building {
-        id: Uuid::parse_str(&building_dto.id).unwrap_or(unit_dto.building_id),
+        id: Uuid::parse_str(&building_dto.id).unwrap_or(building_uuid),
         name: building_dto.name.clone(),
         address: building_dto.address,
         city: building_dto.city,
@@ -635,30 +643,33 @@ pub async fn export_ownership_contract_pdf(
     };
 
     let unit_entity = Unit {
-        id: unit_dto.id,
-        building_id: unit_dto.building_id,
+        id: Uuid::parse_str(&unit_dto.id).unwrap_or(unit_owner.unit_id),
+        organization_id,
+        building_id: building_uuid,
         unit_number: unit_dto.unit_number,
         floor: unit_dto.floor,
         unit_type: unit_dto.unit_type,
-        area_sqm: unit_dto.area_sqm,
-        tantiemes: unit_dto.tantiemes,
-        co_owner_count: unit_dto.co_owner_count,
-        created_at: unit_dto.created_at,
-        updated_at: unit_dto.updated_at,
+        surface_area: unit_dto.surface_area,
+        quota: unit_dto.quota,
+        owner_id: unit_dto.owner_id.and_then(|s| Uuid::parse_str(&s).ok()),
+        created_at: Utc::now(), // DTOs don't have timestamps, use current time
+        updated_at: Utc::now(),
     };
 
     let owner_entity = Owner {
-        id: owner_dto.id,
-        organization_id,
+        id: Uuid::parse_str(&owner_dto.id).unwrap_or(unit_owner.owner_id),
+        organization_id: Uuid::parse_str(&owner_dto.organization_id).unwrap_or(organization_id),
         first_name: owner_dto.first_name.clone(),
         last_name: owner_dto.last_name.clone(),
         email: owner_dto.email,
         phone: owner_dto.phone,
         address: owner_dto.address,
+        city: owner_dto.city,
+        postal_code: owner_dto.postal_code,
+        country: owner_dto.country,
         user_id: owner_dto.user_id.and_then(|s| Uuid::parse_str(&s).ok()),
-        is_anonymized: false,
-        created_at: owner_dto.created_at,
-        updated_at: owner_dto.updated_at,
+        created_at: Utc::now(), // DTOs don't have timestamps, use current time
+        updated_at: Utc::now(),
     };
 
     // 5. Generate PDF
