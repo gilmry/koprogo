@@ -270,8 +270,11 @@ async fn main() -> std::io::Result<()> {
     let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
-    let shared_object_use_cases =
-        SharedObjectUseCases::new(shared_object_repo, owner_repo.clone());
+    let shared_object_use_cases = SharedObjectUseCases::new(
+        shared_object_repo,
+        owner_repo.clone(),
+        owner_credit_balance_repo.clone(),
+    );
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
     let technical_inspection_use_cases = TechnicalInspectionUseCases::new(technical_inspection_repo);
     let work_report_use_cases = WorkReportUseCases::new(work_report_repo);
