@@ -9,78 +9,120 @@ Documentation KoproGo
 
    Retrouvez des tutoriels vidéo pour démarrer avec KoproGo, comprendre l'architecture hexagonale, et découvrir les fonctionnalités avancées de la plateforme.
 
-Introduction
-============
+L'Histoire Humaine Derrière KoproGo
+====================================
 
-**En Belgique, les 200 000 copropriétés dépensent collectivement 70 millions d'euros par an en frais de gestion logicielle.** Les solutions propriétaires facturent entre 200 et 500€/mois, avec des marges importantes, tout en générant une empreinte carbone élevée.
+**Marie, 72 ans, retraitée à Bruxelles**
 
-**KoproGo propose une alternative radicalement différente :** une plateforme open-source, développée par une ASBL belge, offrant une gestion complète pour **5€/mois** en cloud managé ou **gratuite en self-hosted**.
+Son syndic lance des travaux de façade : 15 000€ sa quote-part. Elle conteste les devis qui lui semblent excessifs. Un avocat coûte 2 000€. Sa pension : 1 200€/mois.
 
-Cette différence de prix n'est pas un miracle : elle résulte d'une **architecture ultra-optimisée en Rust**, d'une **infrastructure mutualisée** et d'une **gouvernance sans actionnaires** où chaque euro économisé profite à la communauté.
+**Ahmed, 35 ans, intérimaire**
 
-Le Problème
-===========
+Trois mois de chômage technique en 2024. Résultat : 3 200€ d'impayés de charges. Les huissiers interviennent. Les pénalités s'accumulent.
 
-Les copropriétés belges font face à plusieurs défis :
+**Sofiane, 40 ans, auto-entrepreneur**
 
-.. attention::
-   **Coûts Prohibitifs**
+La toiture de sa copropriété doit être refaite : 12 000€ sa quote-part. Les banques refusent le prêt (pas de CDI). Les travaux sont bloqués. L'immeuble se dégrade.
 
-   * **200-500€/mois** par copropriété pour les solutions propriétaires
-   * **70M€/an** dépensés collectivement en Belgique
-   * Petites copropriétés exclues par les prix élevés
-   * Dépendance à des acteurs privés avec marges importantes
+----
 
-.. attention::
-   **Impact Environnemental**
+**Ces situations reflètent les défis quotidiens de milliers de copropriétaires en Belgique.**
 
-   * Solutions SaaS surdimensionnées : **11,5g CO₂/requête** en moyenne
-   * Datacenters énergivores et technologies inefficaces
-   * Aucune optimisation écologique
+**KoproGo apporte des solutions concrètes** : plateforme de gestion accessible (5€/mois en cloud, gratuite en self-hosted), Fonds de Solidarité pour membres en difficulté, gouvernance démocratique (ASBL), et architecture optimisée réduisant coûts et empreinte carbone.
 
-.. attention::
-   **Manque de Transparence**
+Qui Êtes-Vous ? (Choisissez Votre Parcours)
+============================================
 
-   * Calculs de charges opaques
-   * Pas de souveraineté des données (GDPR)
-   * Litiges fréquents faute de traçabilité
+KoproGo s'adresse à différents profils. Choisissez le parcours qui vous correspond :
 
-La Solution KoproGo
-===================
+.. grid:: 2
+   :gutter: 3
 
-**KoproGo résout ces problèmes avec une approche innovante :**
+   .. grid-item-card:: 💼 Investisseur / Fondation
+      :link: parcours-investisseur
+      :link-type: doc
 
-.. tip::
-   **99% d'Économies**
+      **Vous évaluez KoproGo pour un investissement ou subvention ?**
 
-   * **5€/mois** en cloud managé vs 200-500€/mois des concurrents
-   * **Gratuit** en self-hosted (licence AGPL-3.0)
-   * **70M€/an** économisables pour les copropriétés belges
-   * Prix démocratique : voté par l'Assemblée Générale (modèle ASBL)
+      Découvrez le modèle économique, les projections financières,
+      et l'impact sociétal attendu.
 
-.. tip::
-   **96% de Réduction CO₂**
+      ⏱️ **5-10 min**
 
-   * **0,12g CO₂/requête** grâce à l'architecture Rust
-   * Datacenter bas carbone OVH France (60g CO₂/kWh)
-   * **840 tonnes CO₂/an évitées** à 5 000 copropriétés
-   * Infrastructure mutualisée ultra-économique
+   .. grid-item-card:: 👨‍💻 Développeur
+      :link: contribuer/index
+      :link-type: doc
 
-.. tip::
-   **Open-Source & Souveraineté**
+      **Vous voulez contribuer au projet ?**
 
-   * Code public sur GitHub (AGPL-3.0)
-   * Hébergement Europe (GDPR strict)
-   * Aucune dépendance aux GAFAM
-   * Contributions communautaires bienvenues
+      Installez le projet, comprenez l'architecture,
+      et faites votre première contribution.
 
-.. tip::
-   **Gouvernance Démocratique**
+      ⏱️ **30-60 min**
 
-   * ASBL belge sans actionnaires
-   * 1 membre = 1 voix (Assemblée Générale)
-   * Transparence comptable totale
-   * Fonds de solidarité pour membres en difficulté
+   .. grid-item-card:: 🏘️ Syndic / Copropriétaire
+      :link: user-guides/syndic-guide
+      :link-type: doc
+
+      **Vous cherchez un outil de gestion ?**
+
+      Découvrez les fonctionnalités et cas d'usage.
+
+      ⏱️ **10-15 min**
+
+   .. grid-item-card:: 🌍 Curieux du Projet
+      :link: vision-strategie/pourquoi-koprogo
+      :link-type: doc
+
+      **Vous découvrez KoproGo ?**
+
+      Comprenez pourquoi ce projet existe.
+
+      ⏱️ **15-20 min**
+
+Introduction Rapide
+====================
+
+**Le Contexte**
+
+En Belgique, 200 000 copropriétés font face à des coûts de gestion élevés (200-500€/mois pour les solutions logicielles existantes), une empreinte carbone importante, et un manque de transparence dans les calculs de charges.
+
+**La Solution KoproGo**
+
+Une plateforme open-source développée par une ASBL belge :
+
+.. grid:: 2
+   :gutter: 2
+
+   .. grid-item-card:: 💰 Économies Substantielles
+
+      * **5€/mois** en cloud managé
+      * **Gratuit** en self-hosted (AGPL-3.0)
+      * **70M€/an** économisables collectivement en Belgique
+
+   .. grid-item-card:: 🌱 Impact Écologique
+
+      * **0,12g CO₂/requête** (architecture Rust)
+      * **96% de réduction** vs solutions SaaS classiques
+      * **840 tonnes CO₂/an évitées** à 5 000 copropriétés
+
+   .. grid-item-card:: 🤝 Gouvernance Démocratique
+
+      * ASBL belge sans actionnaires
+      * 1 membre = 1 voix (AG)
+      * Prix voté démocratiquement
+
+   .. grid-item-card:: 💙 Solidarité Intégrée
+
+      * Fonds de Solidarité pour membres en difficulté
+      * Prêts à taux 0% pour impayés
+      * Aide aux litiges démocratiques
+
+**L'Impact Attendu** (5 000 copropriétés)
+
+* **4M€/an économisés** collectivement
+* **840 tonnes CO₂/an évitées**
+* **40-60 copropriétaires aidés/an** financièrement
 
 Vision 2025-2030
 ================
@@ -124,6 +166,10 @@ Vision 2025-2030
 
 **Philosophie** : Nous livrons quand les **capacités sont atteintes**, pas selon des dates arbitraires. Chaque palier débloque le suivant.
 
+**Chaque fonctionnalité d'aujourd'hui prépare la vision de demain.**
+
+→ Découvrez comment : :doc:`vision-strategie/de-gestion-a-symbiose`
+
 Parcours Guidé du Nouveau Contributeur
 =======================================
 
@@ -159,6 +205,8 @@ Parcours Guidé du Nouveau Contributeur
 * Rejoignez `GitHub Discussions <https://github.com/gilmry/koprogo/discussions>`_
 * Regardez les `Tutoriels YouTube <https://www.youtube.com/@koprogo>`_
 
+**Ou suivez le parcours complet** : :doc:`parcours-contributeur`
+
 Chiffres Clés (État Actuel)
 ============================
 
@@ -174,7 +222,7 @@ Chiffres Clés (État Actuel)
 
 * **287 req/s** soutenus (charge réelle)
 * **752ms** latence P99 (1 vCPU)
-* **0,12g CO₂/requête** (96% réduction vs concurrence)
+* **0,12g CO₂/requête** (96% réduction vs solutions SaaS classiques)
 * **99,74% uptime** (infrastructure OVH)
 * **128MB RAM** par instance (ultra-léger)
 
@@ -196,11 +244,12 @@ Comprenez pourquoi KoproGo existe et quelle est sa vision à long terme.
 .. toctree::
    :maxdepth: 2
 
+   parcours-investisseur
    vision-strategie/index
    vision-strategie/pourquoi-koprogo
+   vision-strategie/de-gestion-a-symbiose
    vision-strategie/vision
    vision-strategie/mission
-   vision-strategie/impact
    vision-strategie/fonds-solidarite
 
 🗺️ Roadmap 2025-2030
