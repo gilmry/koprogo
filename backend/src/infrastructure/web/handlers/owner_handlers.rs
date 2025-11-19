@@ -508,8 +508,11 @@ pub async fn export_owner_statement_pdf(
     let mut building_unit_owners = Vec::new();
     for uo in unit_owners {
         if let Ok(Some(unit_dto)) = state.unit_use_cases.get_unit(uo.unit_id).await {
-            if unit_dto.building_id == building_id {
-                building_unit_owners.push((uo, unit_dto));
+            // Parse building_id from String to Uuid for comparison
+            if let Ok(unit_building_id) = Uuid::parse_str(&unit_dto.building_id) {
+                if unit_building_id == building_id {
+                    building_unit_owners.push((uo, unit_dto));
+                }
             }
         }
     }
@@ -550,17 +553,19 @@ pub async fn export_owner_statement_pdf(
 
     // Convert DTOs to domain entities
     let owner_entity = Owner {
-        id: owner_dto.id,
-        organization_id,
+        id: Uuid::parse_str(&owner_dto.id).unwrap_or_else(|_| owner_id),
+        organization_id: Uuid::parse_str(&owner_dto.organization_id).unwrap_or(organization_id),
         first_name: owner_dto.first_name,
         last_name: owner_dto.last_name,
         email: owner_dto.email,
         phone: owner_dto.phone,
         address: owner_dto.address,
+        city: owner_dto.city,
+        postal_code: owner_dto.postal_code,
+        country: owner_dto.country,
         user_id: owner_dto.user_id.and_then(|s| Uuid::parse_str(&s).ok()),
-        is_anonymized: false,
-        created_at: owner_dto.created_at,
-        updated_at: owner_dto.updated_at,
+        created_at: Utc::now(), // DTOs don't have timestamps, use current time
+        updated_at: Utc::now(),
     };
 
     let building_org_id = Uuid::parse_str(&building_dto.organization_id)
@@ -600,16 +605,17 @@ pub async fn export_owner_statement_pdf(
     let mut units_with_ownership = Vec::new();
     for (uo, unit_dto) in building_unit_owners {
         let unit_entity = Unit {
-            id: unit_dto.id,
-            building_id: unit_dto.building_id,
+            id: Uuid::parse_str(&unit_dto.id).unwrap_or(uo.unit_id),
+            organization_id,
+            building_id: Uuid::parse_str(&unit_dto.building_id).unwrap_or(building_id),
             unit_number: unit_dto.unit_number,
             floor: unit_dto.floor,
             unit_type: unit_dto.unit_type,
-            area_sqm: unit_dto.area_sqm,
-            tantiemes: unit_dto.tantiemes,
-            co_owner_count: unit_dto.co_owner_count,
-            created_at: unit_dto.created_at,
-            updated_at: unit_dto.updated_at,
+            surface_area: unit_dto.surface_area,
+            quota: unit_dto.quota,
+            owner_id: unit_dto.owner_id.and_then(|s| Uuid::parse_str(&s).ok()),
+            created_at: Utc::now(), // DTOs don't have timestamps, use current time
+            updated_at: Utc::now(),
         };
 
         units_with_ownership.push(UnitWithOwnership {
