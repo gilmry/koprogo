@@ -507,6 +507,9 @@ mod tests {
         .unwrap();
 
         assert!(!expense.is_paid());
+        // Follow approval workflow: Draft → PendingApproval → Approved → Paid
+        expense.submit_for_approval().unwrap();
+        expense.approve(Uuid::new_v4()).unwrap();
         let result = expense.mark_as_paid();
         assert!(result.is_ok());
         assert!(expense.is_paid());
@@ -529,6 +532,9 @@ mod tests {
         )
         .unwrap();
 
+        // Follow approval workflow before marking as paid
+        expense.submit_for_approval().unwrap();
+        expense.approve(Uuid::new_v4()).unwrap();
         expense.mark_as_paid().unwrap();
         let result = expense.mark_as_paid();
         assert!(result.is_err());
@@ -1044,6 +1050,9 @@ mod tests {
         .unwrap();
 
         assert!(expense.paid_date.is_none());
+        // Follow approval workflow before marking as paid
+        expense.submit_for_approval().unwrap();
+        expense.approve(Uuid::new_v4()).unwrap();
         expense.mark_as_paid().unwrap();
         assert!(expense.paid_date.is_some());
         assert!(expense.is_paid());
