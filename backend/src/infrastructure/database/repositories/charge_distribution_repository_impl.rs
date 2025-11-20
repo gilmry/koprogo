@@ -25,23 +25,22 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
         &self,
         distribution: &ChargeDistribution,
     ) -> Result<ChargeDistribution, String> {
-        let result = sqlx::query_as!(
-            ChargeDistributionRow,
+        let result = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
             INSERT INTO charge_distributions (
                 id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
-            "#,
-            distribution.id,
-            distribution.expense_id,
-            distribution.unit_id,
-            distribution.owner_id,
-            distribution.quota_percentage,
-            distribution.amount_due,
-            distribution.created_at
+            "#
         )
+        .bind(distribution.id)
+        .bind(distribution.expense_id)
+        .bind(distribution.unit_id)
+        .bind(distribution.owner_id)
+        .bind(rust_decimal::Decimal::from_f64_retain(distribution.quota_percentage).unwrap_or(rust_decimal::Decimal::ZERO))
+        .bind(rust_decimal::Decimal::from_f64_retain(distribution.amount_due).unwrap_or(rust_decimal::Decimal::ZERO))
+        .bind(distribution.created_at)
         .fetch_one(&self.pool)
         .await
         .map_err(|e| format!("Failed to create charge distribution: {}", e))?;
@@ -67,23 +66,22 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
         let mut created = Vec::new();
 
         for dist in distributions {
-            let result = sqlx::query_as!(
-                ChargeDistributionRow,
+            let result = sqlx::query_as::<_, ChargeDistributionRow>(
                 r#"
                 INSERT INTO charge_distributions (
                     id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
-                "#,
-                dist.id,
-                dist.expense_id,
-                dist.unit_id,
-                dist.owner_id,
-                dist.quota_percentage,
-                dist.amount_due,
-                dist.created_at
+                "#
             )
+            .bind(dist.id)
+            .bind(dist.expense_id)
+            .bind(dist.unit_id)
+            .bind(dist.owner_id)
+            .bind(rust_decimal::Decimal::from_f64_retain(dist.quota_percentage).unwrap_or(rust_decimal::Decimal::ZERO))
+            .bind(rust_decimal::Decimal::from_f64_retain(dist.amount_due).unwrap_or(rust_decimal::Decimal::ZERO))
+            .bind(dist.created_at)
             .fetch_one(&mut *tx)
             .await
             .map_err(|e| format!("Failed to create charge distribution in bulk: {}", e))?;
@@ -99,15 +97,14 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<ChargeDistribution>, String> {
-        let result = sqlx::query_as!(
-            ChargeDistributionRow,
+        let result = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
             SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
             FROM charge_distributions
             WHERE id = $1
-            "#,
-            id
+            "#
         )
+        .bind(id)
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| format!("Failed to find charge distribution by id: {}", e))?;
@@ -116,16 +113,15 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     }
 
     async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<ChargeDistribution>, String> {
-        let results = sqlx::query_as!(
-            ChargeDistributionRow,
+        let results = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
             SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
             FROM charge_distributions
             WHERE expense_id = $1
             ORDER BY created_at DESC
-            "#,
-            expense_id
+            "#
         )
+        .bind(expense_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| format!("Failed to find charge distributions by expense: {}", e))?;
@@ -134,16 +130,15 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     }
 
     async fn find_by_unit(&self, unit_id: Uuid) -> Result<Vec<ChargeDistribution>, String> {
-        let results = sqlx::query_as!(
-            ChargeDistributionRow,
+        let results = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
             SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
             FROM charge_distributions
             WHERE unit_id = $1
             ORDER BY created_at DESC
-            "#,
-            unit_id
+            "#
         )
+        .bind(unit_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| format!("Failed to find charge distributions by unit: {}", e))?;
@@ -152,16 +147,15 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     }
 
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<ChargeDistribution>, String> {
-        let results = sqlx::query_as!(
-            ChargeDistributionRow,
+        let results = sqlx::query_as::<_, ChargeDistributionRow>(
             r#"
             SELECT id, expense_id, unit_id, owner_id, quota_percentage, amount_due, created_at
             FROM charge_distributions
             WHERE owner_id = $1
             ORDER BY created_at DESC
-            "#,
-            owner_id
+            "#
         )
+        .bind(owner_id)
         .fetch_all(&self.pool)
         .await
         .map_err(|e| format!("Failed to find charge distributions by owner: {}", e))?;
@@ -170,13 +164,13 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     }
 
     async fn delete_by_expense(&self, expense_id: Uuid) -> Result<(), String> {
-        sqlx::query!(
+        sqlx::query(
             r#"
             DELETE FROM charge_distributions
             WHERE expense_id = $1
-            "#,
-            expense_id
+            "#
         )
+        .bind(expense_id)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to delete charge distributions by expense: {}", e))?;
@@ -185,24 +179,24 @@ impl ChargeDistributionRepository for PostgresChargeDistributionRepository {
     }
 
     async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<f64, String> {
-        let result = sqlx::query!(
+        let result: (rust_decimal::Decimal,) = sqlx::query_as(
             r#"
-            SELECT COALESCE(SUM(amount_due), 0) as "total!"
+            SELECT COALESCE(SUM(amount_due), 0)
             FROM charge_distributions
             WHERE owner_id = $1
-            "#,
-            owner_id
+            "#
         )
+        .bind(owner_id)
         .fetch_one(&self.pool)
         .await
         .map_err(|e| format!("Failed to get total due by owner: {}", e))?;
 
-        Ok(result.total)
+        Ok(result.0.to_string().parse().unwrap_or(0.0))
     }
 }
 
 /// Database row representation for charge_distributions table
-#[derive(Debug)]
+#[derive(Debug, sqlx::FromRow)]
 struct ChargeDistributionRow {
     id: Uuid,
     expense_id: Uuid,
