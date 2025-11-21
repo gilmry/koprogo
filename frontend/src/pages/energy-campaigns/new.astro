@@ -1,0 +1,61 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Créer une campagne d'achat groupé - KoproGo">
+  <div class="container mx-auto px-4 py-8 max-w-3xl">
+    <div class="mb-6">
+      <a
+        href="/energy-campaigns"
+        class="text-sm text-indigo-600 hover:text-indigo-800 underline mb-4 inline-block"
+      >
+        ← Retour aux campagnes
+      </a>
+      <h1 class="text-3xl font-bold text-gray-900">
+        Créer une campagne d'achat groupé d'énergie
+      </h1>
+      <p class="text-gray-600 mt-2">
+        Lancez une nouvelle campagne pour négocier collectivement vos contrats
+        d'énergie.
+      </p>
+    </div>
+
+    <div id="create-form-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import CreateCampaignForm from "../../components/energy-campaigns/CreateCampaignForm.svelte";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const organizationId = auth.user?.organization_id || "";
+  const buildingId = auth.user?.building_id;
+
+  // Mount Create Form
+  const formContainer = document.getElementById("create-form-container");
+  if (formContainer) {
+    const component = mount(CreateCampaignForm, {
+      target: formContainer,
+      props: {
+        organizationId: organizationId,
+        buildingId: buildingId,
+      },
+    });
+
+    // Listen for created event
+    component.$on("created", (event: any) => {
+      const campaign = event.detail;
+      setTimeout(() => {
+        window.location.href = `/energy-campaigns/${campaign.id}`;
+      }, 2000);
+    });
+
+    // Listen for cancel event
+    component.$on("cancel", () => {
+      window.location.href = "/energy-campaigns";
+    });
+  }
+</script>

@@ -1,0 +1,39 @@
+---
+import Layout from "../../layouts/Layout.astro";
+
+const { id } = Astro.params;
+---
+
+<Layout title="Détails de la campagne - KoproGo">
+  <div class="container mx-auto px-4 py-8 max-w-6xl">
+    <div id="campaign-detail-container" data-campaign-id={id}></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import CampaignDetail from "../../components/energy-campaigns/CampaignDetail.svelte";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const currentUserId = auth.user?.id || "";
+  const currentUnitId = auth.user?.unit_id; // Assuming user has unit_id
+  const isAdmin = auth.user?.role === "Admin" || auth.user?.role === "Syndic";
+
+  // Get campaign ID from data attribute
+  const container = document.getElementById("campaign-detail-container");
+  const campaignId = container?.getAttribute("data-campaign-id");
+
+  if (container && campaignId) {
+    mount(CampaignDetail, {
+      target: container,
+      props: {
+        campaignId: campaignId,
+        currentUserId: currentUserId,
+        currentUnitId: currentUnitId,
+        isAdmin: isAdmin,
+      },
+    });
+  }
+</script>
