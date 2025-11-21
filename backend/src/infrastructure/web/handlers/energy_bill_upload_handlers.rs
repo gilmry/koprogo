@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use uuid::Uuid;
 
 use crate::application::dto::{
@@ -27,6 +27,7 @@ fn get_encryption_key() -> Result<[u8; 32], String> {
 
 /// POST /api/v1/energy-bills/upload
 /// Upload energy bill with GDPR consent
+#[post("/energy-bills/upload")]
 pub async fn upload_bill(
     uploads: web::Data<EnergyBillUploadUseCases>,
     request: web::Json<UploadEnergyBillRequest>,
@@ -75,6 +76,7 @@ pub async fn upload_bill(
 
 /// GET /api/v1/energy-bills/my-uploads
 /// Get my energy bill uploads
+#[get("/energy-bills/my-uploads")]
 pub async fn get_my_uploads(
     uploads: web::Data<EnergyBillUploadUseCases>,
     user: AuthenticatedUser,
@@ -100,6 +102,7 @@ pub async fn get_my_uploads(
 
 /// GET /api/v1/energy-bills/{id}
 /// Get upload by ID
+#[get("/energy-bills/{id}")]
 pub async fn get_upload(
     uploads: web::Data<EnergyBillUploadUseCases>,
     path: web::Path<Uuid>,
@@ -123,6 +126,7 @@ pub async fn get_upload(
 
 /// GET /api/v1/energy-bills/{id}/decrypt
 /// Decrypt consumption data (owner only)
+#[get("/energy-bills/{id}/decrypt")]
 pub async fn decrypt_consumption(
     uploads: web::Data<EnergyBillUploadUseCases>,
     path: web::Path<Uuid>,
@@ -163,6 +167,7 @@ pub async fn decrypt_consumption(
 
 /// PUT /api/v1/energy-bills/{id}/verify
 /// Verify upload (admin only)
+#[put("/energy-bills/{id}/verify")]
 pub async fn verify_upload(
     uploads: web::Data<EnergyBillUploadUseCases>,
     path: web::Path<Uuid>,
@@ -186,6 +191,7 @@ pub async fn verify_upload(
 
 /// DELETE /api/v1/energy-bills/{id}
 /// Delete upload (GDPR Art. 17 - Right to erasure)
+#[delete("/energy-bills/{id}")]
 pub async fn delete_upload(
     uploads: web::Data<EnergyBillUploadUseCases>,
     path: web::Path<Uuid>,
@@ -208,6 +214,7 @@ pub async fn delete_upload(
 
 /// POST /api/v1/energy-bills/{id}/withdraw-consent
 /// Withdraw GDPR consent (Art. 7.3 - Immediate deletion)
+#[post("/energy-bills/{id}/withdraw-consent")]
 pub async fn withdraw_consent(
     uploads: web::Data<EnergyBillUploadUseCases>,
     path: web::Path<Uuid>,
@@ -233,6 +240,7 @@ pub async fn withdraw_consent(
 
 /// GET /api/v1/energy-campaigns/{campaign_id}/uploads
 /// Get all uploads for a campaign (admin)
+#[get("/energy-campaigns/{campaign_id}/uploads")]
 pub async fn get_campaign_uploads(
     uploads: web::Data<EnergyBillUploadUseCases>,
     path: web::Path<Uuid>,

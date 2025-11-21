@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use uuid::Uuid;
 
 use crate::application::dto::{
@@ -12,6 +12,7 @@ use crate::infrastructure::web::middleware::AuthenticatedUser;
 
 /// POST /api/v1/energy-campaigns
 /// Create a new energy campaign
+#[post("/energy-campaigns")]
 pub async fn create_campaign(
     campaigns: web::Data<EnergyCampaignUseCases>,
     request: web::Json<CreateEnergyCampaignRequest>,
@@ -41,6 +42,7 @@ pub async fn create_campaign(
 
 /// GET /api/v1/energy-campaigns
 /// List all campaigns for current organization
+#[get("/energy-campaigns")]
 pub async fn list_campaigns(
     campaigns: web::Data<EnergyCampaignUseCases>,
     user: AuthenticatedUser,
@@ -62,6 +64,7 @@ pub async fn list_campaigns(
 
 /// GET /api/v1/energy-campaigns/{id}
 /// Get campaign by ID
+#[get("/energy-campaigns/{id}")]
 pub async fn get_campaign(
     campaigns: web::Data<EnergyCampaignUseCases>,
     path: web::Path<Uuid>,
@@ -85,6 +88,7 @@ pub async fn get_campaign(
 
 /// PUT /api/v1/energy-campaigns/{id}/status
 /// Update campaign status
+#[put("/energy-campaigns/{id}/status")]
 pub async fn update_campaign_status(
     campaigns: web::Data<EnergyCampaignUseCases>,
     path: web::Path<Uuid>,
@@ -114,6 +118,7 @@ pub async fn update_campaign_status(
 
 /// GET /api/v1/energy-campaigns/{id}/stats
 /// Get campaign statistics (anonymized)
+#[get("/energy-campaigns/{id}/stats")]
 pub async fn get_campaign_stats(
     campaigns: web::Data<EnergyCampaignUseCases>,
     path: web::Path<Uuid>,
@@ -153,6 +158,7 @@ pub async fn get_campaign_stats(
 
 /// POST /api/v1/energy-campaigns/{id}/offers
 /// Add provider offer (broker/admin only)
+#[post("/energy-campaigns/{id}/offers")]
 pub async fn add_offer(
     campaigns: web::Data<EnergyCampaignUseCases>,
     path: web::Path<Uuid>,
@@ -197,6 +203,7 @@ pub async fn add_offer(
 
 /// GET /api/v1/energy-campaigns/{id}/offers
 /// List all offers for a campaign
+#[get("/energy-campaigns/{id}/offers")]
 pub async fn list_offers(
     campaigns: web::Data<EnergyCampaignUseCases>,
     path: web::Path<Uuid>,
@@ -228,6 +235,7 @@ pub async fn list_offers(
 
 /// POST /api/v1/energy-campaigns/{id}/select-offer
 /// Select winning offer (after vote)
+#[post("/energy-campaigns/{id}/select-offer")]
 pub async fn select_offer(
     campaigns: web::Data<EnergyCampaignUseCases>,
     path: web::Path<Uuid>,
@@ -257,6 +265,7 @@ pub async fn select_offer(
 
 /// POST /api/v1/energy-campaigns/{id}/finalize
 /// Finalize campaign (after final vote)
+#[post("/energy-campaigns/{id}/finalize")]
 pub async fn finalize_campaign(
     campaigns: web::Data<EnergyCampaignUseCases>,
     path: web::Path<Uuid>,
@@ -285,6 +294,7 @@ pub async fn finalize_campaign(
 
 /// DELETE /api/v1/energy-campaigns/{id}
 /// Delete campaign
+#[delete("/energy-campaigns/{id}")]
 pub async fn delete_campaign(
     campaigns: web::Data<EnergyCampaignUseCases>,
     path: web::Path<Uuid>,
