@@ -1,0 +1,61 @@
+[package]
+name = "koprogo-node"
+version = "0.1.0"
+edition = "2021"
+authors = ["KoproGo Team <contact@koprogo.coop>"]
+description = "KoproGo Edge Node - Raspberry Pi AI inference server"
+license = "AGPL-3.0"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.41", features = ["full"] }
+async-trait = "0.1"
+
+# Web framework (lightweight for Pi)
+axum = { version = "0.7", features = ["json"] }
+tower = "0.5"
+tower-http = { version = "0.5", features = ["trace", "cors"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.11", features = ["serde", "v4"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+
+# LLM inference (llama.cpp bindings)
+# Note: Using llm crate which provides Rust bindings to llama.cpp
+llm = "0.2"
+
+# System monitoring
+sysinfo = "0.31"
+
+# Configuration
+config = "0.14"
+dotenv = "0.15"
+
+# HTTP client (for grid communication)
+reqwest = { version = "0.12", features = ["json"] }
+
+[dev-dependencies]
+tokio-test = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true  # Reduce binary size for Pi
+
+[[bin]]
+name = "koprogo-node"
+path = "src/main.rs"

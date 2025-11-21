@@ -534,6 +534,13 @@ mod tests {
                     total_units: 25,
                     total_tantiemes: 1000,
                     construction_year: Some(2020),
+                    syndic_name: None,
+                    syndic_email: None,
+                    syndic_phone: None,
+                    syndic_address: None,
+                    syndic_office_hours: None,
+                    syndic_emergency_contact: None,
+                    slug: None,
                     created_at: Utc::now(),
                     updated_at: Utc::now(),
                 }))
@@ -562,6 +569,13 @@ mod tests {
         }
 
         async fn delete(&self, _id: Uuid) -> Result<bool, String> {
+            unimplemented!()
+        }
+
+        async fn find_by_slug(
+            &self,
+            _slug: &str,
+        ) -> Result<Option<crate::domain::entities::Building>, String> {
             unimplemented!()
         }
     }

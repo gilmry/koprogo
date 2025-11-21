@@ -2,7 +2,7 @@
 Phase: VPS
 ===================
 
-Total: 28 issues
+Total: 30 issues
 
 .. toctree::
    :maxdepth: 1
@@ -35,3 +35,5 @@ Total: 28 issues
    ../issue-85
    ../issue-86
    ../issue-87
+   ../issue-133
+   ../issue-134

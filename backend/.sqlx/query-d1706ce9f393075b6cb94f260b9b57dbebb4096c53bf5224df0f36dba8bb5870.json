@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO iot_readings (\n                    id, building_id, device_type, metric_type, value,\n                    unit, timestamp, source, metadata, created_at\n                )\n                VALUES ($1, $2, $3::TEXT::device_type, $4::TEXT::metric_type, $5, $6, $7, $8, $9, $10)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Float8",
+        "Varchar",
+        "Timestamptz",
+        "Varchar",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d1706ce9f393075b6cb94f260b9b57dbebb4096c53bf5224df0f36dba8bb5870"
+}

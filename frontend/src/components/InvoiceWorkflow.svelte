@@ -1,274 +1,484 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { authStore } from '../stores/auth';
   import { api } from '../lib/api';
 
-  export let invoiceId: string;
-  export let onStatusChanged: ((invoice: any) => void) | null = null;
-
-  // Invoice data
-  let invoice: any = null;
-  let loading = false;
+  let invoices: any[] = [];
+  let filteredInvoices: any[] = [];
+  let loading = true;
   let error = '';
-
-  // Rejection modal
-  let showRejectModal = false;
+  let selectedInvoice: any = null;
+  let showApprovalModal = false;
+  let showRejectionModal = false;
   let rejectionReason = '';
+  let submitting = false;
+
+  // Filtres
+  let filterStatus: string = 'all';
+  let filterPaymentStatus: string = 'all';
 
   onMount(async () => {
-    await loadInvoice();
+    // Initialize auth store from localStorage
+    await authStore.init();
+
+    console.log('🔐 Auth state on mount:', {
+      user: $authStore.user,
+      isAuthenticated: $authStore.isAuthenticated,
+      hasActiveRole: !!$authStore.user?.activeRole,
+      activeRole: $authStore.user?.activeRole,
+      directRole: $authStore.user?.role,
+    });
+    loadInvoices();
   });
 
-  async function loadInvoice() {
+  async function loadInvoices() {
+    loading = true;
+    error = '';
     try {
-      loading = true;
-      error = '';
-      invoice = await api.get(`/invoices/${invoiceId}`);
+      const response = await api.get('/expenses');
+      const data = Array.isArray(response) ? response : (response?.data || []);
+      console.log('📊 Invoices loaded:', data.length, data);
+      invoices = data.sort((a: any, b: any) =>
+        new Date(b.expense_date || b.created_at).getTime() - new Date(a.expense_date || a.created_at).getTime()
+      );
+      console.log('📊 After sort:', invoices.length);
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement';
+      console.error('❌ Error loading invoices:', err);
+      error = err.message || 'Erreur lors du chargement des factures';
     } finally {
       loading = false;
     }
   }
 
-  async function submitForApproval() {
-    if (!confirm('Soumettre cette facture pour validation ?')) {
-      return;
-    }
+  async function submitForApproval(invoiceId: string) {
+    if (!confirm('Soumettre cette facture pour approbation ?')) return;
 
+    submitting = true;
     try {
-      loading = true;
-      error = '';
-      const updated = await api.put(`/invoices/${invoiceId}/submit`, {});
-      invoice = updated;
-      if (onStatusChanged) onStatusChanged(updated);
+      console.log('🔄 Submitting invoice for approval:', invoiceId);
+      const response = await api.put(`/invoices/${invoiceId}/submit`, {});
+      console.log('✅ Invoice submitted successfully:', response);
+      console.log('📋 New approval_status:', response.approval_status);
+      await loadInvoices();
     } catch (err: any) {
-      error = err.message || 'Erreur lors de la soumission';
+      console.error('❌ Error submitting invoice:', err);
+      alert(err.message || 'Erreur lors de la soumission');
     } finally {
-      loading = false;
+      submitting = false;
     }
   }
 
-  async function approve() {
-    if (!confirm('Approuver cette facture ?')) {
-      return;
-    }
+  async function approveInvoice() {
+    if (!selectedInvoice) return;
 
+    submitting = true;
     try {
-      loading = true;
-      error = '';
-      const updated = await api.put(`/invoices/${invoiceId}/approve`, {});
-      invoice = updated;
-      if (onStatusChanged) onStatusChanged(updated);
-    } catch (err: any) {
-      error = err.message || 'Erreur lors de l\'approbation';
-    } finally {
-      loading = false;
-    }
-  }
-
-  function openRejectModal() {
-    showRejectModal = true;
-    rejectionReason = '';
-  }
-
-  function closeRejectModal() {
-    showRejectModal = false;
-    rejectionReason = '';
-  }
-
-  async function confirmReject() {
-    if (!rejectionReason.trim()) {
-      alert('Veuillez fournir une raison de rejet');
-      return;
-    }
-
-    try {
-      loading = true;
-      error = '';
-      const updated = await api.put(`/invoices/${invoiceId}/reject`, {
-        rejection_reason: rejectionReason
+      await api.put(`/invoices/${selectedInvoice.id}/approve`, {
+        approved_by_user_id: $authStore.user?.id || '',
       });
-      invoice = updated;
-      closeRejectModal();
-      if (onStatusChanged) onStatusChanged(updated);
+      showApprovalModal = false;
+      selectedInvoice = null;
+      await loadInvoices();
     } catch (err: any) {
-      error = err.message || 'Erreur lors du rejet';
+      alert(err.message || 'Erreur lors de l\'approbation');
     } finally {
-      loading = false;
+      submitting = false;
     }
   }
 
-  function getStatusBadgeClass(status: string): string {
-    const s = status.toLowerCase();
-    if (s.includes('draft')) return 'badge-draft';
-    if (s.includes('pending')) return 'badge-pending';
-    if (s.includes('approved')) return 'badge-approved';
-    if (s.includes('rejected')) return 'badge-rejected';
-    return '';
+  async function rejectInvoice() {
+    if (!selectedInvoice || !rejectionReason.trim()) {
+      alert('Veuillez saisir une raison de rejet');
+      return;
+    }
+
+    submitting = true;
+    try {
+      await api.put(`/invoices/${selectedInvoice.id}/reject`, {
+        rejected_by_user_id: $authStore.user?.id || '',
+        rejection_reason: rejectionReason,
+      });
+      showRejectionModal = false;
+      selectedInvoice = null;
+      rejectionReason = '';
+      await loadInvoices();
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors du rejet');
+    } finally {
+      submitting = false;
+    }
   }
 
-  function getStatusLabel(status: string): string {
-    const s = status.toLowerCase();
-    if (s.includes('draft')) return 'Brouillon';
-    if (s.includes('pending')) return 'En attente';
-    if (s.includes('approved')) return 'Approuvée';
-    if (s.includes('rejected')) return 'Rejetée';
-    return status;
+  async function markAsPaid(invoiceId: string) {
+    if (!confirm('Marquer cette facture comme payée ? Cela générera automatiquement une écriture comptable de paiement (FIN).')) return;
+
+    submitting = true;
+    try {
+      await api.put(`/expenses/${invoiceId}/mark-paid`, {});
+      await loadInvoices();
+    } catch (err: any) {
+      alert(err.message || 'Erreur lors du paiement');
+    } finally {
+      submitting = false;
+    }
   }
 
-  function canBeModified(status: string): boolean {
-    const s = status.toLowerCase();
-    return s.includes('draft') || s.includes('rejected');
+  function openApprovalModal(invoice: any) {
+    selectedInvoice = invoice;
+    showApprovalModal = true;
   }
 
-  function canBeSubmitted(status: string): boolean {
-    const s = status.toLowerCase();
-    return s.includes('draft') || s.includes('rejected');
+  function openRejectionModal(invoice: any) {
+    selectedInvoice = invoice;
+    showRejectionModal = true;
   }
 
-  function canBeApproved(status: string): boolean {
-    const s = status.toLowerCase();
-    return s.includes('pending');
+  function closeModals() {
+    showApprovalModal = false;
+    showRejectionModal = false;
+    selectedInvoice = null;
+    rejectionReason = '';
+  }
+
+  function getApprovalStatusBadge(status: string) {
+    const badges: Record<string, { class: string; label: string }> = {
+      draft: { class: 'bg-gray-200 text-gray-800', label: 'Brouillon' },
+      pending_approval: { class: 'bg-yellow-200 text-yellow-900', label: 'En attente' },
+      approved: { class: 'bg-green-200 text-green-900', label: 'Approuvée' },
+      rejected: { class: 'bg-red-200 text-red-900', label: 'Rejetée' },
+    };
+    return badges[status] || { class: 'bg-gray-200 text-gray-800', label: status };
+  }
+
+  function getPaymentStatusBadge(status: string) {
+    const badges: Record<string, { class: string; label: string }> = {
+      pending: { class: 'bg-blue-200 text-blue-900', label: 'En attente' },
+      paid: { class: 'bg-green-200 text-green-900', label: 'Payée' },
+      overdue: { class: 'bg-red-200 text-red-900', label: 'En retard' },
+      cancelled: { class: 'bg-gray-200 text-gray-800', label: 'Annulée' },
+    };
+    return badges[status] || { class: 'bg-gray-200 text-gray-800', label: status };
+  }
+
+  function canSubmitForApproval(invoice: any): boolean {
+    // Use activeRole if available, otherwise fallback to user.role
+    const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
+    const canSubmit = (
+      invoice.approval_status === 'draft' &&
+      (role === 'accountant' || role === 'syndic' || role === 'superadmin')
+    );
+    console.log('🔍 canSubmitForApproval:', invoice.id, 'status:', invoice.approval_status, 'role:', role, 'result:', canSubmit);
+    return canSubmit;
+  }
+
+  function canApprove(invoice: any): boolean {
+    // Use activeRole if available, otherwise fallback to user.role
+    const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
+    const canApprove = (
+      invoice.approval_status === 'pending_approval' &&
+      (role === 'syndic' || role === 'superadmin')
+    );
+    console.log('🔍 canApprove:', invoice.id, 'status:', invoice.approval_status, 'role:', role, 'result:', canApprove);
+    return canApprove;
+  }
+
+  function canReject(invoice: any): boolean {
+    // Use activeRole if available, otherwise fallback to user.role
+    const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
+    const canReject = (
+      invoice.approval_status === 'pending_approval' &&
+      (role === 'syndic' || role === 'superadmin')
+    );
+    console.log('🔍 canReject:', invoice.id, 'status:', invoice.approval_status, 'role:', role, 'result:', canReject);
+    return canReject;
+  }
+
+  function canMarkAsPaid(invoice: any): boolean {
+    // Use activeRole if available, otherwise fallback to user.role
+    const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
+    const canPay = (
+      invoice.approval_status === 'approved' &&
+      invoice.payment_status === 'pending' &&
+      (role === 'accountant' || role === 'syndic' || role === 'superadmin')
+    );
+    console.log('🔍 canMarkAsPaid:', invoice.id, 'status:', invoice.approval_status, 'payment:', invoice.payment_status, 'role:', role, 'result:', canPay);
+    return canPay;
+  }
+
+  $: {
+    filteredInvoices = invoices.filter((inv) => {
+      if (filterStatus !== 'all' && inv.approval_status !== filterStatus) {
+        console.log('❌ Filtered out by approval_status:', inv.approval_status, '!==', filterStatus);
+        return false;
+      }
+      if (filterPaymentStatus !== 'all' && inv.payment_status !== filterPaymentStatus) {
+        console.log('❌ Filtered out by payment_status:', inv.payment_status, '!==', filterPaymentStatus);
+        return false;
+      }
+      return true;
+    });
+    console.log('✅ Filtered invoices:', filteredInvoices.length, 'filters:', filterStatus, filterPaymentStatus);
+  }
+
+  function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('fr-BE', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(amount);
+  }
+
+  function formatDate(date: string): string {
+    return new Date(date).toLocaleDateString('fr-BE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   }
 </script>
 
-<div class="invoice-workflow">
-  {#if loading && !invoice}
-    <p>Chargement...</p>
-  {:else if error && !invoice}
-    <div class="alert alert-error">{error}</div>
-  {:else if invoice}
-    <!-- Status Badge -->
-    <div class="status-section">
-      <span class="badge {getStatusBadgeClass(invoice.approval_status)}">
-        {getStatusLabel(invoice.approval_status)}
-      </span>
+<div class="workflow-container">
+  <div class="header">
+    <h1>Workflow de validation des factures</h1>
+    <p class="subtitle">Gérez l'approbation et le paiement des factures</p>
+  </div>
+
+  {#if error}
+    <div class="alert alert-error">
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      {error}
+    </div>
+  {/if}
+
+  <div class="filters">
+    <div class="filter-group">
+      <label for="filterStatus">Statut d'approbation</label>
+      <select id="filterStatus" bind:value={filterStatus}>
+        <option value="all">Tous</option>
+        <option value="draft">Brouillon</option>
+        <option value="pending_approval">En attente d'approbation</option>
+        <option value="approved">Approuvée</option>
+        <option value="rejected">Rejetée</option>
+      </select>
     </div>
 
-    <!-- Invoice Details -->
-    <div class="invoice-details">
-      <h3>{invoice.description}</h3>
-      <div class="detail-row">
-        <span>Montant HT:</span>
-        <strong>{invoice.amount_excl_vat?.toFixed(2) || '0.00'} €</strong>
-      </div>
-      <div class="detail-row">
-        <span>TVA ({invoice.vat_rate}%):</span>
-        <strong>{invoice.vat_amount?.toFixed(2) || '0.00'} €</strong>
-      </div>
-      <div class="detail-row total">
-        <span>Montant TTC:</span>
-        <strong>{invoice.amount_incl_vat?.toFixed(2) || invoice.amount?.toFixed(2) || '0.00'} €</strong>
-      </div>
-      {#if invoice.invoice_date}
-        <div class="detail-row">
-          <span>Date facture:</span>
-          <span>{new Date(invoice.invoice_date).toLocaleDateString('fr-BE')}</span>
-        </div>
-      {/if}
-      {#if invoice.supplier}
-        <div class="detail-row">
-          <span>Fournisseur:</span>
-          <span>{invoice.supplier}</span>
-        </div>
-      {/if}
+    <div class="filter-group">
+      <label for="filterPaymentStatus">Statut de paiement</label>
+      <select id="filterPaymentStatus" bind:value={filterPaymentStatus}>
+        <option value="all">Tous</option>
+        <option value="pending">En attente</option>
+        <option value="paid">Payée</option>
+        <option value="overdue">En retard</option>
+        <option value="cancelled">Annulée</option>
+      </select>
     </div>
 
-    <!-- Workflow Info -->
-    {#if invoice.submitted_at}
-      <div class="workflow-info">
-        <p>
-          <strong>Soumis le:</strong>
-          {new Date(invoice.submitted_at).toLocaleString('fr-BE')}
-        </p>
-      </div>
-    {/if}
+    <button on:click={loadInvoices} class="btn-refresh" disabled={loading}>
+      <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+      </svg>
+      Actualiser
+    </button>
+  </div>
 
-    {#if invoice.approved_at}
-      <div class="workflow-info">
-        <p>
-          <strong>{invoice.approval_status?.toLowerCase().includes('approved') ? 'Approuvé' : 'Rejeté'} le:</strong>
-          {new Date(invoice.approved_at).toLocaleString('fr-BE')}
-        </p>
-      </div>
-    {/if}
+  {#if loading}
+    <div class="loading">
+      <div class="spinner"></div>
+      <p>Chargement des factures...</p>
+    </div>
+  {:else if filteredInvoices.length === 0}
+    <div class="empty-state">
+      <svg class="icon-large" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      <p>Aucune facture trouvée</p>
+    </div>
+  {:else}
+    <div class="invoice-grid">
+      {#each filteredInvoices as invoice}
+        <div class="invoice-card">
+          <div class="card-header">
+            <div>
+              <h3 class="invoice-title">{invoice.description}</h3>
+              <p class="invoice-meta">
+                Date: {formatDate(invoice.expense_date)}
+                {#if invoice.invoice_number}
+                  • N° {invoice.invoice_number}
+                {/if}
+              </p>
+            </div>
+            <div class="invoice-amount">
+              {formatCurrency(invoice.amount_incl_vat || invoice.amount || 0)}
+            </div>
+          </div>
 
-    {#if invoice.rejection_reason}
-      <div class="alert alert-warning">
-        <strong>Raison du rejet:</strong>
-        <p>{invoice.rejection_reason}</p>
-      </div>
-    {/if}
+          <div class="card-body">
+            <div class="status-row">
+              <div class="status-item">
+                <span class="status-label">Approbation</span>
+                <span class="badge {getApprovalStatusBadge(invoice.approval_status).class}">
+                  {getApprovalStatusBadge(invoice.approval_status).label}
+                </span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Paiement</span>
+                <span class="badge {getPaymentStatusBadge(invoice.payment_status).class}">
+                  {getPaymentStatusBadge(invoice.payment_status).label}
+                </span>
+              </div>
+            </div>
 
-    <!-- Error Display -->
-    {#if error}
-      <div class="alert alert-error">{error}</div>
-    {/if}
+            {#if invoice.rejection_reason}
+              <div class="rejection-info">
+                <svg class="icon-small" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <div>
+                  <strong>Raison du rejet:</strong>
+                  <p>{invoice.rejection_reason}</p>
+                </div>
+              </div>
+            {/if}
 
-    <!-- Workflow Actions -->
-    <div class="workflow-actions">
-      {#if canBeModified(invoice.approval_status)}
-        <div class="info-box">
-          ℹ️ Cette facture peut encore être modifiée
+            {#if invoice.invoice_number}
+              <div class="invoice-info">
+                <span class="info-label">N° facture:</span>
+                <span>{invoice.invoice_number}</span>
+              </div>
+            {/if}
+
+            {#if invoice.supplier_name}
+              <div class="invoice-info">
+                <span class="info-label">Fournisseur:</span>
+                <span>{invoice.supplier_name}</span>
+              </div>
+            {/if}
+          </div>
+
+          <div class="card-actions">
+            {#if canSubmitForApproval(invoice)}
+              <button
+                on:click={() => submitForApproval(invoice.id)}
+                class="btn btn-primary"
+                disabled={submitting}
+              >
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Soumettre pour approbation
+              </button>
+            {/if}
+
+            {#if canApprove(invoice)}
+              <button
+                on:click={() => openApprovalModal(invoice)}
+                class="btn btn-success"
+                disabled={submitting}
+              >
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Approuver
+              </button>
+            {/if}
+
+            {#if canReject(invoice)}
+              <button
+                on:click={() => openRejectionModal(invoice)}
+                class="btn btn-danger"
+                disabled={submitting}
+              >
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Rejeter
+              </button>
+            {/if}
+
+            {#if canMarkAsPaid(invoice)}
+              <button
+                on:click={() => markAsPaid(invoice.id)}
+                class="btn btn-info"
+                disabled={submitting}
+              >
+                <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                Marquer comme payée
+              </button>
+            {/if}
+          </div>
         </div>
-      {/if}
-
-      {#if canBeSubmitted(invoice.approval_status)}
-        <button
-          class="btn btn-primary"
-          on:click={submitForApproval}
-          disabled={loading}
-        >
-          📤 Soumettre pour validation
-        </button>
-      {/if}
-
-      {#if canBeApproved(invoice.approval_status)}
-        <div class="approval-actions">
-          <button
-            class="btn btn-success"
-            on:click={approve}
-            disabled={loading}
-          >
-            ✓ Approuver
-          </button>
-          <button
-            class="btn btn-danger"
-            on:click={openRejectModal}
-            disabled={loading}
-          >
-            ✗ Rejeter
-          </button>
-        </div>
-      {/if}
+      {/each}
     </div>
   {/if}
 </div>
 
-<!-- Reject Modal -->
-{#if showRejectModal}
-  <div class="modal-overlay" on:click={closeRejectModal}>
-    <div class="modal-content" on:click|stopPropagation>
-      <h3>Rejeter la facture</h3>
-      <p>Veuillez indiquer la raison du rejet:</p>
-
-      <textarea
-        bind:value={rejectionReason}
-        placeholder="Ex: Montant incorrect, devis non respecté, facture en double..."
-        rows="4"
-        disabled={loading}
-      ></textarea>
-
-      <div class="modal-actions">
-        <button class="btn btn-secondary" on:click={closeRejectModal} disabled={loading}>
+<!-- Modal d'approbation -->
+{#if showApprovalModal && selectedInvoice}
+  <div class="modal-overlay" on:click={closeModals}>
+    <div class="modal" on:click|stopPropagation>
+      <div class="modal-header">
+        <h2>Approuver la facture</h2>
+        <button on:click={closeModals} class="btn-close">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Voulez-vous approuver cette facture ?</p>
+        <div class="invoice-summary">
+          <p><strong>Description:</strong> {selectedInvoice.description}</p>
+          <p><strong>Montant:</strong> {formatCurrency(selectedInvoice.amount_incl_vat || selectedInvoice.amount || 0)}</p>
+          {#if selectedInvoice.supplier_name}
+            <p><strong>Fournisseur:</strong> {selectedInvoice.supplier_name}</p>
+          {/if}
+        </div>
+        <div class="alert alert-info">
+          <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          Une écriture comptable d'achat (ACH) sera automatiquement générée dans le journal.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button on:click={closeModals} class="btn btn-secondary" disabled={submitting}>
           Annuler
         </button>
-        <button class="btn btn-danger" on:click={confirmReject} disabled={loading || !rejectionReason.trim()}>
-          {#if loading}
-            Rejet en cours...
-          {:else}
-            Confirmer le rejet
-          {/if}
+        <button on:click={approveInvoice} class="btn btn-success" disabled={submitting}>
+          {submitting ? 'Approbation en cours...' : 'Approuver'}
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Modal de rejet -->
+{#if showRejectionModal && selectedInvoice}
+  <div class="modal-overlay" on:click={closeModals}>
+    <div class="modal" on:click|stopPropagation>
+      <div class="modal-header">
+        <h2>Rejeter la facture</h2>
+        <button on:click={closeModals} class="btn-close">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Veuillez indiquer la raison du rejet:</p>
+        <div class="invoice-summary">
+          <p><strong>Description:</strong> {selectedInvoice.description}</p>
+          <p><strong>Montant:</strong> {formatCurrency(selectedInvoice.amount_incl_vat || selectedInvoice.amount || 0)}</p>
+        </div>
+        <textarea
+          bind:value={rejectionReason}
+          placeholder="Raison du rejet..."
+          rows="4"
+          class="textarea"
+          disabled={submitting}
+        ></textarea>
+      </div>
+      <div class="modal-footer">
+        <button on:click={closeModals} class="btn btn-secondary" disabled={submitting}>
+          Annuler
+        </button>
+        <button on:click={rejectInvoice} class="btn btn-danger" disabled={submitting || !rejectionReason.trim()}>
+          {submitting ? 'Rejet en cours...' : 'Rejeter'}
         </button>
       </div>
     </div>
@@ -276,136 +486,278 @@
 {/if}
 
 <style>
-  .invoice-workflow {
-    background: white;
+  .workflow-container {
+    max-width: 1400px;
+    margin: 0 auto;
     padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  .status-section {
-    margin-bottom: 1.5rem;
+  .header {
+    margin-bottom: 2rem;
   }
 
-  .badge {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.9rem;
+  .header h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
   }
 
-  .badge-draft {
-    background-color: #e0e0e0;
-    color: #666;
-  }
-
-  .badge-pending {
-    background-color: #fff3cd;
-    color: #856404;
-    border: 1px solid #ffc107;
-  }
-
-  .badge-approved {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #28a745;
-  }
-
-  .badge-rejected {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #dc3545;
-  }
-
-  .invoice-details {
-    background: #f9f9f9;
-    padding: 1.5rem;
-    border-radius: 4px;
-    margin-bottom: 1.5rem;
-  }
-
-  .invoice-details h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #333;
-  }
-
-  .detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #eee;
-  }
-
-  .detail-row:last-child {
-    border-bottom: none;
-  }
-
-  .detail-row.total {
-    margin-top: 0.5rem;
-    padding-top: 0.75rem;
-    border-top: 2px solid #ddd;
-    border-bottom: none;
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
-
-  .workflow-info {
-    background: #e8f4f8;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-  }
-
-  .workflow-info p {
-    margin: 0.5rem 0;
+  .subtitle {
+    font-size: 1rem;
+    color: #6b7280;
   }
 
   .alert {
     padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   .alert-error {
-    background-color: #fee;
-    border: 1px solid #fcc;
-    color: #c33;
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
   }
 
-  .alert-warning {
-    background-color: #fff3cd;
-    border: 1px solid #ffc107;
-    color: #856404;
+  .alert-info {
+    background-color: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
   }
 
-  .info-box {
-    background-color: #e7f3ff;
-    border: 1px solid #b3d9ff;
-    color: #004085;
-    padding: 1rem;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-  }
-
-  .workflow-actions {
-    margin-top: 1.5rem;
-  }
-
-  .approval-actions {
+  .filters {
     display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .filter-group select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    background-color: white;
+  }
+
+  .btn-refresh {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+  }
+
+  .btn-refresh:hover:not(:disabled) {
+    background-color: #2563eb;
+  }
+
+  .btn-refresh:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
     gap: 1rem;
   }
 
-  .btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
+  .spinner {
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    width: 3rem;
+    height: 3rem;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    gap: 1rem;
+    color: #6b7280;
+  }
+
+  .icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .icon-small {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+  }
+
+  .icon-large {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .invoice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .invoice-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .invoice-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .card-header {
+    padding: 1.5rem;
+    background-color: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .invoice-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 0.25rem;
+  }
+
+  .invoice-meta {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .invoice-amount {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #059669;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  .status-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .status-label {
+    font-size: 0.75rem;
     font-weight: 500;
+    color: #6b7280;
+    text-transform: uppercase;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .rejection-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.375rem;
+    display: flex;
+    gap: 0.75rem;
+    color: #991b1b;
+  }
+
+  .rejection-info strong {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .invoice-info {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.875rem;
+  }
+
+  .invoice-info:last-child {
+    border-bottom: none;
+  }
+
+  .info-label {
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .card-actions {
+    padding: 1rem 1.5rem;
+    background-color: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s;
   }
 
   .btn:disabled {
@@ -414,97 +766,141 @@
   }
 
   .btn-primary {
-    background-color: #4a90e2;
+    background-color: #3b82f6;
     color: white;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background-color: #357abd;
+    background-color: #2563eb;
   }
 
   .btn-success {
-    background-color: #28a745;
+    background-color: #10b981;
     color: white;
-    flex: 1;
   }
 
   .btn-success:hover:not(:disabled) {
-    background-color: #218838;
+    background-color: #059669;
   }
 
   .btn-danger {
-    background-color: #dc3545;
+    background-color: #ef4444;
     color: white;
-    flex: 1;
   }
 
   .btn-danger:hover:not(:disabled) {
-    background-color: #c82333;
+    background-color: #dc2626;
+  }
+
+  .btn-info {
+    background-color: #06b6d4;
+    color: white;
+  }
+
+  .btn-info:hover:not(:disabled) {
+    background-color: #0891b2;
   }
 
   .btn-secondary {
-    background-color: #e0e0e0;
-    color: #333;
+    background-color: #6b7280;
+    color: white;
   }
 
   .btn-secondary:hover:not(:disabled) {
-    background-color: #d0d0d0;
+    background-color: #4b5563;
   }
 
-  /* Modal */
   .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 50;
+    padding: 1rem;
   }
 
-  .modal-content {
+  .modal {
     background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
   }
 
-  .modal-content h3 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #333;
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
   }
 
-  .modal-content p {
-    margin-bottom: 1rem;
-    color: #666;
+  .modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1f2937;
   }
 
-  .modal-content textarea {
+  .btn-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #6b7280;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-close:hover {
+    color: #1f2937;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+  }
+
+  .invoice-summary {
+    background-color: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    margin: 1rem 0;
+  }
+
+  .invoice-summary p {
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+  }
+
+  .textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
     font-family: inherit;
     resize: vertical;
   }
 
-  .modal-content textarea:focus {
+  .textarea:focus {
     outline: none;
-    border-color: #4a90e2;
-    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   }
 
-  .modal-actions {
+  .modal-footer {
     display: flex;
-    gap: 1rem;
     justify-content: flex-end;
-    margin-top: 1.5rem;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border-top: 1px solid #e5e7eb;
   }
 </style>

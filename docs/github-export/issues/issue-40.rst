@@ -3,11 +3,11 @@ Issue #40: feat(infra): Implement encrypted backups (GPG + S3 SSE)
 ===================================================================
 
 :State: **OPEN**
-:Milestone: Phase 1: VPS MVP + Legal Compliance
+:Milestone: Jalon 1: Sécurité & GDPR 🔒
 :Labels: phase:vps,track:infrastructure priority:critical
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-08
+:Updated: 2025-11-17
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/40>`_
 
 Description

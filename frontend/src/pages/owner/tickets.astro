@@ -1,0 +1,98 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="My Tickets">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">My Maintenance Tickets</h1>
+      <p class="mt-2 text-gray-600">
+        View and manage your maintenance requests
+      </p>
+    </div>
+
+    <!-- Create Ticket Button -->
+    <div class="mb-6">
+      <button
+        id="create-ticket-btn"
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+      >
+        <svg
+          class="-ml-1 mr-2 h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Create New Ticket
+      </button>
+    </div>
+
+    <!-- My Tickets List -->
+    <div id="my-tickets-list"></div>
+
+    <!-- Create Ticket Modal Placeholder -->
+    <div id="create-ticket-modal"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import TicketList from "../../components/tickets/TicketList.svelte";
+  import TicketCreateModal from "../../components/tickets/TicketCreateModal.svelte";
+
+  // Mount my tickets list
+  const listContainer = document.getElementById("my-tickets-list");
+  if (listContainer) {
+    const ticketList = mount(TicketList, {
+      target: listContainer,
+      props: {
+        view: "my",
+      },
+    });
+
+    // Handle create ticket modal
+    const modalContainer = document.getElementById("create-ticket-modal");
+    if (modalContainer) {
+      const createModal = mount(TicketCreateModal, {
+        target: modalContainer,
+        props: {
+          open: false,
+          buildingId: "",
+          requesterId: "",
+        },
+      });
+
+      // Handle create button click
+      document
+        .getElementById("create-ticket-btn")
+        ?.addEventListener("click", () => {
+          // Get building ID and user ID from context/localStorage
+          const buildingId = localStorage.getItem("current_building_id") || "";
+          const userId = localStorage.getItem("koprogo_user_id") || "";
+
+          if (!buildingId) {
+            alert(
+              "Please select your building first. Go to your profile to set your default building.",
+            );
+            return;
+          }
+
+          createModal.$set({
+            open: true,
+            buildingId: buildingId,
+            requesterId: userId,
+          });
+        });
+
+      // Refresh list when ticket created
+      modalContainer.addEventListener("created", () => {
+        window.location.reload();
+      });
+    }
+  }
+</script>

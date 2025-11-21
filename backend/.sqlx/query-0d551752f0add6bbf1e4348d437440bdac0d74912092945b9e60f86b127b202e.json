@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, journal_entry_id, organization_id, account_code,\n                debit, credit, description, created_at\n            FROM journal_entry_lines\n            WHERE journal_entry_id = $1 AND organization_id = $2\n            ORDER BY created_at ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "journal_entry_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "account_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "debit",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "credit",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "0d551752f0add6bbf1e4348d437440bdac0d74912092945b9e60f86b127b202e"
+}

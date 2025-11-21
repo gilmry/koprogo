@@ -1,4 +1,4 @@
-use crate::domain::entities::{User, UserRole};
+use crate::domain::entities::{Account, AccountType, User, UserRole};
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::{NaiveDate, Utc};
 use fake::faker::address::en::*;
@@ -84,9 +84,214 @@ impl DatabaseSeeder {
             role: UserRole::SuperAdmin,
             organization_id: None,
             is_active: true,
+            processing_restricted: false,
+            processing_restricted_at: None,
+            marketing_opt_out: false,
+            marketing_opt_out_at: None,
             created_at: now,
             updated_at: now,
         })
+    }
+
+    /// Seed Belgian PCMN (Plan Comptable Minimum Normalisé) for all organizations
+    /// This ensures every organization has the base chart of accounts
+    pub async fn seed_belgian_pcmn_for_all_organizations(&self) -> Result<String, String> {
+        log::info!("🌱 Seeding Belgian PCMN for all organizations...");
+
+        // Get all organizations
+        let organizations = sqlx::query!("SELECT id FROM organizations")
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch organizations: {}", e))?;
+
+        let mut total_created = 0;
+        let mut orgs_seeded = 0;
+
+        for org in organizations {
+            let org_id = org.id;
+
+            // Check if this organization already has accounts
+            let existing_count = sqlx::query!(
+                "SELECT COUNT(*) as count FROM accounts WHERE organization_id = $1",
+                org_id
+            )
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to count accounts: {}", e))?;
+
+            if existing_count.count.unwrap_or(0) > 0 {
+                log::debug!(
+                    "Organization {} already has {} accounts, skipping",
+                    org_id,
+                    existing_count.count.unwrap_or(0)
+                );
+                continue;
+            }
+
+            // Seed PCMN for this organization
+            let created = self.seed_belgian_pcmn_for_org(org_id).await?;
+            total_created += created;
+            orgs_seeded += 1;
+        }
+
+        let message = format!(
+            "✅ Seeded {} accounts across {} organizations",
+            total_created, orgs_seeded
+        );
+        log::info!("{}", message);
+        Ok(message)
+    }
+
+    /// Seed Belgian PCMN for a specific organization (idempotent)
+    async fn seed_belgian_pcmn_for_org(&self, organization_id: Uuid) -> Result<i64, String> {
+        // Base PCMN accounts based on Belgian accounting standards
+        let base_accounts = vec![
+            // Class 6: Charges (Expenses)
+            (
+                "6100",
+                "Charges courantes",
+                None,
+                AccountType::Expense,
+                true,
+            ),
+            (
+                "6110",
+                "Entretien et réparations",
+                None,
+                AccountType::Expense,
+                true,
+            ),
+            ("6120", "Personnel", None, AccountType::Expense, true),
+            (
+                "6130",
+                "Services extérieurs",
+                None,
+                AccountType::Expense,
+                true,
+            ),
+            (
+                "6140",
+                "Honoraires et commissions",
+                None,
+                AccountType::Expense,
+                true,
+            ),
+            ("6150", "Assurances", None, AccountType::Expense, true),
+            (
+                "6200",
+                "Travaux extraordinaires",
+                None,
+                AccountType::Expense,
+                true,
+            ),
+            // Class 7: Produits (Revenue)
+            (
+                "7000",
+                "Produits de gestion",
+                None,
+                AccountType::Revenue,
+                true,
+            ),
+            (
+                "7100",
+                "Appels de fonds",
+                Some("7000"),
+                AccountType::Revenue,
+                true,
+            ),
+            (
+                "7200",
+                "Autres produits",
+                Some("7000"),
+                AccountType::Revenue,
+                true,
+            ),
+            // Class 4: Tiers (Third parties)
+            (
+                "4000",
+                "Comptes de tiers",
+                None,
+                AccountType::Liability,
+                false,
+            ),
+            (
+                "4100",
+                "TVA à récupérer",
+                Some("4000"),
+                AccountType::Asset,
+                true,
+            ),
+            (
+                "4110",
+                "TVA récupérable",
+                Some("4100"),
+                AccountType::Asset,
+                true,
+            ),
+            (
+                "4400",
+                "Fournisseurs",
+                Some("4000"),
+                AccountType::Liability,
+                true,
+            ),
+            (
+                "4500",
+                "Copropriétaires",
+                Some("4000"),
+                AccountType::Asset,
+                true,
+            ),
+            // Class 5: Trésorerie (Cash/Bank)
+            ("5500", "Banque", None, AccountType::Asset, true),
+            ("5700", "Caisse", None, AccountType::Asset, true),
+        ];
+
+        let mut created_count = 0;
+
+        for (code, label, parent_code, account_type, direct_use) in base_accounts {
+            // Create account using domain entity
+            let account = Account::new(
+                code.to_string(),
+                label.to_string(),
+                parent_code.map(|s| s.to_string()),
+                account_type,
+                direct_use,
+                organization_id,
+            )?;
+
+            // Insert into database (idempotent - skip if exists)
+            let result = sqlx::query!(
+                r#"
+                INSERT INTO accounts (id, code, label, parent_code, account_type, direct_use, organization_id, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (code, organization_id) DO NOTHING
+                "#,
+                account.id,
+                account.code,
+                account.label,
+                account.parent_code,
+                account.account_type as AccountType,
+                account.direct_use,
+                account.organization_id,
+                account.created_at,
+                account.updated_at
+            )
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to insert account {}: {}", code, e))?;
+
+            if result.rows_affected() > 0 {
+                created_count += 1;
+            }
+        }
+
+        log::info!(
+            "Created {} PCMN accounts for organization {}",
+            created_count,
+            organization_id
+        );
+        Ok(created_count)
     }
 
     /// Seed demo data for production demonstration
@@ -397,70 +602,367 @@ impl DatabaseSeeder {
 
         log::info!("✅ Demo unit_owners relationships created");
 
-        // Create demo expenses
-        self.create_demo_expense(
-            building1_id,
+        // Seed Belgian PCMN accounts for this organization
+        self.seed_pcmn_accounts(org1_id).await?;
+        log::info!("✅ Belgian PCMN accounts seeded");
+
+        // Create demo expenses with realistic Belgian VAT rates and accounting links
+        // Expense 1: Quarterly condo fees (paid) - 21% VAT
+        let expense1_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                "Charges copropriété T1 2025",
+                4132.23, // HT
+                21.0,    // VAT 21%
+                "2025-01-15",
+                "2025-02-15", // due date
+                "administration",
+                "paid",
+                Some("Syndic Services SPRL"),
+                Some("SYN-2025-001"),
+                Some("6100"), // PCMN: Charges courantes
+            )
+            .await?;
+
+        // Expense 2: Elevator repair (paid) - 21% VAT
+        let expense2_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                "Réparation ascenseur - Remplacement moteur",
+                2066.12, // HT
+                21.0,    // VAT 21%
+                "2025-02-10",
+                "2025-03-10",
+                "maintenance",
+                "paid",
+                Some("Ascenseurs Plus SA"),
+                Some("ASC-2025-023"),
+                Some("6110"), // PCMN: Entretien et réparations
+            )
+            .await?;
+
+        // Expense 3: Quarterly condo fees building 2 (pending, will become overdue) - 21% VAT
+        let expense3_id = self
+            .create_demo_expense_with_vat(
+                building2_id,
+                org1_id,
+                "Charges copropriété T1 2025",
+                2479.34, // HT
+                21.0,    // VAT 21%
+                "2025-01-15",
+                "2025-02-15", // OVERDUE (due 2 months ago)
+                "administration",
+                "overdue",
+                Some("Syndic Services SPRL"),
+                Some("SYN-2025-002"),
+                Some("6100"), // PCMN: Charges courantes
+            )
+            .await?;
+
+        // Expense 4: Cleaning (paid) - 6% VAT (reduced rate for certain services)
+        let expense4_id = self
+            .create_demo_expense_with_vat(
+                building2_id,
+                org1_id,
+                "Nettoyage parties communes - Forfait annuel",
+                1132.08, // HT
+                6.0,     // VAT 6% (reduced rate)
+                "2025-01-01",
+                "2025-01-31",
+                "cleaning",
+                "paid",
+                Some("CleanPro Belgium SPRL"),
+                Some("CLN-2025-156"),
+                Some("6130"), // PCMN: Services extérieurs
+            )
+            .await?;
+
+        // Expense 5: Insurance (pending) - 0% VAT (insurance exempt)
+        let expense5_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                "Assurance incendie immeuble 2025",
+                1850.00, // HT (no VAT)
+                0.0,     // VAT 0% (exempt)
+                "2025-01-05",
+                "2025-02-05",
+                "insurance",
+                "pending",
+                Some("AXA Belgium"),
+                Some("AXA-2025-8472"),
+                Some("6150"), // PCMN: Assurances
+            )
+            .await?;
+
+        // Expense 6: Facade works (pending approval) - 21% VAT
+        let expense6_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                "Rénovation façade - Devis Entreprise Martin",
+                12396.69, // HT
+                21.0,     // VAT 21%
+                "2025-03-01",
+                "2025-04-30",
+                "works",
+                "pending",
+                Some("Entreprise Martin & Fils SPRL"),
+                Some("MART-2025-042"),
+                Some("6200"), // PCMN: Travaux extraordinaires
+            )
+            .await?;
+
+        // ===== CURRENT MONTH EXPENSES =====
+        // Use relative dates based on today's date
+        let now = Utc::now();
+        let current_month = now.format("%B %Y").to_string();
+        let month_start = format!("{}", now.format("%Y-%m-01"));
+        let day_3 = format!("{}", now.format("%Y-%m-03"));
+        let day_5 = format!("{}", now.format("%Y-%m-05"));
+        let day_8 = format!("{}", now.format("%Y-%m-08"));
+        let day_10 = format!("{}", now.format("%Y-%m-10"));
+        let month_end = format!("{}", (now + chrono::Duration::days(30)).format("%Y-%m-%d"));
+
+        // Expense 7: Elevator maintenance (current month) - paid - 21% VAT
+        let expense7_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                &format!("Maintenance ascenseur {}", current_month),
+                826.45, // HT
+                21.0,   // VAT 21%
+                &day_5,
+                &month_end,
+                "maintenance",
+                "paid",
+                Some("Ascenseurs Plus SA"),
+                Some(&format!("ASC-{}-001", now.format("%Y-%m"))),
+                Some("6110"), // PCMN: Entretien et réparations
+            )
+            .await?;
+
+        // Expense 8: Electricity bill (current month) - paid - 21% VAT
+        let expense8_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                &format!("Électricité communs {}", current_month),
+                387.60, // HT
+                21.0,   // VAT 21%
+                &day_3,
+                &format!("{}", (now + chrono::Duration::days(25)).format("%Y-%m-%d")),
+                "utilities",
+                "paid",
+                Some("Engie Electrabel"),
+                Some(&format!("ENGIE-{}-3847", now.format("%Y-%m"))),
+                Some("6100"), // PCMN: Charges courantes (Électricité)
+            )
+            .await?;
+
+        // Expense 9: Cleaning service (current month) - paid - 6% VAT
+        let expense9_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                &format!("Nettoyage communs {}", current_month),
+                471.70, // HT
+                6.0,    // VAT 6% (labor-intensive services)
+                &month_start,
+                &format!("{}", (now + chrono::Duration::days(20)).format("%Y-%m-%d")),
+                "cleaning",
+                "paid",
+                Some("NetClean Services SPRL"),
+                Some(&format!("CLEAN-{}-074", now.format("%Y-%m"))),
+                Some("6130"), // PCMN: Services extérieurs (Nettoyage)
+            )
+            .await?;
+
+        // Expense 10: Water bill (current month) - pending - 6% VAT
+        let expense10_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                &format!("Eau communs {}", current_month),
+                156.60, // HT
+                6.0,    // VAT 6%
+                &day_8,
+                &format!("{}", (now + chrono::Duration::days(30)).format("%Y-%m-%d")),
+                "utilities",
+                "pending",
+                Some("Vivaqua"),
+                Some(&format!("VIVA-{}-9284", now.format("%Y-%m"))),
+                Some("6100"), // PCMN: Charges courantes (Eau)
+            )
+            .await?;
+
+        // Expense 11: Heating gas (current month) - paid - 21% VAT
+        let expense11_id = self
+            .create_demo_expense_with_vat(
+                building1_id,
+                org1_id,
+                &format!("Chauffage gaz {}", current_month),
+                1240.00, // HT
+                21.0,    // VAT 21%
+                &day_10,
+                &format!("{}", (now + chrono::Duration::days(30)).format("%Y-%m-%d")),
+                "utilities",
+                "paid",
+                Some("Sibelga"),
+                Some(&format!("SIBEL-{}-7453", now.format("%Y-%m"))),
+                Some("6100"), // PCMN: Charges courantes (Chauffage)
+            )
+            .await?;
+
+        log::info!("✅ Demo expenses with VAT created (including current month)");
+
+        // Calculate and save charge distributions
+        self.create_demo_distributions(expense1_id, org1_id).await?;
+        self.create_demo_distributions(expense2_id, org1_id).await?;
+        self.create_demo_distributions(expense3_id, org1_id).await?;
+        self.create_demo_distributions(expense4_id, org1_id).await?;
+        self.create_demo_distributions(expense5_id, org1_id).await?;
+        self.create_demo_distributions(expense6_id, org1_id).await?;
+        self.create_demo_distributions(expense7_id, org1_id).await?;
+        self.create_demo_distributions(expense8_id, org1_id).await?;
+        self.create_demo_distributions(expense9_id, org1_id).await?;
+        self.create_demo_distributions(expense10_id, org1_id)
+            .await?;
+        self.create_demo_distributions(expense11_id, org1_id)
+            .await?;
+        log::info!("✅ Charge distributions calculated");
+
+        // Create payment reminders for overdue expense
+        self.create_demo_payment_reminder(
+            expense3_id,
+            owner2_db_id, // Sophie Bernard
             org1_id,
-            "Charges de copropriété Q1 2025 - Charges trimestrielles incluant eau, chauffage, entretien",
-            5000.0,
-            "2025-01-15",
-            "administration",
-            "pending",
-            Some("Syndic Services"),
-            Some("INV-2025-001"),
+            "FirstReminder",
+            20, // 20 days overdue
         )
         .await?;
 
-        self.create_demo_expense(
-            building1_id,
+        self.create_demo_payment_reminder(
+            expense3_id,
+            owner3_db_id, // Michel Lefebvre
             org1_id,
-            "Réparation ascenseur - Maintenance et réparation de l'ascenseur principal",
-            2500.0,
-            "2025-02-10",
-            "maintenance",
+            "SecondReminder",
+            35, // 35 days overdue
+        )
+        .await?;
+
+        log::info!("✅ Payment reminders created");
+
+        // Create owner contributions (revenue) for current month
+        log::info!("Creating owner contributions...");
+
+        // Get quarter number for current month (using Datelike trait)
+        use chrono::Datelike;
+        let quarter = ((now.month() - 1) / 3) + 1;
+        let year = now.year();
+
+        // Regular contributions (appels de fonds) for current month
+        // Each owner pays quarterly fees
+        self.create_demo_owner_contribution(
+            org1_id,
+            owner1_db_id, // Jean Dupont
+            Some(unit1_id),
+            &format!("Appel de fonds T{} {} - Charges courantes", quarter, year),
+            650.0,
+            "regular",
+            &month_start,
             "paid",
-            Some("Ascenseurs Plus"),
-            Some("ASC-2025-023"),
+            Some(&day_5),
+            Some("7000"), // PCMN: Regular contributions
         )
         .await?;
 
-        self.create_demo_expense(
-            building2_id,
+        self.create_demo_owner_contribution(
             org1_id,
-            "Charges de copropriété Q1 2025 - Charges trimestrielles",
-            3000.0,
-            "2025-01-15",
-            "administration",
+            owner2_db_id, // Sophie Bernard
+            Some(unit2_id),
+            &format!("Appel de fonds T{} {} - Charges courantes", quarter, year),
+            750.0,
+            "regular",
+            &month_start,
+            "paid",
+            Some(&day_8),
+            Some("7000"),
+        )
+        .await?;
+
+        self.create_demo_owner_contribution(
+            org1_id,
+            owner3_db_id, // Michel Lefebvre
+            Some(unit3_id),
+            &format!("Appel de fonds T{} {} - Charges courantes", quarter, year),
+            600.0,
+            "regular",
+            &month_start,
             "pending",
-            Some("Syndic Services"),
-            Some("INV-2025-002"),
+            None, // Not paid yet
+            Some("7000"),
         )
         .await?;
 
-        self.create_demo_expense(
-            building2_id,
+        // Note: Only 3 owners in seed data, so we skip owner4
+
+        // Extraordinary contribution for roof repairs (previous month)
+        let prev_month = (now - chrono::Duration::days(20))
+            .format("%Y-%m-05")
+            .to_string();
+        let prev_month_payment = (now - chrono::Duration::days(15))
+            .format("%Y-%m-10")
+            .to_string();
+
+        self.create_demo_owner_contribution(
             org1_id,
-            "Nettoyage des parties communes - Contrat annuel de nettoyage",
+            owner1_db_id, // Jean Dupont
+            Some(unit1_id),
+            "Appel de fonds extraordinaire - Réfection toiture",
             1200.0,
-            "2025-01-01",
-            "cleaning",
+            "extraordinary",
+            &prev_month,
             "paid",
-            Some("CleanPro"),
-            Some("CLN-2025-156"),
+            Some(&prev_month_payment),
+            Some("7100"), // PCMN: Extraordinary contributions
         )
         .await?;
 
-        log::info!("✅ Demo expenses created");
+        self.create_demo_owner_contribution(
+            org1_id,
+            owner2_db_id, // Sophie Bernard
+            Some(unit2_id),
+            "Appel de fonds extraordinaire - Réfection toiture",
+            1400.0,
+            "extraordinary",
+            &prev_month,
+            "pending",
+            None, // Not paid yet
+            Some("7100"),
+        )
+        .await?;
 
-        // Create meetings ORG 1
+        log::info!("✅ Owner contributions created");
+
+        // Create meetings ORG 1 (in the past, 3-6 months ago)
+        let meeting1_date = (now - chrono::Duration::days(90))
+            .format("%Y-%m-%d")
+            .to_string();
+        let meeting2_date = (now - chrono::Duration::days(60))
+            .format("%Y-%m-%d")
+            .to_string();
+
         let meeting1_id = self
             .create_demo_meeting(
                 building1_id,
                 org1_id,
-                "Assemblée Générale Ordinaire 2025",
+                &format!("Assemblée Générale Ordinaire {}", year),
                 "ordinary",
-                "2025-03-15",
-                "scheduled",
+                &meeting1_date,
+                "completed",
             )
             .await?;
 
@@ -470,35 +972,41 @@ impl DatabaseSeeder {
                 org1_id,
                 "Assemblée Générale Extraordinaire - Travaux",
                 "extraordinary",
-                "2025-04-20",
-                "scheduled",
+                &meeting2_date,
+                "completed",
             )
             .await?;
 
         log::info!("✅ Demo meetings created");
 
         // Create board members ORG 1
-        // Elect owner1 as president for building1 (mandate: 2024-01-01 to 2024-12-31, ~1 year as per Belgian law)
+        // Board mandates are for 1 year from meeting1_date
+        let mandate_start = meeting1_date.clone();
+        let mandate_end = (now + chrono::Duration::days(275))
+            .format("%Y-%m-%d")
+            .to_string(); // ~9 months from now
+
+        // Elect owner1 as president for building1 (mandate: ~1 year as per Belgian law)
         self.create_demo_board_member(
             owner1_db_id,
             building1_id,
             org1_id,
             meeting1_id,
             "president",
-            "2024-01-01",
-            "2024-12-31",
+            &mandate_start,
+            &mandate_end,
         )
         .await?;
 
-        // Elect owner2 as treasurer for building2 (mandate: 2024-06-01 to 2025-05-31, ~1 year)
+        // Elect owner2 as treasurer for building2 (mandate: ~1 year)
         self.create_demo_board_member(
             owner2_db_id,
             building2_id,
             org1_id,
             meeting2_id,
             "treasurer",
-            "2024-06-01",
-            "2025-05-31",
+            &meeting2_date,
+            &format!("{}", (now + chrono::Duration::days(305)).format("%Y-%m-%d")),
         )
         .await?;
 
@@ -936,6 +1444,7 @@ impl DatabaseSeeder {
         Ok(unit_owner_id)
     }
 
+    #[allow(dead_code)]
     #[allow(clippy::too_many_arguments)]
     async fn create_demo_expense(
         &self,
@@ -956,29 +1465,89 @@ impl DatabaseSeeder {
                 .map_err(|e| format!("Failed to parse date: {}", e))?
                 .with_timezone(&Utc);
 
-        sqlx::query(
-            r#"
-            INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, supplier, invoice_number, created_at, updated_at)
-            VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9, $10, $11, $12)
-            "#
-        )
-        .bind(expense_id)
-        .bind(organization_id)
-        .bind(building_id)
-        .bind(category)
-        .bind(description)
-        .bind(amount)
-        .bind(expense_date_parsed)
-        .bind(payment_status)
-        .bind(supplier)
-        .bind(invoice_number)
-        .bind(now)
-        .bind(now)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to create expense: {}", e))?;
+        // Set approval_status based on payment_status
+        let approval_status = if payment_status == "paid" {
+            "approved" // If already paid, it must be approved
+        } else {
+            "draft" // Otherwise, start as draft
+        };
 
-        Ok(expense_id)
+        // Set paid_date if already paid
+        let paid_date = if payment_status == "paid" {
+            Some(expense_date_parsed)
+        } else {
+            None
+        };
+
+        // Check if expense already exists (idempotency)
+        let existing: Option<(Uuid,)> =
+            sqlx::query_as("SELECT id FROM expenses WHERE description = $1 AND building_id = $2")
+                .bind(description)
+                .bind(building_id)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to check existing expense: {}", e))?;
+
+        let final_expense_id = if let Some((existing_id,)) = existing {
+            // Update existing expense
+            sqlx::query(
+                r#"
+                UPDATE expenses SET
+                    category = $1::expense_category,
+                    amount = $2,
+                    expense_date = $3,
+                    payment_status = $4::payment_status,
+                    approval_status = $5::approval_status,
+                    paid_date = $6,
+                    supplier = $7,
+                    invoice_number = $8,
+                    updated_at = $9
+                WHERE id = $10
+                "#,
+            )
+            .bind(category)
+            .bind(amount)
+            .bind(expense_date_parsed)
+            .bind(payment_status)
+            .bind(approval_status)
+            .bind(paid_date)
+            .bind(supplier)
+            .bind(invoice_number)
+            .bind(now)
+            .bind(existing_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to update expense: {}", e))?;
+            existing_id
+        } else {
+            // Insert new expense
+            sqlx::query(
+                r#"
+                INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, supplier, invoice_number, created_at, updated_at)
+                VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12, $13, $14)
+                "#
+            )
+            .bind(expense_id)
+            .bind(organization_id)
+            .bind(building_id)
+            .bind(category)
+            .bind(description)
+            .bind(amount)
+            .bind(expense_date_parsed)
+            .bind(payment_status)
+            .bind(approval_status)
+            .bind(paid_date)
+            .bind(supplier)
+            .bind(invoice_number)
+            .bind(now)
+            .bind(now)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to create expense: {}", e))?;
+            expense_id
+        };
+
+        Ok(final_expense_id)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1394,45 +1963,69 @@ impl DatabaseSeeder {
 
                 org_units += units_this_building;
 
-                // Create 2-3 expenses per building
-                let num_expenses = rng.random_range(2..=3);
-                let expense_types = [
-                    ("Entretien ascenseur", 450.0, 800.0),
-                    ("Nettoyage parties communes", 300.0, 600.0),
-                    ("Chauffage collectif", 1500.0, 3000.0),
-                    ("Assurance immeuble", 800.0, 1500.0),
-                    ("Travaux façade", 5000.0, 15000.0),
-                ];
+                // Check if expenses already exist for this building (idempotency)
+                let existing_expenses: (i64,) =
+                    sqlx::query_as("SELECT COUNT(*) FROM expenses WHERE building_id = $1")
+                        .bind(building_id)
+                        .fetch_one(&self.pool)
+                        .await
+                        .map_err(|e| format!("Failed to check existing expenses: {}", e))?;
 
-                for _ in 0..num_expenses {
-                    let (desc, min_amount, max_amount) =
-                        expense_types[rng.random_range(0..expense_types.len())];
-                    let amount = rng.random_range(min_amount..max_amount);
-                    let days_ago = rng.random_range(0..90);
-                    let expense_date = Utc::now() - chrono::Duration::days(days_ago);
-
-                    // Valid expense_category ENUM: maintenance, repairs, insurance, utilities, cleaning, administration, works, other
-                    let categories = [
-                        "maintenance",
-                        "repairs",
-                        "insurance",
-                        "utilities",
-                        "cleaning",
-                        "administration",
-                        "works",
+                // Only create random expenses if none exist yet
+                if existing_expenses.0 == 0 {
+                    // Create 2-3 expenses per building
+                    let num_expenses = rng.random_range(2..=3);
+                    let expense_types = [
+                        ("Entretien ascenseur", 450.0, 800.0),
+                        ("Nettoyage parties communes", 300.0, 600.0),
+                        ("Chauffage collectif", 1500.0, 3000.0),
+                        ("Assurance immeuble", 800.0, 1500.0),
+                        ("Travaux façade", 5000.0, 15000.0),
                     ];
-                    let category = categories[rng.random_range(0..categories.len())];
 
-                    // Valid payment_status ENUM: pending, paid, overdue, cancelled
-                    let payment_status = if rng.random_bool(0.7) {
-                        "paid"
-                    } else {
-                        "pending"
-                    };
+                    for _ in 0..num_expenses {
+                        let (desc, min_amount, max_amount) =
+                            expense_types[rng.random_range(0..expense_types.len())];
+                        let amount = rng.random_range(min_amount..max_amount);
+                        let days_ago = rng.random_range(0..90);
+                        let expense_date = Utc::now() - chrono::Duration::days(days_ago);
 
-                    sqlx::query(
-                        "INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
-                         VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9, $10)"
+                        // Valid expense_category ENUM: maintenance, repairs, insurance, utilities, cleaning, administration, works, other
+                        let categories = [
+                            "maintenance",
+                            "repairs",
+                            "insurance",
+                            "utilities",
+                            "cleaning",
+                            "administration",
+                            "works",
+                        ];
+                        let category = categories[rng.random_range(0..categories.len())];
+
+                        // Valid payment_status ENUM: pending, paid, overdue, cancelled
+                        let payment_status = if rng.random_bool(0.7) {
+                            "paid"
+                        } else {
+                            "pending"
+                        };
+
+                        // Set approval_status based on payment_status
+                        let approval_status = if payment_status == "paid" {
+                            "approved" // If already paid, it must be approved
+                        } else {
+                            "draft" // Otherwise, start as draft
+                        };
+
+                        // Set paid_date if already paid
+                        let paid_date = if payment_status == "paid" {
+                            Some(expense_date)
+                        } else {
+                            None
+                        };
+
+                        sqlx::query(
+                        "INSERT INTO expenses (id, organization_id, building_id, category, description, amount, expense_date, payment_status, approval_status, paid_date, created_at, updated_at)
+                         VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8::payment_status, $9::approval_status, $10, $11, $12)"
                     )
                     .bind(Uuid::new_v4())
                     .bind(org_id)
@@ -1442,14 +2035,17 @@ impl DatabaseSeeder {
                     .bind(amount)
                     .bind(expense_date)
                     .bind(payment_status)
+                    .bind(approval_status)
+                    .bind(paid_date)
                     .bind(now)
                     .bind(now)
                     .execute(&self.pool)
                     .await
                     .map_err(|e| format!("Failed to create expense: {}", e))?;
 
-                    total_expenses += 1;
-                }
+                        total_expenses += 1;
+                    }
+                } // End if existing_expenses.0 == 0
             }
 
             total_buildings += num_buildings;
@@ -1478,6 +2074,697 @@ impl DatabaseSeeder {
         ))
     }
 
+    /// Seed Belgian PCMN accounts for an organization
+    async fn seed_pcmn_accounts(&self, organization_id: Uuid) -> Result<(), String> {
+        // Call the existing account seeding endpoint logic
+        // We'll seed the essential accounts for demo purposes
+        let accounts = vec![
+            // Class 6: Charges (Expenses)
+            ("6100", "Charges courantes", "EXPENSE"),
+            ("6110", "Entretien et réparations", "EXPENSE"),
+            ("6120", "Personnel", "EXPENSE"),
+            ("6130", "Services extérieurs", "EXPENSE"),
+            ("6140", "Honoraires et commissions", "EXPENSE"),
+            ("6150", "Assurances", "EXPENSE"),
+            ("6200", "Travaux extraordinaires", "EXPENSE"),
+            // Class 7: Produits (Revenue)
+            ("7000", "Appels de fonds ordinaires", "REVENUE"),
+            ("7100", "Appels de fonds extraordinaires", "REVENUE"),
+            ("7200", "Autres produits", "REVENUE"),
+            // Class 4: Créances et dettes (Assets/Liabilities)
+            ("4000", "Copropriétaires débiteurs", "ASSET"),
+            ("4110", "TVA à récupérer", "ASSET"),
+            ("4400", "Fournisseurs", "LIABILITY"),
+            ("4500", "TVA à payer", "LIABILITY"),
+            // Class 5: Trésorerie (Assets)
+            ("5500", "Banque compte courant", "ASSET"),
+            ("5700", "Caisse", "ASSET"),
+        ];
+
+        let now = Utc::now();
+
+        for (code, label, account_type_str) in accounts {
+            sqlx::query(
+                r#"
+                INSERT INTO accounts (id, code, label, parent_code, account_type, direct_use, organization_id, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5::account_type, $6, $7, $8, $9)
+                ON CONFLICT (code, organization_id) DO NOTHING
+                "#
+            )
+            .bind(Uuid::new_v4())
+            .bind(code)
+            .bind(label)
+            .bind(None::<String>) // parent_code
+            .bind(account_type_str)
+            .bind(true) // direct_use
+            .bind(organization_id)
+            .bind(now)
+            .bind(now)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to seed account {}: {}", code, e))?;
+        }
+
+        Ok(())
+    }
+
+    /// Create a demo expense with VAT calculation
+    #[allow(clippy::too_many_arguments)]
+    async fn create_demo_expense_with_vat(
+        &self,
+        building_id: Uuid,
+        organization_id: Uuid,
+        description: &str,
+        amount_excl_vat: f64,
+        vat_rate: f64,
+        expense_date: &str,
+        due_date: &str,
+        category: &str,
+        payment_status: &str,
+        supplier: Option<&str>,
+        invoice_number: Option<&str>,
+        account_code: Option<&str>,
+    ) -> Result<Uuid, String> {
+        let expense_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        // Calculate VAT and total
+        let vat_amount = (amount_excl_vat * vat_rate / 100.0 * 100.0).round() / 100.0;
+        let amount = amount_excl_vat + vat_amount;
+
+        let expense_date_parsed =
+            chrono::DateTime::parse_from_rfc3339(&format!("{}T00:00:00Z", expense_date))
+                .map_err(|e| format!("Failed to parse expense_date: {}", e))?
+                .with_timezone(&Utc);
+
+        let due_date_parsed =
+            chrono::DateTime::parse_from_rfc3339(&format!("{}T00:00:00Z", due_date))
+                .map_err(|e| format!("Failed to parse due_date: {}", e))?
+                .with_timezone(&Utc);
+
+        // Set paid_date if payment_status is "paid"
+        let paid_date = if payment_status == "paid" {
+            Some(expense_date_parsed) // Use expense_date as paid_date
+        } else {
+            None
+        };
+
+        // Check if expense already exists (idempotency)
+        let existing: Option<(Uuid,)> =
+            sqlx::query_as("SELECT id FROM expenses WHERE description = $1 AND building_id = $2")
+                .bind(description)
+                .bind(building_id)
+                .fetch_optional(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to check existing expense: {}", e))?;
+
+        let expense_id = if let Some((existing_id,)) = existing {
+            // Update existing expense
+            sqlx::query(
+                r#"
+                UPDATE expenses SET
+                    category = $1::expense_category,
+                    amount = $2,
+                    amount_excl_vat = $3,
+                    vat_rate = $4,
+                    expense_date = $5,
+                    due_date = $6,
+                    payment_status = $7::payment_status,
+                    paid_date = $8,
+                    approval_status = $9::approval_status,
+                    supplier = $10,
+                    invoice_number = $11,
+                    account_code = $12,
+                    updated_at = $13
+                WHERE id = $14
+                "#,
+            )
+            .bind(category)
+            .bind(amount)
+            .bind(amount_excl_vat)
+            .bind(vat_rate)
+            .bind(expense_date_parsed)
+            .bind(due_date_parsed)
+            .bind(payment_status)
+            .bind(paid_date)
+            .bind("approved")
+            .bind(supplier)
+            .bind(invoice_number)
+            .bind(account_code)
+            .bind(now)
+            .bind(existing_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to update expense: {}", e))?;
+            existing_id
+        } else {
+            // Insert new expense
+            sqlx::query(
+                r#"
+                INSERT INTO expenses (
+                    id, organization_id, building_id, category, description,
+                    amount, amount_excl_vat, vat_rate, expense_date, due_date,
+                    payment_status, paid_date, approval_status, supplier, invoice_number,
+                    account_code, created_at, updated_at
+                )
+                VALUES ($1, $2, $3, $4::expense_category, $5, $6, $7, $8, $9, $10, $11::payment_status, $12, $13::approval_status, $14, $15, $16, $17, $18)
+                "#
+            )
+            .bind(expense_id)
+            .bind(organization_id)
+            .bind(building_id)
+            .bind(category)
+            .bind(description)
+            .bind(amount)
+            .bind(amount_excl_vat)
+            .bind(vat_rate)
+            .bind(expense_date_parsed)
+            .bind(due_date_parsed)
+            .bind(payment_status)
+            .bind(paid_date)
+            .bind("approved")
+            .bind(supplier)
+            .bind(invoice_number)
+            .bind(account_code)
+            .bind(now)
+            .bind(now)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to create expense with VAT: {}", e))?;
+            expense_id
+        };
+
+        // Generate journal entry for this expense (double-entry bookkeeping)
+        if let Some(acc_code) = account_code {
+            self.generate_journal_entry_for_expense(
+                expense_id,
+                organization_id,
+                building_id,
+                description,
+                amount_excl_vat,
+                vat_rate,
+                amount,
+                expense_date_parsed,
+                acc_code,
+                supplier,
+                invoice_number,
+            )
+            .await?;
+        }
+
+        Ok(expense_id)
+    }
+
+    /// Generate journal entry for an expense (double-entry bookkeeping)
+    ///
+    /// This creates the accounting entries following Belgian PCMN:
+    /// - Debit: Expense account (class 6)
+    /// - Debit: VAT recoverable (4110)
+    /// - Credit: Supplier account (4400)
+    #[allow(clippy::too_many_arguments)]
+    async fn generate_journal_entry_for_expense(
+        &self,
+        expense_id: Uuid,
+        organization_id: Uuid,
+        _building_id: Uuid,
+        description: &str,
+        amount_excl_vat: f64,
+        vat_rate: f64,
+        total_amount: f64,
+        expense_date: chrono::DateTime<Utc>,
+        account_code: &str,
+        supplier: Option<&str>,
+        invoice_number: Option<&str>,
+    ) -> Result<(), String> {
+        let journal_entry_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        // Calculate VAT amount
+        let vat_amount = total_amount - amount_excl_vat;
+
+        // Start a transaction - the deferred trigger will only check at COMMIT
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| format!("Failed to begin transaction: {}", e))?;
+
+        // Insert journal entry header
+        sqlx::query!(
+            r#"
+            INSERT INTO journal_entries (
+                id, organization_id, entry_date, description,
+                document_ref, expense_id, created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            "#,
+            journal_entry_id,
+            organization_id,
+            expense_date,
+            format!("{} - {}", description, supplier.unwrap_or("Fournisseur")),
+            invoice_number,
+            expense_id,
+            now,
+            now
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| format!("Failed to create journal entry: {}", e))?;
+
+        // Line 1: Debit expense account (class 6)
+        sqlx::query!(
+            r#"
+            INSERT INTO journal_entry_lines (
+                journal_entry_id, organization_id, account_code,
+                debit, credit, description
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            "#,
+            journal_entry_id,
+            organization_id,
+            account_code,
+            rust_decimal::Decimal::from_f64_retain(amount_excl_vat).unwrap_or_default(),
+            rust_decimal::Decimal::from_f64_retain(0.0).unwrap_or_default(),
+            format!("Dépense: {}", description)
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| format!("Failed to create expense debit line: {}", e))?;
+
+        // Line 2: Debit VAT recoverable (4110) if VAT > 0
+        if vat_amount > 0.01 {
+            sqlx::query!(
+                r#"
+                INSERT INTO journal_entry_lines (
+                    journal_entry_id, organization_id, account_code,
+                    debit, credit, description
+                )
+                VALUES ($1, $2, $3, $4, $5, $6)
+                "#,
+                journal_entry_id,
+                organization_id,
+                "4110", // VAT Recoverable account
+                rust_decimal::Decimal::from_f64_retain(vat_amount).unwrap_or_default(),
+                rust_decimal::Decimal::from_f64_retain(0.0).unwrap_or_default(),
+                format!("TVA récupérable {}%", vat_rate)
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| format!("Failed to create VAT debit line: {}", e))?;
+        }
+
+        // Line 3: Credit supplier account (4400)
+        sqlx::query!(
+            r#"
+            INSERT INTO journal_entry_lines (
+                journal_entry_id, organization_id, account_code,
+                debit, credit, description
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            "#,
+            journal_entry_id,
+            organization_id,
+            "4400", // Suppliers account
+            rust_decimal::Decimal::from_f64_retain(0.0).unwrap_or_default(),
+            rust_decimal::Decimal::from_f64_retain(total_amount).unwrap_or_default(),
+            supplier.map(|s| format!("Fournisseur: {}", s))
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| format!("Failed to create supplier credit line: {}", e))?;
+
+        // Commit transaction - trigger will validate balance here
+        tx.commit()
+            .await
+            .map_err(|e| format!("Failed to commit journal entry transaction: {}", e))?;
+
+        Ok(())
+    }
+
+    /// Create demo charge distributions for an expense
+    async fn create_demo_distributions(
+        &self,
+        expense_id: Uuid,
+        _organization_id: Uuid,
+    ) -> Result<(), String> {
+        // Get all units for the expense's building
+        let expense_row = sqlx::query!(
+            "SELECT building_id, amount FROM expenses WHERE id = $1",
+            expense_id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to fetch expense: {}", e))?;
+
+        let building_id = expense_row.building_id;
+        let total_amount = expense_row.amount;
+
+        // Get all units with their quotas (NOT unit_owners - one record per unit)
+        let units = sqlx::query!(
+            r#"
+            SELECT u.id as unit_id, u.quota
+            FROM units u
+            WHERE u.building_id = $1
+            "#,
+            building_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to fetch units: {}", e))?;
+
+        if units.is_empty() {
+            return Ok(()); // No units to distribute to
+        }
+
+        // Calculate total quotas for the building
+        let total_quota: f64 = units.iter().map(|u| u.quota).sum();
+
+        let now = Utc::now();
+
+        // Create ONE distribution per unit (not per owner)
+        // The primary owner will be responsible for collecting from co-owners
+        for unit in units {
+            // Get the primary contact owner for this unit
+            let primary_owner = sqlx::query!(
+                r#"
+                SELECT owner_id
+                FROM unit_owners
+                WHERE unit_id = $1 AND end_date IS NULL AND is_primary_contact = true
+                ORDER BY created_at ASC
+                LIMIT 1
+                "#,
+                unit.unit_id
+            )
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch primary owner: {}", e))?;
+
+            // Skip if no owner found for this unit
+            let owner_id = match primary_owner {
+                Some(owner) => owner.owner_id,
+                None => continue, // Skip this unit if no owner
+            };
+
+            let quota_percentage = if total_quota > 0.0 {
+                unit.quota / total_quota
+            } else {
+                0.0
+            };
+
+            let amount_due = if total_quota > 0.0 {
+                (quota_percentage * total_amount * 100.0).round() / 100.0
+            } else {
+                0.0
+            };
+
+            sqlx::query(
+                r#"
+                INSERT INTO charge_distributions (
+                    id, expense_id, unit_id, owner_id,
+                    quota_percentage, amount_due, created_at
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                "#,
+            )
+            .bind(Uuid::new_v4())
+            .bind(expense_id)
+            .bind(unit.unit_id)
+            .bind(owner_id)
+            .bind(quota_percentage)
+            .bind(amount_due)
+            .bind(now)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to create charge distribution: {}", e))?;
+        }
+
+        Ok(())
+    }
+
+    /// Create a demo owner contribution (revenue)
+    #[allow(clippy::too_many_arguments)]
+    async fn create_demo_owner_contribution(
+        &self,
+        organization_id: Uuid,
+        owner_id: Uuid,
+        unit_id: Option<Uuid>,
+        description: &str,
+        amount: f64,
+        contribution_type: &str,
+        contribution_date: &str,
+        payment_status: &str,
+        payment_date: Option<&str>,
+        account_code: Option<&str>,
+    ) -> Result<Uuid, String> {
+        let contribution_id = Uuid::new_v4();
+        let contribution_date = NaiveDate::parse_from_str(contribution_date, "%Y-%m-%d")
+            .map_err(|e| format!("Invalid contribution date: {}", e))?
+            .and_hms_opt(10, 0, 0)
+            .ok_or("Invalid contribution time")?
+            .and_local_timezone(Utc)
+            .unwrap();
+
+        let payment_date_tz = payment_date
+            .map(|date_str| {
+                NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+                    .map_err(|e| format!("Invalid payment date: {}", e))
+                    .and_then(|date| {
+                        date.and_hms_opt(10, 0, 0)
+                            .ok_or("Invalid payment time".to_string())
+                    })
+                    .map(|dt| dt.and_local_timezone(Utc).unwrap())
+            })
+            .transpose()?;
+
+        let payment_method = if payment_status == "paid" {
+            Some("bank_transfer")
+        } else {
+            None
+        };
+
+        let now = Utc::now();
+
+        sqlx::query(
+            r#"
+            INSERT INTO owner_contributions (
+                id, organization_id, owner_id, unit_id,
+                description, amount, account_code,
+                contribution_type, contribution_date, payment_date,
+                payment_method, payment_status,
+                created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+            "#,
+        )
+        .bind(contribution_id)
+        .bind(organization_id)
+        .bind(owner_id)
+        .bind(unit_id)
+        .bind(description)
+        .bind(amount)
+        .bind(account_code)
+        .bind(contribution_type)
+        .bind(contribution_date)
+        .bind(payment_date_tz)
+        .bind(payment_method)
+        .bind(payment_status)
+        .bind(now)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create owner contribution: {}", e))?;
+
+        // Generate journal entry for this contribution (double-entry bookkeeping)
+        if let Some(acc_code) = account_code {
+            self.generate_journal_entry_for_contribution(
+                contribution_id,
+                organization_id,
+                description,
+                amount,
+                contribution_date,
+                acc_code,
+            )
+            .await?;
+        }
+
+        Ok(contribution_id)
+    }
+
+    /// Generate journal entry for an owner contribution (double-entry bookkeeping)
+    ///
+    /// This creates the accounting entries following Belgian PCMN:
+    /// - Debit: Owner receivables (4000) - Money owed by owner
+    /// - Credit: Revenue account (class 7) - Income for ACP
+    async fn generate_journal_entry_for_contribution(
+        &self,
+        contribution_id: Uuid,
+        organization_id: Uuid,
+        description: &str,
+        amount: f64,
+        contribution_date: chrono::DateTime<Utc>,
+        account_code: &str,
+    ) -> Result<(), String> {
+        let journal_entry_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        // Start a transaction with deferred constraints
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| format!("Failed to begin transaction: {}", e))?;
+
+        // Set constraints to deferred for this transaction
+        sqlx::query("SET CONSTRAINTS ALL DEFERRED")
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| format!("Failed to defer constraints: {}", e))?;
+
+        // Create journal entry header
+        sqlx::query(
+            r#"
+            INSERT INTO journal_entries (
+                id, organization_id, entry_date, description,
+                contribution_id, created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+        )
+        .bind(journal_entry_id)
+        .bind(organization_id)
+        .bind(contribution_date)
+        .bind(description)
+        .bind(contribution_id)
+        .bind(now)
+        .bind(now)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| format!("Failed to create journal entry: {}", e))?;
+
+        // Line 1: DEBIT - Owner receivables (4000 = Copropriétaires débiteurs)
+        sqlx::query(
+            r#"
+            INSERT INTO journal_entry_lines (
+                id, journal_entry_id, organization_id, account_code,
+                description, debit, credit, created_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(journal_entry_id)
+        .bind(organization_id)
+        .bind("4000") // Owner receivables
+        .bind(format!("Créance - {}", description))
+        .bind(amount) // Debit
+        .bind(0.0) // Credit
+        .bind(now)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| format!("Failed to create debit line (4000): {}", e))?;
+
+        // Line 2: CREDIT - Revenue account (class 7)
+        sqlx::query(
+            r#"
+            INSERT INTO journal_entry_lines (
+                id, journal_entry_id, organization_id, account_code,
+                description, debit, credit, created_at
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            "#,
+        )
+        .bind(Uuid::new_v4())
+        .bind(journal_entry_id)
+        .bind(organization_id)
+        .bind(account_code) // Revenue account (e.g., 7000)
+        .bind(format!("Produit - {}", description))
+        .bind(0.0) // Debit
+        .bind(amount) // Credit
+        .bind(now)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| format!("Failed to create credit line ({}): {}", account_code, e))?;
+
+        // Commit transaction (constraints will be checked here)
+        tx.commit()
+            .await
+            .map_err(|e| format!("Failed to commit transaction: {}", e))?;
+
+        Ok(())
+    }
+
+    /// Create a demo payment reminder
+    #[allow(clippy::too_many_arguments)]
+    async fn create_demo_payment_reminder(
+        &self,
+        expense_id: Uuid,
+        owner_id: Uuid,
+        organization_id: Uuid,
+        reminder_level: &str,
+        days_overdue: i64,
+    ) -> Result<Uuid, String> {
+        let reminder_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        // Get expense amount and due date
+        let expense = sqlx::query!(
+            "SELECT amount, due_date FROM expenses WHERE id = $1",
+            expense_id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to fetch expense: {}", e))?;
+
+        let amount_owed = expense.amount;
+        let due_date = expense
+            .due_date
+            .expect("Due date required for payment reminder");
+
+        // Calculate penalty (8% annual rate)
+        let penalty_amount = if days_overdue > 0 {
+            let yearly_penalty = amount_owed * 0.08;
+            let daily_penalty = yearly_penalty / 365.0;
+            ((daily_penalty * days_overdue as f64) * 100.0).round() / 100.0
+        } else {
+            0.0
+        };
+
+        let total_amount = amount_owed + penalty_amount;
+        let sent_date = now - chrono::Duration::days(5); // Sent 5 days ago
+
+        sqlx::query(
+            r#"
+            INSERT INTO payment_reminders (
+                id, organization_id, expense_id, owner_id,
+                level, status, amount_owed, penalty_amount, total_amount,
+                due_date, days_overdue, delivery_method, sent_date,
+                created_at, updated_at
+            )
+            VALUES ($1, $2, $3, $4, $5::reminder_level, $6::reminder_status, $7, $8, $9, $10, $11, $12::delivery_method, $13, $14, $15)
+            "#
+        )
+        .bind(reminder_id)
+        .bind(organization_id)
+        .bind(expense_id)
+        .bind(owner_id)
+        .bind(reminder_level) // FirstReminder, SecondReminder, etc.
+        .bind("Sent") // status
+        .bind(amount_owed)
+        .bind(penalty_amount)
+        .bind(total_amount)
+        .bind(due_date)
+        .bind(days_overdue as i32)
+        .bind("Email") // delivery_method
+        .bind(sent_date)
+        .bind(now)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create payment reminder: {}", e))?;
+
+        Ok(reminder_id)
+    }
+
     /// Clear all data (DANGEROUS - use with caution!)
     pub async fn clear_demo_data(&self) -> Result<String, String> {
         log::warn!("⚠️  Clearing seed data only (preserving production data)...");
@@ -1496,7 +2783,61 @@ impl DatabaseSeeder {
         log::info!("Found {} seed organizations to clean", seed_org_ids.len());
 
         // Delete in correct order due to foreign key constraints
-        // Documents linked to buildings
+        // 1. Board decisions (reference board_members and meetings)
+        sqlx::query!(
+            "DELETE FROM board_decisions WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete board_decisions: {}", e))?;
+
+        // 2. Board members (reference meetings)
+        sqlx::query!(
+            "DELETE FROM board_members WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete board_members: {}", e))?;
+
+        // 3. Payment reminders (reference expenses and owners)
+        sqlx::query!(
+            "DELETE FROM payment_reminders WHERE organization_id = ANY($1)",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete payment_reminders: {}", e))?;
+
+        // 3b. Owner contributions (revenue)
+        sqlx::query!(
+            "DELETE FROM owner_contributions WHERE organization_id = ANY($1)",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete owner_contributions: {}", e))?;
+
+        // 4. Charge distributions (reference expenses)
+        sqlx::query(
+            "DELETE FROM charge_distributions WHERE expense_id IN (SELECT id FROM expenses WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1)))"
+        )
+        .bind(&seed_org_ids)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete charge_distributions: {}", e))?;
+
+        // 5. Invoice line items (reference expenses)
+        sqlx::query(
+            "DELETE FROM invoice_line_items WHERE expense_id IN (SELECT id FROM expenses WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1)))"
+        )
+        .bind(&seed_org_ids)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete invoice_line_items: {}", e))?;
+
+        // 6. Documents linked to buildings or expenses
         sqlx::query!(
             "DELETE FROM documents WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
             &seed_org_ids
@@ -1505,7 +2846,7 @@ impl DatabaseSeeder {
         .await
         .map_err(|e| format!("Failed to delete documents: {}", e))?;
 
-        // Meetings
+        // 7. Meetings (now safe to delete after board members)
         sqlx::query!(
             "DELETE FROM meetings WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
             &seed_org_ids
@@ -1514,7 +2855,25 @@ impl DatabaseSeeder {
         .await
         .map_err(|e| format!("Failed to delete meetings: {}", e))?;
 
-        // Expenses
+        // 8. Journal entry lines (reference accounts) - MUST be deleted before accounts
+        sqlx::query!(
+            "DELETE FROM journal_entry_lines WHERE organization_id = ANY($1)",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete journal_entry_lines: {}", e))?;
+
+        // 9. Journal entries (now safe after lines are deleted)
+        sqlx::query!(
+            "DELETE FROM journal_entries WHERE organization_id = ANY($1)",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete journal_entries: {}", e))?;
+
+        // 10. Expenses (now safe to delete after distributions, line items, and journal entries)
         sqlx::query!(
             "DELETE FROM expenses WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = ANY($1))",
             &seed_org_ids
@@ -1558,6 +2917,24 @@ impl DatabaseSeeder {
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to delete buildings: {}", e))?;
+
+        // PCMN Accounts
+        sqlx::query!(
+            "DELETE FROM accounts WHERE organization_id = ANY($1)",
+            &seed_org_ids
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete accounts: {}", e))?;
+
+        // User roles (before deleting users)
+        sqlx::query(
+            "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE organization_id = ANY($1) AND role != 'superadmin')"
+        )
+        .bind(&seed_org_ids)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete user_roles: {}", e))?;
 
         // Users (except superadmin)
         sqlx::query!(

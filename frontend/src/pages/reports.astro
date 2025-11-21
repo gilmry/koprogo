@@ -1,142 +1,37 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import FinancialReports from '../components/FinancialReports.svelte';
 ---
 
-<Layout title="Rapports - KoproGo">
+<Layout title="Rapports Comptables - KoproGo">
   <div class="container mx-auto px-4 py-8">
     <div class="max-w-7xl mx-auto">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">Rapports Comptables</h1>
-
-      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm text-yellow-700">
-              Cette page est en cours de développement. La génération de rapports comptables sera bientôt disponible.
-            </p>
-          </div>
-        </div>
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Rapports Comptables PCMN</h1>
+        <p class="text-gray-600">
+          Rapports conformes au Plan Comptable Minimum Normalisé belge (AR 12/07/2012)
+        </p>
       </div>
 
-      <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Types de Rapports</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="border-2 border-blue-200 bg-blue-50 rounded-lg p-4">
-            <div class="text-3xl mb-2">📊</div>
-            <h3 class="font-semibold text-gray-900 mb-2">Rapports Mensuels</h3>
-            <ul class="text-sm text-gray-600 space-y-1">
-              <li>• Synthèse mensuelle</li>
-              <li>• Charges du mois</li>
-              <li>• Paiements reçus</li>
-              <li>• Impayés</li>
-            </ul>
-          </div>
-          <div class="border-2 border-green-200 bg-green-50 rounded-lg p-4">
-            <div class="text-3xl mb-2">📈</div>
-            <h3 class="font-semibold text-gray-900 mb-2">Rapports Trimestriels</h3>
-            <ul class="text-sm text-gray-600 space-y-1">
-              <li>• Bilan trimestriel</li>
-              <li>• Évolution charges</li>
-              <li>• Trésorerie</li>
-              <li>• Prévisions</li>
-            </ul>
-          </div>
-          <div class="border-2 border-purple-200 bg-purple-50 rounded-lg p-4">
-            <div class="text-3xl mb-2">📋</div>
-            <h3 class="font-semibold text-gray-900 mb-2">Rapports Annuels</h3>
-            <ul class="text-sm text-gray-600 space-y-1">
-              <li>• Comptes annuels</li>
-              <li>• Bilan comptable</li>
-              <li>• Rapport de gestion</li>
-              <li>• Déclarations fiscales</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      <!-- Financial Reports Component -->
+      <FinancialReports client:load />
 
-      <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Rapports Personnalisés</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="border-2 border-gray-200 rounded-lg p-4">
-            <h3 class="font-semibold text-gray-900 mb-2">🎯 Par Période</h3>
-            <p class="text-sm text-gray-600">Sélectionnez une période personnalisée pour générer des rapports sur mesure</p>
-          </div>
-          <div class="border-2 border-gray-200 rounded-lg p-4">
-            <h3 class="font-semibold text-gray-900 mb-2">🏢 Par Immeuble</h3>
-            <p class="text-sm text-gray-600">Rapports détaillés par immeuble avec ventilation des charges</p>
-          </div>
-          <div class="border-2 border-gray-200 rounded-lg p-4">
-            <h3 class="font-semibold text-gray-900 mb-2">👤 Par Copropriétaire</h3>
-            <p class="text-sm text-gray-600">Situation comptable individuelle de chaque copropriétaire</p>
-          </div>
-          <div class="border-2 border-gray-200 rounded-lg p-4">
-            <h3 class="font-semibold text-gray-900 mb-2">💰 Par Type de Charge</h3>
-            <p class="text-sm text-gray-600">Analyse détaillée par catégorie de charges</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Fonctionnalités à venir</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ul class="space-y-2 text-gray-600">
-            <li class="flex items-center">
-              <span class="mr-2">📊</span>
-              <span>Génération de rapports personnalisés</span>
-            </li>
-            <li class="flex items-center">
-              <span class="mr-2">📈</span>
-              <span>Graphiques et visualisations</span>
-            </li>
-            <li class="flex items-center">
-              <span class="mr-2">📅</span>
-              <span>Rapports automatiques planifiés</span>
-            </li>
-            <li class="flex items-center">
-              <span class="mr-2">📧</span>
-              <span>Envoi automatique par email</span>
-            </li>
-            <li class="flex items-center">
-              <span class="mr-2">🔍</span>
-              <span>Analyse comparative</span>
-            </li>
-          </ul>
-          <ul class="space-y-2 text-gray-600">
-            <li class="flex items-center">
-              <span class="mr-2">📄</span>
-              <span>Export PDF personnalisé</span>
-            </li>
-            <li class="flex items-center">
-              <span class="mr-2">📊</span>
-              <span>Export Excel avec formules</span>
-            </li>
-            <li class="flex items-center">
-              <span class="mr-2">🎨</span>
-              <span>Modèles de rapport personnalisables</span>
-            </li>
-            <li class="flex items-center">
-              <span class="mr-2">📌</span>
-              <span>Favoris et rapports récurrents</span>
-            </li>
-            <li class="flex items-center">
-              <span class="mr-2">🔐</span>
-              <span>Contrôle d'accès aux rapports</span>
-            </li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="mt-6">
-        <a href="/accountant" class="inline-flex items-center text-primary-600 hover:text-primary-700">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-          </svg>
-          Retour au dashboard
-        </a>
+      <!-- Documentation Section -->
+      <div class="mt-8 bg-blue-50 border-l-4 border-blue-400 p-6 rounded-r-lg">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">📚 À propos du PCMN Belge</h3>
+        <p class="text-gray-700 mb-3">
+          Les rapports générés sont conformes au <strong>Plan Comptable Minimum Normalisé</strong> belge
+          (Arrêté Royal du 12/07/2012). Le PCMN organise les comptes en classes:
+        </p>
+        <ul class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+          <li>• <strong>Classe 1</strong>: Capital, Réserves (Passif)</li>
+          <li>• <strong>Classes 2-5</strong>: Immobilisations, Créances, Trésorerie (Actif)</li>
+          <li>• <strong>Classe 6</strong>: Charges d'exploitation</li>
+          <li>• <strong>Classe 7</strong>: Produits d'exploitation</li>
+        </ul>
+        <p class="text-sm text-gray-600 mt-3">
+          <em>Implémentation inspirée du projet Noalyss (GPL-2.0)</em>
+        </p>
       </div>
     </div>
   </div>

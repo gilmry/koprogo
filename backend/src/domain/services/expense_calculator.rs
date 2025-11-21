@@ -113,6 +113,7 @@ mod tests {
     fn test_calculate_paid_and_unpaid() {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
 
         let mut expense1 = Expense::new(
             org_id,
@@ -126,6 +127,9 @@ mod tests {
             None, // account_code
         )
         .unwrap();
+        // Follow approval workflow before payment
+        expense1.submit_for_approval().unwrap();
+        expense1.approve(syndic_id).unwrap();
         let _ = expense1.mark_as_paid();
 
         let expense2 = Expense::new(

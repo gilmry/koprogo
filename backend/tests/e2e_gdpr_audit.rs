@@ -6,9 +6,9 @@ use koprogo_api::infrastructure::database::{
     create_pool, PostgresAccountRepository, PostgresAuditLogRepository,
     PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBuildingRepository,
     PostgresChargeDistributionRepository, PostgresDocumentRepository, PostgresExpenseRepository,
-    PostgresGdprRepository, PostgresOwnerRepository, PostgresPaymentReminderRepository,
-    PostgresRefreshTokenRepository, PostgresUnitOwnerRepository, PostgresUnitRepository,
-    PostgresUserRepository, PostgresUserRoleRepository,
+    PostgresGdprRepository, PostgresJournalEntryRepository, PostgresOwnerRepository,
+    PostgresPaymentReminderRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
+    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
 };
 use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
@@ -74,8 +74,9 @@ async fn setup_test_db() -> (
 
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
     let account_use_cases = AccountUseCases::new(account_repo.clone());
+    let journal_entry_repo = Arc::new(PostgresJournalEntryRepository::new(pool.clone()));
     let financial_report_use_cases =
-        FinancialReportUseCases::new(account_repo, expense_repo.clone());
+        FinancialReportUseCases::new(account_repo, expense_repo.clone(), journal_entry_repo);
 
     let auth_use_cases =
         AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
@@ -96,9 +97,12 @@ async fn setup_test_db() -> (
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-    let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo);
-    let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
+    let payment_reminder_use_cases = PaymentReminderUseCases::new(
+        payment_reminder_repo,
+        expense_repo.clone(),
+        owner_repo.clone(),
+    );
+    let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
 
     // Create an organization for FK references
     let org_id = Uuid::new_v4();

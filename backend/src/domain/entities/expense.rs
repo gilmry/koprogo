@@ -17,6 +17,7 @@ pub enum ExpenseCategory {
 
 /// Statut de paiement
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub enum PaymentStatus {
     Pending,
     Paid,
@@ -26,6 +27,7 @@ pub enum PaymentStatus {
 
 /// Statut d'approbation pour le workflow de validation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub enum ApprovalStatus {
     Draft,           // Brouillon - en cours d'édition
     PendingApproval, // Soumis pour validation
@@ -300,6 +302,14 @@ impl Expense {
     }
 
     pub fn mark_as_paid(&mut self) -> Result<(), String> {
+        // Validation critique : une facture ne peut être payée que si elle est approuvée
+        if self.approval_status != ApprovalStatus::Approved {
+            return Err(format!(
+                "Cannot mark expense as paid: invoice must be approved first (current status: {:?})",
+                self.approval_status
+            ));
+        }
+
         match self.payment_status {
             PaymentStatus::Pending | PaymentStatus::Overdue => {
                 self.payment_status = PaymentStatus::Paid;
@@ -483,6 +493,7 @@ mod tests {
     fn test_mark_expense_as_paid() {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
         let mut expense = Expense::new(
             org_id,
             building_id,
@@ -495,6 +506,10 @@ mod tests {
             None,
         )
         .unwrap();
+
+        // Follow approval workflow before payment
+        expense.submit_for_approval().unwrap();
+        expense.approve(syndic_id).unwrap();
 
         assert!(!expense.is_paid());
         let result = expense.mark_as_paid();
@@ -506,6 +521,7 @@ mod tests {
     fn test_mark_paid_expense_as_paid_fails() {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
         let mut expense = Expense::new(
             org_id,
             building_id,
@@ -518,6 +534,10 @@ mod tests {
             None,
         )
         .unwrap();
+
+        // Follow approval workflow before payment
+        expense.submit_for_approval().unwrap();
+        expense.approve(syndic_id).unwrap();
 
         expense.mark_as_paid().unwrap();
         let result = expense.mark_as_paid();
@@ -1019,6 +1039,7 @@ mod tests {
     fn test_mark_as_paid_sets_paid_date() {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
 
         let mut expense = Expense::new(
             org_id,
@@ -1032,6 +1053,10 @@ mod tests {
             None, // account_code
         )
         .unwrap();
+
+        // Follow approval workflow: Draft → Submit → Approve → Pay
+        expense.submit_for_approval().unwrap();
+        expense.approve(syndic_id).unwrap();
 
         assert!(expense.paid_date.is_none());
         expense.mark_as_paid().unwrap();

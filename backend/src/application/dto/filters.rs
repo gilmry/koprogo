@@ -50,6 +50,36 @@ pub struct OwnerFilters {
     pub first_name: Option<String>,
 }
 
+/// Filters for work report list queries
+#[derive(Debug, Deserialize, Default, Clone)]
+pub struct WorkReportFilters {
+    pub organization_id: Option<Uuid>,
+    pub building_id: Option<Uuid>,
+    pub work_type: Option<String>,
+    pub warranty_type: Option<String>,
+    pub contractor_name: Option<String>,
+    pub work_date_from: Option<DateTime<Utc>>,
+    pub work_date_to: Option<DateTime<Utc>>,
+    pub min_cost: Option<f64>,
+    pub max_cost: Option<f64>,
+    pub warranty_active: Option<bool>,
+}
+
+/// Filters for technical inspection list queries
+#[derive(Debug, Deserialize, Default, Clone)]
+pub struct TechnicalInspectionFilters {
+    pub organization_id: Option<Uuid>,
+    pub building_id: Option<Uuid>,
+    pub inspection_type: Option<String>,
+    pub status: Option<String>,
+    pub inspector_name: Option<String>,
+    pub inspector_company: Option<String>,
+    pub inspection_date_from: Option<DateTime<Utc>>,
+    pub inspection_date_to: Option<DateTime<Utc>>,
+    pub overdue: Option<bool>,
+    pub compliant: Option<bool>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

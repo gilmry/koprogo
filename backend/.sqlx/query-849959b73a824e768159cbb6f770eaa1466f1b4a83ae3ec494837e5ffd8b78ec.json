@@ -1,0 +1,195 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE payments\n            SET organization_id = $2,\n                building_id = $3,\n                owner_id = $4,\n                expense_id = $5,\n                amount_cents = $6,\n                currency = $7,\n                status = $8::TEXT::transaction_status,\n                payment_method_type = $9::TEXT::payment_method_type,\n                stripe_payment_intent_id = $10,\n                stripe_customer_id = $11,\n                payment_method_id = $12,\n                idempotency_key = $13,\n                description = $14,\n                metadata = $15,\n                failure_reason = $16,\n                refunded_amount_cents = $17,\n                succeeded_at = $18,\n                failed_at = $19,\n                cancelled_at = $20,\n                updated_at = $21\n            WHERE id = $1\n            RETURNING id, organization_id, building_id, owner_id, expense_id,\n                      amount_cents, currency, status AS \"status: String\",\n                      payment_method_type AS \"payment_method_type: String\",\n                      stripe_payment_intent_id, stripe_customer_id, payment_method_id,\n                      idempotency_key, description, metadata, failure_reason,\n                      refunded_amount_cents, succeeded_at, failed_at, cancelled_at,\n                      created_at, updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "owner_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "expense_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "amount_cents",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "currency",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 7,
+        "name": "status: String",
+        "type_info": {
+          "Custom": {
+            "name": "transaction_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "processing",
+                "requires_action",
+                "succeeded",
+                "failed",
+                "cancelled",
+                "refunded"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "payment_method_type: String",
+        "type_info": {
+          "Custom": {
+            "name": "payment_method_type",
+            "kind": {
+              "Enum": [
+                "card",
+                "sepa_debit",
+                "bank_transfer",
+                "cash"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 9,
+        "name": "stripe_payment_intent_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "stripe_customer_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "payment_method_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 12,
+        "name": "idempotency_key",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 13,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 14,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 15,
+        "name": "failure_reason",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 16,
+        "name": "refunded_amount_cents",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 17,
+        "name": "succeeded_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "failed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 19,
+        "name": "cancelled_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 20,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 21,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int8",
+        "Varchar",
+        "Text",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Uuid",
+        "Varchar",
+        "Text",
+        "Jsonb",
+        "Text",
+        "Int8",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "849959b73a824e768159cbb6f770eaa1466f1b4a83ae3ec494837e5ffd8b78ec"
+}

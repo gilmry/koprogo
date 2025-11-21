@@ -3,6 +3,7 @@ use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
 use env_logger::Env;
+use koprogo_api::application::services::ExpenseAccountingService;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
@@ -11,8 +12,10 @@ use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
 use koprogo_api::infrastructure::web::{
-    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig,
+    configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, LoginRateLimiter,
+    SecurityHeaders,
 };
+use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
 use std::sync::Arc;
 
@@ -22,8 +25,45 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let jwt_secret = env::var("JWT_SECRET")
-        .unwrap_or_else(|_| "super-secret-key-change-in-production".to_string());
+    // JWT Secret with production validation
+    let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| {
+        log::warn!("JWT_SECRET not set, using default (INSECURE - only for development!)");
+        "super-secret-key-change-in-production".to_string()
+    });
+
+    // Validate JWT secret strength in production
+    validate_jwt_secret(&jwt_secret)?;
+
+    // TOTP encryption key (32 bytes = 64 hex chars)
+    let totp_encryption_key = env::var("TOTP_ENCRYPTION_KEY").unwrap_or_else(|_| {
+        log::warn!("TOTP_ENCRYPTION_KEY not set, using default (INSECURE - only for development!)");
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef".to_string()
+    });
+
+    // Parse encryption key from hex string to [u8; 32]
+    let encryption_key_bytes = hex::decode(&totp_encryption_key).map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "Invalid TOTP_ENCRYPTION_KEY (must be 64 hex characters): {}",
+                e
+            ),
+        )
+    })?;
+
+    if encryption_key_bytes.len() != 32 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!(
+                "TOTP_ENCRYPTION_KEY must be exactly 32 bytes (64 hex chars), got {} bytes",
+                encryption_key_bytes.len()
+            ),
+        ));
+    }
+
+    let mut encryption_key = [0u8; 32];
+    encryption_key.copy_from_slice(&encryption_key_bytes);
+
     let server_host = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
     let server_port = env::var("SERVER_PORT")
         .unwrap_or_else(|_| "8080".to_string())
@@ -44,10 +84,16 @@ async fn main() -> std::io::Result<()> {
 
     // Parse allowed CORS origins from environment
     let allowed_origins: Vec<String> = env::var("CORS_ALLOWED_ORIGINS")
-        .unwrap_or_else(|_| "http://localhost:3000".to_string())
+        .unwrap_or_else(|_| {
+            log::warn!("CORS_ALLOWED_ORIGINS not set, defaulting to localhost (dev only!)");
+            "http://localhost:3000".to_string()
+        })
         .split(',')
         .map(|s| s.trim().to_string())
         .collect();
+
+    // Validate CORS origins (no wildcards in production)
+    validate_cors_origins(&allowed_origins)?;
 
     log::info!("CORS allowed origins: {:?}", allowed_origins);
     log::info!("Rate limiting enabled: {}", enable_rate_limiting);
@@ -70,6 +116,13 @@ async fn main() -> std::io::Result<()> {
         Err(e) => log::error!("Failed to seed superadmin: {}", e),
     }
 
+    // Seed Belgian PCMN for all organizations (idempotent)
+    log::info!("Seeding Belgian PCMN chart of accounts...");
+    match seeder.seed_belgian_pcmn_for_all_organizations().await {
+        Ok(message) => log::info!("{}", message),
+        Err(e) => log::warn!("PCMN seed skipped or failed: {}", e),
+    }
+
     // Initialize storage provider (local filesystem by default)
     let file_storage = initialize_storage_provider()
         .await
@@ -86,6 +139,8 @@ async fn main() -> std::io::Result<()> {
     let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
     let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
+    let etat_date_repo = Arc::new(PostgresEtatDateRepository::new(pool.clone()));
+    let budget_repo = Arc::new(PostgresBudgetRepository::new(pool.clone()));
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
@@ -94,13 +149,62 @@ async fn main() -> std::io::Result<()> {
         Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
     let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
+    let journal_entry_repo = Arc::new(PostgresJournalEntryRepository::new(pool.clone()));
+    let owner_contribution_repo = Arc::new(PostgresOwnerContributionRepository::new(pool.clone()));
+    let call_for_funds_repo = Arc::new(PostgresCallForFundsRepository::new(pool.clone()));
+    let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
+    let vote_repo = Arc::new(PostgresVoteRepository::new(pool.clone()));
+    let ticket_repo = Arc::new(PostgresTicketRepository::new(pool.clone()));
+    let notification_repo = Arc::new(PostgresNotificationRepository::new(pool.clone()));
+    let notification_preference_repo =
+        Arc::new(PostgresNotificationPreferenceRepository::new(pool.clone()));
+    let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
+    let payment_method_repo = Arc::new(PostgresPaymentMethodRepository::new(pool.clone()));
+    let quote_repo = Arc::new(PostgresQuoteRepository::new(pool.clone()));
+    let poll_repo = Arc::new(PostgresPollRepository::new(pool.clone()));
+    let poll_vote_repo = Arc::new(PostgresPollVoteRepository::new(pool.clone()));
+    let local_exchange_repo = Arc::new(PostgresLocalExchangeRepository::new(pool.clone()));
+    let owner_credit_balance_repo =
+        Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
+    let notice_repo = Arc::new(PostgresNoticeRepository::new(pool.clone()));
+    let resource_booking_repo = Arc::new(PostgresResourceBookingRepository::new(pool.clone()));
+    let shared_object_repo = Arc::new(PostgresSharedObjectRepository::new(pool.clone()));
+    let skill_repo = Arc::new(PostgresSkillRepository::new(pool.clone()));
+    let technical_inspection_repo =
+        Arc::new(PostgresTechnicalInspectionRepository::new(pool.clone()));
+    let work_report_repo = Arc::new(PostgresWorkReportRepository::new(pool.clone()));
+    let iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
+
+    // Linky API Client configuration
+    let linky_api_base_url = env::var("LINKY_API_BASE_URL")
+        .unwrap_or_else(|_| "https://ext.hml.myelectricaldata.fr".to_string());
+    let linky_client_id = env::var("LINKY_CLIENT_ID").expect("LINKY_CLIENT_ID must be set");
+    let linky_client_secret =
+        env::var("LINKY_CLIENT_SECRET").expect("LINKY_CLIENT_SECRET must be set");
+    let linky_client = Arc::new(LinkyApiClientImpl::new(
+        linky_api_base_url,
+        linky_client_id,
+        linky_client_secret,
+    ));
+    let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
+    let convocation_recipient_repo =
+        Arc::new(PostgresConvocationRecipientRepository::new(pool.clone()));
+    let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
+    let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
+    let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
+    let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
+    let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
 
     // Initialize use cases
-    let auth_use_cases =
-        AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
+    let auth_use_cases = AuthUseCases::new(
+        user_repo.clone(),
+        refresh_token_repo,
+        user_role_repo,
+        jwt_secret,
+    );
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -109,18 +213,65 @@ async fn main() -> std::io::Result<()> {
         unit_repo.clone(),
         owner_repo.clone(),
     );
-    let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
+    // Create expense accounting service (for automatic journal entry generation)
+    let expense_accounting_service =
+        Arc::new(ExpenseAccountingService::new(journal_entry_repo.clone()));
+
+    let expense_use_cases = ExpenseUseCases::with_accounting_service(
+        expense_repo.clone(),
+        expense_accounting_service.clone(),
+    );
     let charge_distribution_use_cases = ChargeDistributionUseCases::new(
         charge_distribution_repo,
         expense_repo.clone(),
-        unit_owner_repo,
+        unit_owner_repo.clone(),
     );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
+    let convocation_use_cases = ConvocationUseCases::new(
+        convocation_repo,
+        convocation_recipient_repo,
+        owner_repo.clone(),
+    );
+    let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo);
+    let ticket_use_cases = TicketUseCases::new(ticket_repo);
+    let two_factor_use_cases =
+        TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
+    let iot_use_cases = IoTUseCases::new(iot_repo.clone());
+    let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client);
+    let notification_use_cases =
+        NotificationUseCases::new(notification_repo, notification_preference_repo);
+    let payment_use_cases = PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
+    let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
+    let quote_use_cases = QuoteUseCases::new(quote_repo);
+    let local_exchange_use_cases = LocalExchangeUseCases::new(
+        local_exchange_repo,
+        owner_credit_balance_repo,
+        owner_repo.clone(),
+    );
+    let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
+    let resource_booking_use_cases =
+        ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
+    let shared_object_use_cases = SharedObjectUseCases::new(shared_object_repo, owner_repo.clone());
+    let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
+    let technical_inspection_use_cases =
+        TechnicalInspectionUseCases::new(technical_inspection_repo);
+    let work_report_use_cases = WorkReportUseCases::new(work_report_repo);
     let document_use_cases = DocumentUseCases::new(document_repo, file_storage.clone());
+    let etat_date_use_cases = EtatDateUseCases::new(
+        etat_date_repo,
+        unit_repo.clone(),
+        building_repo.clone(),
+        unit_owner_repo.clone(),
+    );
+    let budget_use_cases =
+        BudgetUseCases::new(budget_repo, building_repo.clone(), expense_repo.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-    let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo.clone());
-    let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
+    let payment_reminder_use_cases = PaymentReminderUseCases::new(
+        payment_reminder_repo,
+        expense_repo.clone(),
+        owner_repo.clone(),
+    );
+    let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
     let board_member_use_cases =
         BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
     let board_decision_use_cases = BoardDecisionUseCases::new(
@@ -134,8 +285,41 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
     );
     let account_use_cases = AccountUseCases::new(account_repo.clone());
-    let financial_report_use_cases =
-        FinancialReportUseCases::new(account_repo.clone(), expense_repo.clone());
+    let financial_report_use_cases = FinancialReportUseCases::new(
+        account_repo.clone(),
+        expense_repo.clone(),
+        journal_entry_repo.clone(),
+    );
+    let dashboard_use_cases =
+        DashboardUseCases::new(expense_repo.clone(), owner_contribution_repo.clone());
+    let owner_contribution_use_cases =
+        OwnerContributionUseCases::new(owner_contribution_repo.clone());
+    let call_for_funds_use_cases = CallForFundsUseCases::new(
+        call_for_funds_repo,
+        owner_contribution_repo,
+        unit_owner_repo.clone(),
+    );
+    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
+    let poll_use_cases = PollUseCases::new(
+        poll_repo.clone(),
+        poll_vote_repo.clone(),
+        owner_repo.clone(),
+        unit_owner_repo.clone(),
+    );
+    let achievement_use_cases = AchievementUseCases::new(
+        achievement_repo.clone(),
+        user_achievement_repo.clone(),
+        user_repo.clone(),
+    );
+    let challenge_use_cases =
+        ChallengeUseCases::new(challenge_repo.clone(), challenge_progress_repo.clone());
+    let gamification_stats_use_cases = GamificationStatsUseCases::new(
+        achievement_repo,
+        user_achievement_repo,
+        challenge_repo,
+        challenge_progress_repo,
+        user_repo.clone(),
+    );
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");
@@ -144,20 +328,47 @@ async fn main() -> std::io::Result<()> {
         account_use_cases,
         auth_use_cases,
         building_use_cases,
+        budget_use_cases,
         unit_use_cases,
         owner_use_cases,
         unit_owner_use_cases,
         expense_use_cases,
         charge_distribution_use_cases,
         meeting_use_cases,
+        convocation_use_cases,
+        resolution_use_cases,
+        ticket_use_cases,
+        two_factor_use_cases,
+        notification_use_cases,
+        payment_use_cases,
+        payment_method_use_cases,
+        poll_use_cases,
+        quote_use_cases,
+        local_exchange_use_cases,
+        notice_use_cases,
+        resource_booking_use_cases,
+        shared_object_use_cases,
+        skill_use_cases,
+        technical_inspection_use_cases,
+        work_report_use_cases,
         document_use_cases,
+        etat_date_use_cases,
         pcn_use_cases,
         payment_reminder_use_cases,
         gdpr_use_cases,
+        iot_use_cases,
+        linky_use_cases,
         board_member_use_cases,
         board_decision_use_cases,
         board_dashboard_use_cases,
+        dashboard_use_cases,
         financial_report_use_cases,
+        owner_contribution_use_cases,
+        call_for_funds_use_cases,
+        journal_entry_use_cases,
+        achievement_use_cases,
+        challenge_use_cases,
+        gamification_stats_use_cases,
         audit_logger,
         email_service,
         pool.clone(),
@@ -193,6 +404,9 @@ async fn main() -> std::io::Result<()> {
     // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints)
     let gdpr_rate_limit = GdprRateLimit::new(GdprRateLimitConfig::default());
 
+    // Login rate limiting (5 attempts per 15 minutes per IP - anti-brute-force)
+    let login_rate_limiter = LoginRateLimiter::default();
+
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment
         let mut cors = Cors::default();
@@ -211,8 +425,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(app_state.clone())
             .wrap(gdpr_rate_limit.clone())
+            .wrap(login_rate_limiter.clone()) // Login brute-force protection (5/15min)
             .wrap(Governor::new(&governor_conf))
             .wrap(cors)
+            .wrap(SecurityHeaders) // Security headers for all responses
             .wrap(middleware::Logger::default())
             .configure(configure_routes)
     })
@@ -239,4 +455,107 @@ async fn initialize_storage_provider() -> Result<Arc<dyn StorageProvider>, Strin
             Ok(Arc::new(storage))
         }
     }
+}
+
+/// Validate JWT secret strength for production security
+///
+/// Requirements:
+/// - Minimum 32 characters
+/// - Not the default insecure value
+/// - Contains mix of characters (recommended)
+fn validate_jwt_secret(secret: &str) -> std::io::Result<()> {
+    // Check minimum length (256 bits = 32 bytes minimum)
+    if secret.len() < 32 {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!(
+                "JWT_SECRET must be at least 32 characters for security. Current length: {}. \
+                 Generate a strong secret with: openssl rand -base64 32",
+                secret.len()
+            ),
+        ));
+    }
+
+    // Check if using the dangerous default value
+    if secret == "super-secret-key-change-in-production" {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "JWT_SECRET is set to the default insecure value. \
+             Set a strong secret in environment: export JWT_SECRET=$(openssl rand -base64 32)",
+        ));
+    }
+
+    // Warn if secret appears weak (all same character, sequential, etc.)
+    let unique_chars: std::collections::HashSet<char> = secret.chars().collect();
+    if unique_chars.len() < 10 {
+        log::warn!(
+            "JWT_SECRET has low character diversity ({} unique chars). \
+             Consider using a stronger random secret.",
+            unique_chars.len()
+        );
+    }
+
+    log::info!(
+        "✓ JWT_SECRET validation passed (length: {} chars)",
+        secret.len()
+    );
+    Ok(())
+}
+
+/// Validate CORS origins for production security
+///
+/// Requirements:
+/// - No wildcard (*) origins allowed
+/// - Valid URL format
+/// - HTTPS required in production (optional check)
+fn validate_cors_origins(origins: &[String]) -> std::io::Result<()> {
+    if origins.is_empty() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "CORS_ALLOWED_ORIGINS cannot be empty. Specify allowed origins explicitly.",
+        ));
+    }
+
+    for origin in origins {
+        // Reject wildcard origins (security risk)
+        if origin == "*" || origin.contains("*") {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "Wildcard CORS origins not allowed for security: '{}'. \
+                     Specify exact origins like: http://localhost:3000,https://app.example.com",
+                    origin
+                ),
+            ));
+        }
+
+        // Validate URL format
+        if !origin.starts_with("http://") && !origin.starts_with("https://") {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "Invalid CORS origin format '{}'. Must start with http:// or https://",
+                    origin
+                ),
+            ));
+        }
+
+        // Warn about HTTP in production (HTTPS recommended)
+        if origin.starts_with("http://")
+            && !origin.contains("localhost")
+            && !origin.contains("127.0.0.1")
+        {
+            log::warn!(
+                "CORS origin '{}' uses HTTP (not HTTPS). \
+                 HTTPS is strongly recommended for production.",
+                origin
+            );
+        }
+    }
+
+    log::info!(
+        "✓ CORS origins validation passed ({} origins)",
+        origins.len()
+    );
+    Ok(())
 }

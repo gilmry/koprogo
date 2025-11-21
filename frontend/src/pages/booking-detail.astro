@@ -1,0 +1,133 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Resource Detail - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a
+        href="/bookings"
+        class="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        Back to Resources
+      </a>
+    </div>
+
+    <div id="resource-detail-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import { bookingsApi, type BookableResource } from "../lib/api/bookings";
+  import ResourceTypeBadge from "../components/bookings/ResourceTypeBadge.svelte";
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const resourceId = urlParams.get("id");
+
+  if (!resourceId) {
+    window.location.href = "/bookings";
+  } else {
+    bookingsApi.getResourceById(resourceId).then((resource) => {
+      const container = document.getElementById("resource-detail-container");
+      if (!container) return;
+
+      const isAvailable = resource.status === "Available";
+
+      container.innerHTML = `
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+          ${resource.image_urls && resource.image_urls.length > 0 ? `
+            <img src="${resource.image_urls[0]}" alt="${resource.resource_name}" class="w-full h-64 object-cover" />
+          ` : `
+            <div class="w-full h-64 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+              <span class="text-6xl">🏢</span>
+            </div>
+          `}
+          <div class="p-6">
+            <div id="badge" class="mb-4"></div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">${resource.resource_name}</h1>
+            <div class="prose max-w-none mb-6">
+              <p class="text-gray-700">${resource.description}</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-gray-50 rounded-lg p-4">
+              ${resource.capacity ? `
+                <div>
+                  <p class="text-sm text-gray-600">Capacity</p>
+                  <p class="text-lg font-semibold text-gray-900">👥 ${resource.capacity}</p>
+                </div>
+              ` : ''}
+              <div>
+                <p class="text-sm text-gray-600">Max Duration</p>
+                <p class="text-lg font-semibold text-gray-900">⏱️ ${resource.max_booking_duration_hours}h</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">Cost</p>
+                <p class="text-lg font-semibold text-gray-900">${resource.hourly_rate_credits ? `${resource.hourly_rate_credits} credits/hr` : 'FREE'}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-600">Rating</p>
+                <p class="text-lg font-semibold text-gray-900">${resource.rating ? `⭐ ${resource.rating.toFixed(1)}/5` : 'No ratings'}</p>
+              </div>
+            </div>
+
+            ${resource.amenities && resource.amenities.length > 0 ? `
+              <div class="mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Amenities</h3>
+                <div class="flex flex-wrap gap-2">
+                  ${resource.amenities.map(a => `<span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">${a}</span>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            ${resource.requires_approval ? `
+              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p class="text-sm text-yellow-800">⚠️ This resource requires approval from building management</p>
+              </div>
+            ` : ''}
+
+            <div class="mb-4 text-sm text-gray-600">
+              <p>📅 Advance booking: Up to ${resource.advance_booking_days} days</p>
+              <p class="mt-1">📊 Total bookings: ${resource.total_bookings}</p>
+            </div>
+
+            ${isAvailable ? `
+              <button
+                class="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                onclick="alert('Booking functionality coming soon! You will be able to select dates and times.')"
+              >
+                Book This Resource
+              </button>
+            ` : `
+              <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <p class="text-red-800">This resource is currently unavailable (${resource.status})</p>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+
+      // Mount badge
+      const badgeContainer = document.getElementById("badge");
+      if (badgeContainer) {
+        mount(ResourceTypeBadge, {
+          target: badgeContainer,
+          props: { type: resource.resource_type },
+        });
+      }
+    }).catch((err) => {
+      const container = document.getElementById("resource-detail-container");
+      if (container) {
+        container.innerHTML = `<div class="bg-white shadow rounded-lg p-12 text-center text-gray-500">Resource not found</div>`;
+      }
+    });
+  }
+</script>

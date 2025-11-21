@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: koprogo-grid-postgres
+    environment:
+      POSTGRES_DB: koprogo_grid
+      POSTGRES_USER: koprogo
+      POSTGRES_PASSWORD: koprogo123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U koprogo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Grid computing server
+  grid-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: koprogo-grid-server
+    environment:
+      DATABASE_URL: postgresql://koprogo:koprogo123@postgres:5432/koprogo_grid
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8081
+      RUST_LOG: info
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Example edge node (for testing)
+  grid-node-example:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: koprogo-grid-node-example
+    environment:
+      RUST_LOG: info
+    command:
+      - "run"
+      - "--server"
+      - "http://grid-server:8081"
+      - "--node-id"
+      - "00000000-0000-0000-0000-000000000001"
+      - "--solar-watts"
+      - "500"
+      - "--interval"
+      - "30"
+    depends_on:
+      - grid-server
+    restart: unless-stopped
+    profiles:
+      - with-node  # Only start with: docker-compose --profile with-node up
+
+volumes:
+  postgres_data:
+    driver: local

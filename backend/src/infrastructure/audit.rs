@@ -16,6 +16,8 @@ pub enum AuditEventType {
     BuildingCreated,
     BuildingUpdated,
     BuildingDeleted,
+    JournalEntryCreated,
+    JournalEntryDeleted,
     UnitCreated,
     UnitUpdated,
     UnitDeleted,
@@ -41,6 +43,131 @@ pub enum AuditEventType {
     BoardDecisionCompleted,
     BoardDecisionNotesAdded,
 
+    // Voting events (Issue #46 - Phase 2)
+    ResolutionCreated,
+    ResolutionDeleted,
+    VoteCast,
+    VoteChanged,
+    VotingClosed,
+
+    // Ticketing events (Issue #85 - Phase 2)
+    TicketCreated,
+    TicketAssigned,
+    TicketStatusChanged,
+    TicketResolved,
+    TicketClosed,
+    TicketCancelled,
+    TicketReopened,
+    TicketDeleted,
+
+    // Notification events (Issue #86 - Phase 2)
+    NotificationCreated,
+    NotificationRead,
+    NotificationDeleted,
+    NotificationPreferenceUpdated,
+
+    // Payment events (Issue #84 - Phase 2)
+    PaymentCreated,
+    PaymentProcessing,
+    PaymentRequiresAction,
+    PaymentSucceeded,
+    PaymentFailed,
+    PaymentCancelled,
+    PaymentRefunded,
+    PaymentDeleted,
+
+    // Payment method events (Issue #84 - Phase 2)
+    PaymentMethodCreated,
+    PaymentMethodUpdated,
+    PaymentMethodSetDefault,
+    PaymentMethodDeactivated,
+    PaymentMethodReactivated,
+    PaymentMethodDeleted,
+
+    // Convocation events (Issue #88 - Phase 2)
+    ConvocationCreated,
+    ConvocationScheduled,
+    ConvocationSent,
+    ConvocationCancelled,
+    ConvocationDeleted,
+    ConvocationReminderSent,
+    ConvocationAttendanceUpdated,
+    ConvocationProxySet,
+
+    // Quote events (Contractor Quotes Module - Issue #91 - Phase 2)
+    QuoteCreated,
+    QuoteSubmitted,
+    QuoteUnderReview,
+    QuoteAccepted,
+    QuoteRejected,
+    QuoteWithdrawn,
+    QuoteExpired,
+    QuoteRatingUpdated,
+    QuoteComparisonPerformed,
+    QuoteDeleted,
+
+    // SEL events (Local Exchange Trading System - Issue #49 - Phase 2)
+    ExchangeCreated,
+    ExchangeRequested,
+    ExchangeStarted,
+    ExchangeCompleted,
+    ExchangeCancelled,
+    ExchangeProviderRated,
+    ExchangeRequesterRated,
+    ExchangeDeleted,
+    CreditBalanceUpdated,
+    CreditBalanceCreated,
+
+    // Notice events (Community Notice Board - Issue #49 - Phase 2)
+    NoticeCreated,
+    NoticeUpdated,
+    NoticePublished,
+    NoticeArchived,
+    NoticePinned,
+    NoticeUnpinned,
+    NoticeExpirationSet,
+    NoticeExpired,
+    NoticeDeleted,
+
+    // Skill events (Skills Directory - Issue #49 - Phase 3)
+    SkillCreated,
+    SkillUpdated,
+    SkillMarkedAvailable,
+    SkillMarkedUnavailable,
+    SkillDeleted,
+
+    // Shared Object events (Object Sharing Library - Issue #49 - Phase 4)
+    SharedObjectCreated,
+    SharedObjectUpdated,
+    SharedObjectMarkedAvailable,
+    SharedObjectMarkedUnavailable,
+    SharedObjectBorrowed,
+    SharedObjectReturned,
+    SharedObjectDeleted,
+
+    // Resource Booking events (Resource Booking Calendar - Issue #49 - Phase 5)
+    ResourceBookingCreated,
+    ResourceBookingUpdated,
+    ResourceBookingCancelled,
+    ResourceBookingCompleted,
+    ResourceBookingNoShow,
+    ResourceBookingConfirmed,
+    ResourceBookingDeleted,
+
+    // Gamification events (Achievements & Challenges - Issue #49 - Phase 6)
+    AchievementCreated,
+    AchievementUpdated,
+    AchievementDeleted,
+    AchievementAwarded,
+    ChallengeCreated,
+    ChallengeActivated,
+    ChallengeUpdated,
+    ChallengeCompleted,
+    ChallengeCancelled,
+    ChallengeDeleted,
+    ChallengeProgressIncremented,
+    ChallengeProgressCompleted,
+
     // Payment reminder events
     PaymentReminderCreated,
     PaymentReminderSent,
@@ -52,10 +179,61 @@ pub enum AuditEventType {
     PaymentRemindersBulkCreated,
     PaymentReminderDeleted,
 
+    // État Daté events (Belgian legal requirement for property sales)
+    EtatDateCreated,
+    EtatDateInProgress,
+    EtatDateGenerated,
+    EtatDateDelivered,
+    EtatDateFinancialUpdate,
+    EtatDateAdditionalDataUpdate,
+    EtatDateDeleted,
+
+    // Budget events (Annual budget management)
+    BudgetCreated,
+    BudgetUpdated,
+    BudgetSubmitted,
+    BudgetApproved,
+    BudgetRejected,
+    BudgetArchived,
+    BudgetDeleted,
+
+    // Work Report events (Digital Maintenance Logbook - Issue #134)
+    WorkReportCreated,
+    WorkReportUpdated,
+    WorkReportDeleted,
+    WorkReportPhotoAdded,
+    WorkReportDocumentAdded,
+
+    // Technical Inspection events (Digital Maintenance Logbook - Issue #134)
+    TechnicalInspectionCreated,
+    TechnicalInspectionUpdated,
+    TechnicalInspectionDeleted,
+    TechnicalInspectionReportAdded,
+    TechnicalInspectionPhotoAdded,
+    TechnicalInspectionCertificateAdded,
+
     // Security events
     UnauthorizedAccess,
     RateLimitExceeded,
     InvalidToken,
+
+    // Two-Factor Authentication events (Issue #78 - Security Hardening)
+    TwoFactorSetupInitiated,
+    TwoFactorEnabled,
+    TwoFactorDisabled,
+    TwoFactorVerified,
+    TwoFactorVerificationFailed,
+    BackupCodeUsed,
+    BackupCodesRegenerated,
+    TwoFactorReverificationRequired,
+
+    // IoT events (Linky/Ores Smart Meter Integration - Issue #133 - IoT Phase 0)
+    IoTReadingCreated,
+    IoTReadingsBulkCreated,
+    LinkyDeviceConfigured,
+    LinkyDataSynced,
+    LinkyDeviceDeleted,
+    LinkySyncToggled,
 
     // GDPR events (Data Privacy Compliance - Article 30: Records of Processing)
     GdprDataExported,
@@ -63,6 +241,16 @@ pub enum AuditEventType {
     GdprDataErased,
     GdprDataErasureFailed,
     GdprErasureCheckRequested,
+    // GDPR Article 16: Right to Rectification
+    GdprDataRectified,
+    GdprDataRectificationFailed,
+    // GDPR Article 18: Right to Restriction of Processing
+    GdprProcessingRestricted,
+    GdprProcessingRestrictionFailed,
+    // GDPR Article 21: Right to Object (Marketing)
+    GdprMarketingOptOut,
+    GdprMarketingOptIn,
+    GdprMarketingPreferenceChangeFailed,
 
     // Accounting events
     AccountCreated,
@@ -157,6 +345,13 @@ impl AuditLogEntry {
         self
     }
 
+    /// Add details to metadata as a string
+    pub fn with_details(mut self, details: String) -> Self {
+        let details_json = serde_json::json!({ "details": details });
+        self.metadata = Some(details_json);
+        self
+    }
+
     /// Log this entry (currently to stdout, can be extended to database/file)
     pub fn log(&self) {
         // Redact sensitive information for logging (GDPR compliance)
@@ -196,6 +391,37 @@ impl AuditLogEntry {
         // Note: Full audit data (including IP, error messages) should only be
         // stored in secure, access-controlled systems for compliance and forensics
     }
+}
+
+/// Helper function to log audit events asynchronously
+///
+/// This is a convenience function for background audit logging
+/// without database persistence (logs to stdout/file only).
+///
+/// Parameters:
+/// - event_type: Type of audit event
+/// - user_id: Optional user ID who performed the action
+/// - organization_id: Optional organization ID for multi-tenant isolation
+/// - details: Optional details string
+/// - metadata: Optional additional metadata as JSON
+pub async fn log_audit_event(
+    event_type: AuditEventType,
+    user_id: Option<Uuid>,
+    organization_id: Option<Uuid>,
+    details: Option<String>,
+    metadata: Option<serde_json::Value>,
+) {
+    let mut entry = AuditLogEntry::new(event_type, user_id, organization_id);
+
+    if let Some(details_str) = details {
+        entry = entry.with_details(details_str);
+    }
+
+    if let Some(meta) = metadata {
+        entry.metadata = Some(meta);
+    }
+
+    entry.log();
 }
 
 /// Helper macro to create and log audit entries

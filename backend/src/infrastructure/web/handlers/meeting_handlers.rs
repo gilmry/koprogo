@@ -256,3 +256,277 @@ pub async fn delete_meeting(state: web::Data<AppState>, id: web::Path<Uuid>) -> 
         })),
     }
 }
+
+#[get("/meetings/{id}/export-minutes-pdf")]
+pub async fn export_meeting_minutes_pdf(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    use crate::domain::services::{AttendeeInfo, MeetingMinutesExporter, ResolutionWithVotes};
+
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
+    };
+
+    let meeting_id = *id;
+
+    // 1. Get meeting
+    let meeting = match state.meeting_use_cases.get_meeting(meeting_id).await {
+        Ok(Some(meeting_dto)) => meeting_dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Meeting not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // 2. Get building
+    let building = match state
+        .building_use_cases
+        .get_building(meeting.building_id)
+        .await
+    {
+        Ok(Some(building_dto)) => building_dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // 3. Get resolutions for this meeting
+    let resolutions = match state
+        .resolution_use_cases
+        .get_meeting_resolutions(meeting_id)
+        .await
+    {
+        Ok(resolutions) => resolutions,
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to get resolutions: {}", err)
+            }))
+        }
+    };
+
+    // 4. Get votes for each resolution and collect attendees
+    let mut attendees_map = std::collections::HashMap::new();
+    let mut resolutions_with_votes = Vec::new();
+
+    for resolution_dto in resolutions {
+        // Get votes for this resolution
+        let votes_dto = match state
+            .resolution_use_cases
+            .get_resolution_votes(resolution_dto.id)
+            .await
+        {
+            Ok(votes) => votes,
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Failed to get votes: {}", err)
+                }))
+            }
+        };
+
+        // Collect attendees from votes
+        for vote_dto in &votes_dto {
+            if let std::collections::hash_map::Entry::Vacant(e) =
+                attendees_map.entry(vote_dto.owner_id)
+            {
+                // Get owner info
+                if let Ok(Some(owner_dto)) =
+                    state.owner_use_cases.get_owner(vote_dto.owner_id).await
+                {
+                    let proxy_for_name = if let Some(proxy_id) = vote_dto.proxy_owner_id {
+                        state
+                            .owner_use_cases
+                            .get_owner(proxy_id)
+                            .await
+                            .ok()
+                            .flatten()
+                            .map(|o| format!("{} {}", o.first_name, o.last_name))
+                    } else {
+                        None
+                    };
+
+                    let full_name = format!("{} {}", owner_dto.first_name, owner_dto.last_name);
+
+                    e.insert(AttendeeInfo {
+                        owner_id: vote_dto.owner_id,
+                        name: full_name,
+                        email: owner_dto.email.clone(),
+                        voting_power: vote_dto.voting_power,
+                        is_proxy: vote_dto.proxy_owner_id.is_some(),
+                        proxy_for: proxy_for_name,
+                    });
+                }
+            }
+        }
+
+        // Convert DTOs to domain entities for PDF generation
+        use crate::domain::entities::{Resolution, Vote};
+
+        let resolution_entity = Resolution {
+            id: resolution_dto.id,
+            meeting_id: resolution_dto.meeting_id,
+            title: resolution_dto.title,
+            description: resolution_dto.description,
+            resolution_type: resolution_dto.resolution_type,
+            majority_required: resolution_dto.majority_required,
+            vote_count_pour: resolution_dto.vote_count_pour,
+            vote_count_contre: resolution_dto.vote_count_contre,
+            vote_count_abstention: resolution_dto.vote_count_abstention,
+            total_voting_power_pour: resolution_dto.total_voting_power_pour,
+            total_voting_power_contre: resolution_dto.total_voting_power_contre,
+            total_voting_power_abstention: resolution_dto.total_voting_power_abstention,
+            status: resolution_dto.status,
+            voted_at: resolution_dto.voted_at,
+            created_at: resolution_dto.created_at,
+        };
+
+        let votes: Vec<Vote> = votes_dto
+            .iter()
+            .map(|v| Vote {
+                id: v.id,
+                resolution_id: v.resolution_id,
+                owner_id: v.owner_id,
+                unit_id: v.unit_id,
+                vote_choice: v.vote_choice.clone(),
+                voting_power: v.voting_power,
+                proxy_owner_id: v.proxy_owner_id,
+                voted_at: v.voted_at,
+            })
+            .collect();
+
+        resolutions_with_votes.push(ResolutionWithVotes {
+            resolution: resolution_entity,
+            votes,
+        });
+    }
+
+    let attendees: Vec<AttendeeInfo> = attendees_map.into_values().collect();
+
+    // Convert DTOs to domain entities
+    use crate::domain::entities::{Building, Meeting};
+
+    // Parse building organization_id from string
+    let building_org_id = match Uuid::parse_str(&building.organization_id) {
+        Ok(id) => id,
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Invalid organization_id: {}", err)
+            }))
+        }
+    };
+
+    // Parse building dates
+    use chrono::DateTime;
+    let building_created_at = match DateTime::parse_from_rfc3339(&building.created_at) {
+        Ok(dt) => dt.with_timezone(&chrono::Utc),
+        Err(_) => chrono::Utc::now(),
+    };
+    let building_updated_at = match DateTime::parse_from_rfc3339(&building.updated_at) {
+        Ok(dt) => dt.with_timezone(&chrono::Utc),
+        Err(_) => chrono::Utc::now(),
+    };
+
+    let building_entity = Building {
+        id: match Uuid::parse_str(&building.id) {
+            Ok(id) => id,
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Invalid building id: {}", err)
+                }))
+            }
+        },
+        name: building.name,
+        address: building.address,
+        city: building.city,
+        postal_code: building.postal_code,
+        country: building.country,
+        total_units: building.total_units,
+        total_tantiemes: building.total_tantiemes,
+        construction_year: building.construction_year,
+        syndic_name: None,
+        syndic_email: None,
+        syndic_phone: None,
+        syndic_address: None,
+        syndic_office_hours: None,
+        syndic_emergency_contact: None,
+        slug: None,
+        organization_id: building_org_id,
+        created_at: building_created_at,
+        updated_at: building_updated_at,
+    };
+
+    let meeting_entity = Meeting {
+        id: meeting.id,
+        organization_id,
+        building_id: meeting.building_id,
+        meeting_type: meeting.meeting_type,
+        title: meeting.title,
+        description: meeting.description,
+        scheduled_date: meeting.scheduled_date,
+        location: meeting.location,
+        status: meeting.status,
+        agenda: meeting.agenda,
+        attendees_count: meeting.attendees_count,
+        created_at: meeting.created_at,
+        updated_at: meeting.updated_at,
+    };
+
+    // 5. Generate PDF
+    match MeetingMinutesExporter::export_to_pdf(
+        &building_entity,
+        &meeting_entity,
+        &attendees,
+        &resolutions_with_votes,
+    ) {
+        Ok(pdf_bytes) => {
+            // Audit log
+            AuditLogEntry::new(
+                AuditEventType::ReportGenerated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Meeting", meeting_id)
+            .with_metadata(serde_json::json!({
+                "report_type": "meeting_minutes_pdf",
+                "building_name": building_entity.name,
+                "meeting_date": meeting_entity.scheduled_date.to_rfc3339()
+            }))
+            .log();
+
+            HttpResponse::Ok()
+                .content_type("application/pdf")
+                .insert_header((
+                    "Content-Disposition",
+                    format!(
+                        "attachment; filename=\"PV_{}_{}_{}.pdf\"",
+                        building_entity.name.replace(' ', "_"),
+                        meeting_entity.scheduled_date.format("%Y%m%d"),
+                        meeting_entity.id
+                    ),
+                ))
+                .body(pdf_bytes)
+        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Failed to generate PDF: {}", err)
+        })),
+    }
+}

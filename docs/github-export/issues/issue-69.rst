@@ -3,11 +3,11 @@ Issue #69: Add Playwright E2E tests for unit management and document features
 ==============================================================================
 
 :State: **OPEN**
-:Milestone: Phase 1: VPS MVP + Legal Compliance
+:Milestone: Jalon 1: Sécurité & GDPR 🔒
 :Labels: None
 :Assignees: Unassigned
 :Created: 2025-10-31
-:Updated: 2025-11-01
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/69>`_
 
 Description

@@ -231,6 +231,34 @@ pub struct GdprEraseResponseDto {
     pub owners_anonymized: usize,
 }
 
+// GDPR Article 16: Right to Rectification
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GdprRectifyRequest {
+    pub email: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+}
+
+// GDPR Article 18: Right to Restriction of Processing
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GdprRestrictProcessingRequest {
+    // No body needed - action is the request itself
+}
+
+// GDPR Article 21: Right to Object (Marketing opt-out)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GdprMarketingPreferenceRequest {
+    pub opt_out: bool,
+}
+
+// Generic success response for GDPR actions
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GdprActionResponse {
+    pub success: bool,
+    pub message: String,
+    pub updated_at: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

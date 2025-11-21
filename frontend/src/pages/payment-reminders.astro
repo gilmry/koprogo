@@ -1,0 +1,46 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PaymentReminderList from '../components/PaymentReminderList.svelte';
+---
+
+<Layout title="Relances de Paiement - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Relances de Paiement</h1>
+        <p class="text-gray-600">
+          Gestion automatisée des impayés avec workflow à 4 niveaux
+        </p>
+      </div>
+
+      <!-- Payment Reminder List Component -->
+      <PaymentReminderList client:load />
+
+      <!-- Help Section -->
+      <div class="mt-8 bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-lg">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">🔄 Workflow de Recouvrement</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+          <div>
+            <h4 class="font-semibold mb-2">📧 J+15 - Rappel Aimable</h4>
+            <p>Email courtois de rappel du montant et de l'échéance</p>
+          </div>
+          <div>
+            <h4 class="font-semibold mb-2">⚠️ J+30 - Relance Ferme</h4>
+            <p>Email + PDF avec ton plus ferme et mention des pénalités</p>
+          </div>
+          <div>
+            <h4 class="font-semibold mb-2">🚨 J+60 - Mise en Demeure</h4>
+            <p>Lettre recommandée avec AR, ton juridique, pénalités calculées</p>
+          </div>
+          <div>
+            <h4 class="font-semibold mb-2">⚖️ Procédure Huissier</h4>
+            <p>Si pas de réponse après mise en demeure, procédure judiciaire</p>
+          </div>
+        </div>
+        <p class="text-sm text-gray-600 mt-4">
+          <strong>Pénalités de retard:</strong> Taux légal belge de 8% annuel (montant * 0.08 * jours_retard / 365)
+        </p>
+      </div>
+    </div>
+  </div>
+</Layout>

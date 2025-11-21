@@ -1,0 +1,54 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Skill Detail - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a
+        href="/skills"
+        class="text-blue-600 hover:text-blue-800 flex items-center gap-1 mb-4"
+      >
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        Back to Skills Directory
+      </a>
+    </div>
+
+    <div id="skill-detail-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import SkillOfferDetail from "../components/skills/SkillOfferDetail.svelte";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const currentUserId = auth.user?.id || "";
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const offerId = urlParams.get("id");
+
+  if (!offerId) {
+    window.location.href = "/skills";
+  } else {
+    const container = document.getElementById("skill-detail-container");
+    if (container) {
+      mount(SkillOfferDetail, {
+        target: container,
+        props: {
+          offerId: offerId,
+          currentUserId: currentUserId,
+        },
+      });
+    }
+  }
+</script>

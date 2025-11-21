@@ -16,4 +16,4 @@ Top labels by issue count:
    label-priority-low
    label-phase-k3s
    label-legal-compliance
-   label-track-infrastructure
+   label-automation

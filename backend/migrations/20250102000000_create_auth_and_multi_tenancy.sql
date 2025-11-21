@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS organizations (
     max_buildings INTEGER NOT NULL DEFAULT 1,
     max_users INTEGER NOT NULL DEFAULT 3,
     is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Users table for authentication
@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS users (
     role VARCHAR(20) NOT NULL CHECK (role IN ('superadmin', 'syndic', 'accountant', 'owner')),
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
     is_active BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- User-Building access mapping (for granular access control)
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS user_building_access (
     can_read BOOLEAN NOT NULL DEFAULT true,
     can_write BOOLEAN NOT NULL DEFAULT false,
     can_delete BOOLEAN NOT NULL DEFAULT false,
-    granted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    granted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (user_id, building_id)
 );
 

@@ -2,12 +2,12 @@
 Issue #99: feat: Community Modules (SEL, Swap Shop, Skills, Object Lending)
 ============================================================================
 
-:State: **OPEN**
-:Milestone: Phase 3: K8s Production
+:State: **CLOSED**
+:Milestone: Jalon 3: Features Différenciantes 🎯
 :Labels: enhancement,phase:k8s track:software,priority:low community,proptech:energy
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-07
+:Updated: 2025-11-18
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/99>`_
 
 Description

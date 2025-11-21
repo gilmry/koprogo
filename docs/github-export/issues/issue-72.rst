@@ -3,11 +3,11 @@ Issue #72: Étudier l'opportunité d'une matrice des droits dynamique (RBAC gran
 ======================================================================================
 
 :State: **OPEN**
-:Milestone: Phase 3: K8s Production
+:Milestone: Jalon 4: Automation & Intégrations 📅
 :Labels: enhancement
 :Assignees: Unassigned
 :Created: 2025-10-31
-:Updated: 2025-11-01
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/72>`_
 
 Description
