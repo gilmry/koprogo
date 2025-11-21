@@ -229,14 +229,14 @@ mod tests {
 
         // Create test user first
         let user_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO users (id, email, first_name, last_name, password_hash, is_active, created_at, updated_at)
             VALUES ($1, $2, 'Test', 'User', 'hash', true, NOW(), NOW())
-            "#,
-            user_id,
-            format!("test-{}@example.com", user_id)
+            "#
         )
+        .bind(user_id)
+        .bind(format!("test-{}@example.com", user_id))
         .execute(&pool)
         .await
         .unwrap();
@@ -265,14 +265,14 @@ mod tests {
 
         // Create test user
         let user_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO users (id, email, first_name, last_name, password_hash, is_active, created_at, updated_at)
             VALUES ($1, $2, 'Test', 'User', 'hash', true, NOW(), NOW())
-            "#,
-            user_id,
-            format!("test-{}@example.com", user_id)
+            "#
         )
+        .bind(user_id)
+        .bind(format!("test-{}@example.com", user_id))
         .execute(&pool)
         .await
         .unwrap();
@@ -293,14 +293,14 @@ mod tests {
 
         // Create test user
         let user_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO users (id, email, first_name, last_name, password_hash, is_active, created_at, updated_at)
             VALUES ($1, $2, 'Test', 'User', 'hash', true, NOW(), NOW())
-            "#,
-            user_id,
-            format!("test-{}@example.com", user_id)
+            "#
         )
+        .bind(user_id)
+        .bind(format!("test-{}@example.com", user_id))
         .execute(&pool)
         .await
         .unwrap();
@@ -324,14 +324,14 @@ mod tests {
 
         // Create test user
         let user_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO users (id, email, first_name, last_name, password_hash, is_active, created_at, updated_at)
             VALUES ($1, $2, 'Test', 'User', 'hash', true, NOW(), NOW())
-            "#,
-            user_id,
-            format!("test-{}@example.com", user_id)
+            "#
         )
+        .bind(user_id)
+        .bind(format!("test-{}@example.com", user_id))
         .execute(&pool)
         .await
         .unwrap();
@@ -352,14 +352,14 @@ mod tests {
 
         // Create test user
         let user_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO users (id, email, first_name, last_name, password_hash, is_active, created_at, updated_at)
             VALUES ($1, $2, 'Test', 'User', 'hash', true, NOW(), NOW())
-            "#,
-            user_id,
-            format!("test-{}@example.com", user_id)
+            "#
         )
+        .bind(user_id)
+        .bind(format!("test-{}@example.com", user_id))
         .execute(&pool)
         .await
         .unwrap();
@@ -370,10 +370,10 @@ mod tests {
         let created = repo.create(&secret).await.unwrap();
 
         // Manually set last_used_at to 91 days ago
-        sqlx::query!(
-            "UPDATE two_factor_secrets SET last_used_at = NOW() - INTERVAL '91 days' WHERE id = $1",
-            created.id
+        sqlx::query(
+            "UPDATE two_factor_secrets SET last_used_at = NOW() - INTERVAL '91 days' WHERE id = $1"
         )
+        .bind(created.id)
         .execute(&pool)
         .await
         .unwrap();
@@ -390,14 +390,14 @@ mod tests {
 
         // Create test user
         let user_id = Uuid::new_v4();
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO users (id, email, first_name, last_name, password_hash, is_active, created_at, updated_at)
             VALUES ($1, $2, 'Test', 'User', 'hash', true, NOW(), NOW())
-            "#,
-            user_id,
-            format!("test-{}@example.com", user_id)
+            "#
         )
+        .bind(user_id)
+        .bind(format!("test-{}@example.com", user_id))
         .execute(&pool)
         .await
         .unwrap();

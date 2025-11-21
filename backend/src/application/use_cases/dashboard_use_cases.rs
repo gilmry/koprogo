@@ -5,25 +5,31 @@
 use crate::application::dto::{
     AccountantDashboardStats, ExpenseFilters, PageRequest, RecentTransaction, TransactionType,
 };
-use crate::application::ports::{ExpenseRepository, OwnerContributionRepository};
-use crate::domain::entities::ApprovalStatus;
+use crate::application::ports::{
+    ExpenseRepository, OwnerContributionRepository, PaymentReminderRepository,
+};
+use crate::domain::entities::{ApprovalStatus, ReminderStatus};
 use chrono::{Datelike, Timelike, Utc};
+use std::collections::HashSet;
 use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct DashboardUseCases {
     expense_repo: Arc<dyn ExpenseRepository>,
     owner_contribution_repo: Arc<dyn OwnerContributionRepository>,
+    payment_reminder_repo: Arc<dyn PaymentReminderRepository>,
 }
 
 impl DashboardUseCases {
     pub fn new(
         expense_repo: Arc<dyn ExpenseRepository>,
         owner_contribution_repo: Arc<dyn OwnerContributionRepository>,
+        payment_reminder_repo: Arc<dyn PaymentReminderRepository>,
     ) -> Self {
         Self {
             expense_repo,
             owner_contribution_repo,
+            payment_reminder_repo,
         }
     }
 
@@ -107,9 +113,26 @@ impl DashboardUseCases {
             0.0
         };
 
-        // TODO: Calculate owners with overdue payments from payment_reminders
-        // For now, return a placeholder
-        let owners_with_overdue = 0;
+        // Calculate owners with overdue payments from payment_reminders
+        // Get all reminders for the organization
+        let all_reminders = self
+            .payment_reminder_repo
+            .find_by_organization(organization_id)
+            .await?;
+
+        // Filter for active reminders (not Paid or Cancelled)
+        let active_reminders: Vec<_> = all_reminders
+            .iter()
+            .filter(|r| r.status != ReminderStatus::Paid && r.status != ReminderStatus::Cancelled)
+            .collect();
+
+        // Count unique owners with active reminders
+        let unique_owners: HashSet<Uuid> = active_reminders
+            .iter()
+            .map(|r| r.owner_id)
+            .collect();
+
+        let owners_with_overdue = unique_owners.len() as i64;
 
         Ok(AccountantDashboardStats {
             total_expenses_current_month,

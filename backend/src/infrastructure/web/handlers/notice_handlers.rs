@@ -270,7 +270,7 @@ pub async fn archive_notice(
 ) -> impl Responder {
     match data
         .notice_use_cases
-        .archive_notice(id.into_inner(), auth.user_id)
+        .archive_notice(id.into_inner(), auth.user_id, &auth.role)
         .await
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
@@ -297,7 +297,7 @@ pub async fn pin_notice(
 ) -> impl Responder {
     match data
         .notice_use_cases
-        .pin_notice(id.into_inner(), auth.user_id)
+        .pin_notice(id.into_inner(), &auth.role)
         .await
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
@@ -324,7 +324,7 @@ pub async fn unpin_notice(
 ) -> impl Responder {
     match data
         .notice_use_cases
-        .unpin_notice(id.into_inner(), auth.user_id)
+        .unpin_notice(id.into_inner(), &auth.role)
         .await
     {
         Ok(notice) => HttpResponse::Ok().json(notice),

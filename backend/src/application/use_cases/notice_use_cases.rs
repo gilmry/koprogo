@@ -22,6 +22,11 @@ impl NoticeUseCases {
         }
     }
 
+    /// Check if user has building admin privileges (admin, superadmin, or syndic)
+    fn is_building_admin(role: &str) -> bool {
+        role == "admin" || role == "superadmin" || role == "syndic"
+    }
+
     /// Create a new notice (Draft status)
     ///
     /// # Authorization
@@ -246,6 +251,7 @@ impl NoticeUseCases {
         &self,
         notice_id: Uuid,
         actor_id: Uuid,
+        actor_role: &str,
     ) -> Result<NoticeResponseDto, String> {
         let mut notice = self
             .notice_repo
@@ -253,9 +259,12 @@ impl NoticeUseCases {
             .await?
             .ok_or("Notice not found".to_string())?;
 
-        // Authorization: only author can archive (or building admin - TODO)
-        if notice.author_id != actor_id {
-            return Err("Unauthorized: only author can archive notice".to_string());
+        // Authorization: only author or building admin can archive
+        let is_author = notice.author_id == actor_id;
+        let is_admin = Self::is_building_admin(actor_role);
+
+        if !is_author && !is_admin {
+            return Err("Unauthorized: only author or building admin can archive notice".to_string());
         }
 
         // Archive (domain validates state transition)
@@ -271,12 +280,17 @@ impl NoticeUseCases {
     /// Pin a notice to top of board (Published only)
     ///
     /// # Authorization
-    /// - Only building admin can pin notices (TODO: implement admin check)
+    /// - Only building admin (admin, superadmin, or syndic) can pin notices
     pub async fn pin_notice(
         &self,
         notice_id: Uuid,
-        _actor_id: Uuid, // TODO: validate admin role
+        actor_role: &str,
     ) -> Result<NoticeResponseDto, String> {
+        // Authorization: only building admin can pin
+        if !Self::is_building_admin(actor_role) {
+            return Err("Unauthorized: only building admin (admin, superadmin, or syndic) can pin notices".to_string());
+        }
+
         let mut notice = self
             .notice_repo
             .find_by_id(notice_id)
@@ -296,12 +310,17 @@ impl NoticeUseCases {
     /// Unpin a notice
     ///
     /// # Authorization
-    /// - Only building admin can unpin notices
+    /// - Only building admin (admin, superadmin, or syndic) can unpin notices
     pub async fn unpin_notice(
         &self,
         notice_id: Uuid,
-        _actor_id: Uuid, // TODO: validate admin role
+        actor_role: &str,
     ) -> Result<NoticeResponseDto, String> {
+        // Authorization: only building admin can unpin
+        if !Self::is_building_admin(actor_role) {
+            return Err("Unauthorized: only building admin (admin, superadmin, or syndic) can unpin notices".to_string());
+        }
+
         let mut notice = self
             .notice_repo
             .find_by_id(notice_id)

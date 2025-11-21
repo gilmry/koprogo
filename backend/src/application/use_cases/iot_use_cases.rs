@@ -285,13 +285,19 @@ impl IoTUseCases {
 pub struct LinkyUseCases {
     iot_repo: Arc<dyn IoTRepository>,
     linky_client: Arc<dyn LinkyApiClient>,
+    oauth_redirect_uri: String,
 }
 
 impl LinkyUseCases {
-    pub fn new(iot_repo: Arc<dyn IoTRepository>, linky_client: Arc<dyn LinkyApiClient>) -> Self {
+    pub fn new(
+        iot_repo: Arc<dyn IoTRepository>,
+        linky_client: Arc<dyn LinkyApiClient>,
+        oauth_redirect_uri: String,
+    ) -> Self {
         Self {
             iot_repo,
             linky_client,
+            oauth_redirect_uri,
         }
     }
 
@@ -321,10 +327,9 @@ impl LinkyUseCases {
         }
 
         // Exchange authorization code for access token
-        let redirect_uri = format!("https://koprogo.be/oauth/linky/callback"); // TODO: Make configurable
         let token_response = self
             .linky_client
-            .exchange_authorization_code(&dto.authorization_code, &redirect_uri)
+            .exchange_authorization_code(&dto.authorization_code, &self.oauth_redirect_uri)
             .await
             .map_err(|e| format!("Failed to exchange authorization code: {:?}", e))?;
 

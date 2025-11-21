@@ -25,6 +25,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_building)
             .service(update_building)
             .service(delete_building)
+            .service(export_annual_report_pdf) // PDF Export (Issue #47)
             // Units
             .service(create_unit)
             .service(list_units)
@@ -39,6 +40,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_owner)
             .service(update_owner)
             .service(link_owner_to_user)
+            .service(export_owner_statement_pdf) // PDF Export (Issue #47)
             // Owner Contributions (Revenue)
             .service(create_contribution)
             .service(get_contribution)
@@ -63,6 +65,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(get_owner_ownership_history)
             .service(transfer_ownership)
             .service(get_total_ownership_percentage)
+            .service(export_ownership_contract_pdf) // PDF Export (Issue #47)
             // Expenses
             .service(create_expense)
             .service(list_expenses)
@@ -81,6 +84,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(reject_invoice)
             .service(get_pending_invoices)
             .service(get_invoice)
+            .service(export_work_quote_pdf) // PDF Export (Issue #47)
             // Charge Distribution (Issue #73)
             .service(calculate_and_save_distribution)
             .service(get_distribution_by_expense)
