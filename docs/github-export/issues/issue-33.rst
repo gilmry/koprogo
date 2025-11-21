@@ -3,11 +3,11 @@ Issue #33: Update documentation with multi-owner features and Git hooks
 ========================================================================
 
 :State: **CLOSED**
-:Milestone: No milestone
+:Milestone: Jalon 0: Fondations Techniques ✅
 :Labels: documentation,phase:vps track:software,priority:medium
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-10-29
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/33>`_
 
 Description

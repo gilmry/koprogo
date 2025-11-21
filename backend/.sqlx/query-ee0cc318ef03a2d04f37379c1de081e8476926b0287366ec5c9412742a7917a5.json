@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, user_id, secret_encrypted, backup_codes_encrypted,\n                is_enabled, verified_at, last_used_at, created_at, updated_at\n            FROM two_factor_secrets\n            WHERE is_enabled = true\n              AND array_length(backup_codes_encrypted, 1) < 3\n            ORDER BY array_length(backup_codes_encrypted, 1) ASC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "secret_encrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "backup_codes_encrypted",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 4,
+        "name": "is_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "verified_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "last_used_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "ee0cc318ef03a2d04f37379c1de081e8476926b0287366ec5c9412742a7917a5"
+}

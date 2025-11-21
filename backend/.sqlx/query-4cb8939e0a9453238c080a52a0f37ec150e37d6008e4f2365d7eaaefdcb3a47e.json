@@ -1,0 +1,55 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                jel.account_code,\n                a.account_type as \"account_type: String\",\n                SUM(jel.debit) as total_debit,\n                SUM(jel.credit) as total_credit\n            FROM journal_entry_lines jel\n            JOIN journal_entries je ON je.id = jel.journal_entry_id\n            JOIN accounts a ON a.organization_id = jel.organization_id\n                           AND a.code = jel.account_code\n            WHERE jel.organization_id = $1\n              AND je.entry_date >= $2\n              AND je.entry_date <= $3\n            GROUP BY jel.account_code, a.account_type\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "account_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "account_type: String",
+        "type_info": {
+          "Custom": {
+            "name": "account_type",
+            "kind": {
+              "Enum": [
+                "ASSET",
+                "LIABILITY",
+                "EXPENSE",
+                "REVENUE",
+                "OFF_BALANCE"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "total_debit",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "total_credit",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "4cb8939e0a9453238c080a52a0f37ec150e37d6008e4f2365d7eaaefdcb3a47e"
+}

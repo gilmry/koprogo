@@ -68,7 +68,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
             r#"
             SELECT id, organization_id, building_id,
                    category::text AS category, description, amount, expense_date,
-                   payment_status::text AS payment_status, supplier, invoice_number, account_code, created_at, updated_at
+                   payment_status::text AS payment_status, approval_status::text AS approval_status,
+                   submitted_at, approved_by, approved_at, rejection_reason, paid_date,
+                   supplier, invoice_number, account_code, created_at, updated_at
             FROM expenses
             WHERE id = $1
             "#,
@@ -99,6 +101,14 @@ impl ExpenseRepository for PostgresExpenseRepository {
                 _ => PaymentStatus::Pending,
             };
 
+            let approval_status_str: String = row.get("approval_status");
+            let approval_status = match approval_status_str.as_str() {
+                "pending_approval" => ApprovalStatus::PendingApproval,
+                "approved" => ApprovalStatus::Approved,
+                "rejected" => ApprovalStatus::Rejected,
+                _ => ApprovalStatus::Draft,
+            };
+
             Expense {
                 id: row.get("id"),
                 organization_id: row.get("organization_id"),
@@ -113,12 +123,12 @@ impl ExpenseRepository for PostgresExpenseRepository {
                 expense_date: row.get("expense_date"),
                 invoice_date: None,
                 due_date: None,
-                paid_date: None,
-                approval_status: ApprovalStatus::Draft,
-                submitted_at: None,
-                approved_by: None,
-                approved_at: None,
-                rejection_reason: None,
+                paid_date: row.try_get("paid_date").ok(),
+                approval_status,
+                submitted_at: row.try_get("submitted_at").ok(),
+                approved_by: row.try_get("approved_by").ok(),
+                approved_at: row.try_get("approved_at").ok(),
+                rejection_reason: row.try_get("rejection_reason").ok(),
                 payment_status,
                 supplier: row.get("supplier"),
                 invoice_number: row.get("invoice_number"),
@@ -134,7 +144,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
             r#"
             SELECT id, organization_id, building_id,
                    category::text AS category, description, amount, expense_date,
-                   payment_status::text AS payment_status, supplier, invoice_number, account_code, created_at, updated_at
+                   payment_status::text AS payment_status, approval_status::text AS approval_status,
+                   submitted_at, approved_by, approved_at, rejection_reason, paid_date,
+                   supplier, invoice_number, account_code, created_at, updated_at
             FROM expenses
             WHERE building_id = $1
             ORDER BY expense_date DESC
@@ -168,6 +180,14 @@ impl ExpenseRepository for PostgresExpenseRepository {
                     _ => PaymentStatus::Pending,
                 };
 
+                let approval_status_str: String = row.get("approval_status");
+                let approval_status = match approval_status_str.as_str() {
+                    "pending_approval" => ApprovalStatus::PendingApproval,
+                    "approved" => ApprovalStatus::Approved,
+                    "rejected" => ApprovalStatus::Rejected,
+                    _ => ApprovalStatus::Draft,
+                };
+
                 Expense {
                     id: row.get("id"),
                     organization_id: row.get("organization_id"),
@@ -182,12 +202,12 @@ impl ExpenseRepository for PostgresExpenseRepository {
                     expense_date: row.get("expense_date"),
                     invoice_date: None,
                     due_date: None,
-                    paid_date: None,
-                    approval_status: ApprovalStatus::Draft,
-                    submitted_at: None,
-                    approved_by: None,
-                    approved_at: None,
-                    rejection_reason: None,
+                    paid_date: row.try_get("paid_date").ok(),
+                    approval_status,
+                    submitted_at: row.try_get("submitted_at").ok(),
+                    approved_by: row.try_get("approved_by").ok(),
+                    approved_at: row.try_get("approved_at").ok(),
+                    rejection_reason: row.try_get("rejection_reason").ok(),
                     payment_status,
                     supplier: row.get("supplier"),
                     invoice_number: row.get("invoice_number"),
@@ -298,7 +318,7 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let offset_param = param_count;
 
         let data_query = format!(
-            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, supplier, invoice_number, account_code, created_at, updated_at \
+            "SELECT id, organization_id, building_id, category::text AS category, description, amount, expense_date, payment_status::text AS payment_status, approval_status::text AS approval_status, submitted_at, approved_by, approved_at, rejection_reason, paid_date, supplier, invoice_number, account_code, created_at, updated_at \
              FROM expenses {} ORDER BY {} {} LIMIT ${} OFFSET ${}",
             where_clause,
             sort_column,
@@ -363,6 +383,14 @@ impl ExpenseRepository for PostgresExpenseRepository {
                     _ => PaymentStatus::Pending,
                 };
 
+                let approval_status_str: String = row.get("approval_status");
+                let approval_status = match approval_status_str.as_str() {
+                    "pending_approval" => ApprovalStatus::PendingApproval,
+                    "approved" => ApprovalStatus::Approved,
+                    "rejected" => ApprovalStatus::Rejected,
+                    _ => ApprovalStatus::Draft,
+                };
+
                 Expense {
                     id: row.get("id"),
                     organization_id: row.get("organization_id"),
@@ -377,12 +405,12 @@ impl ExpenseRepository for PostgresExpenseRepository {
                     expense_date: row.get("expense_date"),
                     invoice_date: None,
                     due_date: None,
-                    paid_date: None,
-                    approval_status: ApprovalStatus::Draft,
-                    submitted_at: None,
-                    approved_by: None,
-                    approved_at: None,
-                    rejection_reason: None,
+                    paid_date: row.try_get("paid_date").ok(),
+                    approval_status,
+                    submitted_at: row.try_get("submitted_at").ok(),
+                    approved_by: row.try_get("approved_by").ok(),
+                    approved_at: row.try_get("approved_at").ok(),
+                    rejection_reason: row.try_get("rejection_reason").ok(),
                     payment_status,
                     supplier: row.get("supplier"),
                     invoice_number: row.get("invoice_number"),
@@ -397,22 +425,43 @@ impl ExpenseRepository for PostgresExpenseRepository {
     }
 
     async fn update(&self, expense: &Expense) -> Result<Expense, String> {
-        let status_str = match expense.payment_status {
+        let payment_status_str = match expense.payment_status {
             PaymentStatus::Pending => "pending",
             PaymentStatus::Paid => "paid",
             PaymentStatus::Overdue => "overdue",
             PaymentStatus::Cancelled => "cancelled",
         };
 
+        let approval_status_str = match expense.approval_status {
+            ApprovalStatus::Draft => "draft",
+            ApprovalStatus::PendingApproval => "pending_approval",
+            ApprovalStatus::Approved => "approved",
+            ApprovalStatus::Rejected => "rejected",
+        };
+
         sqlx::query(
             r#"
             UPDATE expenses
-            SET payment_status = CAST($2 AS payment_status), updated_at = $3
+            SET
+                payment_status = CAST($2 AS payment_status),
+                approval_status = CAST($3 AS approval_status),
+                submitted_at = $4,
+                approved_by = $5,
+                approved_at = $6,
+                rejection_reason = $7,
+                paid_date = $8,
+                updated_at = $9
             WHERE id = $1
             "#,
         )
         .bind(expense.id)
-        .bind(status_str)
+        .bind(payment_status_str)
+        .bind(approval_status_str)
+        .bind(expense.submitted_at)
+        .bind(expense.approved_by)
+        .bind(expense.approved_at)
+        .bind(expense.rejection_reason.as_deref())
+        .bind(expense.paid_date)
         .bind(expense.updated_at)
         .execute(&self.pool)
         .await

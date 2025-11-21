@@ -3,11 +3,11 @@ Issue #94: feat: AI Features (OCR, Predictions, Anomaly Detection, Chatbot)
 ============================================================================
 
 :State: **OPEN**
-:Milestone: Phase 3: K8s Production
+:Milestone: Jalon 6: Intelligence & Expansion (PropTech 2.0) 🤖
 :Labels: enhancement,phase:k8s track:software,priority:low proptech:ai,mlops
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-07
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/94>`_
 
 Description

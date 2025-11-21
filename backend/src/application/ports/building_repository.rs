@@ -20,4 +20,7 @@ pub trait BuildingRepository: Send + Sync {
 
     async fn update(&self, building: &Building) -> Result<Building, String>;
     async fn delete(&self, id: Uuid) -> Result<bool, String>;
+
+    /// Find building by URL slug (for public pages - Issue #92)
+    async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String>;
 }

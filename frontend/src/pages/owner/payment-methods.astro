@@ -1,0 +1,92 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Payment Methods">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <div class="flex items-center space-x-3 mb-2">
+        <a
+          href="/owner/payments"
+          class="text-gray-500 hover:text-gray-700"
+          aria-label="Back to payments"
+        >
+          <svg
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900">Payment Methods</h1>
+      </div>
+      <p class="mt-2 text-gray-600">
+        Add and manage your payment methods for faster checkout
+      </p>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg
+            class="h-5 w-5 text-blue-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <h3 class="text-sm font-medium text-blue-800">Secure & Encrypted</h3>
+          <div class="mt-2 text-sm text-blue-700">
+            <p>
+              All payment information is encrypted and securely stored by Stripe,
+              a PCI-DSS Level 1 certified payment processor. We never see or store
+              your full card number.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Methods List Component -->
+    <div id="payment-methods-list"></div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { mount } from "svelte";
+  import PaymentMethodList from "../../components/payments/PaymentMethodList.svelte";
+
+  // Get owner ID from localStorage (in real app, from auth context)
+  const ownerId = localStorage.getItem("koprogo_user_id") || "";
+
+  if (ownerId) {
+    // Mount payment methods list
+    const listContainer = document.getElementById("payment-methods-list");
+    if (listContainer) {
+      mount(PaymentMethodList, {
+        target: listContainer,
+        props: {
+          ownerId,
+          canManage: true,
+        },
+      });
+    }
+  } else {
+    // Redirect to login if not authenticated
+    window.location.href = "/login";
+  }
+</script>

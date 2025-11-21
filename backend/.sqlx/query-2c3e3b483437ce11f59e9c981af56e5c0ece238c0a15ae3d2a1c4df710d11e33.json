@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT COUNT(*) as count\n            FROM notifications\n            WHERE user_id = $1 AND channel = 'InApp' AND status = 'Sent' AND read_at IS NULL\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "2c3e3b483437ce11f59e9c981af56e5c0ece238c0a15ae3d2a1c4df710d11e33"
+}

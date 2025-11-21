@@ -3,11 +3,11 @@ Issue #71: Étudier l'ajout des rôles Organization Admin et Building Manager
 ============================================================================
 
 :State: **OPEN**
-:Milestone: Phase 3: K8s Production
+:Milestone: Jalon 4: Automation & Intégrations 📅
 :Labels: enhancement
 :Assignees: Unassigned
 :Created: 2025-10-31
-:Updated: 2025-11-01
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/71>`_
 
 Description

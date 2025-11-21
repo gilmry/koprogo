@@ -3,11 +3,11 @@ Issue #73: Système Complet d'Encodage de Factures avec Workflow de Validation
 ==============================================================================
 
 :State: **CLOSED**
-:Milestone: Phase 2: K3s + Automation
+:Milestone: Jalon 2: Conformité Légale Belge 📋
 :Labels: enhancement,javascript phase:vps,track:software priority:critical,rust
 :Assignees: gilmry
 :Created: 2025-10-31
-:Updated: 2025-11-08
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/73>`_
 
 Description

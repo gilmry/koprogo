@@ -3,11 +3,11 @@ Issue #65: GDPR Articles 16 & 18: Implement rectification and restriction featur
 ===================================================================================================
 
 :State: **OPEN**
-:Milestone: Phase 2: K3s + Automation
+:Milestone: Jalon 4: Automation & Intégrations 📅
 :Labels: None
 :Assignees: Unassigned
 :Created: 2025-10-30
-:Updated: 2025-11-01
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/65>`_
 
 Description

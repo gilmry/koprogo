@@ -3,11 +3,11 @@ Issue #79: feat: Belgian Accounting Chart (Plan Comptable Normalisé Belge)
 ===========================================================================
 
 :State: **CLOSED**
-:Milestone: Phase 1: VPS MVP + Legal Compliance
+:Milestone: Jalon 2: Conformité Légale Belge 📋
 :Labels: enhancement,phase:vps track:software,priority:critical finance,legal-compliance
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-08
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/79>`_
 
 Description

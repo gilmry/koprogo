@@ -1,0 +1,87 @@
+# Docker Compose for KoproGo MCP Stack
+version: '3.8'
+
+services:
+  # PostgreSQL (shared with main stack)
+  postgres:
+    image: postgres:15-alpine
+    container_name: koprogo_postgres_mcp
+    environment:
+      POSTGRES_DB: koprogo_db
+      POSTGRES_USER: koprogo
+      POSTGRES_PASSWORD: koprogo123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_mcp_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U koprogo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # KoproGo Backend (with MCP integration)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: koprogo_backend_mcp
+    environment:
+      DATABASE_URL: postgresql://koprogo:koprogo123@postgres:5432/koprogo_db
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      RUST_LOG: info
+      MCP_EDGE_URLS: http://edge-node:3031
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: cargo run --release
+
+  # Edge Node (Raspberry Pi simulator on x86)
+  edge-node:
+    build:
+      context: ./backend/koprogo-node
+      dockerfile: Dockerfile.arm64
+    container_name: koprogo_edge_node
+    environment:
+      RUST_LOG: info
+    ports:
+      - "3031:3031"
+    volumes:
+      - ./models:/app/models
+    command: ["--port", "3031", "--model", "llama3:8b-instruct-q4"]
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  # Frontend (optional - for MCP chatbot testing)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: koprogo_frontend_mcp
+    environment:
+      PUBLIC_API_URL: http://localhost:8080/api/v1
+      PUBLIC_MCP_URL: http://localhost:8080/mcp/v1
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_mcp_data:
+  models:
+
+networks:
+  default:
+    name: koprogo_mcp_network

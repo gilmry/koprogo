@@ -1,6 +1,11 @@
+use crate::application::dto::{
+    GdprActionResponse, GdprMarketingPreferenceRequest, GdprRectifyRequest,
+    GdprRestrictProcessingRequest,
+};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{delete, get, put, web, HttpRequest, HttpResponse, Responder};
+use chrono::Utc;
 use tokio::spawn;
 
 /// Extract client IP address from request
@@ -313,6 +318,320 @@ pub async fn can_erase_user(
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to check erasure eligibility: {}", e)
         })),
+    }
+}
+
+/// PUT /api/v1/gdpr/rectify
+/// Rectify user personal data (GDPR Article 16 - Right to Rectification)
+///
+/// Allows users to correct inaccurate or incomplete personal data.
+///
+/// # Request Body
+/// ```json
+/// {
+///   "email": "new@example.com",        // Optional
+///   "first_name": "Jane",              // Optional
+///   "last_name": "Doe"                 // Optional
+/// }
+/// ```
+///
+/// # Returns
+/// * `200 OK` - Data successfully rectified
+/// * `400 Bad Request` - Validation error (e.g., invalid email)
+/// * `401 Unauthorized` - Missing or invalid authentication
+/// * `403 Forbidden` - User attempting to rectify another user's data
+/// * `404 Not Found` - User not found
+/// * `500 Internal Server Error` - Database or processing error
+#[put("/gdpr/rectify")]
+pub async fn rectify_user_data(
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    auth: AuthenticatedUser,
+    request: web::Json<GdprRectifyRequest>,
+) -> impl Responder {
+    let user_id = auth.user_id;
+
+    // Extract client information for audit logging
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
+
+    // Call use case to rectify data
+    match data
+        .gdpr_use_cases
+        .rectify_user_data(
+            user_id,
+            user_id, // Users can only rectify their own data
+            request.email.clone(),
+            request.first_name.clone(),
+            request.last_name.clone(),
+        )
+        .await
+    {
+        Ok(_) => {
+            // Audit log: successful data rectification (async with database persistence)
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprDataRectified,
+                Some(user_id),
+                auth.organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
+            .with_metadata(serde_json::json!({
+                "fields_updated": {
+                    "email": request.email.is_some(),
+                    "first_name": request.first_name.is_some(),
+                    "last_name": request.last_name.is_some()
+                }
+            }));
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            let response = GdprActionResponse {
+                success: true,
+                message: "Personal data successfully rectified".to_string(),
+                updated_at: Utc::now().to_rfc3339(),
+            };
+
+            HttpResponse::Ok().json(response)
+        }
+        Err(e) => {
+            // Audit log: failed data rectification
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprDataRectificationFailed,
+                Some(user_id),
+                auth.organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
+            .with_error(e.clone());
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            if e.contains("Unauthorized") {
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": e
+                }))
+            } else if e.contains("not found") {
+                HttpResponse::NotFound().json(serde_json::json!({
+                    "error": e
+                }))
+            } else if e.contains("Validation error") {
+                HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": e
+                }))
+            } else {
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Failed to rectify user data: {}", e)
+                }))
+            }
+        }
+    }
+}
+
+/// PUT /api/v1/gdpr/restrict-processing
+/// Restrict data processing (GDPR Article 18 - Right to Restriction of Processing)
+///
+/// Allows users to request temporary limitation of data processing.
+/// When processing is restricted:
+/// - Data is stored but not processed for certain operations
+/// - Marketing communications are blocked
+/// - Profiling/analytics are disabled
+///
+/// # Returns
+/// * `200 OK` - Processing restriction applied
+/// * `400 Bad Request` - Processing already restricted
+/// * `401 Unauthorized` - Missing or invalid authentication
+/// * `403 Forbidden` - User attempting to restrict another user's processing
+/// * `404 Not Found` - User not found
+/// * `500 Internal Server Error` - Database or processing error
+#[put("/gdpr/restrict-processing")]
+pub async fn restrict_user_processing(
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    auth: AuthenticatedUser,
+    _request: web::Json<GdprRestrictProcessingRequest>,
+) -> impl Responder {
+    let user_id = auth.user_id;
+
+    // Extract client information for audit logging
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
+
+    // Call use case to restrict processing
+    match data
+        .gdpr_use_cases
+        .restrict_user_processing(user_id, user_id)
+        .await
+    {
+        Ok(_) => {
+            // Audit log: successful processing restriction (async with database persistence)
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprProcessingRestricted,
+                Some(user_id),
+                auth.organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent);
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            let response = GdprActionResponse {
+                success: true,
+                message: "Data processing successfully restricted. Your data will be stored but not processed for certain operations.".to_string(),
+                updated_at: Utc::now().to_rfc3339(),
+            };
+
+            HttpResponse::Ok().json(response)
+        }
+        Err(e) => {
+            // Audit log: failed processing restriction
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprProcessingRestrictionFailed,
+                Some(user_id),
+                auth.organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
+            .with_error(e.clone());
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            if e.contains("Unauthorized") {
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": e
+                }))
+            } else if e.contains("not found") {
+                HttpResponse::NotFound().json(serde_json::json!({
+                    "error": e
+                }))
+            } else if e.contains("already restricted") {
+                HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": e
+                }))
+            } else {
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Failed to restrict processing: {}", e)
+                }))
+            }
+        }
+    }
+}
+
+/// PUT /api/v1/gdpr/marketing-preference
+/// Set marketing opt-out preference (GDPR Article 21 - Right to Object)
+///
+/// Allows users to object to marketing communications and profiling.
+///
+/// # Request Body
+/// ```json
+/// {
+///   "opt_out": true  // true to opt out, false to opt back in
+/// }
+/// ```
+///
+/// # Returns
+/// * `200 OK` - Marketing preference updated
+/// * `401 Unauthorized` - Missing or invalid authentication
+/// * `403 Forbidden` - User attempting to change another user's preferences
+/// * `404 Not Found` - User not found
+/// * `500 Internal Server Error` - Database or processing error
+#[put("/gdpr/marketing-preference")]
+pub async fn set_marketing_preference(
+    req: HttpRequest,
+    data: web::Data<AppState>,
+    auth: AuthenticatedUser,
+    request: web::Json<GdprMarketingPreferenceRequest>,
+) -> impl Responder {
+    let user_id = auth.user_id;
+
+    // Extract client information for audit logging
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
+
+    let opt_out = request.opt_out;
+
+    // Call use case to set marketing preference
+    match data
+        .gdpr_use_cases
+        .set_marketing_preference(user_id, user_id, opt_out)
+        .await
+    {
+        Ok(_) => {
+            // Audit log: marketing preference change (async with database persistence)
+            let event_type = if opt_out {
+                AuditEventType::GdprMarketingOptOut
+            } else {
+                AuditEventType::GdprMarketingOptIn
+            };
+
+            let audit_entry = AuditLogEntry::new(event_type, Some(user_id), auth.organization_id)
+                .with_resource("User", user_id)
+                .with_client_info(ip_address, user_agent)
+                .with_metadata(serde_json::json!({
+                    "opt_out": opt_out
+                }));
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            let message = if opt_out {
+                "You have successfully opted out of marketing communications. You will no longer receive promotional emails or offers."
+            } else {
+                "You have successfully opted back in to marketing communications. You will receive promotional emails and offers."
+            };
+
+            let response = GdprActionResponse {
+                success: true,
+                message: message.to_string(),
+                updated_at: Utc::now().to_rfc3339(),
+            };
+
+            HttpResponse::Ok().json(response)
+        }
+        Err(e) => {
+            // Audit log: failed marketing preference change
+            let audit_entry = AuditLogEntry::new(
+                AuditEventType::GdprMarketingPreferenceChangeFailed,
+                Some(user_id),
+                auth.organization_id,
+            )
+            .with_resource("User", user_id)
+            .with_client_info(ip_address, user_agent)
+            .with_error(e.clone());
+
+            let audit_logger = data.audit_logger.clone();
+            spawn(async move {
+                audit_logger.log(&audit_entry).await;
+            });
+
+            if e.contains("Unauthorized") {
+                HttpResponse::Forbidden().json(serde_json::json!({
+                    "error": e
+                }))
+            } else if e.contains("not found") {
+                HttpResponse::NotFound().json(serde_json::json!({
+                    "error": e
+                }))
+            } else {
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": format!("Failed to set marketing preference: {}", e)
+                }))
+            }
+        }
     }
 }
 

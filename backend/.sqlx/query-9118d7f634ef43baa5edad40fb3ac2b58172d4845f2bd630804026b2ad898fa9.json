@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT owner_id\n                FROM unit_owners\n                WHERE unit_id = $1 AND end_date IS NULL AND is_primary_contact = true\n                ORDER BY created_at ASC\n                LIMIT 1\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "owner_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "9118d7f634ef43baa5edad40fb3ac2b58172d4845f2bd630804026b2ad898fa9"
+}

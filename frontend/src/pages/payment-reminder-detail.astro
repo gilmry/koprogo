@@ -1,0 +1,32 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PaymentReminderDetailComponent from '../components/PaymentReminderDetail.svelte';
+
+// Get reminder ID from URL query parameter
+const url = new URL(Astro.request.url);
+const reminderId = url.searchParams.get('id') || '';
+---
+
+<Layout title="Détails Relance - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-5xl mx-auto">
+      <div class="mb-6">
+        <a href="/payment-reminders" class="inline-flex items-center text-primary-600 hover:text-primary-700 mb-4">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Retour aux relances
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">Détails de la Relance</h1>
+      </div>
+
+      {reminderId ? (
+        <PaymentReminderDetailComponent reminderId={reminderId} client:load />
+      ) : (
+        <div class="bg-red-50 border-l-4 border-red-400 p-4">
+          <p class="text-sm text-red-700">ID de relance manquant dans l'URL</p>
+        </div>
+      )}
+    </div>
+  </div>
+</Layout>

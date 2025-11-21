@@ -1,0 +1,117 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Ticket Details">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Back button -->
+    <div class="mb-6">
+      <a
+        href="/tickets"
+        class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700"
+      >
+        <svg
+          class="mr-2 h-5 w-5"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+            clip-rule="evenodd"></path>
+        </svg>
+        Back to Tickets
+      </a>
+    </div>
+
+    <!-- Ticket Detail Component -->
+    <div id="ticket-detail"></div>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Loading ticket details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" class="hidden bg-red-50 border border-red-200 rounded-lg p-6">
+      <h2 class="text-lg font-semibold text-red-900 mb-2">Error Loading Ticket</h2>
+      <p class="text-red-700" id="error-message"></p>
+      <a
+        href="/tickets"
+        class="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+      >
+        Back to Tickets
+      </a>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { mount } from "svelte";
+  import TicketDetail from "../components/tickets/TicketDetail.svelte";
+  import { ticketsApi } from "../lib/api/tickets";
+
+  async function loadTicket() {
+    const params = new URLSearchParams(window.location.search);
+    const ticketId = params.get("id");
+
+    if (!ticketId) {
+      showError("No ticket ID provided");
+      return;
+    }
+
+    try {
+      const loadingEl = document.getElementById("loading-state");
+      const detailContainer = document.getElementById("ticket-detail");
+      const errorEl = document.getElementById("error-state");
+
+      if (!detailContainer) return;
+
+      // Fetch ticket
+      const ticket = await ticketsApi.getById(ticketId);
+
+      // Hide loading
+      if (loadingEl) loadingEl.style.display = "none";
+
+      // Mount component
+      const ticketDetail = mount(TicketDetail, {
+        target: detailContainer,
+        props: {
+          ticket,
+          canManage: true, // TODO: Get from auth context (check if Syndic role)
+          isContractor: false, // TODO: Get from auth context
+        },
+      });
+
+      // Handle events
+      detailContainer.addEventListener("updated", (event: any) => {
+        // Ticket was updated, refresh the component
+        ticketDetail.$set({ ticket: event.detail });
+      });
+
+      detailContainer.addEventListener("deleted", () => {
+        // Ticket was deleted, redirect to list
+        window.location.href = "/tickets";
+      });
+    } catch (err: any) {
+      showError(err.message || "Failed to load ticket");
+    }
+  }
+
+  function showError(message: string) {
+    const loadingEl = document.getElementById("loading-state");
+    const errorEl = document.getElementById("error-state");
+    const errorMessageEl = document.getElementById("error-message");
+
+    if (loadingEl) loadingEl.style.display = "none";
+    if (errorEl) {
+      errorEl.classList.remove("hidden");
+      if (errorMessageEl) errorMessageEl.textContent = message;
+    }
+  }
+
+  // Load ticket on page load
+  loadTicket();
+</script>

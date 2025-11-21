@@ -1,31 +1,67 @@
 pub mod account;
+pub mod achievement;
 pub mod board_decision;
 pub mod board_member;
+pub mod budget;
 pub mod building;
+pub mod call_for_funds;
+pub mod challenge;
 pub mod charge_distribution;
+pub mod convocation;
+pub mod convocation_recipient;
 pub mod document;
+pub mod etat_date;
 pub mod expense;
 pub mod gdpr_export;
 pub mod gdpr_objection;
 pub mod gdpr_rectification;
 pub mod gdpr_restriction;
 pub mod invoice_line_item;
+pub mod iot_reading;
+pub mod journal_entry;
+pub mod linky_device;
+pub mod local_exchange;
 pub mod meeting;
+pub mod notice;
+pub mod notification;
+pub mod owner_credit_balance;
 pub mod organization;
 pub mod owner;
+pub mod owner_contribution;
+pub mod payment;
+pub mod payment_method;
 pub mod payment_reminder;
+pub mod poll;
+pub mod poll_vote;
+pub mod quote;
 pub mod refresh_token;
+pub mod resolution;
+pub mod resource_booking;
+pub mod shared_object;
+pub mod skill;
+pub mod technical_inspection;
+pub mod ticket;
+pub mod two_factor_secret;
 pub mod unit;
 pub mod unit_owner;
 pub mod user;
 pub mod user_role_assignment;
+pub mod vote;
+pub mod work_report;
 
 pub use account::{Account, AccountType};
+pub use achievement::{Achievement, AchievementCategory, AchievementTier, UserAchievement};
 pub use board_decision::{BoardDecision, DecisionStatus};
 pub use board_member::{BoardMember, BoardPosition};
+pub use budget::{Budget, BudgetStatus};
 pub use building::Building;
+pub use call_for_funds::{CallForFunds, CallForFundsStatus};
+pub use challenge::{Challenge, ChallengeProgress, ChallengeStatus, ChallengeType};
 pub use charge_distribution::ChargeDistribution;
+pub use convocation::{Convocation, ConvocationStatus, ConvocationType};
+pub use convocation_recipient::{AttendanceStatus, ConvocationRecipient};
 pub use document::{Document, DocumentType};
+pub use etat_date::{EtatDate, EtatDateLanguage, EtatDateStatus};
 pub use expense::{ApprovalStatus, Expense, ExpenseCategory, PaymentStatus};
 pub use gdpr_export::{
     DocumentData, ExpenseData, GdprExport, MeetingData, OwnerData, RelatedData, UnitOwnershipData,
@@ -35,12 +71,39 @@ pub use gdpr_objection::{GdprObjectionRequest, ObjectionStatus, ObjectionType, P
 pub use gdpr_rectification::{FieldChange, GdprRectificationRequest, RectificationStatus};
 pub use gdpr_restriction::{GdprRestrictionRequest, RestrictionReason, RestrictionStatus};
 pub use invoice_line_item::InvoiceLineItem;
+pub use iot_reading::{DeviceType, IoTReading, MetricType};
+pub use journal_entry::{JournalEntry, JournalEntryLine};
+pub use linky_device::{LinkyDevice, LinkyProvider};
+pub use local_exchange::{ExchangeStatus, ExchangeType, LocalExchange};
 pub use meeting::{Meeting, MeetingStatus, MeetingType};
+pub use notice::{Notice, NoticeCategory, NoticeStatus, NoticeType};
+pub use notification::{
+    Notification, NotificationChannel, NotificationPreference, NotificationPriority,
+    NotificationStatus, NotificationType,
+};
+pub use owner_credit_balance::{CreditStatus, OwnerCreditBalance, ParticipationLevel};
 pub use organization::{Organization, SubscriptionPlan};
 pub use owner::Owner;
+pub use owner_contribution::{
+    ContributionPaymentMethod, ContributionPaymentStatus, ContributionType, OwnerContribution,
+};
+pub use payment::{Payment, PaymentMethodType, TransactionStatus};
+pub use payment_method::PaymentMethod;
 pub use payment_reminder::{DeliveryMethod, PaymentReminder, ReminderLevel, ReminderStatus};
+pub use poll::{Poll, PollOption, PollStatus, PollType};
+pub use poll_vote::PollVote;
+pub use quote::{Quote, QuoteScore, QuoteStatus};
 pub use refresh_token::RefreshToken;
+pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
+pub use resource_booking::{BookingStatus, RecurringPattern, ResourceBooking, ResourceType};
+pub use shared_object::{ObjectCondition, SharedObject, SharedObjectCategory};
+pub use skill::{ExpertiseLevel, Skill, SkillCategory};
+pub use technical_inspection::{InspectionStatus, InspectionType, TechnicalInspection};
+pub use ticket::{Ticket, TicketCategory, TicketPriority, TicketStatus};
+pub use two_factor_secret::TwoFactorSecret;
 pub use unit::{Unit, UnitType};
 pub use unit_owner::UnitOwner;
 pub use user::{User, UserRole};
 pub use user_role_assignment::UserRoleAssignment;
+pub use vote::{Vote, VoteChoice};
+pub use work_report::{WarrantyType, WorkReport, WorkType};

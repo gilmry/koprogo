@@ -1,0 +1,54 @@
+[package]
+name = "koprogo-mcp"
+version = "0.1.0"
+edition = "2021"
+authors = ["KoproGo Team <contact@koprogo.coop>"]
+description = "Model Context Protocol (MCP) implementation for KoproGo - Decentralized AI ecosystem"
+license = "AGPL-3.0"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.41", features = ["full"] }
+async-trait = "0.1"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.11", features = ["serde", "v4"] }
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "chrono", "migrate"] }
+
+# HTTP client (for edge communication)
+reqwest = { version = "0.12", features = ["json"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+
+# LLM integration
+llm = { version = "0.2", optional = true }
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.13"
+testcontainers = "0.23"
+testcontainers-modules = { version = "0.10", features = ["postgres"] }
+
+[features]
+default = ["edge"]
+edge = ["llm"]  # Enable local LLM execution
+full = ["edge"]
+
+[[bin]]
+name = "mcp-cli"
+path = "src/bin/mcp_cli.rs"
+required-features = ["edge"]
