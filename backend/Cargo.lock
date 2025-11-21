@@ -3426,6 +3426,7 @@ dependencies = [
  "jsonwebtoken",
  "lettre",
  "log",
+ "md5",
  "mockall",
  "once_cell",
  "printpdf",

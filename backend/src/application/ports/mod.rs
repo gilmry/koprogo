@@ -11,6 +11,8 @@ pub mod charge_distribution_repository;
 pub mod convocation_recipient_repository;
 pub mod convocation_repository;
 pub mod document_repository;
+pub mod energy_bill_upload_repository;
+pub mod energy_campaign_repository;
 pub mod etat_date_repository;
 pub mod expense_repository;
 pub mod gdpr_repository;
@@ -62,6 +64,8 @@ pub use convocation_recipient_repository::{
 };
 pub use convocation_repository::ConvocationRepository;
 pub use document_repository::DocumentRepository;
+pub use energy_bill_upload_repository::EnergyBillUploadRepository;
+pub use energy_campaign_repository::EnergyCampaignRepository;
 pub use etat_date_repository::EtatDateRepository;
 pub use expense_repository::ExpenseRepository;
 pub use gdpr_repository::GdprRepository;
