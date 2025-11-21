@@ -37,20 +37,22 @@ Vue d'Ensemble
        ↓ Construit
        → Base de données copropriétés + Communauté de confiance
 
-   Jalon 3 : Modules Communautaires (SEL, Partage)
+   Jalon 3 : Modules Communautaires (SEL, Partage, Achats Groupés Énergie 🔥)
        ↓ Génère
-       → Graphe social (qui échange avec qui, quels objets, quels services)
+       → Graphe social + Graphe énergétique (consommations agrégées)
+       → Économies immédiates (15-25% factures énergie)
 
    Jalon 4-5 : Automation + API Publique
        ↓ Prépare
        → Interopérabilité entre immeubles (communication machine-to-machine)
 
-   Jalon 6 : IA + IoT
+   Jalon 6 : IA + IoT (Capteurs Temps Réel)
        ↓ Déploie
-       → Intelligence collective (optimisation énergie, prédictions)
+       → Intelligence collective (optimisation dynamique, maintenance prédictive)
+       → Synergie avec données Jalon 3 (calibration modèles ML)
 
    Jalon 7 : Symbiose Décentralisée
-       → Réseau d'immeubles autonomes (edge computing, blockchain, P2P)
+       → Réseau énergétique virtuel (peer-to-peer energy trading, blockchain)
 
 Jalon 1-2 : Construire la Base de Confiance
 ============================================
@@ -103,6 +105,7 @@ Ce Qu'On Construit
 
 * **Module SEL** (Système d'Échange Local) : échanges de services entre voisins
 * **Partage d'Objets** : bibliothèque communautaire (outils, appareils)
+* **Achats Groupés d'Énergie** 🔥 : regroupement inter-copros pour négociation collective
 * **Contractor Backoffice** : marketplace prestataires locaux
 
 Pourquoi C'est Critical pour Symbiose
@@ -120,12 +123,39 @@ Pourquoi C'est Critical pour Symbiose
 * Types de services échangés (bricolage, garde d'enfants, cours)
 * **Impact Symbiose** : Ces patterns permettent de prédire les besoins futurs et d'optimiser les ressources collectives.
 
+**3. Données Énergétiques Anonymisées** (NOUVEAU)
+
+* Achats groupés → consommations agrégées par building
+* Patterns de consommation (électricité/gaz, saisonnalité)
+* Choix fournisseurs verts (% renouvelable)
+* **Impact Symbiose** : Ces données énergétiques anonymes créent un **graphe de consommation** à l'échelle du réseau. Elles préparent l'optimisation énergétique collective du Jalon 6.
+
+.. important::
+   **Achats Groupés = Pont vers Symbiose Énergétique**
+
+   Les achats groupés (Jalon 3) ne remplacent PAS les IoT sensors (Jalon 6).
+
+   **Jalon 3** : Agrégation factures annuelles → négociation collective → économies immédiates 15-25%
+
+   **Jalon 6** : Capteurs temps réel → optimisation dynamique → lissage pics de demande → économies additionnelles 10-15%
+
+   **Synergie** : Les données agrégées du Jalon 3 (consommation moyenne, saisonnalité) servent à calibrer les modèles ML du Jalon 6. On ne part pas de zéro.
+
 Exemple Concret
 ---------------
 
 **Aujourd'hui** : Ahmed emprunte une perceuse à Sofiane via le module Partage. Marie donne un cours de français à la fille de Sofiane (2h SEL).
 
 **Demain (Symbiose)** : L'IA détecte que 5 immeubles du même quartier ont tous acheté une perceuse en 2024. Elle suggère : "Créer une bibliothèque d'outils partagée entre les 5 immeubles → économie 1 500€ collectivement, -50kg CO₂ (fabrication évitée)."
+
+**Achats Groupés - Exemple Progressif**
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Aujourd'hui (Jalon 3)** : 12 copropriétés regroupent leurs consommations (120 000 kWh/an total). Négociation collective → tarif 0.25 €/kWh (vs 0.30 €/kWh moyen). Économie : 6 000€/an collectivement.
+
+**Demain (Jalon 6 - Symbiose)** : Ces mêmes 12 copropriétés ont maintenant des capteurs IoT. L'IA détecte que tous ont un pic de consommation entre 18h-20h. Elle coordonne le décalage de certains équipements (chauffe-eau, charging véhicules électriques) vers 22h-6h (heures creuses). Économie additionnelle : 15% supplémentaires.
+
+**Vision 2030 (Jalon 7 - Symbiose Décentralisée)** : Les 5 000 immeubles KoproGo forment un **réseau énergétique virtuel**. Ils négocient dynamiquement avec les fournisseurs en temps réel, basé sur les prédictions IA de consommation. Les excédents de production solaire d'un immeuble A sont automatiquement redirigés vers l'immeuble B voisin. Blockchain garantit la traçabilité (peer-to-peer energy trading).
 
 Jalon 4-5 : Préparer l'Interopérabilité
 ========================================
