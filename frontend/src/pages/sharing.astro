@@ -22,7 +22,7 @@ import Layout from "../layouts/Layout.astro";
   import { get } from "svelte/store";
 
   const auth = get(authStore);
-  const buildingId = auth.user?.building_id || "";
+  const buildingId = auth.user?.buildingIds?.[0] || "";
 
   const listContainer = document.getElementById("object-list-container");
   if (listContainer) {

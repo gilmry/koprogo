@@ -153,8 +153,11 @@ export const energyCampaignsApi = {
    * List all campaigns for organization
    */
   async list(organizationId?: string): Promise<EnergyCampaign[]> {
-    const params = organizationId ? { organization_id: organizationId } : {};
-    return api.get("/energy-campaigns", { params });
+    let url = "/energy-campaigns";
+    if (organizationId) {
+      url += `?organization_id=${organizationId}`;
+    }
+    return api.get(url);
   },
 
   /**

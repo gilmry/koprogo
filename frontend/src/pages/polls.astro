@@ -1,0 +1,51 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Sondages - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">
+        🗳️ Sondages (Consultations)
+      </h1>
+      <p class="text-gray-600 mt-2">
+        Consultez les copropriétaires entre les assemblées générales sur des
+        décisions ponctuelles.
+      </p>
+      <div
+        class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm"
+      >
+        <p class="text-blue-800">
+          <strong>⚖️ Cadre légal:</strong> Article 577-8/4 §4 du Code Civil Belge
+          - Le syndic peut consulter les copropriétaires entre les assemblées sur
+          toute décision ne nécessitant pas de vote formel en AG. Les résultats doivent
+          être documentés au procès-verbal de la prochaine AG.
+        </p>
+      </div>
+    </div>
+
+    <div id="poll-list-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import PollList from "../components/polls/PollList.svelte";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const buildingId = auth.user?.buildingIds?.[0] || "";
+
+  // Mount Poll List
+  const listContainer = document.getElementById("poll-list-container");
+  if (listContainer) {
+    mount(PollList, {
+      target: listContainer,
+      props: {
+        buildingId: buildingId,
+        showOnlyActive: false,
+      },
+    });
+  }
+</script>

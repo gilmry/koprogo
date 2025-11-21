@@ -35,7 +35,7 @@ import Layout from "../layouts/Layout.astro";
   import { get } from "svelte/store";
 
   const auth = get(authStore);
-  const organizationId = auth.user?.organization_id || "";
+  const organizationId = auth.user?.organizationId || "";
 
   // Mount Campaign List
   const listContainer = document.getElementById("campaign-list-container");
