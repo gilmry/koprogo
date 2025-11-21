@@ -166,6 +166,38 @@ Issues Importantes
 
 **Impact** : Marketplace locale, économie de plateforme
 
+⏳ **#110 : Achats Groupés d'Énergie** 🔥 (DIFFÉRENCIATEUR MAJEUR)
+
+* Workflow complet : Lancement campagne → Upload factures → Agrégation anonyme → Négociation courtier → Vote AG → Switch automatisé
+* Upload factures PDF + OCR automatique (extraction consommation kWh)
+* Chiffrement AES-256-GCM (données individuelles)
+* Agrégation anonyme au niveau building (k-anonymat ≥ 5)
+* Intégration CREG API (tarifs officiels belges)
+* Consentement GDPR explicite (opt-in individuel)
+* Génération contrats pré-remplis (PDF par unité)
+* Certification CREG (label qualité)
+
+**Impact** :
+
+* **Économique** : 15-25% d'économies sur factures énergie (125 €/an/unité en moyenne)
+* **Social** : Pouvoir de négociation collectif face à l'oligopole belge (Engie, Luminus, TotalEnergies >70% marché)
+* **Écologique** : Incentive fournisseurs 100% renouvelables (2,000 tonnes CO₂/an évitées si 50% choix vert)
+* **Traction** : **Unique sur le marché** (aucun outil SaaS ne propose regroupement spontané entre copropriétés)
+* **ROI** : 4,067% (économie ÷ coût plateforme 5€/mois)
+* **Législation favorable** : Belgique encourage achats groupés (Charte CREG 2013/2018)
+
+.. note::
+   **Pourquoi Jalon 3 (pas Jalon 6) ?**
+
+   Contrairement à l'Issue #110 initiale (qui dépendait de l'IoT platform Jalon 6), cette implémentation utilise des **factures signées/authentifiées** (upload PDF + OCR), ce qui est :
+
+   * ✅ Indépendant du matériel (universel)
+   * ✅ Mise en œuvre rapide (2 semaines MVP)
+   * ✅ GDPR-compliant par design
+   * ✅ Pas de dépendance sur capteurs IoT temps réel
+
+   **Résultat** : Déploiement dès Phase 2 (VPS) au lieu de Phase 3 (K8s + IoT).
+
 Effort Estimé
 ~~~~~~~~~~~~~
 
@@ -313,10 +345,17 @@ Jalon 6 : Intelligence & Expansion (PropTech 2.0)
 
 * ⚠️ IA Assistant Syndic (GPT-4/Claude via OVH)
 * ⚠️ API Bancaire PSD2 (réconciliation auto)
-* ⚠️ IoT Sensors (capteurs énergie/eau temps réel)
+* ⚠️ IoT Sensors (monitoring temps réel, maintenance prédictive, DPE automatisé)
 * Marketplace Services Locaux
 * Prédictions budgétaires (ML)
 * Multi-region (Benelux)
+
+.. note::
+   **IoT Sensors vs Achats Groupés d'Énergie**
+
+   Les capteurs IoT (Jalon 6) servent au **monitoring temps réel** (fuites eau, surconsommations, anomalies), pas aux achats groupés d'énergie.
+
+   **Achats groupés** (Jalon 3) : Basés sur factures annuelles uploadées (PDF + OCR), pas besoin de capteurs temps réel.
 
 **Prérequis CRITIQUES**
 

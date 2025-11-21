@@ -164,6 +164,7 @@ Phase 2 : K3s + Automation (2026)
 
 * Voting Digital Basique (scrutins AG conformes)
 * PDF Generation étendue (tous documents légaux)
+* **Achats Groupés d'Énergie** (regroupement inter-copros, CREG-compliant) 🔥
 * Module SEL (Système d'Échange Local)
 * Partage d'Objets (bibliothèque communautaire)
 * Contractor Backoffice (espace prestataires)
@@ -227,7 +228,7 @@ Phase 3 : K8s Production + PropTech 2.0 (2026-2030)
 
 * IA Assistant Syndic (chatbot réglementaire)
 * API Bancaire PSD2 (réconciliation auto)
-* IoT Sensors (capteurs énergie/eau temps réel)
+* IoT Sensors (monitoring temps réel, maintenance prédictive)
 * Marketplace Services Locaux
 * Prédictions budgétaires (ML)
 * Multi-region (Benelux, adaptation législative)
