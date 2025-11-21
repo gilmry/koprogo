@@ -97,8 +97,11 @@ async fn setup_test_db() -> (
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-    let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo.clone(), owner_repo.clone());
+    let payment_reminder_use_cases = PaymentReminderUseCases::new(
+        payment_reminder_repo,
+        expense_repo.clone(),
+        owner_repo.clone(),
+    );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
 
     // Create an organization for FK references
