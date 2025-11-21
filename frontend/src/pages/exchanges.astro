@@ -1,0 +1,110 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="SEL - Système d'Échange Local - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">
+            🤝 SEL - Système d'Échange Local
+          </h1>
+          <p class="text-gray-600 mt-2">
+            Échangez services, objets et achats groupés avec vos voisins grâce à la monnaie temps (1 heure = 1 crédit).
+          </p>
+        </div>
+        <a
+          href="/exchanges/new"
+          class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+        >
+          + Créer une offre
+        </a>
+      </div>
+
+      <!-- Legal Notice (Belgian Context) -->
+      <div class="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm">
+        <p class="text-blue-800">
+          <strong>⚖️ Cadre légal belge:</strong> Les SEL sont légaux et reconnus en Belgique.
+          Non-taxables si non-commerciaux (troc). Monnaie temps: 1 heure = 1 crédit. Solde
+          négatif autorisé (modèle de confiance communautaire).
+        </p>
+      </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <!-- Credit Balance -->
+      <div id="credit-balance-container"></div>
+
+      <!-- Leaderboard -->
+      <div id="leaderboard-container"></div>
+
+      <!-- Statistics -->
+      <div id="statistics-container"></div>
+    </div>
+
+    <!-- Exchanges List -->
+    <div id="exchange-list-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import { ExchangeList, CreditBalance, Leaderboard, SelStatistics } from "../components/local-exchanges";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const buildingId = auth.user?.buildingIds?.[0] || "";
+  const currentOwnerId = auth.user?.id || ""; // TODO: Map to owner_id from unit ownership
+
+  // Mount Credit Balance
+  const balanceContainer = document.getElementById("credit-balance-container");
+  if (balanceContainer && currentOwnerId && buildingId) {
+    mount(CreditBalance, {
+      target: balanceContainer,
+      props: {
+        ownerId: currentOwnerId,
+        buildingId: buildingId,
+      },
+    });
+  }
+
+  // Mount Leaderboard
+  const leaderboardContainer = document.getElementById("leaderboard-container");
+  if (leaderboardContainer && buildingId) {
+    mount(Leaderboard, {
+      target: leaderboardContainer,
+      props: {
+        buildingId: buildingId,
+        limit: 10,
+      },
+    });
+  }
+
+  // Mount Statistics
+  const statsContainer = document.getElementById("statistics-container");
+  if (statsContainer && buildingId) {
+    mount(SelStatistics, {
+      target: statsContainer,
+      props: {
+        buildingId: buildingId,
+      },
+    });
+  }
+
+  // Mount Exchange List
+  const listContainer = document.getElementById("exchange-list-container");
+  if (listContainer && buildingId) {
+    mount(ExchangeList, {
+      target: listContainer,
+      props: {
+        buildingId: buildingId,
+        currentOwnerId: currentOwnerId,
+        showOnlyAvailable: false,
+        showFilters: true,
+      },
+    });
+  }
+</script>

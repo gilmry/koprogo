@@ -1,0 +1,125 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Créer une offre SEL - KoproGo">
+  <div class="container mx-auto px-4 py-8 max-w-3xl">
+    <div class="mb-6">
+      <a
+        href="/exchanges"
+        class="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
+      >
+        ← Retour aux échanges
+      </a>
+
+      <h1 class="text-3xl font-bold text-gray-900">
+        🤝 Créer une nouvelle offre d'échange
+      </h1>
+      <p class="text-gray-600 mt-2">
+        Proposez un service, un prêt d'objet ou un achat groupé à vos voisins en échange de crédits temps.
+      </p>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div class="bg-blue-50 p-4 rounded-lg">
+        <div class="text-2xl mb-2">🛠️</div>
+        <h3 class="font-semibold text-blue-900 mb-1">Service</h3>
+        <p class="text-sm text-blue-700">
+          Offrez vos compétences: jardinage, bricolage, cours, aide informatique, etc.
+        </p>
+      </div>
+
+      <div class="bg-green-50 p-4 rounded-lg">
+        <div class="text-2xl mb-2">📦</div>
+        <h3 class="font-semibold text-green-900 mb-1">Prêt d'objet</h3>
+        <p class="text-sm text-green-700">
+          Prêtez temporairement des outils, livres, équipements, etc.
+        </p>
+      </div>
+
+      <div class="bg-purple-50 p-4 rounded-lg">
+        <div class="text-2xl mb-2">🛒</div>
+        <h3 class="font-semibold text-purple-900 mb-1">Achat groupé</h3>
+        <p class="text-sm text-purple-700">
+          Organisez des achats en gros pour économiser et réduire l'emballage.
+        </p>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white shadow rounded-lg p-6">
+      <div id="create-form-container"></div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="mt-8 bg-gray-50 p-6 rounded-lg">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">
+        ❓ Questions fréquentes
+      </h2>
+
+      <div class="space-y-4 text-sm text-gray-700">
+        <div>
+          <p class="font-medium text-gray-900 mb-1">
+            💰 Combien de crédits demander ?
+          </p>
+          <p>
+            1 crédit = 1 heure de temps. Estimez la durée réelle du service.
+            Par exemple: jardinage (3h), prêt perceuse (1h), cours anglais (2h).
+          </p>
+        </div>
+
+        <div>
+          <p class="font-medium text-gray-900 mb-1">
+            🔄 Comment fonctionne l'échange ?
+          </p>
+          <p>
+            Vous créez une offre → Un voisin la demande → Vous acceptez et commencez
+            → Vous terminez → Les crédits sont automatiquement transférés.
+          </p>
+        </div>
+
+        <div>
+          <p class="font-medium text-gray-900 mb-1">
+            ⚖️ Le SEL est-il légal en Belgique ?
+          </p>
+          <p>
+            Oui ! Les SEL sont reconnus et non-taxables si non-commerciaux
+            (troc). Ne remplacez pas les services professionnels (assurance).
+          </p>
+        </div>
+
+        <div>
+          <p class="font-medium text-gray-900 mb-1">
+            📊 Puis-je avoir un solde négatif ?
+          </p>
+          <p>
+            Oui, le modèle de confiance communautaire permet les soldes négatifs.
+            Cela vous encourage à offrir plus de services à l'avenir.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import { CreateExchangeForm } from "../../components/local-exchanges";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const buildingId = auth.user?.buildingIds?.[0] || "";
+
+  // Mount Create Form
+  const formContainer = document.getElementById("create-form-container");
+  if (formContainer && buildingId) {
+    mount(CreateExchangeForm, {
+      target: formContainer,
+      props: {
+        buildingId: buildingId,
+      },
+    });
+  }
+</script>
