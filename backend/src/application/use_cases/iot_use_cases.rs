@@ -631,7 +631,7 @@ mod tests {
     fn test_validate_metric_for_device_ores_valid() {
         assert!(IoTUseCases::validate_metric_for_device(
             &DeviceType::ElectricityMeter,
-            &MetricType::GasConsumption
+            &MetricType::ElectricityConsumption
         )
         .is_ok());
     }
@@ -640,7 +640,7 @@ mod tests {
     fn test_validate_metric_for_device_ores_invalid() {
         assert!(IoTUseCases::validate_metric_for_device(
             &DeviceType::ElectricityMeter,
-            &MetricType::ElectricityConsumption
+            &MetricType::GasConsumption
         )
         .is_err());
     }

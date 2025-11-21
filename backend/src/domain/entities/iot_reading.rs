@@ -29,11 +29,11 @@ impl IoTReading {
         timestamp: DateTime<Utc>,
         source: String,
     ) -> Result<Self, String> {
-        // Validate value based on metric type
-        Self::validate_value(&metric_type, value)?;
-
-        // Validate unit matches metric type
+        // Validate unit matches metric type (must be done first)
         Self::validate_unit(&metric_type, &unit)?;
+
+        // Validate value based on metric type (unit needed for temperature conversion)
+        Self::validate_value(&metric_type, value, &unit)?;
 
         // Validate source is non-empty
         if source.trim().is_empty() {
@@ -66,7 +66,7 @@ impl IoTReading {
     }
 
     /// Validate value based on metric type
-    fn validate_value(metric_type: &MetricType, value: f64) -> Result<(), String> {
+    fn validate_value(metric_type: &MetricType, value: f64, unit: &str) -> Result<(), String> {
         match metric_type {
             MetricType::ElectricityConsumption
             | MetricType::WaterConsumption
@@ -79,7 +79,14 @@ impl IoTReading {
                 }
             }
             MetricType::Temperature => {
-                if value < -40.0 || value > 80.0 {
+                // Convert to Celsius for validation
+                let normalized = match unit {
+                    "F" | "°F" => (value - 32.0) * 5.0 / 9.0,
+                    "K" => value - 273.15,
+                    _ => value, // Already Celsius
+                };
+
+                if normalized < -40.0 || normalized > 80.0 {
                     return Err(format!(
                         "Temperature value out of range (-40 to +80°C): {}",
                         value

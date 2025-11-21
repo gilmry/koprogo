@@ -235,11 +235,14 @@ async fn create_test_fixtures(
 
     let login = app_state
         .auth_use_cases
-        .login(register_dto.email, register_dto.password)
+        .login(LoginRequest {
+            email: register_dto.email.clone(),
+            password: register_dto.password.clone(),
+        })
         .await
         .expect("Failed to login");
 
-    let token = login.access_token;
+    let token = login.token;
 
     // 2. Create organization
     let org_dto = CreateOrganizationDto {

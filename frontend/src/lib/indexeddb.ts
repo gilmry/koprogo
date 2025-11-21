@@ -225,6 +225,7 @@ export async function queueRequest(
   ) {
     try {
       const registration = await navigator.serviceWorker.ready;
+      // @ts-ignore - Background Sync API not yet in TypeScript types
       await registration.sync.register("sync-data");
     } catch (error) {
       console.error("Failed to register background sync:", error);

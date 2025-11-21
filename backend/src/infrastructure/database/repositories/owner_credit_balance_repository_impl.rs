@@ -85,7 +85,7 @@ impl OwnerCreditBalanceRepository for PostgresOwnerCreditBalanceRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_balance(row)).collect())
+        Ok(rows.iter().map(map_row_to_balance).collect())
     }
 
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<OwnerCreditBalance>, String> {
@@ -105,7 +105,7 @@ impl OwnerCreditBalanceRepository for PostgresOwnerCreditBalanceRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_balance(row)).collect())
+        Ok(rows.iter().map(map_row_to_balance).collect())
     }
 
     async fn get_or_create(
@@ -191,7 +191,7 @@ impl OwnerCreditBalanceRepository for PostgresOwnerCreditBalanceRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_balance(row)).collect())
+        Ok(rows.iter().map(map_row_to_balance).collect())
     }
 
     async fn count_active_participants(&self, building_id: Uuid) -> Result<i64, String> {

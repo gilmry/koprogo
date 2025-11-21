@@ -15,6 +15,9 @@ pub trait UserRepository: Send + Sync {
 }
 
 #[cfg(test)]
+pub use tests::MockUserRepo;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use mockall::mock;
@@ -35,6 +38,3 @@ mod tests {
         }
     }
 }
-
-#[cfg(test)]
-pub use tests::MockUserRepo;

@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn test_two_factor_status_dto_backup_codes_low() {
-        let codes: Vec<String> = vec!["CODE1".to_string(), "CODE2".to_string()]; // Only 2 codes
+        let _codes: Vec<String> = vec!["CODE1".to_string(), "CODE2".to_string()]; // Only 2 codes
         let mut secret =
             TwoFactorSecret::new(Uuid::new_v4(), "JBSWY3DPEHPK3PXP".to_string()).unwrap();
 

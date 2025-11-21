@@ -465,7 +465,7 @@ mod tests {
 
     #[test]
     fn test_should_send_reminder() {
-        let meeting_date = Utc::now() + Duration::days(2); // 2 days until meeting
+        let meeting_date = Utc::now() + Duration::days(3); // 3 days until meeting (exactly on threshold)
         let mut convocation = Convocation::new(
             Uuid::new_v4(),
             Uuid::new_v4(),

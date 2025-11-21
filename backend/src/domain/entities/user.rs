@@ -145,6 +145,27 @@ impl User {
         first_name: Option<String>,
         last_name: Option<String>,
     ) -> Result<(), String> {
+        // Validate email format BEFORE modifying anything
+        if let Some(ref new_email) = email {
+            let email_normalized = new_email.to_lowercase().trim().to_string();
+            if !email_normalized.contains('@') || email_normalized.len() < 3 {
+                return Err(format!("Invalid email format: {}", new_email));
+            }
+        }
+
+        // Validate names are not empty BEFORE modifying
+        if let Some(ref new_first_name) = first_name {
+            if new_first_name.trim().is_empty() {
+                return Err("First name cannot be empty".to_string());
+            }
+        }
+        if let Some(ref new_last_name) = last_name {
+            if new_last_name.trim().is_empty() {
+                return Err("Last name cannot be empty".to_string());
+            }
+        }
+
+        // Only apply changes after validation passes
         if let Some(new_email) = email {
             self.email = new_email.to_lowercase().trim().to_string();
         }
@@ -157,6 +178,7 @@ impl User {
 
         self.updated_at = Utc::now();
 
+        // Final validation with full validator
         self.validate()
             .map_err(|e| format!("Validation error: {}", e))?;
 

@@ -272,8 +272,8 @@ impl IoTRepository for PostgresIoTRepository {
             .into_iter()
             .map(|record| DailyAggregateDto {
                 building_id,
-                device_type: device_type.clone(),
-                metric_type: metric_type.clone(),
+                device_type,
+                metric_type,
                 day: record.day.and_hms_opt(0, 0, 0).unwrap().and_utc(),
                 avg_value: record.avg_value.unwrap_or(0.0),
                 min_value: record.min_value.unwrap_or(0.0),
@@ -329,8 +329,8 @@ impl IoTRepository for PostgresIoTRepository {
             .into_iter()
             .map(|record| MonthlyAggregateDto {
                 building_id,
-                device_type: device_type.clone(),
-                metric_type: metric_type.clone(),
+                device_type,
+                metric_type,
                 month: record.month,
                 avg_value: record.avg_value.unwrap_or(0.0),
                 min_value: record.min_value.unwrap_or(0.0),

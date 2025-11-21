@@ -19,8 +19,7 @@ pub async fn create_technical_inspection(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -40,9 +39,7 @@ pub async fn create_technical_inspection(
 
             HttpResponse::Created().json(inspection)
         }
-        Err(err) => {
-            HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -61,9 +58,7 @@ pub async fn get_technical_inspection(
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Technical inspection not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -79,9 +74,7 @@ pub async fn list_building_technical_inspections(
         .await
     {
         Ok(inspections) => HttpResponse::Ok().json(inspections),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -97,9 +90,7 @@ pub async fn list_organization_technical_inspections(
         .await
     {
         Ok(inspections) => HttpResponse::Ok().json(inspections),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -116,9 +107,7 @@ pub async fn list_technical_inspections_paginated(
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -133,8 +122,7 @@ pub async fn update_technical_inspection(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -168,8 +156,7 @@ pub async fn delete_technical_inspection(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -195,9 +182,7 @@ pub async fn delete_technical_inspection(
                 }))
             }
         }
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -215,9 +200,7 @@ pub async fn get_overdue_inspections(
         .await
     {
         Ok(inspections) => HttpResponse::Ok().json(inspections),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -229,10 +212,7 @@ pub async fn get_upcoming_inspections(
     query: web::Query<serde_json::Value>,
 ) -> impl Responder {
     let building_id = path.into_inner();
-    let days = query
-        .get("days")
-        .and_then(|v| v.as_i64())
-        .unwrap_or(90) as i32;
+    let days = query.get("days").and_then(|v| v.as_i64()).unwrap_or(90) as i32;
 
     match state
         .technical_inspection_use_cases
@@ -240,9 +220,7 @@ pub async fn get_upcoming_inspections(
         .await
     {
         Ok(inspections) => HttpResponse::Ok().json(inspections),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -260,9 +238,7 @@ pub async fn get_inspections_by_type(
         .await
     {
         Ok(inspections) => HttpResponse::Ok().json(inspections),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -279,8 +255,7 @@ pub async fn add_report(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -315,8 +290,7 @@ pub async fn add_inspection_photo(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -351,8 +325,7 @@ pub async fn add_certificate(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 

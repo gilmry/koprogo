@@ -4,9 +4,7 @@
 
 use actix_web::http::header;
 use actix_web::{test, App};
-use koprogo_api::application::dto::*;
 use koprogo_api::application::use_cases::*;
-use koprogo_api::domain::entities::BudgetStatus;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;
@@ -199,8 +197,8 @@ async fn test_create_budget_draft() {
     let budget_dto = json!({
         "building_id": building_id.to_string(),
         "fiscal_year": 2026,
-        "ordinary_budget_cents": 50000_00i64,  // 50,000 EUR
-        "extraordinary_budget_cents": 20000_00i64,  // 20,000 EUR
+        "ordinary_budget_cents": 5_000_000_i64,  // 50,000 EUR
+        "extraordinary_budget_cents": 2_000_000_i64,  // 20,000 EUR
         "notes": "Draft budget for approval in AG"
     });
 

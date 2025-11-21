@@ -6,7 +6,6 @@ use actix_web::http::header;
 use actix_web::{test, App};
 use koprogo_api::application::dto::*;
 use koprogo_api::application::use_cases::*;
-use koprogo_api::domain::entities::unit::UnitType;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;

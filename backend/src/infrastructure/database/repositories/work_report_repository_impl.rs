@@ -19,7 +19,8 @@ impl PostgresWorkReportRepository {
 #[async_trait]
 impl WorkReportRepository for PostgresWorkReportRepository {
     async fn create(&self, work_report: &WorkReport) -> Result<WorkReport, String> {
-        let (warranty_type_str, warranty_custom_years) = warranty_type_to_sql(&work_report.warranty_type);
+        let (warranty_type_str, warranty_custom_years) =
+            warranty_type_to_sql(&work_report.warranty_type);
 
         sqlx::query(
             r#"
@@ -133,11 +134,13 @@ impl WorkReportRepository for PostgresWorkReportRepository {
         let mut where_clauses = vec![];
         let mut bind_count = 0;
 
+        #[allow(unused_variables)]
         if let Some(building_id) = filters.building_id {
             bind_count += 1;
             where_clauses.push(format!("building_id = ${}", bind_count));
         }
 
+        #[allow(unused_variables)]
         if let Some(ref work_type) = filters.work_type {
             bind_count += 1;
             where_clauses.push(format!("work_type = ${}", bind_count));
@@ -261,7 +264,8 @@ impl WorkReportRepository for PostgresWorkReportRepository {
     }
 
     async fn update(&self, work_report: &WorkReport) -> Result<WorkReport, String> {
-        let (warranty_type_str, warranty_custom_years) = warranty_type_to_sql(&work_report.warranty_type);
+        let (warranty_type_str, warranty_custom_years) =
+            warranty_type_to_sql(&work_report.warranty_type);
 
         sqlx::query(
             r#"

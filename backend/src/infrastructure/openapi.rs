@@ -165,7 +165,6 @@ mod tests {
     fn test_swagger_ui_configuration() {
         let _swagger = configure_swagger_ui();
         // SwaggerUi is configured, this test ensures it compiles
-        assert!(true);
     }
 
     #[test]

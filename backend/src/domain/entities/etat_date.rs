@@ -428,7 +428,7 @@ mod tests {
             "101".to_string(),
             None,
             None,
-            100.0, // 150% - invalide
+            150.0, // 150% - invalide
             100.0,
         );
 

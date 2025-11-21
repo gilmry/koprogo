@@ -213,6 +213,7 @@ impl TotpGenerator {
         // Generate random 96-bit nonce
         let mut nonce_bytes = [0u8; 12];
         rand::rng().fill(&mut nonce_bytes);
+        #[allow(deprecated)]
         let nonce = Nonce::from_slice(&nonce_bytes);
 
         // Encrypt secret
@@ -251,6 +252,7 @@ impl TotpGenerator {
 
         // Extract nonce (first 12 bytes) and ciphertext (rest)
         let (nonce_bytes, ciphertext) = encrypted_bytes.split_at(12);
+        #[allow(deprecated)]
         let nonce = Nonce::from_slice(nonce_bytes);
 
         // Decrypt

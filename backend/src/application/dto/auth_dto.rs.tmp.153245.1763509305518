@@ -11,7 +11,7 @@ pub struct LoginRequest {
     pub password: String,
 }
 
-#[derive(Debug, Deserialize, Validate, ToSchema)]
+#[derive(Debug, Deserialize, Validate)]
 pub struct RegisterRequest {
     #[validate(email(message = "Email must be valid"))]
     pub email: String,
@@ -37,7 +37,7 @@ pub struct LoginResponse {
     pub user: UserResponse,
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize)]
 pub struct RefreshTokenRequest {
     pub refresh_token: String,
 }
@@ -63,7 +63,7 @@ pub struct UserResponse {
     pub active_role: Option<UserRoleSummary>,
 }
 
-#[derive(Debug, Deserialize, ToSchema)]
+#[derive(Debug, Deserialize)]
 pub struct SwitchRoleRequest {
     pub role_id: uuid::Uuid,
 }

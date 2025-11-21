@@ -96,7 +96,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_exchange(row)).collect())
+        Ok(rows.iter().map(map_row_to_exchange).collect())
     }
 
     async fn find_by_building_and_status(
@@ -123,7 +123,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_exchange(row)).collect())
+        Ok(rows.iter().map(map_row_to_exchange).collect())
     }
 
     async fn find_by_provider(&self, provider_id: Uuid) -> Result<Vec<LocalExchange>, String> {
@@ -145,7 +145,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_exchange(row)).collect())
+        Ok(rows.iter().map(map_row_to_exchange).collect())
     }
 
     async fn find_by_requester(&self, requester_id: Uuid) -> Result<Vec<LocalExchange>, String> {
@@ -167,7 +167,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_exchange(row)).collect())
+        Ok(rows.iter().map(map_row_to_exchange).collect())
     }
 
     async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<LocalExchange>, String> {
@@ -189,7 +189,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_exchange(row)).collect())
+        Ok(rows.iter().map(map_row_to_exchange).collect())
     }
 
     async fn find_active_by_building(
@@ -215,7 +215,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_exchange(row)).collect())
+        Ok(rows.iter().map(map_row_to_exchange).collect())
     }
 
     async fn find_available_by_building(
@@ -240,7 +240,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_exchange(row)).collect())
+        Ok(rows.iter().map(map_row_to_exchange).collect())
     }
 
     async fn find_by_type(
@@ -267,7 +267,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
-        Ok(rows.iter().map(|row| map_row_to_exchange(row)).collect())
+        Ok(rows.iter().map(map_row_to_exchange).collect())
     }
 
     async fn update(&self, exchange: &LocalExchange) -> Result<LocalExchange, String> {

@@ -74,10 +74,10 @@ CREATE INDEX idx_technical_inspections_next_due ON technical_inspections(next_du
 CREATE INDEX idx_technical_inspections_type ON technical_inspections(inspection_type);
 CREATE INDEX idx_technical_inspections_status ON technical_inspections(status);
 
--- Index for overdue inspections
+-- Index for overdue inspections (removed NOW() as it's not IMMUTABLE)
 CREATE INDEX idx_technical_inspections_overdue
     ON technical_inspections(next_due_date, status)
-    WHERE status = 'pending' AND next_due_date < NOW();
+    WHERE status = 'pending';
 
 -- GIN indexes for searching in document arrays
 CREATE INDEX idx_technical_inspections_reports ON technical_inspections USING GIN (reports);

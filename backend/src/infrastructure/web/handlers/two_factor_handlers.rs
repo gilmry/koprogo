@@ -424,7 +424,7 @@ mod tests {
             encryption_key,
         ));
 
-        let app = test::init_service(
+        let _app = test::init_service(
             App::new()
                 .app_data(web::Data::new(use_cases))
                 .configure(configure_two_factor_routes),

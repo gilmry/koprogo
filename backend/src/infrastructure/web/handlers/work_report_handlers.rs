@@ -19,8 +19,7 @@ pub async fn create_work_report(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -40,9 +39,7 @@ pub async fn create_work_report(
 
             HttpResponse::Created().json(work_report)
         }
-        Err(err) => {
-            HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -54,9 +51,7 @@ pub async fn get_work_report(state: web::Data<AppState>, id: web::Path<Uuid>) ->
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Work report not found"
         })),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -72,9 +67,7 @@ pub async fn list_building_work_reports(
         .await
     {
         Ok(work_reports) => HttpResponse::Ok().json(work_reports),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -90,9 +83,7 @@ pub async fn list_organization_work_reports(
         .await
     {
         Ok(work_reports) => HttpResponse::Ok().json(work_reports),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -109,9 +100,7 @@ pub async fn list_work_reports_paginated(
         .await
     {
         Ok(response) => HttpResponse::Ok().json(response),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -126,8 +115,7 @@ pub async fn update_work_report(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -161,8 +149,7 @@ pub async fn delete_work_report(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -184,9 +171,7 @@ pub async fn delete_work_report(
                 }))
             }
         }
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -204,9 +189,7 @@ pub async fn get_active_warranties(
         .await
     {
         Ok(warranties) => HttpResponse::Ok().json(warranties),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -218,10 +201,7 @@ pub async fn get_expiring_warranties(
     query: web::Query<serde_json::Value>,
 ) -> impl Responder {
     let building_id = path.into_inner();
-    let days = query
-        .get("days")
-        .and_then(|v| v.as_i64())
-        .unwrap_or(90) as i32;
+    let days = query.get("days").and_then(|v| v.as_i64()).unwrap_or(90) as i32;
 
     match state
         .work_report_use_cases
@@ -229,9 +209,7 @@ pub async fn get_expiring_warranties(
         .await
     {
         Ok(warranties) => HttpResponse::Ok().json(warranties),
-        Err(err) => {
-            HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
-        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
 
@@ -248,8 +226,7 @@ pub async fn add_photo(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 
@@ -284,8 +261,7 @@ pub async fn add_document(
     let organization_id = match user.require_organization() {
         Ok(org_id) => org_id,
         Err(e) => {
-            return HttpResponse::Unauthorized()
-                .json(serde_json::json!({"error": e.to_string()}))
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
         }
     };
 

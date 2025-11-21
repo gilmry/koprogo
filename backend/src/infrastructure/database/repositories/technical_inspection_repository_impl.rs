@@ -90,7 +90,10 @@ impl TechnicalInspectionRepository for PostgresTechnicalInspectionRepository {
         Ok(row.map(|r| map_row_to_technical_inspection(&r)))
     }
 
-    async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<TechnicalInspection>, String> {
+    async fn find_by_building(
+        &self,
+        building_id: Uuid,
+    ) -> Result<Vec<TechnicalInspection>, String> {
         let rows = sqlx::query(
             r#"
             SELECT
@@ -151,16 +154,19 @@ impl TechnicalInspectionRepository for PostgresTechnicalInspectionRepository {
         let mut where_clauses = vec![];
         let mut bind_count = 0;
 
+        #[allow(unused_variables)]
         if let Some(building_id) = filters.building_id {
             bind_count += 1;
             where_clauses.push(format!("building_id = ${}", bind_count));
         }
 
+        #[allow(unused_variables)]
         if let Some(ref inspection_type) = filters.inspection_type {
             bind_count += 1;
             where_clauses.push(format!("inspection_type = ${}", bind_count));
         }
 
+        #[allow(unused_variables)]
         if let Some(ref status) = filters.status {
             bind_count += 1;
             where_clauses.push(format!("status = ${}", bind_count));
@@ -173,7 +179,10 @@ impl TechnicalInspectionRepository for PostgresTechnicalInspectionRepository {
         };
 
         // Count total
-        let count_query = format!("SELECT COUNT(*) FROM technical_inspections {}", where_clause);
+        let count_query = format!(
+            "SELECT COUNT(*) FROM technical_inspections {}",
+            where_clause
+        );
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
         if let Some(building_id) = filters.building_id {
@@ -321,7 +330,10 @@ impl TechnicalInspectionRepository for PostgresTechnicalInspectionRepository {
         Ok(rows.iter().map(map_row_to_technical_inspection).collect())
     }
 
-    async fn update(&self, inspection: &TechnicalInspection) -> Result<TechnicalInspection, String> {
+    async fn update(
+        &self,
+        inspection: &TechnicalInspection,
+    ) -> Result<TechnicalInspection, String> {
         sqlx::query(
             r#"
             UPDATE technical_inspections
@@ -474,7 +486,7 @@ fn inspection_type_to_sql(inspection_type: &InspectionType) -> String {
         InspectionType::RoofStructure => "roof".to_string(),
         InspectionType::Facade => "facade".to_string(),
         InspectionType::WaterQuality => "water_tank".to_string(),
-        InspectionType::Other { name } => {
+        InspectionType::Other { name: _ } => {
             // Store custom inspection types as "other" in the DB
             // The name is stored in the title field
             "other".to_string()

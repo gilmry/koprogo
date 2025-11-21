@@ -131,25 +131,20 @@ impl Building {
         let combined = format!("{} {}", name, city);
 
         combined
-            .to_lowercase()
             .chars()
             .map(|c| {
-                if c.is_alphanumeric() {
-                    c
-                } else if c.is_whitespace() || c == '-' {
-                    '-'
-                } else {
-                    // Remove accents and special characters
-                    match c {
-                        'à' | 'á' | 'â' | 'ã' | 'ä' => 'a',
-                        'è' | 'é' | 'ê' | 'ë' => 'e',
-                        'ì' | 'í' | 'î' | 'ï' => 'i',
-                        'ò' | 'ó' | 'ô' | 'õ' | 'ö' => 'o',
-                        'ù' | 'ú' | 'û' | 'ü' => 'u',
-                        'ç' => 'c',
-                        'ñ' => 'n',
-                        _ => '-',
-                    }
+                // Remove accents and special characters BEFORE lowercase
+                match c {
+                    'À' | 'Á' | 'Â' | 'Ã' | 'Ä' | 'à' | 'á' | 'â' | 'ã' | 'ä' => 'a',
+                    'È' | 'É' | 'Ê' | 'Ë' | 'è' | 'é' | 'ê' | 'ë' => 'e',
+                    'Ì' | 'Í' | 'Î' | 'Ï' | 'ì' | 'í' | 'î' | 'ï' => 'i',
+                    'Ò' | 'Ó' | 'Ô' | 'Õ' | 'Ö' | 'ò' | 'ó' | 'ô' | 'õ' | 'ö' => 'o',
+                    'Ù' | 'Ú' | 'Û' | 'Ü' | 'ù' | 'ú' | 'û' | 'ü' => 'u',
+                    'Ç' | 'ç' => 'c',
+                    'Ñ' | 'ñ' => 'n',
+                    _ if c.is_alphanumeric() => c.to_ascii_lowercase(),
+                    _ if c.is_whitespace() || c == '-' => '-',
+                    _ => '-',
                 }
             })
             .collect::<String>()

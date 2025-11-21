@@ -493,6 +493,7 @@ mod tests {
     fn test_mark_expense_as_paid() {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
         let mut expense = Expense::new(
             org_id,
             building_id,
@@ -505,6 +506,10 @@ mod tests {
             None,
         )
         .unwrap();
+
+        // Follow approval workflow before payment
+        expense.submit_for_approval().unwrap();
+        expense.approve(syndic_id).unwrap();
 
         assert!(!expense.is_paid());
         let result = expense.mark_as_paid();
@@ -516,6 +521,7 @@ mod tests {
     fn test_mark_paid_expense_as_paid_fails() {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
         let mut expense = Expense::new(
             org_id,
             building_id,
@@ -528,6 +534,10 @@ mod tests {
             None,
         )
         .unwrap();
+
+        // Follow approval workflow before payment
+        expense.submit_for_approval().unwrap();
+        expense.approve(syndic_id).unwrap();
 
         expense.mark_as_paid().unwrap();
         let result = expense.mark_as_paid();
@@ -1029,6 +1039,7 @@ mod tests {
     fn test_mark_as_paid_sets_paid_date() {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
 
         let mut expense = Expense::new(
             org_id,
@@ -1042,6 +1053,10 @@ mod tests {
             None, // account_code
         )
         .unwrap();
+
+        // Follow approval workflow: Draft → Submit → Approve → Pay
+        expense.submit_for_approval().unwrap();
+        expense.approve(syndic_id).unwrap();
 
         assert!(expense.paid_date.is_none());
         expense.mark_as_paid().unwrap();

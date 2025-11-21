@@ -7,7 +7,6 @@ use actix_web::{test, App};
 use chrono::{Duration, Utc};
 use koprogo_api::application::dto::*;
 use koprogo_api::application::use_cases::*;
-use koprogo_api::domain::entities::{MeetingStatus, MeetingType};
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;
