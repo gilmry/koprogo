@@ -1,145 +1,335 @@
-===================================
-Documentation KoproGo ASBL
-===================================
+======================================
+Documentation KoproGo
+======================================
 
-**KoproGo** : Plateforme opensource de gestion de copropriété développée par une ASBL belge, utilisant des technologies de pointe pour résoudre un problème sociétal avec un impact écologique minimal.
+**Plateforme open-source de gestion de copropriété pour la Belgique**
 
-Introduction
-============
+.. note::
+   📺 **Tutoriels Vidéo** : `Chaîne YouTube @koprogo <https://www.youtube.com/@koprogo>`_
 
-KoproGo est un projet **holistique** qui combine :
+   Retrouvez des tutoriels vidéo pour démarrer avec KoproGo, comprendre l'architecture hexagonale, et découvrir les fonctionnalités avancées de la plateforme.
 
-✅ **Résolution d'un problème sociétal** (gestion copropriétés en Belgique et Europe)
-✅ **Technologies de pointe** (Rust, GitOps, IA, Architecture Hexagonale)
-✅ **Écologie** (0.12g CO2/requête, 96% réduction vs solutions actuelles)
-✅ **Opensource et communautaire** (AGPL-3.0, ASBL, partage des recettes IA)
-✅ **Sécurité et conformité** (RGPD, souveraineté des données, GitOps)
-✅ **Pédagogie** (documentation exhaustive, onboarding facilité)
-✅ **Progression mesurable** (jalons basés sur capacités, pas sur dates)
+L'Histoire Humaine Derrière KoproGo
+====================================
 
-**Stack Technique** :
+**Marie, 72 ans, retraitée à Bruxelles**
 
-- **Backend**: Rust 1.83 + Actix-web 4.9 + PostgreSQL 15
-- **Frontend**: Astro 4.x + Svelte 4.x (PWA offline-first)
-- **Infrastructure**: Terraform + Ansible + GitOps (OVH Cloud)
-- **Architecture**: Hexagonale (DDD) avec tests exhaustifs (Pyramid Strategy)
+Son syndic lance des travaux de façade : 15 000€ sa quote-part. Elle conteste les devis qui lui semblent excessifs. Un avocat coûte 2 000€. Sa pension : 1 200€/mois.
 
-Ressources
-==========
+**Ahmed, 35 ans, intérimaire**
 
-📺 **Tutoriels Vidéo** : `Chaîne YouTube @koprogo <https://www.youtube.com/@koprogo>`_
+Trois mois de chômage technique en 2024. Résultat : 3 200€ d'impayés de charges. Les huissiers interviennent. Les pénalités s'accumulent.
 
-Retrouvez des tutoriels vidéo pour démarrer avec KoproGo, comprendre l'architecture hexagonale, et découvrir les fonctionnalités avancées de la plateforme.
+**Sofiane, 40 ans, auto-entrepreneur**
 
-=====================================
-Documentation
-=====================================
+La toiture de sa copropriété doit être refaite : 12 000€ sa quote-part. Les banques refusent le prêt (pas de CDI). Les travaux sont bloqués. L'immeuble se dégrade.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: 📘 Vision & Stratégie (Hiérarchie Stratégique)
+----
 
-   VISION
-   MISSION
-   GOVERNANCE
-   ECONOMIC_MODEL
-   FONDS_SOLIDARITE
+**Ces situations reflètent les défis quotidiens de milliers de copropriétaires en Belgique.**
 
-**Hiérarchie de lecture recommandée** :
+**KoproGo apporte des solutions concrètes** : plateforme de gestion accessible (5€/mois en cloud, gratuite en self-hosted), Fonds de Solidarité pour membres en difficulté, gouvernance démocratique (ASBL), et architecture optimisée réduisant coûts et empreinte carbone.
 
-1. **VISION** : Vision macro sociétale et problème à résoudre (pourquoi KoproGo existe)
-2. **MISSION** : Solutions concrètes et valeurs fondamentales (comment nous résolvons le problème)
-3. **GOVERNANCE** : Structure organisationnelle évolutive Solo → Fondateurs → ASBL → Coopérative
-4. **ECONOMIC_MODEL** : Modèle économique ASBL et viabilité financière à long terme
-5. **FONDS_SOLIDARITE** : Mécanisme d'aide financière aux membres en difficulté (solidarité concrète)
+Qui Êtes-Vous ? (Choisissez Votre Parcours)
+============================================
 
-**Métriques de Succès par Paliers** (progression mesurable):
+KoproGo s'adresse à différents profils. Choisissez le parcours qui vous correspond :
 
-.. list-table:: Progression par Capacités
+.. grid:: 2
+   :gutter: 3
+
+   .. grid-item-card:: 💼 Investisseur / Fondation
+      :link: parcours-investisseur
+      :link-type: doc
+
+      **Vous évaluez KoproGo pour un investissement ou subvention ?**
+
+      Découvrez le modèle économique, les projections financières,
+      et l'impact sociétal attendu.
+
+      ⏱️ **5-10 min**
+
+   .. grid-item-card:: 👨‍💻 Développeur
+      :link: contribuer/index
+      :link-type: doc
+
+      **Vous voulez contribuer au projet ?**
+
+      Installez le projet, comprenez l'architecture,
+      et faites votre première contribution.
+
+      ⏱️ **30-60 min**
+
+   .. grid-item-card:: 🏘️ Syndic / Copropriétaire
+      :link: user-guides/syndic-guide
+      :link-type: doc
+
+      **Vous cherchez un outil de gestion ?**
+
+      Découvrez les fonctionnalités et cas d'usage.
+
+      ⏱️ **10-15 min**
+
+   .. grid-item-card:: 🌍 Curieux du Projet
+      :link: vision-strategie/pourquoi-koprogo
+      :link-type: doc
+
+      **Vous découvrez KoproGo ?**
+
+      Comprenez pourquoi ce projet existe.
+
+      ⏱️ **15-20 min**
+
+Introduction Rapide
+====================
+
+**Le Contexte**
+
+En Belgique, 200 000 copropriétés font face à des coûts de gestion élevés (200-500€/mois pour les solutions logicielles existantes), une empreinte carbone importante, et un manque de transparence dans les calculs de charges.
+
+**La Solution KoproGo**
+
+Une plateforme open-source développée par une ASBL belge :
+
+.. grid:: 2
+   :gutter: 2
+
+   .. grid-item-card:: 💰 Économies Substantielles
+
+      * **5€/mois** en cloud managé
+      * **Gratuit** en self-hosted (AGPL-3.0)
+      * **70M€/an** économisables collectivement en Belgique
+
+   .. grid-item-card:: 🌱 Impact Écologique
+
+      * **0,12g CO₂/requête** (architecture Rust)
+      * **96% de réduction** vs solutions SaaS classiques
+      * **840 tonnes CO₂/an évitées** à 5 000 copropriétés
+
+   .. grid-item-card:: 🤝 Gouvernance Démocratique
+
+      * ASBL belge sans actionnaires
+      * 1 membre = 1 voix (AG)
+      * Prix voté démocratiquement
+
+   .. grid-item-card:: 💙 Solidarité Intégrée
+
+      * Fonds de Solidarité pour membres en difficulté
+      * Prêts à taux 0% pour impayés
+      * Aide aux litiges démocratiques
+
+**L'Impact Attendu** (5 000 copropriétés)
+
+* **4M€/an économisés** collectivement
+* **840 tonnes CO₂/an évitées**
+* **40-60 copropriétaires aidés/an** financièrement
+
+Vision 2025-2030
+================
+
+**Notre objectif : 5 000 copropriétés belges utilisant KoproGo**
+
+.. list-table:: Progression par Paliers Mesurables
    :header-rows: 1
    :widths: 20 20 20 20 20
 
    * - Palier
      - Copropriétés
-     - Impact Économique
+     - Économies/an
      - CO₂ évité/an
-     - Participants
+     - Impact Social
    * - **Validation**
      - 100
      - 80k€
      - -2 tonnes
-     - 10
+     - Beta publique
    * - **Viabilité**
      - 500
      - 400k€
      - -15 tonnes
-     - 50
+     - Production ouverte
    * - **Impact**
-     - 1.000
+     - 1 000
      - 800k€
      - -107 tonnes
-     - 100
+     - Communauté active
    * - **Leadership**
-     - 2.000
+     - 2 000
      - 1,6M€
      - -214 tonnes
-     - 200
+     - Référence belge
    * - **Référence**
-     - 5.000
-     - 4M€
+     - 5 000
+     - **4M€**
      - **-840 tonnes**
-     - 500
+     - Leadership EU
 
-**Performance Technique Validée** :
+**Philosophie** : Nous livrons quand les **capacités sont atteintes**, pas selon des dates arbitraires. Chaque palier débloque le suivant.
 
-* Latence P99: 752ms (charge soutenue, 1 vCPU) ✅
-* Throughput: 287 req/s soutenu ✅
-* Consommation: 0.12g CO₂/req (96% réduction vs marché) ✅
-* RAM: 128MB utilisée sur 2GB (5% seulement) ✅
-* Viabilité: Marge 98% maintenue à tous les paliers ✅
+**Chaque fonctionnalité d'aujourd'hui prépare la vision de demain.**
 
-**Chaque palier débloque le suivant. Pas de dates fixes, mais des conditions mesurables.**
+→ Découvrez comment : :doc:`vision-strategie/de-gestion-a-symbiose`
+
+Parcours Guidé du Nouveau Contributeur
+=======================================
+
+.. important::
+   **Vous découvrez KoproGo ? Suivez ce parcours étape par étape !**
+
+**Étape 1 : Comprendre le Projet (15 min)**
+
+1. Lisez :doc:`vision-strategie/pourquoi-koprogo` - Pourquoi KoproGo existe
+2. Découvrez :doc:`vision-strategie/vision` - La vision à long terme
+3. Explorez :doc:`vision-strategie/mission` - La mission et les valeurs
+
+**Étape 2 : Découvrir la Roadmap (20 min)**
+
+4. Consultez :doc:`roadmap/roadmap-2025-2030` - La roadmap 2025-2030
+5. Voyez :doc:`roadmap/jalons-atteints` - Ce qui est déjà fait
+6. Explorez :doc:`roadmap/jalons-a-venir` - Ce qui vient ensuite
+
+**Étape 3 : Comprendre l'Architecture (30 min)**
+
+7. Lisez :doc:`architecture/vue-ensemble` - Vue d'ensemble de l'architecture
+8. Découvrez :doc:`architecture/choix-technologiques` - Pourquoi Rust, PostgreSQL, etc.
+
+**Étape 4 : Commencer à Contribuer (1-2h)**
+
+9. Suivez :doc:`contribuer/premiers-pas` - Premiers pas
+10. Installez le projet : :doc:`contribuer/installer-projet`
+11. Faites votre première contribution : :doc:`contribuer/faire-premiere-contribution`
+
+**Besoin d'Aide ?**
+
+* Consultez :doc:`contribuer/index` - Guide complet du contributeur
+* Rejoignez `GitHub Discussions <https://github.com/gilmry/koprogo/discussions>`_
+* Regardez les `Tutoriels YouTube <https://www.youtube.com/@koprogo>`_
+
+**Ou suivez le parcours complet** : :doc:`parcours-contributeur`
+
+Chiffres Clés (État Actuel)
+============================
+
+**Architecture & Code**
+
+* **73 endpoints REST API** opérationnels
+* **11 entités du domaine** (Organization, Building, Unit, Owner, Expense, etc.)
+* **Architecture hexagonale** (Domain-Driven Design)
+* **Tests E2E automatisés** avec Playwright
+* **100% open-source** (AGPL-3.0)
+
+**Performance Technique**
+
+* **287 req/s** soutenus (charge réelle)
+* **752ms** latence P99 (1 vCPU)
+* **0,12g CO₂/requête** (96% réduction vs solutions SaaS classiques)
+* **99,74% uptime** (infrastructure OVH)
+* **128MB RAM** par instance (ultra-léger)
+
+**Stack Technique**
+
+* **Backend** : Rust 1.83 + Actix-web 4.9 + PostgreSQL 15
+* **Frontend** : Astro 4.x + Svelte 4.x (PWA offline-first)
+* **Infrastructure** : Terraform + Ansible + GitOps
+* **Hébergement** : OVH France (Gravelines, bas carbone)
+
+Table des Matières
+==================
+
+📖 Vision & Stratégie
+---------------------
+
+Comprenez pourquoi KoproGo existe et quelle est sa vision à long terme.
 
 .. toctree::
    :maxdepth: 2
-   :caption: 💰 Finances & Performance (Données Réelles 2025)
 
-   INVESTOR_EXECUTIVE_SUMMARY_2025
-   INFRASTRUCTURE_COST_SIMULATIONS_2025
-   PERFORMANCE_REPORT
-   PERFORMANCE_TESTING
+   parcours-investisseur
+   vision-strategie/index
+   vision-strategie/pourquoi-koprogo
+   vision-strategie/de-gestion-a-symbiose
+   vision-strategie/vision
+   vision-strategie/mission
+   vision-strategie/fonds-solidarite
+
+🗺️ Roadmap 2025-2030
+--------------------
+
+Découvrez le chemin vers 5 000 copropriétés et l'impact sociétal prévu.
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🗺️ Roadmap
 
+   roadmap/index
+   roadmap/roadmap-2025-2030
+   roadmap/jalons-atteints
+   roadmap/jalons-a-venir
    ROADMAP_PAR_CAPACITES
-   roadmap/agile-journey
+
+🏗️ Architecture Technique
+-------------------------
+
+Explorez l'architecture hexagonale, les choix technologiques et les patterns utilisés.
 
 .. toctree::
    :maxdepth: 2
-   :caption: ⚡ Gouvernance Agile
 
+   architecture/index
+   architecture/vue-ensemble
+   architecture/choix-technologiques
+   backend/index
+   frontend/index
+   infrastructure/index
+
+🤝 Guide du Contributeur
+------------------------
+
+Apprenez à contribuer au projet, de l'installation à votre première pull request.
+
+.. toctree::
+   :maxdepth: 2
+
+   contribuer/index
+   contribuer/premiers-pas
+   contribuer/installer-projet
+   contribuer/faire-premiere-contribution
+   contribuer/comprendre-rfc-adr
+   contribuer/standards-code
+
+📜 Gouvernance & Décisions
+--------------------------
+
+Comprenez la gouvernance ASBL, les RFC/ADR et le processus de décision.
+
+.. toctree::
+   :maxdepth: 2
+
+   gouvernance/index
+   gouvernance/modele-asbl
+   GOVERNANCE
    governance/togaf/adm
    governance/nexus/framework
    governance/scrum/ceremonies
    governance/rfc/template
    governance/adr/0001-mcp-integration
 
+💰 Modèle Économique
+--------------------
+
+Découvrez le modèle économique OpenCore et la transparence financière.
+
 .. toctree::
    :maxdepth: 2
-   :caption: 📊 GitHub Project Management
 
-   github-export/index
+   economic-model/index
+   economic-model/modele-economique
+   economic-model/transparence-comptable
+   ECONOMIC_MODEL
 
-.. toctree::
-   :maxdepth: 2
-   :caption: 💻 Documentation Technique
+💻 Documentation Technique
+--------------------------
 
-   backend/index
-   frontend/index
-   infrastructure/index
-   deployment/index
+Documentation technique détaillée pour développeurs.
 
 .. toctree::
    :maxdepth: 2
@@ -170,13 +360,18 @@ Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🔧 API Documentation
+   :caption: 🔧 API & Déploiement
 
    api/README
+   deployment/index
+
+🏗️ Architecture Decision Records (ADR)
+---------------------------------------
+
+Historique des décisions d'architecture importantes.
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🏗️ Architecture Decision Records (ADR)
 
    adr/0001-rust-actix-web-backend
    adr/0002-hexagonal-architecture
@@ -186,26 +381,36 @@ Documentation
    adr/0006-agpl-license
    adr/0044-document-storage-strategy
 
+📊 GitHub Project Management
+-----------------------------
+
+Suivi du projet via GitHub Issues, Milestones et Projects.
+
 .. toctree::
    :maxdepth: 2
-   :caption: 🚨 Operations & SRE
+
+   github-export/index
+
+🚨 Operations & SRE
+-------------------
+
+Guides d'exploitation, monitoring, backups et incidents.
+
+.. toctree::
+   :maxdepth: 2
 
    operations/disaster-recovery
    operations/monitoring-runbook
    operations/backup-recovery
    operations/incident-response
 
-.. toctree::
-   :maxdepth: 2
-   :caption: 🎨 Frontend & Internationalization
+🔒 Sécurité & Conformité
+-------------------------
 
-   FRONTEND_COMPONENTS
-   EMAIL_TEMPLATES
-   I18N_GUIDE
+GDPR, comptabilité belge (PCMN), workflow de facturation et recouvrement.
 
 .. toctree::
    :maxdepth: 2
-   :caption: 🔒 Sécurité & Conformité
 
    BELGIAN_ACCOUNTING_PCMN
    INVOICE_WORKFLOW
@@ -215,8 +420,76 @@ Documentation
    GDPR_ADDITIONAL_RIGHTS
    BOARD_OF_DIRECTORS_GUIDE
 
-=====================================
+💰 Finances & Performance
+--------------------------
+
+Rapports de performance, simulations de coûts et données financières.
+
+.. toctree::
+   :maxdepth: 2
+
+   INVESTOR_EXECUTIVE_SUMMARY_2025
+   INFRASTRUCTURE_COST_SIMULATIONS_2025
+   PERFORMANCE_REPORT
+   PERFORMANCE_TESTING
+
+🎨 Frontend & Internationalisation
+-----------------------------------
+
+Composants frontend, templates email et guide i18n.
+
+.. toctree::
+   :maxdepth: 2
+
+   FRONTEND_COMPONENTS
+   EMAIL_TEMPLATES
+   I18N_GUIDE
+
+Rejoignez la Communauté
+=======================
+
+**KoproGo est un projet collaboratif et ouvert. Votre contribution compte !**
+
+.. tip::
+   **Comment Contribuer ?**
+
+   * **Code** : Consultez les `issues GitHub <https://github.com/gilmry/koprogo/issues>`_ étiquetées "good first issue"
+   * **Documentation** : Améliorez cette documentation via pull requests
+   * **Traductions** : Ajoutez le support pour d'autres langues (NL, DE, EN)
+   * **Tests** : Rejoignez le programme beta et testez la plateforme
+   * **Feedback** : Partagez vos idées sur `GitHub Discussions <https://github.com/gilmry/koprogo/discussions>`_
+
+**Liens Utiles**
+
+* Code source : https://github.com/gilmry/koprogo
+* Discussions : https://github.com/gilmry/koprogo/discussions
+* Tutoriels vidéo : https://www.youtube.com/@koprogo
+* Documentation : https://koprogo.readthedocs.io (à venir)
+
+Principes Fondamentaux
+======================
+
+.. note::
+   **Nos Valeurs**
+
+   ✅ **Open-Source d'abord** : Code public, auditable, contributible
+
+   ✅ **Démocratie tarifaire** : 1 membre = 1 voix, prix voté en AG
+
+   ✅ **Qualité avant vitesse** : Livraison quand c'est prêt, pas selon un calendrier
+
+   ✅ **Écologie par design** : Architecture optimisée pour réduire l'empreinte carbone
+
+   ✅ **Transparence totale** : Comptabilité publique, décisions ouvertes
+
+   ✅ **Solidarité intégrée** : Fonds de solidarité pour membres en difficulté
+
+   ✅ **Souveraineté des données** : Hébergement Europe, conformité GDPR stricte
+
+----
 
 *Documentation maintenue par la communauté KoproGo ASBL*
 
-*Modèle de progression: Capacités et métriques, pas dates fixes*
+*Modèle de progression : Capacités et métriques, pas dates fixes*
+
+*Contact : contact@koprogo.com - GitHub : github.com/gilmry/koprogo*

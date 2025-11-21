@@ -174,6 +174,8 @@ async fn main() -> std::io::Result<()> {
         Arc::new(PostgresTechnicalInspectionRepository::new(pool.clone()));
     let work_report_repo = Arc::new(PostgresWorkReportRepository::new(pool.clone()));
     let iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
+    let energy_campaign_repo = Arc::new(PostgresEnergyCampaignRepository::new(pool.clone()));
+    let energy_bill_upload_repo = Arc::new(PostgresEnergyBillUploadRepository::new(pool.clone()));
 
     // Linky API Client configuration
     let linky_api_base_url = env::var("LINKY_API_BASE_URL")
@@ -320,6 +322,15 @@ async fn main() -> std::io::Result<()> {
         challenge_progress_repo,
         user_repo.clone(),
     );
+    let energy_campaign_use_cases = EnergyCampaignUseCases::new(
+        energy_campaign_repo,
+        energy_bill_upload_repo.clone(),
+        building_repo.clone(),
+    );
+    let energy_bill_upload_use_cases = EnergyBillUploadUseCases::new(
+        energy_bill_upload_repo,
+        energy_campaign_repo.clone(),
+    );
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");
@@ -352,6 +363,8 @@ async fn main() -> std::io::Result<()> {
         technical_inspection_use_cases,
         work_report_use_cases,
         document_use_cases,
+        energy_campaign_use_cases,
+        energy_bill_upload_use_cases,
         etat_date_use_cases,
         pcn_use_cases,
         payment_reminder_use_cases,
