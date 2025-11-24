@@ -6,7 +6,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 # Web framework
-actix-web = "4.11"
+actix-web = "4.12"
 actix-cors = "0.7"
 actix-rt = "2.11"
 actix-multipart = "0.7"
