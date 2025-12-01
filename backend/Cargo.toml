@@ -70,7 +70,7 @@ lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-na
 # Unit & Integration tests
 mockall = "0.14"
 tokio-test = "0.4"
-testcontainers-modules = { version = "0.13", features = ["postgres", "minio"] }
+testcontainers-modules = { version = "0.14", features = ["postgres", "minio"] }
 
 # BDD tests
 cucumber = { version = "0.21", features = ["macros"] }
