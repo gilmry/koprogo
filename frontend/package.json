@@ -36,7 +36,7 @@
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@vite-pwa/astro": "^1.1.1",
-    "prettier": "^3.4.2",
+    "prettier": "^3.7.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-svelte": "^3.4.0",
     "workbox-window": "^7.4.0"
