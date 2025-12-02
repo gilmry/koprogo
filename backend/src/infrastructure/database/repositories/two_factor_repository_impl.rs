@@ -223,6 +223,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore] // Integration test - requires database
     async fn test_create_two_factor_secret() {
         let pool = setup_test_db().await;
         let repo = PostgresTwoFactorRepository::new(pool.clone());
@@ -259,6 +260,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore] // Integration test - requires database
     async fn test_find_by_user_id() {
         let pool = setup_test_db().await;
         let repo = PostgresTwoFactorRepository::new(pool.clone());
@@ -287,6 +289,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore] // Integration test - requires database
     async fn test_update_two_factor_secret() {
         let pool = setup_test_db().await;
         let repo = PostgresTwoFactorRepository::new(pool.clone());
@@ -318,6 +321,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore] // Integration test - requires database
     async fn test_delete_two_factor_secret() {
         let pool = setup_test_db().await;
         let repo = PostgresTwoFactorRepository::new(pool.clone());
@@ -346,6 +350,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore] // Integration test - requires database
     async fn test_find_needing_reverification() {
         let pool = setup_test_db().await;
         let repo = PostgresTwoFactorRepository::new(pool.clone());
@@ -384,6 +389,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore] // Integration test - requires database
     async fn test_find_with_low_backup_codes() {
         let pool = setup_test_db().await;
         let repo = PostgresTwoFactorRepository::new(pool.clone());

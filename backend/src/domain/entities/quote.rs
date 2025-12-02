@@ -500,15 +500,16 @@ mod tests {
         quote2.submit().unwrap();
         quote3.submit().unwrap();
 
-        // Score with min/max ranges
+        // Score with min/max ranges (must use amount_incl_vat since quotes store VAT-included prices)
+        // quote1: 5000 * 1.21 = 6050, quote2: 7000 * 1.21 = 8470, quote3: 6000 * 1.21 = 7260
         let score1 = quote1
-            .calculate_score(dec!(5000.00), dec!(7000.00), 10, 14, 10)
+            .calculate_score(dec!(6050.00), dec!(8470.00), 10, 14, 10)
             .unwrap();
         let score2 = quote2
-            .calculate_score(dec!(5000.00), dec!(7000.00), 10, 14, 10)
+            .calculate_score(dec!(6050.00), dec!(8470.00), 10, 14, 10)
             .unwrap();
         let score3 = quote3
-            .calculate_score(dec!(5000.00), dec!(7000.00), 10, 14, 10)
+            .calculate_score(dec!(6050.00), dec!(8470.00), 10, 14, 10)
             .unwrap();
 
         // Quote1: lowest price (100 * 0.4) + longest delay (0 * 0.3) + best warranty (100 * 0.2) + good reputation (80 * 0.1) = 68
