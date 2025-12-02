@@ -1,0 +1,87 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Notice Board - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900">Notice Board</h1>
+        <p class="text-gray-600 mt-1">Community announcements and classified ads</p>
+      </div>
+      <button
+        id="create-notice-btn"
+        class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        + Create Notice
+      </button>
+    </div>
+
+    <div id="notice-list-container"></div>
+    <div id="create-modal-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import NoticeList from "../components/notices/NoticeList.svelte";
+  import NoticeCreateModal from "../components/notices/NoticeCreateModal.svelte";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const buildingId = auth.user?.buildingIds?.[0] || "";
+  const authorId = auth.user?.id || "";
+
+  let isModalOpen = false;
+
+  // Mount Notice List
+  const listContainer = document.getElementById("notice-list-container");
+  if (listContainer) {
+    const noticeListComponent = mount(NoticeList, {
+      target: listContainer,
+      props: {
+        buildingId: buildingId,
+        showFilters: true,
+      },
+    });
+  }
+
+  // Mount Create Modal
+  const modalContainer = document.getElementById("create-modal-container");
+  let createModalComponent: any = null;
+
+  function openModal() {
+    if (modalContainer && !createModalComponent) {
+      createModalComponent = mount(NoticeCreateModal, {
+        target: modalContainer,
+        props: {
+          isOpen: true,
+          buildingId: buildingId,
+          authorId: authorId,
+          onClose: () => {
+            if (createModalComponent) {
+              createModalComponent.$set({ isOpen: false });
+              setTimeout(() => {
+                createModalComponent.$destroy();
+                createModalComponent = null;
+              }, 100);
+            }
+          },
+          onSuccess: () => {
+            // Reload page to show new notice
+            window.location.reload();
+          },
+        },
+      });
+    } else if (createModalComponent) {
+      createModalComponent.$set({ isOpen: true });
+    }
+  }
+
+  // Create button handler
+  const createBtn = document.getElementById("create-notice-btn");
+  if (createBtn) {
+    createBtn.addEventListener("click", openModal);
+  }
+</script>

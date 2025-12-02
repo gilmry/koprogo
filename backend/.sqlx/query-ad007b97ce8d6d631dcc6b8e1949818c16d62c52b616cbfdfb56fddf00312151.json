@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE energy_campaigns\n            SET\n                total_kwh_electricity = $2,\n                total_kwh_gas = $3,\n                avg_kwh_per_unit = $4,\n                updated_at = NOW()\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Float8",
+        "Float8",
+        "Float8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ad007b97ce8d6d631dcc6b8e1949818c16d62c52b616cbfdfb56fddf00312151"
+}

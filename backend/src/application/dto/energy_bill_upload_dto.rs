@@ -6,10 +6,10 @@ use crate::domain::entities::{EnergyBillUpload, EnergyType};
 
 /// DTO for uploading energy bill with GDPR consent
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct UploadEnergyBillRequest {
     pub campaign_id: Uuid,
     pub unit_id: Uuid,
+    pub building_id: Uuid,
 
     // Bill details
     pub bill_period_start: DateTime<Utc>,
@@ -32,7 +32,6 @@ pub struct UploadEnergyBillRequest {
 
 /// DTO for GDPR consent data
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct GdprConsentData {
     pub accepted: bool, // Must be true
     pub timestamp: DateTime<Utc>,
@@ -42,7 +41,6 @@ pub struct GdprConsentData {
 
 /// DTO for energy bill upload response (anonymized)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct EnergyBillUploadResponse {
     pub id: Uuid,
     pub campaign_id: Uuid,
@@ -108,7 +106,6 @@ impl From<EnergyBillUpload> for EnergyBillUploadResponse {
 
 /// DTO for decrypted consumption (owner only)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct DecryptedConsumptionResponse {
     pub upload_id: Uuid,
     pub total_kwh: f64, // Decrypted value
@@ -119,7 +116,6 @@ pub struct DecryptedConsumptionResponse {
 
 /// DTO for manual correction of OCR data
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct CorrectOcrDataRequest {
     pub total_kwh: f64,
     pub energy_type: Option<EnergyType>,
@@ -130,7 +126,6 @@ pub struct CorrectOcrDataRequest {
 
 /// DTO for verification request (admin)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct VerifyUploadRequest {
     pub verified: bool,
 }

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE provider_offers\n            SET\n                provider_name = $2,\n                price_kwh_electricity = $3,\n                price_kwh_gas = $4,\n                fixed_monthly_fee = $5,\n                green_energy_pct = $6,\n                contract_duration_months = $7,\n                estimated_savings_pct = $8,\n                offer_valid_until = $9,\n                updated_at = $10\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Int4",
+        "Float8",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d69367cf0c401292109e782c6dcadaf038e77c9b192834d058736098279ede1c"
+}

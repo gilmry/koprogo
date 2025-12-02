@@ -196,7 +196,7 @@ impl EnergyCampaignUseCases {
             None
         };
 
-        let avg_kwh = if uploads.len() > 0 {
+        let avg_kwh = if !uploads.is_empty() {
             Some((total_kwh_electricity + total_kwh_gas) / uploads.len() as f64)
         } else {
             None

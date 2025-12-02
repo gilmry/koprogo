@@ -3,11 +3,11 @@ Issue #93: feat: WCAG 2.1 Level AA Accessibility Compliance
 ============================================================
 
 :State: **OPEN**
-:Milestone: Phase 2: K3s + Automation
+:Milestone: Jalon 4: Automation & Intégrations 📅
 :Labels: enhancement,phase:k3s track:software,priority:high accessibility
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-01
+:Updated: 2025-11-13
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/93>`_
 
 Description

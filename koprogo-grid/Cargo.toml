@@ -1,0 +1,99 @@
+[package]
+name = "koprogo-grid"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+authors = ["KoproGo Community"]
+description = "Decentralized green grid computing module for KoproGo cooperative platform"
+repository = "https://github.com/gilmry/koprogo"
+keywords = ["grid-computing", "green-energy", "blockchain", "cooperative", "raspberry-pi"]
+
+[[bin]]
+name = "koprogo-grid-server"
+path = "src/main.rs"
+
+[[bin]]
+name = "koprogo-grid-node"
+path = "src/bin/node_cli.rs"
+
+[dependencies]
+# Web framework
+actix-web = "4.9"
+actix-cors = "0.7"
+actix-rt = "2.11"
+
+# Async runtime
+tokio = { version = "1.41", features = ["macros", "rt-multi-thread", "time", "sync"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "migrate"] }
+
+# Configuration
+dotenvy = "0.15"
+
+# Logging
+env_logger = "0.11"
+log = "0.4"
+
+# Utilities
+uuid = { version = "1.0", features = ["serde", "v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+validator = { version = "0.18", features = ["derive"] }
+
+# Async trait support
+async-trait = "0.1"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Cryptography for Proof of Green
+sha2 = "0.10"
+hex = "0.4"
+
+# JWT for node authentication
+jsonwebtoken = { version = "9.3", default-features = false }
+
+# CLI argument parsing
+clap = { version = "4.5", features = ["derive"] }
+
+# Metrics
+prometheus = "0.14"
+
+# HTTP client for node
+reqwest = { version = "0.12", features = ["json"] }
+
+# System information
+sysinfo = "0.32"
+
+# CLI utilities
+md5 = "0.7"
+rand = "0.9"
+
+[dev-dependencies]
+# Testing
+mockall = "0.13"
+tokio-test = "0.4"
+testcontainers-modules = { version = "0.13", features = ["postgres"] }
+serial_test = "3.1"
+
+# Integration testing
+reqwest = { version = "0.12", features = ["json"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true  # Reduce binary size for edge devices
+
+[profile.edge]
+inherits = "release"
+opt-level = "z"  # Optimize for size (Raspberry Pi)
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true

@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO provider_offers (\n                id, campaign_id, provider_name, price_kwh_electricity, price_kwh_gas,\n                fixed_monthly_fee, green_energy_pct, contract_duration_months,\n                estimated_savings_pct, offer_valid_until, created_at, updated_at\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Varchar",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Int4",
+        "Float8",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "00b1a1fff0a2e8a54ffa89f409d63715ab737acf97fc3c66fb07f4e789ff0307"
+}

@@ -2,12 +2,12 @@
 Issue #84: feat: Online Payment System (Stripe + SEPA Direct Debit)
 ====================================================================
 
-:State: **OPEN**
-:Milestone: Phase 2: K3s + Automation
+:State: **CLOSED**
+:Milestone: Jalon 3: Features Différenciantes 🎯
 :Labels: enhancement,phase:vps track:software,priority:high finance
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-01
+:Updated: 2025-11-17
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/84>`_
 
 Description

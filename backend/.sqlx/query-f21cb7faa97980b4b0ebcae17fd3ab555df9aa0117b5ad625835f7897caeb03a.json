@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE energy_bill_uploads\n            SET\n                bill_period_start = $2,\n                bill_period_end = $3,\n                total_kwh_encrypted = $4,\n                energy_type = $5,\n                provider = $6,\n                postal_code = $7,\n                file_hash = $8,\n                file_path_encrypted = $9,\n                ocr_confidence = $10,\n                manually_verified = $11,\n                verified_at = $12,\n                verified_by = $13,\n                consent_timestamp = $14,\n                consent_ip = $15,\n                consent_user_agent = $16,\n                consent_signature_hash = $17,\n                anonymized = $18,\n                retention_until = $19,\n                deleted_at = $20,\n                updated_at = $21\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Bytea",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Text",
+        "Float8",
+        "Bool",
+        "Timestamptz",
+        "Uuid",
+        "Timestamptz",
+        "Varchar",
+        "Text",
+        "Varchar",
+        "Bool",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f21cb7faa97980b4b0ebcae17fd3ab555df9aa0117b5ad625835f7897caeb03a"
+}

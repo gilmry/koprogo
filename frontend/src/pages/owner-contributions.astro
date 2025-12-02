@@ -1,0 +1,64 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Appels de fonds - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Gestion des Appels de Fonds</h1>
+      <p class="text-gray-600 mt-2">Créer et gérer les appels de fonds (revenus) de l'ACP</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Left column: Create form -->
+      <div>
+        <div id="contribution-form-container"></div>
+      </div>
+
+      <!-- Right column: List -->
+      <div>
+        <div id="contribution-list-container"></div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from 'svelte';
+  import OwnerContributionForm from '../components/OwnerContributionForm.svelte';
+  import OwnerContributionList from '../components/OwnerContributionList.svelte';
+
+  // Get organization ID from auth (you may need to adjust this based on your auth setup)
+  const organizationId = localStorage.getItem('organizationId') || '';
+
+  // Mount the form component using Svelte 5 API
+  const formContainer = document.getElementById('contribution-form-container');
+  if (formContainer) {
+    mount(OwnerContributionForm, {
+      target: formContainer,
+      props: {
+        organizationId,
+        onSuccess: () => {
+          // Reload the list when a new contribution is created
+          window.location.reload();
+        }
+      }
+    });
+  }
+
+  // Mount the list component using Svelte 5 API
+  const listContainer = document.getElementById('contribution-list-container');
+  if (listContainer) {
+    mount(OwnerContributionList, {
+      target: listContainer,
+      props: {
+        organizationId,
+        ownerId: null // Show all contributions for the organization
+      }
+    });
+  }
+</script>
+
+<style>
+  /* Add any page-specific styles here */
+</style>

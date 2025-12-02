@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE energy_campaigns\n            SET\n                campaign_name = $2,\n                campaign_type = $3,\n                status = $4,\n                deadline_participation = $5,\n                deadline_vote = $6,\n                contract_start_date = $7,\n                energy_types = $8,\n                contract_duration_months = $9,\n                contract_type = $10,\n                total_participants = $11,\n                total_kwh_electricity = $12,\n                total_kwh_gas = $13,\n                avg_kwh_per_unit = $14,\n                selected_offer_id = $15,\n                estimated_savings_pct = $16,\n                updated_at = $17\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "TextArray",
+        "Int4",
+        "Varchar",
+        "Int4",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Uuid",
+        "Float8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "82e3cd550633530f0ed895d8b0089ddcfae88aa3950db87ff4c60b1e1ff6c6da"
+}

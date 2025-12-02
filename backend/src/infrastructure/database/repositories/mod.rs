@@ -11,8 +11,8 @@ pub mod charge_distribution_repository_impl;
 pub mod convocation_recipient_repository_impl;
 pub mod convocation_repository_impl;
 pub mod document_repository_impl;
-// pub mod energy_bill_upload_repository_impl; // DISABLED: SQLx cache missing
-// pub mod energy_campaign_repository_impl; // DISABLED: SQLx cache missing
+pub mod energy_bill_upload_repository_impl;
+pub mod energy_campaign_repository_impl;
 pub mod etat_date_repository_impl;
 pub mod expense_repository_impl;
 pub mod gdpr_repository_impl;
@@ -65,8 +65,8 @@ pub use charge_distribution_repository_impl::PostgresChargeDistributionRepositor
 pub use convocation_recipient_repository_impl::PostgresConvocationRecipientRepository;
 pub use convocation_repository_impl::PostgresConvocationRepository;
 pub use document_repository_impl::PostgresDocumentRepository;
-// pub use energy_bill_upload_repository_impl::PostgresEnergyBillUploadRepository;
-// pub use energy_campaign_repository_impl::PostgresEnergyCampaignRepository;
+pub use energy_bill_upload_repository_impl::PostgresEnergyBillUploadRepository;
+pub use energy_campaign_repository_impl::PostgresEnergyCampaignRepository;
 pub use etat_date_repository_impl::PostgresEtatDateRepository;
 pub use expense_repository_impl::PostgresExpenseRepository;
 pub use gdpr_repository_impl::PostgresGdprRepository;

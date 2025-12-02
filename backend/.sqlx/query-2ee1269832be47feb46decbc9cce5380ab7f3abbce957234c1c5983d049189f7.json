@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE energy_bill_uploads\n            SET deleted_at = NOW(), updated_at = NOW()\n            WHERE retention_until < NOW()\n            AND deleted_at IS NULL\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "2ee1269832be47feb46decbc9cce5380ab7f3abbce957234c1c5983d049189f7"
+}

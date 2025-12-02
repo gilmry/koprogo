@@ -2,12 +2,12 @@
 Issue #90: feat: GDPR Complementary Articles (16, 18, 21)
 ==========================================================
 
-:State: **OPEN**
-:Milestone: Phase 2: K3s + Automation
+:State: **CLOSED**
+:Milestone: Jalon 4: Automation & Intégrations 📅
 :Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,gdpr
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-01
+:Updated: 2025-11-17
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/90>`_
 
 Description

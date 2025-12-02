@@ -1,0 +1,79 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="My Payments">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">My Payments</h1>
+      <p class="mt-2 text-gray-600">View your payment history and statistics</p>
+    </div>
+
+    <!-- Payment Statistics -->
+    <div class="mb-6">
+      <div id="payment-stats"></div>
+    </div>
+
+    <!-- Payment List -->
+    <div id="payment-list"></div>
+
+    <!-- Manage Payment Methods Link -->
+    <div class="mt-6 text-center">
+      <a
+        href="/owner/payment-methods"
+        class="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium"
+      >
+        <svg
+          class="mr-2 h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+          />
+        </svg>
+        Manage Payment Methods
+      </a>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import PaymentList from "../../components/payments/PaymentList.svelte";
+  import PaymentStats from "../../components/payments/PaymentStats.svelte";
+
+  // Get owner ID from localStorage (in real app, from auth context)
+  const ownerId = localStorage.getItem("koprogo_user_id") || "";
+
+  if (ownerId) {
+    // Mount payment statistics
+    const statsContainer = document.getElementById("payment-stats");
+    if (statsContainer) {
+      mount(PaymentStats, {
+        target: statsContainer,
+        props: {
+          ownerId,
+        },
+      });
+    }
+
+    // Mount payment list
+    const listContainer = document.getElementById("payment-list");
+    if (listContainer) {
+      mount(PaymentList, {
+        target: listContainer,
+        props: {
+          ownerId,
+        },
+      });
+    }
+  } else {
+    // Redirect to login if not authenticated
+    window.location.href = "/login";
+  }
+</script>

@@ -10,8 +10,8 @@ pub mod charge_distribution_handlers;
 pub mod convocation_handlers;
 pub mod dashboard_handlers;
 pub mod document_handlers;
-// pub mod energy_bill_upload_handlers; // DISABLED: compilation errors, needs fixing
-// pub mod energy_campaign_handlers; // DISABLED
+pub mod energy_bill_upload_handlers;
+pub mod energy_campaign_handlers;
 pub mod etat_date_handlers;
 pub mod expense_handlers;
 pub mod financial_report_handlers;
@@ -62,8 +62,8 @@ pub use charge_distribution_handlers::*;
 pub use convocation_handlers::*;
 pub use dashboard_handlers::*;
 pub use document_handlers::*;
-// pub use energy_bill_upload_handlers::*; // DISABLED
-// pub use energy_campaign_handlers::*; // DISABLED
+pub use energy_bill_upload_handlers::*;
+pub use energy_campaign_handlers::*;
 pub use etat_date_handlers::*;
 pub use expense_handlers::*;
 pub use financial_report_handlers::*;

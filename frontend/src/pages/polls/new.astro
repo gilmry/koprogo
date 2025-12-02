@@ -1,0 +1,87 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Créer un sondage - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <a
+        href="/polls"
+        class="inline-flex items-center text-blue-600 hover:text-blue-800"
+      >
+        ← Retour aux sondages
+      </a>
+    </div>
+
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">
+        🗳️ Créer un nouveau sondage
+      </h1>
+      <p class="text-gray-600 mt-2">
+        Consultez les copropriétaires entre les assemblées générales sur une
+        décision ponctuelle.
+      </p>
+    </div>
+
+    <div
+      class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm"
+    >
+      <p class="text-blue-800">
+        <strong>⚖️ Cadre légal:</strong> Article 577-8/4 §4 du Code Civil Belge
+        - Le syndic peut consulter les copropriétaires entre les assemblées sur
+        toute décision ne nécessitant pas de vote formel en AG. Les résultats doivent
+        être documentés au procès-verbal de la prochaine AG.
+      </p>
+    </div>
+
+    <div
+      class="mb-6 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-md text-sm"
+    >
+      <p class="text-amber-800">
+        <strong>ℹ️ Types de sondages disponibles:</strong>
+      </p>
+      <ul class="list-disc list-inside mt-2 space-y-1 text-amber-800">
+        <li>
+          <strong>Oui/Non:</strong> Décision binaire simple (ex: repeindre le hall
+          en bleu?)
+        </li>
+        <li>
+          <strong>Choix multiple:</strong> Sélection entre plusieurs options (ex:
+          choix d'un entrepreneur)
+        </li>
+        <li>
+          <strong>Notation:</strong> Évaluation sur une échelle (ex: satisfaction
+          1-5 étoiles)
+        </li>
+        <li>
+          <strong>Texte libre:</strong> Réponses ouvertes (ex: suggestions d'amélioration)
+        </li>
+      </ul>
+    </div>
+
+    <div class="bg-white shadow rounded-lg p-6">
+      <div id="create-poll-form-container"></div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import CreatePollForm from "../../components/polls/CreatePollForm.svelte";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const buildingId = auth.user?.buildingIds?.[0] || "";
+
+  // Mount Create Poll Form
+  const formContainer = document.getElementById("create-poll-form-container");
+  if (formContainer) {
+    mount(CreatePollForm, {
+      target: formContainer,
+      props: {
+        buildingId: buildingId,
+      },
+    });
+  }
+</script>
