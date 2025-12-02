@@ -10,6 +10,7 @@ use crate::domain::entities::{EnergyBillUpload, EnergyType};
 pub struct UploadEnergyBillRequest {
     pub campaign_id: Uuid,
     pub unit_id: Uuid,
+    pub building_id: Uuid,
 
     // Bill details
     pub bill_period_start: DateTime<Utc>,

@@ -1,0 +1,142 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, organization_id, building_id, campaign_name, campaign_type, status,\n                deadline_participation, deadline_vote, contract_start_date,\n                energy_types, contract_duration_months, contract_type,\n                total_participants, total_kwh_electricity, total_kwh_gas, avg_kwh_per_unit,\n                selected_offer_id, estimated_savings_pct, created_by, created_at, updated_at\n            FROM energy_campaigns\n            WHERE organization_id = $1\n            ORDER BY created_at DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "campaign_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "campaign_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "deadline_participation",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "deadline_vote",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "contract_start_date",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "energy_types",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 10,
+        "name": "contract_duration_months",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "contract_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "total_participants",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 13,
+        "name": "total_kwh_electricity",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 14,
+        "name": "total_kwh_gas",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 15,
+        "name": "avg_kwh_per_unit",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 16,
+        "name": "selected_offer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 17,
+        "name": "estimated_savings_pct",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 18,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 19,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 20,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "99d4ff6e9312041378a59dcc50ea7cb53422482e6174009ac98ba37002f57331"
+}

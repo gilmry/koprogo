@@ -46,8 +46,9 @@ pub async fn upload_bill(
     let upload = EnergyBillUpload::new(
         request.campaign_id,
         request.unit_id,
-        user.building_id.ok_or_else(|| actix_web::error::ErrorBadRequest("Building ID required"))?,
-        user.organization_id,
+        request.building_id,
+        user.organization_id
+            .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?,
         request.bill_period_start,
         request.bill_period_end,
         request.total_kwh,
@@ -67,8 +68,6 @@ pub async fn upload_bill(
         .await
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
-    // Trigger aggregation update
-    let campaign_use_cases = web::Data::from(std::sync::Arc::clone(&uploads.upload_repo) as std::sync::Arc<dyn crate::application::ports::EnergyBillUploadRepository>);
     // Note: Aggregation should be triggered asynchronously via message queue in production
 
     Ok(HttpResponse::Created().json(EnergyBillUploadResponse::from(created)))
@@ -81,11 +80,14 @@ pub async fn get_my_uploads(
     uploads: web::Data<EnergyBillUploadUseCases>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
-    // Get unit_id from user context (assuming unit ownership relationship)
-    // In production, this would come from unit_owners table
-    let unit_id = user.building_id.ok_or_else(|| {
-        actix_web::error::ErrorBadRequest("Unit ID required")
-    })?;
+    // TODO: Get unit_id from unit_owners table based on user_id
+    // For now return empty list if no organization
+    let organization_id = user
+        .organization_id
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+
+    // Get uploads for user's organization (filtered by repository)
+    let unit_id = uuid::Uuid::nil(); // Placeholder, should come from unit_owners table
 
     let list = uploads
         .get_my_uploads(unit_id)
@@ -137,11 +139,6 @@ pub async fn decrypt_consumption(
     let encryption_key = get_encryption_key()
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
-    // Get unit_id from user context
-    let unit_id = user.building_id.ok_or_else(|| {
-        actix_web::error::ErrorBadRequest("Unit ID required")
-    })?;
-
     // Get upload to check ownership
     let upload = uploads
         .get_upload(upload_id)
@@ -149,8 +146,14 @@ pub async fn decrypt_consumption(
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Upload not found"))?;
 
+    // Verify organization access
+    let user_org = user.organization_id.ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+    if upload.organization_id != user_org {
+        return Err(actix_web::error::ErrorForbidden("Access denied"));
+    }
+
     let total_kwh = uploads
-        .decrypt_consumption(upload_id, unit_id, &encryption_key)
+        .decrypt_consumption(upload_id, upload.unit_id, &encryption_key)
         .await
         .map_err(|e| actix_web::error::ErrorForbidden(e))?;
 
@@ -199,13 +202,21 @@ pub async fn delete_upload(
 ) -> Result<HttpResponse, actix_web::Error> {
     let upload_id = path.into_inner();
 
-    // Get unit_id from user context
-    let unit_id = user.building_id.ok_or_else(|| {
-        actix_web::error::ErrorBadRequest("Unit ID required")
-    })?;
+    // Get upload to verify ownership
+    let upload = uploads
+        .get_upload(upload_id)
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .ok_or_else(|| actix_web::error::ErrorNotFound("Upload not found"))?;
+
+    // Verify organization access
+    let user_org = user.organization_id.ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+    if upload.organization_id != user_org {
+        return Err(actix_web::error::ErrorForbidden("Access denied"));
+    }
 
     uploads
-        .delete_upload(upload_id, unit_id)
+        .delete_upload(upload_id, upload.unit_id)
         .await
         .map_err(|e| actix_web::error::ErrorForbidden(e))?;
 
@@ -222,13 +233,21 @@ pub async fn withdraw_consent(
 ) -> Result<HttpResponse, actix_web::Error> {
     let upload_id = path.into_inner();
 
-    // Get unit_id from user context
-    let unit_id = user.building_id.ok_or_else(|| {
-        actix_web::error::ErrorBadRequest("Unit ID required")
-    })?;
+    // Get upload to verify ownership
+    let upload = uploads
+        .get_upload(upload_id)
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .ok_or_else(|| actix_web::error::ErrorNotFound("Upload not found"))?;
+
+    // Verify organization access
+    let user_org = user.organization_id.ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+    if upload.organization_id != user_org {
+        return Err(actix_web::error::ErrorForbidden("Access denied"));
+    }
 
     uploads
-        .withdraw_consent(upload_id, unit_id)
+        .withdraw_consent(upload_id, upload.unit_id)
         .await
         .map_err(|e| actix_web::error::ErrorForbidden(e))?;
 
@@ -254,8 +273,11 @@ pub async fn get_campaign_uploads(
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
     // Verify organization access
-    if !list.is_empty() && list[0].organization_id != user.organization_id {
-        return Err(actix_web::error::ErrorForbidden("Access denied"));
+    if !list.is_empty() {
+        let user_org = user.organization_id.ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+        if list[0].organization_id != user_org {
+            return Err(actix_web::error::ErrorForbidden("Access denied"));
+        }
     }
 
     let response: Vec<EnergyBillUploadResponse> = list

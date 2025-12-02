@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, campaign_id, provider_name, price_kwh_electricity, price_kwh_gas,\n                fixed_monthly_fee, green_energy_pct, contract_duration_months,\n                estimated_savings_pct, offer_valid_until, created_at, updated_at\n            FROM provider_offers\n            WHERE campaign_id = $1\n            ORDER BY estimated_savings_pct DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "campaign_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "provider_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "price_kwh_electricity",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "price_kwh_gas",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "fixed_monthly_fee",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 6,
+        "name": "green_energy_pct",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "contract_duration_months",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "estimated_savings_pct",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 9,
+        "name": "offer_valid_until",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "2b645575aa8034768480ab1c47d8ccc413419f1123ce7dc10700f3ece123aa77"
+}

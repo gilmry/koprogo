@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO energy_campaigns (\n                id, organization_id, building_id, campaign_name, campaign_type, status,\n                deadline_participation, deadline_vote, contract_start_date,\n                energy_types, contract_duration_months, contract_type,\n                total_participants, total_kwh_electricity, total_kwh_gas, avg_kwh_per_unit,\n                selected_offer_id, estimated_savings_pct, created_by, created_at, updated_at\n            )\n            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)\n            RETURNING id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "TextArray",
+        "Int4",
+        "Varchar",
+        "Int4",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Uuid",
+        "Float8",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "fc4a608eeaa3e8f57f268e3237ea10ba34f7ef4508abf96665764dcd1ae1a1e3"
+}

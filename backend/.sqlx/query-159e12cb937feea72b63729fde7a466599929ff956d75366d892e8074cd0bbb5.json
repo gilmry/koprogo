@@ -1,0 +1,184 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                id, campaign_id, unit_id, building_id, organization_id,\n                bill_period_start, bill_period_end, total_kwh_encrypted, energy_type, provider, postal_code,\n                file_hash, file_path_encrypted, ocr_confidence, manually_verified,\n                uploaded_by, uploaded_at, verified_at, verified_by,\n                consent_timestamp, consent_ip, consent_user_agent, consent_signature_hash,\n                anonymized, retention_until, deleted_at, created_at, updated_at\n            FROM energy_bill_uploads\n            WHERE campaign_id = $1\n            ORDER BY uploaded_at DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "campaign_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "unit_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "bill_period_start",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "bill_period_end",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "total_kwh_encrypted",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 8,
+        "name": "energy_type",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "provider",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 10,
+        "name": "postal_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 11,
+        "name": "file_hash",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 12,
+        "name": "file_path_encrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "ocr_confidence",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 14,
+        "name": "manually_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 15,
+        "name": "uploaded_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 16,
+        "name": "uploaded_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 17,
+        "name": "verified_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 18,
+        "name": "verified_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 19,
+        "name": "consent_timestamp",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 20,
+        "name": "consent_ip",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 21,
+        "name": "consent_user_agent",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 22,
+        "name": "consent_signature_hash",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 23,
+        "name": "anonymized",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 24,
+        "name": "retention_until",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 25,
+        "name": "deleted_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 26,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 27,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "159e12cb937feea72b63729fde7a466599929ff956d75366d892e8074cd0bbb5"
+}
