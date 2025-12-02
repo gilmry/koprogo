@@ -214,7 +214,7 @@ async fn create_test_fixtures(
         unit_number: "101".to_string(),
         unit_type: "Apartment".to_string(),
         floor: Some(1),
-        area: 75.5,
+        surface_area: 75.5,
         tax_value: 100.0,
     };
 

@@ -100,7 +100,7 @@ impl From<ConvocationRecipient> for RecipientSummaryResponse {
     }
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RecipientTrackingSummaryResponse {
     pub total_count: i64,
     pub opened_count: i64,

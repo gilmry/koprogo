@@ -282,7 +282,7 @@ async fn create_test_fixtures(
         building_id: building.id,
         unit_number: "A101".to_string(),
         floor: 1,
-        area: Some(75.0),
+        surface_area: Some(75.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 

@@ -9,13 +9,13 @@ use testcontainers::{runners::AsyncRunner, ContainerAsync, GenericImage};
 use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
-use koprogo::application::dto::{QuoteComparisonResponseDto, QuoteResponseDto};
-use koprogo::application::ports::*;
-use koprogo::application::use_cases::*;
-use koprogo::infrastructure::database::repositories::*;
-use koprogo::infrastructure::email::mock_email_service::MockEmailService;
-use koprogo::infrastructure::storage::mock_storage_provider::MockStorageProvider;
-use koprogo::infrastructure::web::{create_authenticated_app, AppState};
+use koprogo_api::application::dto::{QuoteComparisonResponseDto, QuoteResponseDto};
+use koprogo_api::application::ports::*;
+use koprogo_api::application::use_cases::*;
+use koprogo_api::infrastructure::database::repositories::*;
+use koprogo_api::infrastructure::email::mock_email_service::MockEmailService;
+use koprogo_api::infrastructure::storage::mock_storage_provider::MockStorageProvider;
+use koprogo_api::infrastructure::web::{create_authenticated_app, AppState};
 
 // ==================== Test Setup ====================
 

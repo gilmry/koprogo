@@ -258,7 +258,7 @@ async fn create_test_fixtures(
         building_id: building.id,
         unit_number: "A101".to_string(),
         floor: 1,
-        area: Some(75.0),
+        surface_area: Some(75.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
@@ -272,7 +272,7 @@ async fn create_test_fixtures(
         building_id: building.id,
         unit_number: "A102".to_string(),
         floor: 1,
-        area: Some(85.0),
+        surface_area: Some(85.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
@@ -622,7 +622,7 @@ async fn test_cast_vote_contre_and_abstention() {
             .id,
         unit_number: "A103".to_string(),
         floor: 1,
-        area: Some(90.0),
+        surface_area: Some(90.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
@@ -710,7 +710,7 @@ async fn test_list_resolution_votes() {
         building_id: _building_id,
         unit_number: "A104".to_string(),
         floor: 1,
-        area: Some(95.0),
+        surface_area: Some(95.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
@@ -860,7 +860,7 @@ async fn test_close_voting_simple_majority() {
         building_id: _building_id,
         unit_number: "A105".to_string(),
         floor: 1,
-        area: Some(100.0),
+        surface_area: Some(100.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
@@ -961,7 +961,7 @@ async fn test_close_voting_absolute_majority() {
         building_id: _building_id,
         unit_number: "A106".to_string(),
         floor: 1,
-        area: Some(100.0),
+        surface_area: Some(100.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
@@ -1046,7 +1046,7 @@ async fn test_close_voting_qualified_majority() {
         building_id: _building_id,
         unit_number: "A107".to_string(),
         floor: 1,
-        area: Some(100.0),
+        surface_area: Some(100.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
@@ -1146,7 +1146,7 @@ async fn test_get_meeting_vote_summary() {
         building_id: _building_id,
         unit_number: "A108".to_string(),
         floor: 1,
-        area: Some(100.0),
+        surface_area: Some(100.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
@@ -1252,7 +1252,7 @@ async fn test_complete_voting_lifecycle() {
         building_id: _building_id,
         unit_number: "A109".to_string(),
         floor: 1,
-        area: Some(100.0),
+        surface_area: Some(100.0),
         unit_type: koprogo_api::domain::entities::UnitType::Apartment,
     };
 
