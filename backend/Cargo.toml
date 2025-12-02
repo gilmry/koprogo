@@ -6,7 +6,7 @@ license = "AGPL-3.0-or-later"
 
 [dependencies]
 # Web framework
-actix-web = "4.12.1"
+actix-web = "4.11"
 actix-cors = "0.7"
 actix-rt = "2.11"
 actix-multipart = "0.7"
@@ -14,20 +14,24 @@ actix-governor = "0.10"
 
 # Async runtime
 tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "time"] }
+futures-util = "0.3"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Database
-sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "migrate"] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "migrate", "rust_decimal"] }
+rust_decimal = "1.36"
 
 # Configuration
 dotenvy = "0.15"
 
-# Logging
-env_logger = "0.11"
-log = "0.4"
+# Logging (structured JSON logging - Issue #78)
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+tracing-actix-web = "0.7"
+log = "0.4" # Keep for compatibility with existing log! macros
 
 # Utilities
 uuid = { version = "1.11", features = ["serde", "v4"] }
@@ -35,6 +39,16 @@ chrono = { version = "0.4", features = ["serde"] }
 validator = { version = "0.20", features = ["derive"] }
 bcrypt = "0.17"
 jsonwebtoken = { version = "10.2", default-features = false, features = ["aws_lc_rs"] }
+hex = "0.4"
+md5 = "0.7"
+
+# Two-Factor Authentication (2FA)
+totp-lite = "2.0"
+qrcode = "0.14"
+image = "0.25"
+base64 = "0.22"
+aes-gcm = "0.10"
+urlencoding = "2.1"
 
 # Async trait support
 async-trait = "0.1"
@@ -49,7 +63,7 @@ prometheus = "0.14"
 
 # Cloud storage
 aws-config = { version = "1", features = ["behavior-version-latest"] }
-aws-sdk-s3 = { version = "1.115", features = ["behavior-version-latest"] }
+aws-sdk-s3 = { version = "1", features = ["behavior-version-latest"] }
 aws-types = "1"
 aws-credential-types = "1"
 
@@ -57,7 +71,7 @@ aws-credential-types = "1"
 printpdf = "0.7"
 
 # Excel generation
-rust_xlsxwriter = "0.92.2"
+rust_xlsxwriter = "0.91.0"
 
 # Random data generation (for seed scripts)
 rand = "0.9"
@@ -66,11 +80,19 @@ fake = { version = "4.4", features = ["derive", "chrono", "uuid", "http"] }
 # Email
 lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-native-tls"] }
 
+# HTTP client
+reqwest = { version = "0.12", features = ["json"] }
+
+# OpenAPI documentation
+utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }
+utoipa-swagger-ui = { version = "8.0", features = ["actix-web"] }
+
 [dev-dependencies]
 # Unit & Integration tests
-mockall = "0.14"
+mockall = "0.13"
 tokio-test = "0.4"
-testcontainers-modules = { version = "0.14", features = ["postgres", "minio"] }
+testcontainers-modules = { version = "0.13", features = ["postgres", "minio"] }
+rust_decimal_macros = "1.36"
 
 # BDD tests
 cucumber = { version = "0.21", features = ["macros"] }
@@ -79,7 +101,7 @@ cucumber = { version = "0.21", features = ["macros"] }
 reqwest = { version = "0.12", features = ["json"] }
 
 # Load tests
-criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }
+criterion = { version = "0.7", features = ["async_tokio", "html_reports"] }
 
 # Test utilities
 serial_test = "3.1"
