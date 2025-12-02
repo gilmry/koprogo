@@ -362,22 +362,19 @@ pub async fn export_annual_report_pdf(
 
     // Calculate total income if not provided (sum of all paid expenses)
     use crate::domain::entities::PaymentStatus;
-    let total_income = query
-        .total_income
-        .unwrap_or_else(|| {
-            year_expenses
-                .iter()
-                .filter(|e| e.payment_status == PaymentStatus::Paid)
-                .map(|e| e.amount)
-                .sum()
-        });
+    let total_income = query.total_income.unwrap_or_else(|| {
+        year_expenses
+            .iter()
+            .filter(|e| e.payment_status == PaymentStatus::Paid)
+            .map(|e| e.amount)
+            .sum()
+    });
 
     // Reserve fund (default to 0.0 if not provided)
     let reserve_fund = query.reserve_fund.unwrap_or(0.0);
 
     // Convert DTOs to domain entities
-    let building_org_id = Uuid::parse_str(&building_dto.organization_id)
-        .unwrap_or(organization_id);
+    let building_org_id = Uuid::parse_str(&building_dto.organization_id).unwrap_or(organization_id);
 
     let building_created_at = DateTime::parse_from_rfc3339(&building_dto.created_at)
         .map(|dt| dt.with_timezone(&Utc))

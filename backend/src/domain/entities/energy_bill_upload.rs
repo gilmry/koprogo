@@ -22,9 +22,9 @@ pub struct EnergyBillUpload {
     pub postal_code: String, // Pour tarifs régionaux CREG
 
     // Authentification facture
-    pub file_hash: String, // SHA-256
+    pub file_hash: String,           // SHA-256
     pub file_path_encrypted: String, // S3 path chiffré
-    pub ocr_confidence: f64, // 0-100
+    pub ocr_confidence: f64,         // 0-100
     pub manually_verified: bool,
 
     // Upload metadata
@@ -134,12 +134,12 @@ impl EnergyBillUpload {
 
         // Générer nonce aléatoire (12 bytes pour GCM)
         let nonce_bytes = Self::generate_nonce();
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let nonce = Nonce::from(nonce_bytes);
 
         let plaintext = kwh.to_string().as_bytes().to_vec();
 
         let ciphertext = cipher
-            .encrypt(nonce, plaintext.as_ref())
+            .encrypt(&nonce, plaintext.as_ref())
             .map_err(|e| format!("Encryption failed: {}", e))?;
 
         // Préfixer le ciphertext avec le nonce pour pouvoir déchiffrer plus tard
@@ -166,13 +166,16 @@ impl EnergyBillUpload {
         let cipher = Aes256Gcm::new(key.into());
 
         // Extraire nonce (12 premiers bytes)
-        let nonce = Nonce::from_slice(&self.total_kwh_encrypted[..12]);
+        let nonce_array: [u8; 12] = self.total_kwh_encrypted[..12]
+            .try_into()
+            .map_err(|_| "Invalid nonce length".to_string())?;
+        let nonce = Nonce::from(nonce_array);
 
         // Extraire ciphertext (reste des bytes)
         let ciphertext = &self.total_kwh_encrypted[12..];
 
         let plaintext = cipher
-            .decrypt(nonce, ciphertext)
+            .decrypt(&nonce, ciphertext)
             .map_err(|e| format!("Decryption failed: {}", e))?;
 
         let kwh_str = String::from_utf8(plaintext).map_err(|e| format!("UTF-8 error: {}", e))?;
@@ -185,7 +188,7 @@ impl EnergyBillUpload {
     /// Générer nonce aléatoire de 12 bytes
     fn generate_nonce() -> [u8; 12] {
         use rand::Rng;
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut nonce = [0u8; 12];
         rng.fill(&mut nonce);
         nonce

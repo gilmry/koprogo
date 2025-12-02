@@ -2,7 +2,9 @@ use crate::application::dto::{
     BorrowObjectDto, CategoryObjectCount, CreateSharedObjectDto, SharedObjectResponseDto,
     SharedObjectStatisticsDto, SharedObjectSummaryDto, UpdateSharedObjectDto,
 };
-use crate::application::ports::{OwnerCreditBalanceRepository, OwnerRepository, SharedObjectRepository};
+use crate::application::ports::{
+    OwnerCreditBalanceRepository, OwnerRepository, SharedObjectRepository,
+};
 use crate::domain::entities::{SharedObject, SharedObjectCategory};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -352,9 +354,7 @@ impl SharedObjectUseCases {
                 borrower_balance.spend_credits(deposit_amount)?;
 
                 // Persist balance change
-                self.credit_balance_repo
-                    .update(&borrower_balance)
-                    .await?;
+                self.credit_balance_repo.update(&borrower_balance).await?;
             }
         }
 
@@ -392,7 +392,8 @@ impl SharedObjectUseCases {
         let (rental_cost, deposit) = object.calculate_total_cost();
 
         if rental_cost > 0 || deposit > 0 {
-            let borrower_id = object.current_borrower_id
+            let borrower_id = object
+                .current_borrower_id
                 .ok_or("No current borrower to refund".to_string())?;
             let owner_id = object.owner_id;
 

@@ -264,7 +264,9 @@ impl NoticeUseCases {
         let is_admin = Self::is_building_admin(actor_role);
 
         if !is_author && !is_admin {
-            return Err("Unauthorized: only author or building admin can archive notice".to_string());
+            return Err(
+                "Unauthorized: only author or building admin can archive notice".to_string(),
+            );
         }
 
         // Archive (domain validates state transition)
@@ -288,7 +290,10 @@ impl NoticeUseCases {
     ) -> Result<NoticeResponseDto, String> {
         // Authorization: only building admin can pin
         if !Self::is_building_admin(actor_role) {
-            return Err("Unauthorized: only building admin (admin, superadmin, or syndic) can pin notices".to_string());
+            return Err(
+                "Unauthorized: only building admin (admin, superadmin, or syndic) can pin notices"
+                    .to_string(),
+            );
         }
 
         let mut notice = self

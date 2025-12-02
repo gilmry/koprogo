@@ -2,9 +2,9 @@ use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::application::ports::{
-    EnergyCampaignRepository, EnergyBillUploadRepository, BuildingRepository,
+    BuildingRepository, EnergyBillUploadRepository, EnergyCampaignRepository,
 };
-use crate::domain::entities::{EnergyCampaign, ProviderOffer, CampaignStatus};
+use crate::domain::entities::{CampaignStatus, EnergyCampaign, ProviderOffer};
 
 pub struct EnergyCampaignUseCases {
     campaign_repo: Arc<dyn EnergyCampaignRepository>,
@@ -196,7 +196,7 @@ impl EnergyCampaignUseCases {
             None
         };
 
-        let avg_kwh = if uploads.len() > 0 {
+        let avg_kwh = if !uploads.is_empty() {
             Some((total_kwh_electricity + total_kwh_gas) / uploads.len() as f64)
         } else {
             None
@@ -209,10 +209,7 @@ impl EnergyCampaignUseCases {
     }
 
     /// Get campaign statistics (anonymized)
-    pub async fn get_campaign_stats(
-        &self,
-        campaign_id: Uuid,
-    ) -> Result<CampaignStats, String> {
+    pub async fn get_campaign_stats(&self, campaign_id: Uuid) -> Result<CampaignStats, String> {
         let campaign = self
             .campaign_repo
             .find_by_id(campaign_id)

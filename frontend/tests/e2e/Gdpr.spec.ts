@@ -181,85 +181,79 @@ test.describe.skip("GDPR - Admin Operations (Idempotent)", () => {
 });
 
 // TODO: Requires database cleanup before tests (see issue #66)
-test.describe.skip(
-  "GDPR - Mixed Scenario: User Creates Data, Admin Exports",
-  () => {
-    test("should handle user creating data then admin exporting it", async ({
-      page,
-    }) => {
-      // Step 1: User registers and creates some activity
-      const user = await registerAndLogin(page, "syndic");
+test.describe
+  .skip("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
+  test("should handle user creating data then admin exporting it", async ({
+    page,
+  }) => {
+    // Step 1: User registers and creates some activity
+    const user = await registerAndLogin(page, "syndic");
 
-      // Step 2: User logs in and navigates around (creates activity)
-      await loginViaUI(page, user.email, user.password);
-      await page.goto("/syndic");
-      await page.waitForTimeout(500);
+    // Step 2: User logs in and navigates around (creates activity)
+    await loginViaUI(page, user.email, user.password);
+    await page.goto("/syndic");
+    await page.waitForTimeout(500);
 
-      // Step 3: User logs out
-      await page.getByTestId("user-menu-button").click();
-      await page.getByTestId("user-menu-logout").click();
-      await page.waitForURL("/login");
+    // Step 3: User logs out
+    await page.getByTestId("user-menu-button").click();
+    await page.getByTestId("user-menu-logout").click();
+    await page.waitForURL("/login");
 
-      // Step 4: Admin logs in
-      await loginAsSuperAdmin(page);
+    // Step 4: Admin logs in
+    await loginAsSuperAdmin(page);
 
-      // Step 5: Admin exports user's data
-      await page.goto("/admin/gdpr");
-      await expect(page.getByTestId("admin-gdpr-user-row").first()).toBeVisible(
-        { timeout: 10000 },
-      );
-      await page.getByTestId("admin-gdpr-search").fill(user.email);
-      await page.waitForTimeout(500);
-
-      const userRow = page
-        .getByTestId("admin-gdpr-user-row")
-        .filter({ hasText: user.email });
-      await userRow.getByTestId("admin-gdpr-export-user").click();
-
-      await expect(page.getByTestId("admin-gdpr-export-modal")).toBeVisible({
-        timeout: 10000,
-      });
-
-      // Verify export data contains user info
-      await expect(
-        page
-          .getByTestId("admin-gdpr-export-modal")
-          .locator(`text=${user.email}`),
-      ).toBeVisible();
-
-      await page.getByTestId("admin-gdpr-modal-close").click();
-      await expect(
-        page.getByTestId("admin-gdpr-export-modal"),
-      ).not.toBeVisible();
-
-      // Step 6: User logs back in and exports own data
-      await page.getByTestId("user-menu-button").click();
-      await page.getByTestId("user-menu-logout").click();
-
-      await loginViaUI(page, user.email, user.password);
-      await page.goto("/settings/gdpr");
-      await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
-      await page.waitForTimeout(1000);
-
-      await page.getByTestId("gdpr-export-button").click();
-      await expect(page.getByTestId("gdpr-export-modal")).toBeVisible({
-        timeout: 10000,
-      });
-
-      // User sees their own data
-      await expect(
-        page.getByTestId("gdpr-export-modal").locator(`text=${user.email}`),
-      ).toBeVisible();
-
-      // Cleanup: Erase account
-      await page.getByTestId("gdpr-export-modal-close").click();
-      await expect(page.getByTestId("gdpr-export-modal")).not.toBeVisible();
-      await page.getByTestId("gdpr-erase-button").click();
-      await page.getByTestId("gdpr-erase-confirm-button").click();
-      await page.waitForURL("/login", { timeout: 10000 });
+    // Step 5: Admin exports user's data
+    await page.goto("/admin/gdpr");
+    await expect(page.getByTestId("admin-gdpr-user-row").first()).toBeVisible({
+      timeout: 10000,
     });
-  },
-);
+    await page.getByTestId("admin-gdpr-search").fill(user.email);
+    await page.waitForTimeout(500);
+
+    const userRow = page
+      .getByTestId("admin-gdpr-user-row")
+      .filter({ hasText: user.email });
+    await userRow.getByTestId("admin-gdpr-export-user").click();
+
+    await expect(page.getByTestId("admin-gdpr-export-modal")).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Verify export data contains user info
+    await expect(
+      page.getByTestId("admin-gdpr-export-modal").locator(`text=${user.email}`),
+    ).toBeVisible();
+
+    await page.getByTestId("admin-gdpr-modal-close").click();
+    await expect(page.getByTestId("admin-gdpr-export-modal")).not.toBeVisible();
+
+    // Step 6: User logs back in and exports own data
+    await page.getByTestId("user-menu-button").click();
+    await page.getByTestId("user-menu-logout").click();
+
+    await loginViaUI(page, user.email, user.password);
+    await page.goto("/settings/gdpr");
+    await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
+    await page.waitForTimeout(1000);
+
+    await page.getByTestId("gdpr-export-button").click();
+    await expect(page.getByTestId("gdpr-export-modal")).toBeVisible({
+      timeout: 10000,
+    });
+
+    // User sees their own data
+    await expect(
+      page.getByTestId("gdpr-export-modal").locator(`text=${user.email}`),
+    ).toBeVisible();
+
+    // Cleanup: Erase account
+    await page.getByTestId("gdpr-export-modal-close").click();
+    await expect(page.getByTestId("gdpr-export-modal")).not.toBeVisible();
+    await page.getByTestId("gdpr-erase-button").click();
+    await page.getByTestId("gdpr-erase-confirm-button").click();
+    await page.waitForURL("/login", { timeout: 10000 });
+  });
+});
 
 // TODO: Requires database cleanup before tests (see issue #66)
 test.describe.skip("GDPR - Audit Logs Verification", () => {

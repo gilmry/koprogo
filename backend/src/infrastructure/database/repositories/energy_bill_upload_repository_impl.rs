@@ -287,10 +287,7 @@ impl EnergyBillUploadRepository for PostgresEnergyBillUploadRepository {
         }))
     }
 
-    async fn find_by_building(
-        &self,
-        building_id: Uuid,
-    ) -> Result<Vec<EnergyBillUpload>, String> {
+    async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<EnergyBillUpload>, String> {
         let rows = sqlx::query!(
             r#"
             SELECT

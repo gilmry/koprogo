@@ -6,10 +6,10 @@ use crate::application::use_cases::{
     EtatDateUseCases, ExpenseUseCases, FinancialReportUseCases, GamificationStatsUseCases,
     GdprUseCases, IoTUseCases, JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases,
     MeetingUseCases, NoticeUseCases, NotificationUseCases, OwnerContributionUseCases,
-    OwnerUseCases, PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases,
-    PcnUseCases, PollUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases,
-    SharedObjectUseCases, SkillUseCases, TechnicalInspectionUseCases, TicketUseCases,
-    TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, WorkReportUseCases,
+    OwnerUseCases, PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases,
+    PollUseCases, QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases, SharedObjectUseCases,
+    SkillUseCases, TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases,
+    UnitOwnerUseCases, UnitUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;

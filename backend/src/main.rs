@@ -327,10 +327,8 @@ async fn main() -> std::io::Result<()> {
         energy_bill_upload_repo.clone(),
         building_repo.clone(),
     );
-    let energy_bill_upload_use_cases = EnergyBillUploadUseCases::new(
-        energy_bill_upload_repo,
-        energy_campaign_repo.clone(),
-    );
+    let energy_bill_upload_use_cases =
+        EnergyBillUploadUseCases::new(energy_bill_upload_repo, energy_campaign_repo.clone());
 
     // Initialize email service
     let email_service = EmailService::from_env().expect("Failed to initialize email service");

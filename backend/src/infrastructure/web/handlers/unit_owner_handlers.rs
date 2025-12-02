@@ -609,8 +609,7 @@ pub async fn export_ownership_contract_pdf(
     };
 
     // Convert DTOs to domain entities
-    let building_org_id = Uuid::parse_str(&building_dto.organization_id)
-        .unwrap_or(organization_id);
+    let building_org_id = Uuid::parse_str(&building_dto.organization_id).unwrap_or(organization_id);
 
     let building_created_at = DateTime::parse_from_rfc3339(&building_dto.created_at)
         .map(|dt| dt.with_timezone(&Utc))

@@ -371,7 +371,7 @@ mod tests {
 
         // Manually set last_used_at to 91 days ago
         sqlx::query(
-            "UPDATE two_factor_secrets SET last_used_at = NOW() - INTERVAL '91 days' WHERE id = $1"
+            "UPDATE two_factor_secrets SET last_used_at = NOW() - INTERVAL '91 days' WHERE id = $1",
         )
         .bind(created.id)
         .execute(&pool)

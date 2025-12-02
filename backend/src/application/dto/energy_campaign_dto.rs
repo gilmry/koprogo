@@ -8,7 +8,6 @@ use crate::domain::entities::{
 
 /// DTO for creating a new energy campaign
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct CreateEnergyCampaignRequest {
     pub building_id: Option<Uuid>,
     pub campaign_name: String,
@@ -20,7 +19,6 @@ pub struct CreateEnergyCampaignRequest {
 
 /// DTO for energy campaign response
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct EnergyCampaignResponse {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -81,14 +79,12 @@ impl From<EnergyCampaign> for EnergyCampaignResponse {
 
 /// DTO for campaign status update
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct UpdateCampaignStatusRequest {
     pub status: CampaignStatus,
 }
 
 /// DTO for campaign statistics (anonymized)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct CampaignStatsResponse {
     pub total_participants: i32,
     pub participation_rate: f64,
@@ -102,7 +98,6 @@ pub struct CampaignStatsResponse {
 
 /// DTO for creating provider offer
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct CreateProviderOfferRequest {
     pub provider_name: String,
     pub price_kwh_electricity: Option<f64>,
@@ -116,7 +111,6 @@ pub struct CreateProviderOfferRequest {
 
 /// DTO for provider offer response
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct ProviderOfferResponse {
     pub id: Uuid,
     pub campaign_id: Uuid,
@@ -157,7 +151,6 @@ impl From<ProviderOffer> for ProviderOfferResponse {
 
 /// DTO for selecting winning offer
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct SelectOfferRequest {
     pub offer_id: Uuid,
     pub poll_id: Option<Uuid>, // Reference to voting poll (Issue #51)

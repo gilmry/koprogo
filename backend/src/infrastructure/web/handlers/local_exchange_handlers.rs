@@ -106,7 +106,10 @@ pub async fn list_owner_exchanges(
     };
 
     // Check if the authenticated user owns this owner record
-    let owner_user_id = owner.user_id.as_ref().and_then(|id| Uuid::parse_str(id).ok());
+    let owner_user_id = owner
+        .user_id
+        .as_ref()
+        .and_then(|id| Uuid::parse_str(id).ok());
     if owner_user_id != Some(auth.user_id) {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "You can only view your own exchanges"
@@ -313,7 +316,10 @@ pub async fn get_credit_balance(
         }
     };
 
-    let owner_user_id = owner.user_id.as_ref().and_then(|id| Uuid::parse_str(id).ok());
+    let owner_user_id = owner
+        .user_id
+        .as_ref()
+        .and_then(|id| Uuid::parse_str(id).ok());
     if owner_user_id != Some(auth.user_id) {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "You can only view your own credit balance"
@@ -397,7 +403,10 @@ pub async fn get_owner_summary(
         }
     };
 
-    let owner_user_id = owner.user_id.as_ref().and_then(|id| Uuid::parse_str(id).ok());
+    let owner_user_id = owner
+        .user_id
+        .as_ref()
+        .and_then(|id| Uuid::parse_str(id).ok());
     if owner_user_id != Some(auth.user_id) {
         return HttpResponse::Forbidden().json(serde_json::json!({
             "error": "You can only view your own exchange summary"

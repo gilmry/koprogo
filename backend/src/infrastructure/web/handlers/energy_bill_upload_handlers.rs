@@ -5,7 +5,7 @@ use crate::application::dto::{
     DecryptedConsumptionResponse, EnergyBillUploadResponse, UploadEnergyBillRequest,
     VerifyUploadRequest,
 };
-use crate::application::use_cases::{EnergyCampaignUseCases, EnergyBillUploadUseCases};
+use crate::application::use_cases::EnergyBillUploadUseCases;
 use crate::domain::entities::EnergyBillUpload;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 
@@ -19,8 +19,7 @@ fn get_encryption_key() -> Result<[u8; 32], String> {
     }
 
     let mut key = [0u8; 32];
-    hex::decode_to_slice(&key_hex, &mut key)
-        .map_err(|e| format!("Invalid hex key: {}", e))?;
+    hex::decode_to_slice(&key_hex, &mut key).map_err(|e| format!("Invalid hex key: {}", e))?;
 
     Ok(key)
 }
@@ -35,13 +34,11 @@ pub async fn upload_bill(
 ) -> Result<HttpResponse, actix_web::Error> {
     // Verify GDPR consent
     if !request.consent.accepted {
-        return Err(actix_web::error::ErrorBadRequest(
-            "GDPR consent required",
-        ));
+        return Err(actix_web::error::ErrorBadRequest("GDPR consent required"));
     }
 
-    let encryption_key = get_encryption_key()
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    let encryption_key =
+        get_encryption_key().map_err(actix_web::error::ErrorInternalServerError)?;
 
     let upload = EnergyBillUpload::new(
         request.campaign_id,
@@ -61,12 +58,12 @@ pub async fn upload_bill(
         request.consent.user_agent.clone(),
         &encryption_key,
     )
-    .map_err(|e| actix_web::error::ErrorBadRequest(e))?;
+    .map_err(actix_web::error::ErrorBadRequest)?;
 
     let created = uploads
         .upload_bill(upload)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Note: Aggregation should be triggered asynchronously via message queue in production
 
@@ -81,8 +78,8 @@ pub async fn get_my_uploads(
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     // TODO: Get unit_id from unit_owners table based on user_id
-    // For now return empty list if no organization
-    let organization_id = user
+    // Verify user has organization
+    let _organization_id = user
         .organization_id
         .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
 
@@ -92,7 +89,7 @@ pub async fn get_my_uploads(
     let list = uploads
         .get_my_uploads(unit_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let response: Vec<EnergyBillUploadResponse> = list
         .into_iter()
@@ -115,11 +112,15 @@ pub async fn get_upload(
     let upload = uploads
         .get_upload(id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Upload not found"))?;
 
     // Verify access (owner or same organization)
-    if upload.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if upload.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
@@ -136,18 +137,20 @@ pub async fn decrypt_consumption(
 ) -> Result<HttpResponse, actix_web::Error> {
     let upload_id = path.into_inner();
 
-    let encryption_key = get_encryption_key()
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    let encryption_key =
+        get_encryption_key().map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Get upload to check ownership
     let upload = uploads
         .get_upload(upload_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Upload not found"))?;
 
     // Verify organization access
-    let user_org = user.organization_id.ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+    let user_org = user
+        .organization_id
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
     if upload.organization_id != user_org {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
@@ -155,7 +158,7 @@ pub async fn decrypt_consumption(
     let total_kwh = uploads
         .decrypt_consumption(upload_id, upload.unit_id, &encryption_key)
         .await
-        .map_err(|e| actix_web::error::ErrorForbidden(e))?;
+        .map_err(actix_web::error::ErrorForbidden)?;
 
     let response = DecryptedConsumptionResponse {
         upload_id,
@@ -174,7 +177,7 @@ pub async fn decrypt_consumption(
 pub async fn verify_upload(
     uploads: web::Data<EnergyBillUploadUseCases>,
     path: web::Path<Uuid>,
-    request: web::Json<VerifyUploadRequest>,
+    _request: web::Json<VerifyUploadRequest>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let upload_id = path.into_inner();
@@ -187,7 +190,7 @@ pub async fn verify_upload(
     let updated = uploads
         .verify_upload(upload_id, user.user_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(EnergyBillUploadResponse::from(updated)))
 }
@@ -206,11 +209,13 @@ pub async fn delete_upload(
     let upload = uploads
         .get_upload(upload_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Upload not found"))?;
 
     // Verify organization access
-    let user_org = user.organization_id.ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+    let user_org = user
+        .organization_id
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
     if upload.organization_id != user_org {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
@@ -218,7 +223,7 @@ pub async fn delete_upload(
     uploads
         .delete_upload(upload_id, upload.unit_id)
         .await
-        .map_err(|e| actix_web::error::ErrorForbidden(e))?;
+        .map_err(actix_web::error::ErrorForbidden)?;
 
     Ok(HttpResponse::NoContent().finish())
 }
@@ -237,11 +242,13 @@ pub async fn withdraw_consent(
     let upload = uploads
         .get_upload(upload_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Upload not found"))?;
 
     // Verify organization access
-    let user_org = user.organization_id.ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+    let user_org = user
+        .organization_id
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
     if upload.organization_id != user_org {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
@@ -249,7 +256,7 @@ pub async fn withdraw_consent(
     uploads
         .withdraw_consent(upload_id, upload.unit_id)
         .await
-        .map_err(|e| actix_web::error::ErrorForbidden(e))?;
+        .map_err(actix_web::error::ErrorForbidden)?;
 
     Ok(HttpResponse::Ok().json(serde_json::json!({
         "message": "Consent withdrawn and data deleted",
@@ -270,11 +277,13 @@ pub async fn get_campaign_uploads(
     let list = uploads
         .get_uploads_by_campaign(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Verify organization access
     if !list.is_empty() {
-        let user_org = user.organization_id.ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
+        let user_org = user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
         if list[0].organization_id != user_org {
             return Err(actix_web::error::ErrorForbidden("Access denied"));
         }

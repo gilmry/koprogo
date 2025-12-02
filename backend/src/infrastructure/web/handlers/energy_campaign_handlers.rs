@@ -3,8 +3,7 @@ use uuid::Uuid;
 
 use crate::application::dto::{
     CampaignStatsResponse, CreateEnergyCampaignRequest, CreateProviderOfferRequest,
-    EnergyCampaignResponse, ProviderOfferResponse, SelectOfferRequest,
-    UpdateCampaignStatusRequest,
+    EnergyCampaignResponse, ProviderOfferResponse, SelectOfferRequest, UpdateCampaignStatusRequest,
 };
 use crate::application::use_cases::EnergyCampaignUseCases;
 use crate::domain::entities::EnergyCampaign;
@@ -18,9 +17,9 @@ pub async fn create_campaign(
     request: web::Json<CreateEnergyCampaignRequest>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let org_id = user.organization_id.ok_or_else(|| {
-        actix_web::error::ErrorBadRequest("Organization ID required")
-    })?;
+    let org_id = user
+        .organization_id
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Organization ID required"))?;
 
     let campaign = EnergyCampaign::new(
         org_id,
@@ -30,12 +29,12 @@ pub async fn create_campaign(
         request.energy_types.clone(),
         user.user_id,
     )
-    .map_err(|e| actix_web::error::ErrorBadRequest(e))?;
+    .map_err(actix_web::error::ErrorBadRequest)?;
 
     let created = campaigns
         .create_campaign(campaign)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Created().json(EnergyCampaignResponse::from(created)))
 }
@@ -47,14 +46,14 @@ pub async fn list_campaigns(
     campaigns: web::Data<EnergyCampaignUseCases>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let org_id = user.organization_id.ok_or_else(|| {
-        actix_web::error::ErrorBadRequest("Organization ID required")
-    })?;
+    let org_id = user
+        .organization_id
+        .ok_or_else(|| actix_web::error::ErrorBadRequest("Organization ID required"))?;
 
     let list = campaigns
         .get_campaigns_by_organization(org_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let response: Vec<EnergyCampaignResponse> =
         list.into_iter().map(EnergyCampaignResponse::from).collect();
@@ -75,11 +74,15 @@ pub async fn get_campaign(
     let campaign = campaigns
         .get_campaign(id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Campaign not found"))?;
 
     // Verify organization access
-    if campaign.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if campaign.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
@@ -101,17 +104,21 @@ pub async fn update_campaign_status(
     let campaign = campaigns
         .get_campaign(id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Campaign not found"))?;
 
-    if campaign.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if campaign.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
     let updated = campaigns
         .update_campaign_status(id, request.status.clone())
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(EnergyCampaignResponse::from(updated)))
 }
@@ -130,17 +137,21 @@ pub async fn get_campaign_stats(
     let campaign = campaigns
         .get_campaign(id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Campaign not found"))?;
 
-    if campaign.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if campaign.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
     let stats = campaigns
         .get_campaign_stats(id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     let response = CampaignStatsResponse {
         total_participants: stats.total_participants,
@@ -171,10 +182,14 @@ pub async fn add_offer(
     let campaign = campaigns
         .get_campaign(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Campaign not found"))?;
 
-    if campaign.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if campaign.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
@@ -191,12 +206,12 @@ pub async fn add_offer(
         request.estimated_savings_pct,
         request.offer_valid_until,
     )
-    .map_err(|e| actix_web::error::ErrorBadRequest(e))?;
+    .map_err(actix_web::error::ErrorBadRequest)?;
 
     let created = campaigns
         .add_offer(campaign_id, offer)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Created().json(ProviderOfferResponse::from(created)))
 }
@@ -215,20 +230,26 @@ pub async fn list_offers(
     let campaign = campaigns
         .get_campaign(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Campaign not found"))?;
 
-    if campaign.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if campaign.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
     let offers = campaigns
         .get_campaign_offers(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    let response: Vec<ProviderOfferResponse> =
-        offers.into_iter().map(ProviderOfferResponse::from).collect();
+    let response: Vec<ProviderOfferResponse> = offers
+        .into_iter()
+        .map(ProviderOfferResponse::from)
+        .collect();
 
     Ok(HttpResponse::Ok().json(response))
 }
@@ -248,17 +269,21 @@ pub async fn select_offer(
     let campaign = campaigns
         .get_campaign(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Campaign not found"))?;
 
-    if campaign.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if campaign.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
     let updated = campaigns
         .select_offer(campaign_id, request.offer_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(EnergyCampaignResponse::from(updated)))
 }
@@ -277,17 +302,21 @@ pub async fn finalize_campaign(
     let campaign = campaigns
         .get_campaign(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Campaign not found"))?;
 
-    if campaign.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if campaign.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
     let updated = campaigns
         .finalize_campaign(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(EnergyCampaignResponse::from(updated)))
 }
@@ -306,17 +335,21 @@ pub async fn delete_campaign(
     let campaign = campaigns
         .get_campaign(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?
+        .map_err(actix_web::error::ErrorInternalServerError)?
         .ok_or_else(|| actix_web::error::ErrorNotFound("Campaign not found"))?;
 
-    if campaign.organization_id != user.organization_id.ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))? {
+    if campaign.organization_id
+        != user
+            .organization_id
+            .ok_or_else(|| actix_web::error::ErrorForbidden("Organization ID required"))?
+    {
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
     campaigns
         .delete_campaign(campaign_id)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::NoContent().finish())
 }

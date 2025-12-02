@@ -26,10 +26,7 @@ pub trait EnergyBillUploadRepository: Send + Sync {
     ) -> Result<Option<EnergyBillUpload>, String>;
 
     /// Find uploads by building
-    async fn find_by_building(
-        &self,
-        building_id: Uuid,
-    ) -> Result<Vec<EnergyBillUpload>, String>;
+    async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<EnergyBillUpload>, String>;
 
     /// Update bill upload
     async fn update(&self, upload: &EnergyBillUpload) -> Result<EnergyBillUpload, String>;

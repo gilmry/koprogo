@@ -3,7 +3,9 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::application::ports::EnergyCampaignRepository;
-use crate::domain::entities::{CampaignStatus, CampaignType, ContractType, EnergyCampaign, EnergyType, ProviderOffer};
+use crate::domain::entities::{
+    CampaignStatus, CampaignType, ContractType, EnergyCampaign, EnergyType, ProviderOffer,
+};
 
 pub struct PostgresEnergyCampaignRepository {
     pub pool: PgPool,
@@ -24,7 +26,7 @@ impl EnergyCampaignRepository for PostgresEnergyCampaignRepository {
             .map(|t| t.to_string())
             .collect();
 
-        let result = sqlx::query!(
+        let _result = sqlx::query!(
             r#"
             INSERT INTO energy_campaigns (
                 id, organization_id, building_id, campaign_name, campaign_type, status,

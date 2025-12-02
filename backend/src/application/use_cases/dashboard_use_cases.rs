@@ -127,10 +127,7 @@ impl DashboardUseCases {
             .collect();
 
         // Count unique owners with active reminders
-        let unique_owners: HashSet<Uuid> = active_reminders
-            .iter()
-            .map(|r| r.owner_id)
-            .collect();
+        let unique_owners: HashSet<Uuid> = active_reminders.iter().map(|r| r.owner_id).collect();
 
         let owners_with_overdue = unique_owners.len() as i64;
 

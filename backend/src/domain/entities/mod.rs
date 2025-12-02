@@ -64,7 +64,9 @@ pub use convocation::{Convocation, ConvocationStatus, ConvocationType};
 pub use convocation_recipient::{AttendanceStatus, ConvocationRecipient};
 pub use document::{Document, DocumentType};
 pub use energy_bill_upload::EnergyBillUpload;
-pub use energy_campaign::{CampaignStatus, CampaignType, ContractType, EnergyCampaign, EnergyType, ProviderOffer};
+pub use energy_campaign::{
+    CampaignStatus, CampaignType, ContractType, EnergyCampaign, EnergyType, ProviderOffer,
+};
 pub use etat_date::{EtatDate, EtatDateLanguage, EtatDateStatus};
 pub use expense::{ApprovalStatus, Expense, ExpenseCategory, PaymentStatus};
 pub use gdpr_export::{

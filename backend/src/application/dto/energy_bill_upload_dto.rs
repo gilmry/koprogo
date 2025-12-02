@@ -6,7 +6,6 @@ use crate::domain::entities::{EnergyBillUpload, EnergyType};
 
 /// DTO for uploading energy bill with GDPR consent
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct UploadEnergyBillRequest {
     pub campaign_id: Uuid,
     pub unit_id: Uuid,
@@ -33,7 +32,6 @@ pub struct UploadEnergyBillRequest {
 
 /// DTO for GDPR consent data
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct GdprConsentData {
     pub accepted: bool, // Must be true
     pub timestamp: DateTime<Utc>,
@@ -43,7 +41,6 @@ pub struct GdprConsentData {
 
 /// DTO for energy bill upload response (anonymized)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct EnergyBillUploadResponse {
     pub id: Uuid,
     pub campaign_id: Uuid,
@@ -57,7 +54,6 @@ pub struct EnergyBillUploadResponse {
 
     // Consumption (encrypted - not exposed)
     // total_kwh_encrypted: NOT INCLUDED (sensitive)
-
     pub energy_type: EnergyType,
     pub provider: Option<String>,
     pub postal_code: String,
@@ -65,7 +61,6 @@ pub struct EnergyBillUploadResponse {
     // File metadata (hashes only)
     pub file_hash: String,
     // file_path_encrypted: NOT INCLUDED (sensitive)
-
     pub ocr_confidence: f64,
     pub manually_verified: bool,
     pub verified_at: Option<DateTime<Utc>>,
@@ -111,7 +106,6 @@ impl From<EnergyBillUpload> for EnergyBillUploadResponse {
 
 /// DTO for decrypted consumption (owner only)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct DecryptedConsumptionResponse {
     pub upload_id: Uuid,
     pub total_kwh: f64, // Decrypted value
@@ -122,7 +116,6 @@ pub struct DecryptedConsumptionResponse {
 
 /// DTO for manual correction of OCR data
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct CorrectOcrDataRequest {
     pub total_kwh: f64,
     pub energy_type: Option<EnergyType>,
@@ -133,7 +126,6 @@ pub struct CorrectOcrDataRequest {
 
 /// DTO for verification request (admin)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "utoipa", derive(utoipa::ToSchema))]
 pub struct VerifyUploadRequest {
     pub verified: bool,
 }

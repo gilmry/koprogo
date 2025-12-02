@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use uuid::Uuid;
 
-use crate::application::ports::{EnergyCampaignRepository, EnergyBillUploadRepository};
+use crate::application::ports::{EnergyBillUploadRepository, EnergyCampaignRepository};
 use crate::domain::entities::{CampaignStatus, EnergyBillUpload};
 
 pub struct EnergyBillUploadUseCases {
@@ -21,10 +21,7 @@ impl EnergyBillUploadUseCases {
     }
 
     /// Upload energy bill with GDPR consent
-    pub async fn upload_bill(
-        &self,
-        upload: EnergyBillUpload,
-    ) -> Result<EnergyBillUpload, String> {
+    pub async fn upload_bill(&self, upload: EnergyBillUpload) -> Result<EnergyBillUpload, String> {
         // Validate campaign exists and is accepting uploads
         let campaign = self
             .campaign_repo
@@ -97,7 +94,10 @@ impl EnergyBillUploadUseCases {
 
     /// Batch anonymize all verified uploads for a campaign
     pub async fn batch_anonymize_campaign(&self, campaign_id: Uuid) -> Result<i32, String> {
-        let uploads = self.upload_repo.find_verified_by_campaign(campaign_id).await?;
+        let uploads = self
+            .upload_repo
+            .find_verified_by_campaign(campaign_id)
+            .await?;
 
         let mut count = 0;
         for mut upload in uploads {
@@ -134,7 +134,11 @@ impl EnergyBillUploadUseCases {
     }
 
     /// Delete upload (GDPR Art. 17 - Right to erasure)
-    pub async fn delete_upload(&self, upload_id: Uuid, requester_unit_id: Uuid) -> Result<(), String> {
+    pub async fn delete_upload(
+        &self,
+        upload_id: Uuid,
+        requester_unit_id: Uuid,
+    ) -> Result<(), String> {
         let mut upload = self
             .upload_repo
             .find_by_id(upload_id)
@@ -175,7 +179,9 @@ impl EnergyBillUploadUseCases {
 
     /// Get count of verified uploads for a campaign (k-anonymity check)
     pub async fn get_verified_count(&self, campaign_id: Uuid) -> Result<i32, String> {
-        self.upload_repo.count_verified_by_campaign(campaign_id).await
+        self.upload_repo
+            .count_verified_by_campaign(campaign_id)
+            .await
     }
 
     /// Check if k-anonymity threshold is met (minimum 5 participants)
