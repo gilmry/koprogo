@@ -2,7 +2,6 @@ use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
-use env_logger::Env;
 use koprogo_api::application::services::ExpenseAccountingService;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
@@ -22,7 +21,14 @@ use std::sync::Arc;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    env_logger::init_from_env(Env::default().default_filter_or("info"));
+
+    // Initialize tracing subscriber (already in Cargo.toml, replaces env_logger)
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+        )
+        .init();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     // JWT Secret with production validation
@@ -233,13 +239,17 @@ async fn main() -> std::io::Result<()> {
         convocation_repo,
         convocation_recipient_repo,
         owner_repo.clone(),
+        building_repo.clone(),
+        meeting_repo.clone(),
     );
     let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo);
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
     let two_factor_use_cases =
         TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
     let iot_use_cases = IoTUseCases::new(iot_repo.clone());
-    let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client);
+    let oauth_redirect_uri = env::var("OAUTH_REDIRECT_URI")
+        .unwrap_or_else(|_| format!("http://{}:{}/api/v1/iot/linky/callback", server_host, server_port));
+    let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client, oauth_redirect_uri);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
     let payment_use_cases = PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
@@ -253,7 +263,11 @@ async fn main() -> std::io::Result<()> {
     let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
-    let shared_object_use_cases = SharedObjectUseCases::new(shared_object_repo, owner_repo.clone());
+    let shared_object_use_cases = SharedObjectUseCases::new(
+        shared_object_repo,
+        owner_repo.clone(),
+        owner_credit_balance_repo.clone(),
+    );
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
     let technical_inspection_use_cases =
         TechnicalInspectionUseCases::new(technical_inspection_repo);
@@ -292,8 +306,11 @@ async fn main() -> std::io::Result<()> {
         expense_repo.clone(),
         journal_entry_repo.clone(),
     );
-    let dashboard_use_cases =
-        DashboardUseCases::new(expense_repo.clone(), owner_contribution_repo.clone());
+    let dashboard_use_cases = DashboardUseCases::new(
+        expense_repo.clone(),
+        owner_contribution_repo.clone(),
+        payment_reminder_repo.clone(),
+    );
     let owner_contribution_use_cases =
         OwnerContributionUseCases::new(owner_contribution_repo.clone());
     let call_for_funds_use_cases = CallForFundsUseCases::new(
