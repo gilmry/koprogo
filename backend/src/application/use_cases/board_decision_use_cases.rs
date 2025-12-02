@@ -296,6 +296,7 @@ mod tests {
         impl BuildingRepository for BuildingRepo {
             async fn create(&self, building: &Building) -> Result<Building, String>;
             async fn find_by_id(&self, id: Uuid) -> Result<Option<Building>, String>;
+            async fn find_by_slug(&self, slug: &str) -> Result<Option<Building>, String>;
             async fn find_all(&self) -> Result<Vec<Building>, String>;
             async fn find_all_paginated(
                 &self,

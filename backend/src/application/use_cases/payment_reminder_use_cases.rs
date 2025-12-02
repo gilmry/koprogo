@@ -4,7 +4,7 @@ use crate::application::dto::{
     OverdueExpenseDto, PaymentRecoveryStatsDto, PaymentReminderResponseDto, ReminderLevelCountDto,
     ReminderStatusCountDto,
 };
-use crate::application::ports::{ExpenseRepository, PaymentReminderRepository};
+use crate::application::ports::{ExpenseRepository, OwnerRepository, PaymentReminderRepository};
 use crate::domain::entities::{PaymentReminder, PaymentStatus, ReminderStatus};
 use chrono::{DateTime, Utc};
 use std::sync::Arc;
@@ -13,17 +13,36 @@ use uuid::Uuid;
 pub struct PaymentReminderUseCases {
     reminder_repository: Arc<dyn PaymentReminderRepository>,
     expense_repository: Arc<dyn ExpenseRepository>,
+    owner_repository: Arc<dyn OwnerRepository>,
 }
 
 impl PaymentReminderUseCases {
     pub fn new(
         reminder_repository: Arc<dyn PaymentReminderRepository>,
         expense_repository: Arc<dyn ExpenseRepository>,
+        owner_repository: Arc<dyn OwnerRepository>,
     ) -> Self {
         Self {
             reminder_repository,
             expense_repository,
+            owner_repository,
         }
+    }
+
+    /// Helper to enrich a reminder DTO with owner information
+    async fn enrich_with_owner_info(
+        &self,
+        mut dto: PaymentReminderResponseDto,
+    ) -> Result<PaymentReminderResponseDto, String> {
+        let owner_id =
+            Uuid::parse_str(&dto.owner_id).map_err(|_| "Invalid owner_id format".to_string())?;
+
+        if let Ok(Some(owner)) = self.owner_repository.find_by_id(owner_id).await {
+            dto.owner_name = Some(owner.full_name());
+            dto.owner_email = Some(owner.email.clone());
+        }
+
+        Ok(dto)
     }
 
     /// Create a new payment reminder
@@ -118,7 +137,16 @@ impl PaymentReminderUseCases {
             .reminder_repository
             .find_by_organization(organization_id)
             .await?;
-        Ok(reminders.into_iter().map(|r| r.into()).collect())
+
+        // Enrich each reminder with owner information
+        let mut enriched_reminders = Vec::new();
+        for reminder in reminders {
+            let dto: PaymentReminderResponseDto = reminder.into();
+            let enriched = self.enrich_with_owner_info(dto).await?;
+            enriched_reminders.push(enriched);
+        }
+
+        Ok(enriched_reminders)
     }
 
     /// List active (non-paid, non-cancelled) reminders for an owner

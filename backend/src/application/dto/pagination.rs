@@ -29,13 +29,28 @@ impl PageRequest {
         (self.page - 1) * self.per_page
     }
 
-    /// Get limit with max cap of 100 items
+    /// Get limit for SQL query
+    /// Caps at 100 for typical API calls, but allows up to 10000 for internal batch operations
     pub fn limit(&self) -> i64 {
-        self.per_page.min(100)
+        self.per_page.min(10000)
     }
 
     /// Validate page request parameters
+    /// For external API calls, per_page should be <= 100 (enforced by handlers)
+    /// For internal use cases (e.g., financial reports), allows up to 10000
     pub fn validate(&self) -> Result<(), String> {
+        if self.page < 1 {
+            return Err("page must be >= 1".to_string());
+        }
+        if self.per_page < 1 || self.per_page > 10000 {
+            return Err("per_page must be between 1 and 10000".to_string());
+        }
+        Ok(())
+    }
+
+    /// Validate page request parameters for external API calls
+    /// Enforces stricter limit of 100 items per page
+    pub fn validate_api(&self) -> Result<(), String> {
         if self.page < 1 {
             return Err("page must be >= 1".to_string());
         }
@@ -150,11 +165,11 @@ mod tests {
     fn test_page_request_limit_capped() {
         let req = PageRequest {
             page: 1,
-            per_page: 500, // Excessive
+            per_page: 20000, // Excessive
             sort_by: None,
             order: SortOrder::default(),
         };
-        assert_eq!(req.limit(), 100); // Capped at 100
+        assert_eq!(req.limit(), 10000); // Capped at 10000
     }
 
     #[test]
@@ -183,11 +198,35 @@ mod tests {
     fn test_page_request_validation_invalid_per_page() {
         let req = PageRequest {
             page: 1,
-            per_page: 101, // Invalid (> 100)
+            per_page: 10001, // Invalid (> 10000)
             sort_by: None,
             order: SortOrder::default(),
         };
         assert!(req.validate().is_err());
+    }
+
+    #[test]
+    fn test_page_request_validation_api_invalid_per_page() {
+        let req = PageRequest {
+            page: 1,
+            per_page: 101, // Invalid for API (> 100)
+            sort_by: None,
+            order: SortOrder::default(),
+        };
+        assert!(req.validate_api().is_err());
+    }
+
+    #[test]
+    fn test_page_request_validation_internal_large_per_page() {
+        let req = PageRequest {
+            page: 1,
+            per_page: 10000, // Valid for internal use (financial reports)
+            sort_by: None,
+            order: SortOrder::default(),
+        };
+        assert!(req.validate().is_ok());
+        // limit() should allow up to 10000 for internal use
+        assert_eq!(req.limit(), 10000);
     }
 
     #[test]

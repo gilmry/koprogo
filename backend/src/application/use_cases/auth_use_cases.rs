@@ -4,6 +4,7 @@ use crate::application::dto::{
 };
 use crate::application::ports::{RefreshTokenRepository, UserRepository, UserRoleRepository};
 use crate::domain::entities::{RefreshToken, User, UserRole, UserRoleAssignment};
+use crate::infrastructure::audit::{log_audit_event, AuditEventType};
 use bcrypt::{hash, verify, DEFAULT_COST};
 use chrono::Utc;
 use jsonwebtoken::{encode, EncodingKey, Header};
@@ -37,9 +38,34 @@ impl AuthUseCases {
             .user_repo
             .find_by_email(&request.email)
             .await?
-            .ok_or("Invalid email or password")?;
+            .ok_or_else(|| {
+                // Audit failed login attempt
+                tokio::spawn(async move {
+                    log_audit_event(
+                        AuditEventType::AuthenticationFailed,
+                        None,
+                        None,
+                        Some(format!("Failed login attempt for email: {}", request.email)),
+                        None,
+                    )
+                    .await;
+                });
+                "Invalid email or password".to_string()
+            })?;
 
         if !user.is_active {
+            // Audit login attempt on deactivated account
+            let user_id = user.id;
+            tokio::spawn(async move {
+                log_audit_event(
+                    AuditEventType::AuthenticationFailed,
+                    Some(user_id),
+                    None,
+                    Some("Login attempt on deactivated account".to_string()),
+                    None,
+                )
+                .await;
+            });
             return Err("User account is deactivated".to_string());
         }
 
@@ -47,6 +73,18 @@ impl AuthUseCases {
             .map_err(|e| format!("Password verification failed: {}", e))?;
 
         if !is_valid {
+            // Audit failed password verification
+            let user_id = user.id;
+            tokio::spawn(async move {
+                log_audit_event(
+                    AuditEventType::AuthenticationFailed,
+                    Some(user_id),
+                    None,
+                    Some("Invalid password".to_string()),
+                    None,
+                )
+                .await;
+            });
             return Err("Invalid email or password".to_string());
         }
 
@@ -57,6 +95,20 @@ impl AuthUseCases {
         let refresh_token_string = self.generate_refresh_token_string(&user_for_token);
         let refresh_token = RefreshToken::new(user_for_token.id, refresh_token_string.clone());
         self.refresh_token_repo.create(&refresh_token).await?;
+
+        // Audit successful login
+        let user_id = user_for_token.id;
+        let organization_id = active_role.organization_id;
+        tokio::spawn(async move {
+            log_audit_event(
+                AuditEventType::UserLogin,
+                Some(user_id),
+                organization_id,
+                Some("Successful login".to_string()),
+                None,
+            )
+            .await;
+        });
 
         Ok(LoginResponse {
             token,
@@ -108,6 +160,21 @@ impl AuthUseCases {
         let refresh_token_string = self.generate_refresh_token_string(&user_for_token);
         let refresh_token = RefreshToken::new(user_for_token.id, refresh_token_string.clone());
         self.refresh_token_repo.create(&refresh_token).await?;
+
+        // Audit successful registration
+        let user_id = created_user.id;
+        let organization_id = created_user.organization_id;
+        let email = created_user.email.clone();
+        tokio::spawn(async move {
+            log_audit_event(
+                AuditEventType::UserRegistration,
+                Some(user_id),
+                organization_id,
+                Some(format!("New user registered: {}", email)),
+                None,
+            )
+            .await;
+        });
 
         Ok(LoginResponse {
             token,
@@ -199,9 +266,39 @@ impl AuthUseCases {
             .refresh_token_repo
             .find_by_token(&request.refresh_token)
             .await?
-            .ok_or("Invalid refresh token")?;
+            .ok_or_else(|| {
+                // Audit invalid refresh token attempt
+                tokio::spawn(async {
+                    log_audit_event(
+                        AuditEventType::InvalidToken,
+                        None,
+                        None,
+                        Some("Invalid refresh token attempted".to_string()),
+                        None,
+                    )
+                    .await;
+                });
+                "Invalid refresh token".to_string()
+            })?;
 
         if !refresh_token.is_valid() {
+            // Audit expired/revoked token attempt
+            let user_id = refresh_token.user_id;
+            let reason = if refresh_token.is_expired() {
+                "Expired refresh token"
+            } else {
+                "Revoked refresh token"
+            };
+            tokio::spawn(async move {
+                log_audit_event(
+                    AuditEventType::InvalidToken,
+                    Some(user_id),
+                    None,
+                    Some(format!("{} attempted", reason)),
+                    None,
+                )
+                .await;
+            });
             return Err("Refresh token expired or revoked".to_string());
         }
 
@@ -212,6 +309,18 @@ impl AuthUseCases {
             .ok_or("User not found")?;
 
         if !user.is_active {
+            // Audit refresh attempt on deactivated account
+            let user_id = user.id;
+            tokio::spawn(async move {
+                log_audit_event(
+                    AuditEventType::AuthenticationFailed,
+                    Some(user_id),
+                    None,
+                    Some("Refresh token attempt on deactivated account".to_string()),
+                    None,
+                )
+                .await;
+            });
             return Err("User account is deactivated".to_string());
         }
 
@@ -219,6 +328,7 @@ impl AuthUseCases {
         let user_for_token = self.apply_active_role_metadata(&user, &active_role).await?;
         let token = self.generate_token(&user_for_token, &active_role)?;
 
+        // Revoke old token (refresh token rotation)
         self.refresh_token_repo
             .revoke(&request.refresh_token)
             .await?;
@@ -227,6 +337,20 @@ impl AuthUseCases {
         let new_refresh_token =
             RefreshToken::new(user_for_token.id, new_refresh_token_string.clone());
         self.refresh_token_repo.create(&new_refresh_token).await?;
+
+        // Audit successful token refresh
+        let user_id = user_for_token.id;
+        let organization_id = active_role.organization_id;
+        tokio::spawn(async move {
+            log_audit_event(
+                AuditEventType::TokenRefresh,
+                Some(user_id),
+                organization_id,
+                Some("Refresh token successfully exchanged".to_string()),
+                None,
+            )
+            .await;
+        });
 
         Ok(LoginResponse {
             token,

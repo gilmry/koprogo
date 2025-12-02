@@ -15,6 +15,16 @@ pub struct Building {
     pub total_units: i32,
     pub total_tantiemes: i32,
     pub construction_year: Option<i32>,
+
+    // Public syndic information (Belgian legal requirement - Issue #92)
+    pub syndic_name: Option<String>,
+    pub syndic_email: Option<String>,
+    pub syndic_phone: Option<String>,
+    pub syndic_address: Option<String>,
+    pub syndic_office_hours: Option<String>,
+    pub syndic_emergency_contact: Option<String>,
+    pub slug: Option<String>,
+
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -43,6 +53,8 @@ impl Building {
         }
 
         let now = Utc::now();
+        let slug = Self::generate_slug(&name, &address, &city);
+
         Ok(Self {
             id: Uuid::new_v4(),
             organization_id,
@@ -54,6 +66,13 @@ impl Building {
             total_units,
             total_tantiemes,
             construction_year,
+            syndic_name: None,
+            syndic_email: None,
+            syndic_phone: None,
+            syndic_address: None,
+            syndic_office_hours: None,
+            syndic_emergency_contact: None,
+            slug: Some(slug),
             created_at: now,
             updated_at: now,
         })
@@ -71,15 +90,73 @@ impl Building {
         total_tantiemes: i32,
         construction_year: Option<i32>,
     ) {
-        self.name = name;
-        self.address = address;
-        self.city = city;
+        self.name = name.clone();
+        self.address = address.clone();
+        self.city = city.clone();
         self.postal_code = postal_code;
         self.country = country;
         self.total_units = total_units;
         self.total_tantiemes = total_tantiemes;
         self.construction_year = construction_year;
+
+        // Regenerate slug if name, address, or city changed
+        self.slug = Some(Self::generate_slug(&name, &address, &city));
+
         self.updated_at = Utc::now();
+    }
+
+    /// Update syndic public information (Belgian legal requirement)
+    #[allow(clippy::too_many_arguments)]
+    pub fn update_syndic_info(
+        &mut self,
+        syndic_name: Option<String>,
+        syndic_email: Option<String>,
+        syndic_phone: Option<String>,
+        syndic_address: Option<String>,
+        syndic_office_hours: Option<String>,
+        syndic_emergency_contact: Option<String>,
+    ) {
+        self.syndic_name = syndic_name;
+        self.syndic_email = syndic_email;
+        self.syndic_phone = syndic_phone;
+        self.syndic_address = syndic_address;
+        self.syndic_office_hours = syndic_office_hours;
+        self.syndic_emergency_contact = syndic_emergency_contact;
+        self.updated_at = Utc::now();
+    }
+
+    /// Generate SEO-friendly slug from building name, address, and city
+    /// Example: "Residence Les Jardins, 123 Rue de la Paix, Paris" -> "residence-les-jardins-paris"
+    fn generate_slug(name: &str, _address: &str, city: &str) -> String {
+        let combined = format!("{} {}", name, city);
+
+        combined
+            .chars()
+            .map(|c| {
+                // Remove accents and special characters BEFORE lowercase
+                match c {
+                    'À' | 'Á' | 'Â' | 'Ã' | 'Ä' | 'à' | 'á' | 'â' | 'ã' | 'ä' => 'a',
+                    'È' | 'É' | 'Ê' | 'Ë' | 'è' | 'é' | 'ê' | 'ë' => 'e',
+                    'Ì' | 'Í' | 'Î' | 'Ï' | 'ì' | 'í' | 'î' | 'ï' => 'i',
+                    'Ò' | 'Ó' | 'Ô' | 'Õ' | 'Ö' | 'ò' | 'ó' | 'ô' | 'õ' | 'ö' => 'o',
+                    'Ù' | 'Ú' | 'Û' | 'Ü' | 'ù' | 'ú' | 'û' | 'ü' => 'u',
+                    'Ç' | 'ç' => 'c',
+                    'Ñ' | 'ñ' => 'n',
+                    _ if c.is_alphanumeric() => c.to_ascii_lowercase(),
+                    _ if c.is_whitespace() || c == '-' => '-',
+                    _ => '-',
+                }
+            })
+            .collect::<String>()
+            .split('-')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>()
+            .join("-")
+    }
+
+    /// Check if building has public syndic information available
+    pub fn has_public_syndic_info(&self) -> bool {
+        self.syndic_name.is_some() || self.syndic_email.is_some() || self.syndic_phone.is_some()
     }
 }
 
