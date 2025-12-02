@@ -26,7 +26,7 @@ async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
 
@@ -247,8 +247,12 @@ async fn main() -> std::io::Result<()> {
     let two_factor_use_cases =
         TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
     let iot_use_cases = IoTUseCases::new(iot_repo.clone());
-    let oauth_redirect_uri = env::var("OAUTH_REDIRECT_URI")
-        .unwrap_or_else(|_| format!("http://{}:{}/api/v1/iot/linky/callback", server_host, server_port));
+    let oauth_redirect_uri = env::var("OAUTH_REDIRECT_URI").unwrap_or_else(|_| {
+        format!(
+            "http://{}:{}/api/v1/iot/linky/callback",
+            server_host, server_port
+        )
+    });
     let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client, oauth_redirect_uri);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
@@ -257,7 +261,7 @@ async fn main() -> std::io::Result<()> {
     let quote_use_cases = QuoteUseCases::new(quote_repo);
     let local_exchange_use_cases = LocalExchangeUseCases::new(
         local_exchange_repo,
-        owner_credit_balance_repo,
+        owner_credit_balance_repo.clone(),
         owner_repo.clone(),
     );
     let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
@@ -283,7 +287,7 @@ async fn main() -> std::io::Result<()> {
         BudgetUseCases::new(budget_repo, building_repo.clone(), expense_repo.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
     let payment_reminder_use_cases = PaymentReminderUseCases::new(
-        payment_reminder_repo,
+        payment_reminder_repo.clone(),
         expense_repo.clone(),
         owner_repo.clone(),
     );
@@ -340,7 +344,7 @@ async fn main() -> std::io::Result<()> {
         user_repo.clone(),
     );
     let energy_campaign_use_cases = EnergyCampaignUseCases::new(
-        energy_campaign_repo,
+        energy_campaign_repo.clone(),
         energy_bill_upload_repo.clone(),
         building_repo.clone(),
     );
