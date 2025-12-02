@@ -1,4 +1,6 @@
 use crate::infrastructure::web::app_state::AppState;
+// Note: Rate limiting is configured in main.rs using actix_governor
+// The actix_governor imports are kept in main.rs, not here
 use actix_web::{
     body::MessageBody,
     dev::{forward_ready, Payload, Service, ServiceRequest, ServiceResponse, Transform},
@@ -330,6 +332,16 @@ where
         })
     }
 }
+
+// ========================================
+// Global Rate Limiting (Issue #78)
+// ========================================
+//
+// Rate limiting is configured directly in main.rs using GovernorConfigBuilder.
+// Three-tier strategy:
+// 1. Public endpoints: 100 req/min per IP (DDoS prevention)
+// 2. Authenticated endpoints: 1000 req/min per IP (higher trust, still IP-based for simplicity)
+// 3. Login endpoint: 5 attempts per 15min per IP (brute-force prevention via LoginRateLimiter)
 
 #[cfg(test)]
 mod tests {

@@ -5,6 +5,7 @@ use crate::domain::entities::UnitOwner;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -507,5 +508,208 @@ fn to_response_dto(unit_owner: &UnitOwner) -> UnitOwnerResponseDto {
         is_active: unit_owner.is_active(),
         created_at: unit_owner.created_at,
         updated_at: unit_owner.updated_at,
+    }
+}
+
+/// Export Ownership Contract to PDF
+///
+/// GET /unit-owners/{relationship_id}/export-contract-pdf
+///
+/// Generates a "Contrat de Copropriété" PDF for a unit ownership relationship.
+#[get("/unit-owners/{id}/export-contract-pdf")]
+pub async fn export_ownership_contract_pdf(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    use crate::domain::entities::{Building, Owner, Unit};
+    use crate::domain::services::OwnershipContractExporter;
+
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
+    };
+
+    let relationship_id = *id;
+
+    // 1. Get the UnitOwner relationship
+    let unit_owner = match state
+        .unit_owner_use_cases
+        .get_unit_owner(relationship_id)
+        .await
+    {
+        Ok(Some(uo)) => uo,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Unit ownership relationship not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Failed to get unit ownership: {}", err)
+            }))
+        }
+    };
+
+    // 2. Get unit
+    let unit_dto = match state.unit_use_cases.get_unit(unit_owner.unit_id).await {
+        Ok(Some(dto)) => dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Unit not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // 3. Get owner
+    let owner_dto = match state.owner_use_cases.get_owner(unit_owner.owner_id).await {
+        Ok(Some(dto)) => dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Owner not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // 4. Get building
+    let building_uuid = match Uuid::parse_str(&unit_dto.building_id) {
+        Ok(uuid) => uuid,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Invalid building ID format"
+            }))
+        }
+    };
+    let building_dto = match state.building_use_cases.get_building(building_uuid).await {
+        Ok(Some(dto)) => dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // Convert DTOs to domain entities
+    let building_org_id = Uuid::parse_str(&building_dto.organization_id).unwrap_or(organization_id);
+
+    let building_created_at = DateTime::parse_from_rfc3339(&building_dto.created_at)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now());
+
+    let building_updated_at = DateTime::parse_from_rfc3339(&building_dto.updated_at)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now());
+
+    let building_entity = Building {
+        id: Uuid::parse_str(&building_dto.id).unwrap_or(building_uuid),
+        name: building_dto.name.clone(),
+        address: building_dto.address,
+        city: building_dto.city,
+        postal_code: building_dto.postal_code,
+        country: building_dto.country,
+        total_units: building_dto.total_units,
+        total_tantiemes: building_dto.total_tantiemes,
+        construction_year: building_dto.construction_year,
+        syndic_name: None,
+        syndic_email: None,
+        syndic_phone: None,
+        syndic_address: None,
+        syndic_office_hours: None,
+        syndic_emergency_contact: None,
+        slug: None,
+        organization_id: building_org_id,
+        created_at: building_created_at,
+        updated_at: building_updated_at,
+    };
+
+    let unit_entity = Unit {
+        id: Uuid::parse_str(&unit_dto.id).unwrap_or(unit_owner.unit_id),
+        organization_id,
+        building_id: building_uuid,
+        unit_number: unit_dto.unit_number,
+        floor: unit_dto.floor,
+        unit_type: unit_dto.unit_type,
+        surface_area: unit_dto.surface_area,
+        quota: unit_dto.quota,
+        owner_id: unit_dto.owner_id.and_then(|s| Uuid::parse_str(&s).ok()),
+        created_at: Utc::now(), // DTOs don't have timestamps, use current time
+        updated_at: Utc::now(),
+    };
+
+    let owner_entity = Owner {
+        id: Uuid::parse_str(&owner_dto.id).unwrap_or(unit_owner.owner_id),
+        organization_id: Uuid::parse_str(&owner_dto.organization_id).unwrap_or(organization_id),
+        first_name: owner_dto.first_name.clone(),
+        last_name: owner_dto.last_name.clone(),
+        email: owner_dto.email,
+        phone: owner_dto.phone,
+        address: owner_dto.address,
+        city: owner_dto.city,
+        postal_code: owner_dto.postal_code,
+        country: owner_dto.country,
+        user_id: owner_dto.user_id.and_then(|s| Uuid::parse_str(&s).ok()),
+        created_at: Utc::now(), // DTOs don't have timestamps, use current time
+        updated_at: Utc::now(),
+    };
+
+    // 5. Generate PDF
+    match OwnershipContractExporter::export_to_pdf(
+        &building_entity,
+        &unit_entity,
+        &owner_entity,
+        unit_owner.ownership_percentage,
+        unit_owner.start_date,
+    ) {
+        Ok(pdf_bytes) => {
+            // Audit log
+            AuditLogEntry::new(
+                AuditEventType::ReportGenerated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("UnitOwner", relationship_id)
+            .with_metadata(serde_json::json!({
+                "report_type": "ownership_contract_pdf",
+                "building_name": building_entity.name,
+                "unit_number": unit_entity.unit_number,
+                "owner_name": format!("{} {}", owner_entity.first_name, owner_entity.last_name)
+            }))
+            .log();
+
+            HttpResponse::Ok()
+                .content_type("application/pdf")
+                .insert_header((
+                    "Content-Disposition",
+                    format!(
+                        "attachment; filename=\"Contrat_Copropriete_{}_{}_{}.pdf\"",
+                        building_entity.name.replace(' ', "_"),
+                        unit_entity.unit_number.replace(' ', "_"),
+                        owner_entity.last_name.replace(' ', "_")
+                    ),
+                ))
+                .body(pdf_bytes)
+        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Failed to generate PDF: {}", err)
+        })),
     }
 }

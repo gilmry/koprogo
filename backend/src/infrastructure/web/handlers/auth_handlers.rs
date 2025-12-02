@@ -5,6 +5,19 @@ use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use validator::Validate;
 
+#[utoipa::path(
+    post,
+    path = "/auth/login",
+    tag = "Auth",
+    summary = "Login",
+    request_body = LoginRequest,
+    responses(
+        (status = 201, description = "Resource created successfully"),
+        (status = 400, description = "Bad Request"),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+)]
 #[post("/auth/login")]
 pub async fn login(data: web::Data<AppState>, request: web::Json<LoginRequest>) -> impl Responder {
     // Validate request
@@ -23,6 +36,19 @@ pub async fn login(data: web::Data<AppState>, request: web::Json<LoginRequest>) 
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/register",
+    tag = "Auth",
+    summary = "Register",
+    request_body = RegisterRequest,
+    responses(
+        (status = 201, description = "Resource created successfully"),
+        (status = 400, description = "Bad Request"),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+)]
 #[post("/auth/register")]
 pub async fn register(
     data: web::Data<AppState>,
@@ -44,6 +70,18 @@ pub async fn register(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/auth/me",
+    tag = "Auth",
+    summary = "Get Current User",
+    responses(
+        (status = 200, description = "Success"),
+        (status = 400, description = "Bad Request"),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+)]
 #[get("/auth/me")]
 pub async fn get_current_user(data: web::Data<AppState>, req: HttpRequest) -> impl Responder {
     // Extract Authorization header
@@ -83,6 +121,19 @@ pub async fn get_current_user(data: web::Data<AppState>, req: HttpRequest) -> im
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/refresh",
+    tag = "Auth",
+    summary = "Refresh Token",
+    request_body = RefreshTokenRequest,
+    responses(
+        (status = 201, description = "Resource created successfully"),
+        (status = 400, description = "Bad Request"),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+)]
 #[post("/auth/refresh")]
 pub async fn refresh_token(
     data: web::Data<AppState>,
@@ -100,6 +151,19 @@ pub async fn refresh_token(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/auth/switch-role",
+    tag = "Auth",
+    summary = "Switch Role",
+    request_body = SwitchRoleRequest,
+    responses(
+        (status = 201, description = "Resource created successfully"),
+        (status = 400, description = "Bad Request"),
+        (status = 404, description = "Not Found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+)]
 #[post("/auth/switch-role")]
 pub async fn switch_role(
     data: web::Data<AppState>,

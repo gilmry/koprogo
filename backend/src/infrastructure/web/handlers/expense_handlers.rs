@@ -5,6 +5,8 @@ use crate::application::dto::{
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, put, web, HttpResponse, Responder};
+use chrono::{DateTime, Utc};
+use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -385,7 +387,7 @@ pub async fn update_invoice_draft(
     {
         Ok(invoice) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceUpdated event type
+                AuditEventType::InvoiceUpdated,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -418,7 +420,7 @@ pub async fn submit_invoice_for_approval(
     {
         Ok(invoice) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceSubmitted event type
+                AuditEventType::InvoiceSubmitted,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -452,7 +454,7 @@ pub async fn approve_invoice(
     match state.expense_use_cases.approve_invoice(*id, dto).await {
         Ok(invoice) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceApproved event type
+                AuditEventType::InvoiceApproved,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -497,7 +499,7 @@ pub async fn reject_invoice(
     {
         Ok(invoice) => {
             AuditLogEntry::new(
-                AuditEventType::ExpenseMarkedPaid, // TODO: Add InvoiceRejected event type
+                AuditEventType::InvoiceRejected,
                 Some(user.user_id),
                 user.organization_id,
             )
@@ -554,6 +556,211 @@ pub async fn get_invoice(state: web::Data<AppState>, id: web::Path<Uuid>) -> imp
         })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
+        })),
+    }
+}
+
+/// Export Work Quote to PDF
+///
+/// GET /expenses/{expense_id}/export-quote-pdf?contractor_name={name}&contractor_contact={email}&timeline={description}
+///
+/// Generates a "Devis de Travaux" PDF for work-related expenses.
+#[derive(Debug, Deserialize)]
+pub struct ExportWorkQuoteQuery {
+    pub contractor_name: String,
+    pub contractor_contact: String,
+    pub timeline: String, // e.g., "2-3 weeks" or "Délai: 15 jours ouvrables"
+}
+
+#[get("/expenses/{id}/export-quote-pdf")]
+pub async fn export_work_quote_pdf(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    query: web::Query<ExportWorkQuoteQuery>,
+) -> impl Responder {
+    use crate::domain::entities::{Building, Expense};
+    use crate::domain::services::{QuoteLineItem, WorkQuoteExporter};
+
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
+    };
+
+    let expense_id = *id;
+
+    // 1. Get expense
+    let expense_dto = match state.expense_use_cases.get_expense(expense_id).await {
+        Ok(Some(dto)) => dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Expense not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // 2. Parse expense DTO fields
+    let expense_building_id = match Uuid::parse_str(&expense_dto.building_id) {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": format!("Invalid building_id: {}", e)
+            }))
+        }
+    };
+    let expense_id_uuid = match Uuid::parse_str(&expense_dto.id) {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": format!("Invalid expense_id: {}", e)
+            }))
+        }
+    };
+
+    // 3. Get building
+    let building_dto = match state
+        .building_use_cases
+        .get_building(expense_building_id)
+        .await
+    {
+        Ok(Some(dto)) => dto,
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }))
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }))
+        }
+    };
+
+    // Convert DTOs to domain entities
+    let building_org_id = Uuid::parse_str(&building_dto.organization_id).unwrap_or(organization_id);
+
+    let building_created_at = DateTime::parse_from_rfc3339(&building_dto.created_at)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now());
+
+    let building_updated_at = DateTime::parse_from_rfc3339(&building_dto.updated_at)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now());
+
+    let building_entity = Building {
+        id: Uuid::parse_str(&building_dto.id).unwrap_or(expense_building_id),
+        name: building_dto.name.clone(),
+        address: building_dto.address,
+        city: building_dto.city,
+        postal_code: building_dto.postal_code,
+        country: building_dto.country,
+        total_units: building_dto.total_units,
+        total_tantiemes: building_dto.total_tantiemes,
+        construction_year: building_dto.construction_year,
+        syndic_name: None,
+        syndic_email: None,
+        syndic_phone: None,
+        syndic_address: None,
+        syndic_office_hours: None,
+        syndic_emergency_contact: None,
+        slug: None,
+        organization_id: building_org_id,
+        created_at: building_created_at,
+        updated_at: building_updated_at,
+    };
+
+    let expense_date = DateTime::parse_from_rfc3339(&expense_dto.expense_date)
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(|_| Utc::now());
+
+    let expense_entity = Expense {
+        id: expense_id_uuid,
+        organization_id,
+        building_id: expense_building_id,
+        category: expense_dto.category.clone(),
+        description: expense_dto.description.clone(),
+        amount: expense_dto.amount,
+        amount_excl_vat: None,
+        vat_rate: None,
+        vat_amount: None,
+        amount_incl_vat: None,
+        expense_date,
+        invoice_date: None,
+        due_date: None,
+        paid_date: None,
+        approval_status: expense_dto.approval_status.clone(),
+        submitted_at: None,
+        approved_by: None,
+        approved_at: None,
+        rejection_reason: None,
+        payment_status: expense_dto.payment_status.clone(),
+        supplier: expense_dto.supplier.clone(),
+        invoice_number: expense_dto.invoice_number.clone(),
+        account_code: expense_dto.account_code.clone(),
+        created_at: Utc::now(),
+        updated_at: Utc::now(),
+    };
+
+    // Create a single line item from expense amount (simplified for now)
+    // Note: For full invoice support with line items, we would need to:
+    // 1. Get the invoice via get_invoice()
+    // 2. Add a repository method to fetch line items
+    // For now, we use simplified single line item approach
+    let quote_line_items: Vec<QuoteLineItem> = vec![QuoteLineItem {
+        description: expense_dto.description.clone(),
+        quantity: 1.0,
+        unit_price: expense_dto.amount,
+        total: expense_dto.amount,
+    }];
+
+    // 4. Generate PDF
+    match WorkQuoteExporter::export_to_pdf(
+        &building_entity,
+        &expense_entity,
+        &quote_line_items,
+        &query.contractor_name,
+        &query.contractor_contact,
+        &query.timeline,
+    ) {
+        Ok(pdf_bytes) => {
+            // Audit log
+            AuditLogEntry::new(
+                AuditEventType::ReportGenerated,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Expense", expense_id)
+            .with_metadata(serde_json::json!({
+                "report_type": "work_quote_pdf",
+                "building_name": building_entity.name,
+                "contractor_name": query.contractor_name,
+                "amount": expense_dto.amount
+            }))
+            .log();
+
+            HttpResponse::Ok()
+                .content_type("application/pdf")
+                .insert_header((
+                    "Content-Disposition",
+                    format!(
+                        "attachment; filename=\"Devis_Travaux_{}_{}.pdf\"",
+                        building_entity.name.replace(' ', "_"),
+                        expense_entity.id
+                    ),
+                ))
+                .body(pdf_bytes)
+        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": format!("Failed to generate PDF: {}", err)
         })),
     }
 }
