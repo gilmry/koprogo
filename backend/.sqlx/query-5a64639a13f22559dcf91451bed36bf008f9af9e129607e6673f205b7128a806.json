@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE notifications\n            SET status = 'Read',\n                read_at = $2\n            WHERE user_id = $1\n              AND channel = 'InApp'\n              AND status = 'Sent'\n              AND read_at IS NULL\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5a64639a13f22559dcf91451bed36bf008f9af9e129607e6673f205b7128a806"
+}

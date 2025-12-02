@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                jel.id,\n                jel.journal_entry_id,\n                jel.organization_id,\n                jel.account_code,\n                jel.debit,\n                jel.credit,\n                jel.description,\n                jel.created_at\n            FROM journal_entry_lines jel\n            WHERE jel.organization_id = $1\n              AND jel.account_code = $2\n            ORDER BY jel.created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "journal_entry_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "account_code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "debit",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 5,
+        "name": "credit",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 6,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "481dc3b2e58cb305e2d306fbebf4de2cfb31773b5913445dfb943cf7d4418420"
+}

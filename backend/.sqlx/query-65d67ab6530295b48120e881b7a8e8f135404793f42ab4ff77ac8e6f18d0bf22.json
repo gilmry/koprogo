@@ -1,0 +1,81 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, building_id, device_type::TEXT as device_type, metric_type::TEXT as metric_type, value,\n                   unit, timestamp, source, metadata, created_at\n            FROM iot_readings\n            WHERE building_id = $1\n              AND timestamp >= $2\n              AND timestamp <= $3\n              AND ($4::TEXT IS NULL OR device_type::TEXT = $4)\n              AND ($5::TEXT IS NULL OR metric_type::TEXT = $5)\n            ORDER BY timestamp DESC\n            LIMIT $6\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "building_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "device_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "metric_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "value",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "unit",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "timestamp",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "source",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 8,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      null,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "65d67ab6530295b48120e881b7a8e8f135404793f42ab4ff77ac8e6f18d0bf22"
+}

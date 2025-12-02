@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM journal_entry_lines\n            WHERE journal_entry_id = $1 AND organization_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f30792cacf818eac4622926d734be0b3887cff82bdc1bfe6a3ab73f158d8abc8"
+}

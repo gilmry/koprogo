@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT AVG(value) as avg_value\n            FROM iot_readings\n            WHERE building_id = $1\n              AND metric_type::TEXT = $2\n              AND timestamp >= NOW() - INTERVAL '1 day' * $3\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "avg_value",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Float8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "7cfa178e201a65df393a6e854bb21e8a3f4f491faac05ce28eb07b873914ba18"
+}
