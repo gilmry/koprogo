@@ -266,7 +266,7 @@ impl BuildingWorld {
         let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
         let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
         let expense_use_cases = ExpenseUseCases::new(expense_repo);
-        let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
+        let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
         let auth_use_cases = koprogo_api::application::use_cases::AuthUseCases::new(
             user_repo,
             refresh_repo,
