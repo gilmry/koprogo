@@ -43,9 +43,9 @@ pub async fn upload_bill(
     let upload = EnergyBillUpload::new(
         request.campaign_id,
         request.unit_id,
-        user.building_id
-            .ok_or_else(|| actix_web::error::ErrorBadRequest("Building ID required"))?,
-        user.organization_id,
+        request.building_id, // Get from request, not user
+        user.organization_id
+            .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization ID required"))?,
         request.bill_period_start,
         request.bill_period_end,
         request.total_kwh,
@@ -65,9 +65,6 @@ pub async fn upload_bill(
         .await
         .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
 
-    // Trigger aggregation update
-    let campaign_use_cases = web::Data::from(std::sync::Arc::clone(&uploads.upload_repo)
-        as std::sync::Arc<dyn crate::application::ports::EnergyBillUploadRepository>);
     // Note: Aggregation should be triggered asynchronously via message queue in production
 
     Ok(HttpResponse::Created().json(EnergyBillUploadResponse::from(created)))
@@ -80,11 +77,11 @@ pub async fn get_my_uploads(
     uploads: web::Data<EnergyBillUploadUseCases>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
-    // Get unit_id from user context (assuming unit ownership relationship)
-    // In production, this would come from unit_owners table
-    let unit_id = user
-        .building_id
-        .ok_or_else(|| actix_web::error::ErrorBadRequest("Unit ID required"))?;
+    // TODO: Get unit_id from unit_owners table based on user_id
+    // For now, we need to pass it as query parameter or get all uploads for user's org
+    let organization_id = user
+        .organization_id
+        .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
 
     let list = uploads
         .get_my_uploads(unit_id)
