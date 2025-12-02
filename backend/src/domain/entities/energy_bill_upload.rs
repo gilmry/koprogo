@@ -254,9 +254,8 @@ mod tests {
     use super::*;
 
     fn get_test_encryption_key() -> [u8; 32] {
-        let mut key = [0u8; 32];
-        key.copy_from_slice(b"test_master_key_32_bytes_long__");
-        key
+        // 32 bytes exactly for AES-256
+        *b"test_master_key_for_32bytes!##!!"
     }
 
     #[test]
@@ -370,8 +369,7 @@ mod tests {
     #[test]
     fn test_decrypt_with_wrong_key() {
         let key = get_test_encryption_key();
-        let mut wrong_key = [0u8; 32];
-        wrong_key.copy_from_slice(b"wrong_key_32_bytes_long________");
+        let wrong_key = *b"wrong_key_for_decryption_test!#!";
 
         let bill = EnergyBillUpload::new(
             Uuid::new_v4(),
