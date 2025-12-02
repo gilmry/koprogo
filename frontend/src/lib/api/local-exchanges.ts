@@ -18,44 +18,44 @@ import { api } from "../api";
 // ============================================================================
 
 export enum ExchangeType {
-  Service = "Service",         // Skills (plumbing, gardening, tutoring, etc.)
-  ObjectLoan = "ObjectLoan",   // Temporary loan (tools, books, equipment)
-  SharedPurchase = "SharedPurchase" // Co-buying (bulk food, equipment rental)
+  Service = "Service", // Skills (plumbing, gardening, tutoring, etc.)
+  ObjectLoan = "ObjectLoan", // Temporary loan (tools, books, equipment)
+  SharedPurchase = "SharedPurchase", // Co-buying (bulk food, equipment rental)
 }
 
 export enum ExchangeStatus {
-  Offered = "Offered",         // Available for anyone to request
-  Requested = "Requested",     // Someone claimed it (pending provider acceptance)
-  InProgress = "InProgress",   // Exchange is happening
-  Completed = "Completed",     // Both parties confirmed completion
-  Cancelled = "Cancelled"      // Exchange was cancelled
+  Offered = "Offered", // Available for anyone to request
+  Requested = "Requested", // Someone claimed it (pending provider acceptance)
+  InProgress = "InProgress", // Exchange is happening
+  Completed = "Completed", // Both parties confirmed completion
+  Cancelled = "Cancelled", // Exchange was cancelled
 }
 
 export enum CreditStatus {
-  Positive = "Positive",   // Balance > 0 (net provider)
-  Balanced = "Balanced",   // Balance = 0
-  Negative = "Negative"    // Balance < 0 (net receiver)
+  Positive = "Positive", // Balance > 0 (net provider)
+  Balanced = "Balanced", // Balance = 0
+  Negative = "Negative", // Balance < 0 (net receiver)
 }
 
 export enum ParticipationLevel {
-  New = "New",             // 0 exchanges
-  Beginner = "Beginner",   // 1-5 exchanges
-  Active = "Active",       // 6-20 exchanges
-  Veteran = "Veteran",     // 21-50 exchanges
-  Expert = "Expert"        // 51+ exchanges
+  New = "New", // 0 exchanges
+  Beginner = "Beginner", // 1-5 exchanges
+  Active = "Active", // 6-20 exchanges
+  Veteran = "Veteran", // 21-50 exchanges
+  Expert = "Expert", // 51+ exchanges
 }
 
 export interface LocalExchange {
   id: string;
   building_id: string;
   provider_id: string;
-  provider_name: string;  // Joined from owner table
+  provider_name: string; // Joined from owner table
   requester_id?: string;
   requester_name?: string; // Joined from owner table
   exchange_type: ExchangeType;
   title: string;
   description: string;
-  credits: number;  // Time in hours (1 hour = 1 credit)
+  credits: number; // Time in hours (1 hour = 1 credit)
   status: ExchangeStatus;
   offered_at: string;
   requested_at?: string;
@@ -63,7 +63,7 @@ export interface LocalExchange {
   completed_at?: string;
   cancelled_at?: string;
   cancellation_reason?: string;
-  provider_rating?: number;  // 1-5 stars from requester
+  provider_rating?: number; // 1-5 stars from requester
   requester_rating?: number; // 1-5 stars from provider
   created_at: string;
   updated_at: string;
@@ -78,7 +78,7 @@ export interface OwnerCreditBalance {
   balance: number;
   credit_status: CreditStatus;
   total_exchanges: number;
-  average_rating?: number;  // 1-5 stars
+  average_rating?: number; // 1-5 stars
   participation_level: ParticipationLevel;
   created_at: string;
   updated_at: string;
@@ -98,8 +98,8 @@ export interface SelStatistics {
 export interface OwnerExchangeSummary {
   owner_id: string;
   owner_name: string;
-  as_provider: number;     // Number of exchanges as provider
-  as_requester: number;    // Number of exchanges as requester
+  as_provider: number; // Number of exchanges as provider
+  as_requester: number; // Number of exchanges as requester
   total_exchanges: number; // Sum of both
   average_rating?: number;
   recent_exchanges: LocalExchange[]; // Last 5
@@ -114,7 +114,7 @@ export interface CreateLocalExchangeDto {
   exchange_type: ExchangeType;
   title: string;
   description: string;
-  credits: number;  // Time in hours (1-100)
+  credits: number; // Time in hours (1-100)
 }
 
 export interface CancelExchangeDto {
@@ -122,7 +122,7 @@ export interface CancelExchangeDto {
 }
 
 export interface RateExchangeDto {
-  rating: number;  // 1-5 stars
+  rating: number; // 1-5 stars
 }
 
 // ============================================================================
@@ -170,7 +170,7 @@ export const localExchangesApi = {
    */
   async listByType(
     buildingId: string,
-    exchangeType: ExchangeType
+    exchangeType: ExchangeType,
   ): Promise<LocalExchange[]> {
     return api.get(`/buildings/${buildingId}/exchanges/type/${exchangeType}`);
   },
@@ -230,7 +230,7 @@ export const localExchangesApi = {
    */
   async getCreditBalance(
     ownerId: string,
-    buildingId: string
+    buildingId: string,
   ): Promise<OwnerCreditBalance> {
     return api.get(`/owners/${ownerId}/buildings/${buildingId}/credit-balance`);
   },
@@ -240,7 +240,7 @@ export const localExchangesApi = {
    */
   async getLeaderboard(
     buildingId: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<OwnerCreditBalance[]> {
     let url = `/buildings/${buildingId}/leaderboard`;
     if (limit) url += `?limit=${limit}`;

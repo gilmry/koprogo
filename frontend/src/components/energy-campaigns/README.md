@@ -131,6 +131,7 @@ graph LR
 ### Consentement explicite
 
 Le composant `EnergyBillUpload` inclut:
+
 - ✅ Checkbox de consentement GDPR obligatoire
 - ✅ Explication détaillée des droits (Art. 7, 15, 17)
 - ✅ Signature de consentement générée automatiquement
@@ -139,6 +140,7 @@ Le composant `EnergyBillUpload` inclut:
 ### K-anonymité
 
 Le composant `CampaignDetail` affiche:
+
 - ⚠️ Warning si < 5 participants
 - 🔒 Statistiques cachées tant que k < 5
 - ✅ Validation visuelle quand k ≥ 5
@@ -154,6 +156,7 @@ Le composant `CampaignDetail` affiche:
 ### Couleurs
 
 Les badges utilisent Tailwind CSS:
+
 - **Draft**: `bg-gray-100 text-gray-800`
 - **CollectingData**: `bg-blue-100 text-blue-800`
 - **Negotiating**: `bg-purple-100 text-purple-800`
@@ -175,7 +178,10 @@ Les badges utilisent Tailwind CSS:
 Le module utilise `/lib/api/energy-campaigns.ts`:
 
 ```typescript
-import { energyCampaignsApi, energyBillsApi } from "../lib/api/energy-campaigns";
+import {
+  energyCampaignsApi,
+  energyBillsApi,
+} from "../lib/api/energy-campaigns";
 
 // Créer une campagne
 const campaign = await energyCampaignsApi.create({

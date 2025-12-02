@@ -261,10 +261,7 @@ export const energyBillsApi = {
   /**
    * Verify upload (admin only)
    */
-  async verify(
-    id: string,
-    data: VerifyUploadDto,
-  ): Promise<EnergyBillUpload> {
+  async verify(id: string, data: VerifyUploadDto): Promise<EnergyBillUpload> {
     return api.put(`/energy-bills/${id}/verify`, data);
   },
 

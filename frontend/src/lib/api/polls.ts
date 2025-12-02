@@ -168,10 +168,12 @@ export const pollsApi = {
     let url = "/polls";
     if (filters) {
       const params = new URLSearchParams();
-      if (filters.building_id) params.append("building_id", filters.building_id);
+      if (filters.building_id)
+        params.append("building_id", filters.building_id);
       if (filters.status) params.append("status", filters.status);
       if (filters.page) params.append("page", filters.page.toString());
-      if (filters.page_size) params.append("page_size", filters.page_size.toString());
+      if (filters.page_size)
+        params.append("page_size", filters.page_size.toString());
       if (params.toString()) url += `?${params.toString()}`;
     }
     return api.get(url);
