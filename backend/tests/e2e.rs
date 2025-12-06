@@ -80,8 +80,12 @@ async fn setup_test_db() -> (
         journal_entry_repo.clone(),
     );
 
-    let auth_use_cases =
-        AuthUseCases::new(user_repo.clone(), refresh_token_repo, user_role_repo, jwt_secret);
+    let auth_use_cases = AuthUseCases::new(
+        user_repo.clone(),
+        refresh_token_repo,
+        user_role_repo,
+        jwt_secret,
+    );
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -102,8 +106,11 @@ async fn setup_test_db() -> (
         Arc::new(FileStorage::new(&storage_root).expect("storage"));
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-    let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo.clone(), owner_repo.clone());
+    let payment_reminder_use_cases = PaymentReminderUseCases::new(
+        payment_reminder_repo,
+        expense_repo.clone(),
+        owner_repo.clone(),
+    );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
 
     // Create an organization for FK references

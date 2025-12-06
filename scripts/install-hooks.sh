@@ -38,6 +38,10 @@ make pre-commit || {
     exit 1
 }
 
+# Auto-stage formatted files
+echo "📝 Staging formatted files..."
+git add -u
+
 echo "✅ All pre-commit checks passed!"
 EOF
 
