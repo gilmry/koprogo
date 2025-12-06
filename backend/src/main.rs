@@ -183,12 +183,13 @@ async fn main() -> std::io::Result<()> {
     let energy_campaign_repo = Arc::new(PostgresEnergyCampaignRepository::new(pool.clone()));
     let energy_bill_upload_repo = Arc::new(PostgresEnergyBillUploadRepository::new(pool.clone()));
 
-    // Linky API Client configuration
+    // Linky API Client configuration (optional - use dummy values if not configured)
     let linky_api_base_url = env::var("LINKY_API_BASE_URL")
         .unwrap_or_else(|_| "https://ext.hml.myelectricaldata.fr".to_string());
-    let linky_client_id = env::var("LINKY_CLIENT_ID").expect("LINKY_CLIENT_ID must be set");
+    let linky_client_id =
+        env::var("LINKY_CLIENT_ID").unwrap_or_else(|_| "dummy-client-id".to_string());
     let linky_client_secret =
-        env::var("LINKY_CLIENT_SECRET").expect("LINKY_CLIENT_SECRET must be set");
+        env::var("LINKY_CLIENT_SECRET").unwrap_or_else(|_| "dummy-client-secret".to_string());
     let linky_client = Arc::new(LinkyApiClientImpl::new(
         linky_api_base_url,
         linky_client_id,
