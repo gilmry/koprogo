@@ -4,9 +4,8 @@
 
 use actix_web::http::header;
 use actix_web::{test, App};
-use koprogo_api::application::dto::*;
 use koprogo_api::application::use_cases::*;
-use koprogo_api::domain::entities::{ExchangeStatus, ExchangeType};
+
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;
@@ -169,7 +168,7 @@ async fn test_create_service_exchange_offer() {
         .set_json(&exchange_dto)
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // SEL time-based currency: 1 hour = 1 credit
     assert!(
@@ -203,7 +202,7 @@ async fn test_exchange_workflow_offered_to_completed() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // 2. Start exchange (Requested → InProgress)
     let req = test::TestRequest::post()
@@ -211,7 +210,7 @@ async fn test_exchange_workflow_offered_to_completed() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // 3. Complete exchange (InProgress → Completed)
     // Automatic credit balance update: provider +2, requester -2
@@ -220,7 +219,7 @@ async fn test_exchange_workflow_offered_to_completed() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // SEL trust model: Negative balances allowed (community trust)
 }
@@ -249,7 +248,7 @@ async fn test_mutual_rating_system() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Provider rates requester
     let req = test::TestRequest::put()
@@ -262,7 +261,7 @@ async fn test_mutual_rating_system() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Only completed exchanges can be rated
     // Ratings contribute to reputation score
@@ -290,7 +289,7 @@ async fn test_get_credit_balance() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Expected response:
     // {
@@ -324,7 +323,7 @@ async fn test_leaderboard() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Top 10 contributors ordered by balance DESC
     // Encourages community participation
@@ -349,7 +348,7 @@ async fn test_sel_statistics() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Expected stats:
     // - total_exchanges, active_exchanges, completed_exchanges
@@ -377,7 +376,7 @@ async fn test_owner_exchange_summary() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Summary across all buildings where owner participates in SEL
     // total_offered, total_requested, total_completed
@@ -406,7 +405,7 @@ async fn test_list_available_exchanges() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Marketplace view: only exchanges with status = Offered
     // Excludes provider's own offers
@@ -435,7 +434,7 @@ async fn test_cancel_exchange_with_reason() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Cancellation reason required for audit trail
     // Helps track SEL health and identify issues

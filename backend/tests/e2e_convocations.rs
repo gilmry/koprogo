@@ -5,16 +5,15 @@ use serial_test::serial;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use testcontainers::core::IntoContainerPort;
-use testcontainers::{runners::AsyncRunner, ContainerAsync, GenericImage};
+use testcontainers::{runners::AsyncRunner, ContainerAsync};
 use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
 use koprogo_api::application::dto::{
     ConvocationRecipientResponse, ConvocationResponse, RecipientTrackingSummaryResponse,
 };
-use koprogo_api::application::ports::*;
 use koprogo_api::application::use_cases::*;
-use koprogo_api::domain::entities::{AttendanceStatus, ConvocationStatus, ConvocationType};
+use koprogo_api::domain::entities::{AttendanceStatus, ConvocationStatus};
 use koprogo_api::infrastructure::database::repositories::*;
 use koprogo_api::infrastructure::email::mock_email_service::MockEmailService;
 use koprogo_api::infrastructure::storage::mock_storage_provider::MockStorageProvider;

@@ -4,10 +4,8 @@
 
 use actix_web::http::header;
 use actix_web::{test, App};
-use chrono::{Duration, Utc};
-use koprogo_api::application::dto::*;
+use chrono::Utc;
 use koprogo_api::application::use_cases::*;
-use koprogo_api::domain::entities::ReminderLevel;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::create_pool;
 use koprogo_api::infrastructure::database::repositories::*;
@@ -156,7 +154,7 @@ async fn test_create_gentle_reminder() {
         "expense_id": expense_id.to_string(),
         "owner_id": owner_id.to_string(),
         "level": "Gentle",  // J+15 after due date
-        "amount_due_cents": 500_00i64,  // 500 EUR
+        "amount_due_cents": 50_000_i64,  // 500 EUR
         "days_overdue": 15
     });
 
@@ -167,7 +165,7 @@ async fn test_create_gentle_reminder() {
         .set_json(&reminder_dto)
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Gentle reminder: Courteous tone, simple email
     assert!(
@@ -204,7 +202,7 @@ async fn test_escalation_workflow() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // 4-level escalation: Gentle → Formal → FinalNotice → LegalAction
     // Belgian context: Formal = email + PDF letter, mentions penalties
@@ -231,7 +229,7 @@ async fn test_calculate_late_payment_penalty() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Belgian legal rate: 8% annual
     // Formula: penalty = amount * 0.08 * (days_overdue / 365)
@@ -263,7 +261,7 @@ async fn test_mark_reminder_as_sent() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Tracking: Email sent, awaiting owner response
 }
@@ -293,7 +291,7 @@ async fn test_add_tracking_number_for_registered_letter() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // FinalNotice level: Registered letter (lettre recommandée)
     // Tracking number for legal proof of delivery
@@ -322,7 +320,7 @@ async fn test_bulk_create_reminders_for_overdue_expenses() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Automated workflow: Find all expenses overdue > 15 days without reminders
     // Create Gentle reminders for all
@@ -345,7 +343,7 @@ async fn test_get_recovery_statistics() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Expected stats:
     // - total_reminders
@@ -376,7 +374,7 @@ async fn test_list_active_reminders_by_owner() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Active = sent but not paid/cancelled
     // Critical for owner dashboard: "You have 3 unpaid reminders"
@@ -404,7 +402,7 @@ async fn test_cancel_reminder_if_paid() {
         }))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Stop escalation if owner pays
     // Audit trail for legal compliance
@@ -426,7 +424,7 @@ async fn test_find_overdue_expenses_without_reminders() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Cron job helper: Identify expenses needing first reminder
     // Automation trigger for bulk_create
@@ -453,7 +451,7 @@ async fn test_mark_reminder_as_opened() {
         .insert_header((header::AUTHORIZATION, "Bearer mock-token"))
         .to_request();
 
-    let resp = test::call_service(&app, req).await;
+    let _resp = test::call_service(&app, req).await;
 
     // Email tracking: Owner opened reminder email
     // Helps measure engagement and reminder effectiveness

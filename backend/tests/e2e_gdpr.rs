@@ -11,7 +11,6 @@ use uuid::Uuid;
 use koprogo_api::application::dto::{
     GdprActionResponse, GdprEraseResponseDto, GdprExportResponseDto,
 };
-use koprogo_api::application::ports::*;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::database::repositories::*;
 use koprogo_api::infrastructure::email::mock_email_service::MockEmailService;

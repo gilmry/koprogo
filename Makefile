@@ -113,7 +113,7 @@ coverage: ## 📊 Génération rapport de couverture
 
 lint: ## 🔍 Linter (clippy + prettier)
 	@echo "$(GREEN)🔍 Linting backend...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo clippy --lib --all-features -- -D warnings
+	cd backend && SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings
 	@echo "$(GREEN)🔍 Linting frontend...$(NC)"
 	cd frontend && npx prettier --check .
 
@@ -357,7 +357,7 @@ docs-serve-videos: docs-with-videos ## 🌐 Servir docs avec vidéos sur http://
 
 ci: ## ✅ Vérifications CI locales (IDENTIQUE au CI GitHub)
 	@echo "$(GREEN)🔍 Linting backend...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo clippy --lib --all-features -- -D warnings
+	cd backend && SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings
 	@echo "$(GREEN)🔍 Linting frontend...$(NC)"
 	cd frontend && npx prettier --check .
 	@echo "$(GREEN)🔍 Checking TypeScript frontend...$(NC)"
