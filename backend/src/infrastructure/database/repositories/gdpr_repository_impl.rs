@@ -129,21 +129,35 @@ impl GdprRepository for PostgresGdprRepository {
     async fn find_owner_ids_by_user(
         &self,
         user_id: Uuid,
-        _organization_id: Option<Uuid>,
+        organization_id: Option<Uuid>,
     ) -> Result<Vec<Uuid>, String> {
-        // Simplified query - fetch owners by email match
-        let records = sqlx::query!(
-            r#"
-            SELECT DISTINCT o.id
-            FROM owners o
-            INNER JOIN users u ON o.email = u.email
-            WHERE u.id = $1 AND o.is_anonymized = FALSE
-            "#,
-            user_id
-        )
-        .fetch_all(self.pool.as_ref())
-        .await
-        .map_err(|e| format!("Failed to fetch owner IDs: {}", e))?;
+        // Fetch owners by user_id foreign key
+        let query = if let Some(org_id) = organization_id {
+            sqlx::query!(
+                r#"
+                SELECT id
+                FROM owners
+                WHERE user_id = $1 AND organization_id = $2 AND (is_anonymized IS NULL OR is_anonymized = FALSE)
+                "#,
+                user_id,
+                org_id
+            )
+            .fetch_all(self.pool.as_ref())
+            .await
+        } else {
+            sqlx::query!(
+                r#"
+                SELECT id
+                FROM owners
+                WHERE user_id = $1 AND (is_anonymized IS NULL OR is_anonymized = FALSE)
+                "#,
+                user_id
+            )
+            .fetch_all(self.pool.as_ref())
+            .await
+        };
+
+        let records = query.map_err(|e| format!("Failed to fetch owner IDs: {}", e))?;
 
         Ok(records.into_iter().map(|r| r.id).collect())
     }
@@ -159,8 +173,7 @@ impl GdprRepository for PostgresGdprRepository {
             INNER JOIN units u ON e.building_id = u.building_id
             INNER JOIN unit_owners uo ON u.id = uo.unit_id
             INNER JOIN owners o ON uo.owner_id = o.id
-            INNER JOIN users us ON o.email = us.email
-            WHERE us.id = $1 AND e.payment_status != 'paid'
+            WHERE o.user_id = $1 AND e.payment_status != 'paid'
             "#,
             user_id
         )
@@ -238,22 +251,38 @@ impl PostgresGdprRepository {
     async fn fetch_owner_profiles(
         &self,
         user_id: Uuid,
-        _organization_id: Option<Uuid>,
+        organization_id: Option<Uuid>,
     ) -> Result<Vec<OwnerData>, String> {
-        let records = sqlx::query!(
-            r#"
-            SELECT o.id, o.organization_id, o.first_name, o.last_name,
-                   o.email, o.phone, o.address, o.city, o.postal_code, o.country,
-                   o.is_anonymized, o.created_at, o.updated_at
-            FROM owners o
-            INNER JOIN users u ON u.email = o.email
-            WHERE u.id = $1
-            "#,
-            user_id
-        )
-        .fetch_all(self.pool.as_ref())
-        .await
-        .map_err(|e| format!("Failed to fetch owner profiles: {}", e))?;
+        let query = if let Some(org_id) = organization_id {
+            sqlx::query!(
+                r#"
+                SELECT id, organization_id, first_name, last_name,
+                       email, phone, address, city, postal_code, country,
+                       is_anonymized, created_at, updated_at
+                FROM owners
+                WHERE user_id = $1 AND organization_id = $2
+                "#,
+                user_id,
+                org_id
+            )
+            .fetch_all(self.pool.as_ref())
+            .await
+        } else {
+            sqlx::query!(
+                r#"
+                SELECT id, organization_id, first_name, last_name,
+                       email, phone, address, city, postal_code, country,
+                       is_anonymized, created_at, updated_at
+                FROM owners
+                WHERE user_id = $1
+                "#,
+                user_id
+            )
+            .fetch_all(self.pool.as_ref())
+            .await
+        };
+
+        let records = query.map_err(|e| format!("Failed to fetch owner profiles: {}", e))?;
 
         Ok(records
             .into_iter()
@@ -262,13 +291,13 @@ impl PostgresGdprRepository {
                 organization_id: r.organization_id,
                 first_name: r.first_name,
                 last_name: r.last_name,
-                email: Some(r.email),
+                email: r.email,
                 phone: r.phone,
-                address: Some(r.address),
-                city: Some(r.city),
-                postal_code: Some(r.postal_code),
-                country: Some(r.country),
-                is_anonymized: r.is_anonymized,
+                address: r.address,
+                city: r.city,
+                postal_code: r.postal_code,
+                country: r.country,
+                is_anonymized: r.is_anonymized.unwrap_or(false),
                 created_at: r.created_at,
                 updated_at: r.updated_at,
             })
@@ -290,8 +319,7 @@ impl PostgresGdprRepository {
             INNER JOIN units u ON uo.unit_id = u.id
             INNER JOIN buildings b ON u.building_id = b.id
             INNER JOIN owners o ON uo.owner_id = o.id
-            INNER JOIN users us ON o.email = us.email
-            WHERE us.id = $1
+            WHERE o.user_id = $1
             ORDER BY b.name, u.unit_number
             "#,
             user_id
@@ -330,8 +358,7 @@ impl PostgresGdprRepository {
             INNER JOIN units u ON b.id = u.building_id
             INNER JOIN unit_owners uo ON u.id = uo.unit_id
             INNER JOIN owners o ON uo.owner_id = o.id
-            INNER JOIN users us ON o.email = us.email
-            WHERE us.id = $1
+            WHERE o.user_id = $1
             ORDER BY e.expense_date DESC
             "#,
             user_id

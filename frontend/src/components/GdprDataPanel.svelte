@@ -13,11 +13,39 @@
   let showEraseConfirmation = false;
   let erasureResult: GdprEraseResponse | null = null;
 
+  // Article 16: Rectification
+  let showRectifyModal = false;
+  let rectifyEmail = '';
+  let rectifyFirstName = '';
+  let rectifyLastName = '';
+
+  // Article 18: Processing restriction
+  let processingRestricted = false;
+  let loadingRestriction = false;
+
+  // Article 21: Marketing preference
+  let marketingOptOut = false;
+  let loadingMarketing = false;
+
   onMount(async () => {
     // Ensure auth store is initialized
     await authStore.init();
     await checkCanErase();
+    await loadUserPreferences();
   });
+
+  async function loadUserPreferences() {
+    try {
+      const user = await api.get<any>('/auth/me');
+      processingRestricted = user.processing_restricted || false;
+      marketingOptOut = user.marketing_opt_out || false;
+      rectifyEmail = user.email || '';
+      rectifyFirstName = user.first_name || '';
+      rectifyLastName = user.last_name || '';
+    } catch (error) {
+      console.error('Failed to load user preferences:', error);
+    }
+  }
 
   async function checkCanErase() {
     checkingErasure = true;
@@ -79,6 +107,53 @@
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
+
+  async function handleRectifyData() {
+    loading = true;
+    try {
+      const requestBody: any = {};
+      if (rectifyEmail) requestBody.email = rectifyEmail;
+      if (rectifyFirstName) requestBody.first_name = rectifyFirstName;
+      if (rectifyLastName) requestBody.last_name = rectifyLastName;
+
+      await api.put('/gdpr/rectify', requestBody);
+      showRectifyModal = false;
+      toast.success('Your personal data has been updated successfully');
+      await loadUserPreferences();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to rectify data');
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function toggleProcessingRestriction() {
+    loadingRestriction = true;
+    try {
+      await api.put('/gdpr/restrict-processing', {});
+      processingRestricted = !processingRestricted;
+      toast.success(processingRestricted ? 'Data processing has been restricted' : 'Data processing restriction has been lifted');
+      await loadUserPreferences();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update processing restriction');
+    } finally {
+      loadingRestriction = false;
+    }
+  }
+
+  async function toggleMarketingPreference() {
+    loadingMarketing = true;
+    try {
+      await api.put('/gdpr/marketing-preference', { opt_out: !marketingOptOut });
+      marketingOptOut = !marketingOptOut;
+      toast.success(marketingOptOut ? 'You have opted out of marketing communications' : 'You have opted in to marketing communications');
+      await loadUserPreferences();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update marketing preference');
+    } finally {
+      loadingMarketing = false;
+    }
+  }
 </script>
 
 <div class="bg-white shadow rounded-lg p-6" data-testid="gdpr-data-panel">
@@ -120,6 +195,94 @@
               Export My Data
             {/if}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rectify Data Section -->
+    <div class="border-l-4 border-green-500 bg-green-50 p-4">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+        </div>
+        <div class="ml-3 flex-1">
+          <h3 class="text-lg font-medium text-green-900">Right to Rectification (Article 16)</h3>
+          <p class="mt-2 text-sm text-green-700">
+            Correct any inaccurate or incomplete personal data we hold about you. You can update your email,
+            first name, and last name.
+          </p>
+          <button
+            on:click={() => showRectifyModal = true}
+            disabled={loading}
+            data-testid="gdpr-rectify-button"
+            class="mt-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+          >
+            Update My Information
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Restrict Processing Section -->
+    <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+        </div>
+        <div class="ml-3 flex-1">
+          <h3 class="text-lg font-medium text-yellow-900">Right to Restriction of Processing (Article 18)</h3>
+          <p class="mt-2 text-sm text-yellow-700">
+            Temporarily restrict how we process your personal data. While restricted, we will only store your data
+            and not actively process it for other purposes.
+          </p>
+          <div class="mt-4 flex items-center">
+            <button
+              on:click={toggleProcessingRestriction}
+              disabled={loadingRestriction}
+              data-testid="gdpr-restrict-toggle"
+              class={`${processingRestricted ? 'bg-yellow-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-50`}
+            >
+              <span class={`${processingRestricted ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
+            </button>
+            <span class="ml-3 text-sm font-medium text-gray-900">
+              {processingRestricted ? 'Processing is restricted' : 'Processing is active'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Marketing Preference Section -->
+    <div class="border-l-4 border-purple-500 bg-purple-50 p-4">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="ml-3 flex-1">
+          <h3 class="text-lg font-medium text-purple-900">Right to Object (Article 21)</h3>
+          <p class="mt-2 text-sm text-purple-700">
+            Object to the processing of your personal data for marketing purposes. Opt out of receiving promotional
+            emails, newsletters, and other marketing communications.
+          </p>
+          <div class="mt-4 flex items-center">
+            <button
+              on:click={toggleMarketingPreference}
+              disabled={loadingMarketing}
+              data-testid="gdpr-marketing-toggle"
+              class={`${marketingOptOut ? 'bg-purple-600' : 'bg-gray-200'} relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50`}
+            >
+              <span class={`${marketingOptOut ? 'translate-x-5' : 'translate-x-0'} pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}></span>
+            </button>
+            <span class="ml-3 text-sm font-medium text-gray-900">
+              {marketingOptOut ? 'Opted out of marketing' : 'Opted in to marketing'}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -310,6 +473,94 @@
             on:click={() => showEraseConfirmation = false}
             disabled={loading}
             data-testid="gdpr-erase-cancel-button"
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Rectify Data Modal -->
+{#if showRectifyModal}
+  <div class="fixed z-50 inset-0 overflow-y-auto" data-testid="gdpr-rectify-modal">
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" on:click={() => showRectifyModal = false} aria-hidden="true"></div>
+
+      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10" data-testid="gdpr-rectify-modal-content">
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="sm:flex sm:items-start">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
+              <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </div>
+            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+              <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                Update Personal Information
+              </h3>
+              <div class="mt-4 space-y-4">
+                <div>
+                  <label for="rectify-email" class="block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    id="rectify-email"
+                    type="email"
+                    bind:value={rectifyEmail}
+                    data-testid="gdpr-rectify-email"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+                <div>
+                  <label for="rectify-firstname" class="block text-sm font-medium text-gray-700">First Name</label>
+                  <input
+                    id="rectify-firstname"
+                    type="text"
+                    bind:value={rectifyFirstName}
+                    data-testid="gdpr-rectify-firstname"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    placeholder="John"
+                  />
+                </div>
+                <div>
+                  <label for="rectify-lastname" class="block text-sm font-medium text-gray-700">Last Name</label>
+                  <input
+                    id="rectify-lastname"
+                    type="text"
+                    bind:value={rectifyLastName}
+                    data-testid="gdpr-rectify-lastname"
+                    class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                    placeholder="Doe"
+                  />
+                </div>
+                <p class="text-xs text-gray-500">
+                  Leave fields empty if you don't want to change them. Only provide the fields you wish to update.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+          <button
+            type="button"
+            on:click={handleRectifyData}
+            disabled={loading}
+            data-testid="gdpr-rectify-submit-button"
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+          >
+            {#if loading}
+              Updating...
+            {:else}
+              Update Information
+            {/if}
+          </button>
+          <button
+            type="button"
+            on:click={() => showRectifyModal = false}
+            disabled={loading}
+            data-testid="gdpr-rectify-cancel-button"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
           >
             Cancel
