@@ -421,10 +421,11 @@ const createAuthStore = () => {
           const currentUser = currentState.user;
 
           // Compare user IDs and roles to avoid unnecessary updates
-          const hasChanged = !currentUser ||
-                            currentUser.id !== mappedUser.id ||
-                            currentUser.role !== mappedUser.role ||
-                            currentUser.email !== mappedUser.email;
+          const hasChanged =
+            !currentUser ||
+            currentUser.id !== mappedUser.id ||
+            currentUser.role !== mappedUser.role ||
+            currentUser.email !== mappedUser.email;
 
           if (hasChanged) {
             if (typeof window !== "undefined") {
