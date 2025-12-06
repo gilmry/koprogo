@@ -416,16 +416,28 @@ const createAuthStore = () => {
           const userPayload = await response.json();
           const mappedUser: User = mapBackendUser(userPayload);
 
-          if (typeof window !== "undefined") {
-            localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
-          }
-          await localDB.saveUser(mappedUser);
+          // Only update if user data has actually changed
+          const currentState = get(authStore);
+          const currentUser = currentState.user;
 
-          update((state) => ({
-            ...state,
-            user: mappedUser,
-            isAuthenticated: true,
-          }));
+          // Compare user IDs and roles to avoid unnecessary updates
+          const hasChanged = !currentUser ||
+                            currentUser.id !== mappedUser.id ||
+                            currentUser.role !== mappedUser.role ||
+                            currentUser.email !== mappedUser.email;
+
+          if (hasChanged) {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("koprogo_user", JSON.stringify(mappedUser));
+            }
+            await localDB.saveUser(mappedUser);
+
+            update((state) => ({
+              ...state,
+              user: mappedUser,
+              isAuthenticated: true,
+            }));
+          }
 
           return true;
         }

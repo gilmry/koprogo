@@ -10,10 +10,24 @@
 
   onMount(() => {
     currentRoute = window.location.pathname;
+    let hasChecked = false;
 
     // Check if user is authenticated and has access to current route
     const checkAccess = () => {
-      const { user, isAuthenticated } = $authStore;
+      // Prevent multiple checks - only check once
+      if (hasChecked) {
+        return;
+      }
+
+      const { user, isAuthenticated, isLoading } = $authStore;
+
+      // Wait until auth store is done loading
+      if (isLoading) {
+        return;
+      }
+
+      // Mark as checked to prevent loops
+      hasChecked = true;
 
       // Public routes are always accessible
       if (isPublicRoute(currentRoute)) {
@@ -51,7 +65,7 @@
     // Initial check
     checkAccess();
 
-    // Re-check on auth store changes
+    // Re-check ONLY ONCE on auth store changes (then unsubscribe)
     const unsubscribe = authStore.subscribe(() => {
       checkAccess();
     });
