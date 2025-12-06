@@ -9,7 +9,7 @@
   } from "../../lib/api/tickets";
   import TicketStatusBadge from "./TicketStatusBadge.svelte";
   import TicketPriorityBadge from "./TicketPriorityBadge.svelte";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
 
   export let buildingId: string | undefined = undefined;
   export let view: "all" | "my" | "assigned" = "all";
@@ -45,7 +45,7 @@
       }
     } catch (err: any) {
       error = err.message || "Failed to load tickets";
-      addToast({ message: error, type: "error" });
+      toast.error(error);
     } finally {
       loading = false;
     }

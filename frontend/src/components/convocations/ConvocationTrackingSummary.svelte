@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { convocationsApi, type TrackingSummary } from "../../lib/api/convocations";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
 
   export let convocationId: string;
 
@@ -17,10 +17,7 @@
       loading = true;
       summary = await convocationsApi.getTrackingSummary(convocationId);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load tracking summary",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load tracking summary");
     } finally {
       loading = false;
     }

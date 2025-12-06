@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { ticketsApi, type TicketStatistics } from "../../lib/api/tickets";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
 
   let stats: TicketStatistics | null = null;
   let loading = true;
@@ -15,10 +15,7 @@
       loading = true;
       stats = await ticketsApi.getStatistics();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load ticket statistics",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load ticket statistics");
     } finally {
       loading = false;
     }

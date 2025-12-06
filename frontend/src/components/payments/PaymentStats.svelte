@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { paymentsApi, type PaymentStats } from "../../lib/api/payments";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
 
   export let ownerId: string | undefined = undefined;
   export let buildingId: string | undefined = undefined;
@@ -22,10 +22,7 @@
         stats = await paymentsApi.getBuildingStats(buildingId);
       }
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load statistics",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load statistics");
     } finally {
       loading = false;
     }

@@ -5,7 +5,7 @@
     PaymentStatus,
     type Payment,
   } from "../../lib/api/payments";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import PaymentStatusBadge from "./PaymentStatusBadge.svelte";
 
   export let ownerId: string | undefined = undefined;
@@ -34,10 +34,7 @@
         payments = [];
       }
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load payments",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load payments");
     } finally {
       loading = false;
     }

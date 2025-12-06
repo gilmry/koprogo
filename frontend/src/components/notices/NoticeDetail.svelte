@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { noticesApi, type Notice, NoticeVisibility } from "../../lib/api/notices";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import NoticeTypeBadge from "./NoticeTypeBadge.svelte";
   import NoticeStatusBadge from "./NoticeStatusBadge.svelte";
 
@@ -29,10 +29,7 @@
       loading = true;
       notice = await noticesApi.getById(noticeId);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load notice",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load notice");
     } finally {
       loading = false;
     }
@@ -44,16 +41,10 @@
     try {
       archiving = true;
       await noticesApi.archive(noticeId);
-      addToast({
-        message: "Notice archived successfully",
-        type: "success",
-      });
+      toast.success("Notice archived successfully");
       window.location.href = "/notices";
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to archive notice",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to archive notice");
     } finally {
       archiving = false;
     }
@@ -66,16 +57,10 @@
     try {
       deleting = true;
       await noticesApi.delete(noticeId);
-      addToast({
-        message: "Notice deleted successfully",
-        type: "success",
-      });
+      toast.success("Notice deleted successfully");
       window.location.href = "/notices";
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to delete notice",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to delete notice");
     } finally {
       deleting = false;
     }

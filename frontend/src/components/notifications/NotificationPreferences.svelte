@@ -5,7 +5,7 @@
     NotificationType,
     type NotificationPreference,
   } from "../../lib/api/notifications";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
 
   export let userId: string;
 
@@ -47,10 +47,7 @@
       loading = true;
       preferences = await notificationsApi.getPreferences(userId);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load preferences",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load preferences");
     } finally {
       loading = false;
     }
@@ -73,15 +70,9 @@
         p.id === preference.id ? updated : p,
       );
 
-      addToast({
-        message: "Preference updated successfully",
-        type: "success",
-      });
+      toast.success("Preference updated successfully");
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to update preference",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to update preference");
     } finally {
       saving = false;
     }

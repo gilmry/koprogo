@@ -6,7 +6,7 @@
     type SkillRequest,
     SkillRequestStatus,
   } from "../../lib/api/skills";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import SkillCategoryBadge from "./SkillCategoryBadge.svelte";
   import ProficiencyBadge from "./ProficiencyBadge.svelte";
 
@@ -34,10 +34,7 @@
         requests = await skillsApi.listRequestsByOffer(offerId);
       }
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load skill offer",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load skill offer");
     } finally {
       loading = false;
     }
@@ -45,7 +42,7 @@
 
   async function handleCreateRequest() {
     if (!requestMessage.trim()) {
-      addToast({ message: "Please enter a message", type: "error" });
+      toast.error("Please enter a message");
       return;
     }
 
@@ -57,15 +54,12 @@
         message: requestMessage,
         preferred_dates: preferredDates.filter((d) => d.trim()),
       });
-      addToast({ message: "Request sent successfully", type: "success" });
+      toast.success("Request sent successfully");
       showRequestModal = false;
       requestMessage = "";
       preferredDates = [""];
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to send request",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to send request");
     } finally {
       submitting = false;
     }
@@ -74,20 +68,20 @@
   async function handleAcceptRequest(requestId: string) {
     try {
       await skillsApi.acceptRequest(requestId);
-      addToast({ message: "Request accepted", type: "success" });
+      toast.success("Request accepted");
       await loadOfferDetails();
     } catch (err: any) {
-      addToast({ message: err.message || "Failed to accept request", type: "error" });
+      toast.error(err.message || "Failed to accept request");
     }
   }
 
   async function handleDeclineRequest(requestId: string) {
     try {
       await skillsApi.declineRequest(requestId);
-      addToast({ message: "Request declined", type: "success" });
+      toast.success("Request declined");
       await loadOfferDetails();
     } catch (err: any) {
-      addToast({ message: err.message || "Failed to decline request", type: "error" });
+      toast.error(err.message || "Failed to decline request");
     }
   }
 

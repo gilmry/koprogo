@@ -6,7 +6,7 @@
     ObjectCategory,
     AvailabilityStatus,
   } from "../../lib/api/sharing";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import SharedObjectCard from "./SharedObjectCard.svelte";
 
   export let buildingId: string;
@@ -33,10 +33,7 @@
       }
       applyFilters();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load shared objects",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load shared objects");
     } finally {
       loading = false;
     }

@@ -6,7 +6,7 @@
   } from "../../lib/api/notifications";
   import { notificationStore } from "../../stores/notifications";
   import NotificationItem from "./NotificationItem.svelte";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
 
   let notifications: Notification[] = [];
   let loading = true;
@@ -25,10 +25,7 @@
         notifications = await notificationsApi.listMy();
       }
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load notifications",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load notifications");
     } finally {
       loading = false;
     }
@@ -37,16 +34,10 @@
   async function handleMarkAllRead() {
     try {
       await notificationStore.markAllAsRead();
-      addToast({
-        message: "All notifications marked as read",
-        type: "success",
-      });
+      toast.success("All notifications marked as read");
       await loadNotifications();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to mark all as read",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to mark all as read");
     }
   }
 

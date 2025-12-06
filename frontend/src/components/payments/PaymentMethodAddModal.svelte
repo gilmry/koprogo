@@ -5,7 +5,7 @@
     PaymentMethodType,
     type CreatePaymentMethodDto,
   } from "../../lib/api/payments";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
   import FormInput from "../ui/FormInput.svelte";
   import FormSelect from "../ui/FormSelect.svelte";
@@ -53,10 +53,7 @@
 
   async function handleSubmit() {
     if (!validate()) {
-      addToast({
-        message: "Please fix validation errors",
-        type: "error",
-      });
+      toast.error("Please fix validation errors");
       return;
     }
 
@@ -68,18 +65,12 @@
         owner_id: ownerId,
       });
 
-      addToast({
-        message: "Payment method added successfully",
-        type: "success",
-      });
+      toast.success("Payment method added successfully");
 
       dispatch("added");
       handleClose();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to add payment method",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to add payment method");
     } finally {
       submitting = false;
     }

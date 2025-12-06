@@ -5,7 +5,7 @@
     SkillCategory,
     ProficiencyLevel,
   } from "../../lib/api/skills";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
 
   export let isOpen = false;
   export let buildingId: string;
@@ -29,11 +29,11 @@
 
   async function handleSubmit() {
     if (!formData.skill_name.trim()) {
-      addToast({ message: "Please enter skill name", type: "error" });
+      toast.error("Please enter skill name");
       return;
     }
     if (!formData.description.trim()) {
-      addToast({ message: "Please enter description", type: "error" });
+      toast.error("Please enter description");
       return;
     }
 
@@ -45,15 +45,12 @@
       }
 
       await skillsApi.createOffer(payload);
-      addToast({ message: "Skill offer created successfully", type: "success" });
+      toast.success("Skill offer created successfully");
       resetForm();
       onSuccess();
       onClose();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to create skill offer",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to create skill offer");
     } finally {
       submitting = false;
     }

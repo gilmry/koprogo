@@ -5,7 +5,7 @@
     TicketStatus,
     type Ticket,
   } from "../../lib/api/tickets";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import TicketStatusBadge from "./TicketStatusBadge.svelte";
   import TicketPriorityBadge from "./TicketPriorityBadge.svelte";
   import TicketAssignModal from "./TicketAssignModal.svelte";
@@ -43,16 +43,10 @@
     try {
       actionLoading = true;
       ticket = await ticketsApi.assign(ticket.id, contractorId);
-      addToast({
-        message: "Ticket assigned successfully",
-        type: "success",
-      });
+      toast.success("Ticket assigned successfully");
       dispatch("updated", ticket);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to assign ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to assign ticket");
     } finally {
       actionLoading = false;
     }
@@ -62,16 +56,10 @@
     try {
       actionLoading = true;
       ticket = await ticketsApi.start(ticket.id);
-      addToast({
-        message: "Work started on ticket",
-        type: "success",
-      });
+      toast.success("Work started on ticket");
       dispatch("updated", ticket);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to start ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to start ticket");
     } finally {
       actionLoading = false;
     }
@@ -81,16 +69,10 @@
     try {
       actionLoading = true;
       ticket = await ticketsApi.resolve(ticket.id);
-      addToast({
-        message: "Ticket marked as resolved",
-        type: "success",
-      });
+      toast.success("Ticket marked as resolved");
       dispatch("updated", ticket);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to resolve ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to resolve ticket");
     } finally {
       actionLoading = false;
     }
@@ -100,16 +82,10 @@
     try {
       actionLoading = true;
       ticket = await ticketsApi.close(ticket.id);
-      addToast({
-        message: "Ticket closed",
-        type: "success",
-      });
+      toast.success("Ticket closed");
       dispatch("updated", ticket);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to close ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to close ticket");
     } finally {
       actionLoading = false;
     }
@@ -119,16 +95,10 @@
     try {
       actionLoading = true;
       ticket = await ticketsApi.cancel(ticket.id);
-      addToast({
-        message: "Ticket cancelled",
-        type: "success",
-      });
+      toast.success("Ticket cancelled");
       dispatch("updated", ticket);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to cancel ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to cancel ticket");
     } finally {
       actionLoading = false;
     }
@@ -138,16 +108,10 @@
     try {
       actionLoading = true;
       ticket = await ticketsApi.reopen(ticket.id);
-      addToast({
-        message: "Ticket reopened",
-        type: "success",
-      });
+      toast.success("Ticket reopened");
       dispatch("updated", ticket);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to reopen ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to reopen ticket");
     } finally {
       actionLoading = false;
     }
@@ -157,16 +121,10 @@
     try {
       actionLoading = true;
       await ticketsApi.delete(ticket.id);
-      addToast({
-        message: "Ticket deleted",
-        type: "success",
-      });
+      toast.success("Ticket deleted");
       dispatch("deleted", ticket.id);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to delete ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to delete ticket");
     } finally {
       actionLoading = false;
       showDeleteConfirm = false;

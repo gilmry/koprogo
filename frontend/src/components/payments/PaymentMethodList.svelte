@@ -4,7 +4,7 @@
     paymentMethodsApi,
     type PaymentMethod,
   } from "../../lib/api/payments";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import PaymentMethodCard from "./PaymentMethodCard.svelte";
   import PaymentMethodAddModal from "./PaymentMethodAddModal.svelte";
   import Button from "../ui/Button.svelte";
@@ -25,10 +25,7 @@
       loading = true;
       paymentMethods = await paymentMethodsApi.listByOwner(ownerId);
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load payment methods",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load payment methods");
     } finally {
       loading = false;
     }

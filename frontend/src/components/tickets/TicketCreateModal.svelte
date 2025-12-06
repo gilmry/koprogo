@@ -6,7 +6,7 @@
     TicketCategory,
     type CreateTicketDto,
   } from "../../lib/api/tickets";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
   import FormInput from "../ui/FormInput.svelte";
   import FormTextarea from "../ui/FormTextarea.svelte";
@@ -49,10 +49,7 @@
 
   async function handleSubmit() {
     if (!validate()) {
-      addToast({
-        message: "Please fix validation errors",
-        type: "error",
-      });
+      toast.error("Please fix validation errors");
       return;
     }
 
@@ -65,18 +62,12 @@
         requester_id: requesterId,
       });
 
-      addToast({
-        message: "Ticket created successfully",
-        type: "success",
-      });
+      toast.success("Ticket created successfully");
 
       dispatch("created", ticket);
       handleClose();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to create ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to create ticket");
     } finally {
       submitting = false;
     }

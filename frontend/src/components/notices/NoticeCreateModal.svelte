@@ -1,6 +1,6 @@
 <script lang="ts">
   import { noticesApi, type CreateNoticeDto, NoticeType, NoticeVisibility } from "../../lib/api/notices";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
 
   export let isOpen = false;
   export let buildingId: string;
@@ -25,11 +25,11 @@
 
   async function handleSubmit() {
     if (!formData.title.trim()) {
-      addToast({ message: "Please enter a title", type: "error" });
+      toast.error("Please enter a title");
       return;
     }
     if (!formData.content.trim()) {
-      addToast({ message: "Please enter content", type: "error" });
+      toast.error("Please enter content");
       return;
     }
 
@@ -42,15 +42,12 @@
       }
 
       await noticesApi.create(payload);
-      addToast({ message: "Notice created successfully", type: "success" });
+      toast.success("Notice created successfully");
       resetForm();
       onSuccess();
       onClose();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to create notice",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to create notice");
     } finally {
       submitting = false;
     }

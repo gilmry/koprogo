@@ -7,7 +7,7 @@
     ProficiencyLevel,
     SkillStatus,
   } from "../../lib/api/skills";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import SkillOfferCard from "./SkillOfferCard.svelte";
 
   export let buildingId: string;
@@ -30,10 +30,7 @@
       offers = await skillsApi.listAvailableOffers(buildingId);
       applyFilters();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load skill offers",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load skill offers");
     } finally {
       loading = false;
     }

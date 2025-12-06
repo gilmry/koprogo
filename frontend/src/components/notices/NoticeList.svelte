@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { noticesApi, type Notice, NoticeType, NoticeStatus } from "../../lib/api/notices";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import NoticeTypeBadge from "./NoticeTypeBadge.svelte";
   import NoticeStatusBadge from "./NoticeStatusBadge.svelte";
 
@@ -29,10 +29,7 @@
       }
       applyFilters();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load notices",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load notices");
     } finally {
       loading = false;
     }

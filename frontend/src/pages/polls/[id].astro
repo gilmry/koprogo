@@ -1,5 +1,10 @@
 ---
 import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+  // Return empty array for build - pages will be client-rendered
+  return [];
+}
 ---
 
 <Layout title="Détail du sondage - KoproGo">

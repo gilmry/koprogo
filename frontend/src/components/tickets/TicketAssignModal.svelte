@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
   import FormInput from "../ui/FormInput.svelte";
   import Button from "../ui/Button.svelte";
@@ -15,10 +15,7 @@
 
   async function handleSubmit() {
     if (!contractorId || !contractorId.trim()) {
-      addToast({
-        message: "Please enter a contractor ID",
-        type: "error",
-      });
+      toast.error("Please enter a contractor ID");
       return;
     }
 
@@ -27,10 +24,7 @@
       dispatch("assigned", { contractorId: contractorId.trim() });
       handleClose();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to assign ticket",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to assign ticket");
     } finally {
       submitting = false;
     }

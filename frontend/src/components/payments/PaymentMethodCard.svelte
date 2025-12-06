@@ -5,7 +5,7 @@
     PaymentMethodType,
     type PaymentMethod,
   } from "../../lib/api/payments";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   export let paymentMethod: PaymentMethod;
@@ -39,16 +39,10 @@
     try {
       actionLoading = true;
       await paymentMethodsApi.setAsDefault(paymentMethod.id);
-      addToast({
-        message: "Payment method set as default",
-        type: "success",
-      });
+      toast.success("Payment method set as default");
       dispatch("updated");
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to set as default",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to set as default");
     } finally {
       actionLoading = false;
     }
@@ -59,23 +53,14 @@
       actionLoading = true;
       if (paymentMethod.is_active) {
         await paymentMethodsApi.deactivate(paymentMethod.id);
-        addToast({
-          message: "Payment method deactivated",
-          type: "success",
-        });
+        toast.success("Payment method deactivated");
       } else {
         await paymentMethodsApi.reactivate(paymentMethod.id);
-        addToast({
-          message: "Payment method reactivated",
-          type: "success",
-        });
+        toast.success("Payment method reactivated");
       }
       dispatch("updated");
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to update payment method",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to update payment method");
     } finally {
       actionLoading = false;
     }
@@ -85,16 +70,10 @@
     try {
       actionLoading = true;
       await paymentMethodsApi.delete(paymentMethod.id);
-      addToast({
-        message: "Payment method deleted",
-        type: "success",
-      });
+      toast.success("Payment method deleted");
       dispatch("deleted");
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to delete payment method",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to delete payment method");
     } finally {
       actionLoading = false;
       showDeleteConfirm = false;
