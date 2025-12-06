@@ -36,13 +36,48 @@ export const roleGuards: Record<string, UserRole[]> = {
   "/tickets": [UserRole.SYNDIC, UserRole.OWNER],
 
   // Community routes - ALL ROLES
-  "/exchanges": [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER],
-  "/polls": [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER],
-  "/notices": [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER],
-  "/bookings": [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER],
-  "/sharing": [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER],
-  "/skills": [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER],
-  "/energy-campaigns": [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER],
+  "/exchanges": [
+    UserRole.SUPERADMIN,
+    UserRole.SYNDIC,
+    UserRole.ACCOUNTANT,
+    UserRole.OWNER,
+  ],
+  "/polls": [
+    UserRole.SUPERADMIN,
+    UserRole.SYNDIC,
+    UserRole.ACCOUNTANT,
+    UserRole.OWNER,
+  ],
+  "/notices": [
+    UserRole.SUPERADMIN,
+    UserRole.SYNDIC,
+    UserRole.ACCOUNTANT,
+    UserRole.OWNER,
+  ],
+  "/bookings": [
+    UserRole.SUPERADMIN,
+    UserRole.SYNDIC,
+    UserRole.ACCOUNTANT,
+    UserRole.OWNER,
+  ],
+  "/sharing": [
+    UserRole.SUPERADMIN,
+    UserRole.SYNDIC,
+    UserRole.ACCOUNTANT,
+    UserRole.OWNER,
+  ],
+  "/skills": [
+    UserRole.SUPERADMIN,
+    UserRole.SYNDIC,
+    UserRole.ACCOUNTANT,
+    UserRole.OWNER,
+  ],
+  "/energy-campaigns": [
+    UserRole.SUPERADMIN,
+    UserRole.SYNDIC,
+    UserRole.ACCOUNTANT,
+    UserRole.OWNER,
+  ],
 
   // Public routes - NO GUARD (handled separately)
   // '/login', '/register', '/mentions-legales'
