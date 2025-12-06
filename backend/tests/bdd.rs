@@ -1070,7 +1070,7 @@ async fn given_authenticated_user_with_data(world: &mut BuildingWorld) {
 
     // Create an owner record for this user
     let owner_repo = world.owner_repo.as_ref().unwrap();
-    let owner = koprogo_api::domain::entities::Owner::new(
+    let mut owner = koprogo_api::domain::entities::Owner::new(
         world.org_id.unwrap(),
         "GDPR".to_string(),
         "User".to_string(),
@@ -1082,6 +1082,10 @@ async fn given_authenticated_user_with_data(world: &mut BuildingWorld) {
         "Belgium".to_string(),
     )
     .unwrap();
+
+    // Link owner to user account (required for GDPR export to find the owner)
+    owner.user_id = world.last_user_id;
+
     owner_repo.create(&owner).await.expect("create owner");
 }
 
@@ -1312,7 +1316,7 @@ async fn given_another_user_exists(world: &mut BuildingWorld) {
     let password = "Target123!".to_string();
     let reg = RegisterRequest {
         email: email.clone(),
-        password,
+        password: password.clone(),
         first_name: "Target".to_string(),
         last_name: "User".to_string(),
         role: "syndic".to_string(),
@@ -1323,7 +1327,27 @@ async fn given_another_user_exists(world: &mut BuildingWorld) {
 
     // Store as secondary user
     world.multi_user_id = Some(user_resp.user.id);
-    world.multi_user_password = Some(email);
+    world.multi_user_password = Some(email.clone());
+
+    // Create an owner record for this user (required for GDPR export)
+    let owner_repo = world.owner_repo.as_ref().unwrap();
+    let mut owner = koprogo_api::domain::entities::Owner::new(
+        world.org_id.unwrap(),
+        "Target".to_string(),
+        "User".to_string(),
+        email,
+        Some("0032987654321".to_string()),
+        "456 Target Avenue".to_string(),
+        "Antwerp".to_string(),
+        "2000".to_string(),
+        "Belgium".to_string(),
+    )
+    .unwrap();
+
+    // Link owner to user account (required for GDPR export to find the owner)
+    owner.user_id = world.multi_user_id;
+
+    owner_repo.create(&owner).await.expect("create owner for target user");
 }
 
 #[when("I export that user's data as an admin")]
