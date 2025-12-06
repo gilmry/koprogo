@@ -58,14 +58,21 @@ impl DatabaseSeeder {
         .map_err(|e| format!("Failed to upsert superadmin: {}", e))?;
 
         // Upsert superadmin role (preserve if exists, create if missing)
+        // Note: Use INSERT ... ON CONFLICT DO NOTHING for idempotency
+        // The migration backfill (20250130000000) already creates the role with is_primary=true
         sqlx::query(
             r#"
             INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, created_at, updated_at)
-            VALUES (gen_random_uuid(), $1, 'superadmin', NULL, true, NOW(), NOW())
-            ON CONFLICT (user_id, role, organization_id)
-            DO UPDATE SET
-                is_primary = true,
-                updated_at = NOW()
+            VALUES (
+                gen_random_uuid(),
+                $1,
+                'superadmin',
+                NULL,
+                NOT EXISTS (SELECT 1 FROM user_roles WHERE user_id = $1 AND is_primary = true),
+                NOW(),
+                NOW()
+            )
+            ON CONFLICT DO NOTHING
             "#,
         )
         .bind(superadmin_id)
@@ -2957,5 +2964,142 @@ impl DatabaseSeeder {
             "✅ Seed data cleared successfully! ({} organizations removed)",
             seed_org_ids.len()
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::PgPool;
+
+    /// Test that seed_superadmin() is idempotent - can be called multiple times without errors
+    ///
+    /// This test ensures production deployments can safely restart without constraint violations
+    #[sqlx::test]
+    async fn test_seed_superadmin_is_idempotent(pool: PgPool) -> sqlx::Result<()> {
+        let seeder = DatabaseSeeder::new(pool.clone());
+
+        // First call: Create superadmin
+        let result1 = seeder.seed_superadmin().await;
+        assert!(result1.is_ok(), "First seed_superadmin call should succeed");
+        let user1 = result1.unwrap();
+        assert_eq!(user1.email, "admin@koprogo.com");
+        assert_eq!(user1.role, UserRole::SuperAdmin);
+
+        // Second call: Should succeed (idempotent upsert)
+        let result2 = seeder.seed_superadmin().await;
+        assert!(
+            result2.is_ok(),
+            "Second seed_superadmin call should succeed (idempotent): {:?}",
+            result2.err()
+        );
+        let user2 = result2.unwrap();
+        assert_eq!(user2.email, "admin@koprogo.com");
+        assert_eq!(user2.id, user1.id, "Superadmin UUID should remain the same");
+
+        // Third call: Should still succeed
+        let result3 = seeder.seed_superadmin().await;
+        assert!(
+            result3.is_ok(),
+            "Third seed_superadmin call should succeed (idempotent): {:?}",
+            result3.err()
+        );
+
+        // Verify only ONE primary role exists for superadmin
+        let primary_role_count = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT COUNT(*)
+            FROM user_roles
+            WHERE user_id = $1 AND is_primary = true
+            "#,
+        )
+        .bind(user1.id)
+        .fetch_one(&pool)
+        .await?;
+
+        assert_eq!(
+            primary_role_count, 1,
+            "Superadmin should have exactly ONE primary role, found {}",
+            primary_role_count
+        );
+
+        // Verify the superadmin role exists in user_roles
+        let role_count = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT COUNT(*)
+            FROM user_roles
+            WHERE user_id = $1 AND role = 'superadmin' AND organization_id IS NULL
+            "#,
+        )
+        .bind(user1.id)
+        .fetch_one(&pool)
+        .await?;
+
+        assert_eq!(
+            role_count, 1,
+            "Superadmin should have exactly ONE superadmin role, found {}",
+            role_count
+        );
+
+        Ok(())
+    }
+
+    /// Test that seed_superadmin() handles existing user_roles correctly
+    ///
+    /// Ensures the UPSERT doesn't violate the idx_user_roles_primary_per_user constraint
+    #[sqlx::test]
+    async fn test_seed_superadmin_preserves_existing_primary_role(
+        pool: PgPool,
+    ) -> sqlx::Result<()> {
+        let seeder = DatabaseSeeder::new(pool.clone());
+
+        // First call: Create superadmin
+        seeder.seed_superadmin().await.unwrap();
+
+        // Manually check is_primary state before second call
+        let is_primary_before = sqlx::query_scalar::<_, bool>(
+            r#"
+            SELECT is_primary
+            FROM user_roles
+            WHERE user_id = '00000000-0000-0000-0000-000000000001'
+              AND role = 'superadmin'
+              AND organization_id IS NULL
+            "#,
+        )
+        .fetch_one(&pool)
+        .await?;
+
+        assert!(
+            is_primary_before,
+            "Superadmin role should be primary after first seed"
+        );
+
+        // Second call: Should not violate unique constraint
+        let result = seeder.seed_superadmin().await;
+        assert!(
+            result.is_ok(),
+            "Second seed should not violate idx_user_roles_primary_per_user constraint: {:?}",
+            result.err()
+        );
+
+        // Verify is_primary is still true (preserved, not updated)
+        let is_primary_after = sqlx::query_scalar::<_, bool>(
+            r#"
+            SELECT is_primary
+            FROM user_roles
+            WHERE user_id = '00000000-0000-0000-0000-000000000001'
+              AND role = 'superadmin'
+              AND organization_id IS NULL
+            "#,
+        )
+        .fetch_one(&pool)
+        .await?;
+
+        assert!(
+            is_primary_after,
+            "Superadmin role should remain primary after second seed"
+        );
+
+        Ok(())
     }
 }
