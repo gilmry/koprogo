@@ -239,6 +239,14 @@
               >
                 ⚙️ Paramètres
               </a>
+              <a
+                href="/settings/gdpr"
+                on:click|stopPropagation
+                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                data-testid="user-menu-gdpr"
+              >
+                🔒 Mes données RGPD
+              </a>
               <hr class="my-1" />
               <button
                 on:click|stopPropagation={logout}
