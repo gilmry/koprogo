@@ -5,7 +5,7 @@
     energyBillsApi,
     type EnergyCampaign,
     type CampaignStatistics,
-    type EnergyBillUpload,
+    type EnergyBillUpload as EnergyBillUploadType,
     CampaignStatus,
   } from "../../lib/api/energy-campaigns";
   import CampaignStatusBadge from "./CampaignStatusBadge.svelte";
@@ -19,7 +19,7 @@
 
   let campaign: EnergyCampaign | null = null;
   let stats: CampaignStatistics | null = null;
-  let myUploads: EnergyBillUpload[] = [];
+  let myUploads: EnergyBillUploadType[] = [];
   let loading = true;
   let error = "";
   let showUploadForm = false;

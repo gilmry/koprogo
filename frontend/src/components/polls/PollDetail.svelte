@@ -3,7 +3,7 @@
   import {
     pollsApi,
     type Poll,
-    type PollResults,
+    type PollResults as PollResultsType,
     PollType,
     PollStatus,
   } from "../../lib/api/polls";
@@ -15,7 +15,7 @@
   export let isAdmin = false;
 
   let poll: Poll | null = null;
-  let results: PollResults | null = null;
+  let results: PollResultsType | null = null;
   let loading = true;
   let error = "";
 

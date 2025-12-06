@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { bookingsApi, type BookableResource, ResourceType } from "../../lib/api/bookings";
-  import { addToast } from "../../stores/toast";
+  import { toast } from "../../stores/toast";
   import ResourceCard from "./ResourceCard.svelte";
 
   export let buildingId: string;
@@ -28,10 +28,7 @@
       }
       applyFilters();
     } catch (err: any) {
-      addToast({
-        message: err.message || "Failed to load resources",
-        type: "error",
-      });
+      toast.error(err.message || "Failed to load resources");
     } finally {
       loading = false;
     }

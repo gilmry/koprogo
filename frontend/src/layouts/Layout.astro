@@ -7,6 +7,7 @@ import SessionManager from '../components/SessionManager.svelte';
 import LanguageSelector from '../components/LanguageSelector.svelte';
 import SyncStatus from '../components/SyncStatus.svelte';
 import PWAInstallPrompt from '../components/PWAInstallPrompt.svelte';
+import RouteGuard from '../components/RouteGuard.svelte';
 
 interface Props {
 	title: string;
@@ -126,6 +127,9 @@ const { title, showNav = true, requireAuth = false } = Astro.props;
 		<!-- Screen reader announcements -->
 		<div id="sr-announcer-polite" role="status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 		<div id="sr-announcer-assertive" role="alert" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+
+		<!-- Route Guard - Check access before rendering page -->
+		<RouteGuard client:load />
 
 		{showNav && (
 			<header role="banner">
