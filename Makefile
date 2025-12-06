@@ -355,7 +355,17 @@ docs-serve-videos: docs-with-videos ## 🌐 Servir docs avec vidéos sur http://
 ## 🚀 CI/CD & Déploiement
 ##
 
-ci: lint check-frontend test audit ## ✅ Vérifications CI locales (avant push)
+ci: ## ✅ Vérifications CI locales (IDENTIQUE au CI GitHub)
+	@echo "$(GREEN)🔍 Linting backend...$(NC)"
+	cd backend && SQLX_OFFLINE=true cargo clippy --lib --all-features -- -D warnings
+	@echo "$(GREEN)🔍 Linting frontend...$(NC)"
+	cd frontend && npx prettier --check .
+	@echo "$(GREEN)🔍 Checking TypeScript frontend...$(NC)"
+	cd frontend && npx astro check
+	@echo "$(GREEN)🧪 Tests unitaires...$(NC)"
+	cd backend && SQLX_OFFLINE=true cargo test --lib
+	@echo "$(GREEN)🔨 Build frontend production (identique CI GitHub)...$(NC)"
+	cd frontend && npm run build
 	@echo ""
 	@echo "$(GREEN)🎉 Tous les checks CI passés!$(NC)"
 	@echo "$(GREEN)✅ Prêt à push$(NC)"
