@@ -364,6 +364,10 @@ ci: ## ✅ Vérifications CI locales (IDENTIQUE au CI GitHub)
 	cd frontend && npx astro check
 	@echo "$(GREEN)🧪 Tests unitaires...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --lib
+	@echo "$(GREEN)🔧 Vérification compilation tests E2E...$(NC)"
+	cd backend && SQLX_OFFLINE=true cargo test --test e2e --no-run
+	@echo "$(GREEN)🔧 Vérification compilation tests BDD...$(NC)"
+	cd backend && SQLX_OFFLINE=true cargo test --test bdd --no-run
 	@echo "$(GREEN)🔨 Build frontend production (identique CI GitHub)...$(NC)"
 	cd frontend && npm run build
 	@echo ""
