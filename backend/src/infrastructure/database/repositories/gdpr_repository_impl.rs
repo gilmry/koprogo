@@ -132,32 +132,20 @@ impl GdprRepository for PostgresGdprRepository {
         organization_id: Option<Uuid>,
     ) -> Result<Vec<Uuid>, String> {
         // Fetch owners by user_id foreign key
-        let query = if let Some(org_id) = organization_id {
-            sqlx::query!(
-                r#"
-                SELECT id
-                FROM owners
-                WHERE user_id = $1 AND organization_id = $2 AND (is_anonymized IS NULL OR is_anonymized = FALSE)
-                "#,
-                user_id,
-                org_id
-            )
-            .fetch_all(self.pool.as_ref())
-            .await
-        } else {
-            sqlx::query!(
-                r#"
-                SELECT id
-                FROM owners
-                WHERE user_id = $1 AND (is_anonymized IS NULL OR is_anonymized = FALSE)
-                "#,
-                user_id
-            )
-            .fetch_all(self.pool.as_ref())
-            .await
-        };
-
-        let records = query.map_err(|e| format!("Failed to fetch owner IDs: {}", e))?;
+        let records = sqlx::query!(
+            r#"
+            SELECT id
+            FROM owners
+            WHERE user_id = $1
+              AND ($2::uuid IS NULL OR organization_id = $2)
+              AND (is_anonymized IS NULL OR is_anonymized = FALSE)
+            "#,
+            user_id,
+            organization_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+        .map_err(|e| format!("Failed to fetch owner IDs: {}", e))?;
 
         Ok(records.into_iter().map(|r| r.id).collect())
     }
@@ -253,36 +241,21 @@ impl PostgresGdprRepository {
         user_id: Uuid,
         organization_id: Option<Uuid>,
     ) -> Result<Vec<OwnerData>, String> {
-        let query = if let Some(org_id) = organization_id {
-            sqlx::query!(
-                r#"
-                SELECT id, organization_id, first_name, last_name,
-                       email, phone, address, city, postal_code, country,
-                       is_anonymized, created_at, updated_at
-                FROM owners
-                WHERE user_id = $1 AND organization_id = $2
-                "#,
-                user_id,
-                org_id
-            )
-            .fetch_all(self.pool.as_ref())
-            .await
-        } else {
-            sqlx::query!(
-                r#"
-                SELECT id, organization_id, first_name, last_name,
-                       email, phone, address, city, postal_code, country,
-                       is_anonymized, created_at, updated_at
-                FROM owners
-                WHERE user_id = $1
-                "#,
-                user_id
-            )
-            .fetch_all(self.pool.as_ref())
-            .await
-        };
-
-        let records = query.map_err(|e| format!("Failed to fetch owner profiles: {}", e))?;
+        let records = sqlx::query!(
+            r#"
+            SELECT id, organization_id, first_name, last_name,
+                   email, phone, address, city, postal_code, country,
+                   is_anonymized, created_at, updated_at
+            FROM owners
+            WHERE user_id = $1
+              AND ($2::uuid IS NULL OR organization_id = $2)
+            "#,
+            user_id,
+            organization_id
+        )
+        .fetch_all(self.pool.as_ref())
+        .await
+        .map_err(|e| format!("Failed to fetch owner profiles: {}", e))?;
 
         Ok(records
             .into_iter()
@@ -291,13 +264,13 @@ impl PostgresGdprRepository {
                 organization_id: r.organization_id,
                 first_name: r.first_name,
                 last_name: r.last_name,
-                email: r.email,
+                email: Some(r.email),
                 phone: r.phone,
-                address: r.address,
-                city: r.city,
-                postal_code: r.postal_code,
-                country: r.country,
-                is_anonymized: r.is_anonymized.unwrap_or(false),
+                address: Some(r.address),
+                city: Some(r.city),
+                postal_code: Some(r.postal_code),
+                country: Some(r.country),
+                is_anonymized: r.is_anonymized,
                 created_at: r.created_at,
                 updated_at: r.updated_at,
             })

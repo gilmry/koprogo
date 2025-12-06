@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT o.id, o.organization_id, o.first_name, o.last_name,\n                   o.email, o.phone, o.address, o.city, o.postal_code, o.country,\n                   o.is_anonymized, o.created_at, o.updated_at\n            FROM owners o\n            INNER JOIN users u ON u.email = o.email\n            WHERE u.id = $1\n            ",
+  "query": "\n            SELECT id, organization_id, first_name, last_name,\n                   email, phone, address, city, postal_code, country,\n                   is_anonymized, created_at, updated_at\n            FROM owners\n            WHERE user_id = $1\n              AND ($2::uuid IS NULL OR organization_id = $2)\n            ",
   "describe": {
     "columns": [
       {
@@ -71,6 +71,7 @@
     ],
     "parameters": {
       "Left": [
+        "Uuid",
         "Uuid"
       ]
     },
@@ -90,5 +91,5 @@
       false
     ]
   },
-  "hash": "ce825a29fac8475217796001ec8e16483249627439560b8e59aea952852f4106"
+  "hash": "209a44f6b4bffc85acaca6bc33e0234a62dd8d1a7136d907ea58aba35b20fc49"
 }
