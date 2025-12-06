@@ -3,12 +3,25 @@ use koprogo_api::application::dto::CreateBuildingDto;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAccountRepository, PostgresAuditLogRepository,
-    PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBuildingRepository,
-    PostgresChargeDistributionRepository, PostgresDocumentRepository, PostgresExpenseRepository,
-    PostgresGdprRepository, PostgresJournalEntryRepository, PostgresOwnerRepository,
-    PostgresPaymentReminderRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
-    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
+    create_pool, PostgresAccountRepository, PostgresAchievementRepository,
+    PostgresAuditLogRepository, PostgresBoardDecisionRepository, PostgresBoardMemberRepository,
+    PostgresBudgetRepository, PostgresBuildingRepository, PostgresCallForFundsRepository,
+    PostgresChallengeProgressRepository, PostgresChallengeRepository,
+    PostgresChargeDistributionRepository, PostgresConvocationRecipientRepository,
+    PostgresConvocationRepository, PostgresDocumentRepository, PostgresEnergyBillUploadRepository,
+    PostgresEnergyCampaignRepository, PostgresEtatDateRepository, PostgresExpenseRepository,
+    PostgresGdprRepository, PostgresIoTRepository, PostgresJournalEntryRepository,
+    PostgresLocalExchangeRepository, PostgresNoticeRepository,
+    PostgresNotificationPreferenceRepository, PostgresNotificationRepository,
+    PostgresOwnerContributionRepository, PostgresOwnerCreditBalanceRepository,
+    PostgresOwnerRepository, PostgresPaymentMethodRepository, PostgresPaymentReminderRepository,
+    PostgresPaymentRepository, PostgresPollRepository, PostgresPollVoteRepository,
+    PostgresQuoteRepository, PostgresRefreshTokenRepository, PostgresResolutionRepository,
+    PostgresResourceBookingRepository, PostgresSharedObjectRepository, PostgresSkillRepository,
+    PostgresTechnicalInspectionRepository, PostgresTicketRepository, PostgresTwoFactorRepository,
+    PostgresUnitOwnerRepository, PostgresUnitRepository, PostgresUserAchievementRepository,
+    PostgresUserRepository, PostgresUserRoleRepository, PostgresVoteRepository,
+    PostgresWorkReportRepository,
 };
 use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
@@ -98,7 +111,7 @@ async fn setup_test_db() -> (
     let charge_distribution_use_cases = ChargeDistributionUseCases::new(
         charge_distribution_repo,
         expense_repo.clone(),
-        unit_owner_repo,
+        unit_owner_repo.clone(),
     );
     let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
     let storage_root = std::env::temp_dir().join("koprogo_e2e_uploads");
@@ -107,7 +120,7 @@ async fn setup_test_db() -> (
     let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
     let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
     let payment_reminder_use_cases = PaymentReminderUseCases::new(
-        payment_reminder_repo,
+        payment_reminder_repo.clone(),
         expense_repo.clone(),
         owner_repo.clone(),
     );
@@ -140,84 +153,148 @@ async fn setup_test_db() -> (
     );
 
     // E2E tests focus on basic CRUD operations (Buildings, Units, Owners, Expenses)
-    // Most features are tested separately in BDD tests - we create stub use cases here
-    // to satisfy AppState::new() signature without implementing full repository dependencies
+    // Most features are tested separately in BDD tests
+    // We create real repository instances to avoid unsafe code
 
-    // Use a macro to create stub use cases - these won't be used in E2E tests
-    macro_rules! stub_use_case {
-        ($use_case_type:ty) => {
-            std::mem::zeroed::<$use_case_type>()
-        };
-    }
+    // Create all missing repositories
+    let budget_repo = Arc::new(PostgresBudgetRepository::new(pool.clone()));
+    let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
+    let convocation_recipient_repo =
+        Arc::new(PostgresConvocationRecipientRepository::new(pool.clone()));
+    let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
+    let vote_repo = Arc::new(PostgresVoteRepository::new(pool.clone()));
+    let ticket_repo = Arc::new(PostgresTicketRepository::new(pool.clone()));
+    let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
+    let notification_repo = Arc::new(PostgresNotificationRepository::new(pool.clone()));
+    let notification_preference_repo =
+        Arc::new(PostgresNotificationPreferenceRepository::new(pool.clone()));
+    let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
+    let payment_method_repo = Arc::new(PostgresPaymentMethodRepository::new(pool.clone()));
+    let poll_repo = Arc::new(PostgresPollRepository::new(pool.clone()));
+    let poll_vote_repo = Arc::new(PostgresPollVoteRepository::new(pool.clone()));
+    let quote_repo = Arc::new(PostgresQuoteRepository::new(pool.clone()));
+    let local_exchange_repo = Arc::new(PostgresLocalExchangeRepository::new(pool.clone()));
+    let owner_credit_balance_repo =
+        Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
+    let notice_repo = Arc::new(PostgresNoticeRepository::new(pool.clone()));
+    let resource_booking_repo = Arc::new(PostgresResourceBookingRepository::new(pool.clone()));
+    let shared_object_repo = Arc::new(PostgresSharedObjectRepository::new(pool.clone()));
+    let skill_repo = Arc::new(PostgresSkillRepository::new(pool.clone()));
+    let technical_inspection_repo =
+        Arc::new(PostgresTechnicalInspectionRepository::new(pool.clone()));
+    let work_report_repo = Arc::new(PostgresWorkReportRepository::new(pool.clone()));
+    let energy_campaign_repo = Arc::new(PostgresEnergyCampaignRepository::new(pool.clone()));
+    let energy_bill_upload_repo = Arc::new(PostgresEnergyBillUploadRepository::new(pool.clone()));
+    let etat_date_repo = Arc::new(PostgresEtatDateRepository::new(pool.clone()));
+    let iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
+    let owner_contribution_repo = Arc::new(PostgresOwnerContributionRepository::new(pool.clone()));
+    let call_for_funds_repo = Arc::new(PostgresCallForFundsRepository::new(pool.clone()));
+    let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
+    let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
+    let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
+    let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
 
-    // SAFETY: These use cases are never called in E2E tests - they exist only to satisfy
-    // AppState::new() signature. E2E tests only exercise Buildings/Units/Owners/Expenses.
-    // All other features have dedicated BDD test coverage.
-    let stub_use_cases = unsafe {
-        (
-            stub_use_case!(BudgetUseCases),
-            stub_use_case!(ConvocationUseCases),
-            stub_use_case!(ResolutionUseCases),
-            stub_use_case!(TicketUseCases),
-            stub_use_case!(TwoFactorUseCases),
-            stub_use_case!(NotificationUseCases),
-            stub_use_case!(PaymentUseCases),
-            stub_use_case!(PaymentMethodUseCases),
-            stub_use_case!(PollUseCases),
-            stub_use_case!(QuoteUseCases),
-            stub_use_case!(LocalExchangeUseCases),
-            stub_use_case!(NoticeUseCases),
-            stub_use_case!(ResourceBookingUseCases),
-            stub_use_case!(SharedObjectUseCases),
-            stub_use_case!(SkillUseCases),
-            stub_use_case!(TechnicalInspectionUseCases),
-            stub_use_case!(WorkReportUseCases),
-            stub_use_case!(EnergyCampaignUseCases),
-            stub_use_case!(EnergyBillUploadUseCases),
-            stub_use_case!(EtatDateUseCases),
-            stub_use_case!(IoTUseCases),
-            stub_use_case!(LinkyUseCases),
-            stub_use_case!(DashboardUseCases),
-            stub_use_case!(OwnerContributionUseCases),
-            stub_use_case!(CallForFundsUseCases),
-            stub_use_case!(JournalEntryUseCases),
-            stub_use_case!(AchievementUseCases),
-            stub_use_case!(ChallengeUseCases),
-            stub_use_case!(GamificationStatsUseCases),
-        )
-    };
+    // Create all use cases with real repositories (matching main.rs signatures)
+    let budget_use_cases = BudgetUseCases::new(
+        budget_repo.clone(),
+        building_repo.clone(),
+        expense_repo.clone(),
+    );
+    let convocation_use_cases = ConvocationUseCases::new(
+        convocation_repo,
+        convocation_recipient_repo,
+        owner_repo.clone(),
+        building_repo.clone(),
+        meeting_repo.clone(),
+    );
+    let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo);
+    let ticket_use_cases = TicketUseCases::new(ticket_repo);
+    // TwoFactorUseCases requires [u8; 32] encryption key (exactly 32 bytes)
+    let encryption_key: [u8; 32] = *b"test-encryption-key-32bytes!!!!!";
+    let two_factor_use_cases =
+        TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
+    let notification_use_cases =
+        NotificationUseCases::new(notification_repo, notification_preference_repo);
+    let payment_use_cases = PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
+    let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
+    let quote_use_cases = QuoteUseCases::new(quote_repo);
+    let local_exchange_use_cases = LocalExchangeUseCases::new(
+        local_exchange_repo,
+        owner_credit_balance_repo.clone(),
+        owner_repo.clone(),
+    );
+    let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
+    let resource_booking_use_cases =
+        ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
+    let shared_object_use_cases = SharedObjectUseCases::new(
+        shared_object_repo,
+        owner_repo.clone(),
+        owner_credit_balance_repo.clone(),
+    );
+    let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
+    let technical_inspection_use_cases =
+        TechnicalInspectionUseCases::new(technical_inspection_repo);
+    let work_report_use_cases = WorkReportUseCases::new(work_report_repo);
+    let energy_campaign_use_cases = EnergyCampaignUseCases::new(
+        energy_campaign_repo.clone(),
+        energy_bill_upload_repo.clone(),
+        building_repo.clone(),
+    );
+    let energy_bill_upload_use_cases =
+        EnergyBillUploadUseCases::new(energy_bill_upload_repo, energy_campaign_repo);
+    let etat_date_use_cases = EtatDateUseCases::new(
+        etat_date_repo,
+        unit_repo.clone(),
+        building_repo.clone(),
+        unit_owner_repo.clone(),
+    );
+    let iot_use_cases = IoTUseCases::new(iot_repo.clone());
 
-    let (
-        budget_use_cases,
-        convocation_use_cases,
-        resolution_use_cases,
-        ticket_use_cases,
-        two_factor_use_cases,
-        notification_use_cases,
-        payment_use_cases,
-        payment_method_use_cases,
-        poll_use_cases,
-        quote_use_cases,
-        local_exchange_use_cases,
-        notice_use_cases,
-        resource_booking_use_cases,
-        shared_object_use_cases,
-        skill_use_cases,
-        technical_inspection_use_cases,
-        work_report_use_cases,
-        energy_campaign_use_cases,
-        energy_bill_upload_use_cases,
-        etat_date_use_cases,
-        iot_use_cases,
-        linky_use_cases,
-        dashboard_use_cases,
-        owner_contribution_use_cases,
-        call_for_funds_use_cases,
-        journal_entry_use_cases,
-        achievement_use_cases,
-        challenge_use_cases,
-        gamification_stats_use_cases,
-    ) = stub_use_cases;
+    // Create LinkyApiClientImpl for E2E tests (with dummy credentials)
+    use koprogo_api::infrastructure::LinkyApiClientImpl;
+    let linky_client = Arc::new(LinkyApiClientImpl::new(
+        "https://test.linky-api.fr".to_string(),
+        "test-client-id".to_string(),
+        "test-client-secret".to_string(),
+    ));
+    let linky_use_cases = LinkyUseCases::new(
+        iot_repo,
+        linky_client,
+        "http://localhost/callback".to_string(),
+    );
+    let dashboard_use_cases = DashboardUseCases::new(
+        expense_repo.clone(),
+        owner_contribution_repo.clone(),
+        payment_reminder_repo.clone(),
+    );
+    let owner_contribution_use_cases =
+        OwnerContributionUseCases::new(owner_contribution_repo.clone());
+    let call_for_funds_use_cases = CallForFundsUseCases::new(
+        call_for_funds_repo,
+        owner_contribution_repo,
+        unit_owner_repo.clone(),
+    );
+    let journal_entry_use_cases = JournalEntryUseCases::new(journal_entry_repo.clone());
+    let poll_use_cases = PollUseCases::new(
+        poll_repo,
+        poll_vote_repo,
+        owner_repo.clone(),
+        unit_owner_repo.clone(),
+    );
+    let achievement_use_cases = AchievementUseCases::new(
+        achievement_repo.clone(),
+        user_achievement_repo.clone(),
+        user_repo.clone(),
+    );
+    let challenge_use_cases =
+        ChallengeUseCases::new(challenge_repo.clone(), challenge_progress_repo.clone());
+    let gamification_stats_use_cases = GamificationStatsUseCases::new(
+        achievement_repo,
+        user_achievement_repo,
+        challenge_repo,
+        challenge_progress_repo,
+        user_repo.clone(),
+    );
 
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
