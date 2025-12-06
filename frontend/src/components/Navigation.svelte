@@ -4,6 +4,7 @@
   import { _ } from 'svelte-i18n';
   import { authStore } from '../stores/auth';
   import { UserRole } from '../lib/types';
+  import NotificationBell from './notifications/NotificationBell.svelte';
 
   let showUserMenu = false;
   let switchingRole = false;
@@ -81,6 +82,17 @@
       { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
     ];
 
+    // Community features available to all roles
+    const communityItems = [
+      { href: '/exchanges', label: 'SEL', icon: '🔄' },
+      { href: '/polls', label: 'Sondages', icon: '📊' },
+      { href: '/notices', label: 'Annonces', icon: '📌' },
+      { href: '/bookings', label: 'Réservations', icon: '📅' },
+      { href: '/sharing', label: 'Partage', icon: '🎁' },
+      { href: '/skills', label: 'Compétences', icon: '🎓' },
+      { href: '/energy-campaigns', label: 'Énergie', icon: '⚡' },
+    ];
+
     switch (role) {
       case UserRole.SUPERADMIN:
         return [
@@ -91,6 +103,7 @@
           { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
           { href: '/admin/board-members', label: 'Conseil', icon: '👑' },
           { href: '/admin/gdpr', label: 'RGPD', icon: '🔒' },
+          ...communityItems,
         ];
 
       case UserRole.SYNDIC:
@@ -105,8 +118,11 @@
           { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
           { href: '/payment-reminders', label: 'Relances', icon: '📧' },
           { href: '/meetings', label: t('navigation.meetings'), icon: '📅' },
+          { href: '/tickets', label: 'Tickets', icon: '🎫' },
+          { href: '/quotes/compare', label: 'Devis', icon: '📋' },
           { href: '/syndic/board-members', label: 'Conseil', icon: '👑' },
           { href: '/documents', label: t('navigation.documents'), icon: '📄' },
+          ...communityItems,
         ];
 
       case UserRole.ACCOUNTANT:
@@ -120,6 +136,7 @@
           { href: '/payment-reminders', label: 'Relances', icon: '📧' },
           { href: '/journal-entries', label: 'Écritures comptables', icon: '📒' },
           { href: '/reports', label: 'Rapports PCMN', icon: '📈' },
+          ...communityItems,
         ];
 
       case UserRole.OWNER:
@@ -127,7 +144,12 @@
           { href: '/owner', label: t('navigation.dashboard'), icon: '🏠' },
           { href: '/owner/units', label: t('navigation.units'), icon: '🚪' },
           { href: '/owner/expenses', label: t('navigation.expenses'), icon: '💰' },
+          { href: '/owner/payments', label: 'Paiements', icon: '💳' },
+          { href: '/owner/payment-methods', label: 'Moyens paiement', icon: '🏦' },
+          { href: '/owner/tickets', label: 'Mes tickets', icon: '🎫' },
           { href: '/owner/documents', label: t('navigation.documents'), icon: '📄' },
+          { href: '/owner/profile', label: 'Profil', icon: '👤' },
+          ...communityItems,
         ];
 
       default:
@@ -175,8 +197,11 @@
           {/each}
         </div>
 
-        <!-- Right side: User Menu -->
+        <!-- Right side: Notifications + User Menu -->
         <div class="flex items-center gap-2">
+        <!-- Notification Bell -->
+        <NotificationBell />
+
         <!-- User Menu -->
         <div class="relative" data-testid="user-menu-container">
           <button

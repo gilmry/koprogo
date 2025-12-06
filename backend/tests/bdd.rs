@@ -1347,7 +1347,10 @@ async fn given_another_user_exists(world: &mut BuildingWorld) {
     // Link owner to user account (required for GDPR export to find the owner)
     owner.user_id = world.multi_user_id;
 
-    owner_repo.create(&owner).await.expect("create owner for target user");
+    owner_repo
+        .create(&owner)
+        .await
+        .expect("create owner for target user");
 }
 
 #[when("I export that user's data as an admin")]
