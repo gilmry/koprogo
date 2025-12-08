@@ -85,7 +85,7 @@ reqwest = { version = "0.12", features = ["json"] }
 
 # OpenAPI documentation
 utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }
-utoipa-swagger-ui = { version = "8.0", features = ["actix-web"] }
+utoipa-swagger-ui = { version = "9.0", features = ["actix-web"] }
 
 [dev-dependencies]
 # Unit & Integration tests
