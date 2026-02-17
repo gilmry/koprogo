@@ -22,7 +22,10 @@
     allow_multiple_votes: false,
     min_rating: 1,
     max_rating: 5,
-    options: [],
+    options: [
+      { option_text: "Oui", option_value: 1, display_order: 1 },
+      { option_text: "Non", option_value: 0, display_order: 2 },
+    ],
   };
 
   let loading = false;

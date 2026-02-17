@@ -73,12 +73,15 @@ export async function apiFetch<T = any>(
   if (!response.ok) {
     let errorMessage = `API Error: ${response.status}`;
     try {
-      const errorData = await response.json();
-      errorMessage = errorData.error || errorMessage;
-    } catch {
-      // If JSON parsing fails, try text
       const errorText = await response.text();
-      if (errorText) errorMessage = errorText;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error || errorMessage;
+      } catch {
+        if (errorText) errorMessage = errorText;
+      }
+    } catch {
+      // Body unreadable, keep default message
     }
     throw new Error(errorMessage);
   }
