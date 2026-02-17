@@ -119,18 +119,31 @@ export const inspectionsApi = {
     return api.get(`/buildings/${buildingId}/technical-inspections`);
   },
 
-  async listByOrganization(organizationId: string): Promise<TechnicalInspection[]> {
+  async listByOrganization(
+    organizationId: string,
+  ): Promise<TechnicalInspection[]> {
     return api.get(`/organizations/${organizationId}/technical-inspections`);
   },
 
-  async listPaginated(page: number = 1, pageSize: number = 20, buildingId?: string, inspectionType?: string): Promise<InspectionListResponse> {
-    const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  async listPaginated(
+    page: number = 1,
+    pageSize: number = 20,
+    buildingId?: string,
+    inspectionType?: string,
+  ): Promise<InspectionListResponse> {
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(pageSize),
+    });
     if (buildingId) params.set("building_id", buildingId);
     if (inspectionType) params.set("inspection_type", inspectionType);
     return api.get(`/technical-inspections?${params.toString()}`);
   },
 
-  async update(id: string, data: UpdateInspectionDto): Promise<TechnicalInspection> {
+  async update(
+    id: string,
+    data: UpdateInspectionDto,
+  ): Promise<TechnicalInspection> {
     return api.put(`/technical-inspections/${id}`, data);
   },
 
@@ -142,24 +155,46 @@ export const inspectionsApi = {
     return api.get(`/buildings/${buildingId}/technical-inspections/overdue`);
   },
 
-  async getUpcoming(buildingId: string, days: number = 90): Promise<TechnicalInspection[]> {
-    return api.get(`/buildings/${buildingId}/technical-inspections/upcoming?days=${days}`);
+  async getUpcoming(
+    buildingId: string,
+    days: number = 90,
+  ): Promise<TechnicalInspection[]> {
+    return api.get(
+      `/buildings/${buildingId}/technical-inspections/upcoming?days=${days}`,
+    );
   },
 
-  async getByType(buildingId: string, type: string): Promise<TechnicalInspection[]> {
-    return api.get(`/buildings/${buildingId}/technical-inspections/type/${type}`);
+  async getByType(
+    buildingId: string,
+    type: string,
+  ): Promise<TechnicalInspection[]> {
+    return api.get(
+      `/buildings/${buildingId}/technical-inspections/type/${type}`,
+    );
   },
 
-  async addReport(id: string, reportPath: string): Promise<TechnicalInspection> {
-    return api.post(`/technical-inspections/${id}/reports`, { report_path: reportPath });
+  async addReport(
+    id: string,
+    reportPath: string,
+  ): Promise<TechnicalInspection> {
+    return api.post(`/technical-inspections/${id}/reports`, {
+      report_path: reportPath,
+    });
   },
 
   async addPhoto(id: string, photoPath: string): Promise<TechnicalInspection> {
-    return api.post(`/technical-inspections/${id}/photos`, { photo_path: photoPath });
+    return api.post(`/technical-inspections/${id}/photos`, {
+      photo_path: photoPath,
+    });
   },
 
-  async addCertificate(id: string, certificatePath: string): Promise<TechnicalInspection> {
-    return api.post(`/technical-inspections/${id}/certificates`, { certificate_path: certificatePath });
+  async addCertificate(
+    id: string,
+    certificatePath: string,
+  ): Promise<TechnicalInspection> {
+    return api.post(`/technical-inspections/${id}/certificates`, {
+      certificate_path: certificatePath,
+    });
   },
 };
 

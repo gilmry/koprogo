@@ -19,7 +19,8 @@ pub async fn create_poll(
     auth_user: AuthenticatedUser,
     dto: web::Json<CreatePollDto>,
 ) -> HttpResponse {
-    match state.poll_use_cases
+    match state
+        .poll_use_cases
         .create_poll(dto.into_inner(), auth_user.user_id)
         .await
     {
@@ -81,7 +82,8 @@ pub async fn update_poll(
         }
     };
 
-    match state.poll_use_cases
+    match state
+        .poll_use_cases
         .update_poll(poll_id, dto.into_inner(), auth_user.user_id)
         .await
     {
@@ -128,7 +130,8 @@ pub async fn list_polls(
         ends_after: query.ends_after.clone(),
     };
 
-    match state.poll_use_cases
+    match state
+        .poll_use_cases
         .list_polls_paginated(&page_request, &filters)
         .await
     {
@@ -191,7 +194,8 @@ pub async fn publish_poll(
         }
     };
 
-    match state.poll_use_cases
+    match state
+        .poll_use_cases
         .publish_poll(poll_id, auth_user.user_id)
         .await
     {
@@ -231,7 +235,11 @@ pub async fn close_poll(
         }
     };
 
-    match state.poll_use_cases.close_poll(poll_id, auth_user.user_id).await {
+    match state
+        .poll_use_cases
+        .close_poll(poll_id, auth_user.user_id)
+        .await
+    {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
             if e.contains("not found") {
@@ -268,7 +276,11 @@ pub async fn cancel_poll(
         }
     };
 
-    match state.poll_use_cases.cancel_poll(poll_id, auth_user.user_id).await {
+    match state
+        .poll_use_cases
+        .cancel_poll(poll_id, auth_user.user_id)
+        .await
+    {
         Ok(poll) => HttpResponse::Ok().json(poll),
         Err(e) => {
             if e.contains("not found") {
@@ -305,7 +317,11 @@ pub async fn delete_poll(
         }
     };
 
-    match state.poll_use_cases.delete_poll(poll_id, auth_user.user_id).await {
+    match state
+        .poll_use_cases
+        .delete_poll(poll_id, auth_user.user_id)
+        .await
+    {
         Ok(true) => HttpResponse::NoContent().finish(),
         Ok(false) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Poll not found"
@@ -342,7 +358,11 @@ pub async fn cast_poll_vote(
     // In production, you'd have logic to determine if vote is anonymous
     let owner_id = Some(auth_user.user_id);
 
-    match state.poll_use_cases.cast_vote(dto.into_inner(), owner_id).await {
+    match state
+        .poll_use_cases
+        .cast_vote(dto.into_inner(), owner_id)
+        .await
+    {
         Ok(message) => HttpResponse::Created().json(serde_json::json!({
             "message": message
         })),
@@ -422,7 +442,11 @@ pub async fn get_poll_building_statistics(
         }
     };
 
-    match state.poll_use_cases.get_building_statistics(building_id).await {
+    match state
+        .poll_use_cases
+        .get_building_statistics(building_id)
+        .await
+    {
         Ok(stats) => HttpResponse::Ok().json(stats),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e

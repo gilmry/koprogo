@@ -38,7 +38,8 @@ pub async fn create_iot_reading(
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match state.iot_use_cases
+    match state
+        .iot_use_cases
         .create_reading(dto.into_inner(), auth.user_id, organization_id)
         .await
     {
@@ -78,7 +79,8 @@ pub async fn create_iot_readings_bulk(
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match state.iot_use_cases
+    match state
+        .iot_use_cases
         .create_readings_bulk(dtos.into_inner(), auth.user_id, organization_id)
         .await
     {
@@ -145,7 +147,8 @@ pub async fn get_consumption_stats(
         .parse()
         .map_err(|_| ErrorBadRequest("Invalid end_date format (use ISO 8601)"))?;
 
-    match state.iot_use_cases
+    match state
+        .iot_use_cases
         .get_consumption_stats(building_id, metric_type, start_date, end_date)
         .await
     {
@@ -200,7 +203,8 @@ pub async fn get_daily_aggregates(
         .parse()
         .map_err(|_| ErrorBadRequest("Invalid end_date format (use ISO 8601)"))?;
 
-    match state.iot_use_cases
+    match state
+        .iot_use_cases
         .get_daily_aggregates(building_id, device_type, metric_type, start_date, end_date)
         .await
     {
@@ -255,7 +259,8 @@ pub async fn get_monthly_aggregates(
         .parse()
         .map_err(|_| ErrorBadRequest("Invalid end_date format (use ISO 8601)"))?;
 
-    match state.iot_use_cases
+    match state
+        .iot_use_cases
         .get_monthly_aggregates(building_id, device_type, metric_type, start_date, end_date)
         .await
     {
@@ -296,7 +301,8 @@ pub async fn detect_anomalies(
         .and_then(|v| v.as_i64())
         .unwrap_or(30);
 
-    match state.iot_use_cases
+    match state
+        .iot_use_cases
         .detect_anomalies(
             building_id,
             metric_type,
@@ -338,7 +344,8 @@ pub async fn configure_linky_device(
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match state.linky_use_cases
+    match state
+        .linky_use_cases
         .configure_linky_device(dto.into_inner(), auth.user_id, organization_id)
         .await
     {
@@ -381,7 +388,8 @@ pub async fn delete_linky_device(
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match state.linky_use_cases
+    match state
+        .linky_use_cases
         .delete_linky_device(building_id, auth.user_id, organization_id)
         .await
     {
@@ -415,7 +423,8 @@ pub async fn sync_linky_data(
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match state.linky_use_cases
+    match state
+        .linky_use_cases
         .sync_linky_data(dto.into_inner(), auth.user_id, organization_id)
         .await
     {
@@ -451,7 +460,8 @@ pub async fn toggle_linky_sync(
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match state.linky_use_cases
+    match state
+        .linky_use_cases
         .toggle_sync(building_id, enabled, auth.user_id, organization_id)
         .await
     {
@@ -488,7 +498,11 @@ pub async fn find_devices_with_expired_tokens(
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
 
-    match state.linky_use_cases.find_devices_with_expired_tokens().await {
+    match state
+        .linky_use_cases
+        .find_devices_with_expired_tokens()
+        .await
+    {
         Ok(devices) => Ok(HttpResponse::Ok().json(devices)),
         Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e

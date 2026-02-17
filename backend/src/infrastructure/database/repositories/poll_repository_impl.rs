@@ -180,14 +180,11 @@ impl PollRepository for PostgresPollRepository {
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Poll>, String> {
-        let row = sqlx::query(&format!(
-            "SELECT {} FROM polls WHERE id = $1",
-            POLL_COLUMNS
-        ))
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to fetch poll: {}", e))?;
+        let row = sqlx::query(&format!("SELECT {} FROM polls WHERE id = $1", POLL_COLUMNS))
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch poll: {}", e))?;
 
         match row {
             Some(r) => Ok(Some(self.row_to_poll(&r)?)),

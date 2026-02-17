@@ -213,7 +213,9 @@ export const gamificationApi = {
     return api.get(`/challenges/${challengeId}/all-progress`);
   },
 
-  async getUserActiveChallenges(_userId?: string): Promise<ChallengeProgress[]> {
+  async getUserActiveChallenges(
+    _userId?: string,
+  ): Promise<ChallengeProgress[]> {
     return api.get(`/users/challenges/active`);
   },
 

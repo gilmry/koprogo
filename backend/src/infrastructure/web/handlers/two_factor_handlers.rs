@@ -31,10 +31,7 @@ use actix_web::{web, HttpResponse};
 ///   "account_name": "user@example.com"
 /// }
 /// ```
-pub async fn setup_2fa(
-    auth: AuthenticatedUser,
-    state: web::Data<AppState>,
-) -> HttpResponse {
+pub async fn setup_2fa(auth: AuthenticatedUser, state: web::Data<AppState>) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
         None => {
@@ -44,7 +41,11 @@ pub async fn setup_2fa(
         }
     };
 
-    match state.two_factor_use_cases.setup_2fa(auth.user_id, organization_id).await {
+    match state
+        .two_factor_use_cases
+        .setup_2fa(auth.user_id, organization_id)
+        .await
+    {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) if e.contains("already enabled") => {
             HttpResponse::BadRequest().json(serde_json::json!({
@@ -96,7 +97,8 @@ pub async fn enable_2fa(
         }
     };
 
-    match state.two_factor_use_cases
+    match state
+        .two_factor_use_cases
         .enable_2fa(auth.user_id, organization_id, dto.into_inner())
         .await
     {
@@ -161,7 +163,8 @@ pub async fn verify_2fa(
         }
     };
 
-    match state.two_factor_use_cases
+    match state
+        .two_factor_use_cases
         .verify_2fa(auth.user_id, organization_id, dto.into_inner())
         .await
     {
@@ -219,7 +222,8 @@ pub async fn disable_2fa(
         }
     };
 
-    match state.two_factor_use_cases
+    match state
+        .two_factor_use_cases
         .disable_2fa(auth.user_id, organization_id, dto.into_inner())
         .await
     {
@@ -286,7 +290,8 @@ pub async fn regenerate_backup_codes(
         }
     };
 
-    match state.two_factor_use_cases
+    match state
+        .two_factor_use_cases
         .regenerate_backup_codes(auth.user_id, organization_id, dto.into_inner())
         .await
     {
@@ -340,11 +345,12 @@ pub async fn regenerate_backup_codes(
 ///   "needs_reverification": false
 /// }
 /// ```
-pub async fn get_2fa_status(
-    auth: AuthenticatedUser,
-    state: web::Data<AppState>,
-) -> HttpResponse {
-    match state.two_factor_use_cases.get_2fa_status(auth.user_id).await {
+pub async fn get_2fa_status(auth: AuthenticatedUser, state: web::Data<AppState>) -> HttpResponse {
+    match state
+        .two_factor_use_cases
+        .get_2fa_status(auth.user_id)
+        .await
+    {
         Ok(status) => HttpResponse::Ok().json(status),
         Err(e) => {
             log::error!("Failed to get 2FA status for user {}: {}", auth.user_id, e);

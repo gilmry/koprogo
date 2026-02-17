@@ -17,10 +17,10 @@ export enum WorkType {
 
 export enum WarrantyType {
   None = "none",
-  Standard = "standard",       // 2 years (vices apparents)
-  Decennial = "decennial",     // 10 years (garantie décennale)
-  Extended = "extended",       // 3 years
-  Custom = "custom",           // Custom duration
+  Standard = "standard", // 2 years (vices apparents)
+  Decennial = "decennial", // 10 years (garantie décennale)
+  Extended = "extended", // 3 years
+  Custom = "custom", // Custom duration
 }
 
 export interface CreateWorkReportDto {
@@ -110,8 +110,16 @@ export const workReportsApi = {
     return api.get(`/organizations/${organizationId}/work-reports`);
   },
 
-  async listPaginated(page: number = 1, pageSize: number = 20, buildingId?: string, workType?: WorkType): Promise<WorkReportListResponse> {
-    const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+  async listPaginated(
+    page: number = 1,
+    pageSize: number = 20,
+    buildingId?: string,
+    workType?: WorkType,
+  ): Promise<WorkReportListResponse> {
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(pageSize),
+    });
     if (buildingId) params.set("building_id", buildingId);
     if (workType) params.set("work_type", workType);
     return api.get(`/work-reports?${params.toString()}`);
@@ -129,8 +137,13 @@ export const workReportsApi = {
     return api.get(`/buildings/${buildingId}/work-reports/warranties/active`);
   },
 
-  async getExpiringWarranties(buildingId: string, days: number = 90): Promise<WarrantyStatus[]> {
-    return api.get(`/buildings/${buildingId}/work-reports/warranties/expiring?days=${days}`);
+  async getExpiringWarranties(
+    buildingId: string,
+    days: number = 90,
+  ): Promise<WarrantyStatus[]> {
+    return api.get(
+      `/buildings/${buildingId}/work-reports/warranties/expiring?days=${days}`,
+    );
   },
 
   async addPhoto(id: string, photoPath: string): Promise<WorkReport> {
@@ -138,7 +151,9 @@ export const workReportsApi = {
   },
 
   async addDocument(id: string, documentPath: string): Promise<WorkReport> {
-    return api.post(`/work-reports/${id}/documents`, { document_path: documentPath });
+    return api.post(`/work-reports/${id}/documents`, {
+      document_path: documentPath,
+    });
   },
 };
 
