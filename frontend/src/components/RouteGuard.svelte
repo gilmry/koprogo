@@ -8,7 +8,10 @@
   let currentRoute = '';
   let isChecking = true;
 
-  onMount(() => {
+  onMount(async () => {
+    // Initialize auth store first
+    await authStore.init();
+
     currentRoute = window.location.pathname;
     let hasChecked = false;
 

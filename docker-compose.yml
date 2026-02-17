@@ -57,6 +57,7 @@ services:
       SERVER_PORT: 8080
       RUST_LOG: debug
       RUST_BACKTRACE: 1
+      SQLX_OFFLINE: "true"
       ENABLE_RATE_LIMITING: false
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3} # Basculer sur le stockage local: STORAGE_PROVIDER=local
       UPLOAD_DIR: /app/uploads
