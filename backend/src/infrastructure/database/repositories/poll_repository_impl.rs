@@ -8,6 +8,15 @@ use serde_json;
 use sqlx::Row;
 use uuid::Uuid;
 
+/// Explicit column list for SELECT queries, casting PostgreSQL custom enums to text
+const POLL_COLUMNS: &str = r#"
+    id, building_id, created_by, title, description,
+    poll_type::text as poll_type, options, is_anonymous,
+    allow_multiple_votes, require_all_owners, starts_at, ends_at,
+    status::text as status, total_eligible_voters, total_votes_cast,
+    created_at, updated_at
+"#;
+
 pub struct PostgresPollRepository {
     pool: DbPool,
 }
@@ -143,7 +152,7 @@ impl PollRepository for PostgresPollRepository {
                 starts_at, ends_at, status, total_eligible_voters, total_votes_cast,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+            VALUES ($1, $2, $3, $4, $5, $6::poll_type, $7, $8, $9, $10, $11, $12, $13::poll_status, $14, $15, $16, $17)
             "#,
         )
         .bind(poll.id)
@@ -171,11 +180,10 @@ impl PollRepository for PostgresPollRepository {
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Poll>, String> {
-        let row = sqlx::query(
-            r#"
-            SELECT * FROM polls WHERE id = $1
-            "#,
-        )
+        let row = sqlx::query(&format!(
+            "SELECT {} FROM polls WHERE id = $1",
+            POLL_COLUMNS
+        ))
         .bind(id)
         .fetch_optional(&self.pool)
         .await
@@ -188,13 +196,10 @@ impl PollRepository for PostgresPollRepository {
     }
 
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Poll>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT * FROM polls 
-            WHERE building_id = $1
-            ORDER BY created_at DESC
-            "#,
-        )
+        let rows = sqlx::query(&format!(
+            "SELECT {} FROM polls WHERE building_id = $1 ORDER BY created_at DESC",
+            POLL_COLUMNS
+        ))
         .bind(building_id)
         .fetch_all(&self.pool)
         .await
@@ -206,13 +211,10 @@ impl PollRepository for PostgresPollRepository {
     }
 
     async fn find_by_created_by(&self, created_by: Uuid) -> Result<Vec<Poll>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT * FROM polls 
-            WHERE created_by = $1
-            ORDER BY created_at DESC
-            "#,
-        )
+        let rows = sqlx::query(&format!(
+            "SELECT {} FROM polls WHERE created_by = $1 ORDER BY created_at DESC",
+            POLL_COLUMNS
+        ))
         .bind(created_by)
         .fetch_all(&self.pool)
         .await
@@ -245,12 +247,12 @@ impl PollRepository for PostgresPollRepository {
         }
 
         if filters.status.is_some() {
-            where_clauses.push(format!("status = ${}", bind_index));
+            where_clauses.push(format!("status = ${}::poll_status", bind_index));
             bind_index += 1;
         }
 
         if filters.poll_type.is_some() {
-            where_clauses.push(format!("poll_type = ${}", bind_index));
+            where_clauses.push(format!("poll_type = ${}::poll_type", bind_index));
             bind_index += 1;
         }
 
@@ -313,7 +315,8 @@ impl PollRepository for PostgresPollRepository {
 
         // Fetch paginated results
         let data_query = format!(
-            "SELECT * FROM polls {} ORDER BY created_at DESC LIMIT ${} OFFSET ${}",
+            "SELECT {} FROM polls {} ORDER BY created_at DESC LIMIT ${} OFFSET ${}",
+            POLL_COLUMNS,
             where_sql,
             bind_index,
             bind_index + 1
@@ -367,16 +370,10 @@ impl PollRepository for PostgresPollRepository {
     async fn find_active(&self, building_id: Uuid) -> Result<Vec<Poll>, String> {
         let now = Utc::now();
 
-        let rows = sqlx::query(
-            r#"
-            SELECT * FROM polls 
-            WHERE building_id = $1 
-              AND status = 'active'
-              AND starts_at <= $2
-              AND ends_at > $2
-            ORDER BY created_at DESC
-            "#,
-        )
+        let rows = sqlx::query(&format!(
+            "SELECT {} FROM polls WHERE building_id = $1 AND status = 'active' AND starts_at <= $2 AND ends_at > $2 ORDER BY created_at DESC",
+            POLL_COLUMNS
+        ))
         .bind(building_id)
         .bind(now)
         .fetch_all(&self.pool)
@@ -389,13 +386,10 @@ impl PollRepository for PostgresPollRepository {
     }
 
     async fn find_by_status(&self, building_id: Uuid, status: &str) -> Result<Vec<Poll>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT * FROM polls 
-            WHERE building_id = $1 AND status = $2
-            ORDER BY created_at DESC
-            "#,
-        )
+        let rows = sqlx::query(&format!(
+            "SELECT {} FROM polls WHERE building_id = $1 AND status = $2::poll_status ORDER BY created_at DESC",
+            POLL_COLUMNS
+        ))
         .bind(building_id)
         .bind(status)
         .fetch_all(&self.pool)
@@ -410,13 +404,10 @@ impl PollRepository for PostgresPollRepository {
     async fn find_expired_active(&self) -> Result<Vec<Poll>, String> {
         let now = Utc::now();
 
-        let rows = sqlx::query(
-            r#"
-            SELECT * FROM polls 
-            WHERE status = 'active' AND ends_at <= $1
-            ORDER BY ends_at ASC
-            "#,
-        )
+        let rows = sqlx::query(&format!(
+            "SELECT {} FROM polls WHERE status = 'active' AND ends_at <= $1 ORDER BY ends_at ASC",
+            POLL_COLUMNS
+        ))
         .bind(now)
         .fetch_all(&self.pool)
         .await
@@ -440,14 +431,14 @@ impl PollRepository for PostgresPollRepository {
             UPDATE polls SET
                 title = $2,
                 description = $3,
-                poll_type = $4,
+                poll_type = $4::poll_type,
                 options = $5,
                 is_anonymous = $6,
                 allow_multiple_votes = $7,
                 require_all_owners = $8,
                 starts_at = $9,
                 ends_at = $10,
-                status = $11,
+                status = $11::poll_status,
                 total_eligible_voters = $12,
                 total_votes_cast = $13,
                 updated_at = $14

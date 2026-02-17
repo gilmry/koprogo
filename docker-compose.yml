@@ -81,6 +81,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`localhost`) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.routers.backend-metrics.rule=Host(`localhost`) && Path(`/metrics`)"
+      - "traefik.http.routers.backend-metrics.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=8080"
     networks:
       - koprogo-network

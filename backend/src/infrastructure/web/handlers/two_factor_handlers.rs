@@ -1,10 +1,9 @@
 use crate::application::dto::{
     Disable2FADto, Enable2FADto, RegenerateBackupCodesDto, Verify2FADto,
 };
-use crate::application::use_cases::TwoFactorUseCases;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
+use crate::infrastructure::web::AppState;
 use actix_web::{web, HttpResponse};
-use std::sync::Arc;
 
 /// Setup 2FA for a user (returns QR code + backup codes)
 ///
@@ -34,7 +33,7 @@ use std::sync::Arc;
 /// ```
 pub async fn setup_2fa(
     auth: AuthenticatedUser,
-    use_cases: web::Data<Arc<TwoFactorUseCases>>,
+    state: web::Data<AppState>,
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
@@ -45,7 +44,7 @@ pub async fn setup_2fa(
         }
     };
 
-    match use_cases.setup_2fa(auth.user_id, organization_id).await {
+    match state.two_factor_use_cases.setup_2fa(auth.user_id, organization_id).await {
         Ok(response) => HttpResponse::Ok().json(response),
         Err(e) if e.contains("already enabled") => {
             HttpResponse::BadRequest().json(serde_json::json!({
@@ -86,7 +85,7 @@ pub async fn setup_2fa(
 pub async fn enable_2fa(
     auth: AuthenticatedUser,
     dto: web::Json<Enable2FADto>,
-    use_cases: web::Data<Arc<TwoFactorUseCases>>,
+    state: web::Data<AppState>,
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
@@ -97,7 +96,7 @@ pub async fn enable_2fa(
         }
     };
 
-    match use_cases
+    match state.two_factor_use_cases
         .enable_2fa(auth.user_id, organization_id, dto.into_inner())
         .await
     {
@@ -151,7 +150,7 @@ pub async fn enable_2fa(
 pub async fn verify_2fa(
     auth: AuthenticatedUser,
     dto: web::Json<Verify2FADto>,
-    use_cases: web::Data<Arc<TwoFactorUseCases>>,
+    state: web::Data<AppState>,
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
@@ -162,7 +161,7 @@ pub async fn verify_2fa(
         }
     };
 
-    match use_cases
+    match state.two_factor_use_cases
         .verify_2fa(auth.user_id, organization_id, dto.into_inner())
         .await
     {
@@ -209,7 +208,7 @@ pub async fn verify_2fa(
 pub async fn disable_2fa(
     auth: AuthenticatedUser,
     dto: web::Json<Disable2FADto>,
-    use_cases: web::Data<Arc<TwoFactorUseCases>>,
+    state: web::Data<AppState>,
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
@@ -220,7 +219,7 @@ pub async fn disable_2fa(
         }
     };
 
-    match use_cases
+    match state.two_factor_use_cases
         .disable_2fa(auth.user_id, organization_id, dto.into_inner())
         .await
     {
@@ -276,7 +275,7 @@ pub async fn disable_2fa(
 pub async fn regenerate_backup_codes(
     auth: AuthenticatedUser,
     dto: web::Json<RegenerateBackupCodesDto>,
-    use_cases: web::Data<Arc<TwoFactorUseCases>>,
+    state: web::Data<AppState>,
 ) -> HttpResponse {
     let organization_id = match auth.organization_id {
         Some(id) => id,
@@ -287,7 +286,7 @@ pub async fn regenerate_backup_codes(
         }
     };
 
-    match use_cases
+    match state.two_factor_use_cases
         .regenerate_backup_codes(auth.user_id, organization_id, dto.into_inner())
         .await
     {
@@ -343,9 +342,9 @@ pub async fn regenerate_backup_codes(
 /// ```
 pub async fn get_2fa_status(
     auth: AuthenticatedUser,
-    use_cases: web::Data<Arc<TwoFactorUseCases>>,
+    state: web::Data<AppState>,
 ) -> HttpResponse {
-    match use_cases.get_2fa_status(auth.user_id).await {
+    match state.two_factor_use_cases.get_2fa_status(auth.user_id).await {
         Ok(status) => HttpResponse::Ok().json(status),
         Err(e) => {
             log::error!("Failed to get 2FA status for user {}: {}", auth.user_id, e);
@@ -376,6 +375,7 @@ pub fn configure_two_factor_routes(cfg: &mut web::ServiceConfig) {
 mod tests {
     use super::*;
     use crate::application::ports::{TwoFactorRepository, UserRepository};
+    use crate::application::use_cases::TwoFactorUseCases;
     use crate::domain::entities::User;
     use actix_web::{test, web, App};
     use mockall::mock;
