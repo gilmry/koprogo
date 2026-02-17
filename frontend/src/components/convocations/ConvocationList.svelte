@@ -120,7 +120,7 @@
       {#each filteredConvocations as convocation (convocation.id)}
         {@const statusCfg = getStatusConfig(convocation.status)}
         <li class="hover:bg-gray-50">
-          <a href="/meeting-detail?id={convocation.meeting_id}" class="block px-4 py-4 sm:px-6">
+          <a href="/convocation-detail?id={convocation.id}" class="block px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center space-x-3 mb-2">
@@ -151,7 +151,7 @@
                 </div>
               </div>
 
-              <div class="ml-4">
+              <div class="ml-4 flex flex-col items-center gap-2">
                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
