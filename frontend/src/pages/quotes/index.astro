@@ -1,0 +1,48 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Devis - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">
+        Devis entrepreneurs
+      </h1>
+      <p class="text-gray-600 mt-2">
+        Gérez les demandes de devis et comparez les offres des entrepreneurs.
+      </p>
+      <div
+        class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm"
+      >
+        <p class="text-blue-800">
+          <strong>Obligation légale belge :</strong> Pour les travaux de construction ou
+          réparation dépassant 5 000 EUR, la loi belge exige l'obtention d'au minimum
+          <strong>3 devis comparables</strong> d'entrepreneurs différents, garantissant
+          transparence et juste prix pour les copropriétaires.
+        </p>
+      </div>
+    </div>
+
+    <div id="quote-list-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import QuoteList from "../../components/quotes/QuoteList.svelte";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const buildingId = auth.user?.buildingIds?.[0] || "";
+
+  const listContainer = document.getElementById("quote-list-container");
+  if (listContainer) {
+    mount(QuoteList, {
+      target: listContainer,
+      props: {
+        buildingId: buildingId,
+      },
+    });
+  }
+</script>
