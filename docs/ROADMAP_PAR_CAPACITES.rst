@@ -2,10 +2,11 @@
 KoproGo - Roadmap par Capacités
 =========================================================
 
-:Version: 4.0
+:Version: 5.0
 :Modèle: Progression par jalons et métriques
 :Auteur: Gilles Maury - Fondateur KoproGo ASBL
 :Statut: Document de référence stratégique
+:Dernière mise à jour: 17 février 2026
 
 .. contents:: Table des matières
    :depth: 3
@@ -471,24 +472,40 @@ Jalon 0: Fondations Techniques ✅
 * Identifier les besoins réels
 * Construire une base solide pour la suite
 
-Jalon 1: Sécurité & GDPR
--------------------------
+Jalon 1: Sécurité & GDPR ⏳ (~75%)
+------------------------------------
 
 **Débloque**: 50-100 copropriétés (beta publique possible)
 
+**État**: En cours - 75% complété (Février 2026)
+
 **Issues critiques**:
 
-* #39 : LUKS Encryption at-rest
-* #40 : Backups automatisés GPG + S3
-* #42 : GDPR basique (export + effacement)
-* #48 : Authentification forte (itsme®)
+* ✅ #39 : LUKS Encryption at-rest (COMPLÉTÉ)
+* ✅ #40 : Backups automatisés GPG + S3 (COMPLÉTÉ)
+* ✅ #41 : Monitoring Prometheus + Grafana + Loki (COMPLÉTÉ)
+* ✅ #42 : GDPR basique - export + effacement Articles 15 & 17 (COMPLÉTÉ)
+* ✅ #43 : Security hardening avancé - fail2ban, WAF/CrowdSec, IDS Suricata (COMPLÉTÉ)
+* ✅ #90 : GDPR complémentaire - Articles 16 (rectification), 18 (restriction), 21 (opposition marketing) (COMPLÉTÉ)
+* ⏳ #78 : Security Hardening Production - Rate limiting, JWT refresh tokens, 2FA TOTP (EN COURS)
+* ⏳ #48 : Authentification forte itsme® (EN ATTENTE)
 
-**Livrables**:
+**Livrables complétés**:
 
-* Données chiffrées au repos
-* Backups quotidiens testés
-* Conformité GDPR Articles 15 & 17
-* Auth multi-facteur opérationnelle
+* ✅ Données chiffrées au repos (LUKS AES-XTS-512)
+* ✅ Backups quotidiens GPG + S3 (7j local, configurable S3)
+* ✅ Monitoring complet (Prometheus, Grafana, Loki, Alertmanager)
+* ✅ IDS Suricata + WAF CrowdSec + fail2ban
+* ✅ Conformité GDPR Articles 15, 16, 17, 18, 21 & 30
+* ✅ SSH hardening, kernel hardening, HSTS, CSP
+* ✅ Login rate limiting (5 tentatives/15min)
+
+**Livrables restants**:
+
+* ⏳ Rate limiting global par IP et utilisateur (Redis)
+* ⏳ JWT refresh token rotation (15min access / 7j refresh)
+* ⏳ 2FA optionnel TOTP
+* ⏳ Intégration itsme® (inscription en attente)
 
 **Conformité légale**: 40%
 
@@ -499,227 +516,128 @@ Jalon 1: Sécurité & GDPR
 * **Premiers revenus**: Cloud géré devient possible
 * **Réputation**: "Sécurité d'abord" attire utilisateurs exigeants
 
-**Effort estimé selon force de travail**:
+**Effort restant estimé**: 2-4 semaines (solo)
 
-.. list-table::
-   :header-rows: 1
-   :widths: 30 25 25 20
-
-   * - Configuration
-     - Heures/semaine
-     - Durée estimée
-     - Équipe
-   * - **Solo bootstrap**
-     - 10-20h
-     - 2-3 mois
-     - Gilles Maury (bénévole)
-   * - **Duo fondateurs**
-     - 40-60h
-     - 6-8 semaines
-     - +1 dev backend Rust
-   * - **Équipe projet**
-     - 80-120h
-     - 3-4 semaines
-     - +DevOps +Security
-   * - **Communauté active**
-     - 200+h
-     - 2-3 semaines
-     - +10 contributeurs OSS
-
-**Note**: La durée dépend de la force de travail disponible, pas d'une date arbitraire.
-
-Jalon 2: Conformité Légale Belge
----------------------------------
+Jalon 2: Conformité Légale Belge ✅
+-------------------------------------
 
 **Débloque**: 200-500 copropriétés (production ouverte)
 
-**Issues critiques**:
+**État**: COMPLÉTÉ (Novembre 2025 - Février 2026)
 
-* #16 : Plan Comptable Normalisé Belge (PCB)
-* #17 : État Daté (bloque ventes immobilières)
-* #18 : Budget Prévisionnel Annuel
-* #22 : Conseil de Copropriété (obligatoire >20 lots)
-* #23 : Workflow Recouvrement Impayés
+**Issues (toutes fermées)**:
 
-**Livrables**:
+* ✅ #79 : Plan Comptable Normalisé Belge PCMN (AR 12/07/2012, ~90 comptes pré-seedés)
+* ✅ #73 : Workflow facturation complet (Draft → PendingApproval → Approved/Rejected, TVA 6%/12%/21%)
+* ✅ #83 : Workflow recouvrement impayés (4 niveaux: Gentle → Formal → FinalNotice → LegalAction)
+* ✅ #77 : Rapports financiers (Bilan + Compte de résultats)
+* ✅ #80 : État Daté pour transferts immobiliers
+* ✅ #81 : Budget annuel avec variance analysis
+* ✅ #82 : Conseil de Copropriété (obligatoire >20 lots, dashboard)
+* ✅ #29 : Validation quotes-parts (total = 100%, trigger PostgreSQL)
+* ✅ #76 : Gestion documentaire complète (upload/download)
+* ✅ #75 : Gestion complète AG (assemblées générales)
+* ✅ #44 : Stratégie stockage documents
+* ✅ #45 : Upload fichiers UI drag-and-drop
 
-* Comptabilité conforme arrêté royal 12/07/2012
-* Génération états datés automatique
-* Budgets avec variance analysis
-* Dashboard conseil avec alertes
-* Relances automatiques 3 niveaux
+**Livrables complétés**:
+
+* ✅ Comptabilité conforme arrêté royal 12/07/2012 (PCMN complet)
+* ✅ Génération états datés
+* ✅ Budgets prévisionnels avec variance analysis
+* ✅ Dashboard conseil de copropriété avec alertes
+* ✅ Relances automatiques 4 niveaux (pénalités taux légal belge 8%)
+* ✅ Factures multi-lignes avec TVA belge
+* ✅ Rapports financiers (bilan, compte de résultats, export CSV)
+* ✅ Gestion documentaire complète
 
 **Conformité légale**: 80%
 
 **Bloquants levés**:
 
-* **État daté**: Permet ventes de lots (CRITIQUE pour adoption)
-* **Conseil copropriété**: Débloque copros >20 lots (60% du marché belge)
-* **Comptabilité conforme**: Crédibilité auprès syndics professionnels
+* ✅ **État daté**: Ventes de lots possibles
+* ✅ **Conseil copropriété**: Copros >20 lots accessibles (60% du marché belge)
+* ✅ **Comptabilité conforme**: Crédibilité auprès syndics professionnels
 
-**Ce que ça débloques**:
-
-* **60% du marché**: Copropriétés >20 lots deviennent accessibles
-* **Ventes immobilières**: État daté = feature critique pour notaires
-* **Syndics professionnels**: Conformité légale = crédibilité
-* **Croissance organique**: Bouche-à-oreille entre syndics
-
-**Effort estimé selon force de travail**:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 25 25 20
-
-   * - Configuration
-     - Heures/semaine
-     - Durée estimée
-     - Note
-   * - **Solo bootstrap**
-     - 10-20h
-     - 4-6 mois
-     - Complexité comptable
-   * - **Duo fondateurs**
-     - 40-60h
-     - 8-12 semaines
-     - Expertise comptable requise
-   * - **Équipe projet**
-     - 80-120h
-     - 4-6 semaines
-     - +Expert comptable copro
-   * - **Communauté active**
-     - 200+h
-     - 3-4 semaines
-     - Parallélisation possible
-
-**Dépendances**: Jalon 1 (Sécurité) DOIT être terminé avant (données sensibles)
-
-Jalon 3: Features Différenciantes
-----------------------------------
+Jalon 3: Features Différenciantes ⏳ (~70%)
+---------------------------------------------
 
 **Débloque**: 500-1.000 copropriétés (différenciation marché)
 
-**Issues importantes**:
+**État**: En cours - 70% complété (Février 2026)
 
-* #46 : Voting Digital Basique (scrutins AG conformes, non-blockchain)
-* #47 : PDF Generation étendue
-* #49 : Module SEL (Système Échange Local)
-* #26 : Partage d'Objets
-* #52 : Contractor Backoffice
+**Issues**:
 
-**Livrables**:
+* ✅ #46 : Voting Digital AG (3 types majorité, tantièmes/millièmes, procuration, audit GDPR)
+* ✅ #49 : Community Features complet - 6 phases (SEL, Notice Board, Skills Directory, Object Sharing, Resource Booking, Gamification) - ~21,100 LOC
+* ✅ #84 : Paiements en ligne (Stripe Payment Intents + SEPA Direct Debit, remboursements, 38 endpoints)
+* ✅ #51 : Sondages Board (YesNo/MultipleChoice/Rating/OpenEnded, vote anonyme, résultats)
+* ✅ #99 : Community modules SEL, Swap Shop, Skills, Object Lending (toutes 6 phases complètes)
+* ⏳ #47 : PDF Generation étendue (PV AG, états financiers, contrats) (EN COURS)
+* ⏳ #52 : Contractor Backoffice (Work reports, photos, payment validation) (EN COURS)
+* ⏳ #134 : Work Reports & Technical Inspections REST API (EN COURS - sous-tâche #52)
 
-* Votes AG avec signature itsme® (PostgreSQL, non-blockchain)
-* Templates PDF tous documents légaux
-* Monnaie locale virtuelle intégrée (base de données)
-* Bibliothèque objets partagés
-* Espace prestataires
+**Livrables complétés**:
 
-.. note::
-   **Voting Basique vs Blockchain**: Jalon 3 implémente votes avec signature itsme® stockés PostgreSQL (suffisant légalement). Blockchain Voting (Jalon 7) ajoute immutabilité Polygon mais nécessite expertise blockchain + audit sécurité.
+* ✅ Votes AG avec 3 types de majorité (Simple/Absolute/Qualified) + tantièmes
+* ✅ Sondages consultations rapides (4 types, anonymat, résultats)
+* ✅ Monnaie locale SEL (time-based: 1h = 1 crédit, leaderboard, statistiques)
+* ✅ Bibliothèque objets partagés + Réservation ressources + Skills Directory
+* ✅ Gamification complète (achievements 8 catégories, challenges, leaderboard)
+* ✅ Paiements Stripe + SEPA avec méthodes de paiement stockées
+* ✅ Frontend UI complet pour toutes les features (PR #196)
+
+**Livrables restants**:
+
+* ⏳ Templates PDF documents légaux (PV AG, relevé charges, contrats)
+* ⏳ Contractor Backoffice backend (Work Reports + Technical Inspections REST API)
+* ⏳ Contractor Backoffice frontend
 
 **Conformité légale**: 90%
 
 **Avantage compétitif**: Features communautaires uniques (mission ASBL)
 
-**Ce que ça débloques**:
+**Effort restant estimé**: 2-3 semaines (solo) - PDF + Contractor API
 
-* **Différenciation**: SEL + Partage = unique sur le marché
-* **Impact social**: Modules communautaires créent lien social
-* **Impact écologique**: 790 tonnes CO₂/an évitées (partage objets)
-* **Économie circulaire**: 750k€/an échanges SEL (30% adoption)
-* **Marketing naturel**: "La plateforme avec communauté" = viral
-
-**Effet multiplicateur**: Les features sociales amplifient l'impact écologique x16 !
-
-**Effort estimé selon force de travail**:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 25 25 20
-
-   * - Configuration
-     - Heures/semaine
-     - Durée estimée
-     - Parallélisation
-   * - **Solo bootstrap**
-     - 10-20h
-     - 5-8 mois
-     - Modules indépendants
-   * - **Duo fondateurs**
-     - 40-60h
-     - 10-14 semaines
-     - SEL + Voting // Partage
-   * - **Équipe projet**
-     - 80-120h
-     - 5-7 semaines
-     - 3 tracks parallèles
-   * - **Communauté active**
-     - 200+h
-     - 3-4 semaines
-     - 5 tracks parallèles
-
-**Dépendances**: Jalon 2 (Conformité) recommandé mais non bloquant pour modules communautaires
-
-Jalon 4: Automation & Intégrations
------------------------------------
+Jalon 4: Automation & Intégrations ⏳ (~88%)
+----------------------------------------------
 
 **Débloque**: 1.000-2.000 copropriétés (scalabilité)
 
+**État**: Quasi-complété - 88% (Février 2026)
+
 **Issues**:
 
-* #19 : Convocations AG automatiques
-* #20 : Carnet d'Entretien Digital
-* #21 : GDPR complet (Articles 16, 18, 21)
-* #24 : Module Devis Travaux
-* #25 : Affichage Public Syndic
-* #27 : Accessibilité WCAG 2.1 AA
+* ✅ #88 : Convocations AG automatiques (délais légaux 15j/8j, tracking email, procuration, rappels J-3)
+* ✅ #89 : Carnet d'Entretien Digital
+* ✅ #90 : GDPR complet Articles 16, 18, 21 (rectification, restriction, opposition marketing)
+* ✅ #85 : Ticketing maintenance (workflow 6 états, 5 priorités, 7 catégories, SLA auto)
+* ✅ #86 : Notifications multi-canal (Email, SMS, Push, In-App, 22 types, préférences granulaires)
+* ✅ #91 : Devis travaux avec comparaison multi-entrepreneurs (scoring automatique: prix 40%, délai 30%, garantie 20%, réputation 10%)
+* ✅ #92 : Page publique syndic (SEO, slug URL, aucune auth requise)
+* ✅ #110 : Groupements d'achat énergie (Energy Buying Groups)
+* ✅ #133 : Intégration API Linky/Ores (Smart Electricity Monitoring)
+* ⏳ #93 : Accessibilité WCAG 2.1 AA (EN ATTENTE)
 
-**Livrables**:
+**Livrables complétés**:
 
-* Workflow AG 100% automatisé
-* Carnet maintenance avec alertes
-* GDPR compliance totale
-* Comparaison devis multi-entrepreneurs
-* Page publique syndic (SEO)
-* Accessibilité complète
+* ✅ Workflow AG 100% automatisé (convocations, tracking, rappels)
+* ✅ Carnet maintenance digital avec alertes
+* ✅ GDPR compliance totale (Articles 15, 16, 17, 18, 21, 30)
+* ✅ Comparaison devis multi-entrepreneurs avec scoring belge
+* ✅ Page publique syndic SEO-friendly
+* ✅ Ticketing maintenance complet avec SLA
+* ✅ Notifications multi-canal avec préférences
+* ✅ Groupements d'achat énergie + Smart monitoring
+* ✅ Frontend UI complet pour toutes les features
+
+**Livrables restants**:
+
+* ⏳ Accessibilité WCAG 2.1 AA (European Accessibility Act)
 
 **Conformité légale**: 95%
 
-**Ce que ça débloques**:
-
-* **Automation**: Temps syndic réduit de 50% (AG automatiques)
-* **Accessibilité**: Conformité European Accessibility Act 2025
-* **SEO**: Pages publiques syndics → discovery organique
-* **Professionnalisation**: Outils niveau entreprise
-
-**Effort estimé selon force de travail**:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 25 25 20
-
-   * - Configuration
-     - Heures/semaine
-     - Durée estimée
-     - Focus
-   * - **Solo bootstrap**
-     - 10-20h
-     - 6-10 mois
-     - Automation prioritaire
-   * - **Duo fondateurs**
-     - 40-60h
-     - 12-16 semaines
-     - Workflow + GDPR
-   * - **Équipe projet**
-     - 80-120h
-     - 6-8 semaines
-     - 4 tracks parallèles
-   * - **Communauté active**
-     - 200+h
-     - 4-5 semaines
-     - 6 tracks parallèles
-
-**Dépendances**: Jalon 3 recommandé pour avoir base utilisateurs suffisante (feedback)
+**Effort restant estimé**: 2-3 semaines (solo) - WCAG accessibility
 
 Jalon 5: Mobile & API Publique
 -------------------------------
@@ -1216,76 +1134,79 @@ Pour les Investisseurs / Subventions
 * Social impact tracé
 
 =========================================================
-Plan d'Action: Prochaines Étapes
+Plan d'Action: Prochaines Étapes (Février 2026)
 =========================================================
 
-**Au lieu de "Semaine 1-2", des conditions à remplir:**
+**Progression spectaculaire**: Jalons 0-2 complétés, Jalons 3-4 à ~80%.
 
-Prochaine Étape: Compléter Jalon 1
------------------------------------
+Priorité 1: Compléter Jalon 1 - Sécurité restante
+---------------------------------------------------
 
-**Objectif**: Débloquer 50-100 copropriétés (beta publique)
+**Objectif**: Débloquer beta publique (50-100 copropriétés)
 
-**Conditions de déblocage**:
+**Complété** ✅:
 
-1. **Sécurité Infrastructure** ✅
+* [x] LUKS Encryption at-rest
+* [x] Backups GPG + S3
+* [x] Monitoring Prometheus + Grafana + Loki
+* [x] fail2ban + CrowdSec WAF + Suricata IDS
+* [x] GDPR complet (Articles 15, 16, 17, 18, 21, 30)
+* [x] SSH/kernel hardening, headers sécurité
+* [x] Login rate limiting (5/15min)
 
-   * [x] LUKS Encryption at-rest implémenté
-   * [x] Backups GPG + S3 configurés
-   * [x] Monitoring Prometheus + Grafana
-   * [x] Tests sécurité passés
+**Restant** ⏳:
 
-2. **GDPR Basique** (En cours)
+* [ ] Rate limiting global (Redis) - Issue #78
+* [ ] JWT refresh token rotation - Issue #78
+* [ ] 2FA optionnel TOTP - Issue #78
+* [ ] Intégration itsme® - Issue #48 (en attente inscription)
 
-   * [ ] Export données utilisateur (Article 15)
-   * [ ] Droit à l'oubli (Article 17)
-   * [ ] Privacy policy v1.0
-   * [ ] Tests GDPR automatisés
+**Effort restant**: 2-4 semaines (solo)
 
-3. **Auth Forte** (Prochaine priorité)
+Priorité 2: Compléter Jalon 3 - Features restantes
+----------------------------------------------------
 
-   * [ ] Inscription itsme® (délai 2-4 semaines)
-   * [ ] Intégration API itsme®
-   * [ ] Fallback email/password
-   * [ ] Tests auth E2E
+**Objectif**: Finir contractor backoffice + PDF generation
 
-**Effort restant estimé**:
+**Complété** ✅: Voting, SEL, Payments, Polls, Community (6 phases), Frontend complet
 
-* Solo (20h/sem): 4-6 semaines
-* Duo (60h/sem): 2-3 semaines
+**Restant** ⏳:
 
-**Déblocage automatique quand**: Tests GDPR + Auth forte passent tous
+* [ ] Work Reports & Technical Inspections REST API - Issue #134 (backend)
+* [ ] Contractor Backoffice frontend - Issue #52
+* [ ] PDF Generation étendue (PV AG, relevé charges, contrats) - Issue #47
 
-Ensuite: Attaquer Jalon 2
---------------------------
+**Effort restant**: 2-3 semaines (solo)
 
-**Ne commence QUE quand Jalon 1 est complet** (données sécurisées)
+Priorité 3: Compléter Jalon 4 - WCAG Accessibility
+----------------------------------------------------
 
-**Conditions de déblocage**:
+**Objectif**: Conformité European Accessibility Act
 
-1. **Plan Comptable Belge**
+**Restant** ⏳:
 
-   * PCMN complet (90 comptes pré-seedés) ✅
-   * Tests conformité arrêté royal ✅
-   * Documentation comptable
+* [ ] Audit WCAG 2.1 AA - Issue #93
+* [ ] Corrections accessibilité (contraste, ARIA, navigation clavier, lecteur écran)
 
-2. **État Daté** (Feature critique)
+**Effort restant**: 2-3 semaines (solo)
 
-   * Génération PDF conforme
-   * Signature syndic
-   * Tests notaires (beta)
+Priorité 4: Qualité & Tests
+----------------------------
 
-3. **Conseil Copropriété**
+**Issues ouvertes transversales**:
 
-   * Dashboard conseil >20 lots
-   * Alertes réglementaires
-   * Workflow validation
+* [ ] Corriger 200+ erreurs compilation E2E tests - Issue #158
+* [ ] Tests Playwright frontend - Issue #69
+* [ ] Frontend tracking issue - Issue #197
 
-**Effort estimé**:
+Ensuite: Attaquer Jalon 5 (Mobile & API)
+------------------------------------------
 
-* Solo: 4-6 mois
-* Duo: 8-12 semaines
-* Équipe: 4-6 semaines
+**Conditions de début**: Jalons 1-4 complétés
+
+* [ ] PWA - Issue #87
+* [ ] API publique v1 documentée
+* [ ] Multi-langue NL/FR/DE/EN
 
 =========================================================
 Conclusion: Progression Saine et Soutenable
@@ -1353,6 +1274,6 @@ Documents de Référence
 
 ---
 
-*Roadmap par Capacités KoproGo v4.0*
+*Roadmap par Capacités KoproGo v5.0 - Mise à jour Février 2026*
 *Modèle de progression mesurable et soutenable*
 *Contact : contact@koprogo.com - GitHub : github.com/gilmry/koprogo*
