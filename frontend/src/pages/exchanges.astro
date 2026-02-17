@@ -32,6 +32,8 @@ import Layout from "../layouts/Layout.astro";
       </div>
     </div>
 
+    <div id="building-selector-container" class="mb-6"></div>
+
     <!-- Dashboard Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
       <!-- Credit Balance -->
@@ -50,60 +52,67 @@ import Layout from "../layouts/Layout.astro";
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import { ExchangeList, CreditBalance, Leaderboard, SelStatistics } from "../components/local-exchanges";
+  import BuildingSelector from "../components/BuildingSelector.svelte";
   import { authStore } from "../stores/auth";
   import { get } from "svelte/store";
 
   const auth = get(authStore);
-  const buildingId = auth.user?.buildingIds?.[0] || "";
-  const currentOwnerId = auth.user?.id || ""; // TODO: Map to owner_id from unit ownership
+  const currentOwnerId = auth.user?.id || "";
 
-  // Mount Credit Balance
+  const selectorContainer = document.getElementById("building-selector-container");
   const balanceContainer = document.getElementById("credit-balance-container");
-  if (balanceContainer && currentOwnerId && buildingId) {
-    mount(CreditBalance, {
-      target: balanceContainer,
-      props: {
-        ownerId: currentOwnerId,
-        buildingId: buildingId,
-      },
-    });
-  }
-
-  // Mount Leaderboard
   const leaderboardContainer = document.getElementById("leaderboard-container");
-  if (leaderboardContainer && buildingId) {
-    mount(Leaderboard, {
-      target: leaderboardContainer,
-      props: {
-        buildingId: buildingId,
-        limit: 10,
-      },
-    });
-  }
-
-  // Mount Statistics
   const statsContainer = document.getElementById("statistics-container");
-  if (statsContainer && buildingId) {
-    mount(SelStatistics, {
-      target: statsContainer,
-      props: {
-        buildingId: buildingId,
-      },
-    });
+  const listContainer = document.getElementById("exchange-list-container");
+
+  let mounted: any[] = [];
+
+  function mountAll(buildingId: string) {
+    // Cleanup previous
+    for (const c of mounted) { try { unmount(c); } catch {} }
+    mounted = [];
+    if (balanceContainer) balanceContainer.innerHTML = "";
+    if (leaderboardContainer) leaderboardContainer.innerHTML = "";
+    if (statsContainer) statsContainer.innerHTML = "";
+    if (listContainer) listContainer.innerHTML = "";
+
+    if (balanceContainer && currentOwnerId) {
+      mounted.push(mount(CreditBalance, {
+        target: balanceContainer,
+        props: { ownerId: currentOwnerId, buildingId },
+      }));
+    }
+
+    if (leaderboardContainer) {
+      mounted.push(mount(Leaderboard, {
+        target: leaderboardContainer,
+        props: { buildingId, limit: 10 },
+      }));
+    }
+
+    if (statsContainer) {
+      mounted.push(mount(SelStatistics, {
+        target: statsContainer,
+        props: { buildingId },
+      }));
+    }
+
+    if (listContainer) {
+      mounted.push(mount(ExchangeList, {
+        target: listContainer,
+        props: { buildingId, currentOwnerId, showOnlyAvailable: false, showFilters: true },
+      }));
+    }
   }
 
-  // Mount Exchange List
-  const listContainer = document.getElementById("exchange-list-container");
-  if (listContainer && buildingId) {
-    mount(ExchangeList, {
-      target: listContainer,
+  if (selectorContainer) {
+    mount(BuildingSelector, {
+      target: selectorContainer,
       props: {
-        buildingId: buildingId,
-        currentOwnerId: currentOwnerId,
-        showOnlyAvailable: false,
-        showFilters: true,
+        label: "Immeuble",
+        onSelect: (id: string) => mountAll(id),
       },
     });
   }

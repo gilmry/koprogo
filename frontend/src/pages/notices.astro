@@ -17,69 +17,78 @@ import Layout from "../layouts/Layout.astro";
       </button>
     </div>
 
+    <div id="building-selector-container" class="mb-6"></div>
     <div id="notice-list-container"></div>
     <div id="create-modal-container"></div>
   </div>
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import NoticeList from "../components/notices/NoticeList.svelte";
   import NoticeCreateModal from "../components/notices/NoticeCreateModal.svelte";
+  import BuildingSelector from "../components/BuildingSelector.svelte";
   import { authStore } from "../stores/auth";
   import { get } from "svelte/store";
 
   const auth = get(authStore);
-  const buildingId = auth.user?.buildingIds?.[0] || "";
   const authorId = auth.user?.id || "";
 
-  let isModalOpen = false;
-
-  // Mount Notice List
+  const selectorContainer = document.getElementById("building-selector-container");
   const listContainer = document.getElementById("notice-list-container");
-  if (listContainer) {
-    const noticeListComponent = mount(NoticeList, {
+  const modalContainer = document.getElementById("create-modal-container");
+  let listComponent: any = null;
+  let createModalComponent: any = null;
+  let currentBuildingId = "";
+
+  function mountList(buildingId: string) {
+    currentBuildingId = buildingId;
+    if (!listContainer) return;
+    if (listComponent) { try { unmount(listComponent); } catch {} }
+    listContainer.innerHTML = "";
+    listComponent = mount(NoticeList, {
       target: listContainer,
-      props: {
-        buildingId: buildingId,
-        showFilters: true,
-      },
+      props: { buildingId, showFilters: true },
     });
   }
 
-  // Mount Create Modal
-  const modalContainer = document.getElementById("create-modal-container");
-  let createModalComponent: any = null;
+  function closeModal() {
+    if (createModalComponent) {
+      try { unmount(createModalComponent); } catch {}
+      createModalComponent = null;
+      if (modalContainer) modalContainer.innerHTML = "";
+    }
+  }
 
   function openModal() {
-    if (modalContainer && !createModalComponent) {
+    if (!currentBuildingId) return;
+    closeModal();
+    if (modalContainer) {
       createModalComponent = mount(NoticeCreateModal, {
         target: modalContainer,
         props: {
           isOpen: true,
-          buildingId: buildingId,
+          buildingId: currentBuildingId,
           authorId: authorId,
-          onClose: () => {
-            if (createModalComponent) {
-              createModalComponent.$set({ isOpen: false });
-              setTimeout(() => {
-                createModalComponent.$destroy();
-                createModalComponent = null;
-              }, 100);
-            }
-          },
+          onClose: closeModal,
           onSuccess: () => {
-            // Reload page to show new notice
             window.location.reload();
           },
         },
       });
-    } else if (createModalComponent) {
-      createModalComponent.$set({ isOpen: true });
     }
   }
 
-  // Create button handler
+  if (selectorContainer) {
+    mount(BuildingSelector, {
+      target: selectorContainer,
+      props: {
+        label: "Immeuble",
+        onSelect: (id: string) => mountList(id),
+      },
+    });
+  }
+
   const createBtn = document.getElementById("create-notice-btn");
   if (createBtn) {
     createBtn.addEventListener("click", openModal);

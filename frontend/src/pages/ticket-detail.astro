@@ -49,7 +49,7 @@ import Layout from "../layouts/Layout.astro";
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import TicketDetail from "../components/tickets/TicketDetail.svelte";
   import { ticketsApi } from "../lib/api/tickets";
 
@@ -65,7 +65,6 @@ import Layout from "../layouts/Layout.astro";
     try {
       const loadingEl = document.getElementById("loading-state");
       const detailContainer = document.getElementById("ticket-detail");
-      const errorEl = document.getElementById("error-state");
 
       if (!detailContainer) return;
 
@@ -75,26 +74,30 @@ import Layout from "../layouts/Layout.astro";
       // Hide loading
       if (loadingEl) loadingEl.style.display = "none";
 
-      // Mount component
-      const ticketDetail = mount(TicketDetail, {
-        target: detailContainer,
-        props: {
-          ticket,
-          canManage: true, // TODO: Get from auth context (check if Syndic role)
-          isContractor: false, // TODO: Get from auth context
-        },
-      });
+      let ticketDetailComponent: any = null;
 
-      // Handle events
-      detailContainer.addEventListener("updated", (event: any) => {
-        // Ticket was updated, refresh the component
-        ticketDetail.$set({ ticket: event.detail });
-      });
+      function mountDetail(ticketData: any) {
+        if (ticketDetailComponent) {
+          try { unmount(ticketDetailComponent); } catch {}
+          detailContainer.innerHTML = "";
+        }
+        ticketDetailComponent = mount(TicketDetail, {
+          target: detailContainer,
+          props: {
+            ticket: ticketData,
+            canManage: true, // TODO: Get from auth context (check if Syndic role)
+            isContractor: false, // TODO: Get from auth context
+            onUpdated: (updatedTicket: any) => {
+              mountDetail(updatedTicket);
+            },
+            onDeleted: () => {
+              window.location.href = "/tickets";
+            },
+          },
+        });
+      }
 
-      detailContainer.addEventListener("deleted", () => {
-        // Ticket was deleted, redirect to list
-        window.location.href = "/tickets";
-      });
+      mountDetail(ticket);
     } catch (err: any) {
       showError(err.message || "Failed to load ticket");
     }

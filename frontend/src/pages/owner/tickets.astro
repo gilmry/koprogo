@@ -41,58 +41,60 @@ import Layout from "../../layouts/Layout.astro";
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import TicketList from "../../components/tickets/TicketList.svelte";
   import TicketCreateModal from "../../components/tickets/TicketCreateModal.svelte";
 
   // Mount my tickets list
   const listContainer = document.getElementById("my-tickets-list");
   if (listContainer) {
-    const ticketList = mount(TicketList, {
+    mount(TicketList, {
       target: listContainer,
       props: {
         view: "my",
       },
     });
 
-    // Handle create ticket modal
     const modalContainer = document.getElementById("create-ticket-modal");
-    if (modalContainer) {
-      const createModal = mount(TicketCreateModal, {
-        target: modalContainer,
-        props: {
-          open: false,
-          buildingId: "",
-          requesterId: "",
-        },
-      });
+    let createModal: any = null;
 
-      // Handle create button click
-      document
-        .getElementById("create-ticket-btn")
-        ?.addEventListener("click", () => {
-          // Get building ID and user ID from context/localStorage
-          const buildingId = localStorage.getItem("current_building_id") || "";
-          const userId = localStorage.getItem("koprogo_user_id") || "";
-
-          if (!buildingId) {
-            alert(
-              "Please select your building first. Go to your profile to set your default building.",
-            );
-            return;
-          }
-
-          createModal.$set({
-            open: true,
-            buildingId: buildingId,
-            requesterId: userId,
-          });
-        });
-
-      // Refresh list when ticket created
-      modalContainer.addEventListener("created", () => {
-        window.location.reload();
-      });
+    function closeModal() {
+      if (createModal) {
+        try { unmount(createModal); } catch {}
+        createModal = null;
+        if (modalContainer) modalContainer.innerHTML = "";
+      }
     }
+
+    // Handle create button click
+    document
+      .getElementById("create-ticket-btn")
+      ?.addEventListener("click", () => {
+        const buildingId = localStorage.getItem("current_building_id") || "";
+        const userId = localStorage.getItem("koprogo_user_id") || "";
+
+        if (!buildingId) {
+          alert(
+            "Please select your building first. Go to your profile to set your default building.",
+          );
+          return;
+        }
+
+        closeModal();
+        if (modalContainer) {
+          createModal = mount(TicketCreateModal, {
+            target: modalContainer,
+            props: {
+              open: true,
+              buildingId: buildingId,
+              requesterId: userId,
+              onClose: closeModal,
+              onCreated: () => {
+                window.location.reload();
+              },
+            },
+          });
+        }
+      });
   }
 </script>

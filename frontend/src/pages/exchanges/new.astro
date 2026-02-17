@@ -106,20 +106,11 @@ import Layout from "../../layouts/Layout.astro";
 <script>
   import { mount } from "svelte";
   import { CreateExchangeForm } from "../../components/local-exchanges";
-  import { authStore } from "../../stores/auth";
-  import { get } from "svelte/store";
 
-  const auth = get(authStore);
-  const buildingId = auth.user?.buildingIds?.[0] || "";
-
-  // Mount Create Form
   const formContainer = document.getElementById("create-form-container");
-  if (formContainer && buildingId) {
+  if (formContainer) {
     mount(CreateExchangeForm, {
       target: formContainer,
-      props: {
-        buildingId: buildingId,
-      },
     });
   }
 </script>

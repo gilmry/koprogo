@@ -283,7 +283,7 @@
 
     <!-- Convocation Section -->
     <div class="mb-8">
-      <ConvocationPanel meetingId={meetingId} meetingStatus={meeting.status} />
+      <ConvocationPanel meetingId={meetingId} meetingStatus={meeting.status} buildingId={meeting.building_id} />
     </div>
 
     <!-- Resolutions & Votes Section -->

@@ -17,63 +17,76 @@ import Layout from "../layouts/Layout.astro";
       </button>
     </div>
 
+    <div id="building-selector-container" class="mb-6"></div>
     <div id="offer-list-container"></div>
     <div id="create-modal-container"></div>
   </div>
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import SkillOfferList from "../components/skills/SkillOfferList.svelte";
   import SkillOfferCreateModal from "../components/skills/SkillOfferCreateModal.svelte";
+  import BuildingSelector from "../components/BuildingSelector.svelte";
   import { authStore } from "../stores/auth";
   import { get } from "svelte/store";
 
   const auth = get(authStore);
-  const buildingId = auth.user?.buildingIds?.[0] || "";
   const ownerId = auth.user?.id || "";
 
-  // Mount Offer List
+  const selectorContainer = document.getElementById("building-selector-container");
   const listContainer = document.getElementById("offer-list-container");
-  if (listContainer) {
-    mount(SkillOfferList, {
+  const modalContainer = document.getElementById("create-modal-container");
+  let listComponent: any = null;
+  let createModalComponent: any = null;
+  let currentBuildingId = "";
+
+  function mountList(buildingId: string) {
+    currentBuildingId = buildingId;
+    if (!listContainer) return;
+    if (listComponent) { try { unmount(listComponent); } catch {} }
+    listContainer.innerHTML = "";
+    listComponent = mount(SkillOfferList, {
       target: listContainer,
-      props: {
-        buildingId: buildingId,
-        showFilters: true,
-      },
+      props: { buildingId, showFilters: true },
     });
   }
 
-  // Mount Create Modal
-  const modalContainer = document.getElementById("create-modal-container");
-  let createModalComponent: any = null;
+  function closeModal() {
+    if (createModalComponent) {
+      try { unmount(createModalComponent); } catch {}
+      createModalComponent = null;
+      if (modalContainer) modalContainer.innerHTML = "";
+    }
+  }
 
   function openModal() {
-    if (modalContainer && !createModalComponent) {
+    if (!currentBuildingId) return;
+    closeModal();
+    if (modalContainer) {
       createModalComponent = mount(SkillOfferCreateModal, {
         target: modalContainer,
         props: {
           isOpen: true,
-          buildingId: buildingId,
+          buildingId: currentBuildingId,
           ownerId: ownerId,
-          onClose: () => {
-            if (createModalComponent) {
-              createModalComponent.$set({ isOpen: false });
-              setTimeout(() => {
-                createModalComponent.$destroy();
-                createModalComponent = null;
-              }, 100);
-            }
-          },
+          onClose: closeModal,
           onSuccess: () => {
             window.location.reload();
           },
         },
       });
-    } else if (createModalComponent) {
-      createModalComponent.$set({ isOpen: true });
     }
+  }
+
+  if (selectorContainer) {
+    mount(BuildingSelector, {
+      target: selectorContainer,
+      props: {
+        label: "Immeuble",
+        onSelect: (id: string) => mountList(id),
+      },
+    });
   }
 
   const createBtn = document.getElementById("create-offer-btn");
