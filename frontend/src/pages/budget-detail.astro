@@ -1,0 +1,8 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BudgetDetail from '../components/budgets/BudgetDetail.svelte';
+---
+
+<Layout title="Detail du Budget" showNav={true} requireAuth={true}>
+  <BudgetDetail client:load />
+</Layout>

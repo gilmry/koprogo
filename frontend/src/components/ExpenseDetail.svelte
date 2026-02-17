@@ -5,11 +5,13 @@
   import Button from './ui/Button.svelte';
   import ExpenseDocuments from './ExpenseDocuments.svelte';
   import { paymentsApi, type Payment } from '../lib/api/payments';
+  import { chargeDistributionsApi, type ChargeDistribution } from '../lib/api/charge-distributions';
 
   let expense: Expense | null = null;
   let building: Building | null = null;
   let expensePayments: Payment[] = [];
   let totalPaidCents = 0;
+  let distributions: ChargeDistribution[] = [];
   let loading = true;
   let error = '';
   let expenseId: string = '';
@@ -55,6 +57,12 @@
           paymentsApi.getExpenseTotal(expenseId)
             .then(t => { totalPaidCents = t.total_paid_cents; })
             .catch(() => { totalPaidCents = 0; })
+        );
+
+        promises.push(
+          chargeDistributionsApi.getByExpense(expenseId)
+            .then(d => { distributions = d; })
+            .catch(() => { distributions = []; })
         );
 
         await Promise.all(promises);
@@ -353,6 +361,37 @@
     <div class="mb-8">
       <ExpenseDocuments expenseId={expenseId} expenseStatus={expense.payment_status} />
     </div>
+
+    <!-- Charge Distribution Section -->
+    {#if distributions.length > 0}
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+        <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+          <h2 class="text-xl font-semibold text-white">Repartition des Charges</h2>
+        </div>
+        <div class="p-6">
+          <div class="space-y-3">
+            {#each distributions as dist}
+              <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-900">
+                    Proprietaire #{dist.owner_id.substring(0, 8)}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    Quote-part: {(dist.quota_percentage * 100).toFixed(2)}%
+                  </p>
+                </div>
+                <span class="text-sm font-bold text-indigo-600">
+                  {formatCurrency(dist.amount_due)}
+                </span>
+              </div>
+            {/each}
+          </div>
+          <div class="mt-4 pt-3 border-t text-sm text-gray-500">
+            {distributions.length} proprietaire{distributions.length > 1 ? 's' : ''} concerne{distributions.length > 1 ? 's' : ''}
+          </div>
+        </div>
+      </div>
+    {/if}
 
     <!-- Payments Section -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
