@@ -5,15 +5,15 @@ use crate::application::dto::{
     CampaignStatsResponse, CreateEnergyCampaignRequest, CreateProviderOfferRequest,
     EnergyCampaignResponse, ProviderOfferResponse, SelectOfferRequest, UpdateCampaignStatusRequest,
 };
-use crate::application::use_cases::EnergyCampaignUseCases;
 use crate::domain::entities::EnergyCampaign;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
+use crate::infrastructure::web::AppState;
 
 /// POST /api/v1/energy-campaigns
 /// Create a new energy campaign
 #[post("/energy-campaigns")]
 pub async fn create_campaign(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     request: web::Json<CreateEnergyCampaignRequest>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
@@ -31,7 +31,8 @@ pub async fn create_campaign(
     )
     .map_err(actix_web::error::ErrorBadRequest)?;
 
-    let created = campaigns
+    let created = state
+        .energy_campaign_use_cases
         .create_campaign(campaign)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -43,14 +44,15 @@ pub async fn create_campaign(
 /// List all campaigns for current organization
 #[get("/energy-campaigns")]
 pub async fn list_campaigns(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let org_id = user
         .organization_id
         .ok_or_else(|| actix_web::error::ErrorBadRequest("Organization ID required"))?;
 
-    let list = campaigns
+    let list = state
+        .energy_campaign_use_cases
         .get_campaigns_by_organization(org_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -65,13 +67,14 @@ pub async fn list_campaigns(
 /// Get campaign by ID
 #[get("/energy-campaigns/{id}")]
 pub async fn get_campaign(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let id = path.into_inner();
 
-    let campaign = campaigns
+    let campaign = state
+        .energy_campaign_use_cases
         .get_campaign(id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -93,7 +96,7 @@ pub async fn get_campaign(
 /// Update campaign status
 #[put("/energy-campaigns/{id}/status")]
 pub async fn update_campaign_status(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     request: web::Json<UpdateCampaignStatusRequest>,
     user: AuthenticatedUser,
@@ -101,7 +104,8 @@ pub async fn update_campaign_status(
     let id = path.into_inner();
 
     // Verify ownership
-    let campaign = campaigns
+    let campaign = state
+        .energy_campaign_use_cases
         .get_campaign(id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -115,7 +119,8 @@ pub async fn update_campaign_status(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    let updated = campaigns
+    let updated = state
+        .energy_campaign_use_cases
         .update_campaign_status(id, request.status.clone())
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -127,14 +132,15 @@ pub async fn update_campaign_status(
 /// Get campaign statistics (anonymized)
 #[get("/energy-campaigns/{id}/stats")]
 pub async fn get_campaign_stats(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let id = path.into_inner();
 
     // Verify ownership
-    let campaign = campaigns
+    let campaign = state
+        .energy_campaign_use_cases
         .get_campaign(id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -148,7 +154,8 @@ pub async fn get_campaign_stats(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    let stats = campaigns
+    let stats = state
+        .energy_campaign_use_cases
         .get_campaign_stats(id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -171,7 +178,7 @@ pub async fn get_campaign_stats(
 /// Add provider offer (broker/admin only)
 #[post("/energy-campaigns/{id}/offers")]
 pub async fn add_offer(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     request: web::Json<CreateProviderOfferRequest>,
     user: AuthenticatedUser,
@@ -179,7 +186,8 @@ pub async fn add_offer(
     let campaign_id = path.into_inner();
 
     // Verify ownership
-    let campaign = campaigns
+    let campaign = state
+        .energy_campaign_use_cases
         .get_campaign(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -208,7 +216,8 @@ pub async fn add_offer(
     )
     .map_err(actix_web::error::ErrorBadRequest)?;
 
-    let created = campaigns
+    let created = state
+        .energy_campaign_use_cases
         .add_offer(campaign_id, offer)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -220,14 +229,15 @@ pub async fn add_offer(
 /// List all offers for a campaign
 #[get("/energy-campaigns/{id}/offers")]
 pub async fn list_offers(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let campaign_id = path.into_inner();
 
     // Verify ownership
-    let campaign = campaigns
+    let campaign = state
+        .energy_campaign_use_cases
         .get_campaign(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -241,7 +251,8 @@ pub async fn list_offers(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    let offers = campaigns
+    let offers = state
+        .energy_campaign_use_cases
         .get_campaign_offers(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -258,7 +269,7 @@ pub async fn list_offers(
 /// Select winning offer (after vote)
 #[post("/energy-campaigns/{id}/select-offer")]
 pub async fn select_offer(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     request: web::Json<SelectOfferRequest>,
     user: AuthenticatedUser,
@@ -266,7 +277,8 @@ pub async fn select_offer(
     let campaign_id = path.into_inner();
 
     // Verify ownership
-    let campaign = campaigns
+    let campaign = state
+        .energy_campaign_use_cases
         .get_campaign(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -280,7 +292,8 @@ pub async fn select_offer(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    let updated = campaigns
+    let updated = state
+        .energy_campaign_use_cases
         .select_offer(campaign_id, request.offer_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -292,14 +305,15 @@ pub async fn select_offer(
 /// Finalize campaign (after final vote)
 #[post("/energy-campaigns/{id}/finalize")]
 pub async fn finalize_campaign(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let campaign_id = path.into_inner();
 
     // Verify ownership
-    let campaign = campaigns
+    let campaign = state
+        .energy_campaign_use_cases
         .get_campaign(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -313,7 +327,8 @@ pub async fn finalize_campaign(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    let updated = campaigns
+    let updated = state
+        .energy_campaign_use_cases
         .finalize_campaign(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -325,14 +340,15 @@ pub async fn finalize_campaign(
 /// Delete campaign
 #[delete("/energy-campaigns/{id}")]
 pub async fn delete_campaign(
-    campaigns: web::Data<EnergyCampaignUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let campaign_id = path.into_inner();
 
     // Verify ownership
-    let campaign = campaigns
+    let campaign = state
+        .energy_campaign_use_cases
         .get_campaign(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -346,7 +362,8 @@ pub async fn delete_campaign(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    campaigns
+    state
+        .energy_campaign_use_cases
         .delete_campaign(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;

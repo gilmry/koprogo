@@ -67,7 +67,7 @@ pub async fn get_notification(
     }
 }
 
-#[get("/notifications/my-notifications")]
+#[get("/notifications/my")]
 pub async fn list_my_notifications(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
@@ -97,7 +97,7 @@ pub async fn list_unread_notifications(
     }
 }
 
-#[put("/notifications/{id}/mark-read")]
+#[put("/notifications/{id}/read")]
 pub async fn mark_notification_read(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
@@ -137,7 +137,7 @@ pub async fn mark_notification_read(
     }
 }
 
-#[put("/notifications/mark-all-read")]
+#[put("/notifications/read-all")]
 pub async fn mark_all_notifications_read(
     state: web::Data<AppState>,
     user: AuthenticatedUser,

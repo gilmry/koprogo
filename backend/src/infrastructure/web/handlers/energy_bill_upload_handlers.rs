@@ -5,9 +5,9 @@ use crate::application::dto::{
     DecryptedConsumptionResponse, EnergyBillUploadResponse, UploadEnergyBillRequest,
     VerifyUploadRequest,
 };
-use crate::application::use_cases::EnergyBillUploadUseCases;
 use crate::domain::entities::EnergyBillUpload;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
+use crate::infrastructure::web::AppState;
 
 // Helper: Get encryption key from environment
 fn get_encryption_key() -> Result<[u8; 32], String> {
@@ -28,7 +28,7 @@ fn get_encryption_key() -> Result<[u8; 32], String> {
 /// Upload energy bill with GDPR consent
 #[post("/energy-bills/upload")]
 pub async fn upload_bill(
-    uploads: web::Data<EnergyBillUploadUseCases>,
+    state: web::Data<AppState>,
     request: web::Json<UploadEnergyBillRequest>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
@@ -60,7 +60,8 @@ pub async fn upload_bill(
     )
     .map_err(actix_web::error::ErrorBadRequest)?;
 
-    let created = uploads
+    let created = state
+        .energy_bill_upload_use_cases
         .upload_bill(upload)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -74,7 +75,7 @@ pub async fn upload_bill(
 /// Get my energy bill uploads
 #[get("/energy-bills/my-uploads")]
 pub async fn get_my_uploads(
-    uploads: web::Data<EnergyBillUploadUseCases>,
+    state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     // TODO: Get unit_id from unit_owners table based on user_id
@@ -86,7 +87,8 @@ pub async fn get_my_uploads(
     // Get uploads for user's organization (filtered by repository)
     let unit_id = uuid::Uuid::nil(); // Placeholder, should come from unit_owners table
 
-    let list = uploads
+    let list = state
+        .energy_bill_upload_use_cases
         .get_my_uploads(unit_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -103,13 +105,14 @@ pub async fn get_my_uploads(
 /// Get upload by ID
 #[get("/energy-bills/{id}")]
 pub async fn get_upload(
-    uploads: web::Data<EnergyBillUploadUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let id = path.into_inner();
 
-    let upload = uploads
+    let upload = state
+        .energy_bill_upload_use_cases
         .get_upload(id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -131,7 +134,7 @@ pub async fn get_upload(
 /// Decrypt consumption data (owner only)
 #[get("/energy-bills/{id}/decrypt")]
 pub async fn decrypt_consumption(
-    uploads: web::Data<EnergyBillUploadUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
@@ -141,7 +144,8 @@ pub async fn decrypt_consumption(
         get_encryption_key().map_err(actix_web::error::ErrorInternalServerError)?;
 
     // Get upload to check ownership
-    let upload = uploads
+    let upload = state
+        .energy_bill_upload_use_cases
         .get_upload(upload_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -155,7 +159,8 @@ pub async fn decrypt_consumption(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    let total_kwh = uploads
+    let total_kwh = state
+        .energy_bill_upload_use_cases
         .decrypt_consumption(upload_id, upload.unit_id, &encryption_key)
         .await
         .map_err(actix_web::error::ErrorForbidden)?;
@@ -175,7 +180,7 @@ pub async fn decrypt_consumption(
 /// Verify upload (admin only)
 #[put("/energy-bills/{id}/verify")]
 pub async fn verify_upload(
-    uploads: web::Data<EnergyBillUploadUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     _request: web::Json<VerifyUploadRequest>,
     user: AuthenticatedUser,
@@ -187,7 +192,8 @@ pub async fn verify_upload(
     //     return Err(actix_web::error::ErrorForbidden("Admin access required"));
     // }
 
-    let updated = uploads
+    let updated = state
+        .energy_bill_upload_use_cases
         .verify_upload(upload_id, user.user_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
@@ -199,14 +205,15 @@ pub async fn verify_upload(
 /// Delete upload (GDPR Art. 17 - Right to erasure)
 #[delete("/energy-bills/{id}")]
 pub async fn delete_upload(
-    uploads: web::Data<EnergyBillUploadUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let upload_id = path.into_inner();
 
     // Get upload to verify ownership
-    let upload = uploads
+    let upload = state
+        .energy_bill_upload_use_cases
         .get_upload(upload_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -220,7 +227,8 @@ pub async fn delete_upload(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    uploads
+    state
+        .energy_bill_upload_use_cases
         .delete_upload(upload_id, upload.unit_id)
         .await
         .map_err(actix_web::error::ErrorForbidden)?;
@@ -232,14 +240,15 @@ pub async fn delete_upload(
 /// Withdraw GDPR consent (Art. 7.3 - Immediate deletion)
 #[post("/energy-bills/{id}/withdraw-consent")]
 pub async fn withdraw_consent(
-    uploads: web::Data<EnergyBillUploadUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let upload_id = path.into_inner();
 
     // Get upload to verify ownership
-    let upload = uploads
+    let upload = state
+        .energy_bill_upload_use_cases
         .get_upload(upload_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?
@@ -253,7 +262,8 @@ pub async fn withdraw_consent(
         return Err(actix_web::error::ErrorForbidden("Access denied"));
     }
 
-    uploads
+    state
+        .energy_bill_upload_use_cases
         .withdraw_consent(upload_id, upload.unit_id)
         .await
         .map_err(actix_web::error::ErrorForbidden)?;
@@ -268,13 +278,14 @@ pub async fn withdraw_consent(
 /// Get all uploads for a campaign (admin)
 #[get("/energy-campaigns/{campaign_id}/uploads")]
 pub async fn get_campaign_uploads(
-    uploads: web::Data<EnergyBillUploadUseCases>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let campaign_id = path.into_inner();
 
-    let list = uploads
+    let list = state
+        .energy_bill_upload_use_cases
         .get_uploads_by_campaign(campaign_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
