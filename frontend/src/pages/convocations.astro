@@ -1,0 +1,47 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Convocations - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">
+        📨 Convocations
+      </h1>
+      <p class="text-gray-600 mt-2">
+        Gérez les convocations aux assemblées générales de copropriété.
+      </p>
+      <div
+        class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-400 rounded-md text-sm"
+      >
+        <p class="text-blue-800">
+          <strong>Délais légaux belges :</strong> Les convocations doivent être envoyées
+          au minimum 15 jours avant une AG ordinaire et 8 jours avant une AG extraordinaire
+          (Art. 577-6 §2 du Code Civil).
+        </p>
+      </div>
+    </div>
+
+    <div id="convocation-list-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount } from "svelte";
+  import ConvocationList from "../components/convocations/ConvocationList.svelte";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const buildingId = auth.user?.buildingIds?.[0] || "";
+
+  const listContainer = document.getElementById("convocation-list-container");
+  if (listContainer) {
+    mount(ConvocationList, {
+      target: listContainer,
+      props: {
+        buildingId: buildingId,
+      },
+    });
+  }
+</script>
