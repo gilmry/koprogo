@@ -71,7 +71,7 @@ aws-credential-types = "1"
 printpdf = "0.7"
 
 # Excel generation
-rust_xlsxwriter = "0.91.0"
+rust_xlsxwriter = "0.92.2"
 
 # Random data generation (for seed scripts)
 rand = "0.9"
