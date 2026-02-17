@@ -9,7 +9,8 @@
   } from '../../lib/api/gamification';
   import { authStore } from '../../stores/auth';
 
-  export let organizationId: string;
+  export let organizationId: string = '';
+  export let buildingId: string = '';
 
   let challenges: Challenge[] = [];
   let userProgress: Map<string, ChallengeProgress> = new Map();
@@ -22,7 +23,7 @@
   });
 
   async function loadData() {
-    if (!organizationId) {
+    if (!buildingId && !organizationId) {
       loading = false;
       return;
     }
@@ -30,18 +31,40 @@
       loading = true;
       error = '';
 
+      // Use building-scoped endpoint when available, org-scoped as fallback
+      let challengePromise: Promise<Challenge[]>;
+      if (buildingId) {
+        challengePromise = gamificationApi.listBuildingChallenges(buildingId);
+      } else if (statusFilter === 'active') {
+        challengePromise = gamificationApi.getActiveChallenges(organizationId);
+      } else if (statusFilter === 'completed') {
+        challengePromise = gamificationApi.listByStatus(organizationId, ChallengeStatus.Completed);
+      } else {
+        challengePromise = gamificationApi.listChallenges(organizationId);
+      }
+
       const [challengeList, userChallenges] = await Promise.all([
-        statusFilter === 'active'
-          ? gamificationApi.getActiveChallenges(organizationId)
-          : statusFilter === 'completed'
-            ? gamificationApi.listByStatus(organizationId, ChallengeStatus.Completed)
-            : gamificationApi.listChallenges(organizationId),
+        challengePromise,
         $authStore.user?.id
           ? gamificationApi.getUserActiveChallenges($authStore.user.id)
           : Promise.resolve([]),
       ]);
 
-      challenges = challengeList;
+      // Client-side filtering when using building endpoint (returns all statuses)
+      if (buildingId && statusFilter !== 'all') {
+        const now = new Date();
+        challenges = challengeList.filter(c => {
+          if (statusFilter === 'active') {
+            return c.status === ChallengeStatus.Active && new Date(c.end_date) > now;
+          }
+          if (statusFilter === 'completed') {
+            return c.status === ChallengeStatus.Completed;
+          }
+          return true;
+        });
+      } else {
+        challenges = challengeList;
+      }
       userProgress = new Map(userChallenges.map(p => [p.challenge_id, p]));
     } catch (err: any) {
       error = err.message || 'Erreur lors du chargement des challenges';

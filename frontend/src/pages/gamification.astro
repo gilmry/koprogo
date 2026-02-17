@@ -13,8 +13,7 @@ import Layout from "../layouts/Layout.astro";
       </p>
     </div>
 
-    <!-- Stats banner -->
-    <div id="gamification-stats" class="mb-6"></div>
+    <div id="building-selector-container" class="mb-6"></div>
 
     <!-- Main grid: achievements + sidebar -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -33,37 +32,61 @@ import Layout from "../layouts/Layout.astro";
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import AchievementList from "../components/gamification/AchievementList.svelte";
   import ChallengeList from "../components/gamification/ChallengeList.svelte";
   import GamificationLeaderboard from "../components/gamification/GamificationLeaderboard.svelte";
-  import { authStore } from "../stores/auth";
-  import { get } from "svelte/store";
+  import BuildingSelector from "../components/BuildingSelector.svelte";
 
-  const auth = get(authStore);
-  const organizationId = auth.user?.organizationId || auth.user?.activeRole?.organizationId || "";
-
+  const selectorContainer = document.getElementById("building-selector-container");
   const achContainer = document.getElementById("achievement-list");
-  if (achContainer) {
-    mount(AchievementList, {
-      target: achContainer,
-      props: { organizationId },
-    });
-  }
-
   const chalContainer = document.getElementById("challenge-list");
-  if (chalContainer) {
-    mount(ChallengeList, {
-      target: chalContainer,
-      props: { organizationId },
-    });
+  const lbContainer = document.getElementById("gamification-leaderboard");
+
+  let achComponent: any = null;
+  let chalComponent: any = null;
+  let lbComponent: any = null;
+
+  function mountComponents(buildingId: string, organizationId: string) {
+    // Unmount previous instances
+    if (achComponent) { try { unmount(achComponent); } catch {} }
+    if (chalComponent) { try { unmount(chalComponent); } catch {} }
+    if (lbComponent) { try { unmount(lbComponent); } catch {} }
+
+    if (achContainer) {
+      achContainer.innerHTML = "";
+      achComponent = mount(AchievementList, {
+        target: achContainer,
+        props: { organizationId },
+      });
+    }
+
+    if (chalContainer) {
+      chalContainer.innerHTML = "";
+      chalComponent = mount(ChallengeList, {
+        target: chalContainer,
+        props: { buildingId, organizationId },
+      });
+    }
+
+    if (lbContainer) {
+      lbContainer.innerHTML = "";
+      lbComponent = mount(GamificationLeaderboard, {
+        target: lbContainer,
+        props: { organizationId, buildingId },
+      });
+    }
   }
 
-  const lbContainer = document.getElementById("gamification-leaderboard");
-  if (lbContainer) {
-    mount(GamificationLeaderboard, {
-      target: lbContainer,
-      props: { organizationId },
+  if (selectorContainer) {
+    mount(BuildingSelector, {
+      target: selectorContainer,
+      props: {
+        label: "Immeuble",
+        onSelectBuilding: (building: any) => {
+          mountComponents(building.id, building.organization_id || "");
+        },
+      },
     });
   }
 </script>

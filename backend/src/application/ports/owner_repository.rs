@@ -7,6 +7,7 @@ use uuid::Uuid;
 pub trait OwnerRepository: Send + Sync {
     async fn create(&self, owner: &Owner) -> Result<Owner, String>;
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Owner>, String>;
+    async fn find_by_user_id(&self, user_id: Uuid) -> Result<Option<Owner>, String>;
     async fn find_by_email(&self, email: &str) -> Result<Option<Owner>, String>;
     async fn find_all(&self) -> Result<Vec<Owner>, String>;
 

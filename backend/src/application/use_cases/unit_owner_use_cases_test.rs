@@ -202,6 +202,10 @@ impl OwnerRepository for MockOwnerRepository {
         Ok(store.get(&id).cloned())
     }
 
+    async fn find_by_user_id(&self, _user_id: Uuid) -> Result<Option<Owner>, String> {
+        unimplemented!()
+    }
+
     async fn find_by_email(&self, _email: &str) -> Result<Option<Owner>, String> {
         unimplemented!()
     }

@@ -179,6 +179,10 @@ export const gamificationApi = {
     return api.get(`/organizations/${organizationId}/challenges/active`);
   },
 
+  async listBuildingChallenges(buildingId: string): Promise<Challenge[]> {
+    return api.get(`/buildings/${buildingId}/challenges`);
+  },
+
   async activateChallenge(id: string): Promise<Challenge> {
     return api.put(`/challenges/${id}/activate`, {});
   },

@@ -152,9 +152,8 @@
       <div>
         <div class="flex items-center gap-3 mb-2">
           <h2 class="text-2xl font-bold text-gray-900">Convocation</h2>
-          {@const statusCfg = getStatusConfig(convocation.status)}
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {statusCfg.bg} {statusCfg.text}">
-            {statusCfg.label}
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {getStatusConfig(convocation.status).bg} {getStatusConfig(convocation.status).text}">
+            {getStatusConfig(convocation.status).label}
           </span>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
             {getMeetingTypeLabel(convocation.meeting_type)}

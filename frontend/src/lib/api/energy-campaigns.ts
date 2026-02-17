@@ -11,16 +11,22 @@ export interface EnergyCampaign {
   organization_id: string;
   building_id?: string;
   campaign_name: string;
+  campaign_type: string;
   status: CampaignStatus;
+  deadline_participation: string;
+  deadline_vote?: string;
+  contract_start_date?: string;
   energy_types: EnergyType[];
+  contract_duration_months: number;
+  contract_type: string;
   total_participants: number;
   total_kwh_electricity?: number;
   total_kwh_gas?: number;
-  total_kwh_heating?: number;
+  avg_kwh_per_unit?: number;
   offers_received: ProviderOffer[];
   selected_offer_id?: string;
-  campaign_start_date: string;
-  campaign_end_date: string;
+  estimated_savings_pct?: number;
+  created_by: string;
   created_at: string;
   updated_at: string;
 }
@@ -42,16 +48,18 @@ export enum EnergyType {
 
 export interface ProviderOffer {
   id: string;
+  campaign_id: string;
   provider_name: string;
-  energy_type: EnergyType;
-  price_per_kwh_cents: number;
+  price_kwh_electricity?: number;
+  price_kwh_gas?: number;
+  fixed_monthly_fee: number;
+  green_energy_pct: number;
+  green_score: number;
   contract_duration_months: number;
-  fixed_monthly_fee_cents?: number;
-  green_energy_percentage: number;
-  estimated_annual_savings_cents?: number;
+  estimated_savings_pct: number;
   offer_valid_until: string;
-  terms_and_conditions_url?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface EnergyBillUpload {
@@ -86,12 +94,12 @@ export interface CampaignStatistics {
 }
 
 export interface CreateCampaignDto {
-  organization_id: string;
   building_id?: string;
   campaign_name: string;
+  deadline_participation: string;
   energy_types: EnergyType[];
-  campaign_start_date: string;
-  campaign_end_date: string;
+  contract_duration_months?: number;
+  contract_type?: string;
 }
 
 export interface UpdateCampaignStatusDto {
@@ -100,14 +108,13 @@ export interface UpdateCampaignStatusDto {
 
 export interface CreateProviderOfferDto {
   provider_name: string;
-  energy_type: EnergyType;
-  price_per_kwh_cents: number;
+  price_kwh_electricity?: number;
+  price_kwh_gas?: number;
+  fixed_monthly_fee: number;
+  green_energy_pct: number;
   contract_duration_months: number;
-  fixed_monthly_fee_cents?: number;
-  green_energy_percentage: number;
-  estimated_annual_savings_cents?: number;
+  estimated_savings_pct: number;
   offer_valid_until: string;
-  terms_and_conditions_url?: string;
 }
 
 export interface SelectOfferDto {

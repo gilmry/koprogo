@@ -235,8 +235,7 @@
               <span>{Math.round((variance.actual_ordinary / variance.budgeted_ordinary) * 100)}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
-              {@const pct = Math.min(100, (variance.actual_ordinary / variance.budgeted_ordinary) * 100)}
-              <div class="h-2 rounded-full {pct > 100 ? 'bg-red-500' : 'bg-green-500'}" style="width: {pct}%"></div>
+              <div class="h-2 rounded-full {Math.min(100, (variance.actual_ordinary / variance.budgeted_ordinary) * 100) > 100 ? 'bg-red-500' : 'bg-green-500'}" style="width: {Math.min(100, (variance.actual_ordinary / variance.budgeted_ordinary) * 100)}%"></div>
             </div>
           </div>
           <div>
@@ -245,8 +244,7 @@
               <span>{Math.round((variance.actual_extraordinary / variance.budgeted_extraordinary) * 100)}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
-              {@const pct = Math.min(100, (variance.actual_extraordinary / variance.budgeted_extraordinary) * 100)}
-              <div class="h-2 rounded-full {pct > 100 ? 'bg-red-500' : 'bg-blue-500'}" style="width: {pct}%"></div>
+              <div class="h-2 rounded-full {Math.min(100, (variance.actual_extraordinary / variance.budgeted_extraordinary) * 100) > 100 ? 'bg-red-500' : 'bg-blue-500'}" style="width: {Math.min(100, (variance.actual_extraordinary / variance.budgeted_extraordinary) * 100)}%"></div>
             </div>
           </div>
         </div>

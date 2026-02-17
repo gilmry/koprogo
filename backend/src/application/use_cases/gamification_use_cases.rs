@@ -148,6 +148,12 @@ impl AchievementUseCases {
         if let Some(description) = dto.description {
             achievement.update_description(description)?;
         }
+        if let Some(category) = dto.category {
+            achievement.category = category;
+        }
+        if let Some(tier) = dto.tier {
+            achievement.tier = tier;
+        }
         if let Some(icon) = dto.icon {
             achievement.update_icon(icon)?;
         }

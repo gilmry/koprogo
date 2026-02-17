@@ -7,11 +7,13 @@
   export let required = true;
   export let disabled = false;
   export let onSelect: ((buildingId: string) => void) | undefined = undefined;
+  export let onSelectBuilding: ((building: Building) => void) | undefined = undefined;
 
   interface Building {
     id: string;
     name: string;
     address: string;
+    organization_id?: string;
   }
 
   let buildings: Building[] = [];
@@ -35,8 +37,11 @@
       if (buildings.length === 1 && !selectedBuildingId) {
         selectedBuildingId = buildings[0].id;
         if (onSelect) onSelect(selectedBuildingId);
+        if (onSelectBuilding) onSelectBuilding(buildings[0]);
       } else if (buildings.length > 1 && selectedBuildingId) {
+        const selected = buildings.find(b => b.id === selectedBuildingId);
         if (onSelect) onSelect(selectedBuildingId);
+        if (selected && onSelectBuilding) onSelectBuilding(selected);
       }
     } catch (err: any) {
       error = "Erreur lors du chargement des immeubles";
@@ -72,7 +77,13 @@
     <select
       id="building-selector"
       bind:value={selectedBuildingId}
-      on:change={() => { if (onSelect && selectedBuildingId) onSelect(selectedBuildingId); }}
+      on:change={() => {
+        if (selectedBuildingId) {
+          if (onSelect) onSelect(selectedBuildingId);
+          const selected = buildings.find(b => b.id === selectedBuildingId);
+          if (selected && onSelectBuilding) onSelectBuilding(selected);
+        }
+      }}
       {required}
       {disabled}
       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"

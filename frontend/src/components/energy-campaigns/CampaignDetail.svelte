@@ -182,11 +182,15 @@
       <!-- Campaign Info -->
       <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="p-4 bg-blue-50 rounded-lg">
-          <div class="text-sm text-blue-600 font-medium">Période</div>
+          <div class="text-sm text-blue-600 font-medium">Date limite participation</div>
           <div class="text-lg text-blue-900">
-            {formatDate(campaign.campaign_start_date)} →
-            {formatDate(campaign.campaign_end_date)}
+            {formatDate(campaign.deadline_participation)}
           </div>
+          {#if campaign.deadline_vote}
+            <div class="text-xs text-blue-600 mt-1">
+              Vote jusqu'au {formatDate(campaign.deadline_vote)}
+            </div>
+          {/if}
         </div>
         <div class="p-4 bg-green-50 rounded-lg">
           <div class="text-sm text-green-600 font-medium">Participants</div>

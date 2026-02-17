@@ -35,24 +35,19 @@ import Layout from "../../layouts/Layout.astro";
 
   const formContainer = document.getElementById("create-form-container");
   if (formContainer) {
-    const component = mount(CreateCampaignForm, {
+    mount(CreateCampaignForm, {
       target: formContainer,
       props: {
         organizationId: organizationId,
+        onCreated: (campaign: any) => {
+          setTimeout(() => {
+            window.location.href = `/energy-campaigns/detail?id=${campaign.id}`;
+          }, 2000);
+        },
+        onCancel: () => {
+          window.location.href = "/energy-campaigns";
+        },
       },
-    });
-
-    // Listen for created event
-    component.$on("created", (event: any) => {
-      const campaign = event.detail;
-      setTimeout(() => {
-        window.location.href = `/energy-campaigns/detail?id=${campaign.id}`;
-      }, 2000);
-    });
-
-    // Listen for cancel event
-    component.$on("cancel", () => {
-      window.location.href = "/energy-campaigns";
     });
   }
 </script>

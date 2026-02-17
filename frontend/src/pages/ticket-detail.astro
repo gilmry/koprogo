@@ -86,10 +86,10 @@ import Layout from "../layouts/Layout.astro";
       function mountDetail(ticketData: any) {
         if (ticketDetailComponent) {
           try { unmount(ticketDetailComponent); } catch {}
-          detailContainer.innerHTML = "";
+          detailContainer!.innerHTML = "";
         }
         ticketDetailComponent = mount(TicketDetail, {
-          target: detailContainer,
+          target: detailContainer!,
           props: {
             ticket: ticketData,
             canManage,

@@ -27,7 +27,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+            VALUES ($1, $2, $3, $4, $5::exchange_type, $6, $7, $8, $9::exchange_status, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
             "#,
         )
         .bind(exchange.id)
@@ -60,8 +60,8 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let row = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
@@ -81,8 +81,8 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
@@ -107,13 +107,13 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
             FROM local_exchanges
-            WHERE building_id = $1 AND status = $2
+            WHERE building_id = $1 AND status = $2::exchange_status
             ORDER BY offered_at DESC
             "#,
         )
@@ -130,8 +130,8 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
@@ -152,8 +152,8 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
@@ -174,8 +174,8 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
@@ -199,8 +199,8 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
@@ -225,8 +225,8 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
@@ -251,13 +251,13 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         let rows = sqlx::query(
             r#"
             SELECT
-                id, building_id, provider_id, requester_id, exchange_type,
-                title, description, credits, status, offered_at,
+                id, building_id, provider_id, requester_id, exchange_type::text,
+                title, description, credits, status::text, offered_at,
                 requested_at, started_at, completed_at, cancelled_at,
                 cancellation_reason, provider_rating, requester_rating,
                 created_at, updated_at
             FROM local_exchanges
-            WHERE building_id = $1 AND exchange_type = $2
+            WHERE building_id = $1 AND exchange_type = $2::exchange_type
             ORDER BY offered_at DESC
             "#,
         )
@@ -278,11 +278,11 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
                 building_id = $2,
                 provider_id = $3,
                 requester_id = $4,
-                exchange_type = $5,
+                exchange_type = $5::exchange_type,
                 title = $6,
                 description = $7,
                 credits = $8,
-                status = $9,
+                status = $9::exchange_status,
                 offered_at = $10,
                 requested_at = $11,
                 started_at = $12,
@@ -347,7 +347,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         status: &str,
     ) -> Result<i64, String> {
         let count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM local_exchanges WHERE building_id = $1 AND status = $2",
+            "SELECT COUNT(*) FROM local_exchanges WHERE building_id = $1 AND status = $2::exchange_status",
         )
         .bind(building_id)
         .bind(status)

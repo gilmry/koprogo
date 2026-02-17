@@ -30,29 +30,33 @@ impl LocalExchangeUseCases {
         }
     }
 
+    /// Resolve a user_id (from auth) to an owner_id (from owners table)
+    async fn resolve_owner_id(&self, user_id: Uuid) -> Result<Uuid, String> {
+        let owner = self
+            .owner_repo
+            .find_by_user_id(user_id)
+            .await?
+            .ok_or("User is not linked to an owner account".to_string())?;
+        Ok(owner.id)
+    }
+
     /// Create a new exchange offer
     pub async fn create_exchange(
         &self,
-        provider_id: Uuid, // From auth
+        user_id: Uuid, // From auth (user_id, resolved to owner_id internally)
         dto: CreateLocalExchangeDto,
     ) -> Result<LocalExchangeResponseDto, String> {
-        // Verify owner exists
+        // Resolve user_id → owner
         let provider = self
             .owner_repo
-            .find_by_id(provider_id)
+            .find_by_user_id(user_id)
             .await?
-            .ok_or("Provider not found".to_string())?;
+            .ok_or("Provider not found - user is not linked to an owner account".to_string())?;
 
-        // Verify building exists (via owner)
-        let _ = self
-            .owner_repo
-            .find_by_id(dto.building_id) // Check building ownership
-            .await?;
-
-        // Create domain entity
+        // Create domain entity using owner's actual ID
         let exchange = LocalExchange::new(
             dto.building_id,
-            provider_id,
+            provider.id,
             dto.exchange_type,
             dto.title,
             dto.description,
@@ -152,9 +156,11 @@ impl LocalExchangeUseCases {
     pub async fn request_exchange(
         &self,
         exchange_id: Uuid,
-        requester_id: Uuid, // From auth
+        user_id: Uuid, // From auth (user_id, resolved to owner_id internally)
         _dto: RequestExchangeDto,
     ) -> Result<LocalExchangeResponseDto, String> {
+        let owner_id = self.resolve_owner_id(user_id).await?;
+
         // Load exchange
         let mut exchange = self
             .exchange_repo
@@ -163,7 +169,7 @@ impl LocalExchangeUseCases {
             .ok_or("Exchange not found".to_string())?;
 
         // Apply business logic
-        exchange.request(requester_id)?;
+        exchange.request(owner_id)?;
 
         // Persist
         let updated = self.exchange_repo.update(&exchange).await?;
@@ -177,15 +183,17 @@ impl LocalExchangeUseCases {
     pub async fn start_exchange(
         &self,
         exchange_id: Uuid,
-        actor_id: Uuid, // From auth (must be provider)
+        user_id: Uuid, // From auth (user_id, resolved to owner_id internally)
     ) -> Result<LocalExchangeResponseDto, String> {
+        let owner_id = self.resolve_owner_id(user_id).await?;
+
         let mut exchange = self
             .exchange_repo
             .find_by_id(exchange_id)
             .await?
             .ok_or("Exchange not found".to_string())?;
 
-        exchange.start(actor_id)?;
+        exchange.start(owner_id)?;
 
         let updated = self.exchange_repo.update(&exchange).await?;
 
@@ -197,9 +205,11 @@ impl LocalExchangeUseCases {
     pub async fn complete_exchange(
         &self,
         exchange_id: Uuid,
-        actor_id: Uuid, // From auth (provider or requester)
+        user_id: Uuid, // From auth (user_id, resolved to owner_id internally)
         _dto: CompleteExchangeDto,
     ) -> Result<LocalExchangeResponseDto, String> {
+        let owner_id = self.resolve_owner_id(user_id).await?;
+
         let mut exchange = self
             .exchange_repo
             .find_by_id(exchange_id)
@@ -211,7 +221,7 @@ impl LocalExchangeUseCases {
             .requester_id
             .ok_or("Exchange has no requester".to_string())?;
 
-        exchange.complete(actor_id)?;
+        exchange.complete(owner_id)?;
 
         let updated = self.exchange_repo.update(&exchange).await?;
 
@@ -240,16 +250,18 @@ impl LocalExchangeUseCases {
     pub async fn cancel_exchange(
         &self,
         exchange_id: Uuid,
-        actor_id: Uuid, // From auth (provider or requester)
+        user_id: Uuid, // From auth (user_id, resolved to owner_id internally)
         dto: CancelExchangeDto,
     ) -> Result<LocalExchangeResponseDto, String> {
+        let owner_id = self.resolve_owner_id(user_id).await?;
+
         let mut exchange = self
             .exchange_repo
             .find_by_id(exchange_id)
             .await?
             .ok_or("Exchange not found".to_string())?;
 
-        exchange.cancel(actor_id, dto.reason)?;
+        exchange.cancel(owner_id, dto.reason)?;
 
         let updated = self.exchange_repo.update(&exchange).await?;
 
@@ -260,16 +272,18 @@ impl LocalExchangeUseCases {
     pub async fn rate_provider(
         &self,
         exchange_id: Uuid,
-        requester_id: Uuid, // From auth
+        user_id: Uuid, // From auth (user_id, resolved to owner_id internally)
         dto: RateExchangeDto,
     ) -> Result<LocalExchangeResponseDto, String> {
+        let owner_id = self.resolve_owner_id(user_id).await?;
+
         let mut exchange = self
             .exchange_repo
             .find_by_id(exchange_id)
             .await?
             .ok_or("Exchange not found".to_string())?;
 
-        exchange.rate_provider(requester_id, dto.rating)?;
+        exchange.rate_provider(owner_id, dto.rating)?;
 
         let updated = self.exchange_repo.update(&exchange).await?;
 
@@ -284,16 +298,18 @@ impl LocalExchangeUseCases {
     pub async fn rate_requester(
         &self,
         exchange_id: Uuid,
-        provider_id: Uuid, // From auth
+        user_id: Uuid, // From auth (user_id, resolved to owner_id internally)
         dto: RateExchangeDto,
     ) -> Result<LocalExchangeResponseDto, String> {
+        let owner_id = self.resolve_owner_id(user_id).await?;
+
         let mut exchange = self
             .exchange_repo
             .find_by_id(exchange_id)
             .await?
             .ok_or("Exchange not found".to_string())?;
 
-        exchange.rate_requester(provider_id, dto.rating)?;
+        exchange.rate_requester(owner_id, dto.rating)?;
 
         let updated = self.exchange_repo.update(&exchange).await?;
 
@@ -307,7 +323,9 @@ impl LocalExchangeUseCases {
     }
 
     /// Delete an exchange (only if not completed)
-    pub async fn delete_exchange(&self, exchange_id: Uuid, actor_id: Uuid) -> Result<(), String> {
+    pub async fn delete_exchange(&self, exchange_id: Uuid, user_id: Uuid) -> Result<(), String> {
+        let owner_id = self.resolve_owner_id(user_id).await?;
+
         let exchange = self
             .exchange_repo
             .find_by_id(exchange_id)
@@ -315,7 +333,7 @@ impl LocalExchangeUseCases {
             .ok_or("Exchange not found".to_string())?;
 
         // Only provider can delete
-        if exchange.provider_id != actor_id {
+        if exchange.provider_id != owner_id {
             return Err("Only the provider can delete the exchange".to_string());
         }
 

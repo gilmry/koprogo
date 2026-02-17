@@ -1,8 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import EtatDateDetail from '../components/etats-dates/EtatDateDetail.svelte';
+import EtatDateDetailComponent from '../components/etats-dates/EtatDateDetail.svelte';
 ---
 
 <Layout title="Detail Etat Date" showNav={true} requireAuth={true}>
-  <EtatDateDetail client:load />
+  <EtatDateDetailComponent client:load />
 </Layout>

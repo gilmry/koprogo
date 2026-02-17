@@ -45,11 +45,23 @@
 
   async function handleSubmit() {
     if (!title.trim()) {
-      toast.error('Le nom est obligatoire');
+      toast.error('Le nom est obligatoire. Entrez un nom court et descriptif (ex: "Premier echange SEL").');
+      return;
+    }
+    if (title.trim().length < 3) {
+      toast.error('Le nom doit contenir au moins 3 caracteres.');
+      return;
+    }
+    if (!description.trim()) {
+      toast.error('La description est obligatoire. Expliquez comment obtenir cet achievement.');
+      return;
+    }
+    if (description.trim().length < 10) {
+      toast.error('La description doit contenir au moins 10 caracteres.');
       return;
     }
     if (pointsValue < 0 || pointsValue > 1000) {
-      toast.error('Les points doivent etre entre 0 et 1000');
+      toast.error('Les points doivent etre entre 0 et 1000.');
       return;
     }
 
@@ -66,16 +78,16 @@
         is_secret: isSecret,
         is_repeatable: isRepeatable,
         display_order: displayOrder,
-        requirements: {},
+        requirements: '{}',
       };
 
       let result: Achievement;
       if (achievement) {
         result = await gamificationApi.updateAchievement(achievement.id, data);
-        toast.success('Achievement mis a jour');
+        toast.success('Achievement "' + title.trim() + '" mis a jour avec succes.');
       } else {
         result = await gamificationApi.createAchievement(data);
-        toast.success('Achievement cree');
+        toast.success('Achievement "' + title.trim() + '" cree avec succes.');
       }
       dispatch('saved', result);
     } catch (err: any) {
@@ -96,34 +108,38 @@
       <label for="ach-name" class="block text-sm font-medium text-gray-700">Nom *</label>
       <input id="ach-name" type="text" bind:value={title} required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-        placeholder="Premier echange SEL" />
+        placeholder="Ex: Premier echange SEL, Voisin solidaire..." />
+      <p class="mt-1 text-xs text-gray-500">Nom court et descriptif de l'achievement (min. 3 caracteres)</p>
     </div>
 
     <div class="md:col-span-2">
-      <label for="ach-desc" class="block text-sm font-medium text-gray-700">Description</label>
+      <label for="ach-desc" class="block text-sm font-medium text-gray-700">Description *</label>
       <textarea id="ach-desc" bind:value={description} rows="2"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-        placeholder="Realisez votre premier echange dans le SEL"></textarea>
+        placeholder="Ex: Realisez votre premier echange dans le SEL de la copropriete"></textarea>
+      <p class="mt-1 text-xs text-gray-500">Expliquez comment obtenir cet achievement (min. 10 caracteres)</p>
     </div>
 
     <div>
-      <label for="ach-category" class="block text-sm font-medium text-gray-700">Categorie</label>
+      <label for="ach-category" class="block text-sm font-medium text-gray-700">Categorie *</label>
       <select id="ach-category" bind:value={category}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm">
         {#each Object.values(AchievementCategory) as cat}
           <option value={cat}>{categoryLabels[cat]}</option>
         {/each}
       </select>
+      <p class="mt-1 text-xs text-gray-500">Domaine d'activite lie a cet achievement</p>
     </div>
 
     <div>
-      <label for="ach-tier" class="block text-sm font-medium text-gray-700">Niveau</label>
+      <label for="ach-tier" class="block text-sm font-medium text-gray-700">Niveau *</label>
       <select id="ach-tier" bind:value={tier}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm">
         {#each Object.values(AchievementTier) as t}
           <option value={t}>{tierLabels[t]}</option>
         {/each}
       </select>
+      <p class="mt-1 text-xs text-gray-500">Difficulte : Bronze (facile) a Diamant (exceptionnel)</p>
     </div>
 
     <div>
@@ -131,18 +147,21 @@
       <input id="ach-icon" type="text" bind:value={icon}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
         placeholder="🏅" />
+      <p class="mt-1 text-xs text-gray-500">Emoji representant l'achievement (defaut: 🏅)</p>
     </div>
 
     <div>
-      <label for="ach-points" class="block text-sm font-medium text-gray-700">Points (0-1000)</label>
+      <label for="ach-points" class="block text-sm font-medium text-gray-700">Points *</label>
       <input id="ach-points" type="number" bind:value={pointsValue} min="0" max="1000"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm" />
+      <p class="mt-1 text-xs text-gray-500">Points attribues a l'obtention (entre 0 et 1000)</p>
     </div>
 
     <div>
       <label for="ach-order" class="block text-sm font-medium text-gray-700">Ordre d'affichage</label>
       <input id="ach-order" type="number" bind:value={displayOrder} min="0"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm" />
+      <p class="mt-1 text-xs text-gray-500">Position dans la liste (0 = premier)</p>
     </div>
 
     <div class="flex items-center gap-6">
@@ -152,7 +171,7 @@
       </label>
       <label class="flex items-center gap-2 text-sm text-gray-700">
         <input type="checkbox" bind:checked={isRepeatable} class="rounded border-gray-300 text-amber-600 focus:ring-amber-500" />
-        Repetable
+        Repetable (peut etre obtenu plusieurs fois)
       </label>
     </div>
   </div>

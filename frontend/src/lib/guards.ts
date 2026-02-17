@@ -5,9 +5,12 @@ import { UserRole } from "./types";
  * Maps route patterns to allowed roles
  */
 export const roleGuards: Record<string, UserRole[]> = {
-  // Admin routes - SUPERADMIN only
+  // Admin routes - SUPERADMIN only (except shared admin pages below)
   "/admin": [UserRole.SUPERADMIN],
   "/admin/*": [UserRole.SUPERADMIN],
+
+  // Admin pages shared with SYNDIC
+  "/admin/gamification": [UserRole.SUPERADMIN, UserRole.SYNDIC],
 
   // Syndic routes - SYNDIC only
   "/syndic": [UserRole.SYNDIC],

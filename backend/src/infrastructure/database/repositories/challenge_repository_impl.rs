@@ -125,7 +125,7 @@ impl ChallengeRepository for PostgresChallengeRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Challenge>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, challenge_type, status, title,
+            SELECT id, organization_id, building_id, challenge_type::text, status::text, title,
                    description, icon, start_date, end_date, target_metric,
                    target_value, reward_points, created_at, updated_at
             FROM challenges
@@ -143,7 +143,7 @@ impl ChallengeRepository for PostgresChallengeRepository {
     async fn find_by_organization(&self, organization_id: Uuid) -> Result<Vec<Challenge>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, challenge_type, status, title,
+            SELECT id, organization_id, building_id, challenge_type::text, status::text, title,
                    description, icon, start_date, end_date, target_metric,
                    target_value, reward_points, created_at, updated_at
             FROM challenges
@@ -171,7 +171,7 @@ impl ChallengeRepository for PostgresChallengeRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, challenge_type, status, title,
+            SELECT id, organization_id, building_id, challenge_type::text, status::text, title,
                    description, icon, start_date, end_date, target_metric,
                    target_value, reward_points, created_at, updated_at
             FROM challenges
@@ -192,7 +192,7 @@ impl ChallengeRepository for PostgresChallengeRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Challenge>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, challenge_type, status, title,
+            SELECT id, organization_id, building_id, challenge_type::text, status::text, title,
                    description, icon, start_date, end_date, target_metric,
                    target_value, reward_points, created_at, updated_at
             FROM challenges
@@ -211,7 +211,7 @@ impl ChallengeRepository for PostgresChallengeRepository {
     async fn find_active(&self, organization_id: Uuid) -> Result<Vec<Challenge>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, challenge_type, status, title,
+            SELECT id, organization_id, building_id, challenge_type::text, status::text, title,
                    description, icon, start_date, end_date, target_metric,
                    target_value, reward_points, created_at, updated_at
             FROM challenges
@@ -233,7 +233,7 @@ impl ChallengeRepository for PostgresChallengeRepository {
     async fn find_ended_not_completed(&self) -> Result<Vec<Challenge>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, building_id, challenge_type, status, title,
+            SELECT id, organization_id, building_id, challenge_type::text, status::text, title,
                    description, icon, start_date, end_date, target_metric,
                    target_value, reward_points, created_at, updated_at
             FROM challenges

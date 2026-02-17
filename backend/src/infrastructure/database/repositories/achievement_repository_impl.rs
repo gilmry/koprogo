@@ -120,7 +120,7 @@ impl AchievementRepository for PostgresAchievementRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Achievement>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, category, tier, name, description, icon,
+            SELECT id, organization_id, category::text, tier::text, name, description, icon,
                    points_value, requirements, is_secret, is_repeatable, display_order,
                    created_at, updated_at
             FROM achievements
@@ -141,12 +141,12 @@ impl AchievementRepository for PostgresAchievementRepository {
     ) -> Result<Vec<Achievement>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, category, tier, name, description, icon,
+            SELECT id, organization_id, category::text, tier::text, name, description, icon,
                    points_value, requirements, is_secret, is_repeatable, display_order,
                    created_at, updated_at
             FROM achievements
             WHERE organization_id = $1
-            ORDER BY display_order ASC, tier ASC, name ASC
+            ORDER BY display_order ASC, tier::text ASC, name ASC
             "#,
         )
         .bind(organization_id)
@@ -169,13 +169,13 @@ impl AchievementRepository for PostgresAchievementRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, category, tier, name, description, icon,
+            SELECT id, organization_id, category::text, tier::text, name, description, icon,
                    points_value, requirements, is_secret, is_repeatable, display_order,
                    created_at, updated_at
             FROM achievements
             WHERE organization_id = $1
               AND category = $2::achievement_category
-            ORDER BY display_order ASC, tier ASC, name ASC
+            ORDER BY display_order ASC, tier::text ASC, name ASC
             "#,
         )
         .bind(organization_id)
@@ -195,7 +195,7 @@ impl AchievementRepository for PostgresAchievementRepository {
         // Return all non-secret achievements OR secret achievements the user has earned
         let rows = sqlx::query(
             r#"
-            SELECT DISTINCT a.id, a.organization_id, a.category, a.tier, a.name,
+            SELECT DISTINCT a.id, a.organization_id, a.category::text, a.tier::text, a.name,
                    a.description, a.icon, a.points_value, a.requirements,
                    a.is_secret, a.is_repeatable, a.display_order,
                    a.created_at, a.updated_at
@@ -203,7 +203,7 @@ impl AchievementRepository for PostgresAchievementRepository {
             LEFT JOIN user_achievements ua ON ua.achievement_id = a.id AND ua.user_id = $2
             WHERE a.organization_id = $1
               AND (a.is_secret = FALSE OR ua.id IS NOT NULL)
-            ORDER BY a.display_order ASC, a.tier ASC, a.name ASC
+            ORDER BY a.display_order ASC, a.tier::text ASC, a.name ASC
             "#,
         )
         .bind(organization_id)

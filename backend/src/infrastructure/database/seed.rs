@@ -2976,6 +2976,7 @@ mod tests {
     ///
     /// This test ensures production deployments can safely restart without constraint violations
     #[sqlx::test]
+    #[ignore = "requires DATABASE_URL (integration test)"]
     async fn test_seed_superadmin_is_idempotent(pool: PgPool) -> sqlx::Result<()> {
         let seeder = DatabaseSeeder::new(pool.clone());
 
@@ -3048,6 +3049,7 @@ mod tests {
     ///
     /// Ensures the UPSERT doesn't violate the idx_user_roles_primary_per_user constraint
     #[sqlx::test]
+    #[ignore = "requires DATABASE_URL (integration test)"]
     async fn test_seed_superadmin_preserves_existing_primary_role(
         pool: PgPool,
     ) -> sqlx::Result<()> {

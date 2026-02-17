@@ -3,7 +3,6 @@
   import {
     energyCampaignsApi,
     type CreateProviderOfferDto,
-    EnergyType,
   } from "../../lib/api/energy-campaigns";
 
   export let campaignId: string;
@@ -12,14 +11,13 @@
 
   let formData: CreateProviderOfferDto = {
     provider_name: "",
-    energy_type: EnergyType.Electricity,
-    price_per_kwh_cents: 0,
+    price_kwh_electricity: undefined,
+    price_kwh_gas: undefined,
+    fixed_monthly_fee: 0,
+    green_energy_pct: 0,
     contract_duration_months: 12,
-    fixed_monthly_fee_cents: undefined,
-    green_energy_percentage: 0,
-    estimated_annual_savings_cents: undefined,
+    estimated_savings_pct: 0,
     offer_valid_until: "",
-    terms_and_conditions_url: "",
   };
 
   let loading = false;
@@ -43,25 +41,29 @@
       if (!formData.provider_name.trim()) {
         throw new Error("Le nom du fournisseur est obligatoire");
       }
-      if (formData.price_per_kwh_cents <= 0) {
-        throw new Error("Le prix par kWh doit être supérieur à 0");
+      if (!formData.price_kwh_electricity && !formData.price_kwh_gas) {
+        throw new Error("Au moins un prix par kWh (electricite ou gaz) est obligatoire");
       }
       if (formData.contract_duration_months <= 0) {
-        throw new Error("La durée du contrat doit être supérieure à 0");
+        throw new Error("La duree du contrat doit etre superieure a 0");
       }
       if (!formData.offer_valid_until) {
-        throw new Error("La date de validité est obligatoire");
+        throw new Error("La date de validite est obligatoire");
       }
-      if (
-        formData.green_energy_percentage < 0 ||
-        formData.green_energy_percentage > 100
-      ) {
-        throw new Error(
-          "Le pourcentage d'énergie verte doit être entre 0 et 100",
-        );
+      if (formData.green_energy_pct < 0 || formData.green_energy_pct > 100) {
+        throw new Error("Le pourcentage d'energie verte doit etre entre 0 et 100");
+      }
+      if (formData.estimated_savings_pct < 0 || formData.estimated_savings_pct > 100) {
+        throw new Error("Le pourcentage d'economies doit etre entre 0 et 100");
       }
 
-      const offer = await energyCampaignsApi.addOffer(campaignId, formData);
+      // Send date as ISO datetime for backend DateTime<Utc>
+      const payload = {
+        ...formData,
+        offer_valid_until: new Date(formData.offer_valid_until).toISOString(),
+      };
+
+      const offer = await energyCampaignsApi.addOffer(campaignId, payload as any);
       success = true;
       dispatch("created", offer);
 
@@ -69,14 +71,13 @@
       setTimeout(() => {
         formData = {
           provider_name: "",
-          energy_type: EnergyType.Electricity,
-          price_per_kwh_cents: 0,
+          price_kwh_electricity: undefined,
+          price_kwh_gas: undefined,
+          fixed_monthly_fee: 0,
+          green_energy_pct: 0,
           contract_duration_months: 12,
-          fixed_monthly_fee_cents: undefined,
-          green_energy_percentage: 0,
-          estimated_annual_savings_cents: undefined,
+          estimated_savings_pct: 0,
           offer_valid_until: "",
-          terms_and_conditions_url: "",
         };
         success = false;
       }, 2000);
@@ -133,76 +134,68 @@
       />
     </div>
 
-    <!-- Energy Type -->
-    <div>
-      <label for="energy_type" class="block text-sm font-medium text-gray-700">
-        Type d'énergie <span class="text-red-500">*</span>
-      </label>
-      <select
-        id="energy_type"
-        bind:value={formData.energy_type}
-        required
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-      >
-        <option value={EnergyType.Electricity}>⚡ Électricité</option>
-        <option value={EnergyType.Gas}>🔥 Gaz</option>
-        <option value={EnergyType.Heating}>🌡️ Chauffage</option>
-      </select>
-    </div>
-
     <!-- Pricing -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label
-          for="price_per_kwh"
+          for="price_kwh_electricity"
           class="block text-sm font-medium text-gray-700"
         >
-          Prix par kWh (€) <span class="text-red-500">*</span>
+          Prix electricite (€/kWh)
         </label>
         <input
           type="number"
-          id="price_per_kwh"
-          bind:value={formData.price_per_kwh_cents}
-          required
+          id="price_kwh_electricity"
+          bind:value={formData.price_kwh_electricity}
           min="0"
           step="0.0001"
           placeholder="0.1234"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          on:input={(e) => {
-            // Convert euros to cents
-            const value = parseFloat(e.currentTarget.value) || 0;
-            formData.price_per_kwh_cents = Math.round(value * 10000);
-          }}
         />
         <p class="mt-1 text-xs text-gray-500">
-          Ex: 0.1234 € = 12.34 centimes/kWh
+          Ex: 0.1234 €/kWh. Laisser vide si non concerne.
         </p>
       </div>
       <div>
         <label
-          for="fixed_fee"
+          for="price_kwh_gas"
           class="block text-sm font-medium text-gray-700"
         >
-          Abonnement mensuel (€)
+          Prix gaz (€/kWh)
         </label>
         <input
           type="number"
-          id="fixed_fee"
-          value={formData.fixed_monthly_fee_cents
-            ? formData.fixed_monthly_fee_cents / 100
-            : ""}
+          id="price_kwh_gas"
+          bind:value={formData.price_kwh_gas}
           min="0"
-          step="0.01"
-          placeholder="15.00"
+          step="0.0001"
+          placeholder="0.0567"
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-          on:input={(e) => {
-            const value = parseFloat(e.currentTarget.value) || 0;
-            formData.fixed_monthly_fee_cents =
-              value > 0 ? Math.round(value * 100) : undefined;
-          }}
         />
-        <p class="mt-1 text-xs text-gray-500">Laisser vide si non applicable</p>
+        <p class="mt-1 text-xs text-gray-500">
+          Ex: 0.0567 €/kWh. Laisser vide si non concerne.
+        </p>
       </div>
+    </div>
+
+    <!-- Fixed Fee -->
+    <div>
+      <label
+        for="fixed_fee"
+        class="block text-sm font-medium text-gray-700"
+      >
+        Abonnement mensuel (€) <span class="text-red-500">*</span>
+      </label>
+      <input
+        type="number"
+        id="fixed_fee"
+        bind:value={formData.fixed_monthly_fee}
+        required
+        min="0"
+        step="0.01"
+        placeholder="15.00"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+      />
     </div>
 
     <!-- Contract Duration -->
@@ -232,50 +225,45 @@
         for="green_percentage"
         class="block text-sm font-medium text-gray-700"
       >
-        Pourcentage d'énergie verte (%) <span class="text-red-500">*</span>
+        Pourcentage d'energie verte (%) <span class="text-red-500">*</span>
       </label>
       <div class="flex items-center space-x-4">
         <input
           type="range"
           id="green_percentage"
-          bind:value={formData.green_energy_percentage}
+          bind:value={formData.green_energy_pct}
           min="0"
           max="100"
           step="1"
           class="flex-1"
         />
         <span class="text-sm font-medium text-gray-900 w-12">
-          {formData.green_energy_percentage}%
+          {formData.green_energy_pct}%
         </span>
       </div>
       <p class="mt-1 text-xs text-gray-500">
-        100% = Entièrement renouvelable (éolien, solaire, hydraulique)
+        100% = Entierement renouvelable (eolien, solaire, hydraulique)
       </p>
     </div>
 
     <!-- Estimated Savings -->
     <div>
       <label for="savings" class="block text-sm font-medium text-gray-700">
-        Économies annuelles estimées (€)
+        Economies estimees (%) <span class="text-red-500">*</span>
       </label>
       <input
         type="number"
         id="savings"
-        value={formData.estimated_annual_savings_cents
-          ? formData.estimated_annual_savings_cents / 100
-          : ""}
+        bind:value={formData.estimated_savings_pct}
+        required
         min="0"
-        step="1"
-        placeholder="250"
+        max="100"
+        step="0.1"
+        placeholder="15"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        on:input={(e) => {
-          const value = parseFloat(e.currentTarget.value) || 0;
-          formData.estimated_annual_savings_cents =
-            value > 0 ? Math.round(value * 100) : undefined;
-        }}
       />
       <p class="mt-1 text-xs text-gray-500">
-        Par rapport au tarif actuel moyen
+        Pourcentage d'economies par rapport au tarif actuel moyen
       </p>
     </div>
 
@@ -292,20 +280,6 @@
         id="valid_until"
         bind:value={formData.offer_valid_until}
         required
-        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-      />
-    </div>
-
-    <!-- Terms & Conditions URL -->
-    <div>
-      <label for="terms_url" class="block text-sm font-medium text-gray-700">
-        Lien vers les conditions générales
-      </label>
-      <input
-        type="url"
-        id="terms_url"
-        bind:value={formData.terms_and_conditions_url}
-        placeholder="https://fournisseur.be/conditions-generales"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
     </div>

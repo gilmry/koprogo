@@ -130,8 +130,7 @@
                 </div>
                 <div class="mt-2 flex items-center text-xs text-gray-400">
                   <span>
-                    {formatDate(campaign.campaign_start_date)} →
-                    {formatDate(campaign.campaign_end_date)}
+                    Participation jusqu'au {formatDate(campaign.deadline_participation)}
                   </span>
                   {#if campaign.offers_received.length > 0}
                     <span class="mx-2">•</span>

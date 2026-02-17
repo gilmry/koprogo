@@ -34,6 +34,10 @@ pub struct UpdateAchievementDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub category: Option<AchievementCategory>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tier: Option<AchievementTier>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub points_value: Option<i32>,

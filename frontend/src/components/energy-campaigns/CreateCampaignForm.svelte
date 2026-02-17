@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import {
     energyCampaignsApi,
     type CreateCampaignDto,
@@ -8,18 +7,20 @@
   import BuildingSelector from "../BuildingSelector.svelte";
 
   export let organizationId: string;
-
-  const dispatch = createEventDispatcher();
+  export let onCreated: ((campaign: any) => void) | undefined = undefined;
+  export let onCancel: (() => void) | undefined = undefined;
 
   let selectedBuildingId = "";
 
+  // Default deadline: 3 months from now
+  const defaultDeadline = new Date();
+  defaultDeadline.setMonth(defaultDeadline.getMonth() + 3);
+
   let formData: CreateCampaignDto = {
-    organization_id: organizationId,
     building_id: undefined,
     campaign_name: "",
+    deadline_participation: defaultDeadline.toISOString().split("T")[0],
     energy_types: [],
-    campaign_start_date: new Date().toISOString().split("T")[0],
-    campaign_end_date: "",
   };
 
   $: formData.building_id = selectedBuildingId || undefined;
@@ -36,14 +37,6 @@
     }
   }
 
-  function setDefaultEndDate() {
-    if (formData.campaign_start_date) {
-      const startDate = new Date(formData.campaign_start_date);
-      startDate.setMonth(startDate.getMonth() + 3); // 3 months campaign by default
-      formData.campaign_end_date = startDate.toISOString().split("T")[0];
-    }
-  }
-
   async function handleSubmit(e: Event) {
     e.preventDefault();
     loading = true;
@@ -51,42 +44,45 @@
     success = false;
 
     try {
-      // Validate
       if (!formData.campaign_name.trim()) {
-        throw new Error("Le nom de la campagne est obligatoire");
+        throw new Error("Le nom de la campagne est obligatoire.");
       }
       if (formData.energy_types.length === 0) {
         throw new Error(
-          "Sélectionnez au moins un type d'énergie (électricité, gaz ou chauffage)",
+          "Selectionnez au moins un type d'energie (electricite, gaz ou chauffage).",
         );
       }
-      if (!formData.campaign_start_date || !formData.campaign_end_date) {
-        throw new Error("Les dates de début et de fin sont obligatoires");
+      if (!formData.deadline_participation) {
+        throw new Error("La date limite de participation est obligatoire.");
       }
-      if (formData.campaign_end_date <= formData.campaign_start_date) {
+      const today = new Date().toISOString().split("T")[0];
+      if (formData.deadline_participation <= today) {
         throw new Error(
-          "La date de fin doit être postérieure à la date de début",
+          "La date limite doit etre dans le futur.",
         );
       }
 
-      const campaign = await energyCampaignsApi.create(formData);
-      success = true;
-      dispatch("created", campaign);
+      // Send as ISO datetime for backend DateTime<Utc>
+      const payload = {
+        ...formData,
+        deadline_participation: new Date(formData.deadline_participation).toISOString(),
+      };
 
-      // Reset form
+      const campaign = await energyCampaignsApi.create(payload as any);
+      success = true;
+      if (onCreated) onCreated(campaign);
+
       setTimeout(() => {
         formData = {
-          organization_id: organizationId,
           building_id: selectedBuildingId || undefined,
           campaign_name: "",
+          deadline_participation: defaultDeadline.toISOString().split("T")[0],
           energy_types: [],
-          campaign_start_date: new Date().toISOString().split("T")[0],
-          campaign_end_date: "",
         };
         success = false;
       }, 2000);
     } catch (err: any) {
-      error = err.message || "Erreur lors de la création de la campagne";
+      error = err.message || "Erreur lors de la creation de la campagne";
       console.error("Failed to create campaign:", err);
     } finally {
       loading = false;
@@ -189,41 +185,25 @@
       </p>
     </div>
 
-    <!-- Dates -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label
-          for="start_date"
-          class="block text-sm font-medium text-gray-700"
-        >
-          Date de début <span class="text-red-500">*</span>
-        </label>
-        <input
-          type="date"
-          id="start_date"
-          bind:value={formData.campaign_start_date}
-          on:change={setDefaultEndDate}
-          required
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
-      <div>
-        <label for="end_date" class="block text-sm font-medium text-gray-700">
-          Date de fin <span class="text-red-500">*</span>
-        </label>
-        <input
-          type="date"
-          id="end_date"
-          bind:value={formData.campaign_end_date}
-          required
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        />
-      </div>
+    <!-- Deadline -->
+    <div>
+      <label
+        for="deadline_participation"
+        class="block text-sm font-medium text-gray-700"
+      >
+        Date limite de participation <span class="text-red-500">*</span>
+      </label>
+      <input
+        type="date"
+        id="deadline_participation"
+        bind:value={formData.deadline_participation}
+        required
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+      />
+      <p class="mt-1 text-xs text-gray-500">
+        Date limite pour que les coproprietaires rejoignent la campagne. Recommandation : 3 a 6 mois.
+      </p>
     </div>
-    <p class="text-xs text-gray-500">
-      Recommandation: 3-6 mois pour collecter les factures et négocier avec les
-      fournisseurs.
-    </p>
 
     <!-- GDPR Notice -->
     <div class="p-4 bg-blue-50 border border-blue-200 rounded-md">
@@ -252,7 +232,7 @@
     <div class="flex justify-end space-x-3">
       <button
         type="button"
-        on:click={() => dispatch("cancel")}
+        on:click={() => onCancel && onCancel()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         Annuler

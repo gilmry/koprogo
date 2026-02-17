@@ -3,7 +3,6 @@
   import {
     energyCampaignsApi,
     type ProviderOffer,
-    EnergyType,
   } from "../../lib/api/energy-campaigns";
 
   export let campaignId: string;
@@ -25,10 +24,10 @@
       error = "";
       offers = await energyCampaignsApi.listOffers(campaignId);
 
-      // Calculate best offer (lowest price)
+      // Calculate best offer (highest savings percentage)
       if (offers.length > 0) {
         bestOffer = offers.reduce((best, current) => {
-          return current.price_per_kwh_cents < best.price_per_kwh_cents
+          return current.estimated_savings_pct > best.estimated_savings_pct
             ? current
             : best;
         });
@@ -41,21 +40,12 @@
     }
   }
 
-  function formatPrice(cents: number): string {
-    return (cents / 100).toFixed(4) + " €";
+  function formatPrice(euros: number): string {
+    return euros.toFixed(4) + " €";
   }
 
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString("fr-BE");
-  }
-
-  function getEnergyTypeLabel(type: EnergyType): string {
-    const labels = {
-      [EnergyType.Electricity]: "⚡ Électricité",
-      [EnergyType.Gas]: "🔥 Gaz",
-      [EnergyType.Heating]: "🌡️ Chauffage",
-    };
-    return labels[type] || type;
   }
 
   function getGreenBadge(percentage: number): {
@@ -84,16 +74,11 @@
     }
   }
 
-  function calculateAnnualCost(offer: ProviderOffer, annualKwh: number): number {
-    const energyCost = (offer.price_per_kwh_cents * annualKwh) / 100;
-    const fixedCost = offer.fixed_monthly_fee_cents
-      ? (offer.fixed_monthly_fee_cents * 12) / 100
-      : 0;
-    return energyCost + fixedCost;
+  function getGreenScoreLabel(score: number): string {
+    if (score >= 10) return "Vert";
+    if (score >= 5) return "Mixte";
+    return "Classique";
   }
-
-  // Example: Assume 3500 kWh/year per household
-  const estimatedAnnualKwh = 3500;
 </script>
 
 <div class="bg-white shadow-md rounded-lg">
@@ -148,7 +133,7 @@
             <div>
               <h4 class="font-semibold text-gray-900">{offer.provider_name}</h4>
               <p class="text-xs text-gray-500">
-                {getEnergyTypeLabel(offer.energy_type)}
+                Score vert: {getGreenScoreLabel(offer.green_score)} ({offer.green_score}/10)
               </p>
             </div>
             {#if offer.id === selectedOfferId}
@@ -158,7 +143,7 @@
             {:else if offer.id === bestOffer?.id}
               <span
                 class="text-indigo-600 text-xl"
-                title="Meilleure offre (prix)"
+                title="Meilleure offre (economies)"
               >
                 ⭐
               </span>
@@ -167,21 +152,25 @@
 
           <!-- Price -->
           <div class="mb-3">
-            <div class="text-2xl font-bold text-gray-900">
-              {formatPrice(offer.price_per_kwh_cents)}
-            </div>
-            <div class="text-xs text-gray-500">par kWh</div>
-            {#if offer.fixed_monthly_fee_cents}
-              <div class="text-sm text-gray-600 mt-1">
-                + {formatPrice(offer.fixed_monthly_fee_cents)}/mois
+            {#if offer.price_kwh_electricity != null}
+              <div class="text-lg font-bold text-gray-900">
+                ⚡ {formatPrice(offer.price_kwh_electricity)}/kWh
               </div>
             {/if}
+            {#if offer.price_kwh_gas != null}
+              <div class="text-lg font-bold text-gray-900">
+                🔥 {formatPrice(offer.price_kwh_gas)}/kWh
+              </div>
+            {/if}
+            <div class="text-sm text-gray-600 mt-1">
+              + {offer.fixed_monthly_fee.toFixed(2)} €/mois
+            </div>
           </div>
 
           <!-- Green Energy Badge -->
           <div class="mb-3">
-            {#if offer.green_energy_percentage > 0}
-              {@const badge = getGreenBadge(offer.green_energy_percentage)}
+            {#if offer.green_energy_pct > 0}
+              {@const badge = getGreenBadge(offer.green_energy_pct)}
               <span
                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {badge.color}"
               >
@@ -202,38 +191,15 @@
             📅 Durée: {offer.contract_duration_months} mois
           </div>
 
-          <!-- Estimated Annual Cost -->
-          <div class="text-sm text-gray-700 mb-2">
-            💰 Coût annuel estimé (3500 kWh):
-            <strong>
-              {calculateAnnualCost(offer, estimatedAnnualKwh).toFixed(2)} €
-            </strong>
-          </div>
-
           <!-- Estimated Savings -->
-          {#if offer.estimated_annual_savings_cents}
-            <div class="text-sm font-medium text-green-600 mb-2">
-              💸 Économies estimées:
-              {formatPrice(offer.estimated_annual_savings_cents)}/an
-            </div>
-          {/if}
+          <div class="text-sm font-medium text-green-600 mb-2">
+            💸 Économies estimées: {offer.estimated_savings_pct.toFixed(1)}%
+          </div>
 
           <!-- Valid Until -->
           <div class="text-xs text-gray-500 mb-3">
             Valide jusqu'au {formatDate(offer.offer_valid_until)}
           </div>
-
-          <!-- Terms & Conditions -->
-          {#if offer.terms_and_conditions_url}
-            <a
-              href={offer.terms_and_conditions_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-xs text-indigo-600 hover:text-indigo-800 underline"
-            >
-              📄 Conditions générales
-            </a>
-          {/if}
 
           <!-- Selection Button (Admin only) -->
           {#if canSelect && !selectedOfferId}
@@ -288,7 +254,7 @@
                 <th
                   class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"
                 >
-                  Coût annuel
+                  Économies
                 </th>
               </tr>
             </thead>
@@ -306,23 +272,19 @@
                     {/if}
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
-                    {formatPrice(offer.price_per_kwh_cents)}
+                    {offer.price_kwh_electricity != null ? formatPrice(offer.price_kwh_electricity) : "-"}
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
-                    {offer.fixed_monthly_fee_cents
-                      ? formatPrice(offer.fixed_monthly_fee_cents) + "/mois"
-                      : "-"}
+                    {offer.fixed_monthly_fee.toFixed(2)} €/mois
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
                     {offer.contract_duration_months} mois
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
-                    {offer.green_energy_percentage}%
+                    {offer.green_energy_pct}%
                   </td>
-                  <td class="px-4 py-2 text-sm font-medium text-gray-900">
-                    {calculateAnnualCost(offer, estimatedAnnualKwh).toFixed(
-                      2,
-                    )} €
+                  <td class="px-4 py-2 text-sm font-medium text-green-600">
+                    {offer.estimated_savings_pct.toFixed(1)}%
                   </td>
                 </tr>
               {/each}
