@@ -24,27 +24,39 @@ import Layout from "../layouts/Layout.astro";
       </div>
     </div>
 
+    <div id="building-selector-container" class="mb-6"></div>
     <div id="poll-list-container"></div>
   </div>
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import PollList from "../components/polls/PollList.svelte";
-  import { authStore } from "../stores/auth";
-  import { get } from "svelte/store";
+  import BuildingSelector from "../components/BuildingSelector.svelte";
 
-  const auth = get(authStore);
-  const buildingId = auth.user?.buildingIds?.[0] || "";
-
-  // Mount Poll List
+  const selectorContainer = document.getElementById("building-selector-container");
   const listContainer = document.getElementById("poll-list-container");
-  if (listContainer) {
-    mount(PollList, {
+  let listComponent: any = null;
+
+  function mountList(buildingId: string) {
+    if (!listContainer) return;
+    if (listComponent) { try { unmount(listComponent); } catch {} }
+    listContainer.innerHTML = "";
+    listComponent = mount(PollList, {
       target: listContainer,
       props: {
         buildingId: buildingId,
         showOnlyActive: false,
+      },
+    });
+  }
+
+  if (selectorContainer) {
+    mount(BuildingSelector, {
+      target: selectorContainer,
+      props: {
+        label: "Immeuble",
+        onSelect: (id: string) => mountList(id),
       },
     });
   }

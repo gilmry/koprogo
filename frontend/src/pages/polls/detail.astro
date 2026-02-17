@@ -1,10 +1,5 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-
-export async function getStaticPaths() {
-  // Return empty array for build - pages will be client-rendered
-  return [];
-}
 ---
 
 <Layout title="Détail du sondage - KoproGo">
@@ -14,7 +9,7 @@ export async function getStaticPaths() {
         href="/polls"
         class="inline-flex items-center text-blue-600 hover:text-blue-800"
       >
-        ← Retour aux sondages
+        &larr; Retour aux sondages
       </a>
     </div>
 
@@ -30,14 +25,13 @@ export async function getStaticPaths() {
   import { get } from "svelte/store";
 
   const auth = get(authStore);
-  const currentUserId = auth.user?.id || "";
   const isAdmin =
     auth.user?.role === UserRole.SYNDIC ||
     auth.user?.role === UserRole.SUPERADMIN;
 
-  // Extract poll ID from URL
-  const pathParts = window.location.pathname.split("/");
-  const pollId = pathParts[pathParts.length - 1];
+  // Extract poll ID from query parameter
+  const params = new URLSearchParams(window.location.search);
+  const pollId = params.get("id");
 
   // Mount Poll Detail
   const detailContainer = document.getElementById("poll-detail-container");
@@ -46,7 +40,6 @@ export async function getStaticPaths() {
       target: detailContainer,
       props: {
         pollId: pollId,
-        currentUserId: currentUserId,
         isAdmin: isAdmin,
       },
     });

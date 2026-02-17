@@ -6,27 +6,30 @@
     type CreatePollOptionDto,
     PollType,
   } from "../../lib/api/polls";
-
-  export let buildingId: string;
+  import BuildingSelector from "../BuildingSelector.svelte";
 
   const dispatch = createEventDispatcher();
 
+  let selectedBuildingId = "";
+
   let formData: CreatePollDto = {
-    building_id: buildingId,
+    building_id: "",
     poll_type: PollType.YesNo,
-    question: "",
+    title: "",
     description: "",
-    starts_at: new Date().toISOString().split("T")[0],
     ends_at: "",
     is_anonymous: false,
     allow_multiple_votes: false,
-    min_rating: 1,
-    max_rating: 5,
     options: [
-      { option_text: "Oui", option_value: 1, display_order: 1 },
-      { option_text: "Non", option_value: 0, display_order: 2 },
+      { option_text: "Oui", display_order: 1 },
+      { option_text: "Non", display_order: 2 },
     ],
   };
+
+  $: formData.building_id = selectedBuildingId;
+
+  // UI-only fields (not sent to backend)
+  let startsAt = new Date().toISOString().split("T")[0];
 
   let loading = false;
   let error = "";
@@ -35,11 +38,13 @@
   // For multiple choice options
   let newOptionText = "";
 
+  let endsAtDate = "";
+
   function setDefaultEndDate() {
-    if (formData.starts_at) {
-      const startDate = new Date(formData.starts_at);
+    if (startsAt) {
+      const startDate = new Date(startsAt);
       startDate.setDate(startDate.getDate() + 7); // 7 days by default
-      formData.ends_at = startDate.toISOString().split("T")[0];
+      endsAtDate = startDate.toISOString().split("T")[0];
     }
   }
 
@@ -48,8 +53,8 @@
     if (formData.poll_type === PollType.YesNo) {
       // Auto-create Yes/No options
       formData.options = [
-        { option_text: "Oui", option_value: 1, display_order: 1 },
-        { option_text: "Non", option_value: 0, display_order: 2 },
+        { option_text: "Oui", display_order: 1 },
+        { option_text: "Non", display_order: 2 },
       ];
     }
   }
@@ -83,15 +88,20 @@
 
     try {
       // Validate
-      if (!formData.question.trim()) {
+      if (!formData.building_id) {
+        throw new Error("Veuillez sélectionner un immeuble");
+      }
+      if (!formData.title.trim()) {
         throw new Error("La question est obligatoire");
       }
-      if (!formData.ends_at) {
+      if (!endsAtDate) {
         throw new Error("La date de fin est obligatoire");
       }
-      if (formData.ends_at <= formData.starts_at!) {
+      if (endsAtDate <= startsAt) {
         throw new Error("La date de fin doit être postérieure à la date de début");
       }
+      // Convert date to ISO 8601 for backend
+      formData.ends_at = new Date(endsAtDate + "T23:59:59Z").toISOString();
       if (
         (formData.poll_type === PollType.YesNo ||
           formData.poll_type === PollType.MultipleChoice) &&
@@ -106,7 +116,7 @@
 
       // Reset form after 2 seconds
       setTimeout(() => {
-        window.location.href = `/polls/${poll.id}`;
+        window.location.href = `/polls/detail?id=${poll.id}`;
       }, 1500);
     } catch (err: any) {
       error = err.message || "Erreur lors de la création du sondage";
@@ -145,6 +155,9 @@
   {/if}
 
   <form on:submit={handleSubmit} class="space-y-6">
+    <!-- Building Selector -->
+    <BuildingSelector bind:selectedBuildingId label="Immeuble concerné" />
+
     <!-- Poll Type -->
     <div>
       <label for="poll_type" class="block text-sm font-medium text-gray-700">
@@ -172,7 +185,7 @@
       <input
         type="text"
         id="question"
-        bind:value={formData.question}
+        bind:value={formData.title}
         required
         placeholder="Ex: Êtes-vous favorable à la rénovation de la façade ?"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -262,7 +275,8 @@
             <label class="text-xs text-gray-500">Note minimale</label>
             <input
               type="number"
-              bind:value={formData.min_rating}
+              value="1"
+              disabled
               min="1"
               max="5"
               class="mt-1 block w-full rounded-md border-gray-300"
@@ -272,7 +286,8 @@
             <label class="text-xs text-gray-500">Note maximale</label>
             <input
               type="number"
-              bind:value={formData.max_rating}
+              value="5"
+              disabled
               min="1"
               max="10"
               class="mt-1 block w-full rounded-md border-gray-300"
@@ -294,7 +309,7 @@
         <input
           type="date"
           id="starts_at"
-          bind:value={formData.starts_at}
+          bind:value={startsAt}
           on:change={setDefaultEndDate}
           required
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -307,7 +322,7 @@
         <input
           type="date"
           id="ends_at"
-          bind:value={formData.ends_at}
+          bind:value={endsAtDate}
           required
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />

@@ -137,14 +137,14 @@
     <ul class="divide-y divide-gray-200">
       {#each filteredPolls as poll}
         <li class="hover:bg-gray-50">
-          <a href="/polls/{poll.id}" class="block px-4 py-4 sm:px-6">
+          <a href="/polls/detail?id={poll.id}" class="block px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
                 <div class="flex items-center space-x-3 mb-2">
                   <h4
                     class="text-sm font-medium text-indigo-600 truncate max-w-md"
                   >
-                    {poll.question}
+                    {poll.title}
                   </h4>
                   <PollTypeBadge type={poll.poll_type} />
                   <PollStatusBadge status={poll.status} />

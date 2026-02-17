@@ -5,7 +5,7 @@
   export let results: PollResults;
 
   function getWinnerColor(optionId: string): string {
-    if (results.winner && results.winner.option_id === optionId) {
+    if (results.winning_option && results.winning_option.id === optionId) {
       return "border-green-500 bg-green-50";
     }
     return "border-gray-200";
@@ -31,9 +31,9 @@
 <div class="bg-white shadow-md rounded-lg p-6">
   <div class="flex items-center justify-between mb-4">
     <h3 class="text-lg font-medium text-gray-900">📊 Résultats</h3>
-    {#if results.winner}
+    {#if results.winning_option}
       <span class="text-sm text-green-600 font-medium">
-        🏆 Gagnant: {results.winner.option_text}
+        🏆 Gagnant: {results.winning_option.option_text}
       </span>
     {/if}
   </div>
@@ -44,7 +44,7 @@
       <div>
         <div class="text-xs text-gray-500">Total des votes</div>
         <div class="text-2xl font-bold text-gray-900">
-          {results.total_votes}
+          {results.total_votes_cast}
         </div>
       </div>
       <div>
@@ -61,11 +61,11 @@
   <!-- Results by Poll Type -->
   {#if poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice}
     <div class="space-y-3">
-      {#each results.results_by_option as optionResult}
-        <div class="border-2 rounded-lg p-4 {getWinnerColor(optionResult.option_id)}">
+      {#each results.options as optionResult}
+        <div class="border-2 rounded-lg p-4 {getWinnerColor(optionResult.id)}">
           <div class="flex items-center justify-between mb-2">
             <span class="font-medium text-gray-900">
-              {#if results.winner && results.winner.option_id === optionResult.option_id}
+              {#if results.winning_option && results.winning_option.id === optionResult.id}
                 🏆
               {/if}
               {optionResult.option_text}
@@ -77,11 +77,11 @@
           <div class="w-full bg-gray-200 rounded-full h-2.5">
             <div
               class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300"
-              style="width: {optionResult.percentage}%"
+              style="width: {optionResult.vote_percentage}%"
             ></div>
           </div>
           <div class="mt-1 text-right text-xs text-gray-500">
-            {optionResult.percentage.toFixed(1)}%
+            {optionResult.vote_percentage.toFixed(1)}%
           </div>
         </div>
       {/each}
@@ -92,21 +92,21 @@
       <div class="text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg">
         <div class="text-sm text-gray-600 mb-2">Note moyenne</div>
         <div class="text-5xl mb-2">
-          {getRatingStars(results.average_rating || 0, poll.max_rating || 5)}
+          {getRatingStars(0, 5)}
         </div>
         <div class="text-3xl font-bold text-gray-900">
-          {results.average_rating?.toFixed(2)} / {poll.max_rating}
+          — / 5
         </div>
       </div>
 
       <!-- Rating Distribution (if available) -->
-      {#if results.results_by_option && results.results_by_option.length > 0}
+      {#if results.options && results.options.length > 0}
         <div>
           <h4 class="text-sm font-medium text-gray-700 mb-3">
             Distribution des notes
           </h4>
           <div class="space-y-2">
-            {#each results.results_by_option as optionResult}
+            {#each results.options as optionResult}
               <div class="flex items-center space-x-3">
                 <span class="text-sm text-gray-600 w-20">
                   {optionResult.option_text} ⭐
@@ -114,11 +114,11 @@
                 <div class="flex-1 bg-gray-200 rounded-full h-2">
                   <div
                     class="bg-yellow-400 h-2 rounded-full"
-                    style="width: {optionResult.percentage}%"
+                    style="width: {optionResult.vote_percentage}%"
                   ></div>
                 </div>
                 <span class="text-sm text-gray-600 w-16 text-right">
-                  {optionResult.vote_count} ({optionResult.percentage.toFixed(
+                  {optionResult.vote_count} ({optionResult.vote_percentage.toFixed(
                     1,
                   )}%)
                 </span>
@@ -130,25 +130,9 @@
     </div>
   {:else if poll.poll_type === PollType.OpenEnded}
     <div>
-      <h4 class="text-sm font-medium text-gray-700 mb-3">
-        Réponses textuelles ({results.text_responses?.length || 0})
-      </h4>
-      {#if results.text_responses && results.text_responses.length > 0}
-        <div class="space-y-3 max-h-96 overflow-y-auto">
-          {#each results.text_responses as response, index}
-            <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
-              <div class="text-xs text-gray-500 mb-1">
-                Réponse #{index + 1}
-              </div>
-              <p class="text-sm text-gray-700">{response}</p>
-            </div>
-          {/each}
-        </div>
-      {:else}
-        <p class="text-sm text-gray-500 italic">
-          Aucune réponse textuelle n'a été enregistrée.
-        </p>
-      {/if}
+      <p class="text-sm text-gray-500 italic">
+        Les réponses textuelles sont disponibles dans les résultats détaillés.
+      </p>
     </div>
   {/if}
 

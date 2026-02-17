@@ -67,28 +67,26 @@
 
       if (poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice) {
         if (poll.allow_multiple_votes) {
-          // Multiple selection (not supported in current DTO, would need backend update)
           if (selectedOptions.size === 0) {
             throw new Error("Sélectionnez au moins une option");
           }
-          // For now, use first selected option
-          voteData.option_id = Array.from(selectedOptions)[0];
+          voteData.selected_option_ids = Array.from(selectedOptions);
         } else {
           if (!selectedOptionId) {
             throw new Error("Sélectionnez une option");
           }
-          voteData.option_id = selectedOptionId;
+          voteData.selected_option_ids = [selectedOptionId];
         }
       } else if (poll.poll_type === PollType.Rating) {
         if (ratingValue === null) {
           throw new Error("Donnez une note");
         }
-        voteData.vote_value = ratingValue;
+        voteData.rating_value = ratingValue;
       } else if (poll.poll_type === PollType.OpenEnded) {
         if (!openEndedText.trim()) {
           throw new Error("Écrivez votre réponse");
         }
-        voteData.vote_text = openEndedText.trim();
+        voteData.open_text = openEndedText.trim();
       }
 
       await pollsApi.vote(voteData);
@@ -217,7 +215,7 @@
             {/if}
           </div>
           <h2 class="text-2xl font-bold text-gray-900 mb-2">
-            {poll.question}
+            {poll.title}
           </h2>
           {#if poll.description}
             <p class="text-sm text-gray-600 mb-4">{poll.description}</p>
@@ -336,8 +334,8 @@
         {:else if poll.poll_type === PollType.Rating}
           <div>
             <div class="flex items-center justify-center space-x-2 mb-4">
-              {#each Array(poll.max_rating - poll.min_rating + 1) as _, i}
-                {@const value = poll.min_rating + i}
+              {#each Array(5) as _, i}
+                {@const value = i + 1}
                 <button
                   type="button"
                   on:click={() => (ratingValue = value)}
@@ -349,7 +347,7 @@
             </div>
             {#if ratingValue !== null}
               <p class="text-center text-sm text-gray-600">
-                Votre note: {ratingValue}/{poll.max_rating}
+                Votre note: {ratingValue}/5
               </p>
             {/if}
           </div>

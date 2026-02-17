@@ -68,20 +68,11 @@ import Layout from "../../layouts/Layout.astro";
 <script>
   import { mount } from "svelte";
   import CreatePollForm from "../../components/polls/CreatePollForm.svelte";
-  import { authStore } from "../../stores/auth";
-  import { get } from "svelte/store";
 
-  const auth = get(authStore);
-  const buildingId = auth.user?.buildingIds?.[0] || "";
-
-  // Mount Create Poll Form
   const formContainer = document.getElementById("create-poll-form-container");
   if (formContainer) {
     mount(CreatePollForm, {
       target: formContainer,
-      props: {
-        buildingId: buildingId,
-      },
     });
   }
 </script>
