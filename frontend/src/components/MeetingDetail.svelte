@@ -4,6 +4,8 @@
   import type { Meeting, Building } from '../lib/types';
   import Button from './ui/Button.svelte';
   import MeetingDocuments from './MeetingDocuments.svelte';
+  import ResolutionList from './resolutions/ResolutionList.svelte';
+  import ConvocationPanel from './convocations/ConvocationPanel.svelte';
 
   let meeting: Meeting | null = null;
   let building: Building | null = null;
@@ -277,6 +279,16 @@
           {/if}
         </div>
       </div>
+    </div>
+
+    <!-- Convocation Section -->
+    <div class="mb-8">
+      <ConvocationPanel meetingId={meetingId} meetingStatus={meeting.status} />
+    </div>
+
+    <!-- Resolutions & Votes Section -->
+    <div class="mb-8">
+      <ResolutionList meetingId={meetingId} meetingStatus={meeting.status} />
     </div>
 
     <!-- Documents Section -->
