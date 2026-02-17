@@ -39,13 +39,14 @@
       error = "";
       poll = await pollsApi.getById(pollId);
 
-      // Load results if poll is closed
-      if (poll.status === PollStatus.Closed) {
-        results = await pollsApi.getResults(pollId);
+      // Load results if closed or active (to show live results)
+      if (poll.status === PollStatus.Closed || poll.status === PollStatus.Active) {
+        try {
+          results = await pollsApi.getResults(pollId);
+        } catch {
+          // Results may not be available yet
+        }
       }
-
-      // Check if user has already voted (TODO: implement backend check)
-      // For now, we'll allow multiple votes if not restricted
     } catch (err: any) {
       error = err.message || "Erreur lors du chargement du sondage";
       console.error("Failed to load poll:", err);
@@ -101,7 +102,13 @@
         votingSuccess = false;
       }, 3000);
     } catch (err: any) {
-      votingError = err.message || "Erreur lors de l'enregistrement du vote";
+      const msg = err.message || "";
+      if (msg.includes("already voted") || msg.includes("déjà voté") || msg.includes("duplicate")) {
+        hasVoted = true;
+        votingError = "Vous avez déjà voté sur ce sondage.";
+      } else {
+        votingError = msg || "Erreur lors de l'enregistrement du vote";
+      }
       console.error("Failed to vote:", err);
     } finally {
       votingInProgress = false;

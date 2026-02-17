@@ -52,6 +52,9 @@ import Layout from "../layouts/Layout.astro";
   import { mount, unmount } from "svelte";
   import TicketDetail from "../components/tickets/TicketDetail.svelte";
   import { ticketsApi } from "../lib/api/tickets";
+  import { authStore } from "../stores/auth";
+  import { get } from "svelte/store";
+  import { UserRole } from "../lib/types";
 
   async function loadTicket() {
     const params = new URLSearchParams(window.location.search);
@@ -68,8 +71,12 @@ import Layout from "../layouts/Layout.astro";
 
       if (!detailContainer) return;
 
-      // Fetch ticket
+      // Fetch ticket and derive permissions from auth context
       const ticket = await ticketsApi.getById(ticketId);
+      const auth = get(authStore);
+      const userRole = auth.user?.activeRole?.role || auth.user?.role;
+      const canManage = userRole === UserRole.SYNDIC || userRole === UserRole.SUPERADMIN;
+      const isContractor = ticket.assigned_contractor_id === auth.user?.id;
 
       // Hide loading
       if (loadingEl) loadingEl.style.display = "none";
@@ -85,8 +92,8 @@ import Layout from "../layouts/Layout.astro";
           target: detailContainer,
           props: {
             ticket: ticketData,
-            canManage: true, // TODO: Get from auth context (check if Syndic role)
-            isContractor: false, // TODO: Get from auth context
+            canManage,
+            isContractor,
             onUpdated: (updatedTicket: any) => {
               mountDetail(updatedTicket);
             },
