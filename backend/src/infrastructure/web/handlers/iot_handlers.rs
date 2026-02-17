@@ -1,12 +1,11 @@
 use crate::application::dto::{
     ConfigureLinkyDeviceDto, CreateIoTReadingDto, QueryIoTReadingsDto, SyncLinkyDataDto,
 };
-use crate::application::use_cases::{IoTUseCases, LinkyUseCases};
 use crate::domain::entities::{DeviceType, MetricType};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
+use crate::infrastructure::web::AppState;
 use actix_web::{error::ErrorBadRequest, web, HttpResponse, Result};
 use chrono::{DateTime, Utc};
-use std::sync::Arc;
 use uuid::Uuid;
 
 // ============================================================================
@@ -33,13 +32,13 @@ use uuid::Uuid;
 pub async fn create_iot_reading(
     auth: AuthenticatedUser,
     dto: web::Json<CreateIoTReadingDto>,
-    iot_use_cases: web::Data<Arc<IoTUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let organization_id = auth
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match iot_use_cases
+    match state.iot_use_cases
         .create_reading(dto.into_inner(), auth.user_id, organization_id)
         .await
     {
@@ -73,13 +72,13 @@ pub async fn create_iot_reading(
 pub async fn create_iot_readings_bulk(
     auth: AuthenticatedUser,
     dtos: web::Json<Vec<CreateIoTReadingDto>>,
-    iot_use_cases: web::Data<Arc<IoTUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let organization_id = auth
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match iot_use_cases
+    match state.iot_use_cases
         .create_readings_bulk(dtos.into_inner(), auth.user_id, organization_id)
         .await
     {
@@ -99,10 +98,10 @@ pub async fn create_iot_readings_bulk(
 pub async fn query_iot_readings(
     auth: AuthenticatedUser,
     query: web::Query<QueryIoTReadingsDto>,
-    iot_use_cases: web::Data<Arc<IoTUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
-    match iot_use_cases.query_readings(query.into_inner()).await {
+    match state.iot_use_cases.query_readings(query.into_inner()).await {
         Ok(readings) => Ok(HttpResponse::Ok().json(readings)),
         Err(e) => Ok(HttpResponse::BadRequest().json(serde_json::json!({
             "error": e
@@ -117,7 +116,7 @@ pub async fn get_consumption_stats(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
-    iot_use_cases: web::Data<Arc<IoTUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
     let building_id = path.into_inner();
@@ -146,7 +145,7 @@ pub async fn get_consumption_stats(
         .parse()
         .map_err(|_| ErrorBadRequest("Invalid end_date format (use ISO 8601)"))?;
 
-    match iot_use_cases
+    match state.iot_use_cases
         .get_consumption_stats(building_id, metric_type, start_date, end_date)
         .await
     {
@@ -164,7 +163,7 @@ pub async fn get_daily_aggregates(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
-    iot_use_cases: web::Data<Arc<IoTUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
     let building_id = path.into_inner();
@@ -201,7 +200,7 @@ pub async fn get_daily_aggregates(
         .parse()
         .map_err(|_| ErrorBadRequest("Invalid end_date format (use ISO 8601)"))?;
 
-    match iot_use_cases
+    match state.iot_use_cases
         .get_daily_aggregates(building_id, device_type, metric_type, start_date, end_date)
         .await
     {
@@ -219,7 +218,7 @@ pub async fn get_monthly_aggregates(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
-    iot_use_cases: web::Data<Arc<IoTUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
     let building_id = path.into_inner();
@@ -256,7 +255,7 @@ pub async fn get_monthly_aggregates(
         .parse()
         .map_err(|_| ErrorBadRequest("Invalid end_date format (use ISO 8601)"))?;
 
-    match iot_use_cases
+    match state.iot_use_cases
         .get_monthly_aggregates(building_id, device_type, metric_type, start_date, end_date)
         .await
     {
@@ -274,7 +273,7 @@ pub async fn detect_anomalies(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
-    iot_use_cases: web::Data<Arc<IoTUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
     let building_id = path.into_inner();
@@ -297,7 +296,7 @@ pub async fn detect_anomalies(
         .and_then(|v| v.as_i64())
         .unwrap_or(30);
 
-    match iot_use_cases
+    match state.iot_use_cases
         .detect_anomalies(
             building_id,
             metric_type,
@@ -333,13 +332,13 @@ pub async fn detect_anomalies(
 pub async fn configure_linky_device(
     auth: AuthenticatedUser,
     dto: web::Json<ConfigureLinkyDeviceDto>,
-    linky_use_cases: web::Data<Arc<LinkyUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let organization_id = auth
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match linky_use_cases
+    match state.linky_use_cases
         .configure_linky_device(dto.into_inner(), auth.user_id, organization_id)
         .await
     {
@@ -356,12 +355,12 @@ pub async fn configure_linky_device(
 pub async fn get_linky_device(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
-    linky_use_cases: web::Data<Arc<LinkyUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
     let building_id = path.into_inner();
 
-    match linky_use_cases.get_linky_device(building_id).await {
+    match state.linky_use_cases.get_linky_device(building_id).await {
         Ok(device) => Ok(HttpResponse::Ok().json(device)),
         Err(e) => Ok(HttpResponse::NotFound().json(serde_json::json!({
             "error": e
@@ -375,14 +374,14 @@ pub async fn get_linky_device(
 pub async fn delete_linky_device(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
-    linky_use_cases: web::Data<Arc<LinkyUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let building_id = path.into_inner();
     let organization_id = auth
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match linky_use_cases
+    match state.linky_use_cases
         .delete_linky_device(building_id, auth.user_id, organization_id)
         .await
     {
@@ -409,14 +408,14 @@ pub async fn sync_linky_data(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
     dto: web::Json<SyncLinkyDataDto>,
-    linky_use_cases: web::Data<Arc<LinkyUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _building_id = path.into_inner();
     let organization_id = auth
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match linky_use_cases
+    match state.linky_use_cases
         .sync_linky_data(dto.into_inner(), auth.user_id, organization_id)
         .await
     {
@@ -441,7 +440,7 @@ pub async fn toggle_linky_sync(
     auth: AuthenticatedUser,
     path: web::Path<Uuid>,
     body: web::Json<serde_json::Value>,
-    linky_use_cases: web::Data<Arc<LinkyUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let building_id = path.into_inner();
     let enabled = body
@@ -452,7 +451,7 @@ pub async fn toggle_linky_sync(
         .organization_id
         .ok_or_else(|| ErrorBadRequest("Organization ID is required"))?;
 
-    match linky_use_cases
+    match state.linky_use_cases
         .toggle_sync(building_id, enabled, auth.user_id, organization_id)
         .await
     {
@@ -468,11 +467,11 @@ pub async fn toggle_linky_sync(
 /// GET /api/v1/iot/linky/devices/needing-sync
 pub async fn find_devices_needing_sync(
     auth: AuthenticatedUser,
-    linky_use_cases: web::Data<Arc<LinkyUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
 
-    match linky_use_cases.find_devices_needing_sync().await {
+    match state.linky_use_cases.find_devices_needing_sync().await {
         Ok(devices) => Ok(HttpResponse::Ok().json(devices)),
         Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e
@@ -485,11 +484,11 @@ pub async fn find_devices_needing_sync(
 /// GET /api/v1/iot/linky/devices/expired-tokens
 pub async fn find_devices_with_expired_tokens(
     auth: AuthenticatedUser,
-    linky_use_cases: web::Data<Arc<LinkyUseCases>>,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse> {
     let _ = auth; // Authentication required
 
-    match linky_use_cases.find_devices_with_expired_tokens().await {
+    match state.linky_use_cases.find_devices_with_expired_tokens().await {
         Ok(devices) => Ok(HttpResponse::Ok().json(devices)),
         Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e

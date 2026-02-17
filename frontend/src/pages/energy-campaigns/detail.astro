@@ -1,17 +1,19 @@
 ---
 import Layout from "../../layouts/Layout.astro";
-
-export async function getStaticPaths() {
-  // Return empty array for build - pages will be client-rendered
-  return [];
-}
-
-const { id } = Astro.params;
 ---
 
 <Layout title="Détails de la campagne - KoproGo">
   <div class="container mx-auto px-4 py-8 max-w-6xl">
-    <div id="campaign-detail-container" data-campaign-id={id}></div>
+    <div class="mb-6">
+      <a
+        href="/energy-campaigns"
+        class="inline-flex items-center text-blue-600 hover:text-blue-800"
+      >
+        &larr; Retour aux campagnes
+      </a>
+    </div>
+
+    <div id="campaign-detail-container"></div>
   </div>
 </Layout>
 
@@ -27,10 +29,11 @@ const { id } = Astro.params;
   const currentUnitId = undefined; // TODO: Get unit_id from context
   const isAdmin = auth.user?.role === UserRole.SUPERADMIN || auth.user?.role === UserRole.SYNDIC;
 
-  // Get campaign ID from data attribute
-  const container = document.getElementById("campaign-detail-container");
-  const campaignId = container?.getAttribute("data-campaign-id");
+  // Extract campaign ID from query parameter
+  const params = new URLSearchParams(window.location.search);
+  const campaignId = params.get("id");
 
+  const container = document.getElementById("campaign-detail-container");
   if (container && campaignId) {
     mount(CampaignDetail, {
       target: container,

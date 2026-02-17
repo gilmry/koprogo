@@ -7,18 +7,21 @@
     exchangeTypeLabels,
     exchangeTypeIcons,
   } from "../../lib/api/local-exchanges";
-
-  export let buildingId: string;
+  import BuildingSelector from "../BuildingSelector.svelte";
 
   const dispatch = createEventDispatcher();
 
+  let selectedBuildingId = "";
+
   let formData: CreateLocalExchangeDto = {
-    building_id: buildingId,
+    building_id: "",
     exchange_type: ExchangeType.Service,
     title: "",
     description: "",
     credits: 1,
   };
+
+  $: formData.building_id = selectedBuildingId;
 
   let loading: boolean = false;
   let error: string | null = null;
@@ -28,6 +31,10 @@
     e.preventDefault();
 
     // Validation
+    if (!formData.building_id) {
+      error = "Veuillez sélectionner un immeuble";
+      return;
+    }
     if (!formData.title.trim()) {
       error = "Le titre est obligatoire";
       return;
@@ -94,6 +101,9 @@
       <p class="text-red-800">❌ {error}</p>
     </div>
   {/if}
+
+  <!-- Building Selector -->
+  <BuildingSelector bind:selectedBuildingId label="Immeuble concerné" />
 
   <!-- Exchange Type -->
   <div>

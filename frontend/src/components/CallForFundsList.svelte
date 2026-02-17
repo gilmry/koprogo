@@ -4,10 +4,24 @@
   import { toast } from '../stores/toast';
 
   export let buildingId: string | undefined = undefined;
+  export let statusFilter: string | undefined = undefined;
   export let onCreate: () => void = () => {};
 
   let calls: any[] = [];
+  let filteredCalls: any[] = [];
   let loading = true;
+
+  $: {
+    if (statusFilter && statusFilter !== 'all') {
+      if (statusFilter === 'overdue') {
+        filteredCalls = calls.filter(c => c.is_overdue);
+      } else {
+        filteredCalls = calls.filter(c => c.status === statusFilter);
+      }
+    } else {
+      filteredCalls = calls;
+    }
+  }
 
   onMount(async () => {
     await loadCalls();
@@ -126,7 +140,7 @@
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       <p class="mt-2 text-gray-600">Chargement...</p>
     </div>
-  {:else if calls.length === 0}
+  {:else if filteredCalls.length === 0}
     <div class="text-center py-12 bg-gray-50 rounded-lg">
       <svg
         class="mx-auto h-12 w-12 text-gray-400"
@@ -178,7 +192,7 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          {#each calls as call (call.id)}
+          {#each filteredCalls as call (call.id)}
             <tr class:bg-red-50={call.is_overdue}>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900">{call.title}</div>

@@ -39,13 +39,14 @@
       error = "";
       poll = await pollsApi.getById(pollId);
 
-      // Load results if poll is closed
-      if (poll.status === PollStatus.Closed) {
-        results = await pollsApi.getResults(pollId);
+      // Load results if closed or active (to show live results)
+      if (poll.status === PollStatus.Closed || poll.status === PollStatus.Active) {
+        try {
+          results = await pollsApi.getResults(pollId);
+        } catch {
+          // Results may not be available yet
+        }
       }
-
-      // Check if user has already voted (TODO: implement backend check)
-      // For now, we'll allow multiple votes if not restricted
     } catch (err: any) {
       error = err.message || "Erreur lors du chargement du sondage";
       console.error("Failed to load poll:", err);
@@ -67,28 +68,26 @@
 
       if (poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice) {
         if (poll.allow_multiple_votes) {
-          // Multiple selection (not supported in current DTO, would need backend update)
           if (selectedOptions.size === 0) {
             throw new Error("Sélectionnez au moins une option");
           }
-          // For now, use first selected option
-          voteData.option_id = Array.from(selectedOptions)[0];
+          voteData.selected_option_ids = Array.from(selectedOptions);
         } else {
           if (!selectedOptionId) {
             throw new Error("Sélectionnez une option");
           }
-          voteData.option_id = selectedOptionId;
+          voteData.selected_option_ids = [selectedOptionId];
         }
       } else if (poll.poll_type === PollType.Rating) {
         if (ratingValue === null) {
           throw new Error("Donnez une note");
         }
-        voteData.vote_value = ratingValue;
+        voteData.rating_value = ratingValue;
       } else if (poll.poll_type === PollType.OpenEnded) {
         if (!openEndedText.trim()) {
           throw new Error("Écrivez votre réponse");
         }
-        voteData.vote_text = openEndedText.trim();
+        voteData.open_text = openEndedText.trim();
       }
 
       await pollsApi.vote(voteData);
@@ -103,7 +102,13 @@
         votingSuccess = false;
       }, 3000);
     } catch (err: any) {
-      votingError = err.message || "Erreur lors de l'enregistrement du vote";
+      const msg = err.message || "";
+      if (msg.includes("already voted") || msg.includes("déjà voté") || msg.includes("duplicate")) {
+        hasVoted = true;
+        votingError = "Vous avez déjà voté sur ce sondage.";
+      } else {
+        votingError = msg || "Erreur lors de l'enregistrement du vote";
+      }
       console.error("Failed to vote:", err);
     } finally {
       votingInProgress = false;
@@ -217,7 +222,7 @@
             {/if}
           </div>
           <h2 class="text-2xl font-bold text-gray-900 mb-2">
-            {poll.question}
+            {poll.title}
           </h2>
           {#if poll.description}
             <p class="text-sm text-gray-600 mb-4">{poll.description}</p>
@@ -336,8 +341,8 @@
         {:else if poll.poll_type === PollType.Rating}
           <div>
             <div class="flex items-center justify-center space-x-2 mb-4">
-              {#each Array(poll.max_rating - poll.min_rating + 1) as _, i}
-                {@const value = poll.min_rating + i}
+              {#each Array(5) as _, i}
+                {@const value = i + 1}
                 <button
                   type="button"
                   on:click={() => (ratingValue = value)}
@@ -349,7 +354,7 @@
             </div>
             {#if ratingValue !== null}
               <p class="text-center text-sm text-gray-600">
-                Votre note: {ratingValue}/{poll.max_rating}
+                Votre note: {ratingValue}/5
               </p>
             {/if}
           </div>

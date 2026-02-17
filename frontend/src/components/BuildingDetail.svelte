@@ -10,6 +10,8 @@
   import MeetingList from './MeetingList.svelte';
   import DocumentList from './DocumentList.svelte';
   import BuildingFinancialReports from './BuildingFinancialReports.svelte';
+  import WorkReportList from './work-reports/WorkReportList.svelte';
+  import InspectionList from './inspections/InspectionList.svelte';
 
   let building: Building | null = null;
   let loading = true;
@@ -176,6 +178,18 @@
       <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
         <DocumentList buildingId={buildingId} />
+      </div>
+
+      <!-- Work Reports Section -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Rapports de travaux</h3>
+        <WorkReportList buildingId={buildingId} />
+      </div>
+
+      <!-- Technical Inspections Section -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Inspections techniques</h3>
+        <InspectionList buildingId={buildingId} />
       </div>
 
       <!-- Financial Reports Section -->

@@ -14,6 +14,7 @@
 
   export let meetingId: string;
   export let meetingStatus: string = 'Scheduled';
+  export let buildingId: string = '';
 
   let convocation: Convocation | null = null;
   let loading = true;
@@ -49,7 +50,7 @@
       actionLoading = true;
       convocation = await convocationsApi.create({
         meeting_id: meetingId,
-        building_id: $authStore.user?.buildingIds?.[0] || '',
+        building_id: buildingId,
         meeting_type: MeetingType.Ordinary,
         meeting_date: '', // Le backend le calculera depuis le meeting
         language: 'fr',

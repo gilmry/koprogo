@@ -46,7 +46,7 @@ import Layout from "../layouts/Layout.astro";
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import TicketList from "../components/tickets/TicketList.svelte";
   import TicketStatistics from "../components/tickets/TicketStatistics.svelte";
   import TicketCreateModal from "../components/tickets/TicketCreateModal.svelte";
@@ -60,52 +60,53 @@ import Layout from "../layouts/Layout.astro";
   // Mount tickets list
   const listContainer = document.getElementById("tickets-list");
   if (listContainer) {
-    const ticketList = mount(TicketList, {
+    mount(TicketList, {
       target: listContainer,
       props: {
         view: "all",
       },
     });
 
-    // Listen for ticket created event to refresh list
     const modalContainer = document.getElementById("create-ticket-modal");
-    if (modalContainer) {
-      const createModal = mount(TicketCreateModal, {
-        target: modalContainer,
-        props: {
-          open: false,
-          buildingId: "", // Will be set when button clicked
-          requesterId: "", // Will be set from auth context
-        },
-      });
+    let createModal: any = null;
 
-      // Handle create button click
-      document
-        .getElementById("create-ticket-btn")
-        ?.addEventListener("click", () => {
-          // In a real app, get these from auth store
-          const buildingId = new URLSearchParams(window.location.search).get(
-            "building_id",
-          );
-          const userId = localStorage.getItem("koprogo_user_id") || "";
-
-          if (!buildingId) {
-            alert("Please select a building first");
-            return;
-          }
-
-          createModal.$set({
-            open: true,
-            buildingId: buildingId,
-            requesterId: userId,
-          });
-        });
-
-      // Refresh list when ticket created
-      modalContainer.addEventListener("created", () => {
-        // Trigger refresh by re-mounting (in real app, use reactive stores)
-        window.location.reload();
-      });
+    function closeModal() {
+      if (createModal) {
+        try { unmount(createModal); } catch {}
+        createModal = null;
+        if (modalContainer) modalContainer.innerHTML = "";
+      }
     }
+
+    // Handle create button click
+    document
+      .getElementById("create-ticket-btn")
+      ?.addEventListener("click", () => {
+        const buildingId = new URLSearchParams(window.location.search).get(
+          "building_id",
+        );
+        const userId = localStorage.getItem("koprogo_user_id") || "";
+
+        if (!buildingId) {
+          alert("Please select a building first");
+          return;
+        }
+
+        closeModal();
+        if (modalContainer) {
+          createModal = mount(TicketCreateModal, {
+            target: modalContainer,
+            props: {
+              open: true,
+              buildingId: buildingId,
+              requesterId: userId,
+              onClose: closeModal,
+              onCreated: () => {
+                window.location.reload();
+              },
+            },
+          });
+        }
+      });
   }
 </script>

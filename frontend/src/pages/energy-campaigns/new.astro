@@ -32,16 +32,13 @@ import Layout from "../../layouts/Layout.astro";
 
   const auth = get(authStore);
   const organizationId = auth.user?.organizationId || "";
-  const buildingId = auth.user?.buildingIds?.[0];
 
-  // Mount Create Form
   const formContainer = document.getElementById("create-form-container");
   if (formContainer) {
     const component = mount(CreateCampaignForm, {
       target: formContainer,
       props: {
         organizationId: organizationId,
-        buildingId: buildingId,
       },
     });
 
@@ -49,7 +46,7 @@ import Layout from "../../layouts/Layout.astro";
     component.$on("created", (event: any) => {
       const campaign = event.detail;
       setTimeout(() => {
-        window.location.href = `/energy-campaigns/${campaign.id}`;
+        window.location.href = `/energy-campaigns/detail?id=${campaign.id}`;
       }, 2000);
     });
 

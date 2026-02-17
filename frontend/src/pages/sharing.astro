@@ -11,26 +11,36 @@ import Layout from "../layouts/Layout.astro";
       </p>
     </div>
 
+    <div id="building-selector-container" class="mb-6"></div>
     <div id="object-list-container"></div>
   </div>
 </Layout>
 
 <script>
-  import { mount } from "svelte";
+  import { mount, unmount } from "svelte";
   import SharedObjectList from "../components/sharing/SharedObjectList.svelte";
-  import { authStore } from "../stores/auth";
-  import { get } from "svelte/store";
+  import BuildingSelector from "../components/BuildingSelector.svelte";
 
-  const auth = get(authStore);
-  const buildingId = auth.user?.buildingIds?.[0] || "";
-
+  const selectorContainer = document.getElementById("building-selector-container");
   const listContainer = document.getElementById("object-list-container");
-  if (listContainer) {
-    mount(SharedObjectList, {
+  let listComponent: any = null;
+
+  function mountList(buildingId: string) {
+    if (!listContainer) return;
+    if (listComponent) { try { unmount(listComponent); } catch {} }
+    listContainer.innerHTML = "";
+    listComponent = mount(SharedObjectList, {
       target: listContainer,
+      props: { buildingId, showFilters: true },
+    });
+  }
+
+  if (selectorContainer) {
+    mount(BuildingSelector, {
+      target: selectorContainer,
       props: {
-        buildingId: buildingId,
-        showFilters: true,
+        label: "Immeuble",
+        onSelect: (id: string) => mountList(id),
       },
     });
   }

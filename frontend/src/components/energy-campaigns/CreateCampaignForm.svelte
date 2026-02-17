@@ -5,20 +5,24 @@
     type CreateCampaignDto,
     EnergyType,
   } from "../../lib/api/energy-campaigns";
+  import BuildingSelector from "../BuildingSelector.svelte";
 
   export let organizationId: string;
-  export let buildingId: string | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
+  let selectedBuildingId = "";
+
   let formData: CreateCampaignDto = {
     organization_id: organizationId,
-    building_id: buildingId,
+    building_id: undefined,
     campaign_name: "",
     energy_types: [],
     campaign_start_date: new Date().toISOString().split("T")[0],
     campaign_end_date: "",
   };
+
+  $: formData.building_id = selectedBuildingId || undefined;
 
   let loading = false;
   let error = "";
@@ -73,7 +77,7 @@
       setTimeout(() => {
         formData = {
           organization_id: organizationId,
-          building_id: buildingId,
+          building_id: selectedBuildingId || undefined,
           campaign_name: "",
           energy_types: [],
           campaign_start_date: new Date().toISOString().split("T")[0],
@@ -116,6 +120,9 @@
   {/if}
 
   <form on:submit={handleSubmit} class="space-y-6">
+    <!-- Building Selector -->
+    <BuildingSelector bind:selectedBuildingId label="Immeuble concerné" required={false} />
+
     <!-- Campaign Name -->
     <div>
       <label

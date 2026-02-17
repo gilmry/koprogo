@@ -85,13 +85,60 @@
   }
 
   function exportToPDF() {
-    alert('Export PDF en développement');
-    // TODO: Implement PDF export
+    const data = reportType === 'balance-sheet' ? balanceSheet : incomeStatement;
+    if (!data) {
+      alert('Veuillez d\'abord charger un rapport');
+      return;
+    }
+    window.print();
   }
 
   function exportToExcel() {
-    alert('Export Excel en développement');
-    // TODO: Implement Excel export
+    const data = reportType === 'balance-sheet' ? balanceSheet : incomeStatement;
+    if (!data) {
+      alert('Veuillez d\'abord charger un rapport');
+      return;
+    }
+
+    let csv = '';
+    const title = reportType === 'balance-sheet' ? 'Bilan_Comptable' : 'Compte_de_Resultats';
+    csv += `${title.replace(/_/g, ' ')}\n`;
+    csv += `Date export;${new Date().toLocaleDateString('fr-BE')}\n\n`;
+
+    if (reportType === 'balance-sheet' && balanceSheet) {
+      csv += 'Section;Code;Compte;Montant EUR\n';
+      for (const account of balanceSheet.assets?.accounts || []) {
+        csv += `Actif;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+      }
+      csv += `;;Total Actif;${balanceSheet.total_assets.toFixed(2)}\n`;
+      for (const account of balanceSheet.liabilities?.accounts || []) {
+        csv += `Passif;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+      }
+      csv += `;;Total Passif;${balanceSheet.total_liabilities.toFixed(2)}\n`;
+      for (const account of balanceSheet.equity?.accounts || []) {
+        csv += `Capitaux Propres;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+      }
+      csv += `;;Total Capitaux Propres;${balanceSheet.total_equity.toFixed(2)}\n`;
+    } else if (incomeStatement) {
+      csv += 'Section;Code;Compte;Montant EUR\n';
+      for (const account of incomeStatement.expenses?.accounts || []) {
+        csv += `Charges;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+      }
+      csv += `;;Total Charges;${incomeStatement.total_expenses.toFixed(2)}\n`;
+      for (const account of incomeStatement.revenue?.accounts || []) {
+        csv += `Produits;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+      }
+      csv += `;;Total Produits;${incomeStatement.total_revenue.toFixed(2)}\n`;
+      csv += `;;Resultat Net;${incomeStatement.net_result.toFixed(2)}\n`;
+    }
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 </script>
 
@@ -205,7 +252,7 @@
             on:click={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📊 Export Excel
+            📊 Export CSV
           </button>
         </div>
       </div>
@@ -338,7 +385,7 @@
             on:click={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📊 Export Excel
+            📊 Export CSV
           </button>
         </div>
       </div>

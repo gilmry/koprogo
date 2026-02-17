@@ -266,7 +266,7 @@
               <!-- Actions -->
               <div class="ml-4 flex-shrink-0 space-y-2">
                 <a
-                  href={`/exchanges/${exchange.id}`}
+                  href={`/exchange-detail?id=${exchange.id}`}
                   class="block w-full text-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   Voir détails

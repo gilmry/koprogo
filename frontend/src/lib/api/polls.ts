@@ -12,73 +12,66 @@ export interface Poll {
   building_id: string;
   created_by: string;
   poll_type: PollType;
-  question: string;
+  title: string;
   description?: string;
   status: PollStatus;
-  starts_at?: string;
-  ends_at?: string;
+  starts_at: string;
+  ends_at: string;
   is_anonymous: boolean;
   total_eligible_voters: number;
   total_votes_cast: number;
   allow_multiple_votes: boolean;
-  min_rating?: number;
-  max_rating?: number;
+  require_all_owners: boolean;
+  participation_rate: number;
+  is_active: boolean;
+  is_ended: boolean;
+  winning_option?: PollOption;
   options: PollOption[];
   created_at: string;
   updated_at: string;
 }
 
 export enum PollType {
-  YesNo = "YesNo",
-  MultipleChoice = "MultipleChoice",
-  Rating = "Rating",
-  OpenEnded = "OpenEnded",
+  YesNo = "yes_no",
+  MultipleChoice = "multiple_choice",
+  Rating = "rating",
+  OpenEnded = "open_ended",
 }
 
 export enum PollStatus {
-  Draft = "Draft",
-  Active = "Active",
-  Closed = "Closed",
-  Cancelled = "Cancelled",
+  Draft = "draft",
+  Active = "active",
+  Closed = "closed",
+  Cancelled = "cancelled",
 }
 
 export interface PollOption {
   id: string;
-  poll_id: string;
   option_text: string;
-  option_value?: number;
-  display_order: number;
+  attachment_url?: string;
   vote_count: number;
-  created_at: string;
+  vote_percentage: number;
+  display_order: number;
 }
 
 export interface PollVote {
   id: string;
   poll_id: string;
-  owner_id?: string; // NULL for anonymous votes
-  option_id?: string; // For multiple choice
-  vote_value?: number; // For rating
-  vote_text?: string; // For open-ended
-  ip_address?: string;
-  is_anonymous: boolean;
-  created_at: string;
+  owner_id?: string;
+  building_id: string;
+  selected_option_ids: string[];
+  rating_value?: number;
+  open_text?: string;
+  voted_at: string;
 }
 
 export interface PollResults {
   poll_id: string;
-  total_votes: number;
+  total_votes_cast: number;
+  total_eligible_voters: number;
   participation_rate: number;
-  results_by_option: OptionResult[];
-  winner?: OptionResult; // For YesNo/MultipleChoice
-  average_rating?: number; // For Rating
-  text_responses?: string[]; // For OpenEnded
-}
-
-export interface OptionResult {
-  option_id: string;
-  option_text: string;
-  vote_count: number;
-  percentage: number;
+  options: PollOption[];
+  winning_option?: PollOption;
 }
 
 export interface PollStatistics {
@@ -92,38 +85,37 @@ export interface PollStatistics {
 
 export interface CreatePollDto {
   building_id: string;
-  poll_type: PollType;
-  question: string;
+  title: string;
   description?: string;
-  starts_at?: string;
-  ends_at?: string;
+  poll_type: PollType | string;
+  options: CreatePollOptionDto[];
   is_anonymous?: boolean;
   allow_multiple_votes?: boolean;
-  min_rating?: number;
-  max_rating?: number;
-  options?: CreatePollOptionDto[];
+  require_all_owners?: boolean;
+  ends_at: string;
 }
 
 export interface CreatePollOptionDto {
   option_text: string;
-  option_value?: number;
+  attachment_url?: string;
   display_order: number;
 }
 
 export interface UpdatePollDto {
-  question?: string;
+  title?: string;
   description?: string;
-  starts_at?: string;
-  ends_at?: string;
+  options?: CreatePollOptionDto[];
   is_anonymous?: boolean;
   allow_multiple_votes?: boolean;
+  require_all_owners?: boolean;
+  ends_at?: string;
 }
 
 export interface CastVoteDto {
   poll_id: string;
-  option_id?: string; // For YesNo/MultipleChoice
-  vote_value?: number; // For Rating
-  vote_text?: string; // For OpenEnded
+  selected_option_ids?: string[]; // For YesNo/MultipleChoice
+  rating_value?: number; // For Rating (1-5)
+  open_text?: string; // For OpenEnded
 }
 
 export interface PublishPollDto {
@@ -176,7 +168,8 @@ export const pollsApi = {
         params.append("page_size", filters.page_size.toString());
       if (params.toString()) url += `?${params.toString()}`;
     }
-    return api.get(url);
+    const response = await api.get(url);
+    return response.polls ?? response;
   },
 
   /**

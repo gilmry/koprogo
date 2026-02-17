@@ -89,33 +89,40 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  import { mount } from 'svelte';
+  import { mount, unmount } from 'svelte';
   import CallForFundsList from '../components/CallForFundsList.svelte';
   import CallForFundsForm from '../components/CallForFundsForm.svelte';
 
   let currentTab = 'all';
   let listComponent: any = null;
 
-  // Initialize the list component
+  // Initialize or re-initialize the list component with current filter
   function initList() {
     const container = document.getElementById('calls-container');
-    if (container && !listComponent) {
-      listComponent = mount(CallForFundsList, {
-        target: container,
-        props: {
-          onCreate: showModal,
-        },
-      });
+    if (!container) return;
+
+    // Unmount previous instance
+    if (listComponent) {
+      try { unmount(listComponent); } catch {}
+      container.innerHTML = '';
     }
+
+    listComponent = mount(CallForFundsList, {
+      target: container,
+      props: {
+        onCreate: showModal,
+        statusFilter: currentTab === 'all' ? undefined : currentTab,
+      },
+    });
   }
 
-  // Tab switching
+  // Tab switching with list filtering
   document.querySelectorAll('.tab-button').forEach((button) => {
     button.addEventListener('click', (e) => {
       const target = e.target as HTMLButtonElement;
       const tab = target.dataset.tab;
 
-      if (tab) {
+      if (tab && tab !== currentTab) {
         currentTab = tab;
 
         // Update active tab styles
@@ -126,8 +133,8 @@ import Layout from '../layouts/Layout.astro';
         target.classList.remove('border-transparent', 'text-gray-500');
         target.classList.add('border-blue-500', 'text-blue-600');
 
-        // TODO: Filter the list based on tab
-        // For now, we'll just show all items
+        // Re-mount list with new filter
+        initList();
       }
     });
   });
