@@ -106,7 +106,7 @@
       {#each campaigns as campaign}
         <li class="hover:bg-gray-50">
           <a
-            href="/energy-campaigns/{campaign.id}"
+            href="/energy-campaigns/detail?id={campaign.id}"
             class="block px-4 py-4 sm:px-6"
           >
             <div class="flex items-center justify-between">
