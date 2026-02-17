@@ -56,7 +56,7 @@ sha2 = "0.10"
 hex = "0.4"
 
 # JWT for node authentication
-jsonwebtoken = { version = "9.3", default-features = false }
+jsonwebtoken = { version = "10.3", default-features = false, features = ["aws_lc_rs"] }
 
 # CLI argument parsing
 clap = { version = "4.5", features = ["derive"] }
