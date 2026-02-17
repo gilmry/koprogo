@@ -142,15 +142,15 @@ export const gamificationApi = {
     return api.post("/users/achievements", data);
   },
 
-  async getUserAchievements(userId: string): Promise<UserAchievement[]> {
-    return api.get(`/users/${userId}/achievements`);
+  async getUserAchievements(_userId?: string): Promise<UserAchievement[]> {
+    return api.get(`/users/achievements`);
   },
 
   async getRecentAchievements(
-    userId: string,
+    _userId?: string,
     limit = 10,
   ): Promise<UserAchievement[]> {
-    return api.get(`/users/${userId}/achievements/recent?limit=${limit}`);
+    return api.get(`/users/achievements/recent?limit=${limit}`);
   },
 
   // Challenges (9 endpoints)
@@ -198,19 +198,19 @@ export const gamificationApi = {
   // Challenge Progress (4 endpoints)
   async getChallengeProgress(
     challengeId: string,
-    userId: string,
+    _userId?: string,
   ): Promise<ChallengeProgress> {
-    return api.get(`/challenges/${challengeId}/progress/${userId}`);
+    return api.get(`/challenges/${challengeId}/progress`);
   },
 
   async listChallengeProgress(
     challengeId: string,
   ): Promise<ChallengeProgress[]> {
-    return api.get(`/challenges/${challengeId}/progress`);
+    return api.get(`/challenges/${challengeId}/all-progress`);
   },
 
-  async getUserActiveChallenges(userId: string): Promise<ChallengeProgress[]> {
-    return api.get(`/users/${userId}/challenges/active`);
+  async getUserActiveChallenges(_userId?: string): Promise<ChallengeProgress[]> {
+    return api.get(`/users/challenges/active`);
   },
 
   async incrementProgress(
@@ -223,8 +223,8 @@ export const gamificationApi = {
   },
 
   // Statistics (2 endpoints)
-  async getUserStats(userId: string): Promise<any> {
-    return api.get(`/users/${userId}/gamification/stats`);
+  async getUserStats(organizationId: string): Promise<any> {
+    return api.get(`/organizations/${organizationId}/gamification/stats`);
   },
 
   async getLeaderboard(

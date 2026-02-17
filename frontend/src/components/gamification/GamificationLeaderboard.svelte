@@ -21,6 +21,10 @@
   });
 
   async function loadLeaderboard() {
+    if (!organizationId) {
+      loading = false;
+      return;
+    }
     try {
       loading = true;
       error = '';

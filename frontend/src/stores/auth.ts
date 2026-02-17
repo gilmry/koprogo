@@ -125,13 +125,40 @@ const ensureUserShape = (user: any): User => {
 };
 
 const createAuthStore = () => {
-  const { subscribe, set, update } = writable<AuthState>({
+  // Pre-populate from localStorage synchronously so page scripts
+  // can access user data immediately via get(authStore)
+  let initialState: AuthState = {
     user: null,
     isAuthenticated: false,
     isLoading: true,
     token: null,
     refreshToken: null,
-  });
+  };
+
+  if (typeof window !== "undefined") {
+    const storedUser = localStorage.getItem("koprogo_user");
+    const storedToken = localStorage.getItem("koprogo_token");
+    const storedRefreshToken = localStorage.getItem("koprogo_refresh_token");
+
+    if (storedUser && storedToken && storedRefreshToken) {
+      try {
+        const user = ensureUserShape(JSON.parse(storedUser));
+        initialState = {
+          user,
+          isAuthenticated: true,
+          isLoading: true, // still loading until init() completes async ops
+          token: storedToken,
+          refreshToken: storedRefreshToken,
+        };
+      } catch {
+        // Invalid stored data, keep defaults
+      }
+    } else {
+      initialState.isLoading = false;
+    }
+  }
+
+  const { subscribe, set, update } = writable<AuthState>(initialState);
 
   const startTokenRefresh = () => {
     if (refreshTimer) {
@@ -156,32 +183,25 @@ const createAuthStore = () => {
   const authStore = {
     subscribe,
 
-    // Initialize from localStorage and IndexedDB
+    // Initialize async operations (localDB, sync, token refresh).
+    // User data is already pre-populated from localStorage at store creation.
     init: async () => {
       if (typeof window !== "undefined") {
-        const storedUser = localStorage.getItem("koprogo_user");
         const storedToken = localStorage.getItem("koprogo_token");
         const storedRefreshToken = localStorage.getItem(
           "koprogo_refresh_token",
         );
 
-        if (storedUser && storedToken && storedRefreshToken) {
+        if (initialState.user && storedToken && storedRefreshToken) {
           try {
-            const user = ensureUserShape(JSON.parse(storedUser));
-
             // Initialize local database
             await localDB.init();
 
             // Initialize sync service with token
             await syncService.initialize(storedToken);
 
-            set({
-              user,
-              isAuthenticated: true,
-              isLoading: false,
-              token: storedToken,
-              refreshToken: storedRefreshToken,
-            });
+            // Mark loading complete
+            update((state) => ({ ...state, isLoading: false }));
 
             // Start auto-refresh
             startTokenRefresh();

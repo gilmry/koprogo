@@ -35,6 +35,10 @@
   });
 
   async function loadData() {
+    if (!organizationId) {
+      loading = false;
+      return;
+    }
     try {
       loading = true;
       error = '';
