@@ -1,0 +1,47 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Rapports de travaux - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">Rapports de travaux</h1>
+      <p class="text-gray-600 mt-1">
+        Carnet d'entretien numérique : suivi des travaux, garanties et interventions
+      </p>
+    </div>
+
+    <div id="building-selector-container" class="mb-6"></div>
+    <div id="work-reports-container"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount, unmount } from "svelte";
+  import WorkReportList from "../components/work-reports/WorkReportList.svelte";
+  import BuildingSelector from "../components/BuildingSelector.svelte";
+
+  const selectorContainer = document.getElementById("building-selector-container");
+  const listContainer = document.getElementById("work-reports-container");
+  let listComponent: any = null;
+
+  function mountList(buildingId: string) {
+    if (!listContainer) return;
+    if (listComponent) { try { unmount(listComponent); } catch {} }
+    listContainer.innerHTML = "";
+    listComponent = mount(WorkReportList, {
+      target: listContainer,
+      props: { buildingId },
+    });
+  }
+
+  if (selectorContainer) {
+    mount(BuildingSelector, {
+      target: selectorContainer,
+      props: {
+        label: "Immeuble",
+        onSelect: (id: string) => mountList(id),
+      },
+    });
+  }
+</script>

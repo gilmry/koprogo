@@ -187,6 +187,8 @@
               { href: '/convocations', label: 'Convocations', icon: '📨' },
               { href: '/tickets', label: 'Tickets', icon: '🎫' },
               { href: '/quotes', label: 'Devis', icon: '📋' },
+              { href: '/work-reports', label: 'Travaux', icon: '🔧' },
+              { href: '/inspections', label: 'Inspections', icon: '🔍' },
               { href: '/syndic/board-members', label: 'Conseil', icon: '👑' },
               { href: '/documents', label: t('navigation.documents'), icon: '📄' },
             ],
