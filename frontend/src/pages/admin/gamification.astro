@@ -1,0 +1,128 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Gestion Gamification - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-900">
+        Gestion de la Gamification
+      </h1>
+      <p class="text-gray-600 mt-2">
+        Gerez les achievements et challenges pour encourager la participation communautaire.
+      </p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="border-b border-gray-200 mb-6">
+      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+        <button
+          id="tab-achievements"
+          class="tab-button border-amber-500 text-amber-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+          data-tab="achievements"
+        >
+          Achievements
+        </button>
+        <button
+          id="tab-challenges"
+          class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+          data-tab="challenges"
+        >
+          Challenges
+        </button>
+        <button
+          id="tab-leaderboard"
+          class="tab-button border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+          data-tab="leaderboard"
+        >
+          Classement
+        </button>
+      </nav>
+    </div>
+
+    <!-- Tab Content -->
+    <div id="tab-achievements-content"></div>
+    <div id="tab-challenges-content" class="hidden"></div>
+    <div id="tab-leaderboard-content" class="hidden"></div>
+  </div>
+</Layout>
+
+<script>
+  import { mount, unmount } from "svelte";
+  import AdminAchievementList from "../../components/gamification/AdminAchievementList.svelte";
+  import AdminChallengeList from "../../components/gamification/AdminChallengeList.svelte";
+  import GamificationLeaderboard from "../../components/gamification/GamificationLeaderboard.svelte";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
+
+  const auth = get(authStore);
+  const organizationId = auth.user?.organizationId || auth.user?.activeRole?.organizationId || "";
+
+  let currentTab = "achievements";
+  const containers: Record<string, HTMLElement | null> = {
+    achievements: document.getElementById("tab-achievements-content"),
+    challenges: document.getElementById("tab-challenges-content"),
+    leaderboard: document.getElementById("tab-leaderboard-content"),
+  };
+  let mounted: Record<string, any> = {};
+
+  function mountTab(tab: string) {
+    // Show/hide containers
+    for (const [key, el] of Object.entries(containers)) {
+      if (el) {
+        el.classList.toggle("hidden", key !== tab);
+      }
+    }
+
+    // Mount component if not already mounted
+    if (mounted[tab]) return;
+
+    const container = containers[tab];
+    if (!container) return;
+
+    switch (tab) {
+      case "achievements":
+        mounted[tab] = mount(AdminAchievementList, {
+          target: container,
+          props: { organizationId },
+        });
+        break;
+      case "challenges":
+        mounted[tab] = mount(AdminChallengeList, {
+          target: container,
+          props: { organizationId },
+        });
+        break;
+      case "leaderboard":
+        mounted[tab] = mount(GamificationLeaderboard, {
+          target: container,
+          props: { organizationId },
+        });
+        break;
+    }
+  }
+
+  // Tab switching
+  document.querySelectorAll(".tab-button").forEach((button) => {
+    button.addEventListener("click", (e) => {
+      const target = e.target as HTMLButtonElement;
+      const tab = target.dataset.tab;
+      if (!tab || tab === currentTab) return;
+
+      currentTab = tab;
+
+      // Update styles
+      document.querySelectorAll(".tab-button").forEach((btn) => {
+        btn.classList.remove("border-amber-500", "text-amber-600");
+        btn.classList.add("border-transparent", "text-gray-500");
+      });
+      target.classList.remove("border-transparent", "text-gray-500");
+      target.classList.add("border-amber-500", "text-amber-600");
+
+      mountTab(tab);
+    });
+  });
+
+  // Mount initial tab
+  mountTab("achievements");
+</script>

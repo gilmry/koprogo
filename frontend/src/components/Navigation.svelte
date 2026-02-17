@@ -150,6 +150,7 @@
               { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
               { href: '/admin/board-members', label: 'Conseil', icon: '👑' },
               { href: '/admin/gdpr', label: 'RGPD', icon: '🔒' },
+              { href: '/admin/gamification', label: 'Gamification', icon: '🏆' },
             ],
           },
           communityGroup,
