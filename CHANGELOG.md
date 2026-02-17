@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Frontend Feature Pages & Navigation Refactoring (2026-02-17)
+
+**Major frontend expansion: 8 thematic commits delivering 6 new feature areas with full UI coverage for existing backend APIs.**
+
+#### Navigation & Layout
+
+- **Navigation sidebar**: Complete rewrite as fixed sidebar (w-60) on desktop, hamburger + slide-in drawer on mobile with smooth transitions and keyboard accessibility
+- **Layout offset**: Content wrapper with `lg:ml-60` offset and mobile header spacer
+- **Grouped navigation**: Items organized by section (Principal, Gestion, Gouvernance, Communauté) with role-based visibility
+
+#### Resolutions & Votes AG (Belgian Copropriété Law)
+
+- **ResolutionList**: List resolutions per meeting with inline vote panels, status counts, create form
+- **ResolutionVotePanel**: Pour/Contre/Abstention voting with millièmes (tantièmes), proxy support, progress bars
+- **ResolutionCreateForm**: Create resolutions with majority type selection (Simple/Absolute/Qualified)
+- **ResolutionStatusBadge**: Visual status indicators (Pending/Adopted/Rejected)
+- Integrated into MeetingDetail page
+
+#### Convocations AG (Belgian Legal Deadlines)
+
+- **ConvocationPanel**: Meeting-level convocation management (create/send/cancel/reminders), legal deadline badge
+- **ConvocationRecipientList**: Recipient table with email tracking, attendance status, proxy delegation
+- **ConvocationList**: Standalone list page with status filter and legal deadline warnings
+- **convocations.astro**: Dedicated page for syndics (Art. 577-6 §2: 15j/8j deadlines)
+
+#### Quotes (Contractor Management - Belgian 3-Quote Law)
+
+- **QuoteList**: Building quotes with status filter, compare mode (multi-select), create form, Belgian law warnings
+- **QuoteDetail**: Full workflow (submit/review/accept/reject/withdraw) with Belgian VAT rates (6%/12%/21%)
+- **quotes/index.astro**: Main quotes page (replaces direct link to comparison page)
+
+#### Profile (GDPR Compliant)
+
+- **ProfilePanel**: Functional profile replacing stub, with editable personal info and complete GDPR section:
+  - Art. 15: Export data (JSON download)
+  - Art. 16: Rectify personal data
+  - Art. 17: Erase data (eligibility check + double confirmation)
+  - Art. 18: Restrict processing
+  - Art. 21: Marketing opt-out/opt-in
+
+#### Gamification (Community Engagement)
+
+- **AchievementList**: Achievement grid with 8 category filters, 5 tier badges (Bronze→Diamond), earned/unearned states
+- **ChallengeList**: Active/completed challenges with progress bars, days remaining, reward points
+- **GamificationLeaderboard**: Points-based ranking with medals and current user highlighting
+- **gamification.astro**: Two-column layout page
+
+### Fixed - Backend Route Ordering & Handler Consistency (2026-02-17)
+
+- **Route ordering**: Specific paths now registered before parameterized `/{id}` paths (tickets, notifications, payments) preventing route shadowing
+- **Handler migration**: Energy bill upload and campaign handlers migrated from direct `Data<UseCases>` to `Data<AppState>` pattern
+- **Notification endpoints**: URLs corrected to match API spec (`/notifications/my`, `/notifications/{id}/read`, `/notifications/read-all`)
+- **API error handling**: Fixed double-consume error on non-JSON error responses in frontend `apiFetch`
+- **Poll form defaults**: Added default Oui/Non options for YesNo poll type
+
 ### Added - Strategic Documentation Transformation & Solidarity Fund (2025-11-13)
 
 **Complete repositioning of KoproGo messaging from confrontational to collaborative, with introduction of comprehensive Solidarity Fund mechanism.**
