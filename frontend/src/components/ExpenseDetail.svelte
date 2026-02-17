@@ -4,9 +4,12 @@
   import type { Expense, Building } from '../lib/types';
   import Button from './ui/Button.svelte';
   import ExpenseDocuments from './ExpenseDocuments.svelte';
+  import { paymentsApi, type Payment } from '../lib/api/payments';
 
   let expense: Expense | null = null;
   let building: Building | null = null;
+  let expensePayments: Payment[] = [];
+  let totalPaidCents = 0;
   let loading = true;
   let error = '';
   let expenseId: string = '';
@@ -30,13 +33,31 @@
       error = '';
       expense = await api.get<Expense>(`/expenses/${expenseId}`);
 
-      // Load building info
-      if (expense && expense.building_id) {
-        try {
-          building = await api.get<Building>(`/buildings/${expense.building_id}`);
-        } catch (e) {
-          console.error('Error loading building:', e);
+      // Load building info and payments in parallel
+      if (expense) {
+        const promises: Promise<any>[] = [];
+
+        if (expense.building_id) {
+          promises.push(
+            api.get<Building>(`/buildings/${expense.building_id}`)
+              .then(b => { building = b; })
+              .catch(e => console.error('Error loading building:', e))
+          );
         }
+
+        promises.push(
+          paymentsApi.listByExpense(expenseId)
+            .then(p => { expensePayments = p; })
+            .catch(() => { expensePayments = []; })
+        );
+
+        promises.push(
+          paymentsApi.getExpenseTotal(expenseId)
+            .then(t => { totalPaidCents = t.total_paid_cents; })
+            .catch(() => { totalPaidCents = 0; })
+        );
+
+        await Promise.all(promises);
       }
     } catch (e) {
       error = e instanceof Error ? e.message : 'Erreur lors du chargement de la dépense';
@@ -148,6 +169,33 @@
       'Cancelled': { class: 'bg-gray-100 text-gray-800', label: 'Annulée' }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
+  }
+
+  function formatCentsToEur(cents: number): string {
+    return formatCurrency(cents / 100);
+  }
+
+  function getPaymentStatusBadge(status: string): { class: string; label: string } {
+    const badges: Record<string, { class: string; label: string }> = {
+      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: 'En attente' },
+      'Processing': { class: 'bg-blue-100 text-blue-800', label: 'En cours' },
+      'RequiresAction': { class: 'bg-orange-100 text-orange-800', label: 'Action requise' },
+      'Succeeded': { class: 'bg-green-100 text-green-800', label: 'Réussi' },
+      'Failed': { class: 'bg-red-100 text-red-800', label: 'Échoué' },
+      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: 'Annulé' },
+      'Refunded': { class: 'bg-purple-100 text-purple-800', label: 'Remboursé' },
+    };
+    return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
+  }
+
+  function getPaymentMethodLabel(type: string): string {
+    const labels: Record<string, string> = {
+      'Card': 'Carte bancaire',
+      'SepaDebit': 'SEPA',
+      'BankTransfer': 'Virement',
+      'Cash': 'Espèces',
+    };
+    return labels[type] || type;
   }
 
   function getCategoryLabel(category: string): string {
@@ -304,6 +352,75 @@
     <!-- Documents Section -->
     <div class="mb-8">
       <ExpenseDocuments expenseId={expenseId} expenseStatus={expense.payment_status} />
+    </div>
+
+    <!-- Payments Section -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+      <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-semibold text-white">Paiements</h2>
+          {#if totalPaidCents > 0}
+            <span class="px-3 py-1 rounded-full text-sm font-medium bg-white/20 text-white">
+              Total payé : {formatCentsToEur(totalPaidCents)}
+            </span>
+          {/if}
+        </div>
+      </div>
+      <div class="p-6">
+        {#if expensePayments.length > 0}
+          <!-- Payment progress bar -->
+          {#if expense.amount > 0}
+            {@const paidPercent = Math.min(100, (totalPaidCents / 100 / expense.amount) * 100)}
+            <div class="mb-6">
+              <div class="flex items-center justify-between text-sm text-gray-600 mb-1">
+                <span>Progression du paiement</span>
+                <span class="font-medium">{Math.round(paidPercent)}%</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div
+                  class="h-2.5 rounded-full {paidPercent >= 100 ? 'bg-green-500' : 'bg-primary-500'}"
+                  style="width: {paidPercent}%"
+                ></div>
+              </div>
+              <div class="flex items-center justify-between text-xs text-gray-500 mt-1">
+                <span>{formatCentsToEur(totalPaidCents)} payé</span>
+                <span>{formatCurrency(expense.amount)} total</span>
+              </div>
+            </div>
+          {/if}
+
+          <!-- Payment list -->
+          <div class="space-y-3">
+            {#each expensePayments as payment}
+              {@const badge = getPaymentStatusBadge(payment.status)}
+              <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <div class="flex-1">
+                  <div class="flex items-center gap-3 mb-1">
+                    <span class="text-sm font-medium text-gray-900">{formatCentsToEur(payment.amount_cents)}</span>
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium {badge.class}">{badge.label}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{getPaymentMethodLabel(payment.payment_method_type)}</span>
+                    <span>·</span>
+                    <span>{formatDate(payment.created_at)}</span>
+                    {#if payment.refunded_amount_cents > 0}
+                      <span>·</span>
+                      <span class="text-purple-600">Remboursé : {formatCentsToEur(payment.refunded_amount_cents)}</span>
+                    {/if}
+                  </div>
+                  {#if payment.failure_reason}
+                    <p class="text-xs text-red-600 mt-1">{payment.failure_reason}</p>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </div>
+        {:else}
+          <div class="text-center py-8">
+            <p class="text-gray-500">Aucun paiement enregistré pour cette dépense</p>
+          </div>
+        {/if}
+      </div>
     </div>
   {/if}
 </div>

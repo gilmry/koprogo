@@ -4,7 +4,28 @@
   import { api } from '../../lib/api';
   import type { Building, Unit, Expense } from '../../lib/types';
 
+  import { ticketsApi, type Ticket } from '../../lib/api/tickets';
+  import { notificationsApi, type Notification as AppNotification } from '../../lib/api/notifications';
+
   $: user = $authStore.user;
+
+  interface OwnerTicket {
+    id: string;
+    title: string;
+    status: string;
+    priority: string;
+    category: string;
+    created_at: string;
+  }
+
+  interface OwnerNotification {
+    id: string;
+    title: string;
+    message: string;
+    notification_type: string;
+    is_read: boolean;
+    created_at: string;
+  }
 
   interface OwnerStats {
     total_buildings: number;
@@ -35,6 +56,8 @@
   let recentBuildings: Building[] = [];
   let recentUnits: Unit[] = [];
   let boardMandates: BoardMandate[] = [];
+  let myTickets: OwnerTicket[] = [];
+  let unreadNotifications: OwnerNotification[] = [];
   let loading = true;
   let error: string | null = null;
 
@@ -55,6 +78,19 @@
       recentBuildings = buildingsData.data;
       recentUnits = unitsData.data;
       boardMandates = mandatesData.mandates;
+
+      // Load tickets and notifications (non-blocking)
+      try {
+        const [ticketsData, notifData] = await Promise.all([
+          ticketsApi.listMy(),
+          notificationsApi.getUnread(),
+        ]);
+        myTickets = (ticketsData as OwnerTicket[]).slice(0, 5);
+        unreadNotifications = (notifData as OwnerNotification[]).slice(0, 5);
+      } catch {
+        // Non-critical, ignore errors
+      }
+
       loading = false;
     } catch (err) {
       error = err instanceof Error ? err.message : 'Erreur lors du chargement des données';
@@ -62,6 +98,8 @@
       console.error('Error fetching owner dashboard data:', err);
     }
   }
+
+  $: openTicketsCount = myTickets.filter(t => t.status !== 'Closed' && t.status !== 'Cancelled' && t.status !== 'Resolved').length;
 
   function formatDate(dateString: string): string {
     const date = new Date(dateString);
@@ -297,6 +335,85 @@
       </div>
     </div>
 
+    <!-- Tickets & Notifications -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+      <!-- My Tickets -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-gray-900">Mes tickets</h2>
+            {#if openTicketsCount > 0}
+              <span class="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">{openTicketsCount} ouvert{openTicketsCount > 1 ? 's' : ''}</span>
+            {/if}
+          </div>
+          <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+            Voir tout →
+          </a>
+        </div>
+        <div class="p-6">
+          {#if myTickets.length > 0}
+            <div class="space-y-3">
+              {#each myTickets as ticket}
+                <a href="/ticket-detail?id={ticket.id}" class="block p-3 border border-gray-200 rounded-lg hover:border-primary-300 transition">
+                  <div class="flex items-center justify-between mb-1">
+                    <h3 class="text-sm font-medium text-gray-900 truncate">{ticket.title}</h3>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium
+                      {ticket.status === 'Open' ? 'bg-blue-100 text-blue-800' :
+                       ticket.status === 'InProgress' ? 'bg-yellow-100 text-yellow-800' :
+                       ticket.status === 'Resolved' ? 'bg-green-100 text-green-800' :
+                       ticket.status === 'Assigned' ? 'bg-purple-100 text-purple-800' :
+                       'bg-gray-100 text-gray-800'}">{ticket.status}</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <span>{ticket.category}</span>
+                    <span>·</span>
+                    <span>{formatDate(ticket.created_at)}</span>
+                  </div>
+                </a>
+              {/each}
+            </div>
+          {:else}
+            <div class="text-center py-6">
+              <p class="text-gray-500 text-sm">Aucun ticket de maintenance</p>
+              <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 mt-1 inline-block">Créer un ticket</a>
+            </div>
+          {/if}
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-semibold text-gray-900">Notifications</h2>
+            {#if unreadNotifications.length > 0}
+              <span class="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full">{unreadNotifications.length} non lu{unreadNotifications.length > 1 ? 'es' : 'e'}</span>
+            {/if}
+          </div>
+          <a href="/notifications" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+            Voir tout →
+          </a>
+        </div>
+        <div class="p-6">
+          {#if unreadNotifications.length > 0}
+            <div class="space-y-3">
+              {#each unreadNotifications as notif}
+                <div class="p-3 border border-gray-200 rounded-lg bg-blue-50/50">
+                  <h3 class="text-sm font-medium text-gray-900">{notif.title}</h3>
+                  <p class="text-xs text-gray-600 mt-0.5 line-clamp-2">{notif.message}</p>
+                  <p class="text-xs text-gray-400 mt-1">{formatDate(notif.created_at)}</p>
+                </div>
+              {/each}
+            </div>
+          {:else}
+            <div class="text-center py-6">
+              <p class="text-gray-500 text-sm">Aucune notification non lue</p>
+            </div>
+          {/if}
+        </div>
+      </div>
+    </div>
+
     <!-- Quick Actions -->
     <div class="mt-8">
       <div class="bg-white rounded-lg shadow">
@@ -320,6 +437,14 @@
             <a href="/meetings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">📅</span>
               <span class="text-sm font-medium text-gray-700">Assemblées</span>
+            </a>
+            <a href="/owner/tickets" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+              <span class="text-4xl mb-2 group-hover:scale-110 transition">🎫</span>
+              <span class="text-sm font-medium text-gray-700">Tickets</span>
+            </a>
+            <a href="/owner/payments" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+              <span class="text-4xl mb-2 group-hover:scale-110 transition">💳</span>
+              <span class="text-sm font-medium text-gray-700">Paiements</span>
             </a>
             {#if boardMandates.length > 0}
               <a

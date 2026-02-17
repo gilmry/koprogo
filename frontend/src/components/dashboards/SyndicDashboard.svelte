@@ -4,6 +4,8 @@
   import { api } from '../../lib/api';
   import type { Owner } from '../../lib/types';
   import OwnerEditModal from '../OwnerEditModal.svelte';
+  import { ticketsApi } from '../../lib/api/tickets';
+  import { notificationsApi } from '../../lib/api/notifications';
 
   $: user = $authStore.user;
 
@@ -33,6 +35,8 @@
   let stats: SyndicStats | null = null;
   let urgentTasks: UrgentTask[] = [];
   let recentOwners: Owner[] = [];
+  let openTicketsCount = 0;
+  let unreadNotifCount = 0;
   let loading = true;
   let error: string | null = null;
 
@@ -56,6 +60,18 @@
       urgentTasks = tasksData;
       recentOwners = ownersData.data;
       loading = false;
+
+      // Load ticket/notification counts (non-blocking)
+      try {
+        const [ticketStats, unreadNotifs] = await Promise.all([
+          ticketsApi.getStatistics(),
+          notificationsApi.getUnread(),
+        ]);
+        openTicketsCount = (ticketStats as any)?.open_count ?? 0;
+        unreadNotifCount = Array.isArray(unreadNotifs) ? unreadNotifs.length : 0;
+      } catch {
+        // Non-critical
+      }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Erreur lors du chargement des statistiques';
       loading = false;
@@ -217,22 +233,44 @@
         <h2 class="text-lg font-semibold text-gray-900">Actions rapides</h2>
       </div>
       <div class="p-6">
-        <div class="grid grid-cols-2 gap-4">
-          <a href="/buildings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-4xl mb-2 group-hover:scale-110 transition">🏢</span>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <a href="/buildings" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition">🏢</span>
             <span class="text-sm font-medium text-gray-700">Immeubles</span>
           </a>
-          <a href="/owners" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-4xl mb-2 group-hover:scale-110 transition">👥</span>
+          <a href="/owners" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition">👥</span>
             <span class="text-sm font-medium text-gray-700">Copropriétaires</span>
           </a>
-          <a href="/expenses" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-4xl mb-2 group-hover:scale-110 transition">💰</span>
+          <a href="/expenses" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition">💰</span>
             <span class="text-sm font-medium text-gray-700">Charges</span>
           </a>
-          <a href="/meetings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
-            <span class="text-4xl mb-2 group-hover:scale-110 transition">📅</span>
+          <a href="/meetings" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition">📅</span>
             <span class="text-sm font-medium text-gray-700">Assemblées</span>
+          </a>
+          <a href="/tickets" class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition">🎫</span>
+            <span class="text-sm font-medium text-gray-700">Tickets</span>
+            {#if openTicketsCount > 0}
+              <span class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">{openTicketsCount}</span>
+            {/if}
+          </a>
+          <a href="/convocations" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition">📨</span>
+            <span class="text-sm font-medium text-gray-700">Convocations</span>
+          </a>
+          <a href="/work-reports" class="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition">🔧</span>
+            <span class="text-sm font-medium text-gray-700">Travaux</span>
+          </a>
+          <a href="/notifications" class="relative flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
+            <span class="text-3xl mb-2 group-hover:scale-110 transition">🔔</span>
+            <span class="text-sm font-medium text-gray-700">Notifications</span>
+            {#if unreadNotifCount > 0}
+              <span class="absolute top-2 right-2 px-1.5 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full">{unreadNotifCount}</span>
+            {/if}
           </a>
         </div>
       </div>
