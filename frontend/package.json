@@ -34,7 +34,7 @@
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@playwright/test": "^1.57.0",
+    "@playwright/test": "^1.58.0",
     "@vite-pwa/astro": "^1.2.0",
     "prettier": "^3.7.3",
     "prettier-plugin-astro": "^0.14.1",
