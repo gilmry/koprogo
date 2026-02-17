@@ -2,11 +2,11 @@
 import Layout from "../../layouts/Layout.astro";
 ---
 
-<Layout title="My Payments">
+<Layout title="Mes Paiements - KoproGo">
   <div class="container mx-auto px-4 py-8">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">My Payments</h1>
-      <p class="mt-2 text-gray-600">View your payment history and statistics</p>
+      <h1 class="text-3xl font-bold text-gray-900">Mes Paiements</h1>
+      <p class="mt-2 text-gray-600">Historique et statistiques de vos paiements</p>
     </div>
 
     <!-- Payment Statistics -->
@@ -36,7 +36,7 @@ import Layout from "../../layouts/Layout.astro";
             d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
           />
         </svg>
-        Manage Payment Methods
+        Gerer mes moyens de paiement
       </a>
     </div>
   </div>
@@ -46,34 +46,27 @@ import Layout from "../../layouts/Layout.astro";
   import { mount } from "svelte";
   import PaymentList from "../../components/payments/PaymentList.svelte";
   import PaymentStats from "../../components/payments/PaymentStats.svelte";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
 
-  // Get owner ID from localStorage (in real app, from auth context)
-  const ownerId = localStorage.getItem("koprogo_user_id") || "";
+  const auth = get(authStore);
+  const ownerId = auth.user?.id || "";
 
   if (ownerId) {
-    // Mount payment statistics
     const statsContainer = document.getElementById("payment-stats");
     if (statsContainer) {
       mount(PaymentStats, {
         target: statsContainer,
-        props: {
-          ownerId,
-        },
+        props: { ownerId },
       });
     }
 
-    // Mount payment list
     const listContainer = document.getElementById("payment-list");
     if (listContainer) {
       mount(PaymentList, {
         target: listContainer,
-        props: {
-          ownerId,
-        },
+        props: { ownerId },
       });
     }
-  } else {
-    // Redirect to login if not authenticated
-    window.location.href = "/login";
   }
 </script>

@@ -2,14 +2,14 @@
 import Layout from "../../layouts/Layout.astro";
 ---
 
-<Layout title="Payment Methods">
+<Layout title="Moyens de Paiement - KoproGo">
   <div class="container mx-auto px-4 py-8">
     <div class="mb-6">
       <div class="flex items-center space-x-3 mb-2">
         <a
           href="/owner/payments"
           class="text-gray-500 hover:text-gray-700"
-          aria-label="Back to payments"
+          aria-label="Retour aux paiements"
         >
           <svg
             class="h-6 w-6"
@@ -25,10 +25,10 @@ import Layout from "../../layouts/Layout.astro";
             />
           </svg>
         </a>
-        <h1 class="text-3xl font-bold text-gray-900">Payment Methods</h1>
+        <h1 class="text-3xl font-bold text-gray-900">Moyens de Paiement</h1>
       </div>
       <p class="mt-2 text-gray-600">
-        Add and manage your payment methods for faster checkout
+        Ajoutez et gerez vos moyens de paiement
       </p>
     </div>
 
@@ -49,12 +49,12 @@ import Layout from "../../layouts/Layout.astro";
           </svg>
         </div>
         <div class="ml-3">
-          <h3 class="text-sm font-medium text-blue-800">Secure & Encrypted</h3>
+          <h3 class="text-sm font-medium text-blue-800">Securise et chiffre</h3>
           <div class="mt-2 text-sm text-blue-700">
             <p>
-              All payment information is encrypted and securely stored by Stripe,
-              a PCI-DSS Level 1 certified payment processor. We never see or store
-              your full card number.
+              Toutes les informations de paiement sont chiffrees et stockees de maniere securisee
+              par Stripe, certifie PCI-DSS Niveau 1. Nous ne voyons ni ne stockons jamais votre
+              numero de carte complet.
             </p>
           </div>
         </div>
@@ -69,24 +69,19 @@ import Layout from "../../layouts/Layout.astro";
 <script>
   import { mount } from "svelte";
   import PaymentMethodList from "../../components/payments/PaymentMethodList.svelte";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
 
-  // Get owner ID from localStorage (in real app, from auth context)
-  const ownerId = localStorage.getItem("koprogo_user_id") || "";
+  const auth = get(authStore);
+  const ownerId = auth.user?.id || "";
 
   if (ownerId) {
-    // Mount payment methods list
     const listContainer = document.getElementById("payment-methods-list");
     if (listContainer) {
       mount(PaymentMethodList, {
         target: listContainer,
-        props: {
-          ownerId,
-          canManage: true,
-        },
+        props: { ownerId, canManage: true },
       });
     }
-  } else {
-    // Redirect to login if not authenticated
-    window.location.href = "/login";
   }
 </script>

@@ -2,14 +2,16 @@
 import Layout from "../../layouts/Layout.astro";
 ---
 
-<Layout title="My Tickets">
+<Layout title="Mes Tickets">
   <div class="container mx-auto px-4 py-8">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">My Maintenance Tickets</h1>
+      <h1 class="text-3xl font-bold text-gray-900">Mes Tickets de Maintenance</h1>
       <p class="mt-2 text-gray-600">
-        View and manage your maintenance requests
+        Consultez et gerez vos demandes de maintenance
       </p>
     </div>
+
+    <div id="building-selector-container" class="mb-6"></div>
 
     <!-- Create Ticket Button -->
     <div class="mb-6">
@@ -28,7 +30,7 @@ import Layout from "../../layouts/Layout.astro";
             d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
             clip-rule="evenodd"></path>
         </svg>
-        Create New Ticket
+        Creer un ticket
       </button>
     </div>
 
@@ -44,57 +46,74 @@ import Layout from "../../layouts/Layout.astro";
   import { mount, unmount } from "svelte";
   import TicketList from "../../components/tickets/TicketList.svelte";
   import TicketCreateModal from "../../components/tickets/TicketCreateModal.svelte";
+  import BuildingSelector from "../../components/BuildingSelector.svelte";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
 
-  // Mount my tickets list
+  const auth = get(authStore);
+  const userId = auth.user?.id || "";
+  let currentBuildingId = "";
+  let listComponent: any = null;
+
+  const selectorContainer = document.getElementById("building-selector-container");
   const listContainer = document.getElementById("my-tickets-list");
-  if (listContainer) {
-    mount(TicketList, {
+  const modalContainer = document.getElementById("create-ticket-modal");
+  let createModal: any = null;
+
+  function mountList(buildingId: string) {
+    currentBuildingId = buildingId;
+    if (!listContainer) return;
+    if (listComponent) {
+      try { unmount(listComponent); } catch {}
+    }
+    listContainer.innerHTML = "";
+    listComponent = mount(TicketList, {
       target: listContainer,
+      props: { view: "my", buildingId },
+    });
+  }
+
+  if (selectorContainer) {
+    mount(BuildingSelector, {
+      target: selectorContainer,
       props: {
-        view: "my",
+        label: "Immeuble",
+        onSelect: (id: string) => mountList(id),
       },
     });
-
-    const modalContainer = document.getElementById("create-ticket-modal");
-    let createModal: any = null;
-
-    function closeModal() {
-      if (createModal) {
-        try { unmount(createModal); } catch {}
-        createModal = null;
-        if (modalContainer) modalContainer.innerHTML = "";
-      }
-    }
-
-    // Handle create button click
-    document
-      .getElementById("create-ticket-btn")
-      ?.addEventListener("click", () => {
-        const buildingId = localStorage.getItem("current_building_id") || "";
-        const userId = localStorage.getItem("koprogo_user_id") || "";
-
-        if (!buildingId) {
-          alert(
-            "Please select your building first. Go to your profile to set your default building.",
-          );
-          return;
-        }
-
-        closeModal();
-        if (modalContainer) {
-          createModal = mount(TicketCreateModal, {
-            target: modalContainer,
-            props: {
-              open: true,
-              buildingId: buildingId,
-              requesterId: userId,
-              onClose: closeModal,
-              onCreated: () => {
-                window.location.reload();
-              },
-            },
-          });
-        }
-      });
   }
+
+  function closeModal() {
+    if (createModal) {
+      try { unmount(createModal); } catch {}
+      createModal = null;
+      if (modalContainer) modalContainer.innerHTML = "";
+    }
+  }
+
+  document
+    .getElementById("create-ticket-btn")
+    ?.addEventListener("click", () => {
+      if (!currentBuildingId) {
+        alert("Veuillez d'abord selectionner un immeuble.");
+        return;
+      }
+
+      closeModal();
+      if (modalContainer) {
+        createModal = mount(TicketCreateModal, {
+          target: modalContainer,
+          props: {
+            open: true,
+            buildingId: currentBuildingId,
+            requesterId: userId,
+            onClose: closeModal,
+            onCreated: () => {
+              closeModal();
+              mountList(currentBuildingId);
+            },
+          },
+        });
+      }
+    });
 </script>
