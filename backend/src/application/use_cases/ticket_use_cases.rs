@@ -278,6 +278,71 @@ impl TicketUseCases {
 
         Ok(overdue)
     }
+
+    /// Get ticket statistics for an organization (all buildings)
+    pub async fn get_ticket_statistics_by_organization(
+        &self,
+        organization_id: Uuid,
+    ) -> Result<TicketStatistics, String> {
+        let total = self
+            .ticket_repository
+            .count_by_organization(organization_id)
+            .await?;
+
+        let open = self
+            .ticket_repository
+            .count_by_organization_and_status(organization_id, TicketStatus::Open)
+            .await?;
+
+        let in_progress = self
+            .ticket_repository
+            .count_by_organization_and_status(organization_id, TicketStatus::InProgress)
+            .await?;
+
+        let resolved = self
+            .ticket_repository
+            .count_by_organization_and_status(organization_id, TicketStatus::Resolved)
+            .await?;
+
+        let closed = self
+            .ticket_repository
+            .count_by_organization_and_status(organization_id, TicketStatus::Closed)
+            .await?;
+
+        let cancelled = self
+            .ticket_repository
+            .count_by_organization_and_status(organization_id, TicketStatus::Cancelled)
+            .await?;
+
+        Ok(TicketStatistics {
+            total,
+            open,
+            in_progress,
+            resolved,
+            closed,
+            cancelled,
+        })
+    }
+
+    /// Check for overdue tickets in organization (all buildings)
+    pub async fn get_overdue_tickets_by_organization(
+        &self,
+        organization_id: Uuid,
+        max_days: i64,
+    ) -> Result<Vec<TicketResponse>, String> {
+        let tickets = self
+            .ticket_repository
+            .find_by_organization(organization_id)
+            .await?;
+
+        let overdue: Vec<TicketResponse> = tickets
+            .into_iter()
+            .filter(|ticket| ticket.is_overdue(max_days))
+            .map(TicketResponse::from)
+            .collect();
+
+        Ok(overdue)
+    }
 }
 
 /// Ticket statistics for a building

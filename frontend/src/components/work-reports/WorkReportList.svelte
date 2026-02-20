@@ -4,6 +4,7 @@
   import type { WorkReport, CreateWorkReportDto } from "../../lib/api/work-reports";
   import { WorkType, WarrantyType } from "../../lib/api/work-reports";
   import { toast } from "../../stores/toast";
+  import WorkReportDetail from "./WorkReportDetail.svelte";
 
   export let buildingId: string;
   export let organizationId: string = "";
@@ -13,6 +14,8 @@
   let error = "";
   let showCreateForm = false;
   let filterType = "all";
+  let selectedReport: WorkReport | null = null;
+  let detailOpen = false;
 
   // Create form
   let form: Partial<CreateWorkReportDto> = resetForm();
@@ -85,6 +88,21 @@
     }
   }
 
+  function openDetail(report: WorkReport) {
+    selectedReport = report;
+    detailOpen = true;
+  }
+
+  function handleDetailUpdated(event: CustomEvent<WorkReport>) {
+    const updated = event.detail;
+    reports = reports.map((r) => (r.id === updated.id ? updated : r));
+  }
+
+  function handleDetailDeleted(event: CustomEvent<string>) {
+    reports = reports.filter((r) => r.id !== event.detail);
+    detailOpen = false;
+  }
+
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString("fr-BE", {
       day: "numeric",
@@ -127,52 +145,52 @@
       <h3 class="font-medium text-gray-800 mb-3">Nouveau rapport de travaux</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Titre *</label>
-          <input bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Ex: Réparation ascenseur" />
+          <label for="wr-new-title" class="block text-sm text-gray-600 mb-1">Titre *</label>
+          <input id="wr-new-title" bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Ex: Réparation ascenseur" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Entrepreneur *</label>
-          <input bind:value={form.contractor_name} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Nom de l'entreprise" />
+          <label for="wr-new-contractor" class="block text-sm text-gray-600 mb-1">Entrepreneur *</label>
+          <input id="wr-new-contractor" bind:value={form.contractor_name} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Nom de l'entreprise" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Type de travaux</label>
-          <select bind:value={form.work_type} class="w-full border rounded px-3 py-1.5 text-sm">
+          <label for="wr-new-type" class="block text-sm text-gray-600 mb-1">Type de travaux</label>
+          <select id="wr-new-type" bind:value={form.work_type} class="w-full border rounded px-3 py-1.5 text-sm">
             {#each Object.entries(workTypeLabels) as [val, label]}
               <option value={val}>{label}</option>
             {/each}
           </select>
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Date des travaux</label>
-          <input type="date" bind:value={form.work_date} class="w-full border rounded px-3 py-1.5 text-sm" />
+          <label for="wr-new-date" class="block text-sm text-gray-600 mb-1">Date des travaux</label>
+          <input id="wr-new-date" type="date" bind:value={form.work_date} class="w-full border rounded px-3 py-1.5 text-sm" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Coût (EUR)</label>
-          <input type="number" bind:value={form.cost} min="0" step="0.01" class="w-full border rounded px-3 py-1.5 text-sm" />
+          <label for="wr-new-cost" class="block text-sm text-gray-600 mb-1">Coût (EUR)</label>
+          <input id="wr-new-cost" type="number" bind:value={form.cost} min="0" step="0.01" class="w-full border rounded px-3 py-1.5 text-sm" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Garantie</label>
-          <select bind:value={form.warranty_type} class="w-full border rounded px-3 py-1.5 text-sm">
+          <label for="wr-new-warranty" class="block text-sm text-gray-600 mb-1">Garantie</label>
+          <select id="wr-new-warranty" bind:value={form.warranty_type} class="w-full border rounded px-3 py-1.5 text-sm">
             {#each Object.entries(warrantyTypeLabels) as [val, label]}
               <option value={val}>{label}</option>
             {/each}
           </select>
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">N° Facture</label>
-          <input bind:value={form.invoice_number} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Optionnel" />
+          <label for="wr-new-invoice" class="block text-sm text-gray-600 mb-1">N° Facture</label>
+          <input id="wr-new-invoice" bind:value={form.invoice_number} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Optionnel" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Contact entrepreneur</label>
-          <input bind:value={form.contractor_contact} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Téléphone ou email" />
+          <label for="wr-new-contact" class="block text-sm text-gray-600 mb-1">Contact entrepreneur</label>
+          <input id="wr-new-contact" bind:value={form.contractor_contact} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Téléphone ou email" />
         </div>
         <div class="md:col-span-2">
-          <label class="block text-sm text-gray-600 mb-1">Description</label>
-          <textarea bind:value={form.description} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Détails des travaux effectués"></textarea>
+          <label for="wr-new-desc" class="block text-sm text-gray-600 mb-1">Description</label>
+          <textarea id="wr-new-desc" bind:value={form.description} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Détails des travaux effectués"></textarea>
         </div>
         <div class="md:col-span-2">
-          <label class="block text-sm text-gray-600 mb-1">Notes</label>
-          <textarea bind:value={form.notes} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Notes additionnelles"></textarea>
+          <label for="wr-new-notes" class="block text-sm text-gray-600 mb-1">Notes</label>
+          <textarea id="wr-new-notes" bind:value={form.notes} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Notes additionnelles"></textarea>
         </div>
       </div>
       <div class="mt-3 flex gap-2">
@@ -213,7 +231,13 @@
     <!-- Reports list -->
     <div class="space-y-3">
       {#each filteredReports as report}
-        <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-gray-300 transition-colors">
+        <div
+          class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer"
+          on:click={() => openDetail(report)}
+          on:keydown={(e) => e.key === "Enter" && openDetail(report)}
+          role="button"
+          tabindex="0"
+        >
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
@@ -247,7 +271,11 @@
                 {/if}
               </div>
             </div>
-            <button on:click={() => deleteReport(report.id)} class="text-red-400 hover:text-red-600 p-1" title="Supprimer">
+            <button
+              on:click|stopPropagation={() => deleteReport(report.id)}
+              class="text-red-400 hover:text-red-600 p-1"
+              title="Supprimer"
+            >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
           </div>
@@ -256,3 +284,13 @@
     </div>
   {/if}
 </div>
+
+{#if selectedReport}
+  <WorkReportDetail
+    isOpen={detailOpen}
+    report={selectedReport}
+    on:close={() => (detailOpen = false)}
+    on:updated={handleDetailUpdated}
+    on:deleted={handleDetailDeleted}
+  />
+{/if}

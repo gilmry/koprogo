@@ -135,11 +135,11 @@ pub async fn list_tickets_by_status(
     let (building_id, status_str) = path.into_inner();
 
     let status = match status_str.as_str() {
-        "open" => TicketStatus::Open,
-        "in_progress" => TicketStatus::InProgress,
-        "resolved" => TicketStatus::Resolved,
-        "closed" => TicketStatus::Closed,
-        "cancelled" => TicketStatus::Cancelled,
+        "Open" | "open" => TicketStatus::Open,
+        "InProgress" | "in_progress" => TicketStatus::InProgress,
+        "Resolved" | "resolved" => TicketStatus::Resolved,
+        "Closed" | "closed" => TicketStatus::Closed,
+        "Cancelled" | "cancelled" => TicketStatus::Cancelled,
         _ => {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "error": format!("Invalid status: {}", status_str)
@@ -457,6 +457,53 @@ pub async fn reopen_ticket(
 
 // ==================== Ticket Statistics Endpoints ====================
 
+#[get("/tickets/statistics")]
+pub async fn get_ticket_statistics_org(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+) -> impl Responder {
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
+
+    match state
+        .ticket_use_cases
+        .get_ticket_statistics_by_organization(organization_id)
+        .await
+    {
+        Ok(stats) => HttpResponse::Ok().json(stats),
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
+    }
+}
+
+#[get("/tickets/overdue")]
+pub async fn get_overdue_tickets_org(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    query: web::Query<OverdueQuery>,
+) -> impl Responder {
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
+
+    let max_days = query.max_days.unwrap_or(7);
+
+    match state
+        .ticket_use_cases
+        .get_overdue_tickets_by_organization(organization_id, max_days)
+        .await
+    {
+        Ok(tickets) => HttpResponse::Ok().json(tickets),
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
+    }
+}
+
 #[get("/buildings/{building_id}/tickets/statistics")]
 pub async fn get_ticket_statistics(
     state: web::Data<AppState>,
@@ -478,7 +525,7 @@ pub async fn get_overdue_tickets(
     building_id: web::Path<Uuid>,
     query: web::Query<OverdueQuery>,
 ) -> impl Responder {
-    let max_days = query.max_days.unwrap_or(7); // Default 7 days
+    let max_days = query.max_days.unwrap_or(7);
 
     match state
         .ticket_use_cases

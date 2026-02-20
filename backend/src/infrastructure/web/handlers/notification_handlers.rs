@@ -7,6 +7,23 @@ use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
 
+/// Parse notification type from both snake_case and PascalCase
+fn parse_notification_type(s: &str) -> Option<NotificationType> {
+    match s {
+        "expense_created" | "ExpenseCreated" => Some(NotificationType::ExpenseCreated),
+        "meeting_convocation" | "MeetingConvocation" => Some(NotificationType::MeetingConvocation),
+        "payment_received" | "PaymentReceived" => Some(NotificationType::PaymentReceived),
+        "ticket_resolved" | "TicketResolved" => Some(NotificationType::TicketResolved),
+        "document_added" | "DocumentAdded" => Some(NotificationType::DocumentAdded),
+        "board_message" | "BoardMessage" => Some(NotificationType::BoardMessage),
+        "payment_reminder" | "PaymentReminder" => Some(NotificationType::PaymentReminder),
+        "budget_approved" | "BudgetApproved" => Some(NotificationType::BudgetApproved),
+        "resolution_vote" | "ResolutionVote" => Some(NotificationType::ResolutionVote),
+        "system" | "System" => Some(NotificationType::System),
+        _ => None,
+    }
+}
+
 // ==================== Notification Endpoints ====================
 
 #[post("/notifications")]
@@ -249,18 +266,9 @@ pub async fn get_preference(
     user: AuthenticatedUser,
     notification_type: web::Path<String>,
 ) -> impl Responder {
-    let notification_type = match notification_type.as_str() {
-        "expense_created" => NotificationType::ExpenseCreated,
-        "meeting_convocation" => NotificationType::MeetingConvocation,
-        "payment_received" => NotificationType::PaymentReceived,
-        "ticket_resolved" => NotificationType::TicketResolved,
-        "document_added" => NotificationType::DocumentAdded,
-        "board_message" => NotificationType::BoardMessage,
-        "payment_reminder" => NotificationType::PaymentReminder,
-        "budget_approved" => NotificationType::BudgetApproved,
-        "resolution_vote" => NotificationType::ResolutionVote,
-        "system" => NotificationType::System,
-        _ => {
+    let notification_type = match parse_notification_type(notification_type.as_str()) {
+        Some(nt) => nt,
+        None => {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "error": format!("Invalid notification type: {}", notification_type)
             }))
@@ -294,18 +302,9 @@ pub async fn update_preference(
         }
     };
 
-    let notification_type = match notification_type.as_str() {
-        "expense_created" => NotificationType::ExpenseCreated,
-        "meeting_convocation" => NotificationType::MeetingConvocation,
-        "payment_received" => NotificationType::PaymentReceived,
-        "ticket_resolved" => NotificationType::TicketResolved,
-        "document_added" => NotificationType::DocumentAdded,
-        "board_message" => NotificationType::BoardMessage,
-        "payment_reminder" => NotificationType::PaymentReminder,
-        "budget_approved" => NotificationType::BudgetApproved,
-        "resolution_vote" => NotificationType::ResolutionVote,
-        "system" => NotificationType::System,
-        _ => {
+    let notification_type = match parse_notification_type(notification_type.as_str()) {
+        Some(nt) => nt,
+        None => {
             return HttpResponse::BadRequest().json(serde_json::json!({
                 "error": format!("Invalid notification type: {}", notification_type)
             }))

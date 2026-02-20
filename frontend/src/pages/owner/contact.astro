@@ -7,26 +7,16 @@ import Layout from '../../layouts/Layout.astro';
     <div class="max-w-4xl mx-auto">
       <h1 class="text-3xl font-bold text-gray-900 mb-6">Contacter le Syndic</h1>
 
-      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm text-yellow-700">
-              Cette page est en cours de développement. Le système de messagerie sera bientôt disponible.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Formulaire de contact -->
+        <!-- Formulaire de contact (future) -->
         <div class="bg-white rounded-lg shadow p-6">
           <h2 class="text-xl font-semibold text-gray-900 mb-4">Envoyer un Message</h2>
-          <div class="space-y-4">
+
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 text-sm text-yellow-700 rounded-r">
+            La messagerie directe sera disponible prochainement.
+          </div>
+
+          <div class="space-y-4 opacity-50 pointer-events-none">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Sujet</label>
               <select class="w-full px-3 py-2 border border-gray-300 rounded-lg" disabled>
@@ -45,53 +35,27 @@ import Layout from '../../layouts/Layout.astro';
                 disabled
               ></textarea>
             </div>
-            <button
-              class="w-full bg-primary-600 text-white py-2 rounded-lg opacity-50 cursor-not-allowed"
-              disabled
-            >
-              Envoyer (Bientôt disponible)
+            <button class="w-full bg-primary-600 text-white py-2 rounded-lg cursor-not-allowed" disabled>
+              Envoyer
             </button>
           </div>
         </div>
 
-        <!-- Coordonnées du syndic -->
+        <!-- Coordonnées du syndic (dynamiques) -->
         <div class="space-y-6">
           <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Coordonnées du Syndic</h2>
-            <ul class="space-y-3 text-gray-600">
-              <li class="flex items-start">
-                <span class="mr-3 text-primary-600">📧</span>
-                <div>
-                  <p class="font-medium">Email</p>
-                  <p class="text-sm">contact@syndic-exemple.fr</p>
-                </div>
-              </li>
-              <li class="flex items-start">
-                <span class="mr-3 text-primary-600">📞</span>
-                <div>
-                  <p class="font-medium">Téléphone</p>
-                  <p class="text-sm">01 23 45 67 89</p>
-                </div>
-              </li>
-              <li class="flex items-start">
-                <span class="mr-3 text-primary-600">📍</span>
-                <div>
-                  <p class="font-medium">Adresse</p>
-                  <p class="text-sm">123 Avenue Example<br>75001 Paris</p>
-                </div>
-              </li>
-              <li class="flex items-start">
-                <span class="mr-3 text-primary-600">🕐</span>
-                <div>
-                  <p class="font-medium">Horaires</p>
-                  <p class="text-sm">Lun-Ven: 9h-18h<br>Sam: 9h-12h</p>
-                </div>
-              </li>
-            </ul>
+            <div id="syndic-contact-panel">
+              <!-- Syndic info will be mounted here -->
+              <div class="flex items-center gap-2 text-gray-400 py-4">
+                <div class="animate-spin w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full"></div>
+                <span class="text-sm">Chargement...</span>
+              </div>
+            </div>
           </div>
 
           <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
-            <h3 class="font-semibold text-blue-900 mb-2">💡 Astuce</h3>
+            <h3 class="font-semibold text-blue-900 mb-2">Astuce</h3>
             <p class="text-sm text-blue-700">
               Pour une réponse plus rapide, consultez d'abord la FAQ et vos documents disponibles dans votre espace.
             </p>
@@ -110,3 +74,27 @@ import Layout from '../../layouts/Layout.astro';
     </div>
   </div>
 </Layout>
+
+<script>
+  import { mount } from "svelte";
+  import { get } from "svelte/store";
+  import { authStore } from "../../stores/auth";
+  import SyndicContactPanel from "../../components/SyndicContactPanel.svelte";
+
+  await authStore.init();
+  const auth = get(authStore);
+
+  if (!auth.isAuthenticated) {
+    window.location.href = "/login";
+  } else {
+    const buildingIds: string[] = auth.user?.buildingIds ?? [];
+    const container = document.getElementById("syndic-contact-panel");
+    if (container) {
+      container.innerHTML = "";
+      mount(SyndicContactPanel, {
+        target: container,
+        props: { buildingIds },
+      });
+    }
+  }
+</script>

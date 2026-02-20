@@ -167,7 +167,9 @@ impl ConvocationUseCases {
             .map_err(|e| format!("Failed to generate PDF: {}", e))?;
 
         // Save PDF to file
-        let pdf_file_path = format!("/uploads/convocations/conv-{}.pdf", id);
+        let upload_dir =
+            std::env::var("UPLOAD_DIR").unwrap_or_else(|_| "/tmp/koprogo-uploads".to_string());
+        let pdf_file_path = format!("{}/convocations/conv-{}.pdf", upload_dir, id);
         ConvocationExporter::save_to_file(&pdf_bytes, &pdf_file_path)
             .map_err(|e| format!("Failed to save PDF: {}", e))?;
 
@@ -180,7 +182,8 @@ impl ConvocationUseCases {
                 .await?
                 .ok_or_else(|| format!("Owner not found: {}", owner_id))?;
 
-            let recipient = ConvocationRecipient::new(id, *owner_id, owner.email)?;
+            let mut recipient = ConvocationRecipient::new(id, *owner_id, owner.email)?;
+            recipient.mark_email_sent();
             recipients.push(recipient);
         }
 

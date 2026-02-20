@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { toast } from '../stores/toast';
 
   export let ownerId: string | null = null;
   export let expenseId: string | null = null;
@@ -104,11 +105,11 @@
       const response = await api.post('/payment-reminders/bulk-create', {
         min_days_overdue: 15
       });
-      alert(`${response.created_count} relances créées, ${response.skipped_count} ignorées`);
+      toast.success(`${response.created_count} relances créées, ${response.skipped_count} ignorées`);
       await loadReminders();
       await loadStats();
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de créer les relances'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de créer les relances'));
     } finally {
       loading = false;
     }

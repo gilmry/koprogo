@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { toast } from '../stores/toast';
 
   export let reminderId: string;
   export let onUpdated: ((reminder: any) => void) | null = null;
@@ -43,9 +44,9 @@
       });
       reminder = updated;
       if (onUpdated) onUpdated(updated);
-      alert('Relance marquée comme envoyée');
+      toast.success('Relance marquée comme envoyée');
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de marquer comme envoyée'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de marquer comme envoyée'));
     } finally {
       loading = false;
     }
@@ -59,9 +60,9 @@
       const updated = await api.put(`/payment-reminders/${reminderId}/mark-paid`, {});
       reminder = updated;
       if (onUpdated) onUpdated(updated);
-      alert('Relance marquée comme payée');
+      toast.success('Relance marquée comme payée');
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de marquer comme payée'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de marquer comme payée'));
     } finally {
       loading = false;
     }
@@ -77,9 +78,9 @@
       });
       reminder = await api.get(`/payment-reminders/${reminderId}`);
       if (onUpdated) onUpdated(reminder);
-      alert('Relance escaladée avec succès');
+      toast.success('Relance escaladée avec succès');
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible d\'escalader'));
+      toast.error('Erreur: ' + (err.message || 'Impossible d\'escalader'));
     } finally {
       loading = false;
     }
@@ -92,7 +93,7 @@
 
   async function confirmCancel() {
     if (!cancelReason.trim()) {
-      alert('Veuillez fournir une raison d\'annulation');
+      toast.error('Veuillez fournir une raison d\'annulation');
       return;
     }
 
@@ -104,9 +105,9 @@
       reminder = updated;
       showCancelModal = false;
       if (onUpdated) onUpdated(updated);
-      alert('Relance annulée');
+      toast.success('Relance annulée');
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible d\'annuler'));
+      toast.error('Erreur: ' + (err.message || 'Impossible d\'annuler'));
     } finally {
       loading = false;
     }
@@ -119,7 +120,7 @@
 
   async function confirmAddTracking() {
     if (!trackingNumber.trim()) {
-      alert('Veuillez fournir un numéro de suivi');
+      toast.error('Veuillez fournir un numéro de suivi');
       return;
     }
 
@@ -131,9 +132,9 @@
       reminder = updated;
       showTrackingModal = false;
       if (onUpdated) onUpdated(updated);
-      alert('Numéro de suivi ajouté');
+      toast.success('Numéro de suivi ajouté');
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible d\'ajouter le numéro'));
+      toast.error('Erreur: ' + (err.message || 'Impossible d\'ajouter le numéro'));
     } finally {
       loading = false;
     }

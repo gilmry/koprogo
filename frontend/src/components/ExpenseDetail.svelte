@@ -4,6 +4,7 @@
   import type { Expense, Building } from '../lib/types';
   import Button from './ui/Button.svelte';
   import ExpenseDocuments from './ExpenseDocuments.svelte';
+  import { toast } from '../stores/toast';
   import { paymentsApi, type Payment } from '../lib/api/payments';
   import { chargeDistributionsApi, type ChargeDistribution } from '../lib/api/charge-distributions';
 
@@ -85,10 +86,10 @@
     try {
       await api.put(`/expenses/${expense.id}/mark-paid`, {});
       await loadExpense();
-      alert('Dépense marquée comme payée avec succès');
+      toast.success('Dépense marquée comme payée avec succès');
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la mise à jour';
-      alert(`Erreur: ${errorMsg}`);
+      toast.error(`Erreur: ${errorMsg}`);
       console.error('Error marking as paid:', e);
     }
   };
@@ -99,10 +100,10 @@
     try {
       await api.post(`/expenses/${expense.id}/mark-overdue`, {});
       await loadExpense();
-      alert('Dépense marquée comme en retard avec succès');
+      toast.success('Dépense marquée comme en retard');
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la mise à jour';
-      alert(`Erreur: ${errorMsg}`);
+      toast.error(`Erreur: ${errorMsg}`);
       console.error('Error marking as overdue:', e);
     }
   };
@@ -117,10 +118,10 @@
     try {
       await api.post(`/expenses/${expense.id}/cancel`, {});
       await loadExpense();
-      alert('Dépense annulée avec succès');
+      toast.success('Dépense annulée avec succès');
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erreur lors de l\'annulation';
-      alert(`Erreur: ${errorMsg}`);
+      toast.error(`Erreur: ${errorMsg}`);
       console.error('Error cancelling expense:', e);
     }
   };
@@ -131,10 +132,10 @@
     try {
       await api.post(`/expenses/${expense.id}/reactivate`, {});
       await loadExpense();
-      alert('Dépense réactivée avec succès');
+      toast.success('Dépense réactivée avec succès');
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la réactivation';
-      alert(`Erreur: ${errorMsg}`);
+      toast.error(`Erreur: ${errorMsg}`);
       console.error('Error reactivating expense:', e);
     }
   };
@@ -149,10 +150,10 @@
     try {
       await api.post(`/expenses/${expense.id}/unpay`, {});
       await loadExpense();
-      alert('Paiement annulé avec succès - dépense remise en attente');
+      toast.success('Paiement annulé avec succès - dépense remise en attente');
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erreur lors de l\'annulation du paiement';
-      alert(`Erreur: ${errorMsg}`);
+      toast.error(`Erreur: ${errorMsg}`);
       console.error('Error unpaying expense:', e);
     }
   };

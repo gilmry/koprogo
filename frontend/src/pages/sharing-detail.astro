@@ -22,6 +22,8 @@ import Layout from "../layouts/Layout.astro";
     </div>
 
     <div id="object-detail-container"></div>
+    <!-- Loan panel (button + modal) mounted here by Svelte -->
+    <div id="loan-panel-container" class="mt-4"></div>
   </div>
 </Layout>
 
@@ -31,14 +33,21 @@ import Layout from "../layouts/Layout.astro";
   import ObjectCategoryBadge from "../components/sharing/ObjectCategoryBadge.svelte";
   import ObjectConditionBadge from "../components/sharing/ObjectConditionBadge.svelte";
   import AvailabilityStatusBadge from "../components/sharing/AvailabilityStatusBadge.svelte";
+  import LoanPanel from "../components/sharing/LoanPanel.svelte";
 
   const urlParams = new URLSearchParams(window.location.search);
   const objectId = urlParams.get("id");
 
+  // Get current user from localStorage
+  const storedUser = typeof window !== "undefined"
+    ? localStorage.getItem("koprogo_user")
+    : null;
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  const borrowerId = currentUser?.id ?? "";
+
   if (!objectId) {
     window.location.href = "/sharing";
   } else {
-    // Simplified detail page - just fetch and display the object
     sharingApi.getObjectById(objectId).then((object) => {
       const container = document.getElementById("object-detail-container");
       if (!container) return;
@@ -86,18 +95,6 @@ import Layout from "../layouts/Layout.astro";
             ${object.replacement_value_cents ? `
               <p class="text-sm text-gray-600 mb-4">Replacement value: €${(object.replacement_value_cents / 100).toFixed(2)}</p>
             ` : ''}
-            ${object.availability_status === 'Available' ? `
-              <button
-                class="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                onclick="alert('Loan request feature coming soon!')"
-              >
-                Request to Borrow
-              </button>
-            ` : `
-              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
-                <p class="text-yellow-800">This object is currently unavailable</p>
-              </div>
-            `}
           </div>
         </div>
       `;
@@ -118,7 +115,16 @@ import Layout from "../layouts/Layout.astro";
           props: { status: object.availability_status },
         });
       }
-    }).catch((err) => {
+
+      // Mount loan panel (button + modal) below the detail card
+      const panelContainer = document.getElementById("loan-panel-container");
+      if (panelContainer) {
+        mount(LoanPanel, {
+          target: panelContainer,
+          props: { object, borrowerId },
+        });
+      }
+    }).catch(() => {
       const container = document.getElementById("object-detail-container");
       if (container) {
         container.innerHTML = `<div class="bg-white shadow rounded-lg p-12 text-center text-gray-500">Object not found</div>`;

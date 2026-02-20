@@ -278,7 +278,10 @@ impl Convocation {
     pub fn respects_legal_deadline(&self) -> bool {
         match &self.actual_send_date {
             Some(sent_at) => *sent_at <= self.minimum_send_date,
-            None => false, // Not sent yet
+            None => {
+                // Not sent yet: still respects deadline if there's time to send
+                Utc::now() <= self.minimum_send_date
+            }
         }
     }
 

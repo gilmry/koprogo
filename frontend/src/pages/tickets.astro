@@ -51,6 +51,15 @@ import Layout from "../layouts/Layout.astro";
   import TicketStatistics from "../components/tickets/TicketStatistics.svelte";
   import TicketCreateModal from "../components/tickets/TicketCreateModal.svelte";
 
+  function showPageToast(message: string, type: "success" | "error" | "warning" = "info") {
+    const colors = { success: "bg-green-600", error: "bg-red-600", warning: "bg-yellow-500", info: "bg-blue-600" };
+    const el = document.createElement("div");
+    el.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-sm ${colors[type]}`;
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
   // Mount statistics widget
   const statsContainer = document.getElementById("ticket-statistics");
   if (statsContainer) {
@@ -88,7 +97,7 @@ import Layout from "../layouts/Layout.astro";
         const userId = localStorage.getItem("koprogo_user_id") || "";
 
         if (!buildingId) {
-          alert("Please select a building first");
+          showPageToast("Veuillez d'abord sélectionner un immeuble.", "warning");
           return;
         }
 
