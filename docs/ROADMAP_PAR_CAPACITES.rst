@@ -2,11 +2,17 @@
 KoproGo - Roadmap par Capacités
 =========================================================
 
-:Version: 5.0
+:Version: 5.1
 :Modèle: Progression par jalons et métriques
 :Auteur: Gilles Maury - Fondateur KoproGo ASBL
 :Statut: Document de référence stratégique
-:Dernière mise à jour: 17 février 2026
+:Dernière mise à jour: 18 février 2026
+
+.. note::
+
+   **WBS synchronisé le 2026-02-18** : Audit croisé code↔issues a corrigé les écarts.
+   3 issues fermées, 5 commentées, 6 créées rétroactivement.
+   Voir `WBS_2026_02_18.rst <WBS_2026_02_18.rst>`_ pour le détail complet.
 
 .. contents:: Table des matières
    :depth: 3
@@ -575,7 +581,7 @@ Jalon 3: Features Différenciantes ⏳ (~70%)
 * ✅ #99 : Community modules SEL, Swap Shop, Skills, Object Lending (toutes 6 phases complètes)
 * ⏳ #47 : PDF Generation étendue (PV AG, états financiers, contrats) (EN COURS)
 * ⏳ #52 : Contractor Backoffice (Work reports, photos, payment validation) (EN COURS)
-* ⏳ #134 : Work Reports & Technical Inspections REST API (EN COURS - sous-tâche #52)
+* ✅ #134 : Work Reports & Technical Inspections REST API (COMPLÉTÉ)
 
 **Livrables complétés**:
 
@@ -585,26 +591,26 @@ Jalon 3: Features Différenciantes ⏳ (~70%)
 * ✅ Bibliothèque objets partagés + Réservation ressources + Skills Directory
 * ✅ Gamification complète (achievements 8 catégories, challenges, leaderboard)
 * ✅ Paiements Stripe + SEPA avec méthodes de paiement stockées
+* ✅ Work Reports & Technical Inspections REST API (Issue #134)
 * ✅ Frontend UI complet pour toutes les features (PR #196)
 
 **Livrables restants**:
 
 * ⏳ Templates PDF documents légaux (PV AG, relevé charges, contrats)
-* ⏳ Contractor Backoffice backend (Work Reports + Technical Inspections REST API)
 * ⏳ Contractor Backoffice frontend
 
 **Conformité légale**: 90%
 
 **Avantage compétitif**: Features communautaires uniques (mission ASBL)
 
-**Effort restant estimé**: 2-3 semaines (solo) - PDF + Contractor API
+**Effort restant estimé**: 2-3 semaines (solo) - PDF + Contractor frontend
 
-Jalon 4: Automation & Intégrations ⏳ (~88%)
+Jalon 4: Automation & Intégrations ⏳ (~71%)
 ----------------------------------------------
 
 **Débloque**: 1.000-2.000 copropriétés (scalabilité)
 
-**État**: Quasi-complété - 88% (Février 2026)
+**État**: En cours - 71% (Février 2026)
 
 **Issues**:
 
@@ -617,6 +623,9 @@ Jalon 4: Automation & Intégrations ⏳ (~88%)
 * ✅ #92 : Page publique syndic (SEO, slug URL, aucune auth requise)
 * ✅ #110 : Groupements d'achat énergie (Energy Buying Groups)
 * ✅ #133 : Intégration API Linky/Ores (Smart Electricity Monitoring)
+* ⏳ #67 : Documentation GDPR & revue qualité (EN ATTENTE)
+* ⏳ #71 : Rôles Organization Admin / Building Manager (EN ATTENTE)
+* ⏳ #72 : RBAC granulaire - matrice droits dynamique (EN ATTENTE)
 * ⏳ #93 : Accessibilité WCAG 2.1 AA (EN ATTENTE)
 
 **Livrables complétés**:
@@ -633,11 +642,14 @@ Jalon 4: Automation & Intégrations ⏳ (~88%)
 
 **Livrables restants**:
 
-* ⏳ Accessibilité WCAG 2.1 AA (European Accessibility Act)
+* ⏳ Documentation GDPR & revue qualité (Issue #67)
+* ⏳ Rôles Organization Admin / Building Manager (Issue #71)
+* ⏳ RBAC granulaire (matrice droits dynamique) (Issue #72)
+* ⏳ Accessibilité WCAG 2.1 AA (European Accessibility Act) (Issue #93)
 
 **Conformité légale**: 95%
 
-**Effort restant estimé**: 2-3 semaines (solo) - WCAG accessibility
+**Effort restant estimé**: 4-6 semaines (solo) - GDPR docs + RBAC + WCAG accessibility
 
 Jalon 5: Mobile & API Publique
 -------------------------------
@@ -1168,27 +1180,29 @@ Priorité 2: Compléter Jalon 3 - Features restantes
 
 **Objectif**: Finir contractor backoffice + PDF generation
 
-**Complété** ✅: Voting, SEL, Payments, Polls, Community (6 phases), Frontend complet
+**Complété** ✅: Voting, SEL, Payments, Polls, Community (6 phases), Frontend complet, Work Reports & Technical Inspections REST API (Issue #134)
 
 **Restant** ⏳:
 
-* [ ] Work Reports & Technical Inspections REST API - Issue #134 (backend)
 * [ ] Contractor Backoffice frontend - Issue #52
 * [ ] PDF Generation étendue (PV AG, relevé charges, contrats) - Issue #47
 
 **Effort restant**: 2-3 semaines (solo)
 
-Priorité 3: Compléter Jalon 4 - WCAG Accessibility
-----------------------------------------------------
+Priorité 3: Compléter Jalon 4 - GDPR, RBAC & Accessibilité
+------------------------------------------------------------
 
-**Objectif**: Conformité European Accessibility Act
+**Objectif**: Documentation GDPR, Rôles organisationnels, RBAC + Conformité European Accessibility Act
 
 **Restant** ⏳:
 
+* [ ] Documentation GDPR & revue qualité - Issue #67
+* [ ] Rôles Organization Admin / Building Manager - Issue #71
+* [ ] RBAC granulaire (matrice droits dynamique) - Issue #72
 * [ ] Audit WCAG 2.1 AA - Issue #93
 * [ ] Corrections accessibilité (contraste, ARIA, navigation clavier, lecteur écran)
 
-**Effort restant**: 2-3 semaines (solo)
+**Effort restant**: 4-6 semaines (solo)
 
 Priorité 4: Qualité & Tests
 ----------------------------

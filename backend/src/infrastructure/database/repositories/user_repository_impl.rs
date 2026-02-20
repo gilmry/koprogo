@@ -2,6 +2,8 @@ use crate::application::ports::UserRepository;
 use crate::domain::entities::{User, UserRole};
 use crate::infrastructure::pool::DbPool;
 use async_trait::async_trait;
+use chrono::{DateTime, Utc};
+use sqlx::Row;
 use uuid::Uuid;
 
 pub struct PostgresUserRepository {
@@ -12,6 +14,32 @@ impl PostgresUserRepository {
     pub fn new(pool: DbPool) -> Self {
         Self { pool }
     }
+}
+
+const USER_COLUMNS: &str = "id, email, password_hash, first_name, last_name, role, organization_id, is_active, processing_restricted, processing_restricted_at, marketing_opt_out, marketing_opt_out_at, created_at, updated_at";
+
+fn row_to_user(row: &sqlx::postgres::PgRow) -> Result<User, String> {
+    let role_str: String = row.get("role");
+    let role = role_str
+        .parse::<UserRole>()
+        .map_err(|e| format!("Invalid role: {}", e))?;
+
+    Ok(User {
+        id: row.get("id"),
+        email: row.get("email"),
+        password_hash: row.get("password_hash"),
+        first_name: row.get("first_name"),
+        last_name: row.get("last_name"),
+        role,
+        organization_id: row.get("organization_id"),
+        is_active: row.get("is_active"),
+        processing_restricted: row.get("processing_restricted"),
+        processing_restricted_at: row.get::<Option<DateTime<Utc>>, _>("processing_restricted_at"),
+        marketing_opt_out: row.get("marketing_opt_out"),
+        marketing_opt_out_at: row.get::<Option<DateTime<Utc>>, _>("marketing_opt_out_at"),
+        created_at: row.get("created_at"),
+        updated_at: row.get("updated_at"),
+    })
 }
 
 #[async_trait]
@@ -41,182 +69,98 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<User>, String> {
-        let result = sqlx::query!(
-            r#"
-            SELECT id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at
-            FROM users
-            WHERE id = $1
-            "#,
-            id
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to find user: {}", e))?;
+        let sql = format!("SELECT {} FROM users WHERE id = $1", USER_COLUMNS);
+        let result = sqlx::query(&sql)
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to find user: {}", e))?;
 
         match result {
-            Some(row) => {
-                let role = row
-                    .role
-                    .parse::<UserRole>()
-                    .map_err(|e| format!("Invalid role: {}", e))?;
-
-                Ok(Some(User {
-                    id: row.id,
-                    email: row.email,
-                    password_hash: row.password_hash,
-                    first_name: row.first_name,
-                    last_name: row.last_name,
-                    role,
-                    organization_id: row.organization_id,
-                    is_active: row.is_active,
-                    processing_restricted: false,
-                    processing_restricted_at: None,
-                    marketing_opt_out: false,
-                    marketing_opt_out_at: None,
-                    created_at: row.created_at,
-                    updated_at: row.updated_at,
-                }))
-            }
+            Some(row) => Ok(Some(row_to_user(&row)?)),
             None => Ok(None),
         }
     }
 
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, String> {
-        let result = sqlx::query!(
-            r#"
-            SELECT id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at
-            FROM users
-            WHERE email = $1
-            "#,
-            email
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to find user by email: {}", e))?;
+        let sql = format!("SELECT {} FROM users WHERE email = $1", USER_COLUMNS);
+        let result = sqlx::query(&sql)
+            .bind(email)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to find user by email: {}", e))?;
 
         match result {
-            Some(row) => {
-                let role = row
-                    .role
-                    .parse::<UserRole>()
-                    .map_err(|e| format!("Invalid role: {}", e))?;
-
-                Ok(Some(User {
-                    id: row.id,
-                    email: row.email,
-                    password_hash: row.password_hash,
-                    first_name: row.first_name,
-                    last_name: row.last_name,
-                    role,
-                    organization_id: row.organization_id,
-                    is_active: row.is_active,
-                    processing_restricted: false,
-                    processing_restricted_at: None,
-                    marketing_opt_out: false,
-                    marketing_opt_out_at: None,
-                    created_at: row.created_at,
-                    updated_at: row.updated_at,
-                }))
-            }
+            Some(row) => Ok(Some(row_to_user(&row)?)),
             None => Ok(None),
         }
     }
 
     async fn find_all(&self) -> Result<Vec<User>, String> {
-        let rows = sqlx::query!(
-            r#"
-            SELECT id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at
-            FROM users
-            ORDER BY created_at DESC
-            "#
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to fetch users: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM users ORDER BY created_at DESC",
+            USER_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch users: {}", e))?;
 
-        let users = rows
-            .into_iter()
-            .filter_map(|row| {
-                let role = row.role.parse::<UserRole>().ok()?;
-                Some(User {
-                    id: row.id,
-                    email: row.email,
-                    password_hash: row.password_hash,
-                    first_name: row.first_name,
-                    last_name: row.last_name,
-                    role,
-                    organization_id: row.organization_id,
-                    is_active: row.is_active,
-                    processing_restricted: false,
-                    processing_restricted_at: None,
-                    marketing_opt_out: false,
-                    marketing_opt_out_at: None,
-                    created_at: row.created_at,
-                    updated_at: row.updated_at,
-                })
-            })
-            .collect();
+        let mut users = Vec::new();
+        for row in &rows {
+            if let Ok(user) = row_to_user(row) {
+                users.push(user);
+            }
+        }
 
         Ok(users)
     }
 
     async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<User>, String> {
-        let rows = sqlx::query!(
-            r#"
-            SELECT id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at
-            FROM users
-            WHERE organization_id = $1
-            ORDER BY created_at DESC
-            "#,
-            org_id
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to fetch users by organization: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM users WHERE organization_id = $1 ORDER BY created_at DESC",
+            USER_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .bind(org_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch users by organization: {}", e))?;
 
-        let users = rows
-            .into_iter()
-            .filter_map(|row| {
-                let role = row.role.parse::<UserRole>().ok()?;
-                Some(User {
-                    id: row.id,
-                    email: row.email,
-                    password_hash: row.password_hash,
-                    first_name: row.first_name,
-                    last_name: row.last_name,
-                    role,
-                    organization_id: row.organization_id,
-                    is_active: row.is_active,
-                    processing_restricted: false,
-                    processing_restricted_at: None,
-                    marketing_opt_out: false,
-                    marketing_opt_out_at: None,
-                    created_at: row.created_at,
-                    updated_at: row.updated_at,
-                })
-            })
-            .collect();
+        let mut users = Vec::new();
+        for row in &rows {
+            if let Ok(user) = row_to_user(row) {
+                users.push(user);
+            }
+        }
 
         Ok(users)
     }
 
     async fn update(&self, user: &User) -> Result<User, String> {
-        sqlx::query!(
+        sqlx::query(
             r#"
             UPDATE users
             SET email = $2, first_name = $3, last_name = $4, role = $5,
-                organization_id = $6, is_active = $7, updated_at = $8
+                organization_id = $6, is_active = $7,
+                processing_restricted = $8, processing_restricted_at = $9,
+                marketing_opt_out = $10, marketing_opt_out_at = $11,
+                updated_at = $12
             WHERE id = $1
             "#,
-            user.id,
-            user.email,
-            user.first_name,
-            user.last_name,
-            user.role.to_string(),
-            user.organization_id,
-            user.is_active,
-            user.updated_at,
         )
+        .bind(user.id)
+        .bind(&user.email)
+        .bind(&user.first_name)
+        .bind(&user.last_name)
+        .bind(user.role.to_string())
+        .bind(user.organization_id)
+        .bind(user.is_active)
+        .bind(user.processing_restricted)
+        .bind(user.processing_restricted_at)
+        .bind(user.marketing_opt_out)
+        .bind(user.marketing_opt_out_at)
+        .bind(user.updated_at)
         .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to update user: {}", e))?;

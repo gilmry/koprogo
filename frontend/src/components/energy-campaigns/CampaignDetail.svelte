@@ -9,6 +9,7 @@
     CampaignStatus,
   } from "../../lib/api/energy-campaigns";
   import CampaignStatusBadge from "./CampaignStatusBadge.svelte";
+  import { toast } from "../../stores/toast";
   import ProviderOffersList from "./ProviderOffersList.svelte";
   import EnergyBillUpload from "./EnergyBillUpload.svelte";
 
@@ -122,9 +123,9 @@
     try {
       await energyBillsApi.withdrawConsent(uploadId);
       await loadData();
-      alert("Consentement retiré et données supprimées avec succès.");
+      toast.success("Consentement retiré et données supprimées avec succès.");
     } catch (err: any) {
-      alert("Erreur lors du retrait du consentement: " + err.message);
+      toast.error("Erreur lors du retrait du consentement: " + err.message);
     }
   }
 </script>

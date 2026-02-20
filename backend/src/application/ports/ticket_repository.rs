@@ -20,4 +20,10 @@ pub trait TicketRepository: Send + Sync {
     async fn count_by_building(&self, building_id: Uuid) -> Result<i64, String>;
     async fn count_by_status(&self, building_id: Uuid, status: TicketStatus)
         -> Result<i64, String>;
+    async fn count_by_organization(&self, organization_id: Uuid) -> Result<i64, String>;
+    async fn count_by_organization_and_status(
+        &self,
+        organization_id: Uuid,
+        status: TicketStatus,
+    ) -> Result<i64, String>;
 }

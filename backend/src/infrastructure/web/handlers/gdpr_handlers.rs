@@ -421,7 +421,11 @@ pub async fn rectify_user_data(
                 HttpResponse::NotFound().json(serde_json::json!({
                     "error": e
                 }))
-            } else if e.contains("Validation error") {
+            } else if e.contains("Validation error")
+                || e.contains("Invalid email")
+                || e.contains("cannot be empty")
+                || e.contains("No fields provided")
+            {
                 HttpResponse::BadRequest().json(serde_json::json!({
                     "error": e
                 }))

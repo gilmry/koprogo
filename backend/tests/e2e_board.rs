@@ -1,158 +1,15 @@
+mod common;
+
 use actix_web::{http::header, test, App};
 use koprogo_api::application::dto::CreateBuildingDto;
-use koprogo_api::application::use_cases::*;
-use koprogo_api::infrastructure::audit_logger::AuditLogger;
-use koprogo_api::infrastructure::database::{
-    create_pool, PostgresAccountRepository, PostgresAuditLogRepository,
-    PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBuildingRepository,
-    PostgresChargeDistributionRepository, PostgresDocumentRepository, PostgresExpenseRepository,
-    PostgresGdprRepository, PostgresMeetingRepository, PostgresOwnerRepository,
-    PostgresPaymentReminderRepository, PostgresRefreshTokenRepository, PostgresUnitOwnerRepository,
-    PostgresUnitRepository, PostgresUserRepository, PostgresUserRoleRepository,
-};
-use koprogo_api::infrastructure::email::EmailService;
-use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::{configure_routes, AppState};
 use serial_test::serial;
-use std::sync::Arc;
-use testcontainers_modules::postgres::Postgres;
-use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use uuid::Uuid;
-
-async fn setup_test_db() -> (
-    actix_web::web::Data<AppState>,
-    ContainerAsync<Postgres>,
-    Uuid,
-) {
-    let postgres_container = Postgres::default()
-        .start()
-        .await
-        .expect("Failed to start postgres container");
-
-    let host_port = postgres_container
-        .get_host_port_ipv4(5432)
-        .await
-        .expect("Failed to get host port");
-
-    let connection_string = format!(
-        "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        host_port
-    );
-
-    let pool = create_pool(&connection_string)
-        .await
-        .expect("Failed to create pool");
-
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
-
-    // Initialize repositories
-    let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
-    let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
-    let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
-    let unit_owner_repo = Arc::new(PostgresUnitOwnerRepository::new(pool.clone()));
-    let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
-    let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
-    let user_role_repo = Arc::new(PostgresUserRoleRepository::new(pool.clone()));
-    let refresh_token_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
-    let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
-    let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
-    let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
-    let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
-    let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
-    let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
-    let charge_distribution_repo =
-        Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
-    let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
-
-    let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
-    let jwt_secret = "test-secret-key".to_string();
-
-    // Initialize use cases
-    let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
-    let account_use_cases = AccountUseCases::new(account_repo.clone());
-    let financial_report_use_cases =
-        FinancialReportUseCases::new(account_repo, expense_repo.clone());
-
-    let auth_use_cases =
-        AuthUseCases::new(user_repo, refresh_token_repo, user_role_repo, jwt_secret);
-    let building_use_cases = BuildingUseCases::new(building_repo.clone());
-    let unit_use_cases = UnitUseCases::new(unit_repo.clone());
-    let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
-    let unit_owner_use_cases =
-        UnitOwnerUseCases::new(unit_owner_repo.clone(), unit_repo, owner_repo);
-    let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
-    let charge_distribution_use_cases = ChargeDistributionUseCases::new(
-        charge_distribution_repo,
-        expense_repo.clone(),
-        unit_owner_repo,
-    );
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
-    let storage_root = std::env::temp_dir().join("koprogo_e2e_board_uploads");
-    let storage: Arc<dyn StorageProvider> =
-        Arc::new(FileStorage::new(&storage_root).expect("storage"));
-    let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
-    let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-    let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo);
-    let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
-    let board_member_use_cases =
-        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
-    let board_decision_use_cases = BoardDecisionUseCases::new(
-        board_decision_repo.clone(),
-        building_repo.clone(),
-        meeting_repo,
-    );
-
-    // Create an organization for FK references
-    let org_id = Uuid::new_v4();
-    sqlx::query(
-        r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
-           VALUES ($1, 'Org Test Board', 'org-test-board', 'board@test.com', 'professional', 50, 50, true, NOW(), NOW())"#
-    )
-    .bind(org_id)
-    .execute(&pool)
-    .await
-    .expect("insert org");
-
-    let board_dashboard_use_cases = BoardDashboardUseCases::new(
-        board_member_repo.clone(),
-        board_decision_repo.clone(),
-        building_repo.clone(),
-    );
-
-    let app_state = actix_web::web::Data::new(AppState::new(
-        account_use_cases,
-        auth_use_cases,
-        building_use_cases,
-        unit_use_cases,
-        owner_use_cases,
-        unit_owner_use_cases,
-        expense_use_cases,
-        charge_distribution_use_cases,
-        meeting_use_cases,
-        document_use_cases,
-        pcn_use_cases,
-        payment_reminder_use_cases,
-        gdpr_use_cases,
-        board_member_use_cases,
-        board_decision_use_cases,
-        board_dashboard_use_cases,
-        financial_report_use_cases,
-        audit_logger,
-        EmailService::from_env().expect("email service"),
-        pool.clone(),
-    ));
-
-    (app_state, postgres_container, org_id)
-}
 
 #[actix_web::test]
 #[serial]
 async fn test_board_member_lifecycle() {
-    let (app_state, _container, org_id) = setup_test_db().await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
 
     let state = app_state.clone();
     let app = test::init_service(
@@ -162,23 +19,7 @@ async fn test_board_member_lifecycle() {
     )
     .await;
 
-    // Register + login as superadmin (only superadmin can create buildings)
-    let email = format!("board-e2e-{}@test.com", Uuid::new_v4());
-    let reg = koprogo_api::application::dto::RegisterRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-        first_name: "Board".to_string(),
-        last_name: "TestUser".to_string(),
-        role: "superadmin".to_string(),
-        organization_id: Some(org_id),
-    };
-    let _ = state.auth_use_cases.register(reg).await.expect("register");
-    let login = koprogo_api::application::dto::LoginRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-    };
-    let login_response = state.auth_use_cases.login(login).await.expect("login");
-    let token = login_response.token;
+    let token = common::register_and_login(&state, org_id).await;
 
     // Create building
     let building_dto = CreateBuildingDto {
@@ -204,10 +45,10 @@ async fn test_board_member_lifecycle() {
     if status != 201 {
         let body_bytes = test::read_body(resp).await;
         eprintln!(
-            "Decision creation failed: {:?}",
+            "Building creation failed: {:?}",
             String::from_utf8_lossy(&body_bytes)
         );
-        panic!("Expected 201 for decision, got {}", status);
+        panic!("Expected 201 for building, got {}", status);
     }
     let building: serde_json::Value = test::read_body_json(resp).await;
     let building_id = building["id"].as_str().unwrap();
@@ -382,7 +223,7 @@ async fn test_board_member_lifecycle() {
 #[actix_web::test]
 #[serial]
 async fn test_board_decision_lifecycle() {
-    let (app_state, _container, org_id) = setup_test_db().await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
 
     let state = app_state.clone();
     let app = test::init_service(
@@ -392,27 +233,7 @@ async fn test_board_decision_lifecycle() {
     )
     .await;
 
-    // Register + login as superadmin (only superadmin can create buildings)
-    let email = format!("board-e2e-{}@test.com", Uuid::new_v4());
-    let reg = koprogo_api::application::dto::RegisterRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-        first_name: "Board".to_string(),
-        last_name: "TestUser".to_string(),
-        role: "superadmin".to_string(),
-        organization_id: Some(org_id),
-    };
-    let _ = state.auth_use_cases.register(reg).await.expect("register");
-    let login = koprogo_api::application::dto::LoginRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-    };
-    let token = state
-        .auth_use_cases
-        .login(login)
-        .await
-        .expect("login")
-        .token;
+    let token = common::register_and_login(&state, org_id).await;
 
     // Create building
     let building_dto = CreateBuildingDto {
@@ -438,10 +259,10 @@ async fn test_board_decision_lifecycle() {
     if status != 201 {
         let body_bytes = test::read_body(resp).await;
         eprintln!(
-            "Decision creation failed: {:?}",
+            "Building creation failed: {:?}",
             String::from_utf8_lossy(&body_bytes)
         );
-        panic!("Expected 201 for decision, got {}", status);
+        panic!("Expected 201 for building, got {}", status);
     }
     let building: serde_json::Value = test::read_body_json(resp).await;
     let building_id = building["id"].as_str().unwrap();
@@ -468,10 +289,10 @@ async fn test_board_decision_lifecycle() {
     if status != 201 {
         let body_bytes = test::read_body(resp).await;
         eprintln!(
-            "Decision creation failed: {:?}",
+            "Meeting creation failed: {:?}",
             String::from_utf8_lossy(&body_bytes)
         );
-        panic!("Expected 201 for decision, got {}", status);
+        panic!("Expected 201 for meeting, got {}", status);
     }
     let meeting: serde_json::Value = test::read_body_json(resp).await;
     let meeting_id = meeting["id"].as_str().unwrap();
@@ -605,7 +426,7 @@ async fn test_board_decision_lifecycle() {
 #[actix_web::test]
 #[serial]
 async fn test_overdue_decisions() {
-    let (app_state, _container, org_id) = setup_test_db().await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
 
     let state = app_state.clone();
     let app = test::init_service(
@@ -615,27 +436,7 @@ async fn test_overdue_decisions() {
     )
     .await;
 
-    // Register + login as superadmin (only superadmin can create buildings)
-    let email = format!("board-e2e-{}@test.com", Uuid::new_v4());
-    let reg = koprogo_api::application::dto::RegisterRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-        first_name: "Board".to_string(),
-        last_name: "TestUser".to_string(),
-        role: "superadmin".to_string(),
-        organization_id: Some(org_id),
-    };
-    let _ = state.auth_use_cases.register(reg).await.expect("register");
-    let login = koprogo_api::application::dto::LoginRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-    };
-    let token = state
-        .auth_use_cases
-        .login(login)
-        .await
-        .expect("login")
-        .token;
+    let token = common::register_and_login(&state, org_id).await;
 
     // Create building
     let building_dto = CreateBuildingDto {
@@ -661,10 +462,10 @@ async fn test_overdue_decisions() {
     if status != 201 {
         let body_bytes = test::read_body(resp).await;
         eprintln!(
-            "Decision creation failed: {:?}",
+            "Building creation failed: {:?}",
             String::from_utf8_lossy(&body_bytes)
         );
-        panic!("Expected 201 for decision, got {}", status);
+        panic!("Expected 201 for building, got {}", status);
     }
     let building: serde_json::Value = test::read_body_json(resp).await;
     let building_id = building["id"].as_str().unwrap();
@@ -691,10 +492,10 @@ async fn test_overdue_decisions() {
     if status != 201 {
         let body_bytes = test::read_body(resp).await;
         eprintln!(
-            "Decision creation failed: {:?}",
+            "Meeting creation failed: {:?}",
             String::from_utf8_lossy(&body_bytes)
         );
-        panic!("Expected 201 for decision, got {}", status);
+        panic!("Expected 201 for meeting, got {}", status);
     }
     let meeting: serde_json::Value = test::read_body_json(resp).await;
     let meeting_id = meeting["id"].as_str().unwrap();

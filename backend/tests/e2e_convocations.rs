@@ -1,301 +1,92 @@
-use actix_web::{http::header, test, web, App};
+mod common;
+
+use actix_web::{http::header, test, App};
 use chrono::{DateTime, Duration, Utc};
 use serde_json::json;
 use serial_test::serial;
-use sqlx::postgres::PgPoolOptions;
-use std::sync::Arc;
-use testcontainers::core::IntoContainerPort;
-use testcontainers::{runners::AsyncRunner, ContainerAsync};
-use testcontainers_modules::postgres::Postgres;
 use uuid::Uuid;
 
 use koprogo_api::application::dto::{
-    ConvocationRecipientResponse, ConvocationResponse, RecipientTrackingSummaryResponse,
+    ConvocationRecipientResponse, ConvocationResponse, CreateBuildingDto, CreateMeetingRequest,
+    CreateOwnerDto, RecipientTrackingSummaryResponse,
 };
-use koprogo_api::application::use_cases::*;
-use koprogo_api::domain::entities::{AttendanceStatus, ConvocationStatus};
-use koprogo_api::infrastructure::database::repositories::*;
-use koprogo_api::infrastructure::email::mock_email_service::MockEmailService;
-use koprogo_api::infrastructure::storage::mock_storage_provider::MockStorageProvider;
-use koprogo_api::infrastructure::web::{create_authenticated_app, AppState};
+use koprogo_api::domain::entities::{AttendanceStatus, ConvocationStatus, MeetingType};
+use koprogo_api::infrastructure::web::{configure_routes, AppState};
 
-// ==================== Test Setup ====================
+// ==================== Test Helpers ====================
 
-async fn setup_app() -> (web::Data<AppState>, ContainerAsync<Postgres>) {
-    let postgres_container = Postgres::default()
-        .start()
-        .await
-        .expect("Failed to start PostgreSQL container");
-
-    let host_port = postgres_container
-        .get_host_port_ipv4(5432.tcp())
-        .await
-        .expect("Failed to get PostgreSQL host port");
-
-    let connection_string = format!(
-        "postgresql://postgres:postgres@127.0.0.1:{}/postgres",
-        host_port
-    );
-
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&connection_string)
-        .await
-        .expect("Failed to create PostgreSQL connection pool");
-
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
-
-    // Initialize all repositories
-    let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
-    let auth_repo = Arc::new(PostgresAuthRepository::new(pool.clone()));
-    let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
-    let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
-    let unit_owner_repo = Arc::new(PostgresUnitOwnerRepository::new(pool.clone()));
-    let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
-    let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
-    let invoice_line_item_repo = Arc::new(PostgresInvoiceLineItemRepository::new(pool.clone()));
-    let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
-    let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
-    let resolution_repo = Arc::new(PostgresResolutionRepository::new(pool.clone()));
-    let vote_repo = Arc::new(PostgresVoteRepository::new(pool.clone()));
-    let ticket_repo = Arc::new(PostgresTicketRepository::new(pool.clone()));
-    let notification_repo = Arc::new(PostgresNotificationRepository::new(pool.clone()));
-    let notification_preference_repo =
-        Arc::new(PostgresNotificationPreferenceRepository::new(pool.clone()));
-    let payment_repo = Arc::new(PostgresPaymentRepository::new(pool.clone()));
-    let payment_method_repo = Arc::new(PostgresPaymentMethodRepository::new(pool.clone()));
-    let quote_repo = Arc::new(PostgresQuoteRepository::new(pool.clone()));
-    let convocation_repo = Arc::new(PostgresConvocationRepository::new(pool.clone()));
-    let convocation_recipient_repo =
-        Arc::new(PostgresConvocationRecipientRepository::new(pool.clone()));
-    let user_role_repo = Arc::new(PostgresUserRoleRepository::new(pool.clone()));
-    let gdpr_repo = Arc::new(PostgresGdprRepository::new(pool.clone()));
-    let local_exchange_repo = Arc::new(PostgresLocalExchangeRepository::new(pool.clone()));
-    let owner_credit_balance_repo =
-        Arc::new(PostgresOwnerCreditBalanceRepository::new(pool.clone()));
-    let community_notice_repo = Arc::new(PostgresCommunityNoticeRepository::new(pool.clone()));
-    let skills_directory_repo = Arc::new(PostgresSkillsDirectoryRepository::new(pool.clone()));
-    let object_sharing_repo = Arc::new(PostgresObjectSharingRepository::new(pool.clone()));
-    let resource_booking_repo = Arc::new(PostgresResourceBookingRepository::new(pool.clone()));
-    let achievement_repo = Arc::new(PostgresAchievementRepository::new(pool.clone()));
-    let user_achievement_repo = Arc::new(PostgresUserAchievementRepository::new(pool.clone()));
-    let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
-    let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
-
-    // Initialize email service and storage provider
-    let email_service = Arc::new(MockEmailService::new());
-    let storage_provider = Arc::new(MockStorageProvider::new("/tmp/e2e_convocations_test"));
-
-    // Initialize use cases
-    let account_use_cases = AccountUseCases::new(account_repo.clone());
-    let auth_use_cases = AuthUseCases::new(
-        auth_repo.clone(),
-        user_role_repo.clone(),
-        "test_jwt_secret_key_minimum_32_chars".to_string(),
-    );
-    let building_use_cases = BuildingUseCases::new(building_repo.clone());
-    let unit_use_cases = UnitUseCases::new(unit_repo.clone(), building_repo.clone());
-    let unit_owner_use_cases = UnitOwnerUseCases::new(
-        unit_owner_repo.clone(),
-        unit_repo.clone(),
-        owner_repo.clone(),
-    );
-    let owner_use_cases = OwnerUseCases::new(
-        owner_repo.clone(),
-        unit_repo.clone(),
-        unit_owner_repo.clone(),
-    );
-    let expense_use_cases = ExpenseUseCases::new(
-        expense_repo.clone(),
-        invoice_line_item_repo.clone(),
-        building_repo.clone(),
-    );
-    let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo.clone(), expense_repo.clone());
-    let financial_report_use_cases = FinancialReportUseCases::new(
-        account_repo.clone(),
-        expense_repo.clone(),
-        invoice_line_item_repo.clone(),
-    );
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone(), building_repo.clone());
-    let resolution_use_cases = ResolutionUseCases::new(
-        resolution_repo.clone(),
-        vote_repo.clone(),
-        meeting_repo.clone(),
-    );
-    let ticket_use_cases = TicketUseCases::new(ticket_repo.clone(), building_repo.clone());
-    let notification_use_cases = NotificationUseCases::new(
-        notification_repo.clone(),
-        notification_preference_repo.clone(),
-    );
-    let payment_use_cases = PaymentUseCases::new(
-        payment_repo.clone(),
-        expense_repo.clone(),
-        owner_repo.clone(),
-    );
-    let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo.clone());
-    let quote_use_cases = QuoteUseCases::new(quote_repo.clone(), building_repo.clone());
-    let convocation_use_cases = ConvocationUseCases::new(
-        convocation_repo.clone(),
-        convocation_recipient_repo.clone(),
-        owner_repo.clone(),
-        meeting_repo.clone(),
-        email_service.clone(),
-        storage_provider.clone(),
-    );
-    let gdpr_use_cases = GdprUseCases::new(gdpr_repo.clone(), auth_repo.clone());
-    let local_exchange_use_cases = LocalExchangeUseCases::new(
-        local_exchange_repo.clone(),
-        owner_credit_balance_repo.clone(),
-        owner_repo.clone(),
-    );
-    let community_notice_use_cases = CommunityNoticeUseCases::new(
-        community_notice_repo.clone(),
-        building_repo.clone(),
-        auth_repo.clone(),
-    );
-    let skills_directory_use_cases = SkillsDirectoryUseCases::new(
-        skills_directory_repo.clone(),
-        building_repo.clone(),
-        auth_repo.clone(),
-    );
-    let object_sharing_use_cases = ObjectSharingUseCases::new(
-        object_sharing_repo.clone(),
-        building_repo.clone(),
-        auth_repo.clone(),
-    );
-    let resource_booking_use_cases = ResourceBookingUseCases::new(
-        resource_booking_repo.clone(),
-        building_repo.clone(),
-        auth_repo.clone(),
-    );
-    let achievement_use_cases =
-        AchievementUseCases::new(achievement_repo.clone(), user_achievement_repo.clone());
-    let challenge_use_cases =
-        ChallengeUseCases::new(challenge_repo.clone(), challenge_progress_repo.clone());
-    let gamification_stats_use_cases = GamificationStatsUseCases::new(
-        user_achievement_repo.clone(),
-        achievement_repo.clone(),
-        challenge_progress_repo.clone(),
-        challenge_repo.clone(),
-        auth_repo.clone(),
-    );
-
-    let app_state = web::Data::new(AppState::new(
-        account_use_cases,
-        auth_use_cases,
-        building_use_cases,
-        unit_use_cases,
-        unit_owner_use_cases,
-        owner_use_cases,
-        expense_use_cases,
-        payment_reminder_use_cases,
-        financial_report_use_cases,
-        meeting_use_cases,
-        resolution_use_cases,
-        ticket_use_cases,
-        notification_use_cases,
-        payment_use_cases,
-        payment_method_use_cases,
-        quote_use_cases,
-        convocation_use_cases,
-        gdpr_use_cases,
-        local_exchange_use_cases,
-        community_notice_use_cases,
-        skills_directory_use_cases,
-        object_sharing_use_cases,
-        resource_booking_use_cases,
-        achievement_use_cases,
-        challenge_use_cases,
-        gamification_stats_use_cases,
-    ));
-
-    (app_state, postgres_container)
-}
-
-async fn create_test_user(app_state: &web::Data<AppState>) -> (Uuid, String) {
-    let email = format!("convocation_test_{}@example.com", Uuid::new_v4());
-    let register_result = app_state
-        .auth_use_cases
-        .register(
-            email.clone(),
-            "TestPassword123!".to_string(),
-            "Test".to_string(),
-            "User".to_string(),
-        )
-        .await
-        .expect("Failed to register test user");
-
-    let login_result = app_state
-        .auth_use_cases
-        .login(email, "TestPassword123!".to_string())
-        .await
-        .expect("Failed to login test user");
-
-    (register_result.id, login_result.token)
-}
-
-async fn create_test_building(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
+async fn create_test_building(
+    app_state: &actix_web::web::Data<AppState>,
+    organization_id: Uuid,
+) -> Uuid {
     let building_name = format!("Test Building {}", Uuid::new_v4());
+    let dto = CreateBuildingDto {
+        organization_id: organization_id.to_string(),
+        name: building_name,
+        address: "123 Test Street".to_string(),
+        city: "Test City".to_string(),
+        postal_code: "12345".to_string(),
+        country: "BE".to_string(),
+        total_units: 10,
+        total_tantiemes: Some(1000),
+        construction_year: Some(2020),
+    };
     let building = app_state
         .building_use_cases
-        .create_building(
-            organization_id,
-            building_name,
-            "123 Test Street".to_string(),
-            Some("Test City".to_string()),
-            Some("12345".to_string()),
-            Some("BE".to_string()),
-            10,
-            Some(2020),
-        )
+        .create_building(dto)
         .await
         .expect("Failed to create test building");
 
-    building.id
+    Uuid::parse_str(&building.id).expect("Failed to parse building id")
 }
 
 async fn create_test_meeting(
-    app_state: &web::Data<AppState>,
+    app_state: &actix_web::web::Data<AppState>,
     organization_id: Uuid,
     building_id: Uuid,
     meeting_date: DateTime<Utc>,
 ) -> Uuid {
+    let request = CreateMeetingRequest {
+        organization_id,
+        building_id,
+        meeting_type: MeetingType::Ordinary,
+        title: format!("Test Meeting {}", Uuid::new_v4()),
+        description: Some("Annual general assembly".to_string()),
+        scheduled_date: meeting_date,
+        location: "Building main hall".to_string(),
+    };
     let meeting = app_state
         .meeting_use_cases
-        .create_meeting(
-            organization_id,
-            building_id,
-            "Ordinary".to_string(),
-            format!("Test Meeting {}", Uuid::new_v4()),
-            Some("Annual general assembly".to_string()),
-            meeting_date,
-            Some("Building main hall".to_string()),
-        )
+        .create_meeting(request)
         .await
         .expect("Failed to create test meeting");
 
     meeting.id
 }
 
-async fn create_test_owner(app_state: &web::Data<AppState>, organization_id: Uuid) -> Uuid {
+async fn create_test_owner(
+    app_state: &actix_web::web::Data<AppState>,
+    organization_id: Uuid,
+) -> Uuid {
     let email = format!("owner_{}@example.com", Uuid::new_v4());
+    let dto = CreateOwnerDto {
+        organization_id: organization_id.to_string(),
+        first_name: "Test".to_string(),
+        last_name: "Owner".to_string(),
+        email,
+        phone: Some("+32123456789".to_string()),
+        address: "123 Test St".to_string(),
+        city: "Brussels".to_string(),
+        postal_code: "1000".to_string(),
+        country: "Belgium".to_string(),
+    };
     let owner = app_state
         .owner_use_cases
-        .create_owner(
-            organization_id,
-            "Test".to_string(),
-            "Owner".to_string(),
-            email,
-            Some("+32123456789".to_string()),
-        )
+        .create_owner(dto)
         .await
         .expect("Failed to create test owner");
 
-    owner.id
+    Uuid::parse_str(&owner.id).expect("Failed to parse owner id")
 }
 
 // ==================== Convocation CRUD Tests ====================
@@ -303,20 +94,18 @@ async fn create_test_owner(app_state: &web::Data<AppState>, organization_id: Uui
 #[actix_web::test]
 #[serial]
 async fn test_create_convocation_success() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     // Create meeting 30 days in future (well beyond 15d requirement)
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -353,19 +142,17 @@ async fn test_create_convocation_success() {
 #[actix_web::test]
 #[serial]
 async fn test_create_convocation_without_auth() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, _token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let _token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -391,15 +178,14 @@ async fn test_create_convocation_without_auth() {
 #[actix_web::test]
 #[serial]
 async fn test_create_convocation_all_meeting_types() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -411,8 +197,7 @@ async fn test_create_convocation_all_meeting_types() {
 
     for (meeting_type, days_ahead) in meeting_types {
         let meeting_date = Utc::now() + Duration::days(days_ahead);
-        let meeting_id =
-            create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+        let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
         let create_req = test::TestRequest::post()
             .uri("/api/v1/convocations")
@@ -446,15 +231,14 @@ async fn test_create_convocation_all_meeting_types() {
 #[actix_web::test]
 #[serial]
 async fn test_create_convocation_all_languages() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -462,8 +246,7 @@ async fn test_create_convocation_all_languages() {
 
     for language in languages {
         let meeting_date = Utc::now() + Duration::days(30);
-        let meeting_id =
-            create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+        let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
         let create_req = test::TestRequest::post()
             .uri("/api/v1/convocations")
@@ -493,19 +276,17 @@ async fn test_create_convocation_all_languages() {
 #[actix_web::test]
 #[serial]
 async fn test_get_convocation_by_id() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -542,13 +323,13 @@ async fn test_get_convocation_by_id() {
 #[actix_web::test]
 #[serial]
 async fn test_get_convocation_not_found() {
-    let (app_state, _container) = setup_app().await;
-    let (_user_id, token) = create_test_user(&app_state).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -565,19 +346,17 @@ async fn test_get_convocation_not_found() {
 #[actix_web::test]
 #[serial]
 async fn test_get_convocation_by_meeting() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -614,23 +393,21 @@ async fn test_get_convocation_by_meeting() {
 #[actix_web::test]
 #[serial]
 async fn test_list_building_convocations() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
     // Create 3 convocations for the same building
     for i in 0..3 {
         let meeting_date = Utc::now() + Duration::days(30 + i);
-        let meeting_id =
-            create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+        let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
         let create_req = test::TestRequest::post()
             .uri("/api/v1/convocations")
@@ -667,24 +444,22 @@ async fn test_list_building_convocations() {
 #[actix_web::test]
 #[serial]
 async fn test_list_organization_convocations() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building1_id = create_test_building(&app_state, organization_id).await;
-    let building2_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building1_id = create_test_building(&app_state, org_id).await;
+    let building2_id = create_test_building(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
     // Create 2 convocations for building1
     for _ in 0..2 {
         let meeting_date = Utc::now() + Duration::days(30);
-        let meeting_id =
-            create_test_meeting(&app_state, organization_id, building1_id, meeting_date).await;
+        let meeting_id = create_test_meeting(&app_state, org_id, building1_id, meeting_date).await;
 
         let create_req = test::TestRequest::post()
             .uri("/api/v1/convocations")
@@ -703,8 +478,7 @@ async fn test_list_organization_convocations() {
 
     // Create 1 convocation for building2
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building2_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building2_id, meeting_date).await;
 
     let create_req = test::TestRequest::post()
         .uri("/api/v1/convocations")
@@ -722,10 +496,7 @@ async fn test_list_organization_convocations() {
 
     // List organization convocations
     let list_req = test::TestRequest::get()
-        .uri(&format!(
-            "/api/v1/organizations/{}/convocations",
-            organization_id
-        ))
+        .uri(&format!("/api/v1/organizations/{}/convocations", org_id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
@@ -742,19 +513,17 @@ async fn test_list_organization_convocations() {
 #[actix_web::test]
 #[serial]
 async fn test_delete_convocation() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -798,19 +567,17 @@ async fn test_delete_convocation() {
 #[actix_web::test]
 #[serial]
 async fn test_schedule_convocation() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -852,23 +619,21 @@ async fn test_schedule_convocation() {
 #[actix_web::test]
 #[serial]
 async fn test_send_convocation() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     // Create 2 owners as recipients
-    let owner1_id = create_test_owner(&app_state, organization_id).await;
-    let owner2_id = create_test_owner(&app_state, organization_id).await;
+    let owner1_id = create_test_owner(&app_state, org_id).await;
+    let owner2_id = create_test_owner(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -909,19 +674,17 @@ async fn test_send_convocation() {
 #[actix_web::test]
 #[serial]
 async fn test_cancel_convocation() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -959,22 +722,20 @@ async fn test_cancel_convocation() {
 #[actix_web::test]
 #[serial]
 async fn test_list_convocation_recipients() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
-    let owner1_id = create_test_owner(&app_state, organization_id).await;
-    let owner2_id = create_test_owner(&app_state, organization_id).await;
+    let owner1_id = create_test_owner(&app_state, org_id).await;
+    let owner2_id = create_test_owner(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1023,22 +784,20 @@ async fn test_list_convocation_recipients() {
 #[actix_web::test]
 #[serial]
 async fn test_get_tracking_summary() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
-    let owner1_id = create_test_owner(&app_state, organization_id).await;
-    let owner2_id = create_test_owner(&app_state, organization_id).await;
+    let owner1_id = create_test_owner(&app_state, org_id).await;
+    let owner2_id = create_test_owner(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1088,21 +847,19 @@ async fn test_get_tracking_summary() {
 #[actix_web::test]
 #[serial]
 async fn test_mark_recipient_email_opened() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
-    let owner_id = create_test_owner(&app_state, organization_id).await;
+    let owner_id = create_test_owner(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1166,21 +923,19 @@ async fn test_mark_recipient_email_opened() {
 #[actix_web::test]
 #[serial]
 async fn test_update_recipient_attendance() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
-    let owner_id = create_test_owner(&app_state, organization_id).await;
+    let owner_id = create_test_owner(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1249,19 +1004,16 @@ async fn test_update_recipient_attendance() {
 #[actix_web::test]
 #[serial]
 async fn test_update_recipient_attendance_all_statuses() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1274,7 +1026,10 @@ async fn test_update_recipient_attendance_all_statuses() {
     ];
 
     for status in statuses {
-        let owner_id = create_test_owner(&app_state, organization_id).await;
+        let owner_id = create_test_owner(&app_state, org_id).await;
+        // Each convocation needs a unique meeting (UNIQUE constraint on meeting_id)
+        let loop_meeting_id =
+            create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
         // Create and send convocation
         let create_req = test::TestRequest::post()
@@ -1282,7 +1037,7 @@ async fn test_update_recipient_attendance_all_statuses() {
             .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
             .set_json(json!({
                 "building_id": building_id.to_string(),
-                "meeting_id": meeting_id.to_string(),
+                "meeting_id": loop_meeting_id.to_string(),
                 "meeting_type": "Ordinary",
                 "meeting_date": meeting_date.to_rfc3339(),
                 "language": "FR"
@@ -1340,22 +1095,20 @@ async fn test_update_recipient_attendance_all_statuses() {
 #[actix_web::test]
 #[serial]
 async fn test_set_recipient_proxy() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
-    let owner1_id = create_test_owner(&app_state, organization_id).await;
-    let owner2_id = create_test_owner(&app_state, organization_id).await; // Proxy
+    let owner1_id = create_test_owner(&app_state, org_id).await;
+    let owner2_id = create_test_owner(&app_state, org_id).await; // Proxy
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1420,21 +1173,19 @@ async fn test_set_recipient_proxy() {
 #[actix_web::test]
 #[serial]
 async fn test_send_convocation_reminders() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
-    let owner_id = create_test_owner(&app_state, organization_id).await;
+    let owner_id = create_test_owner(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1482,22 +1233,20 @@ async fn test_send_convocation_reminders() {
 #[actix_web::test]
 #[serial]
 async fn test_complete_convocation_lifecycle() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
-    let owner1_id = create_test_owner(&app_state, organization_id).await;
-    let owner2_id = create_test_owner(&app_state, organization_id).await;
+    let owner1_id = create_test_owner(&app_state, org_id).await;
+    let owner2_id = create_test_owner(&app_state, org_id).await;
 
     let meeting_date = Utc::now() + Duration::days(30);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1518,7 +1267,7 @@ async fn test_complete_convocation_lifecycle() {
     let convocation: ConvocationResponse = test::read_body_json(create_resp).await;
     assert_eq!(convocation.status, ConvocationStatus::Draft);
 
-    // 2. Schedule convocation (Draft → Scheduled)
+    // 2. Schedule convocation (Draft -> Scheduled)
     let send_date = Utc::now() + Duration::days(10);
     let schedule_req = test::TestRequest::put()
         .uri(&format!("/api/v1/convocations/{}/schedule", convocation.id))
@@ -1532,7 +1281,7 @@ async fn test_complete_convocation_lifecycle() {
     let scheduled_convocation: ConvocationResponse = test::read_body_json(schedule_resp).await;
     assert_eq!(scheduled_convocation.status, ConvocationStatus::Scheduled);
 
-    // 3. Send convocation (Scheduled → Sent)
+    // 3. Send convocation (Scheduled -> Sent)
     let send_req = test::TestRequest::post()
         .uri(&format!("/api/v1/convocations/{}/send", convocation.id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -1620,21 +1369,19 @@ async fn test_complete_convocation_lifecycle() {
 #[actix_web::test]
 #[serial]
 async fn test_legal_deadline_ordinary_ag() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     // Ordinary AG requires 15 days minimum notice
     // Meeting 16 days from now = respects deadline
     let meeting_date = Utc::now() + Duration::days(16);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1669,21 +1416,19 @@ async fn test_legal_deadline_ordinary_ag() {
 #[actix_web::test]
 #[serial]
 async fn test_legal_deadline_extraordinary_ag() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     // Extraordinary AG requires 8 days minimum notice
     // Meeting 10 days from now = respects deadline
     let meeting_date = Utc::now() + Duration::days(10);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 
@@ -1718,21 +1463,19 @@ async fn test_legal_deadline_extraordinary_ag() {
 #[actix_web::test]
 #[serial]
 async fn test_legal_deadline_second_convocation() {
-    let (app_state, _container) = setup_app().await;
-    let (user_id, token) = create_test_user(&app_state).await;
-    let organization_id = user_id;
-    let building_id = create_test_building(&app_state, organization_id).await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
+    let building_id = create_test_building(&app_state, org_id).await;
 
     // Second convocation requires 8 days minimum notice (after quorum not reached)
     // Meeting 9 days from now = respects deadline
     let meeting_date = Utc::now() + Duration::days(9);
-    let meeting_id =
-        create_test_meeting(&app_state, organization_id, building_id, meeting_date).await;
+    let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
         App::new()
             .app_data(app_state.clone())
-            .configure(create_authenticated_app),
+            .configure(configure_routes),
     )
     .await;
 

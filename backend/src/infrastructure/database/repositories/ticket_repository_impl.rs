@@ -515,6 +515,36 @@ impl TicketRepository for PostgresTicketRepository {
 
         Ok(row.count.unwrap_or(0))
     }
+
+    async fn count_by_organization(&self, organization_id: Uuid) -> Result<i64, String> {
+        let count: (i64,) =
+            sqlx::query_as("SELECT COUNT(*) FROM tickets WHERE organization_id = $1")
+                .bind(organization_id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| format!("Database error counting tickets by organization: {}", e))?;
+
+        Ok(count.0)
+    }
+
+    async fn count_by_organization_and_status(
+        &self,
+        organization_id: Uuid,
+        status: TicketStatus,
+    ) -> Result<i64, String> {
+        let status_str = Self::status_to_db(&status);
+
+        let count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM tickets WHERE organization_id = $1 AND status = $2",
+        )
+        .bind(organization_id)
+        .bind(status_str)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Database error counting tickets by org and status: {}", e))?;
+
+        Ok(count.0)
+    }
 }
 
 #[cfg(test)]

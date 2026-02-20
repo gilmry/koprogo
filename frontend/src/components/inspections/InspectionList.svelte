@@ -4,6 +4,7 @@
   import type { TechnicalInspection, CreateInspectionDto } from "../../lib/api/inspections";
   import { InspectionType, InspectionStatus } from "../../lib/api/inspections";
   import { toast } from "../../stores/toast";
+  import InspectionDetail from "./InspectionDetail.svelte";
 
   export let buildingId: string;
   export let organizationId: string = "";
@@ -13,6 +14,8 @@
   let error = "";
   let showCreateForm = false;
   let activeTab: "all" | "overdue" | "upcoming" = "all";
+  let selectedInspection: TechnicalInspection | null = null;
+  let detailOpen = false;
 
   // Create form
   let form: Partial<CreateInspectionDto> = resetForm();
@@ -87,6 +90,21 @@
     }
   }
 
+  function openDetail(inspection: TechnicalInspection) {
+    selectedInspection = inspection;
+    detailOpen = true;
+  }
+
+  function handleDetailUpdated(event: CustomEvent<TechnicalInspection>) {
+    const updated = event.detail;
+    inspections = inspections.map((i) => (i.id === updated.id ? updated : i));
+  }
+
+  function handleDetailDeleted(event: CustomEvent<string>) {
+    inspections = inspections.filter((i) => i.id !== event.detail);
+    detailOpen = false;
+  }
+
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString("fr-BE", {
       day: "numeric",
@@ -132,36 +150,36 @@
       <h3 class="font-medium text-gray-800 mb-3">Planifier une inspection</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Titre *</label>
-          <input bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Ex: Inspection annuelle ascenseur" />
+          <label for="insp-new-title" class="block text-sm text-gray-600 mb-1">Titre *</label>
+          <input id="insp-new-title" bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Ex: Inspection annuelle ascenseur" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Type d'inspection</label>
-          <select bind:value={form.inspection_type} class="w-full border rounded px-3 py-1.5 text-sm">
+          <label for="insp-new-type" class="block text-sm text-gray-600 mb-1">Type d'inspection</label>
+          <select id="insp-new-type" bind:value={form.inspection_type} class="w-full border rounded px-3 py-1.5 text-sm">
             {#each Object.entries(inspectionTypeLabels) as [val, label]}
               <option value={val}>{label} ({inspectionFrequencyLabels[val] || ""})</option>
             {/each}
           </select>
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Inspecteur *</label>
-          <input bind:value={form.inspector_name} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Nom de l'inspecteur" />
+          <label for="insp-new-inspector" class="block text-sm text-gray-600 mb-1">Inspecteur *</label>
+          <input id="insp-new-inspector" bind:value={form.inspector_name} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Nom de l'inspecteur" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Société</label>
-          <input bind:value={form.inspector_company} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Société d'inspection" />
+          <label for="insp-new-company" class="block text-sm text-gray-600 mb-1">Société</label>
+          <input id="insp-new-company" bind:value={form.inspector_company} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Société d'inspection" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Date de l'inspection</label>
-          <input type="date" bind:value={form.inspection_date} class="w-full border rounded px-3 py-1.5 text-sm" />
+          <label for="insp-new-date" class="block text-sm text-gray-600 mb-1">Date de l'inspection</label>
+          <input id="insp-new-date" type="date" bind:value={form.inspection_date} class="w-full border rounded px-3 py-1.5 text-sm" />
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Coût (EUR)</label>
-          <input type="number" bind:value={form.cost} min="0" step="0.01" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Optionnel" />
+          <label for="insp-new-cost" class="block text-sm text-gray-600 mb-1">Coût (EUR)</label>
+          <input id="insp-new-cost" type="number" bind:value={form.cost} min="0" step="0.01" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Optionnel" />
         </div>
         <div class="md:col-span-2">
-          <label class="block text-sm text-gray-600 mb-1">Description</label>
-          <textarea bind:value={form.description} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Détails de l'inspection"></textarea>
+          <label for="insp-new-desc" class="block text-sm text-gray-600 mb-1">Description</label>
+          <textarea id="insp-new-desc" bind:value={form.description} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Détails de l'inspection"></textarea>
         </div>
       </div>
       <div class="mt-3 flex gap-2">
@@ -208,7 +226,13 @@
     <!-- Inspections list -->
     <div class="space-y-3">
       {#each inspections as inspection}
-        <div class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 {inspection.is_overdue ? 'border-l-4 border-l-red-500' : ''}">
+        <div
+          class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer {inspection.is_overdue ? 'border-l-4 border-l-red-500' : ''}"
+          on:click={() => openDetail(inspection)}
+          on:keydown={(e) => e.key === "Enter" && openDetail(inspection)}
+          role="button"
+          tabindex="0"
+        >
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
@@ -251,7 +275,11 @@
                 </div>
               {/if}
             </div>
-            <button on:click={() => deleteInspection(inspection.id)} class="text-red-400 hover:text-red-600 p-1" title="Supprimer">
+            <button
+              on:click|stopPropagation={() => deleteInspection(inspection.id)}
+              class="text-red-400 hover:text-red-600 p-1"
+              title="Supprimer"
+            >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
           </div>
@@ -260,3 +288,13 @@
     </div>
   {/if}
 </div>
+
+{#if selectedInspection}
+  <InspectionDetail
+    isOpen={detailOpen}
+    inspection={selectedInspection}
+    on:close={() => (detailOpen = false)}
+    on:updated={handleDetailUpdated}
+    on:deleted={handleDetailDeleted}
+  />
+{/if}

@@ -1,139 +1,16 @@
+mod common;
+
 use actix_web::http::header;
 use actix_web::{test, App};
-use koprogo_api::application::use_cases::*;
-use koprogo_api::infrastructure::audit_logger::AuditLogger;
-use koprogo_api::infrastructure::database::create_pool;
-use koprogo_api::infrastructure::database::repositories::*;
-use koprogo_api::infrastructure::database::PostgresAccountRepository;
-use koprogo_api::infrastructure::email::EmailService;
-use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::configure_routes;
-use koprogo_api::infrastructure::web::AppState;
 use serde_json::json;
 use serial_test::serial;
-use std::sync::Arc;
-use testcontainers_modules::postgres::Postgres;
-use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use uuid::Uuid;
-
-async fn setup_app() -> (actix_web::web::Data<AppState>, ContainerAsync<Postgres>) {
-    let postgres_container = Postgres::default()
-        .start()
-        .await
-        .expect("Failed to start postgres container");
-
-    let host_port = postgres_container
-        .get_host_port_ipv4(5432)
-        .await
-        .expect("Failed to get host port");
-
-    let connection_string = format!(
-        "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        host_port
-    );
-
-    let pool = create_pool(&connection_string)
-        .await
-        .expect("Failed to create pool");
-
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("migrate");
-
-    // repos
-    let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
-    let user_role_repo = Arc::new(PostgresUserRoleRepository::new(pool.clone()));
-    let refresh_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
-    let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
-    let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
-    let owner_repo = Arc::new(PostgresOwnerRepository::new(pool.clone()));
-    let unit_owner_repo = Arc::new(PostgresUnitOwnerRepository::new(pool.clone()));
-    let expense_repo = Arc::new(PostgresExpenseRepository::new(pool.clone()));
-    let meeting_repo = Arc::new(PostgresMeetingRepository::new(pool.clone()));
-    let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
-    let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
-    let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
-    let charge_distribution_repo =
-        Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
-    let payment_reminder_repo = Arc::new(PostgresPaymentReminderRepository::new(pool.clone()));
-
-    let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
-
-    // use cases
-    let jwt_secret = "e2e-secret".to_string();
-
-    let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
-    let account_use_cases = AccountUseCases::new(account_repo.clone());
-    let financial_report_use_cases =
-        FinancialReportUseCases::new(account_repo, expense_repo.clone());
-
-    let auth_use_cases = AuthUseCases::new(user_repo, refresh_repo, user_role_repo, jwt_secret);
-    let building_use_cases = BuildingUseCases::new(building_repo.clone());
-    let unit_use_cases = UnitUseCases::new(unit_repo.clone());
-    let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
-    let unit_owner_use_cases =
-        UnitOwnerUseCases::new(unit_owner_repo.clone(), unit_repo, owner_repo);
-    let expense_use_cases = ExpenseUseCases::new(expense_repo.clone());
-    let charge_distribution_use_cases = ChargeDistributionUseCases::new(
-        charge_distribution_repo,
-        expense_repo.clone(),
-        unit_owner_repo,
-    );
-    let meeting_use_cases = MeetingUseCases::new(meeting_repo.clone());
-    let storage_root = std::env::temp_dir().join("koprogo_e2e_http_uploads");
-    let storage: Arc<dyn StorageProvider> =
-        Arc::new(FileStorage::new(&storage_root).expect("storage"));
-    let document_use_cases = DocumentUseCases::new(document_repo, storage.clone());
-    let pcn_use_cases = PcnUseCases::new(expense_repo.clone());
-    let payment_reminder_use_cases =
-        PaymentReminderUseCases::new(payment_reminder_repo, expense_repo);
-    let gdpr_use_cases = GdprUseCases::new(gdpr_repo);
-    let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
-    let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
-    let board_member_use_cases =
-        BoardMemberUseCases::new(board_member_repo.clone(), building_repo.clone());
-    let board_decision_use_cases = BoardDecisionUseCases::new(
-        board_decision_repo.clone(),
-        building_repo.clone(),
-        meeting_repo.clone(),
-    );
-    let board_dashboard_use_cases = BoardDashboardUseCases::new(
-        board_member_repo.clone(),
-        board_decision_repo.clone(),
-        building_repo.clone(),
-    );
-
-    let app_state = actix_web::web::Data::new(AppState::new(
-        account_use_cases,
-        auth_use_cases,
-        building_use_cases,
-        unit_use_cases,
-        owner_use_cases,
-        unit_owner_use_cases,
-        expense_use_cases,
-        charge_distribution_use_cases,
-        meeting_use_cases,
-        document_use_cases,
-        pcn_use_cases,
-        payment_reminder_use_cases,
-        gdpr_use_cases,
-        board_member_use_cases,
-        board_decision_use_cases,
-        board_dashboard_use_cases,
-        financial_report_use_cases,
-        audit_logger,
-        EmailService::from_env().expect("email service"),
-        pool.clone(),
-    ));
-
-    (app_state, postgres_container)
-}
 
 #[actix_web::test]
 #[serial]
 async fn protected_route_requires_jwt() {
-    let (app_state, _container) = setup_app().await;
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
 
     let app = test::init_service(
         App::new()
@@ -153,42 +30,9 @@ async fn protected_route_requires_jwt() {
 #[actix_web::test]
 #[serial]
 async fn protected_route_with_valid_jwt_succeeds() {
-    let (app_state, container) = setup_app().await;
-    let pool = app_state.pool.clone();
+    let (app_state, _container, org_id) = common::setup_test_db().await;
 
-    // Create organization and user then login to get token
-    let org_id = Uuid::new_v4();
-    sqlx::query(
-        r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
-           VALUES ($1, 'Org E2E', 'org-e2e', 'e2e@org.com', 'starter', 10, 10, true, NOW(), NOW())"#
-    )
-    .bind(org_id)
-    .execute(&pool)
-    .await
-    .expect("insert org");
-
-    // Register + login
-    use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
-    let email = format!("e2e+{}@test.com", Uuid::new_v4());
-    let reg = RegisterRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-        first_name: "E2E".to_string(),
-        last_name: "User".to_string(),
-        role: "syndic".to_string(),
-        organization_id: Some(org_id),
-    };
-    let _ = app_state
-        .auth_use_cases
-        .register(reg)
-        .await
-        .expect("register");
-    let login = LoginRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-    };
-    let res = app_state.auth_use_cases.login(login).await.expect("login");
-    let token = res.token;
+    let token = common::register_and_login(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -205,9 +49,6 @@ async fn protected_route_with_valid_jwt_succeeds() {
         .to_request();
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
-
-    // Keep container alive until end of test
-    drop(container);
 }
 
 #[actix_web::test]
@@ -216,42 +57,10 @@ async fn post_building_injects_org_from_jwt() {
     use actix_web::http::header;
     use serde::Deserialize;
 
-    let (app_state, _container) = setup_app().await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
     let pool = app_state.pool.clone();
 
-    // Create organization and user then login to get token (Org A)
-    let org_a = Uuid::new_v4();
-    sqlx::query(
-        r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
-           VALUES ($1, 'Org A', 'orga', 'a@org.com', 'starter', 10, 10, true, NOW(), NOW())"#
-    )
-    .bind(org_a)
-    .execute(&pool)
-    .await
-    .expect("insert org");
-
-    // Register + login for Org A (use superadmin as only superadmin can create buildings)
-    use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
-    let email = format!("e2e+{}@test.com", Uuid::new_v4());
-    let reg = RegisterRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-        first_name: "E2E".to_string(),
-        last_name: "SuperAdmin".to_string(),
-        role: "superadmin".to_string(),
-        organization_id: Some(org_a),
-    };
-    let _ = app_state
-        .auth_use_cases
-        .register(reg)
-        .await
-        .expect("register");
-    let login = LoginRequest {
-        email: email.clone(),
-        password: "Passw0rd!".to_string(),
-    };
-    let res = app_state.auth_use_cases.login(login).await.expect("login");
-    let token = res.token;
+    let token = common::register_and_login(&app_state, org_id).await;
 
     // SuperAdmin can specify organization_id in request body
     // Test that SuperAdmin can create building with valid organization_id
@@ -260,9 +69,9 @@ async fn post_building_injects_org_from_jwt() {
         id: String,
     }
 
-    // Use the valid org_a that was created in setup
+    // Use the valid org_id that was created in setup
     let payload = serde_json::json!({
-        "organization_id": org_a.to_string(),
+        "organization_id": org_id.to_string(),
         "name": "JWT Building",
         "address": "1 JWT St",
         "city": "Brussels",
@@ -289,14 +98,15 @@ async fn post_building_injects_org_from_jwt() {
     let body: BuildingResp = test::read_body_json(resp).await;
     let building_id = Uuid::parse_str(&body.id).expect("uuid");
 
-    // Verify in DB that organization_id is Org A (as specified by SuperAdmin)
-    let org_id: Uuid = sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
-        .bind(building_id)
-        .fetch_one(&pool)
-        .await
-        .expect("select org id");
+    // Verify in DB that organization_id is org_id (as specified by SuperAdmin)
+    let fetched_org_id: Uuid =
+        sqlx::query_scalar("SELECT organization_id FROM buildings WHERE id = $1")
+            .bind(building_id)
+            .fetch_one(&pool)
+            .await
+            .expect("select org id");
     assert_eq!(
-        org_id, org_a,
+        fetched_org_id, org_id,
         "SuperAdmin should be able to create building with specified organization_id"
     );
 }
@@ -306,7 +116,7 @@ async fn post_building_injects_org_from_jwt() {
 async fn login_returns_all_roles_and_switch_active_role_updates_claims() {
     use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
 
-    let (app_state, container) = setup_app().await;
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
     let pool = app_state.pool.clone();
 
     // Create two organizations for multi-role scenario
@@ -430,8 +240,6 @@ async fn login_returns_all_roles_and_switch_active_role_updates_claims() {
         claims.role_id.expect("claims include role_id"),
         secondary_role_id
     );
-
-    drop(container);
 }
 
 #[actix_web::test]
@@ -439,7 +247,7 @@ async fn login_returns_all_roles_and_switch_active_role_updates_claims() {
 async fn admin_can_manage_user_roles_via_http() {
     use koprogo_api::application::dto::{LoginRequest, RegisterRequest};
 
-    let (app_state, container) = setup_app().await;
+    let (app_state, _container, _org_id) = common::setup_test_db().await;
     let pool = app_state.pool.clone();
 
     let org_id = Uuid::new_v4();
@@ -602,6 +410,4 @@ async fn admin_can_manage_user_roles_via_http() {
             .expect("active role in list"),
         "accountant"
     );
-
-    drop(container);
 }

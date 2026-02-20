@@ -11,6 +11,18 @@ pub struct PostgresBudgetRepository {
     pool: PgPool,
 }
 
+/// Budget SELECT columns with casts for enums and decimals
+const BUDGET_COLUMNS: &str = r#"
+    id, organization_id, building_id, fiscal_year,
+    ordinary_budget::float8 as ordinary_budget,
+    extraordinary_budget::float8 as extraordinary_budget,
+    total_budget::float8 as total_budget,
+    status::text as status_text,
+    submitted_date, approved_date, approved_by_meeting_id,
+    monthly_provision_amount::float8 as monthly_provision_amount,
+    notes, created_at, updated_at
+"#;
+
 impl PostgresBudgetRepository {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
@@ -18,7 +30,7 @@ impl PostgresBudgetRepository {
 
     /// Helper: Convert database row to Budget entity
     fn row_to_budget(&self, row: PgRow) -> Budget {
-        let status_str: String = row.get("status");
+        let status_str: String = row.get("status_text");
         let status = match status_str.as_str() {
             "draft" => BudgetStatus::Draft,
             "submitted" => BudgetStatus::Submitted,
@@ -71,7 +83,14 @@ impl BudgetRepository for PostgresBudgetRepository {
                 $1, $2, $3, $4, $5, $6, $7, $8::budget_status,
                 $9, $10, $11, $12, $13, $14, $15
             )
-            RETURNING *
+            RETURNING id, organization_id, building_id, fiscal_year,
+                ordinary_budget::float8 as ordinary_budget,
+                extraordinary_budget::float8 as extraordinary_budget,
+                total_budget::float8 as total_budget,
+                status::text as status_text,
+                submitted_date, approved_date, approved_by_meeting_id,
+                monthly_provision_amount::float8 as monthly_provision_amount,
+                notes, created_at, updated_at
             "#,
         )
         .bind(budget.id)
@@ -97,7 +116,8 @@ impl BudgetRepository for PostgresBudgetRepository {
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Budget>, String> {
-        let result = sqlx::query("SELECT * FROM budgets WHERE id = $1")
+        let sql = format!("SELECT {} FROM budgets WHERE id = $1", BUDGET_COLUMNS);
+        let result = sqlx::query(&sql)
             .bind(id)
             .fetch_optional(&self.pool)
             .await
@@ -111,24 +131,30 @@ impl BudgetRepository for PostgresBudgetRepository {
         building_id: Uuid,
         fiscal_year: i32,
     ) -> Result<Option<Budget>, String> {
-        let result =
-            sqlx::query("SELECT * FROM budgets WHERE building_id = $1 AND fiscal_year = $2")
-                .bind(building_id)
-                .bind(fiscal_year)
-                .fetch_optional(&self.pool)
-                .await
-                .map_err(|e| format!("Failed to find budget: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM budgets WHERE building_id = $1 AND fiscal_year = $2",
+            BUDGET_COLUMNS
+        );
+        let result = sqlx::query(&sql)
+            .bind(building_id)
+            .bind(fiscal_year)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to find budget: {}", e))?;
 
         Ok(result.map(|row| self.row_to_budget(row)))
     }
 
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Budget>, String> {
-        let rows =
-            sqlx::query("SELECT * FROM budgets WHERE building_id = $1 ORDER BY fiscal_year DESC")
-                .bind(building_id)
-                .fetch_all(&self.pool)
-                .await
-                .map_err(|e| format!("Failed to find budgets: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM budgets WHERE building_id = $1 ORDER BY fiscal_year DESC",
+            BUDGET_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .bind(building_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to find budgets: {}", e))?;
 
         Ok(rows
             .into_iter()
@@ -137,18 +163,12 @@ impl BudgetRepository for PostgresBudgetRepository {
     }
 
     async fn find_active_by_building(&self, building_id: Uuid) -> Result<Option<Budget>, String> {
-        let result = sqlx::query(
-            r#"
-            SELECT * FROM budgets
-            WHERE building_id = $1 AND status = 'approved'
-            ORDER BY fiscal_year DESC
-            LIMIT 1
-            "#,
-        )
-        .bind(building_id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to find active budget: {}", e))?;
+        let sql = format!("SELECT {} FROM budgets WHERE building_id = $1 AND status = 'approved' ORDER BY fiscal_year DESC LIMIT 1", BUDGET_COLUMNS);
+        let result = sqlx::query(&sql)
+            .bind(building_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to find active budget: {}", e))?;
 
         Ok(result.map(|row| self.row_to_budget(row)))
     }
@@ -158,18 +178,13 @@ impl BudgetRepository for PostgresBudgetRepository {
         organization_id: Uuid,
         fiscal_year: i32,
     ) -> Result<Vec<Budget>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT * FROM budgets
-            WHERE organization_id = $1 AND fiscal_year = $2
-            ORDER BY created_at DESC
-            "#,
-        )
-        .bind(organization_id)
-        .bind(fiscal_year)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to find budgets: {}", e))?;
+        let sql = format!("SELECT {} FROM budgets WHERE organization_id = $1 AND fiscal_year = $2 ORDER BY created_at DESC", BUDGET_COLUMNS);
+        let rows = sqlx::query(&sql)
+            .bind(organization_id)
+            .bind(fiscal_year)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to find budgets: {}", e))?;
 
         Ok(rows
             .into_iter()
@@ -190,18 +205,13 @@ impl BudgetRepository for PostgresBudgetRepository {
             BudgetStatus::Archived => "archived",
         };
 
-        let rows = sqlx::query(
-            r#"
-            SELECT * FROM budgets
-            WHERE organization_id = $1 AND status = $2::budget_status
-            ORDER BY created_at DESC
-            "#,
-        )
-        .bind(organization_id)
-        .bind(status_str)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to find budgets: {}", e))?;
+        let sql = format!("SELECT {} FROM budgets WHERE organization_id = $1 AND status = $2::budget_status ORDER BY created_at DESC", BUDGET_COLUMNS);
+        let rows = sqlx::query(&sql)
+            .bind(organization_id)
+            .bind(status_str)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to find budgets: {}", e))?;
 
         Ok(rows
             .into_iter()
@@ -219,7 +229,7 @@ impl BudgetRepository for PostgresBudgetRepository {
         let offset = (page_request.page - 1) * page_request.per_page;
 
         // Build dynamic query
-        let mut query = String::from("SELECT * FROM budgets WHERE 1=1");
+        let mut query = format!("SELECT {} FROM budgets WHERE 1=1", BUDGET_COLUMNS);
         let mut count_query = String::from("SELECT COUNT(*) as count FROM budgets WHERE 1=1");
 
         let mut bind_index = 1;
@@ -315,7 +325,14 @@ impl BudgetRepository for PostgresBudgetRepository {
                 notes = $10,
                 updated_at = $11
             WHERE id = $1
-            RETURNING *
+            RETURNING id, organization_id, building_id, fiscal_year,
+                ordinary_budget::float8 as ordinary_budget,
+                extraordinary_budget::float8 as extraordinary_budget,
+                total_budget::float8 as total_budget,
+                status::text as status_text,
+                submitted_date, approved_date, approved_by_meeting_id,
+                monthly_provision_amount::float8 as monthly_provision_amount,
+                notes, created_at, updated_at
             "#,
         )
         .bind(budget.id)
@@ -356,8 +373,8 @@ impl BudgetRepository for PostgresBudgetRepository {
                 COUNT(*) FILTER (WHERE status = 'approved') as approved_count,
                 COUNT(*) FILTER (WHERE status = 'rejected') as rejected_count,
                 COUNT(*) FILTER (WHERE status = 'archived') as archived_count,
-                COALESCE(AVG(total_budget), 0) as average_total_budget,
-                COALESCE(AVG(monthly_provision_amount), 0) as average_monthly_provision
+                COALESCE(AVG(total_budget), 0)::float8 as average_total_budget,
+                COALESCE(AVG(monthly_provision_amount), 0)::float8 as average_monthly_provision
             FROM budgets
             WHERE organization_id = $1
             "#,

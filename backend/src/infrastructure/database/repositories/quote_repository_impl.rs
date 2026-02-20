@@ -9,6 +9,16 @@ pub struct PostgresQuoteRepository {
     pool: DbPool,
 }
 
+/// Quote SELECT columns with cast for status enum
+const QUOTE_COLUMNS: &str = r#"
+    id, building_id, contractor_id, project_title, project_description,
+    amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
+    estimated_start_date, estimated_duration_days, warranty_years,
+    contractor_rating, status::text as status_text, requested_at, submitted_at,
+    reviewed_at, decision_at, decision_by, decision_notes,
+    created_at, updated_at
+"#;
+
 impl PostgresQuoteRepository {
     pub fn new(pool: DbPool) -> Self {
         Self { pool }
@@ -28,7 +38,7 @@ impl QuoteRepository for PostgresQuoteRepository {
                 reviewed_at, decision_at, decision_by, decision_notes,
                 created_at, updated_at
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::quote_status, $15, $16, $17, $18, $19, $20, $21, $22)
             "#,
         )
         .bind(quote.id)
@@ -61,93 +71,55 @@ impl QuoteRepository for PostgresQuoteRepository {
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<Quote>, String> {
-        let row = sqlx::query(
-            r#"
-            SELECT
-                id, building_id, contractor_id, project_title, project_description,
-                amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
-                estimated_start_date, estimated_duration_days, warranty_years,
-                contractor_rating, status, requested_at, submitted_at,
-                reviewed_at, decision_at, decision_by, decision_notes,
-                created_at, updated_at
-            FROM quotes
-            WHERE id = $1
-            "#,
-        )
-        .bind(id)
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let sql = format!("SELECT {} FROM quotes WHERE id = $1", QUOTE_COLUMNS);
+        let row = sqlx::query(&sql)
+            .bind(id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(row.map(|row| map_row_to_quote(&row)))
     }
 
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Quote>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT
-                id, building_id, contractor_id, project_title, project_description,
-                amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
-                estimated_start_date, estimated_duration_days, warranty_years,
-                contractor_rating, status, requested_at, submitted_at,
-                reviewed_at, decision_at, decision_by, decision_notes,
-                created_at, updated_at
-            FROM quotes
-            WHERE building_id = $1
-            ORDER BY requested_at DESC
-            "#,
-        )
-        .bind(building_id)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM quotes WHERE building_id = $1 ORDER BY requested_at DESC",
+            QUOTE_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .bind(building_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
     async fn find_by_contractor(&self, contractor_id: Uuid) -> Result<Vec<Quote>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT
-                id, building_id, contractor_id, project_title, project_description,
-                amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
-                estimated_start_date, estimated_duration_days, warranty_years,
-                contractor_rating, status, requested_at, submitted_at,
-                reviewed_at, decision_at, decision_by, decision_notes,
-                created_at, updated_at
-            FROM quotes
-            WHERE contractor_id = $1
-            ORDER BY requested_at DESC
-            "#,
-        )
-        .bind(contractor_id)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM quotes WHERE contractor_id = $1 ORDER BY requested_at DESC",
+            QUOTE_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .bind(contractor_id)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
     async fn find_by_status(&self, building_id: Uuid, status: &str) -> Result<Vec<Quote>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT
-                id, building_id, contractor_id, project_title, project_description,
-                amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
-                estimated_start_date, estimated_duration_days, warranty_years,
-                contractor_rating, status, requested_at, submitted_at,
-                reviewed_at, decision_at, decision_by, decision_notes,
-                created_at, updated_at
-            FROM quotes
-            WHERE building_id = $1 AND status = $2
-            ORDER BY requested_at DESC
-            "#,
-        )
-        .bind(building_id)
-        .bind(status)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM quotes WHERE building_id = $1 AND status = $2::quote_status ORDER BY requested_at DESC",
+            QUOTE_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .bind(building_id)
+            .bind(status)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(rows.iter().map(map_row_to_quote).collect())
     }
@@ -157,24 +129,15 @@ impl QuoteRepository for PostgresQuoteRepository {
             return Ok(vec![]);
         }
 
-        let rows = sqlx::query(
-            r#"
-            SELECT
-                id, building_id, contractor_id, project_title, project_description,
-                amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
-                estimated_start_date, estimated_duration_days, warranty_years,
-                contractor_rating, status, requested_at, submitted_at,
-                reviewed_at, decision_at, decision_by, decision_notes,
-                created_at, updated_at
-            FROM quotes
-            WHERE id = ANY($1)
-            ORDER BY amount_incl_vat ASC
-            "#,
-        )
-        .bind(&ids)
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM quotes WHERE id = ANY($1) ORDER BY amount_incl_vat ASC",
+            QUOTE_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .bind(&ids)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(rows.iter().map(map_row_to_quote).collect())
     }
@@ -184,48 +147,29 @@ impl QuoteRepository for PostgresQuoteRepository {
         building_id: Uuid,
         project_title: &str,
     ) -> Result<Vec<Quote>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT
-                id, building_id, contractor_id, project_title, project_description,
-                amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
-                estimated_start_date, estimated_duration_days, warranty_years,
-                contractor_rating, status, requested_at, submitted_at,
-                reviewed_at, decision_at, decision_by, decision_notes,
-                created_at, updated_at
-            FROM quotes
-            WHERE building_id = $1 AND project_title ILIKE $2
-            ORDER BY requested_at DESC
-            "#,
-        )
-        .bind(building_id)
-        .bind(format!("%{}%", project_title))
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM quotes WHERE building_id = $1 AND project_title ILIKE $2 ORDER BY requested_at DESC",
+            QUOTE_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .bind(building_id)
+            .bind(format!("%{}%", project_title))
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(rows.iter().map(map_row_to_quote).collect())
     }
 
     async fn find_expired(&self) -> Result<Vec<Quote>, String> {
-        let rows = sqlx::query(
-            r#"
-            SELECT
-                id, building_id, contractor_id, project_title, project_description,
-                amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
-                estimated_start_date, estimated_duration_days, warranty_years,
-                contractor_rating, status, requested_at, submitted_at,
-                reviewed_at, decision_at, decision_by, decision_notes,
-                created_at, updated_at
-            FROM quotes
-            WHERE validity_date < NOW()
-              AND status NOT IN ('Accepted', 'Rejected', 'Expired', 'Withdrawn')
-            ORDER BY validity_date ASC
-            "#,
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let sql = format!(
+            "SELECT {} FROM quotes WHERE validity_date < NOW() AND status::text NOT IN ('Accepted', 'Rejected', 'Expired', 'Withdrawn') ORDER BY validity_date ASC",
+            QUOTE_COLUMNS
+        );
+        let rows = sqlx::query(&sql)
+            .fetch_all(&self.pool)
+            .await
+            .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(rows.iter().map(map_row_to_quote).collect())
     }
@@ -247,7 +191,7 @@ impl QuoteRepository for PostgresQuoteRepository {
                 estimated_duration_days = $11,
                 warranty_years = $12,
                 contractor_rating = $13,
-                status = $14,
+                status = $14::quote_status,
                 requested_at = $15,
                 submitted_at = $16,
                 reviewed_at = $17,
@@ -308,7 +252,7 @@ impl QuoteRepository for PostgresQuoteRepository {
 
     async fn count_by_status(&self, building_id: Uuid, status: &str) -> Result<i64, String> {
         let count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM quotes WHERE building_id = $1 AND status = $2",
+            "SELECT COUNT(*) FROM quotes WHERE building_id = $1 AND status = $2::quote_status",
         )
         .bind(building_id)
         .bind(status)
@@ -322,6 +266,7 @@ impl QuoteRepository for PostgresQuoteRepository {
 
 /// Helper function to map PostgreSQL row to Quote entity
 fn map_row_to_quote(row: &sqlx::postgres::PgRow) -> Quote {
+    let status_str: String = row.get("status_text");
     Quote {
         id: row.get("id"),
         building_id: row.get("building_id"),
@@ -336,7 +281,7 @@ fn map_row_to_quote(row: &sqlx::postgres::PgRow) -> Quote {
         estimated_duration_days: row.get("estimated_duration_days"),
         warranty_years: row.get("warranty_years"),
         contractor_rating: row.get("contractor_rating"),
-        status: QuoteStatus::from_sql(row.get("status")).unwrap_or(QuoteStatus::Requested),
+        status: QuoteStatus::from_sql(&status_str).unwrap_or(QuoteStatus::Requested),
         requested_at: row.get("requested_at"),
         submitted_at: row.get("submitted_at"),
         reviewed_at: row.get("reviewed_at"),

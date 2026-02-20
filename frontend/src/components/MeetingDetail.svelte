@@ -6,6 +6,7 @@
   import MeetingDocuments from './MeetingDocuments.svelte';
   import ResolutionList from './resolutions/ResolutionList.svelte';
   import ConvocationPanel from './convocations/ConvocationPanel.svelte';
+  import { toast } from '../stores/toast';
 
   let meeting: Meeting | null = null;
   let building: Building | null = null;
@@ -60,17 +61,17 @@
 
     const attendeesCount = parseInt(attendees);
     if (isNaN(attendeesCount) || attendeesCount < 0) {
-      alert('Veuillez entrer un nombre valide');
+      toast.error('Veuillez entrer un nombre valide');
       return;
     }
 
     try {
       await api.post(`/meetings/${meeting.id}/complete`, { attendees_count: attendeesCount });
       await loadMeeting();
-      alert('Assemblée marquée comme terminée avec succès');
+      toast.success('Assemblée marquée comme terminée avec succès');
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la mise à jour';
-      alert(`Erreur: ${errorMsg}`);
+      toast.error(`Erreur: ${errorMsg}`);
       console.error('Error completing meeting:', e);
     }
   };
@@ -85,10 +86,10 @@
     try {
       await api.post(`/meetings/${meeting.id}/cancel`, {});
       await loadMeeting();
-      alert('Assemblée annulée avec succès');
+      toast.success('Assemblée annulée avec succès');
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erreur lors de l\'annulation';
-      alert(`Erreur: ${errorMsg}`);
+      toast.error(`Erreur: ${errorMsg}`);
       console.error('Error cancelling meeting:', e);
     }
   };
@@ -103,7 +104,7 @@
       // Parse and format the date as ISO 8601
       const date = new Date(newDate);
       if (isNaN(date.getTime())) {
-        alert('Format de date invalide. Utilisez: YYYY-MM-DD HH:MM');
+        toast.error('Format de date invalide. Utilisez: YYYY-MM-DD HH:MM');
         return;
       }
 
@@ -111,10 +112,10 @@
         scheduled_date: date.toISOString()
       });
       await loadMeeting();
-      alert('Assemblée reprogrammée avec succès');
+      toast.success('Assemblée reprogrammée avec succès');
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la reprogrammation';
-      alert(`Erreur: ${errorMsg}`);
+      toast.error(`Erreur: ${errorMsg}`);
       console.error('Error rescheduling meeting:', e);
     }
   };

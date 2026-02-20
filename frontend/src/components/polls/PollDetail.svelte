@@ -10,6 +10,7 @@
   import PollStatusBadge from "./PollStatusBadge.svelte";
   import PollTypeBadge from "./PollTypeBadge.svelte";
   import PollResults from "./PollResults.svelte";
+  import { toast } from "../../stores/toast";
 
   export let pollId: string;
   export let isAdmin = false;
@@ -125,9 +126,9 @@
         starts_at: poll.starts_at,
         ends_at: poll.ends_at,
       });
-      alert("Sondage publié avec succès !");
+      toast.success("Sondage publié avec succès !");
     } catch (err: any) {
-      alert("Erreur lors de la publication: " + err.message);
+      toast.error("Erreur lors de la publication: " + err.message);
     }
   }
 
@@ -139,9 +140,9 @@
     try {
       poll = await pollsApi.close(poll.id);
       await loadPoll(); // Reload to get results
-      alert("Sondage clôturé avec succès ! Les résultats sont maintenant disponibles.");
+      toast.success("Sondage clôturé avec succès ! Les résultats sont maintenant disponibles.");
     } catch (err: any) {
-      alert("Erreur lors de la clôture: " + err.message);
+      toast.error("Erreur lors de la clôture: " + err.message);
     }
   }
 
@@ -152,9 +153,9 @@
 
     try {
       poll = await pollsApi.cancel(poll.id);
-      alert("Sondage annulé.");
+      toast.success("Sondage annulé.");
     } catch (err: any) {
-      alert("Erreur lors de l'annulation: " + err.message);
+      toast.error("Erreur lors de l'annulation: " + err.message);
     }
   }
 

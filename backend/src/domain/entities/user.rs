@@ -145,6 +145,11 @@ impl User {
         first_name: Option<String>,
         last_name: Option<String>,
     ) -> Result<(), String> {
+        // At least one field must be provided
+        if email.is_none() && first_name.is_none() && last_name.is_none() {
+            return Err("No fields provided for rectification".to_string());
+        }
+
         // Validate email format BEFORE modifying anything
         if let Some(ref new_email) = email {
             let email_normalized = new_email.to_lowercase().trim().to_string();
