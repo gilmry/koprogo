@@ -93,7 +93,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             r#"
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
-                   total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
+                   total_voting_power_pour::FLOAT8, total_voting_power_contre::FLOAT8, total_voting_power_abstention::FLOAT8,
                    status, created_at, voted_at
             FROM resolutions
             WHERE id = $1
@@ -146,7 +146,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             r#"
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
-                   total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
+                   total_voting_power_pour::FLOAT8, total_voting_power_contre::FLOAT8, total_voting_power_abstention::FLOAT8,
                    status, created_at, voted_at
             FROM resolutions
             WHERE meeting_id = $1
@@ -209,7 +209,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
             r#"
             SELECT id, meeting_id, title, description, resolution_type, majority_required,
                    vote_count_pour, vote_count_contre, vote_count_abstention,
-                   total_voting_power_pour, total_voting_power_contre, total_voting_power_abstention,
+                   total_voting_power_pour::FLOAT8, total_voting_power_contre::FLOAT8, total_voting_power_abstention::FLOAT8,
                    status, created_at, voted_at
             FROM resolutions
             WHERE status = $1

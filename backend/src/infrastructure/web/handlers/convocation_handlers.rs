@@ -356,7 +356,7 @@ pub async fn set_recipient_proxy(
     }
 }
 
-#[post("/convocations/{id}/send-reminders")]
+#[post("/convocations/{id}/reminders")]
 pub async fn send_convocation_reminders(
     state: web::Data<AppState>,
     user: AuthenticatedUser,

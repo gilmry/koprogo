@@ -457,6 +457,174 @@ Base URL: `http://localhost:8080/api/v1`
    - `GET /polls/:id/votes` - List all poll votes (admin/syndic only)
    - `GET /polls/:id/results` - Get poll results with statistics (vote counts, percentages, participation rate)
 **Health**: `/health` (GET)
+**✅ NOUVEAU: Board Management** (Board Members & Decisions):
+   - `POST /board-members` - Elect a new board member (syndic/superadmin)
+   - `GET /board-members/{id}` - Get board member by ID
+   - `GET /board-members/my-mandates` - Get all active board mandates for authenticated user
+   - `GET /board-members/dashboard?building_id=uuid` - Get board dashboard (board members only)
+   - `GET /buildings/{building_id}/board-members/active` - List active board members for a building
+   - `GET /buildings/{building_id}/board-members` - List all board members (active + history)
+   - `PUT /board-members/{id}/renew` - Renew a board member mandate
+   - `DELETE /board-members/{id}` - Remove a board member (early mandate termination)
+   - `GET /buildings/{building_id}/board-members/stats` - Get board statistics for a building
+   - `POST /board-decisions` - Create a new board decision to track (post-AG)
+   - `GET /board-decisions/{id}` - Get a board decision by ID
+   - `GET /buildings/{building_id}/board-decisions` - List all decisions for a building
+   - `GET /buildings/{building_id}/board-decisions/status/{status}` - List decisions by status
+   - `GET /buildings/{building_id}/board-decisions/overdue` - List overdue decisions
+   - `GET /buildings/{building_id}/board-decisions/stats` - Get decision statistics
+   - `PUT /board-decisions/{id}` - Update decision status
+   - `POST /board-decisions/{id}/notes` - Add notes to a decision
+   - `PUT /board-decisions/{id}/complete` - Mark a decision as completed
+**✅ NOUVEAU: Budgets** (Annual Budget Management):
+   - `POST /budgets` - Create a new budget
+   - `GET /budgets/{id}` - Get budget by ID
+   - `GET /budgets` - List budgets (paginated, with optional building_id/status filters)
+   - `GET /budgets/fiscal-year/{fiscal_year}` - List budgets by fiscal year
+   - `GET /budgets/status/{status}` - List budgets by status (draft/submitted/approved/rejected/archived)
+   - `GET /budgets/stats` - Get budget statistics for organization
+   - `GET /budgets/{id}/variance` - Get budget variance analysis (budget vs actual)
+   - `GET /buildings/{building_id}/budgets` - List budgets for a building
+   - `GET /buildings/{building_id}/budgets/active` - Get active budget for a building
+   - `GET /buildings/{building_id}/budgets/fiscal-year/{fiscal_year}` - Get budget by building and fiscal year
+   - `PUT /budgets/{id}` - Update budget (Draft only)
+   - `PUT /budgets/{id}/submit` - Submit budget for approval
+   - `PUT /budgets/{id}/approve` - Approve budget (requires meeting_id)
+   - `PUT /budgets/{id}/reject` - Reject budget (with optional reason)
+   - `PUT /budgets/{id}/archive` - Archive budget
+   - `DELETE /budgets/{id}` - Delete budget
+**✅ NOUVEAU: Etats Dates** (Belgian Legal Requirement for Property Sales):
+   - `POST /etats-dates` - Create a new etat date request
+   - `GET /etats-dates/{id}` - Get etat date by ID
+   - `GET /etats-dates/reference/{reference_number}` - Get etat date by reference number
+   - `GET /etats-dates` - List etats dates (paginated, with optional status filter)
+   - `GET /etats-dates/overdue` - List overdue etats dates (>10 days, not generated)
+   - `GET /etats-dates/expired` - List expired etats dates (>3 months from reference date)
+   - `GET /etats-dates/stats` - Get statistics for dashboard
+   - `GET /units/{unit_id}/etats-dates` - List etats dates by unit
+   - `GET /buildings/{building_id}/etats-dates` - List etats dates by building
+   - `PUT /etats-dates/{id}/mark-in-progress` - Mark etat date as in progress
+   - `PUT /etats-dates/{id}/mark-generated` - Mark etat date as generated (with PDF file path)
+   - `PUT /etats-dates/{id}/mark-delivered` - Mark etat date as delivered to notary
+   - `PUT /etats-dates/{id}/financial` - Update financial data
+   - `PUT /etats-dates/{id}/additional-data` - Update additional data (sections 7-16)
+   - `DELETE /etats-dates/{id}` - Delete etat date
+**✅ NOUVEAU: Charge Distribution** (Invoice Charge Allocation):
+   - `POST /invoices/{expense_id}/calculate-distribution` - Calculate and save charge distribution (accountant/syndic/superadmin)
+   - `GET /invoices/{expense_id}/distribution` - Get charge distribution for an invoice
+   - `GET /owners/{owner_id}/distributions` - Get all charge distributions for an owner
+   - `GET /owners/{owner_id}/total-due` - Get total amount due for an owner
+**✅ NOUVEAU: Documents** (File Storage):
+   - `POST /documents` - Upload a document (multipart/form-data, max 50MB)
+   - `GET /documents/{id}` - Get document metadata by ID
+   - `GET /documents` - List all documents (paginated)
+   - `GET /documents/{id}/download` - Download document file
+   - `GET /buildings/{building_id}/documents` - List documents for a building
+   - `GET /meetings/{meeting_id}/documents` - List documents for a meeting
+   - `GET /expenses/{expense_id}/documents` - List documents for an expense
+   - `PUT /documents/{id}/link-meeting` - Link document to a meeting
+   - `PUT /documents/{id}/link-expense` - Link document to an expense
+   - `DELETE /documents/{id}` - Delete a document
+**✅ NOUVEAU: Owner Contributions & Call for Funds** (Revenue Management):
+   - `POST /owner-contributions` - Create a new owner contribution
+   - `GET /owner-contributions/{id}` - Get contribution by ID
+   - `GET /owner-contributions` - Get contributions by owner (owner_id query param) or all for organization
+   - `GET /owner-contributions/outstanding` - Get outstanding (unpaid) contributions for an owner
+   - `PUT /owner-contributions/{id}/mark-paid` - Record payment for a contribution
+   - `POST /call-for-funds` - Create a new call for funds
+   - `GET /call-for-funds/{id}` - Get a call for funds by ID
+   - `GET /call-for-funds` - List calls for funds (building_id query param or all for organization)
+   - `GET /call-for-funds/overdue` - Get all overdue calls for funds
+   - `POST /call-for-funds/{id}/send` - Send a call for funds (generates individual contributions)
+   - `PUT /call-for-funds/{id}/cancel` - Cancel a call for funds
+   - `DELETE /call-for-funds/{id}` - Delete a call for funds (Draft only)
+**✅ NOUVEAU: Journal Entries** (Manual Accounting - Noalyss-inspired):
+   - `POST /journal-entries` - Create a manual journal entry (double-entry bookkeeping, accountant/superadmin)
+   - `GET /journal-entries` - List journal entries with filters (building_id, journal_type, start_date, end_date, page, per_page)
+   - `GET /journal-entries/{id}` - Get a single journal entry with its lines
+   - `DELETE /journal-entries/{id}` - Delete a manual journal entry (accountant/superadmin)
+**✅ NOUVEAU: Organizations & Users** (SuperAdmin Management):
+   - `GET /organizations` - List all organizations (SuperAdmin only)
+   - `POST /organizations` - Create organization (SuperAdmin only)
+   - `PUT /organizations/{id}` - Update organization (SuperAdmin only)
+   - `PUT /organizations/{id}/activate` - Activate organization (SuperAdmin only)
+   - `PUT /organizations/{id}/suspend` - Suspend organization (SuperAdmin only)
+   - `DELETE /organizations/{id}` - Delete organization (SuperAdmin only)
+   - `GET /users` - List all users (SuperAdmin only)
+   - `POST /users` - Create user with role assignments (SuperAdmin only)
+   - `PUT /users/{id}` - Update user with role assignments (SuperAdmin only)
+   - `PUT /users/{id}/activate` - Activate user (SuperAdmin only)
+   - `PUT /users/{id}/deactivate` - Deactivate user (SuperAdmin only)
+   - `DELETE /users/{id}` - Delete user (SuperAdmin only)
+**✅ NOUVEAU: Energy Buying Groups** (Achats Groupes d'Energie - GDPR compliant):
+   - `POST /energy-campaigns` - Create a new energy campaign
+   - `GET /energy-campaigns` - List all campaigns for current organization
+   - `GET /energy-campaigns/{id}` - Get campaign by ID
+   - `GET /energy-campaigns/{id}/stats` - Get campaign statistics (anonymized, k-anonymity >= 5 participants)
+   - `PUT /energy-campaigns/{id}/status` - Update campaign status
+   - `DELETE /energy-campaigns/{id}` - Delete campaign
+   - `POST /energy-campaigns/{id}/offers` - Add provider offer (broker/admin only)
+   - `GET /energy-campaigns/{id}/offers` - List all offers for a campaign
+   - `POST /energy-campaigns/{id}/select-offer` - Select winning offer (after vote)
+   - `POST /energy-campaigns/{id}/finalize` - Finalize campaign (after final vote)
+   - `POST /energy-bills/upload` - Upload energy bill with GDPR consent
+   - `GET /energy-bills/my-uploads` - Get my energy bill uploads
+   - `GET /energy-bills/{id}` - Get upload by ID
+   - `GET /energy-bills/{id}/decrypt` - Decrypt consumption data (owner only)
+   - `PUT /energy-bills/{id}/verify` - Verify upload (admin only)
+   - `DELETE /energy-bills/{id}` - Delete upload (GDPR Art. 17 - Right to erasure)
+   - `POST /energy-bills/{id}/withdraw-consent` - Withdraw GDPR consent (Art. 7.3 - immediate deletion)
+   - `GET /energy-campaigns/{campaign_id}/uploads` - Get all uploads for a campaign (admin)
+**✅ NOUVEAU: IoT Smart Meters & Linky** (Issue #133 - IoT Phase 0):
+   - `POST /iot/readings` - Create a single IoT reading
+   - `POST /iot/readings/bulk` - Create multiple IoT readings in bulk
+   - `GET /iot/readings` - Query IoT readings with filters (building_id, device_type, metric_type, start_date, end_date, limit)
+   - `GET /iot/buildings/{building_id}/consumption/stats` - Get consumption statistics for a building
+   - `GET /iot/buildings/{building_id}/consumption/daily` - Get daily aggregates for a building
+   - `GET /iot/buildings/{building_id}/consumption/monthly` - Get monthly aggregates for a building
+   - `GET /iot/buildings/{building_id}/consumption/anomalies` - Detect consumption anomalies
+   - `POST /iot/linky/devices` - Configure a Linky device for a building (PRM, provider, authorization)
+   - `GET /iot/linky/buildings/{building_id}/device` - Get Linky device for a building
+   - `DELETE /iot/linky/buildings/{building_id}/device` - Delete Linky device for a building
+   - `POST /iot/linky/buildings/{building_id}/sync` - Sync Linky data for a building
+   - `PUT /iot/linky/buildings/{building_id}/sync/toggle` - Toggle sync for a Linky device
+   - `GET /iot/linky/devices/needing-sync` - Find Linky devices needing sync
+   - `GET /iot/linky/devices/expired-tokens` - Find Linky devices with expired tokens
+**✅ NOUVEAU: Work Reports & Technical Inspections** (Issue #134 - Digital Maintenance Logbook):
+   - `POST /work-reports` - Create a new work report
+   - `GET /work-reports/{id}` - Get work report by ID
+   - `GET /work-reports` - List work reports (paginated, with filters)
+   - `GET /buildings/{building_id}/work-reports` - List work reports by building
+   - `GET /organizations/{organization_id}/work-reports` - List work reports by organization
+   - `PUT /work-reports/{id}` - Update work report
+   - `DELETE /work-reports/{id}` - Delete work report
+   - `GET /buildings/{building_id}/work-reports/warranties/active` - Get active warranties for a building
+   - `GET /buildings/{building_id}/work-reports/warranties/expiring` - Get expiring warranties (query: days=90)
+   - `POST /work-reports/{id}/photos` - Add photo to work report
+   - `POST /work-reports/{id}/documents` - Add document to work report
+   - `POST /technical-inspections` - Create a new technical inspection
+   - `GET /technical-inspections/{id}` - Get technical inspection by ID
+   - `GET /technical-inspections` - List technical inspections (paginated, with filters)
+   - `GET /buildings/{building_id}/technical-inspections` - List technical inspections by building
+   - `GET /organizations/{organization_id}/technical-inspections` - List technical inspections by organization
+   - `PUT /technical-inspections/{id}` - Update technical inspection
+   - `DELETE /technical-inspections/{id}` - Delete technical inspection
+   - `GET /buildings/{building_id}/technical-inspections/overdue` - Get overdue inspections
+   - `GET /buildings/{building_id}/technical-inspections/upcoming` - Get upcoming inspections (query: days=90)
+   - `GET /buildings/{building_id}/technical-inspections/type/{inspection_type}` - Get inspections by type
+   - `POST /technical-inspections/{id}/reports` - Add report to technical inspection
+   - `POST /technical-inspections/{id}/photos` - Add photo to technical inspection
+   - `POST /technical-inspections/{id}/certificates` - Add certificate to technical inspection
+**✅ NOUVEAU: 2FA (Two-Factor Authentication)** (Issue #78 - TOTP):
+   - `POST /2fa/setup` - Setup 2FA for a user (returns QR code + backup codes)
+   - `POST /2fa/enable` - Enable 2FA after verifying TOTP code
+   - `POST /2fa/verify` - Verify 2FA code during login (accepts TOTP or backup code)
+   - `POST /2fa/disable` - Disable 2FA (requires current password)
+   - `POST /2fa/regenerate-backup-codes` - Regenerate backup codes (requires TOTP verification)
+   - `GET /2fa/status` - Get 2FA status for authenticated user
+**✅ NOUVEAU: Dashboard** (Accountant Dashboard):
+   - `GET /dashboard/accountant/stats` - Get accountant dashboard statistics
+   - `GET /dashboard/accountant/transactions` - Get recent transactions for dashboard (query: limit=10)
 
 ## Domain Entities
 
@@ -492,6 +660,25 @@ The system models property management with these aggregates:
 - **✅ NOUVEAU: Poll**: Board decision polls for owner consultations (building_id, poll_type, question, description, status, starts_at, ends_at, is_anonymous, total_eligible_voters, total_votes_cast, allow_multiple_votes, min_rating, max_rating) - Issue #51
 - **✅ NOUVEAU: PollOption**: Poll answer options (poll_id, option_text, option_value, display_order, vote_count) - Issue #51
 - **✅ NOUVEAU: PollVote**: Individual votes on polls (poll_id, owner_id, option_id, vote_value, vote_text, ip_address, is_anonymous) - Issue #51
+- **✅ NOUVEAU: BoardMember**: Council members of a copropriete (building_id, owner_id, organization_id, position, mandate_start, mandate_end, is_active) with positions: President, VicePresident, Treasurer, Secretary, Member
+- **✅ NOUVEAU: BoardDecision**: Decisions to track after general assemblies (building_id, meeting_id, title, description, status, due_date, assigned_to, notes) with statuses: Pending/InProgress/Completed/Cancelled/Overdue
+- **✅ NOUVEAU: Budget**: Annual budget management (building_id, organization_id, fiscal_year, status, total_budget_amount, actual_expenses, variance) with statuses: Draft/Submitted/Approved/Rejected/Archived
+- **✅ NOUVEAU: EtatDate**: Belgian legal document for property sales (unit_id, building_id, organization_id, reference_number, status, language, financial_data, pdf_file_path) with statuses: Requested/InProgress/Generated/Delivered/Expired
+- **✅ NOUVEAU: ChargeDistribution**: Allocation of invoice charges across unit owners based on ownership percentages (expense_id, unit_id, owner_id, percentage, amount_cents)
+- **✅ NOUVEAU: EnergyCampaign**: Group energy buying campaigns (organization_id, building_id, campaign_name, status, energy_types, deadline_participation, selected_offer_id) with k-anonymity >= 5 participants for GDPR compliance
+- **✅ NOUVEAU: ProviderOffer**: Energy provider offers within campaigns (campaign_id, provider_name, price_kwh_electricity, price_kwh_gas, fixed_monthly_fee, green_energy_pct, contract_duration_months, estimated_savings_pct)
+- **✅ NOUVEAU: EnergyBillUpload**: GDPR-compliant energy bill data (campaign_id, unit_id, organization_id, total_kwh, energy_type, bill_period, file_hash, file_path, consent fields, is_verified)
+- **✅ NOUVEAU: IoTReading**: Smart meter readings (building_id, organization_id, device_type, metric_type, value, unit, timestamp, source, metadata) with device types: Linky, Ores, SmartMeter, OtherIoT
+- **✅ NOUVEAU: LinkyDevice**: Linky smart meter configuration (building_id, organization_id, prm, provider, authorization_code, sync_enabled, last_sync_at, token_expires_at)
+- **✅ NOUVEAU: WorkReport**: Digital maintenance logbook entry (building_id, organization_id, work_type, title, description, contractor_name, start_date, end_date, warranty_years, warranty_type, photos, documents)
+- **✅ NOUVEAU: TechnicalInspection**: Mandatory technical inspection records (building_id, organization_id, inspection_type, status, inspector_name, inspection_date, next_inspection_date, reports, photos, certificates)
+- **✅ NOUVEAU: JournalEntry**: Manual double-entry accounting journal entry (organization_id, building_id, journal_type, entry_date, description, document_ref) with journal types: ACH/VEN/FIN/ODS (inspired by Noalyss)
+- **✅ NOUVEAU: JournalEntryLine**: Individual debit/credit lines within a journal entry (journal_entry_id, account_code, debit, credit, description)
+- **✅ NOUVEAU: Organization**: SaaS tenant organization (name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active) with plans: free/starter/professional/enterprise
+- **✅ NOUVEAU: RefreshToken**: JWT refresh token for session management (user_id, token_hash, expires_at, is_revoked)
+- **✅ NOUVEAU: TwoFactorSecret**: TOTP 2FA configuration per user (user_id, organization_id, secret, is_enabled, backup_codes, verified_at, last_used_at)
+- **✅ NOUVEAU: OwnerContribution**: Individual owner payment contributions (organization_id, owner_id, unit_id, call_for_funds_id, description, amount, contribution_type, payment_status, payment_date, account_code)
+- **✅ NOUVEAU: CallForFunds**: Collective payment requests to all unit owners (organization_id, building_id, title, total_amount, contribution_type, status, call_date, due_date, account_code)
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 

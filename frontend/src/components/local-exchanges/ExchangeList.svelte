@@ -10,6 +10,7 @@
   } from "../../lib/api/local-exchanges";
   import ExchangeStatusBadge from "./ExchangeStatusBadge.svelte";
   import ExchangeTypeBadge from "./ExchangeTypeBadge.svelte";
+  import { toast } from "../../stores/toast";
 
   export let buildingId: string;
   export let currentOwnerId: string;
@@ -93,7 +94,7 @@
       await localExchangesApi.request(exchangeId);
       await loadExchanges(); // Reload list
     } catch (err: any) {
-      alert(`Erreur: ${err.message}`);
+      toast.error(`Erreur: ${err.message}`);
     }
   }
 

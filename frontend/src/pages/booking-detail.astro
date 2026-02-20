@@ -22,6 +22,8 @@ import Layout from "../layouts/Layout.astro";
     </div>
 
     <div id="resource-detail-container"></div>
+    <!-- Booking panel (button + modal) mounted here by Svelte -->
+    <div id="booking-panel-container" class="mt-4"></div>
   </div>
 </Layout>
 
@@ -29,9 +31,17 @@ import Layout from "../layouts/Layout.astro";
   import { mount } from "svelte";
   import { bookingsApi, type BookableResource } from "../lib/api/bookings";
   import ResourceTypeBadge from "../components/bookings/ResourceTypeBadge.svelte";
+  import BookingPanel from "../components/bookings/BookingPanel.svelte";
 
   const urlParams = new URLSearchParams(window.location.search);
   const resourceId = urlParams.get("id");
+
+  // Get current user from localStorage
+  const storedUser = typeof window !== "undefined"
+    ? localStorage.getItem("koprogo_user")
+    : null;
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  const ownerId = currentUser?.id ?? "";
 
   if (!resourceId) {
     window.location.href = "/bookings";
@@ -39,8 +49,6 @@ import Layout from "../layouts/Layout.astro";
     bookingsApi.getResourceById(resourceId).then((resource) => {
       const container = document.getElementById("resource-detail-container");
       if (!container) return;
-
-      const isAvailable = resource.status === "Available";
 
       container.innerHTML = `
         <div class="bg-white shadow rounded-lg overflow-hidden">
@@ -98,24 +106,11 @@ import Layout from "../layouts/Layout.astro";
               <p>📅 Advance booking: Up to ${resource.advance_booking_days} days</p>
               <p class="mt-1">📊 Total bookings: ${resource.total_bookings}</p>
             </div>
-
-            ${isAvailable ? `
-              <button
-                class="w-full bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                onclick="alert('Booking functionality coming soon! You will be able to select dates and times.')"
-              >
-                Book This Resource
-              </button>
-            ` : `
-              <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                <p class="text-red-800">This resource is currently unavailable (${resource.status})</p>
-              </div>
-            `}
           </div>
         </div>
       `;
 
-      // Mount badge
+      // Mount resource type badge
       const badgeContainer = document.getElementById("badge");
       if (badgeContainer) {
         mount(ResourceTypeBadge, {
@@ -123,7 +118,16 @@ import Layout from "../layouts/Layout.astro";
           props: { type: resource.resource_type },
         });
       }
-    }).catch((err) => {
+
+      // Mount booking panel (button + modal) below the detail card
+      const panelContainer = document.getElementById("booking-panel-container");
+      if (panelContainer) {
+        mount(BookingPanel, {
+          target: panelContainer,
+          props: { resource, ownerId },
+        });
+      }
+    }).catch(() => {
       const container = document.getElementById("resource-detail-container");
       if (container) {
         container.innerHTML = `<div class="bg-white shadow rounded-lg p-12 text-center text-gray-500">Resource not found</div>`;

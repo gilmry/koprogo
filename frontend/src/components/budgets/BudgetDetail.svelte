@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { budgetsApi, type Budget, type BudgetVariance } from '../../lib/api/budgets';
   import BudgetStatusBadge from './BudgetStatusBadge.svelte';
+  import { toast } from '../../stores/toast';
 
   let budget: Budget | null = null;
   let variance: BudgetVariance | null = null;
@@ -61,7 +62,7 @@
       actionLoading = true;
       budget = await budgetsApi.submit(budgetId);
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de soumettre'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de soumettre'));
     } finally {
       actionLoading = false;
     }
@@ -69,7 +70,7 @@
 
   async function approveBudget() {
     if (!meetingId.trim()) {
-      alert('Veuillez entrer l\'ID de l\'assemblee generale');
+      toast.error('Veuillez entrer l\'ID de l\'assemblée générale');
       return;
     }
     try {
@@ -77,7 +78,7 @@
       budget = await budgetsApi.approve(budgetId, meetingId);
       showApproveModal = false;
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible d\'approuver'));
+      toast.error('Erreur: ' + (err.message || 'Impossible d\'approuver'));
     } finally {
       actionLoading = false;
     }
@@ -89,7 +90,7 @@
       budget = await budgetsApi.reject(budgetId, rejectReason || undefined);
       showRejectModal = false;
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de rejeter'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de rejeter'));
     } finally {
       actionLoading = false;
     }
@@ -101,7 +102,7 @@
       actionLoading = true;
       budget = await budgetsApi.archive(budgetId);
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible d\'archiver'));
+      toast.error('Erreur: ' + (err.message || 'Impossible d\'archiver'));
     } finally {
       actionLoading = false;
     }
@@ -113,7 +114,7 @@
       await budgetsApi.delete(budgetId);
       window.location.href = '/budgets';
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de supprimer'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de supprimer'));
     }
   }
 </script>

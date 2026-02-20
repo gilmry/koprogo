@@ -3,6 +3,7 @@
   import { api } from '../lib/api';
   import type { Document } from '../lib/types';
   import Button from './ui/Button.svelte';
+  import { toast } from '../stores/toast';
 
   export let expenseId: string;
   export let expenseStatus: string;
@@ -45,7 +46,7 @@
 
   async function handleUpload() {
     if (!uploadFile || !uploadTitle) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      toast.error('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
@@ -82,11 +83,11 @@
 
       // Reload documents
       await loadDocuments();
-      alert('Document ajouté avec succès');
+      toast.success('Document ajouté avec succès');
     } catch (e) {
       error = e instanceof Error ? e.message : 'Erreur lors de l\'upload';
       console.error('Error uploading document:', e);
-      alert(`Erreur: ${error}`);
+      toast.error(`Erreur: ${error}`);
     } finally {
       uploading = false;
     }
@@ -114,7 +115,7 @@
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (e) {
-      alert('Erreur lors du téléchargement du document');
+      toast.error('Erreur lors du téléchargement du document');
       console.error('Error downloading document:', e);
     }
   }

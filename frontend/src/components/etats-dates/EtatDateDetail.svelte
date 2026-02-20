@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { etatsDatesApi, type EtatDate } from '../../lib/api/etats-dates';
   import EtatDateStatusBadge from './EtatDateStatusBadge.svelte';
+  import { toast } from '../../stores/toast';
 
   let etatDate: EtatDate | null = null;
   let loading = true;
@@ -48,7 +49,7 @@
       actionLoading = true;
       etatDate = await etatsDatesApi.markInProgress(etatDateId);
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de mettre en cours'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de mettre en cours'));
     } finally {
       actionLoading = false;
     }
@@ -61,7 +62,7 @@
       actionLoading = true;
       etatDate = await etatsDatesApi.markGenerated(etatDateId, pdfPath);
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de marquer comme genere'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de marquer comme généré'));
     } finally {
       actionLoading = false;
     }
@@ -73,7 +74,7 @@
       actionLoading = true;
       etatDate = await etatsDatesApi.markDelivered(etatDateId);
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de marquer comme delivre'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de marquer comme délivré'));
     } finally {
       actionLoading = false;
     }
@@ -85,7 +86,7 @@
       await etatsDatesApi.delete(etatDateId);
       window.location.href = '/etats-dates';
     } catch (err: any) {
-      alert('Erreur: ' + (err.message || 'Impossible de supprimer'));
+      toast.error('Erreur: ' + (err.message || 'Impossible de supprimer'));
     }
   }
 </script>

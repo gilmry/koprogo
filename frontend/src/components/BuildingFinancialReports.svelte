@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { toast } from '../stores/toast';
 
   export let buildingId: string;
   export let buildingName: string = '';
@@ -90,7 +91,7 @@
   function exportToPDF() {
     const data = reportType === 'balance-sheet' ? balanceSheet : incomeStatement;
     if (!data) {
-      alert('Veuillez d\'abord charger un rapport');
+      toast.error('Veuillez d\'abord charger un rapport');
       return;
     }
     window.print();
@@ -99,7 +100,7 @@
   function exportToExcel() {
     const data = reportType === 'balance-sheet' ? balanceSheet : incomeStatement;
     if (!data) {
-      alert('Veuillez d\'abord charger un rapport');
+      toast.error('Veuillez d\'abord charger un rapport');
       return;
     }
 

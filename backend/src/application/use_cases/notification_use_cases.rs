@@ -63,6 +63,11 @@ impl NotificationUseCases {
             notification = notification.with_metadata(metadata);
         }
 
+        // InApp notifications are immediately "sent" (delivered to user's inbox)
+        if notification.channel == NotificationChannel::InApp {
+            notification.mark_sent();
+        }
+
         let created = self.notification_repository.create(&notification).await?;
         Ok(NotificationResponse::from(created))
     }

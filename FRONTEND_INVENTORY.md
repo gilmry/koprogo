@@ -1,10 +1,10 @@
 # 📦 KoproGo Frontend - Inventaire Complet & Câblage
 
-**Date**: 6 Décembre 2025
-**Version**: 1.0
+**Date**: 19 février 2026
+**Version**: 1.1
 **Frontend**: Astro 4.x + Svelte 5.x
-**Total Pages**: 67 Astro pages
-**Total Components**: 130+ Svelte components
+**Total Pages**: 79 Astro pages
+**Total Components**: 161 Svelte components
 
 ---
 
@@ -13,7 +13,7 @@
 ```
 frontend/
 ├── src/
-│   ├── components/          (130+ Svelte components)
+│   ├── components/          (161 Svelte components)
 │   │   ├── admin/           (7 components - SUPERADMIN only)
 │   │   ├── dashboards/      (4 components - Role-specific)
 │   │   ├── bookings/        (4 components - Community)
@@ -31,7 +31,7 @@ frontend/
 │   │   ├── ui/              (10 components - Shared UI)
 │   │   └── [35+ core components]
 │   ├── layouts/             (1 layout - Layout.astro)
-│   ├── pages/               (67 Astro pages)
+│   ├── pages/               (79 Astro pages)
 │   │   ├── admin/           (9 pages - SUPERADMIN)
 │   │   ├── syndic/          (2 pages - SYNDIC)
 │   │   ├── accountant/      (1 page - ACCOUNTANT)
@@ -40,7 +40,7 @@ frontend/
 │   │   └── [44+ shared pages]
 │   ├── stores/              (3 stores - auth, notifications, toast)
 │   ├── lib/
-│   │   ├── api/             (20+ API clients)
+│   │   ├── api/             (22 API clients)
 │   │   ├── types.ts         (Type definitions)
 │   │   └── config.ts        (API config)
 │   └── locales/             (i18n - FR only, NL/DE/EN TODO)
@@ -154,7 +154,7 @@ export enum UserRole {
 
 ---
 
-## 📄 Pages Astro (67 pages)
+## 📄 Pages Astro (79 pages)
 
 ### **Pages Publiques** (3 pages - No Auth)
 | Page | Route | Description |
@@ -336,7 +336,7 @@ export enum UserRole {
 
 ---
 
-## 🧩 Composants Svelte (130+)
+## 🧩 Composants Svelte (161)
 
 ### **Dashboards** (4 components - Role-specific)
 
@@ -565,7 +565,7 @@ export enum UserRole {
 
 ## 📡 API Clients (`src/lib/api/`)
 
-### **Core API Clients** (20+ clients)
+### **Core API Clients** (22 clients)
 
 | Client | Endpoints | Description |
 |--------|-----------|-------------|
@@ -860,6 +860,6 @@ export default defineConfig({
 
 ---
 
-**Version**: 1.0
-**Date**: 6 Décembre 2025
-**Status**: ✅ Inventaire complet - 67 pages, 130+ components
+**Version**: 1.1
+**Date**: 19 février 2026
+**Status**: ✅ Inventaire complet - 79 pages, 161 components, 22 API modules

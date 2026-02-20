@@ -52,7 +52,7 @@ impl VoteRepository for PostgresVoteRepository {
         let row = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power, proxy_owner_id, voted_at
+                   voting_power::FLOAT8, proxy_owner_id, voted_at
             FROM votes
             WHERE id = $1
             "#,
@@ -87,7 +87,7 @@ impl VoteRepository for PostgresVoteRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power, proxy_owner_id, voted_at
+                   voting_power::FLOAT8, proxy_owner_id, voted_at
             FROM votes
             WHERE resolution_id = $1
             ORDER BY voted_at ASC
@@ -126,7 +126,7 @@ impl VoteRepository for PostgresVoteRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power, proxy_owner_id, voted_at
+                   voting_power::FLOAT8, proxy_owner_id, voted_at
             FROM votes
             WHERE owner_id = $1
             ORDER BY voted_at DESC
@@ -169,7 +169,7 @@ impl VoteRepository for PostgresVoteRepository {
         let row = sqlx::query(
             r#"
             SELECT id, resolution_id, owner_id, unit_id, vote_choice,
-                   voting_power, proxy_owner_id, voted_at
+                   voting_power::FLOAT8, proxy_owner_id, voted_at
             FROM votes
             WHERE resolution_id = $1 AND unit_id = $2
             "#,
@@ -297,9 +297,9 @@ impl VoteRepository for PostgresVoteRepository {
         let row = sqlx::query(
             r#"
             SELECT
-                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Pour'), 0) AS pour_power,
-                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Contre'), 0) AS contre_power,
-                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Abstention'), 0) AS abstention_power
+                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Pour'), 0)::FLOAT8 AS pour_power,
+                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Contre'), 0)::FLOAT8 AS contre_power,
+                COALESCE(SUM(voting_power) FILTER (WHERE vote_choice = 'Abstention'), 0)::FLOAT8 AS abstention_power
             FROM votes
             WHERE resolution_id = $1
             "#,

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { authStore } from '../stores/auth';
   import { api } from '../lib/api';
+  import { toast } from '../stores/toast';
 
   let invoices: any[] = [];
   let filteredInvoices: any[] = [];
@@ -62,7 +63,7 @@
       await loadInvoices();
     } catch (err: any) {
       console.error('❌ Error submitting invoice:', err);
-      alert(err.message || 'Erreur lors de la soumission');
+      toast.error(err.message || 'Erreur lors de la soumission');
     } finally {
       submitting = false;
     }
@@ -80,7 +81,7 @@
       selectedInvoice = null;
       await loadInvoices();
     } catch (err: any) {
-      alert(err.message || 'Erreur lors de l\'approbation');
+      toast.error(err.message || 'Erreur lors de l\'approbation');
     } finally {
       submitting = false;
     }
@@ -88,7 +89,7 @@
 
   async function rejectInvoice() {
     if (!selectedInvoice || !rejectionReason.trim()) {
-      alert('Veuillez saisir une raison de rejet');
+      toast.error('Veuillez saisir une raison de rejet');
       return;
     }
 
@@ -103,7 +104,7 @@
       rejectionReason = '';
       await loadInvoices();
     } catch (err: any) {
-      alert(err.message || 'Erreur lors du rejet');
+      toast.error(err.message || 'Erreur lors du rejet');
     } finally {
       submitting = false;
     }
@@ -117,7 +118,7 @@
       await api.put(`/expenses/${invoiceId}/mark-paid`, {});
       await loadInvoices();
     } catch (err: any) {
-      alert(err.message || 'Erreur lors du paiement');
+      toast.error(err.message || 'Erreur lors du paiement');
     } finally {
       submitting = false;
     }
