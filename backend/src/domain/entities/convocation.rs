@@ -531,10 +531,10 @@ mod tests {
         )
         .unwrap();
 
-        // Before sending
-        assert!(!convocation.respects_legal_deadline());
+        // Before sending but still within deadline (meeting J+20, minimum_send J+5)
+        assert!(convocation.respects_legal_deadline());
 
-        // After sending (now is definitely before minimum_send_date)
+        // After sending (now is before minimum_send_date so deadline respected)
         convocation
             .mark_sent("/uploads/conv.pdf".to_string(), 30)
             .unwrap();
