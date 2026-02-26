@@ -6,7 +6,24 @@ use crate::domain::entities::EtatDateStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use serde::Deserialize;
 use uuid::Uuid;
+
+#[derive(Debug, Deserialize)]
+pub struct EtatDateListQuery {
+    #[serde(default = "default_page")]
+    pub page: i64,
+    #[serde(default = "default_per_page")]
+    pub per_page: i64,
+    pub status: Option<String>,
+}
+
+fn default_page() -> i64 {
+    1
+}
+fn default_per_page() -> i64 {
+    10
+}
 
 /// Create a new état daté request
 #[post("/etats-dates")]
@@ -98,13 +115,12 @@ pub async fn get_by_reference_number(
 pub async fn list_etats_dates(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
-    page_request: web::Query<PageRequest>,
-    status_filter: web::Query<Option<String>>,
+    query: web::Query<EtatDateListQuery>,
 ) -> impl Responder {
     let organization_id = user.organization_id;
 
     // Parse status filter
-    let status = status_filter.0.as_ref().and_then(|s| match s.as_str() {
+    let status = query.status.as_ref().and_then(|s| match s.as_str() {
         "requested" => Some(EtatDateStatus::Requested),
         "in_progress" => Some(EtatDateStatus::InProgress),
         "generated" => Some(EtatDateStatus::Generated),
@@ -112,6 +128,13 @@ pub async fn list_etats_dates(
         "expired" => Some(EtatDateStatus::Expired),
         _ => None,
     });
+
+    let page_request = PageRequest {
+        page: query.page,
+        per_page: query.per_page,
+        sort_by: None,
+        order: Default::default(),
+    };
 
     match state
         .etat_date_use_cases

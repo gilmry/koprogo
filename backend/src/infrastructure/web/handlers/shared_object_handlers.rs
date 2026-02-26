@@ -14,9 +14,15 @@ pub async fn create_shared_object(
     auth: AuthenticatedUser,
     request: web::Json<CreateSharedObjectDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .shared_object_use_cases
-        .create_shared_object(auth.user_id, request.into_inner())
+        .create_shared_object(auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(object) => HttpResponse::Created().json(object),
@@ -194,9 +200,15 @@ pub async fn list_my_borrowed_objects(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .shared_object_use_cases
-        .list_user_borrowed_objects(auth.user_id)
+        .list_user_borrowed_objects(auth.user_id, org_id)
         .await
     {
         Ok(objects) => HttpResponse::Ok().json(objects),
@@ -214,9 +226,15 @@ pub async fn update_shared_object(
     id: web::Path<Uuid>,
     request: web::Json<UpdateSharedObjectDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .shared_object_use_cases
-        .update_shared_object(id.into_inner(), auth.user_id, request.into_inner())
+        .update_shared_object(id.into_inner(), auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(object) => HttpResponse::Ok().json(object),
@@ -241,9 +259,15 @@ pub async fn mark_object_available(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .shared_object_use_cases
-        .mark_object_available(id.into_inner(), auth.user_id)
+        .mark_object_available(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(object) => HttpResponse::Ok().json(object),
@@ -268,9 +292,15 @@ pub async fn mark_object_unavailable(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .shared_object_use_cases
-        .mark_object_unavailable(id.into_inner(), auth.user_id)
+        .mark_object_unavailable(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(object) => HttpResponse::Ok().json(object),
@@ -296,9 +326,15 @@ pub async fn borrow_object(
     id: web::Path<Uuid>,
     request: web::Json<BorrowObjectDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .shared_object_use_cases
-        .borrow_object(id.into_inner(), auth.user_id, request.into_inner())
+        .borrow_object(id.into_inner(), auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(object) => HttpResponse::Ok().json(object),
@@ -323,9 +359,15 @@ pub async fn return_object(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .shared_object_use_cases
-        .return_object(id.into_inner(), auth.user_id)
+        .return_object(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(object) => HttpResponse::Ok().json(object),
@@ -350,9 +392,15 @@ pub async fn delete_shared_object(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .shared_object_use_cases
-        .delete_shared_object(id.into_inner(), auth.user_id)
+        .delete_shared_object(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(_) => HttpResponse::NoContent().finish(),

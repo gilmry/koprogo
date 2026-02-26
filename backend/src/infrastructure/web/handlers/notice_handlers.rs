@@ -14,9 +14,15 @@ pub async fn create_notice(
     auth: AuthenticatedUser,
     request: web::Json<CreateNoticeDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .notice_use_cases
-        .create_notice(auth.user_id, request.into_inner())
+        .create_notice(auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(notice) => HttpResponse::Created().json(notice),
@@ -214,9 +220,15 @@ pub async fn update_notice(
     id: web::Path<Uuid>,
     request: web::Json<UpdateNoticeDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .notice_use_cases
-        .update_notice(id.into_inner(), auth.user_id, request.into_inner())
+        .update_notice(id.into_inner(), auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
@@ -241,9 +253,15 @@ pub async fn publish_notice(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .notice_use_cases
-        .publish_notice(id.into_inner(), auth.user_id)
+        .publish_notice(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
@@ -268,9 +286,15 @@ pub async fn archive_notice(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .notice_use_cases
-        .archive_notice(id.into_inner(), auth.user_id, &auth.role)
+        .archive_notice(id.into_inner(), auth.user_id, org_id, &auth.role)
         .await
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
@@ -350,9 +374,15 @@ pub async fn set_expiration(
     id: web::Path<Uuid>,
     request: web::Json<SetExpirationDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .notice_use_cases
-        .set_expiration(id.into_inner(), auth.user_id, request.into_inner())
+        .set_expiration(id.into_inner(), auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(notice) => HttpResponse::Ok().json(notice),
@@ -377,9 +407,15 @@ pub async fn delete_notice(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .notice_use_cases
-        .delete_notice(id.into_inner(), auth.user_id)
+        .delete_notice(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(_) => HttpResponse::NoContent().finish(),

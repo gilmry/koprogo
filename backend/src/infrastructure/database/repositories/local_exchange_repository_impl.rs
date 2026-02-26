@@ -358,6 +358,23 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
         Ok(count)
     }
 
+    async fn count_by_building_and_type(
+        &self,
+        building_id: Uuid,
+        exchange_type: &str,
+    ) -> Result<i64, String> {
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM local_exchanges WHERE building_id = $1 AND exchange_type = $2::exchange_type",
+        )
+        .bind(building_id)
+        .bind(exchange_type)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+        Ok(count)
+    }
+
     async fn get_total_credits_exchanged(&self, building_id: Uuid) -> Result<i32, String> {
         let total: Option<i64> = sqlx::query_scalar(
             r#"
@@ -377,7 +394,7 @@ impl LocalExchangeRepository for PostgresLocalExchangeRepository {
     async fn get_average_exchange_rating(&self, building_id: Uuid) -> Result<Option<f32>, String> {
         let avg: Option<f32> = sqlx::query_scalar(
             r#"
-            SELECT AVG((provider_rating + requester_rating) / 2.0)
+            SELECT AVG((provider_rating + requester_rating) / 2.0)::FLOAT4
             FROM local_exchanges
             WHERE building_id = $1
               AND status = 'Completed'

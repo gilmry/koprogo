@@ -145,11 +145,12 @@ export const sharingApi = {
     return api.put(`/shared-objects/${id}`, data);
   },
 
-  async updateAvailability(
-    id: string,
-    status: AvailabilityStatus,
-  ): Promise<SharedObject> {
-    return api.put(`/shared-objects/${id}/availability`, { status });
+  async markAvailable(id: string): Promise<SharedObject> {
+    return api.post(`/shared-objects/${id}/mark-available`, {});
+  },
+
+  async markUnavailable(id: string): Promise<SharedObject> {
+    return api.post(`/shared-objects/${id}/mark-unavailable`, {});
   },
 
   async deleteObject(id: string): Promise<void> {

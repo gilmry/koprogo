@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { noticesApi, type Notice, NoticeVisibility } from "../../lib/api/notices";
+  import { noticesApi, type Notice, NoticeStatus } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
   import NoticeTypeBadge from "./NoticeTypeBadge.svelte";
   import NoticeStatusBadge from "./NoticeStatusBadge.svelte";
@@ -76,19 +76,6 @@
     });
   }
 
-  function getVisibilityIcon(visibility: NoticeVisibility): string {
-    switch (visibility) {
-      case NoticeVisibility.Public:
-        return "🌍";
-      case NoticeVisibility.BuildingOnly:
-        return "🏢";
-      case NoticeVisibility.OwnersOnly:
-        return "🔒";
-      default:
-        return "👁️";
-    }
-  }
-
   $: isAuthor = notice && notice.author_id === currentUserId;
 </script>
 
@@ -103,10 +90,9 @@
           <div class="flex items-center gap-2 mb-2">
             <NoticeTypeBadge type={notice.notice_type} />
             <NoticeStatusBadge status={notice.status} />
-            <span class="text-xs text-gray-500">
-              {getVisibilityIcon(notice.visibility)}
-              {notice.visibility}
-            </span>
+            {#if notice.is_pinned}
+              <span class="text-xs text-gray-500">📌 Pinned</span>
+            {/if}
           </div>
           <h1 class="text-2xl font-bold text-gray-900">{notice.title}</h1>
         </div>
@@ -137,7 +123,9 @@
           <span>👤 Posted by {notice.author_name}</span>
         {/if}
         <span>📅 {formatDate(notice.created_at)}</span>
-        <span>👁️ {notice.view_count} views</span>
+        {#if notice.published_at}
+          <span>📤 Published {formatDate(notice.published_at)}</span>
+        {/if}
         {#if notice.expires_at}
           <span>⏰ Expires {formatDate(notice.expires_at)}</span>
         {/if}
@@ -157,24 +145,27 @@
         <p class="whitespace-pre-wrap text-gray-700">{notice.content}</p>
       </div>
 
+      <!-- Event Info -->
+      {#if notice.event_date}
+        <div class="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-4">
+          <h3 class="text-sm font-semibold text-pink-900 mb-1">Event Details</h3>
+          <p class="text-sm text-pink-700">📅 {formatDate(notice.event_date)}</p>
+          {#if notice.event_location}
+            <p class="text-sm text-pink-700">📍 {notice.event_location}</p>
+          {/if}
+          {#if notice.days_until_event !== undefined && notice.days_until_event !== null}
+            <p class="text-sm text-pink-600 mt-1">
+              {notice.days_until_event > 0 ? `In ${notice.days_until_event} days` : notice.days_until_event === 0 ? "Today!" : "Past event"}
+            </p>
+          {/if}
+        </div>
+      {/if}
+
       <!-- Contact Info -->
       {#if notice.contact_info}
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
           <h3 class="text-sm font-semibold text-blue-900 mb-1">Contact Information</h3>
           <p class="text-sm text-blue-700">{notice.contact_info}</p>
-        </div>
-      {/if}
-
-      <!-- Images -->
-      {#if notice.image_urls && notice.image_urls.length > 0}
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {#each notice.image_urls as imageUrl}
-            <img
-              src={imageUrl}
-              alt="Notice image"
-              class="w-full h-48 object-cover rounded-lg shadow"
-            />
-          {/each}
         </div>
       {/if}
     </div>

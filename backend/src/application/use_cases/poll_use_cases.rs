@@ -848,6 +848,14 @@ mod tests {
             unimplemented!()
         }
 
+        async fn find_by_user_id_and_organization(
+            &self,
+            _user_id: Uuid,
+            _organization_id: Uuid,
+        ) -> Result<Option<crate::domain::entities::Owner>, String> {
+            unimplemented!()
+        }
+
         async fn find_by_email(
             &self,
             _email: &str,

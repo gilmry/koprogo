@@ -28,6 +28,18 @@ impl ResourceBookingUseCases {
         }
     }
 
+    /// Resolve user_id to owner via organization lookup
+    async fn resolve_owner(
+        &self,
+        user_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<crate::domain::entities::Owner, String> {
+        self.owner_repo
+            .find_by_user_id_and_organization(user_id, organization_id)
+            .await?
+            .ok_or_else(|| "Owner not found for this user in the organization".to_string())
+    }
+
     /// Create a new resource booking with conflict detection
     ///
     /// # Steps
@@ -40,9 +52,12 @@ impl ResourceBookingUseCases {
     /// - Any authenticated owner can create bookings
     pub async fn create_booking(
         &self,
-        booked_by: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
         dto: CreateResourceBookingDto,
     ) -> Result<ResourceBookingResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
+        let booked_by = owner.id;
         // Create booking entity (validates business rules in constructor)
         let booking = ResourceBooking::new(
             dto.building_id,
@@ -139,8 +154,10 @@ impl ResourceBookingUseCases {
     pub async fn list_user_bookings(
         &self,
         user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<Vec<ResourceBookingResponseDto>, String> {
-        let bookings = self.booking_repo.find_by_user(user_id).await?;
+        let owner = self.resolve_owner(user_id, organization_id).await?;
+        let bookings = self.booking_repo.find_by_user(owner.id).await?;
         self.enrich_bookings_response(bookings).await
     }
 
@@ -148,11 +165,13 @@ impl ResourceBookingUseCases {
     pub async fn list_user_bookings_by_status(
         &self,
         user_id: Uuid,
+        organization_id: Uuid,
         status: BookingStatus,
     ) -> Result<Vec<ResourceBookingResponseDto>, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let bookings = self
             .booking_repo
-            .find_by_user_and_status(user_id, status)
+            .find_by_user_and_status(owner.id, status)
             .await?;
         self.enrich_bookings_response(bookings).await
     }
@@ -208,9 +227,11 @@ impl ResourceBookingUseCases {
     pub async fn update_booking(
         &self,
         booking_id: Uuid,
-        updater_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
         dto: UpdateResourceBookingDto,
     ) -> Result<ResourceBookingResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut booking = self
             .booking_repo
             .find_by_id(booking_id)
@@ -218,7 +239,7 @@ impl ResourceBookingUseCases {
             .ok_or("Booking not found".to_string())?;
 
         // Authorization: Only booking owner can update
-        if booking.booked_by != updater_id {
+        if booking.booked_by != owner.id {
             return Err("Only the booking owner can update this booking".to_string());
         }
 
@@ -239,8 +260,10 @@ impl ResourceBookingUseCases {
     pub async fn cancel_booking(
         &self,
         booking_id: Uuid,
-        canceller_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<ResourceBookingResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut booking = self
             .booking_repo
             .find_by_id(booking_id)
@@ -248,7 +271,7 @@ impl ResourceBookingUseCases {
             .ok_or("Booking not found".to_string())?;
 
         // Cancel booking (validates authorization and state)
-        booking.cancel(canceller_id)?;
+        booking.cancel(owner.id)?;
 
         // Persist changes
         let updated = self.booking_repo.update(&booking).await?;
@@ -334,7 +357,13 @@ impl ResourceBookingUseCases {
     /// # Authorization
     /// - Only booking owner can delete their booking
     /// - Or admin for any booking
-    pub async fn delete_booking(&self, booking_id: Uuid, deleter_id: Uuid) -> Result<(), String> {
+    pub async fn delete_booking(
+        &self,
+        booking_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<(), String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let booking = self
             .booking_repo
             .find_by_id(booking_id)
@@ -342,7 +371,7 @@ impl ResourceBookingUseCases {
             .ok_or("Booking not found".to_string())?;
 
         // Authorization: Only booking owner can delete
-        if booking.booked_by != deleter_id {
+        if booking.booked_by != owner.id {
             return Err("Only the booking owner can delete this booking".to_string());
         }
 

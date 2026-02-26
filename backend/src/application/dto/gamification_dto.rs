@@ -13,7 +13,8 @@ use uuid::Uuid;
 /// DTO for creating a new achievement
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateAchievementDto {
-    pub organization_id: Uuid,
+    #[serde(default)]
+    pub organization_id: Uuid, // Will be overridden by JWT token
     pub category: AchievementCategory,
     pub tier: AchievementTier,
     pub name: String,
@@ -130,7 +131,8 @@ impl UserAchievementResponseDto {
 /// DTO for creating a new challenge
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateChallengeDto {
-    pub organization_id: Uuid,
+    #[serde(default)]
+    pub organization_id: Uuid, // Will be overridden by JWT token
     #[serde(skip_serializing_if = "Option::is_none")]
     pub building_id: Option<Uuid>,
     pub challenge_type: ChallengeType,

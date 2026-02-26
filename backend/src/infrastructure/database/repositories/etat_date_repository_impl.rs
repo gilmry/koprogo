@@ -108,10 +108,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
-                building_name, building_address, unit_number, unit_floor, unit_area,
-                ordinary_charges_quota, extraordinary_charges_quota,
-                owner_balance, arrears_amount, monthly_provision_amount,
-                total_balance, approved_works_unpaid,
+                building_name, building_address, unit_number, unit_floor, unit_area::FLOAT8 AS unit_area,
+                ordinary_charges_quota::FLOAT8 AS ordinary_charges_quota, extraordinary_charges_quota::FLOAT8 AS extraordinary_charges_quota,
+                owner_balance::FLOAT8 AS owner_balance, arrears_amount::FLOAT8 AS arrears_amount, monthly_provision_amount::FLOAT8 AS monthly_provision_amount,
+                total_balance::FLOAT8 AS total_balance, approved_works_unpaid::FLOAT8 AS approved_works_unpaid,
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
@@ -137,10 +137,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
-                building_name, building_address, unit_number, unit_floor, unit_area,
-                ordinary_charges_quota, extraordinary_charges_quota,
-                owner_balance, arrears_amount, monthly_provision_amount,
-                total_balance, approved_works_unpaid,
+                building_name, building_address, unit_number, unit_floor, unit_area::FLOAT8 AS unit_area,
+                ordinary_charges_quota::FLOAT8 AS ordinary_charges_quota, extraordinary_charges_quota::FLOAT8 AS extraordinary_charges_quota,
+                owner_balance::FLOAT8 AS owner_balance, arrears_amount::FLOAT8 AS arrears_amount, monthly_provision_amount::FLOAT8 AS monthly_provision_amount,
+                total_balance::FLOAT8 AS total_balance, approved_works_unpaid::FLOAT8 AS approved_works_unpaid,
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
@@ -163,10 +163,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
-                building_name, building_address, unit_number, unit_floor, unit_area,
-                ordinary_charges_quota, extraordinary_charges_quota,
-                owner_balance, arrears_amount, monthly_provision_amount,
-                total_balance, approved_works_unpaid,
+                building_name, building_address, unit_number, unit_floor, unit_area::FLOAT8 AS unit_area,
+                ordinary_charges_quota::FLOAT8 AS ordinary_charges_quota, extraordinary_charges_quota::FLOAT8 AS extraordinary_charges_quota,
+                owner_balance::FLOAT8 AS owner_balance, arrears_amount::FLOAT8 AS arrears_amount, monthly_provision_amount::FLOAT8 AS monthly_provision_amount,
+                total_balance::FLOAT8 AS total_balance, approved_works_unpaid::FLOAT8 AS approved_works_unpaid,
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
@@ -193,10 +193,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
-                building_name, building_address, unit_number, unit_floor, unit_area,
-                ordinary_charges_quota, extraordinary_charges_quota,
-                owner_balance, arrears_amount, monthly_provision_amount,
-                total_balance, approved_works_unpaid,
+                building_name, building_address, unit_number, unit_floor, unit_area::FLOAT8 AS unit_area,
+                ordinary_charges_quota::FLOAT8 AS ordinary_charges_quota, extraordinary_charges_quota::FLOAT8 AS extraordinary_charges_quota,
+                owner_balance::FLOAT8 AS owner_balance, arrears_amount::FLOAT8 AS arrears_amount, monthly_provision_amount::FLOAT8 AS monthly_provision_amount,
+                total_balance::FLOAT8 AS total_balance, approved_works_unpaid::FLOAT8 AS approved_works_unpaid,
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
@@ -230,10 +230,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
-                building_name, building_address, unit_number, unit_floor, unit_area,
-                ordinary_charges_quota, extraordinary_charges_quota,
-                owner_balance, arrears_amount, monthly_provision_amount,
-                total_balance, approved_works_unpaid,
+                building_name, building_address, unit_number, unit_floor, unit_area::FLOAT8 AS unit_area,
+                ordinary_charges_quota::FLOAT8 AS ordinary_charges_quota, extraordinary_charges_quota::FLOAT8 AS extraordinary_charges_quota,
+                owner_balance::FLOAT8 AS owner_balance, arrears_amount::FLOAT8 AS arrears_amount, monthly_provision_amount::FLOAT8 AS monthly_provision_amount,
+                total_balance::FLOAT8 AS total_balance, approved_works_unpaid::FLOAT8 AS approved_works_unpaid,
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
@@ -331,10 +331,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
-                building_name, building_address, unit_number, unit_floor, unit_area,
-                ordinary_charges_quota, extraordinary_charges_quota,
-                owner_balance, arrears_amount, monthly_provision_amount,
-                total_balance, approved_works_unpaid,
+                building_name, building_address, unit_number, unit_floor, unit_area::FLOAT8 AS unit_area,
+                ordinary_charges_quota::FLOAT8 AS ordinary_charges_quota, extraordinary_charges_quota::FLOAT8 AS extraordinary_charges_quota,
+                owner_balance::FLOAT8 AS owner_balance, arrears_amount::FLOAT8 AS arrears_amount, monthly_provision_amount::FLOAT8 AS monthly_provision_amount,
+                total_balance::FLOAT8 AS total_balance, approved_works_unpaid::FLOAT8 AS approved_works_unpaid,
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
@@ -363,10 +363,10 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 reference_date, requested_date, generated_date, delivered_date,
                 status::text AS status, language::text AS language, reference_number,
                 notary_name, notary_email, notary_phone,
-                building_name, building_address, unit_number, unit_floor, unit_area,
-                ordinary_charges_quota, extraordinary_charges_quota,
-                owner_balance, arrears_amount, monthly_provision_amount,
-                total_balance, approved_works_unpaid,
+                building_name, building_address, unit_number, unit_floor, unit_area::FLOAT8 AS unit_area,
+                ordinary_charges_quota::FLOAT8 AS ordinary_charges_quota, extraordinary_charges_quota::FLOAT8 AS extraordinary_charges_quota,
+                owner_balance::FLOAT8 AS owner_balance, arrears_amount::FLOAT8 AS arrears_amount, monthly_provision_amount::FLOAT8 AS monthly_provision_amount,
+                total_balance::FLOAT8 AS total_balance, approved_works_unpaid::FLOAT8 AS approved_works_unpaid,
                 additional_data, pdf_file_path,
                 created_at, updated_at
             FROM etats_dates
@@ -452,7 +452,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 COUNT(*) FILTER (WHERE status = 'delivered') as delivered_count,
                 COUNT(*) FILTER (WHERE reference_date < NOW() - INTERVAL '90 days') as expired_count,
                 COUNT(*) FILTER (WHERE status IN ('requested', 'in_progress') AND requested_date < NOW() - INTERVAL '10 days') as overdue_count,
-                COALESCE(AVG(EXTRACT(EPOCH FROM (COALESCE(generated_date, NOW()) - requested_date)) / 86400), 0) as avg_processing_days
+                COALESCE(AVG(EXTRACT(EPOCH FROM (COALESCE(generated_date, NOW()) - requested_date)) / 86400), 0)::FLOAT8 as avg_processing_days
             FROM etats_dates
             WHERE organization_id = $1
             "#,

@@ -28,11 +28,7 @@ import Layout from "../layouts/Layout.astro";
 <script>
   import { mount } from "svelte";
   import NoticeDetail from "../components/notices/NoticeDetail.svelte";
-  import { authStore } from "../stores/auth";
-  import { get } from "svelte/store";
-
-  const auth = get(authStore);
-  const currentUserId = auth.user?.id || "";
+  import { getMyOwner } from "../lib/api";
 
   // Get notice ID from URL
   const urlParams = new URLSearchParams(window.location.search);
@@ -41,15 +37,21 @@ import Layout from "../layouts/Layout.astro";
   if (!noticeId) {
     window.location.href = "/notices";
   } else {
-    const container = document.getElementById("notice-detail-container");
-    if (container) {
-      mount(NoticeDetail, {
-        target: container,
-        props: {
-          noticeId: noticeId,
-          currentUserId: currentUserId,
-        },
-      });
+    async function init() {
+      const owner = await getMyOwner();
+      const currentUserId = owner?.id || "";
+
+      const container = document.getElementById("notice-detail-container");
+      if (container) {
+        mount(NoticeDetail, {
+          target: container,
+          props: {
+            noticeId: noticeId!,
+            currentUserId: currentUserId,
+          },
+        });
+      }
     }
+    init();
   }
 </script>

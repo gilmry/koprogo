@@ -9,190 +9,121 @@ export interface SkillOffer {
   id: string;
   building_id: string;
   owner_id: string;
-  owner_name?: string;
+  owner_name: string;
   skill_category: SkillCategory;
   skill_name: string;
+  expertise_level: ExpertiseLevel;
   description: string;
-  proficiency_level: ProficiencyLevel;
+  is_available_for_help: boolean;
   hourly_rate_credits?: number;
-  availability: string;
-  certifications?: string[];
-  years_experience?: number;
-  status: SkillStatus;
-  rating?: number;
-  total_requests: number;
-  completed_requests: number;
+  years_of_experience?: number;
+  certifications?: string;
+  is_free: boolean;
+  is_professional: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export enum SkillCategory {
   HomeRepair = "HomeRepair",
-  Tutoring = "Tutoring",
-  LanguageLessons = "LanguageLessons",
-  ITSupport = "ITSupport",
+  Languages = "Languages",
+  Technology = "Technology",
+  Education = "Education",
+  Arts = "Arts",
+  Sports = "Sports",
   Cooking = "Cooking",
   Gardening = "Gardening",
-  Childcare = "Childcare",
+  Health = "Health",
+  Legal = "Legal",
+  Financial = "Financial",
   PetCare = "PetCare",
-  Arts = "Arts",
-  Music = "Music",
-  Sports = "Sports",
   Other = "Other",
 }
 
-export enum ProficiencyLevel {
+export enum ExpertiseLevel {
   Beginner = "Beginner",
   Intermediate = "Intermediate",
   Advanced = "Advanced",
   Expert = "Expert",
-  Professional = "Professional",
-}
-
-export enum SkillStatus {
-  Available = "Available",
-  Unavailable = "Unavailable",
-  Archived = "Archived",
-}
-
-export interface SkillRequest {
-  id: string;
-  skill_offer_id: string;
-  requester_id: string;
-  requester_name?: string;
-  message: string;
-  preferred_dates?: string[];
-  status: SkillRequestStatus;
-  rating?: number;
-  feedback?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export enum SkillRequestStatus {
-  Pending = "Pending",
-  Accepted = "Accepted",
-  Declined = "Declined",
-  Completed = "Completed",
-  Cancelled = "Cancelled",
 }
 
 export interface CreateSkillOfferDto {
   building_id: string;
-  owner_id: string;
   skill_category: SkillCategory;
   skill_name: string;
+  expertise_level: ExpertiseLevel;
   description: string;
-  proficiency_level: ProficiencyLevel;
+  is_available_for_help: boolean;
   hourly_rate_credits?: number;
-  availability: string;
-  certifications?: string[];
-  years_experience?: number;
-}
-
-export interface CreateSkillRequestDto {
-  skill_offer_id: string;
-  requester_id: string;
-  message: string;
-  preferred_dates?: string[];
+  years_of_experience?: number;
+  certifications?: string;
 }
 
 export const skillsApi = {
   // Skill Offers
   async createOffer(data: CreateSkillOfferDto): Promise<SkillOffer> {
-    return api.post("/skill-offers", data);
+    return api.post("/skills", data);
   },
 
   async getOfferById(id: string): Promise<SkillOffer> {
-    return api.get(`/skill-offers/${id}`);
+    return api.get(`/skills/${id}`);
   },
 
   async listOffersByBuilding(buildingId: string): Promise<SkillOffer[]> {
-    return api.get(`/buildings/${buildingId}/skill-offers`);
+    return api.get(`/buildings/${buildingId}/skills`);
   },
 
   async listAvailableOffers(buildingId: string): Promise<SkillOffer[]> {
-    return api.get(`/buildings/${buildingId}/skill-offers/available`);
+    return api.get(`/buildings/${buildingId}/skills/available`);
+  },
+
+  async listFreeOffers(buildingId: string): Promise<SkillOffer[]> {
+    return api.get(`/buildings/${buildingId}/skills/free`);
+  },
+
+  async listProfessionalOffers(buildingId: string): Promise<SkillOffer[]> {
+    return api.get(`/buildings/${buildingId}/skills/professional`);
   },
 
   async listOffersByCategory(
     buildingId: string,
     category: SkillCategory,
   ): Promise<SkillOffer[]> {
-    return api.get(
-      `/buildings/${buildingId}/skill-offers/category/${category}`,
-    );
+    return api.get(`/buildings/${buildingId}/skills/category/${category}`);
+  },
+
+  async listOffersByExpertise(
+    buildingId: string,
+    level: ExpertiseLevel,
+  ): Promise<SkillOffer[]> {
+    return api.get(`/buildings/${buildingId}/skills/expertise/${level}`);
   },
 
   async listOffersByOwner(ownerId: string): Promise<SkillOffer[]> {
-    return api.get(`/owners/${ownerId}/skill-offers`);
+    return api.get(`/owners/${ownerId}/skills`);
   },
 
   async updateOffer(
     id: string,
     data: Partial<SkillOffer>,
   ): Promise<SkillOffer> {
-    return api.put(`/skill-offers/${id}`, data);
+    return api.put(`/skills/${id}`, data);
   },
 
-  async setOfferAvailability(
-    id: string,
-    status: SkillStatus,
-  ): Promise<SkillOffer> {
-    return api.put(`/skill-offers/${id}/status`, { status });
+  async markAvailable(id: string): Promise<SkillOffer> {
+    return api.post(`/skills/${id}/mark-available`, {});
+  },
+
+  async markUnavailable(id: string): Promise<SkillOffer> {
+    return api.post(`/skills/${id}/mark-unavailable`, {});
   },
 
   async deleteOffer(id: string): Promise<void> {
-    return api.delete(`/skill-offers/${id}`);
-  },
-
-  // Skill Requests
-  async createRequest(data: CreateSkillRequestDto): Promise<SkillRequest> {
-    return api.post("/skill-requests", data);
-  },
-
-  async getRequestById(id: string): Promise<SkillRequest> {
-    return api.get(`/skill-requests/${id}`);
-  },
-
-  async listRequestsByOffer(offerId: string): Promise<SkillRequest[]> {
-    return api.get(`/skill-offers/${offerId}/requests`);
-  },
-
-  async listRequestsByRequester(requesterId: string): Promise<SkillRequest[]> {
-    return api.get(`/owners/${requesterId}/skill-requests`);
-  },
-
-  async acceptRequest(id: string): Promise<SkillRequest> {
-    return api.put(`/skill-requests/${id}/accept`, {});
-  },
-
-  async declineRequest(id: string): Promise<SkillRequest> {
-    return api.put(`/skill-requests/${id}/decline`, {});
-  },
-
-  async completeRequest(id: string): Promise<SkillRequest> {
-    return api.put(`/skill-requests/${id}/complete`, {});
-  },
-
-  async cancelRequest(id: string): Promise<SkillRequest> {
-    return api.put(`/skill-requests/${id}/cancel`, {});
-  },
-
-  async rateRequest(
-    id: string,
-    rating: number,
-    feedback?: string,
-  ): Promise<SkillRequest> {
-    return api.put(`/skill-requests/${id}/rate`, { rating, feedback });
+    return api.delete(`/skills/${id}`);
   },
 
   // Statistics
-  async getOwnerSkillStats(ownerId: string): Promise<any> {
-    return api.get(`/owners/${ownerId}/skill-stats`);
-  },
-
   async getBuildingSkillStats(buildingId: string): Promise<any> {
-    return api.get(`/buildings/${buildingId}/skill-stats`);
+    return api.get(`/buildings/${buildingId}/skills/statistics`);
   },
 };

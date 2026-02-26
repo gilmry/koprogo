@@ -37,8 +37,7 @@ import Layout from "../layouts/Layout.astro";
   import { mount } from "svelte";
   import ExchangeDetail from "../components/local-exchanges/ExchangeDetail.svelte";
   import { localExchangesApi } from "../lib/api/local-exchanges";
-  import { authStore } from "../stores/auth";
-  import { get } from "svelte/store";
+  import { getMyOwner } from "../lib/api";
 
   async function loadExchange() {
     const params = new URLSearchParams(window.location.search);
@@ -54,9 +53,12 @@ import Layout from "../layouts/Layout.astro";
       const detailContainer = document.getElementById("exchange-detail");
       if (!detailContainer) return;
 
-      const exchange = await localExchangesApi.getById(exchangeId);
-      const auth = get(authStore);
-      const currentUserId = auth.user?.id || "";
+      // Fetch exchange and owner in parallel
+      const [exchange, owner] = await Promise.all([
+        localExchangesApi.getById(exchangeId),
+        getMyOwner(),
+      ]);
+      const currentUserId = owner?.id || "";
 
       if (loadingEl) loadingEl.style.display = "none";
 

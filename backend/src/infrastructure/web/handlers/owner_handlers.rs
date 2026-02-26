@@ -134,6 +134,34 @@ pub async fn list_owners(
     }
 }
 
+/// Get the owner record linked to the currently authenticated user.
+/// Uses the JWT organization_id to find the correct owner in multi-org contexts.
+/// Falls back to user_id-only lookup if no organization_id in JWT.
+#[get("/owners/me")]
+pub async fn get_my_owner(state: web::Data<AppState>, user: AuthenticatedUser) -> impl Responder {
+    let result = if let Some(org_id) = user.organization_id {
+        state
+            .owner_use_cases
+            .find_owner_by_user_id_and_organization(user.user_id, org_id)
+            .await
+    } else {
+        state
+            .owner_use_cases
+            .find_owner_by_user_id(user.user_id)
+            .await
+    };
+
+    match result {
+        Ok(Some(owner)) => HttpResponse::Ok().json(owner),
+        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+            "error": "No owner record linked to this user"
+        })),
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
+
 #[get("/owners/{id}")]
 pub async fn get_owner(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
     match state.owner_use_cases.get_owner(*id).await {

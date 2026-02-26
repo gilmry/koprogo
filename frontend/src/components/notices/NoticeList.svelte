@@ -46,7 +46,7 @@
 
       const matchesStatus =
         selectedStatus === "active-only"
-          ? notice.status === NoticeStatus.Active
+          ? notice.status === NoticeStatus.Published
           : notice.status === selectedStatus;
 
       return matchesSearch && matchesType && matchesStatus;
@@ -114,11 +114,11 @@
             bind:value={selectedStatus}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="active-only">Active Only</option>
-            <option value={NoticeStatus.Active}>Active</option>
-            <option value={NoticeStatus.Expired}>Expired</option>
+            <option value="active-only">Published Only</option>
+            <option value={NoticeStatus.Draft}>Draft</option>
+            <option value={NoticeStatus.Published}>Published</option>
             <option value={NoticeStatus.Archived}>Archived</option>
-            <option value={NoticeStatus.Moderated}>Moderated</option>
+            <option value={NoticeStatus.Expired}>Expired</option>
           </select>
         </div>
       </div>
@@ -156,7 +156,7 @@
                     {#if notice.author_name}
                       <span>👤 {notice.author_name}</span>
                     {/if}
-                    <span>👁️ {notice.view_count} views</span>
+                    {#if notice.is_pinned}<span>📌 Pinned</span>{/if}
                     {#if notice.expires_at}
                       <span>⏰ Expires {formatDate(notice.expires_at)}</span>
                     {/if}

@@ -97,7 +97,7 @@ pub async fn list_organization_tickets(
     }
 }
 
-#[get("/tickets/my-tickets")]
+#[get("/tickets/my")]
 pub async fn list_my_tickets(
     state: web::Data<AppState>,
     user: AuthenticatedUser,

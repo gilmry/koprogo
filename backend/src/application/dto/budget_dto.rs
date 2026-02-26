@@ -6,6 +6,7 @@ use uuid::Uuid;
 /// Request pour créer un nouveau budget
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateBudgetRequest {
+    #[serde(default)]
     pub organization_id: Uuid, // Will be overridden by JWT token
     pub building_id: Uuid,
     pub fiscal_year: i32,

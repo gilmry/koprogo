@@ -206,6 +206,14 @@ impl OwnerRepository for MockOwnerRepository {
         unimplemented!()
     }
 
+    async fn find_by_user_id_and_organization(
+        &self,
+        _user_id: Uuid,
+        _organization_id: Uuid,
+    ) -> Result<Option<Owner>, String> {
+        unimplemented!()
+    }
+
     async fn find_by_email(&self, _email: &str) -> Result<Option<Owner>, String> {
         unimplemented!()
     }

@@ -65,6 +65,13 @@ pub trait LocalExchangeRepository: Send + Sync {
         status: &str,
     ) -> Result<i64, String>;
 
+    /// Count exchanges by building and type
+    async fn count_by_building_and_type(
+        &self,
+        building_id: Uuid,
+        exchange_type: &str,
+    ) -> Result<i64, String>;
+
     /// Get total credits exchanged in a building (sum of completed exchanges)
     async fn get_total_credits_exchanged(&self, building_id: Uuid) -> Result<i32, String>;
 

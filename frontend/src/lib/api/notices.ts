@@ -11,51 +11,57 @@ export interface Notice {
   author_id: string;
   author_name?: string;
   notice_type: NoticeType;
-  category: string;
+  category: NoticeCategory;
   title: string;
   content: string;
-  visibility: NoticeVisibility;
   status: NoticeStatus;
+  is_pinned: boolean;
+  published_at?: string;
   expires_at?: string;
+  archived_at?: string;
+  event_date?: string;
+  event_location?: string;
   contact_info?: string;
-  image_urls?: string[];
-  view_count: number;
+  is_expired: boolean;
+  days_until_event?: number;
   created_at: string;
   updated_at: string;
 }
 
 export enum NoticeType {
   Announcement = "Announcement",
-  ForSale = "ForSale",
-  WantedToBuy = "WantedToBuy",
-  LostAndFound = "LostAndFound",
   Event = "Event",
-  Alert = "Alert",
+  LostAndFound = "LostAndFound",
+  ClassifiedAd = "ClassifiedAd",
 }
 
-export enum NoticeVisibility {
-  Public = "Public",
-  BuildingOnly = "BuildingOnly",
-  OwnersOnly = "OwnersOnly",
+export enum NoticeCategory {
+  General = "General",
+  Maintenance = "Maintenance",
+  Social = "Social",
+  Security = "Security",
+  Environment = "Environment",
+  Parking = "Parking",
+  Other = "Other",
 }
 
 export enum NoticeStatus {
-  Active = "Active",
-  Expired = "Expired",
+  Draft = "Draft",
+  Published = "Published",
   Archived = "Archived",
-  Moderated = "Moderated",
+  Expired = "Expired",
 }
 
 export interface CreateNoticeDto {
   building_id: string;
-  author_id: string;
   notice_type: NoticeType;
-  category: string;
+  category: NoticeCategory;
   title: string;
   content: string;
-  visibility: NoticeVisibility;
-  expires_at?: string;
+  event_date?: string;
+  event_location?: string;
   contact_info?: string;
+  expires_at?: string;
 }
 
 export const noticesApi = {
@@ -72,7 +78,7 @@ export const noticesApi = {
   },
 
   async listActive(buildingId: string): Promise<Notice[]> {
-    return api.get(`/buildings/${buildingId}/notices/active`);
+    return api.get(`/buildings/${buildingId}/notices/published`);
   },
 
   async listByType(
@@ -91,7 +97,7 @@ export const noticesApi = {
   },
 
   async archive(id: string): Promise<Notice> {
-    return api.put(`/notices/${id}/archive`, {});
+    return api.post(`/notices/${id}/archive`, {});
   },
 
   async delete(id: string): Promise<void> {
@@ -103,6 +109,6 @@ export const noticesApi = {
   },
 
   async getExpiredNotices(buildingId: string): Promise<Notice[]> {
-    return api.get(`/buildings/${buildingId}/notices/expired`);
+    return api.get(`/buildings/${buildingId}/notices/status/Expired`);
   },
 };

@@ -12,7 +12,7 @@ pub struct PostgresQuoteRepository {
 /// Quote SELECT columns with cast for status enum
 const QUOTE_COLUMNS: &str = r#"
     id, building_id, contractor_id, project_title, project_description,
-    amount_excl_vat, vat_rate, amount_incl_vat, validity_date,
+    amount_excl_vat::FLOAT8 AS amount_excl_vat, vat_rate::FLOAT8 AS vat_rate, amount_incl_vat::FLOAT8 AS amount_incl_vat, validity_date,
     estimated_start_date, estimated_duration_days, warranty_years,
     contractor_rating, status::text as status_text, requested_at, submitted_at,
     reviewed_at, decision_at, decision_by, decision_notes,

@@ -293,21 +293,34 @@ pub async fn delete_exchange(
 
 /// GET /api/v1/owners/:owner_id/buildings/:building_id/credit-balance
 /// Get credit balance for an owner in a building
+/// Note: owner_id can be the actual owner ID or the user ID (frontend sends user ID)
 #[get("/owners/{owner_id}/buildings/{building_id}/credit-balance")]
 pub async fn get_credit_balance(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
     path: web::Path<(Uuid, Uuid)>,
 ) -> impl Responder {
-    let (owner_id, building_id) = path.into_inner();
+    let (path_id, building_id) = path.into_inner();
 
-    // Authorization: users can only view their own credit balance
-    let owner = match data.owner_use_cases.get_owner(owner_id).await {
+    // Try to find owner by ID first, then by user_id as fallback
+    // (frontend sends user_id from auth store, not owner_id)
+    let owner = match data.owner_use_cases.get_owner(path_id).await {
         Ok(Some(owner)) => owner,
         Ok(None) => {
-            return HttpResponse::NotFound().json(serde_json::json!({
-                "error": format!("Owner not found: {}", owner_id)
-            }))
+            // Fallback: treat path_id as user_id and look up owner
+            match data.owner_use_cases.find_owner_by_user_id(path_id).await {
+                Ok(Some(owner)) => owner,
+                Ok(None) => {
+                    return HttpResponse::NotFound().json(serde_json::json!({
+                        "error": format!("Owner not found for id: {}", path_id)
+                    }))
+                }
+                Err(e) => {
+                    return HttpResponse::InternalServerError().json(serde_json::json!({
+                        "error": format!("Failed to fetch owner: {}", e)
+                    }))
+                }
+            }
         }
         Err(e) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
@@ -316,6 +329,7 @@ pub async fn get_credit_balance(
         }
     };
 
+    // Authorization: users can only view their own credit balance
     let owner_user_id = owner
         .user_id
         .as_ref()
@@ -326,9 +340,18 @@ pub async fn get_credit_balance(
         }));
     }
 
+    let owner_uuid = match Uuid::parse_str(&owner.id) {
+        Ok(id) => id,
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": "Invalid owner ID format"
+            }))
+        }
+    };
+
     match data
         .local_exchange_use_cases
-        .get_credit_balance(owner_id, building_id)
+        .get_credit_balance(owner_uuid, building_id)
         .await
     {
         Ok(balance) => HttpResponse::Ok().json(balance),

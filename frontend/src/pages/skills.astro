@@ -28,12 +28,6 @@ import Layout from "../layouts/Layout.astro";
   import SkillOfferList from "../components/skills/SkillOfferList.svelte";
   import SkillOfferCreateModal from "../components/skills/SkillOfferCreateModal.svelte";
   import BuildingSelector from "../components/BuildingSelector.svelte";
-  import { authStore } from "../stores/auth";
-  import { get } from "svelte/store";
-
-  const auth = get(authStore);
-  const ownerId = auth.user?.id || "";
-
   const selectorContainer = document.getElementById("building-selector-container");
   const listContainer = document.getElementById("offer-list-container");
   const modalContainer = document.getElementById("create-modal-container");
@@ -69,7 +63,6 @@ import Layout from "../layouts/Layout.astro";
         props: {
           isOpen: true,
           buildingId: currentBuildingId,
-          ownerId: ownerId,
           onClose: closeModal,
           onSuccess: () => {
             window.location.reload();
@@ -79,15 +72,19 @@ import Layout from "../layouts/Layout.astro";
     }
   }
 
-  if (selectorContainer) {
-    mount(BuildingSelector, {
-      target: selectorContainer,
-      props: {
-        label: "Immeuble",
-        onSelect: (id: string) => mountList(id),
-      },
-    });
+  async function init() {
+    if (selectorContainer) {
+      mount(BuildingSelector, {
+        target: selectorContainer,
+        props: {
+          label: "Immeuble",
+          onSelect: (id: string) => mountList(id),
+        },
+      });
+    }
   }
+
+  init();
 
   const createBtn = document.getElementById("create-offer-btn");
   if (createBtn) {

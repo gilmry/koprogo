@@ -33,8 +33,8 @@
     try {
       loading = true;
       const response = await api.get('/buildings');
-      // API returns paginated response with { items: [...], page, per_page, total }
-      buildings = response.items || response || [];
+      // API returns paginated response with { data: [...], pagination: {...} }
+      buildings = response.data || [];
     } catch (error: any) {
       toast.error(error.message || 'Erreur lors du chargement des bâtiments');
     } finally {

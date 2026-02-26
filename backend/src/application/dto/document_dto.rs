@@ -48,7 +48,8 @@ impl From<Document> for DocumentResponse {
 /// Note: File upload is handled via multipart/form-data, this is for metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UploadDocumentRequest {
-    pub organization_id: Uuid,
+    #[serde(default)]
+    pub organization_id: Uuid, // Will be overridden by JWT token
     pub building_id: Uuid,
     pub document_type: DocumentType,
     pub title: String,
