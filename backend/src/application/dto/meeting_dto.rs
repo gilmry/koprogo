@@ -42,7 +42,8 @@ impl From<Meeting> for MeetingResponse {
 /// Request DTO for creating a meeting
 #[derive(Debug, Deserialize)]
 pub struct CreateMeetingRequest {
-    pub organization_id: Uuid,
+    #[serde(default)]
+    pub organization_id: Uuid, // Will be overridden by JWT token
     pub building_id: Uuid,
     pub meeting_type: MeetingType,
     pub title: String,

@@ -28,21 +28,31 @@ impl SharedObjectUseCases {
         }
     }
 
+    /// Resolve user_id to owner via organization lookup
+    async fn resolve_owner(
+        &self,
+        user_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<crate::domain::entities::Owner, String> {
+        self.owner_repo
+            .find_by_user_id_and_organization(user_id, organization_id)
+            .await?
+            .ok_or_else(|| "Owner not found for this user in the organization".to_string())
+    }
+
     /// Create a new shared object
     ///
     /// # Authorization
     /// - Owner must exist in the system
     pub async fn create_shared_object(
         &self,
-        owner_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
         dto: CreateSharedObjectDto,
     ) -> Result<SharedObjectResponseDto, String> {
-        // Verify owner exists
-        let owner = self
-            .owner_repo
-            .find_by_id(owner_id)
-            .await?
-            .ok_or("Owner not found".to_string())?;
+        // Resolve user_id to owner
+        let owner = self.resolve_owner(user_id, organization_id).await?;
+        let owner_id = owner.id;
 
         // Create shared object entity (validates business rules)
         let object = SharedObject::new(
@@ -171,11 +181,13 @@ impl SharedObjectUseCases {
     /// List all shared objects currently borrowed by a user
     pub async fn list_user_borrowed_objects(
         &self,
-        borrower_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<Vec<SharedObjectSummaryDto>, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let objects = self
             .shared_object_repo
-            .find_borrowed_by_user(borrower_id)
+            .find_borrowed_by_user(owner.id)
             .await?;
         self.enrich_objects_summary(objects).await
     }
@@ -213,9 +225,11 @@ impl SharedObjectUseCases {
     pub async fn update_shared_object(
         &self,
         object_id: Uuid,
-        actor_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
         dto: UpdateSharedObjectDto,
     ) -> Result<SharedObjectResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut object = self
             .shared_object_repo
             .find_by_id(object_id)
@@ -223,7 +237,7 @@ impl SharedObjectUseCases {
             .ok_or("Shared object not found".to_string())?;
 
         // Authorization: only owner can update
-        if object.owner_id != actor_id {
+        if object.owner_id != owner.id {
             return Err("Unauthorized: only owner can update object".to_string());
         }
 
@@ -255,8 +269,10 @@ impl SharedObjectUseCases {
     pub async fn mark_object_available(
         &self,
         object_id: Uuid,
-        actor_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<SharedObjectResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut object = self
             .shared_object_repo
             .find_by_id(object_id)
@@ -264,7 +280,7 @@ impl SharedObjectUseCases {
             .ok_or("Shared object not found".to_string())?;
 
         // Authorization: only owner can mark available
-        if object.owner_id != actor_id {
+        if object.owner_id != owner.id {
             return Err("Unauthorized: only owner can mark object as available".to_string());
         }
 
@@ -285,8 +301,10 @@ impl SharedObjectUseCases {
     pub async fn mark_object_unavailable(
         &self,
         object_id: Uuid,
-        actor_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<SharedObjectResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut object = self
             .shared_object_repo
             .find_by_id(object_id)
@@ -294,7 +312,7 @@ impl SharedObjectUseCases {
             .ok_or("Shared object not found".to_string())?;
 
         // Authorization: only owner can mark unavailable
-        if object.owner_id != actor_id {
+        if object.owner_id != owner.id {
             return Err("Unauthorized: only owner can mark object as unavailable".to_string());
         }
 
@@ -320,9 +338,12 @@ impl SharedObjectUseCases {
     pub async fn borrow_object(
         &self,
         object_id: Uuid,
-        borrower_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
         dto: BorrowObjectDto,
     ) -> Result<SharedObjectResponseDto, String> {
+        let borrower = self.resolve_owner(user_id, organization_id).await?;
+        let borrower_id = borrower.id;
         let mut object = self
             .shared_object_repo
             .find_by_id(object_id)
@@ -380,8 +401,11 @@ impl SharedObjectUseCases {
     pub async fn return_object(
         &self,
         object_id: Uuid,
-        returner_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<SharedObjectResponseDto, String> {
+        let returner = self.resolve_owner(user_id, organization_id).await?;
+        let returner_id = returner.id;
         let mut object = self
             .shared_object_repo
             .find_by_id(object_id)
@@ -443,8 +467,10 @@ impl SharedObjectUseCases {
     pub async fn delete_shared_object(
         &self,
         object_id: Uuid,
-        actor_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<(), String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let object = self
             .shared_object_repo
             .find_by_id(object_id)
@@ -452,7 +478,7 @@ impl SharedObjectUseCases {
             .ok_or("Shared object not found".to_string())?;
 
         // Authorization: only owner can delete
-        if object.owner_id != actor_id {
+        if object.owner_id != owner.id {
             return Err("Unauthorized: only owner can delete object".to_string());
         }
 

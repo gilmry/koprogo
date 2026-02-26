@@ -6,6 +6,7 @@ use uuid::Uuid;
 /// Statut de l'état daté (workflow de génération)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "etat_date_status", rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum EtatDateStatus {
     Requested,  // Demandé par le notaire
     InProgress, // En cours de génération
@@ -17,6 +18,7 @@ pub enum EtatDateStatus {
 /// Langue de génération du document (Belgique: FR/NL/DE)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
 #[sqlx(type_name = "etat_date_language", rename_all = "snake_case")]
+#[serde(rename_all = "lowercase")]
 pub enum EtatDateLanguage {
     Fr, // Français
     Nl, // Néerlandais

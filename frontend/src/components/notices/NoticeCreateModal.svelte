@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { noticesApi, type CreateNoticeDto, NoticeType, NoticeVisibility } from "../../lib/api/notices";
+  import { noticesApi, type CreateNoticeDto, NoticeType, NoticeCategory } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
 
   export let isOpen = false;
   export let buildingId: string;
-  export let authorId: string;
+  export let authorId: string = "";
   export let onClose: () => void;
   export let onSuccess: () => void;
 
   let submitting = false;
   let formData: CreateNoticeDto = {
     building_id: buildingId,
-    author_id: authorId,
     notice_type: NoticeType.Announcement,
-    category: "",
+    category: NoticeCategory.General,
     title: "",
     content: "",
-    visibility: NoticeVisibility.BuildingOnly,
     contact_info: "",
   };
 
   let expiresEnabled = false;
   let expiresDate = "";
+  let eventDate = "";
+  let eventLocation = "";
 
   async function handleSubmit() {
     if (!formData.title.trim()) {
@@ -35,10 +35,14 @@
 
     try {
       submitting = true;
-      const payload = { ...formData };
+      const payload: CreateNoticeDto = { ...formData };
 
       if (expiresEnabled && expiresDate) {
         payload.expires_at = new Date(expiresDate).toISOString();
+      }
+      if (formData.notice_type === NoticeType.Event) {
+        if (eventDate) payload.event_date = new Date(eventDate).toISOString();
+        if (eventLocation) payload.event_location = eventLocation;
       }
 
       await noticesApi.create(payload);
@@ -56,16 +60,16 @@
   function resetForm() {
     formData = {
       building_id: buildingId,
-      author_id: authorId,
       notice_type: NoticeType.Announcement,
-      category: "",
+      category: NoticeCategory.General,
       title: "",
       content: "",
-      visibility: NoticeVisibility.BuildingOnly,
       contact_info: "",
     };
     expiresEnabled = false;
     expiresDate = "";
+    eventDate = "";
+    eventLocation = "";
   }
 
   function handleCancel() {
@@ -100,15 +104,17 @@
           <!-- Category -->
           <div>
             <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
-              Category (optional)
+              Category
             </label>
-            <input
-              type="text"
+            <select
               id="category"
               bind:value={formData.category}
-              placeholder="e.g., Electronics, Furniture, General"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            />
+            >
+              {#each Object.values(NoticeCategory) as cat}
+                <option value={cat}>{cat}</option>
+              {/each}
+            </select>
           </div>
 
           <!-- Title -->
@@ -121,7 +127,9 @@
               id="title"
               bind:value={formData.title}
               required
-              placeholder="Enter a clear title..."
+              minlength="5"
+              maxlength="255"
+              placeholder="Enter a clear title (min 5 characters)..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -141,21 +149,32 @@
             />
           </div>
 
-          <!-- Visibility -->
-          <div>
-            <label for="visibility" class="block text-sm font-medium text-gray-700 mb-1">
-              Visibility
-            </label>
-            <select
-              id="visibility"
-              bind:value={formData.visibility}
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value={NoticeVisibility.BuildingOnly}>🏢 Building Only</option>
-              <option value={NoticeVisibility.OwnersOnly}>🔒 Owners Only</option>
-              <option value={NoticeVisibility.Public}>🌍 Public</option>
-            </select>
-          </div>
+          <!-- Event Fields (shown only for Event type) -->
+          {#if formData.notice_type === NoticeType.Event}
+            <div>
+              <label for="event_date" class="block text-sm font-medium text-gray-700 mb-1">
+                Event Date
+              </label>
+              <input
+                type="datetime-local"
+                id="event_date"
+                bind:value={eventDate}
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label for="event_location" class="block text-sm font-medium text-gray-700 mb-1">
+                Event Location
+              </label>
+              <input
+                type="text"
+                id="event_location"
+                bind:value={eventLocation}
+                placeholder="e.g., Common room, Garden, Lobby"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          {/if}
 
           <!-- Contact Info -->
           <div>

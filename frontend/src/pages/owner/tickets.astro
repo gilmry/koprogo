@@ -47,11 +47,9 @@ import Layout from "../../layouts/Layout.astro";
   import TicketList from "../../components/tickets/TicketList.svelte";
   import TicketCreateModal from "../../components/tickets/TicketCreateModal.svelte";
   import BuildingSelector from "../../components/BuildingSelector.svelte";
-  import { authStore } from "../../stores/auth";
-  import { get } from "svelte/store";
+  import { getMyOwner } from "../../lib/api";
 
-  const auth = get(authStore);
-  const userId = auth.user?.id || "";
+  let currentOwnerId = "";
   let currentBuildingId = "";
 
   function showPageToast(message: string, type: "success" | "error" | "warning" = "info") {
@@ -82,16 +80,6 @@ import Layout from "../../layouts/Layout.astro";
     });
   }
 
-  if (selectorContainer) {
-    mount(BuildingSelector, {
-      target: selectorContainer,
-      props: {
-        label: "Immeuble",
-        onSelect: (id: string) => mountList(id),
-      },
-    });
-  }
-
   function closeModal() {
     if (createModal) {
       try { unmount(createModal); } catch {}
@@ -99,6 +87,25 @@ import Layout from "../../layouts/Layout.astro";
       if (modalContainer) modalContainer.innerHTML = "";
     }
   }
+
+  async function init() {
+    const owner = await getMyOwner();
+    if (owner) {
+      currentOwnerId = owner.id;
+    }
+
+    if (selectorContainer) {
+      mount(BuildingSelector, {
+        target: selectorContainer,
+        props: {
+          label: "Immeuble",
+          onSelect: (id: string) => mountList(id),
+        },
+      });
+    }
+  }
+
+  init();
 
   document
     .getElementById("create-ticket-btn")
@@ -115,7 +122,7 @@ import Layout from "../../layouts/Layout.astro";
           props: {
             open: true,
             buildingId: currentBuildingId,
-            requesterId: userId,
+            requesterId: currentOwnerId,
             onClose: closeModal,
             onCreated: () => {
               closeModal();

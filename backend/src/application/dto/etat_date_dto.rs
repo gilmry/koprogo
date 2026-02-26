@@ -7,6 +7,7 @@ use uuid::Uuid;
 /// Request pour créer un nouvel état daté
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateEtatDateRequest {
+    #[serde(default)]
     pub organization_id: Uuid, // Will be overridden by JWT token
     pub building_id: Uuid,
     pub unit_id: Uuid,

@@ -214,6 +214,25 @@ export const api = {
 export { buildHeaders };
 
 /**
+ * Get the owner record for the currently authenticated user.
+ * Uses the JWT organization_id to find the correct owner in multi-org contexts.
+ * Returns null if no owner record is linked to this user.
+ */
+export async function getMyOwner(): Promise<{
+  id: string;
+  organization_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+} | null> {
+  try {
+    return await api.get("/owners/me");
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Return the absolute URL for the metrics endpoint.
  */
 export function getMetricsUrl(): string {

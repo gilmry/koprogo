@@ -14,9 +14,15 @@ pub async fn create_skill(
     auth: AuthenticatedUser,
     request: web::Json<CreateSkillDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .skill_use_cases
-        .create_skill(auth.user_id, request.into_inner())
+        .create_skill(auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(skill) => HttpResponse::Created().json(skill),
@@ -201,9 +207,15 @@ pub async fn update_skill(
     id: web::Path<Uuid>,
     request: web::Json<UpdateSkillDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .skill_use_cases
-        .update_skill(id.into_inner(), auth.user_id, request.into_inner())
+        .update_skill(id.into_inner(), auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(skill) => HttpResponse::Ok().json(skill),
@@ -228,9 +240,15 @@ pub async fn mark_skill_available(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .skill_use_cases
-        .mark_skill_available(id.into_inner(), auth.user_id)
+        .mark_skill_available(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(skill) => HttpResponse::Ok().json(skill),
@@ -255,9 +273,15 @@ pub async fn mark_skill_unavailable(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .skill_use_cases
-        .mark_skill_unavailable(id.into_inner(), auth.user_id)
+        .mark_skill_unavailable(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(skill) => HttpResponse::Ok().json(skill),
@@ -282,9 +306,15 @@ pub async fn delete_skill(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .skill_use_cases
-        .delete_skill(id.into_inner(), auth.user_id)
+        .delete_skill(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(_) => HttpResponse::NoContent().finish(),

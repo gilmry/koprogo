@@ -69,19 +69,22 @@ import Layout from "../../layouts/Layout.astro";
 <script>
   import { mount } from "svelte";
   import PaymentMethodList from "../../components/payments/PaymentMethodList.svelte";
-  import { authStore } from "../../stores/auth";
-  import { get } from "svelte/store";
+  import { getMyOwner } from "../../lib/api";
 
-  const auth = get(authStore);
-  const ownerId = auth.user?.id || "";
+  async function init() {
+    const owner = await getMyOwner();
+    const ownerId = owner?.id || "";
 
-  if (ownerId) {
-    const listContainer = document.getElementById("payment-methods-list");
-    if (listContainer) {
-      mount(PaymentMethodList, {
-        target: listContainer,
-        props: { ownerId, canManage: true },
-      });
+    if (ownerId) {
+      const listContainer = document.getElementById("payment-methods-list");
+      if (listContainer) {
+        mount(PaymentMethodList, {
+          target: listContainer,
+          props: { ownerId, canManage: true },
+        });
+      }
     }
   }
+
+  init();
 </script>

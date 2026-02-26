@@ -4,8 +4,7 @@
     skillsApi,
     type SkillOffer,
     SkillCategory,
-    ProficiencyLevel,
-    SkillStatus,
+    ExpertiseLevel,
   } from "../../lib/api/skills";
   import { toast } from "../../stores/toast";
   import SkillOfferCard from "./SkillOfferCard.svelte";
@@ -18,7 +17,7 @@
   let loading = true;
   let searchQuery = "";
   let selectedCategory: SkillCategory | "all" = "all";
-  let selectedProficiency: ProficiencyLevel | "all" = "all";
+  let selectedExpertise: ExpertiseLevel | "all" = "all";
 
   onMount(async () => {
     await loadOffers();
@@ -47,17 +46,17 @@
       const matchesCategory =
         selectedCategory === "all" || offer.skill_category === selectedCategory;
 
-      const matchesProficiency =
-        selectedProficiency === "all" || offer.proficiency_level === selectedProficiency;
+      const matchesExpertise =
+        selectedExpertise === "all" || offer.expertise_level === selectedExpertise;
 
-      return matchesSearch && matchesCategory && matchesProficiency;
+      return matchesSearch && matchesCategory && matchesExpertise;
     });
   }
 
   $: {
     searchQuery;
     selectedCategory;
-    selectedProficiency;
+    selectedExpertise;
     applyFilters();
   }
 
@@ -102,18 +101,18 @@
           </select>
         </div>
 
-        <!-- Proficiency Filter -->
+        <!-- Expertise Filter -->
         <div>
-          <label for="proficiency" class="block text-sm font-medium text-gray-700 mb-1">
-            Proficiency
+          <label for="expertise" class="block text-sm font-medium text-gray-700 mb-1">
+            Expertise
           </label>
           <select
-            id="proficiency"
-            bind:value={selectedProficiency}
+            id="expertise"
+            bind:value={selectedExpertise}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Levels</option>
-            {#each Object.values(ProficiencyLevel) as level}
+            {#each Object.values(ExpertiseLevel) as level}
               <option value={level}>{level}</option>
             {/each}
           </select>
@@ -129,7 +128,7 @@
     <div class="bg-white shadow rounded-lg p-12 text-center">
       <p class="text-gray-500">
         No skill offers found.
-        {#if searchQuery || selectedCategory !== "all" || selectedProficiency !== "all"}
+        {#if searchQuery || selectedCategory !== "all" || selectedExpertise !== "all"}
           Try adjusting your filters.
         {/if}
       </p>

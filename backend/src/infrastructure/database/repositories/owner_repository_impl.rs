@@ -105,6 +105,41 @@ impl OwnerRepository for PostgresOwnerRepository {
         }))
     }
 
+    async fn find_by_user_id_and_organization(
+        &self,
+        user_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<Option<Owner>, String> {
+        let row = sqlx::query(
+            r#"
+            SELECT id, organization_id, user_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at
+            FROM owners
+            WHERE user_id = $1 AND organization_id = $2
+            "#,
+        )
+        .bind(user_id)
+        .bind(organization_id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+
+        Ok(row.map(|row| Owner {
+            id: row.get("id"),
+            organization_id: row.get("organization_id"),
+            user_id: row.get("user_id"),
+            first_name: row.get("first_name"),
+            last_name: row.get("last_name"),
+            email: row.get("email"),
+            phone: row.get("phone"),
+            address: row.get("address"),
+            city: row.get("city"),
+            postal_code: row.get("postal_code"),
+            country: row.get("country"),
+            created_at: row.get("created_at"),
+            updated_at: row.get("updated_at"),
+        }))
+    }
+
     async fn find_by_email(&self, email: &str) -> Result<Option<Owner>, String> {
         let row = sqlx::query(
             r#"

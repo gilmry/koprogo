@@ -43,6 +43,26 @@ impl OwnerUseCases {
         Ok(owner.map(|o| self.to_response_dto(&o)))
     }
 
+    pub async fn find_owner_by_user_id(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Option<OwnerResponseDto>, String> {
+        let owner = self.repository.find_by_user_id(user_id).await?;
+        Ok(owner.map(|o| self.to_response_dto(&o)))
+    }
+
+    pub async fn find_owner_by_user_id_and_organization(
+        &self,
+        user_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<Option<OwnerResponseDto>, String> {
+        let owner = self
+            .repository
+            .find_by_user_id_and_organization(user_id, organization_id)
+            .await?;
+        Ok(owner.map(|o| self.to_response_dto(&o)))
+    }
+
     pub async fn list_owners(&self) -> Result<Vec<OwnerResponseDto>, String> {
         let owners = self.repository.find_all().await?;
         Ok(owners.iter().map(|o| self.to_response_dto(o)).collect())

@@ -46,27 +46,30 @@ import Layout from "../../layouts/Layout.astro";
   import { mount } from "svelte";
   import PaymentList from "../../components/payments/PaymentList.svelte";
   import PaymentStats from "../../components/payments/PaymentStats.svelte";
-  import { authStore } from "../../stores/auth";
-  import { get } from "svelte/store";
+  import { getMyOwner } from "../../lib/api";
 
-  const auth = get(authStore);
-  const ownerId = auth.user?.id || "";
+  async function init() {
+    const owner = await getMyOwner();
+    const ownerId = owner?.id || "";
 
-  if (ownerId) {
-    const statsContainer = document.getElementById("payment-stats");
-    if (statsContainer) {
-      mount(PaymentStats, {
-        target: statsContainer,
-        props: { ownerId },
-      });
-    }
+    if (ownerId) {
+      const statsContainer = document.getElementById("payment-stats");
+      if (statsContainer) {
+        mount(PaymentStats, {
+          target: statsContainer,
+          props: { ownerId },
+        });
+      }
 
-    const listContainer = document.getElementById("payment-list");
-    if (listContainer) {
-      mount(PaymentList, {
-        target: listContainer,
-        props: { ownerId },
-      });
+      const listContainer = document.getElementById("payment-list");
+      if (listContainer) {
+        mount(PaymentList, {
+          target: listContainer,
+          props: { ownerId },
+        });
+      }
     }
   }
+
+  init();
 </script>

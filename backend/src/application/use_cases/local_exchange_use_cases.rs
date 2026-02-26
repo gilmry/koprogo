@@ -430,15 +430,15 @@ impl LocalExchangeUseCases {
         // Determine most popular exchange type
         let service_count = self
             .exchange_repo
-            .count_by_building_and_status(building_id, ExchangeType::Service.to_sql())
+            .count_by_building_and_type(building_id, ExchangeType::Service.to_sql())
             .await?;
         let object_loan_count = self
             .exchange_repo
-            .count_by_building_and_status(building_id, ExchangeType::ObjectLoan.to_sql())
+            .count_by_building_and_type(building_id, ExchangeType::ObjectLoan.to_sql())
             .await?;
         let shared_purchase_count = self
             .exchange_repo
-            .count_by_building_and_status(building_id, ExchangeType::SharedPurchase.to_sql())
+            .count_by_building_and_type(building_id, ExchangeType::SharedPurchase.to_sql())
             .await?;
 
         let most_popular_exchange_type =

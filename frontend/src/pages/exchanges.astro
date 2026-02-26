@@ -55,11 +55,10 @@ import Layout from "../layouts/Layout.astro";
   import { mount, unmount } from "svelte";
   import { ExchangeList, CreditBalance, Leaderboard, SelStatistics } from "../components/local-exchanges";
   import BuildingSelector from "../components/BuildingSelector.svelte";
-  import { authStore } from "../stores/auth";
-  import { get } from "svelte/store";
+  import { getMyOwner } from "../lib/api";
 
-  const auth = get(authStore);
-  const currentOwnerId = auth.user?.id || "";
+  // Resolve the real owner_id from the backend (user_id → owner_id via JWT org)
+  let currentOwnerId = "";
 
   const selectorContainer = document.getElementById("building-selector-container");
   const balanceContainer = document.getElementById("credit-balance-container");
@@ -107,13 +106,23 @@ import Layout from "../layouts/Layout.astro";
     }
   }
 
-  if (selectorContainer) {
-    mount(BuildingSelector, {
-      target: selectorContainer,
-      props: {
-        label: "Immeuble",
-        onSelect: (id: string) => mountAll(id),
-      },
-    });
+  // Fetch owner_id then mount building selector
+  async function init() {
+    const owner = await getMyOwner();
+    if (owner) {
+      currentOwnerId = owner.id;
+    }
+
+    if (selectorContainer) {
+      mount(BuildingSelector, {
+        target: selectorContainer,
+        props: {
+          label: "Immeuble",
+          onSelect: (id: string) => mountAll(id),
+        },
+      });
+    }
   }
+
+  init();
 </script>

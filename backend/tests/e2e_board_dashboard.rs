@@ -2,7 +2,7 @@ mod common;
 
 use actix_web::{test, App};
 use koprogo_api::application::dto::{CreateBuildingDto, LoginRequest, RegisterRequest};
-use koprogo_api::infrastructure::web::{configure_routes, AppState};
+use koprogo_api::infrastructure::web::configure_routes;
 use serial_test::serial;
 use uuid::Uuid;
 

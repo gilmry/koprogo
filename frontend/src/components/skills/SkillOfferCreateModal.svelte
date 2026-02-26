@@ -3,29 +3,26 @@
     skillsApi,
     type CreateSkillOfferDto,
     SkillCategory,
-    ProficiencyLevel,
+    ExpertiseLevel,
   } from "../../lib/api/skills";
   import { toast } from "../../stores/toast";
 
   export let isOpen = false;
   export let buildingId: string;
-  export let ownerId: string;
   export let onClose: () => void;
   export let onSuccess: () => void;
 
   let submitting = false;
   let formData: CreateSkillOfferDto = {
     building_id: buildingId,
-    owner_id: ownerId,
     skill_category: SkillCategory.Other,
     skill_name: "",
     description: "",
-    proficiency_level: ProficiencyLevel.Intermediate,
-    availability: "",
+    expertise_level: ExpertiseLevel.Intermediate,
+    is_available_for_help: true,
   };
 
-  let certifications: string[] = [];
-  let newCertification = "";
+  let certificationInput = "";
 
   async function handleSubmit() {
     if (!formData.skill_name.trim()) {
@@ -40,8 +37,8 @@
     try {
       submitting = true;
       const payload = { ...formData };
-      if (certifications.length > 0) {
-        payload.certifications = certifications;
+      if (certificationInput.trim()) {
+        payload.certifications = certificationInput.trim();
       }
 
       await skillsApi.createOffer(payload);
@@ -56,29 +53,16 @@
     }
   }
 
-  function addCertification() {
-    if (newCertification.trim()) {
-      certifications = [...certifications, newCertification.trim()];
-      newCertification = "";
-    }
-  }
-
-  function removeCertification(index: number) {
-    certifications = certifications.filter((_, i) => i !== index);
-  }
-
   function resetForm() {
     formData = {
       building_id: buildingId,
-      owner_id: ownerId,
       skill_category: SkillCategory.Other,
       skill_name: "",
       description: "",
-      proficiency_level: ProficiencyLevel.Intermediate,
-      availability: "",
+      expertise_level: ExpertiseLevel.Intermediate,
+      is_available_for_help: true,
     };
-    certifications = [];
-    newCertification = "";
+    certificationInput = "";
   }
 
   function handleCancel() {
@@ -120,6 +104,8 @@
               id="skill_name"
               bind:value={formData.skill_name}
               required
+              minlength="3"
+              maxlength="100"
               placeholder="e.g., Plumbing Repairs, Piano Lessons"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
@@ -135,22 +121,23 @@
               bind:value={formData.description}
               required
               rows="4"
+              maxlength="1000"
               placeholder="Describe what you can offer..."
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            />
+            ></textarea>
           </div>
 
-          <!-- Proficiency Level -->
+          <!-- Expertise Level -->
           <div>
-            <label for="proficiency" class="block text-sm font-medium text-gray-700 mb-1">
-              Proficiency Level <span class="text-red-500">*</span>
+            <label for="expertise" class="block text-sm font-medium text-gray-700 mb-1">
+              Expertise Level <span class="text-red-500">*</span>
             </label>
             <select
-              id="proficiency"
-              bind:value={formData.proficiency_level}
+              id="expertise"
+              bind:value={formData.expertise_level}
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
-              {#each Object.values(ProficiencyLevel) as level}
+              {#each Object.values(ExpertiseLevel) as level}
                 <option value={level}>{level}</option>
               {/each}
             </select>
@@ -166,10 +153,11 @@
               id="hourly_rate"
               bind:value={formData.hourly_rate_credits}
               min="0"
+              max="100"
               placeholder="Leave empty for free"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
-            <p class="text-xs text-gray-500 mt-1">1 hour = 1 credit (Belgian SEL system)</p>
+            <p class="text-xs text-gray-500 mt-1">1 hour = 1 credit (Belgian SEL system). 0 or empty = free/volunteer.</p>
           </div>
 
           <!-- Years Experience -->
@@ -180,64 +168,26 @@
             <input
               type="number"
               id="years_exp"
-              bind:value={formData.years_experience}
+              bind:value={formData.years_of_experience}
               min="0"
+              max="50"
               placeholder="e.g., 5"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <!-- Availability -->
-          <div>
-            <label for="availability" class="block text-sm font-medium text-gray-700 mb-1">
-              Availability <span class="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              id="availability"
-              bind:value={formData.availability}
-              required
-              placeholder="e.g., Weekends, Evenings after 6pm"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <!-- Certifications -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="certifications" class="block text-sm font-medium text-gray-700 mb-1">
               Certifications (optional)
             </label>
-            <div class="flex gap-2 mb-2">
-              <input
-                type="text"
-                bind:value={newCertification}
-                placeholder="Add certification..."
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              />
-              <button
-                type="button"
-                on:click={addCertification}
-                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-              >
-                Add
-              </button>
-            </div>
-            {#if certifications.length > 0}
-              <div class="flex flex-wrap gap-2">
-                {#each certifications as cert, index}
-                  <span class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                    {cert}
-                    <button
-                      type="button"
-                      on:click={() => removeCertification(index)}
-                      class="text-blue-500 hover:text-blue-700"
-                    >
-                      ×
-                    </button>
-                  </span>
-                {/each}
-              </div>
-            {/if}
+            <input
+              type="text"
+              id="certifications"
+              bind:value={certificationInput}
+              placeholder="e.g., Certified Plumber, First Aid Certificate"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
 
           <!-- Actions -->

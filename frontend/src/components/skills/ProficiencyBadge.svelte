@@ -1,40 +1,35 @@
 <script lang="ts">
-  import { ProficiencyLevel } from "../../lib/api/skills";
+  import { ExpertiseLevel } from "../../lib/api/skills";
 
-  export let level: ProficiencyLevel;
+  export let level: ExpertiseLevel;
 
   const levelConfig: Record<
-    ProficiencyLevel,
+    ExpertiseLevel,
     { label: string; class: string; stars: string }
   > = {
-    [ProficiencyLevel.Beginner]: {
+    [ExpertiseLevel.Beginner]: {
       label: "Beginner",
       class: "bg-gray-100 text-gray-700",
       stars: "⭐",
     },
-    [ProficiencyLevel.Intermediate]: {
+    [ExpertiseLevel.Intermediate]: {
       label: "Intermediate",
       class: "bg-blue-100 text-blue-700",
       stars: "⭐⭐",
     },
-    [ProficiencyLevel.Advanced]: {
+    [ExpertiseLevel.Advanced]: {
       label: "Advanced",
       class: "bg-green-100 text-green-700",
       stars: "⭐⭐⭐",
     },
-    [ProficiencyLevel.Expert]: {
+    [ExpertiseLevel.Expert]: {
       label: "Expert",
       class: "bg-purple-100 text-purple-700",
       stars: "⭐⭐⭐⭐",
     },
-    [ProficiencyLevel.Professional]: {
-      label: "Professional",
-      class: "bg-yellow-100 text-yellow-800",
-      stars: "⭐⭐⭐⭐⭐",
-    },
   };
 
-  $: config = levelConfig[level];
+  $: config = levelConfig[level] || levelConfig[ExpertiseLevel.Beginner];
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

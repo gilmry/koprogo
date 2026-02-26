@@ -28,11 +28,7 @@ import Layout from "../layouts/Layout.astro";
 <script>
   import { mount } from "svelte";
   import SkillOfferDetail from "../components/skills/SkillOfferDetail.svelte";
-  import { authStore } from "../stores/auth";
-  import { get } from "svelte/store";
-
-  const auth = get(authStore);
-  const currentUserId = auth.user?.id || "";
+  import { getMyOwner } from "../lib/api";
 
   const urlParams = new URLSearchParams(window.location.search);
   const offerId = urlParams.get("id");
@@ -40,15 +36,21 @@ import Layout from "../layouts/Layout.astro";
   if (!offerId) {
     window.location.href = "/skills";
   } else {
-    const container = document.getElementById("skill-detail-container");
-    if (container) {
-      mount(SkillOfferDetail, {
-        target: container,
-        props: {
-          offerId: offerId,
-          currentUserId: currentUserId,
-        },
-      });
+    async function init() {
+      const owner = await getMyOwner();
+      const currentUserId = owner?.id || "";
+
+      const container = document.getElementById("skill-detail-container");
+      if (container) {
+        mount(SkillOfferDetail, {
+          target: container,
+          props: {
+            offerId: offerId!,
+            currentUserId: currentUserId,
+          },
+        });
+      }
     }
+    init();
   }
 </script>

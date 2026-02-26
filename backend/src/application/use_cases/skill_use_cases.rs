@@ -20,21 +20,31 @@ impl SkillUseCases {
         }
     }
 
+    /// Resolve user_id to owner via organization lookup
+    async fn resolve_owner(
+        &self,
+        user_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<crate::domain::entities::Owner, String> {
+        self.owner_repo
+            .find_by_user_id_and_organization(user_id, organization_id)
+            .await?
+            .ok_or_else(|| "Owner not found for this user in the organization".to_string())
+    }
+
     /// Create a new skill
     ///
     /// # Authorization
     /// - Owner must exist in the system
     pub async fn create_skill(
         &self,
-        owner_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
         dto: CreateSkillDto,
     ) -> Result<SkillResponseDto, String> {
-        // Verify owner exists
-        let owner = self
-            .owner_repo
-            .find_by_id(owner_id)
-            .await?
-            .ok_or("Owner not found".to_string())?;
+        // Resolve user_id to owner
+        let owner = self.resolve_owner(user_id, organization_id).await?;
+        let owner_id = owner.id;
 
         // Create skill entity (validates business rules)
         let skill = Skill::new(
@@ -164,9 +174,11 @@ impl SkillUseCases {
     pub async fn update_skill(
         &self,
         skill_id: Uuid,
-        actor_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
         dto: UpdateSkillDto,
     ) -> Result<SkillResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut skill = self
             .skill_repo
             .find_by_id(skill_id)
@@ -174,7 +186,7 @@ impl SkillUseCases {
             .ok_or("Skill not found".to_string())?;
 
         // Authorization: only owner can update
-        if skill.owner_id != actor_id {
+        if skill.owner_id != owner.id {
             return Err("Unauthorized: only owner can update skill".to_string());
         }
 
@@ -203,8 +215,10 @@ impl SkillUseCases {
     pub async fn mark_skill_available(
         &self,
         skill_id: Uuid,
-        actor_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<SkillResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut skill = self
             .skill_repo
             .find_by_id(skill_id)
@@ -212,7 +226,7 @@ impl SkillUseCases {
             .ok_or("Skill not found".to_string())?;
 
         // Authorization: only owner can mark available
-        if skill.owner_id != actor_id {
+        if skill.owner_id != owner.id {
             return Err("Unauthorized: only owner can mark skill as available".to_string());
         }
 
@@ -233,8 +247,10 @@ impl SkillUseCases {
     pub async fn mark_skill_unavailable(
         &self,
         skill_id: Uuid,
-        actor_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
     ) -> Result<SkillResponseDto, String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut skill = self
             .skill_repo
             .find_by_id(skill_id)
@@ -242,7 +258,7 @@ impl SkillUseCases {
             .ok_or("Skill not found".to_string())?;
 
         // Authorization: only owner can mark unavailable
-        if skill.owner_id != actor_id {
+        if skill.owner_id != owner.id {
             return Err("Unauthorized: only owner can mark skill as unavailable".to_string());
         }
 
@@ -260,7 +276,13 @@ impl SkillUseCases {
     ///
     /// # Authorization
     /// - Only owner can delete their skill
-    pub async fn delete_skill(&self, skill_id: Uuid, actor_id: Uuid) -> Result<(), String> {
+    pub async fn delete_skill(
+        &self,
+        skill_id: Uuid,
+        user_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<(), String> {
+        let owner = self.resolve_owner(user_id, organization_id).await?;
         let skill = self
             .skill_repo
             .find_by_id(skill_id)
@@ -268,7 +290,7 @@ impl SkillUseCases {
             .ok_or("Skill not found".to_string())?;
 
         // Authorization: only owner can delete
-        if skill.owner_id != actor_id {
+        if skill.owner_id != owner.id {
             return Err("Unauthorized: only owner can delete skill".to_string());
         }
 

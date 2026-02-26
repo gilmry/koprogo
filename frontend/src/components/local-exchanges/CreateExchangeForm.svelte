@@ -61,7 +61,7 @@
 
       // Reset form after 1.5s
       setTimeout(() => {
-        window.location.href = `/exchanges/${exchange.id}`;
+        window.location.href = `/exchange-detail?id=${exchange.id}`;
       }, 1500);
     } catch (err: any) {
       error = err.message || "Impossible de créer l'échange";

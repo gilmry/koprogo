@@ -73,7 +73,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         let row = sqlx::query(
             r#"
             SELECT id, organization_id, building_id, title, description,
-                   total_amount, contribution_type::text AS contribution_type,
+                   total_amount::FLOAT8 AS total_amount, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
@@ -93,7 +93,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, building_id, title, description,
-                   total_amount, contribution_type::text AS contribution_type,
+                   total_amount::FLOAT8 AS total_amount, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
@@ -117,7 +117,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, building_id, title, description,
-                   total_amount, contribution_type::text AS contribution_type,
+                   total_amount::FLOAT8 AS total_amount, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by
@@ -200,7 +200,7 @@ impl CallForFundsRepository for PostgresCallForFundsRepository {
         let rows = sqlx::query(
             r#"
             SELECT id, organization_id, building_id, title, description,
-                   total_amount, contribution_type::text AS contribution_type,
+                   total_amount::FLOAT8 AS total_amount, contribution_type::text AS contribution_type,
                    call_date, due_date, sent_date,
                    status::text AS status, account_code, notes,
                    created_at, updated_at, created_by

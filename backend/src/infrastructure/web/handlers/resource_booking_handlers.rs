@@ -33,9 +33,15 @@ pub async fn create_booking(
     auth: AuthenticatedUser,
     request: web::Json<CreateResourceBookingDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .resource_booking_use_cases
-        .create_booking(auth.user_id, request.into_inner())
+        .create_booking(auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(booking) => HttpResponse::Created().json(booking),
@@ -177,9 +183,15 @@ pub async fn list_my_bookings(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .resource_booking_use_cases
-        .list_user_bookings(auth.user_id)
+        .list_user_bookings(auth.user_id, org_id)
         .await
     {
         Ok(bookings) => HttpResponse::Ok().json(bookings),
@@ -209,9 +221,15 @@ pub async fn list_my_bookings_by_status(
             }
         };
 
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .resource_booking_use_cases
-        .list_user_bookings_by_status(auth.user_id, booking_status)
+        .list_user_bookings_by_status(auth.user_id, org_id, booking_status)
         .await
     {
         Ok(bookings) => HttpResponse::Ok().json(bookings),
@@ -351,9 +369,15 @@ pub async fn update_booking(
     id: web::Path<Uuid>,
     request: web::Json<UpdateResourceBookingDto>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .resource_booking_use_cases
-        .update_booking(id.into_inner(), auth.user_id, request.into_inner())
+        .update_booking(id.into_inner(), auth.user_id, org_id, request.into_inner())
         .await
     {
         Ok(booking) => HttpResponse::Ok().json(booking),
@@ -384,9 +408,15 @@ pub async fn cancel_booking(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .resource_booking_use_cases
-        .cancel_booking(id.into_inner(), auth.user_id)
+        .cancel_booking(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(booking) => HttpResponse::Ok().json(booking),
@@ -506,9 +536,15 @@ pub async fn delete_booking(
     auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    let org_id = match auth.require_organization() {
+        Ok(id) => id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
     match data
         .resource_booking_use_cases
-        .delete_booking(id.into_inner(), auth.user_id)
+        .delete_booking(id.into_inner(), auth.user_id, org_id)
         .await
     {
         Ok(()) => HttpResponse::NoContent().finish(),

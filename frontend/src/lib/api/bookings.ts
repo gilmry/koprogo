@@ -163,11 +163,11 @@ export const bookingsApi = {
 
   // Bookings
   async createBooking(data: CreateBookingDto): Promise<Booking> {
-    return api.post("/bookings", data);
+    return api.post("/resource-bookings", data);
   },
 
   async getBookingById(id: string): Promise<Booking> {
-    return api.get(`/bookings/${id}`);
+    return api.get(`/resource-bookings/${id}`);
   },
 
   async listBookingsByResource(resourceId: string): Promise<Booking[]> {
@@ -179,7 +179,7 @@ export const bookingsApi = {
   },
 
   async listUpcomingBookings(buildingId: string): Promise<Booking[]> {
-    return api.get(`/buildings/${buildingId}/bookings/upcoming`);
+    return api.get(`/buildings/${buildingId}/resource-bookings/upcoming`);
   },
 
   async listPendingBookings(buildingId: string): Promise<Booking[]> {
@@ -199,11 +199,11 @@ export const bookingsApi = {
   },
 
   async completeBooking(id: string): Promise<Booking> {
-    return api.put(`/bookings/${id}/complete`, {});
+    return api.post(`/resource-bookings/${id}/complete`, {});
   },
 
   async cancelBooking(id: string, reason: string): Promise<Booking> {
-    return api.put(`/bookings/${id}/cancel`, { reason });
+    return api.post(`/resource-bookings/${id}/cancel`, { reason });
   },
 
   async rateBooking(id: string, rating: number): Promise<Booking> {
