@@ -116,6 +116,22 @@ harness = false
 name = "bdd"
 harness = false
 
+[[test]]
+name = "bdd_governance"
+harness = false
+
+[[test]]
+name = "bdd_financial"
+harness = false
+
+[[test]]
+name = "bdd_operations"
+harness = false
+
+[[test]]
+name = "bdd_community"
+harness = false
+
 [profile.release]
 opt-level = 3
 lto = true
