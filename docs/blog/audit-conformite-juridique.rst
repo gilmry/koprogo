@@ -1,138 +1,148 @@
 .. post:: 2026-02-28
-   :tags: conformite, audit, droit-belge, rgpd
+   :tags: conformite, audit, droit-belge, rgpd, bdd, transparence
    :category: Conformite
    :author: KoproGo Team
 
-Audit de conformite juridique : resultats et plan de remediation
-=================================================================
+Comment KoproGo prouve sa conformite juridique — et pourquoi vous pouvez le verifier
+======================================================================================
 
-Nous publions aujourd'hui les resultats de l'audit de conformite juridique
-de KoproGo, mene en comparant le code source avec les textes de loi officiels belges.
+KoproGo gere votre copropriete : vos charges, vos votes en assemblee generale,
+vos donnees personnelles. C'est une responsabilite serieuse. Alors comment
+savoir si le logiciel respecte vraiment la loi belge ?
 
-Pourquoi cet audit ?
----------------------
+Nous avons choisi la transparence totale. Voici comment ca marche, sans jargon.
 
-KoproGo gere des donnees sensibles (financieres, personnelles) et implemente
-des processus a valeur juridique (convocations AG, votes, comptabilite).
-Avant toute mise en production, il est essentiel de verifier que le code
-respecte les obligations legales applicables.
+Le probleme : comment prouver qu'un logiciel respecte la loi ?
+---------------------------------------------------------------
 
-Methodologie
--------------
+Quand un syndic vous envoie une convocation d'assemblee generale, le Code Civil
+belge exige un preavis de **15 jours minimum**. Quand une penalite de retard est
+calculee, elle doit utiliser le **taux d'interet legal** (4.5% en 2026, pas un
+chiffre invente). Quand vous demandez l'effacement de vos donnees personnelles,
+le RGPD oblige a le faire.
 
-L'audit couvre quatre domaines :
+Mais comment verifier qu'un logiciel applique ces regles correctement ?
+La plupart des editeurs vous demandent de leur faire confiance. Chez KoproGo,
+on a choisi une autre voie : **tout est ecrit noir sur blanc, lisible par tous**.
 
-1. **Droit de la copropriete** — Art. 3.84 a 3.94 du Code Civil belge
-2. **Comptabilite** — AR du 12/07/2012 (PCMN pour associations de coproprietaires)
-3. **RGPD** — Reglement UE 2016/679 + Loi belge du 30/07/2018
-4. **Securite technique** — OWASP, chiffrement, infrastructure
+Notre methode : des scenarios en langage naturel
+--------------------------------------------------
 
-Pour chaque exigence legale, nous avons verifie : le fichier de code concerne,
-le scenario de test BDD qui le prouve, et le statut de conformite.
+Nous utilisons une methode appelee **BDD** (Behavior-Driven Development,
+ou "developpement guide par le comportement"). Le principe est simple :
+avant d'ecrire le moindre code, on ecrit un **scenario** qui decrit ce
+que le logiciel doit faire, en francais courant.
 
-Resultats par domaine
-----------------------
+Voici un vrai exemple tire de notre code :
 
-.. list-table::
-   :header-rows: 1
-   :widths: 35 15 50
+.. code-block:: gherkin
 
-   * - Domaine
-     - Score
-     - Commentaire
-   * - Droit copropriete (Art. 3.84-3.94)
-     - **70%**
-     - Convocations OK, quorum/procurations manquants
-   * - RGPD
-     - **65%**
-     - Articles 15-21 OK, documentation legale absente
-   * - Comptabilite (PCMN)
-     - **95%**
-     - Quasi complet
-   * - Securite technique
-     - **90%**
-     - Excellente infrastructure
-   * - **GLOBAL**
-     - **65%**
-     - NON PRET pour production
+   Scenario: [Art. 3.87 §3] Convocation 15 jours pour TOUS types AG
+     # Loi : "la convocation est communiquée quinze jours au moins
+     #         avant la date de l'assemblée"
+     Etant donne les types de convocation Ordinaire, Extraordinaire et Deuxieme
+     Alors le delai minimum doit etre de 15 jours pour TOUS les types
 
-Erreurs corrigees
-------------------
+Ce scenario est **lisible par n'importe qui** — pas besoin d'etre developpeur.
+Et il est **executable** : a chaque modification du logiciel, la machine verifie
+automatiquement que cette regle est toujours respectee.
 
-L'audit a revele trois erreurs factuelles dans le code :
+Un fichier central de conformite
+----------------------------------
 
-**1. Delai de convocation AG**
+Toutes les exigences legales belges applicables a KoproGo sont rassemblees dans
+un seul fichier : ``legal_compliance.feature``. Ce fichier contient **37 scenarios**,
+un par obligation legale.
 
-Le code imposait 8 jours de preavis pour les AG extraordinaires et les
-deuxiemes convocations. L'Art. 3.87 §3 du Code Civil est clair :
+Chaque scenario porte une etiquette de statut :
 
-   *"Sauf dans les cas d'urgence, la convocation est communiquee quinze jours
-   au moins avant la date de l'assemblee."*
+- **@conforme** : la regle est implementee et verifiee automatiquement
+- **@manquant** : la regle n'est pas encore implementee (on le dit clairement)
+- **@partiel** : la regle est partiellement implementee
+- **@corrige** : une erreur a ete trouvee et corrigee lors de l'audit
 
-Ce delai de **15 jours** s'applique a **tous les types d'assemblee**, sans distinction.
-Le code a ete corrige dans ``convocation.rs``.
+Aujourd'hui, le score est de **25 sur 37** exigences conformes (67%).
+Ce n'est pas 100%, et nous le disons ouvertement. C'est pourquoi KoproGo
+reste en version 0.1.0 — nous ne passerons en production qu'une fois
+les lacunes critiques corrigees.
 
-**2. Taux d'interet de retard**
+Ce que l'audit a revele (et corrige)
+--------------------------------------
 
-Le code appliquait un taux de penalite de 8% annuel. Le taux d'interet legal civil
-belge pour 2026 est de **4.5%** (publie au Moniteur belge par Arrete Royal).
-Appliquer un taux superieur expose a une reduction d'office par le juge
-(Art. 1153 et 1231 CC). Le code a ete corrige dans ``payment_reminder.rs``.
+En comparant notre code avec les textes de loi officiels belges, nous avons
+decouvert quatre erreurs. Elles ont toutes ete corrigees :
 
-**3. Delai de l'etat date**
+**1. Delai de convocation** — Le code imposait 8 jours de preavis pour les
+AG extraordinaires. L'Art. 3.87 §3 du Code Civil ne fait aucune distinction :
+c'est **15 jours pour tous les types d'assemblee**. Corrige.
 
-Le seuil de detection de retard etait fixe a 10 jours. L'Art. 3.94 du Code Civil
-prevoit un delai de **15 jours** pour une demande simple (30 jours pour une
-demande par recommande du notaire). Le code a ete corrige dans ``etat_date.rs``.
+**2. Taux de penalite** — Le code appliquait 8% de penalite annuelle.
+Le taux legal civil belge pour 2026 est de **4.5%** (publie au Moniteur belge).
+Appliquer un taux superieur expose a une reduction d'office par le juge. Corrige.
 
-**4. 3 devis "obligatoires"**
+**3. Delai etat date** — Le seuil de retard etait fixe a 10 jours.
+L'Art. 3.94 prevoit **15 jours**. Corrige.
 
-Le code et la documentation presentaient la regle des 3 devis pour travaux >5000 EUR
-comme une "obligation legale belge". Aucun article du Code Civil n'impose cette regle.
-C'est une **bonne pratique professionnelle** que nous maintenons dans l'application,
-mais avec une terminologie corrigee.
+**4. Regle des 3 devis** — Le code presentait la regle des 3 devis pour
+travaux >5000 EUR comme une "obligation legale". C'est en realite une
+**bonne pratique professionnelle**, pas une loi. La terminologie a ete corrigee
+dans 15 fichiers.
 
-Lacunes critiques
-------------------
+Les lacunes identifiees
+------------------------
 
-Trois lacunes critiques doivent etre corrigees avant la mise en production :
+Trois manques critiques bloquent la mise en production :
 
-1. **Quorum AG** (Art. 3.87 §5) : Les votes sont possibles meme sans quorum de 50%.
-   Les decisions prises sans quorum sont nulles et peuvent etre contestees sous 4 mois.
+1. **Quorum d'assemblee** (Art. 3.87 §5) : Le systeme permet de voter meme
+   sans quorum de 50%. En droit belge, les decisions prises sans quorum sont
+   nulles et contestables pendant 4 mois.
 
-2. **Limitation des procurations** (Art. 3.87 §7) : Un mandataire peut representer
-   un nombre illimite de coproprietaires. La loi impose un maximum de 3 mandats
-   (avec exception si le total ne depasse pas 10% des voix).
+2. **Limite des procurations** (Art. 3.87 §7) : Aucune limite n'est imposee
+   au nombre de procurations. La loi limite a 3 mandats par mandataire
+   (sauf si le total ne depasse pas 10% des voix).
 
-3. **Lien agenda-resolutions** (Art. 3.87 §2) : Des decisions hors agenda peuvent
-   etre enregistrees. Toute decision sur un point absent de l'ordre du jour est nulle.
+3. **Lien agenda-resolutions** (Art. 3.87 §2) : Des votes sur des sujets
+   hors agenda sont possibles. La loi les rend nuls.
 
-Plan de remediation
---------------------
+Pourquoi cette transparence compte
+-------------------------------------
 
-Le plan de remediation est organise en trois phases :
+Dans la gestion de copropriete, les erreurs ont des consequences reelles :
 
-- **Phase 1 (critique)** : Quorum, procurations, 2eme convocation, lien agenda, documentation legale (~15 jours)
-- **Phase 2 (elevee)** : Distribution PV, presets majorite, notification RGPD (~7 jours)
-- **Phase 3 (moyenne)** : Snapshot tantiemes, cookies, pentest (~5 jours + externe)
+- Une convocation envoyee trop tard ? L'assemblee est contestable.
+- Un taux de penalite trop eleve ? Le juge le reduit d'office.
+- Des donnees personnelles mal gerees ? L'APD peut sanctionner jusqu'a 20 millions d'euros.
 
-Documentation complete
------------------------
+En rendant notre code **auditable par tous**, nous permettons a chaque
+coproprietaire, chaque syndic, chaque juriste de verifier par lui-meme que
+KoproGo fait ce qu'il dit. Pas de boite noire, pas de "faites-nous confiance" :
+**les preuves sont dans le code**.
 
-La section `Conformite Juridique <../legal/index.html>`_ de la documentation
-contient :
+Comment verifier par vous-meme
+-------------------------------
 
-- Les extraits de loi in extenso (Art. 3.84 a 3.94 CC, AR 12/07/2012)
-- La matrice de conformite code-loi complete
-- L'analyse des risques juridiques avec probabilites et impacts
-- Le detail de la conformite RGPD et des sanctions APD
+Tout est public et accessible :
+
+- **Les scenarios de conformite** : ouvrez le fichier
+  ``backend/tests/features/legal_compliance.feature`` — chaque scenario
+  cite l'article de loi, le fichier de code concerne, et le statut.
+
+- **Les extraits de loi** : la section `Conformite Juridique <../legal/index.html>`_
+  contient les textes de loi in extenso (Code Civil Art. 3.84 a 3.94,
+  Arrete Royal PCMN, RGPD).
+
+- **La matrice de conformite** : un tableau qui lie chaque exigence legale
+  au code qui l'implemente et au test qui le prouve.
+
+- **L'analyse des risques** : chaque risque juridique est documente avec
+  sa probabilite, son impact et sa mitigation.
 
 Prochaines etapes
 ------------------
 
-La montee en version de KoproGo (au-dela de 0.1.0) est conditionnee a la
-correction des lacunes critiques identifiees dans cet audit. Nous publierons
-des mises a jour regulieres sur l'avancement de la remediation.
+La montee en version au-dela de 0.1.0 est conditionnee a la correction des
+lacunes critiques (quorum, procurations, lien agenda). Nous publierons des
+mises a jour regulieres.
 
 Une revue par un juriste belge specialise en copropriete est prevue avant
-la mise en production.
+toute mise en production.

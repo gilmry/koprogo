@@ -16,14 +16,14 @@ Feature: Payment Recovery Workflow
     When I create a FirstReminder for the overdue expense
     Then the reminder should be created successfully
     And the reminder level should be "FirstReminder"
-    And the penalty amount should be calculated at 8% annual rate
+    And the penalty amount should be calculated at 4.5% annual rate (Belgian legal rate 2026)
     And the days overdue should be 20
     And the delivery method should be "Email"
 
-  Scenario: Calculate penalties correctly for Belgian legal rate (8% annual)
+  Scenario: Calculate penalties correctly for Belgian legal rate (4.5% annual — 2026)
     Given an overdue expense of 1000 EUR due 365 days ago
     When I calculate the penalty amount
-    Then the penalty should be 80 EUR
+    Then the penalty should be 45 EUR
 
   Scenario: Prevent creating reminder before minimum days threshold
     Given an overdue expense of 100 EUR due 10 days ago
