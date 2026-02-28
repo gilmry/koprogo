@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: koprogo
       POSTGRES_PASSWORD: koprogo123
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_mcp_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d

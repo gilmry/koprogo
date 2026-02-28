@@ -147,6 +147,11 @@ jobs:
                       <h2>📝 Blog</h2>
                       <p>Actualités, annonces et articles techniques du projet KoproGo</p>
                   </a>
+
+                  <a href="docs/legal/index.html" class="doc-card">
+                      <h2>Conformite Juridique</h2>
+                      <p>Bases legales belges, extraits de loi, matrice de conformite et analyse des risques</p>
+                  </a>
               </div>
           </body>
           </html>

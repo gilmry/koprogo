@@ -68,7 +68,7 @@ pub struct PaymentReminder {
     pub level: ReminderLevel,
     pub status: ReminderStatus,
     pub amount_owed: f64,        // Montant dû (en euros)
-    pub penalty_amount: f64,     // Pénalités de retard (8% annuel en Belgique)
+    pub penalty_amount: f64,     // Pénalités de retard (taux légal civil, 4.5% annuel en 2026)
     pub total_amount: f64,       // Montant total (owed + penalties)
     pub due_date: DateTime<Utc>, // Date d'échéance originale de la charge
     pub days_overdue: i64,       // Nombre de jours de retard
@@ -83,8 +83,11 @@ pub struct PaymentReminder {
 }
 
 impl PaymentReminder {
-    /// Taux légal de pénalité de retard en Belgique (8% annuel)
-    pub const BELGIAN_PENALTY_RATE: f64 = 0.08;
+    /// Taux légal civil de pénalité de retard en Belgique (Moniteur belge)
+    /// Ce taux est publié annuellement par Arrêté Royal.
+    /// 2024: 5.25%, 2025: 4.0%, 2026: 4.5%
+    /// A mettre à jour chaque année selon publication au Moniteur belge.
+    pub const BELGIAN_PENALTY_RATE: f64 = 0.045;
 
     /// Crée une nouvelle relance de paiement
     #[allow(clippy::too_many_arguments)]
@@ -121,7 +124,7 @@ impl PaymentReminder {
             ));
         }
 
-        // Calculer les pénalités de retard (taux légal belge: 8% annuel)
+        // Calculer les pénalités de retard (taux légal civil belge: 4.5% annuel en 2026)
         let penalty_amount = Self::calculate_penalty(amount_owed, days_overdue);
         let total_amount = amount_owed + penalty_amount;
 
@@ -156,8 +159,8 @@ impl PaymentReminder {
         })
     }
 
-    /// Calcule les pénalités de retard selon le taux légal belge (8% annuel)
-    /// Formule: pénalité = montant * 0.08 * (jours_retard / 365)
+    /// Calcule les pénalités de retard selon le taux légal civil belge (4.5% annuel en 2026)
+    /// Formule: pénalité = montant * 0.045 * (jours_retard / 365)
     pub fn calculate_penalty(amount: f64, days_overdue: i64) -> f64 {
         if days_overdue <= 0 {
             return 0.0;
@@ -326,15 +329,15 @@ mod tests {
 
     #[test]
     fn test_calculate_penalty() {
-        // 100€, 30 jours de retard, taux 8% annuel
-        // Pénalité = 100 * 0.08 * (30/365) = 0.66€
+        // 100€, 30 jours de retard, taux légal civil 4.5% annuel (2026)
+        // Pénalité = 100 * 0.045 * (30/365) = 0.37€
         let penalty = PaymentReminder::calculate_penalty(100.0, 30);
-        assert!((penalty - 0.66).abs() < 0.01);
+        assert!((penalty - 0.37).abs() < 0.01);
 
         // 1000€, 365 jours de retard (1 an)
-        // Pénalité = 1000 * 0.08 * 1 = 80€
+        // Pénalité = 1000 * 0.045 * 1 = 45€
         let penalty = PaymentReminder::calculate_penalty(1000.0, 365);
-        assert!((penalty - 80.0).abs() < 0.01);
+        assert!((penalty - 45.0).abs() < 0.01);
     }
 
     #[test]

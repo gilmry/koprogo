@@ -139,7 +139,7 @@ pub struct QuoteComparisonItemDto {
     pub rank: usize, // 1, 2, 3, etc. (sorted by score)
 }
 
-/// Quote comparison response DTO (Belgian legal requirement: 3 quotes minimum)
+/// Quote comparison response DTO (Belgian professional best practice: 3 quotes minimum)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QuoteComparisonResponseDto {
     pub project_title: String,

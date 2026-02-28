@@ -4,7 +4,7 @@ use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// Quote for contractor work (Belgian legal requirement: 3 quotes for works >5000€)
+/// Quote for contractor work (Belgian professional best practice: 3 quotes for works >5000€)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Quote {
     pub id: Uuid,

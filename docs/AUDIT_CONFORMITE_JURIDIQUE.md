@@ -267,11 +267,16 @@ cargo test --lib
 # Tests integration PostgreSQL (triggers, contraintes)
 cargo test --test integration
 
-# Scenarios BDD AG
-cargo test --test bdd
+# Scenarios BDD - 5 fichiers par domaine (752 scenarios au total)
+cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
 
 # Compilation sans warnings
 cargo clippy -- -D warnings
 ```
+
+> **Note importante** : Les 752 scenarios BDD ont ete ecrits mais n'ont pas tous ete
+> executes dans un environnement d'integration complet. Des correctifs seront probablement
+> necessaires lors des premieres executions CI. Les tests couvrent les lacunes documentees
+> ci-dessus (quorum, procurations, 2eme convocation, etc.) mais en mode step-pending.
 
 Une revue manuelle de la documentation legale par un juriste belge specialise en copropriete est **fortement recommandee** avant la mise en production.

@@ -307,7 +307,6 @@ test.describe("Board of Directors", () => {
       await filterSelect.selectOption({ label: "En cours" });
 
       // Wait for filtered results
-      await page.waitForTimeout(500);
     }
   });
 
@@ -358,7 +357,6 @@ test.describe("Board of Directors", () => {
       await startButton.first().click();
 
       // Wait for status update
-      await page.waitForTimeout(500);
 
       // Should show "Terminer" button now
       const completeButton = page

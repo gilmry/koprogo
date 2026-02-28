@@ -2,7 +2,7 @@ use crate::domain::entities::Quote;
 use async_trait::async_trait;
 use uuid::Uuid;
 
-/// Port (interface) for Quote repository (Belgian legal requirement: 3 quotes >5000€)
+/// Port (interface) for Quote repository (Belgian professional best practice: 3 quotes >5000€)
 #[async_trait]
 pub trait QuoteRepository: Send + Sync {
     /// Create new quote

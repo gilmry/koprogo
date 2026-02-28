@@ -3,22 +3,30 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Convocation type according to Belgian copropriété law
+/// Art. 3.87 §3 Code Civil (ex Art. 577-6 §2): minimum 15 days notice for ALL types
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ConvocationType {
     /// Ordinary General Assembly (15 days minimum notice)
     Ordinary,
-    /// Extraordinary General Assembly (8 days minimum notice)
+    /// Extraordinary General Assembly (15 days minimum notice - same as ordinary per Art. 3.87 §3)
     Extraordinary,
-    /// Second convocation after quorum not reached (8 days minimum notice)
+    /// Second convocation after quorum not reached (15 days minimum notice - Art. 3.87 §5)
     SecondConvocation,
 }
 
 impl ConvocationType {
     /// Get minimum notice period in days according to Belgian law
+    /// Art. 3.87 §3 Code Civil: "Sauf dans les cas d'urgence, la convocation est
+    /// communiquée quinze jours au moins avant la date de l'assemblée."
+    /// This 15-day minimum applies to ALL assembly types (ordinary, extraordinary,
+    /// and second convocation after quorum failure).
     pub fn minimum_notice_days(&self) -> i64 {
+        // Belgian law does not distinguish between assembly types for notice period.
+        // All require minimum 15 days (Art. 3.87 §3 CC).
         match self {
-            ConvocationType::Ordinary => 15,
-            ConvocationType::Extraordinary | ConvocationType::SecondConvocation => 8,
+            ConvocationType::Ordinary
+            | ConvocationType::Extraordinary
+            | ConvocationType::SecondConvocation => 15,
         }
     }
 
@@ -79,9 +87,8 @@ impl ConvocationStatus {
 /// Convocation entity - Automatic meeting invitations with legal compliance
 ///
 /// Implements Belgian copropriété legal requirements for meeting convocations:
-/// - Ordinary AG: 15 days minimum notice
-/// - Extraordinary AG: 8 days minimum notice
-/// - Second convocation: 8 days minimum notice
+/// Art. 3.87 §3 Code Civil: 15 days minimum notice for ALL types
+/// (Ordinary, Extraordinary, and Second Convocation after quorum failure)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Convocation {
     pub id: Uuid,
@@ -329,9 +336,10 @@ mod tests {
 
     #[test]
     fn test_meeting_type_minimum_notice_days() {
+        // Art. 3.87 §3 CC: 15 days for ALL types
         assert_eq!(ConvocationType::Ordinary.minimum_notice_days(), 15);
-        assert_eq!(ConvocationType::Extraordinary.minimum_notice_days(), 8);
-        assert_eq!(ConvocationType::SecondConvocation.minimum_notice_days(), 8);
+        assert_eq!(ConvocationType::Extraordinary.minimum_notice_days(), 15);
+        assert_eq!(ConvocationType::SecondConvocation.minimum_notice_days(), 15);
     }
 
     #[test]
@@ -468,13 +476,14 @@ mod tests {
 
     #[test]
     fn test_should_send_reminder() {
-        // Test case 1: Meeting in 10 days - should NOT send reminder (too early)
-        let far_meeting_date = Utc::now() + Duration::days(10);
+        // Test case 1: Meeting in 20 days - should NOT send reminder (too early)
+        // Art. 3.87 §3: all types require 15 days notice, so 20 days is valid
+        let far_meeting_date = Utc::now() + Duration::days(20);
         let mut convocation_far = Convocation::new(
             Uuid::new_v4(),
             Uuid::new_v4(),
             Uuid::new_v4(),
-            ConvocationType::Extraordinary, // 8 days notice
+            ConvocationType::Extraordinary, // 15 days notice (same as all types per Art. 3.87 §3)
             far_meeting_date,
             "FR".to_string(),
             Uuid::new_v4(),
@@ -485,7 +494,7 @@ mod tests {
             .mark_sent("/uploads/conv.pdf".to_string(), 30)
             .unwrap();
 
-        // Should NOT send reminder yet (meeting is 10 days away, reminder threshold is 3 days)
+        // Should NOT send reminder yet (meeting is 20 days away, reminder threshold is 3 days)
         assert!(!convocation_far.should_send_reminder());
 
         // Test case 2: For a meeting within 3 days, we'd need to create it with proper notice

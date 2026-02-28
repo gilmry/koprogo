@@ -437,8 +437,18 @@ async fn main() -> std::io::Result<()> {
     // GDPR-specific rate limiting (10 requests/hour per user for GDPR endpoints)
     let gdpr_rate_limit = GdprRateLimit::new(GdprRateLimitConfig::default());
 
-    // Login rate limiting (5 attempts per 15 minutes per IP - anti-brute-force)
-    let login_rate_limiter = LoginRateLimiter::default();
+    // Login rate limiting (anti-brute-force)
+    // Configurable via LOGIN_RATE_LIMIT_MAX (default: 5) and LOGIN_RATE_LIMIT_WINDOW_SECS (default: 900)
+    let login_max_attempts: u32 = env::var("LOGIN_RATE_LIMIT_MAX")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(5);
+    let login_window_secs: u64 = env::var("LOGIN_RATE_LIMIT_WINDOW_SECS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(900);
+    let login_rate_limiter =
+        LoginRateLimiter::new(login_max_attempts, std::time::Duration::from_secs(login_window_secs));
 
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment

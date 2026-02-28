@@ -135,14 +135,14 @@ impl QuoteUseCases {
         Ok(QuoteResponseDto::from(updated))
     }
 
-    /// Compare multiple quotes (Belgian legal requirement: 3 quotes minimum for works >5000€)
+    /// Compare multiple quotes (Belgian professional best practice: 3 quotes minimum for works >5000€)
     /// Returns quotes sorted by total score (best first)
     pub async fn compare_quotes(
         &self,
         dto: QuoteComparisonRequestDto,
     ) -> Result<QuoteComparisonResponseDto, String> {
         if dto.quote_ids.len() < 3 {
-            return Err("Belgian law requires at least 3 quotes for comparison".to_string());
+            return Err("Best practice requires at least 3 quotes for comparison".to_string());
         }
 
         // Parse quote IDs
@@ -466,7 +466,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            "Belgian law requires at least 3 quotes for comparison"
+            "Best practice requires at least 3 quotes for comparison"
         );
     }
 }
