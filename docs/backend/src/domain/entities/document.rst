@@ -2,27 +2,27 @@
 backend/src/domain/entities/document.rs
 ==================================================
 
-Description et Responsabilités
+Description et ResponsabilitÃ©s
 ==================================================
 
-Le fichier ``document.rs`` définit l'entité de domaine **Document** dans le système KoproGo. Cette entité représente les documents de copropriété (proc
+Le fichier ``document.rs`` dÃ©finit l'entitÃ© de domaine **Document** dans le systÃ¨me KoproGo. Cette entitÃ© reprÃ©sente les documents de copropriÃ©tÃ© (proc
 
-ès-verbaux, factures, contrats, règlements, devis, etc.) et leur gestion.
+Ã¨s-verbaux, factures, contrats, rÃ¨glements, devis, etc.) et leur gestion.
 
-**Responsabilités principales:**
+**ResponsabilitÃ©s principales:**
 
-- Représenter un document avec ses métadonnées (type, titre, taille, format)
-- Gérer le stockage de fichiers et leur localisation (file_path)
-- Lier les documents aux entités métier (meetings, expenses)
-- Valider les données lors de la création
+- ReprÃ©senter un document avec ses mÃ©tadonnÃ©es (type, titre, taille, format)
+- GÃ©rer le stockage de fichiers et leur localisation (file_path)
+- Lier les documents aux entitÃ©s mÃ©tier (meetings, expenses)
+- Valider les donnÃ©es lors de la crÃ©ation
 - Tracer l'origine des documents (uploaded_by)
-- Maintenir les métadonnées temporelles (création, mise à jour)
+- Maintenir les mÃ©tadonnÃ©es temporelles (crÃ©ation, mise Ã  jour)
 
-**Contexte métier:**
+**Contexte mÃ©tier:**
 
-Dans une copropriété, de nombreux documents doivent être conservés et partagés avec les copropriétaires : procès-verbaux d'assemblées générales, bilans financiers, factures de travaux, contrats de prestation, règlements de copropriété, devis, etc. Ces documents doivent être organisés, accessibles, et liés aux événements et charges correspondants.
+Dans une copropriÃ©tÃ©, de nombreux documents doivent Ãªtre conservÃ©s et partagÃ©s avec les copropriÃ©taires : procÃ¨s-verbaux d'assemblÃ©es gÃ©nÃ©rales, bilans financiers, factures de travaux, contrats de prestation, rÃ¨glements de copropriÃ©tÃ©, devis, etc. Ces documents doivent Ãªtre organisÃ©s, accessibles, et liÃ©s aux Ã©vÃ©nements et charges correspondants.
 
-Énumérations
+Ã‰numÃ©rations
 ==================================================
 
 DocumentType
@@ -45,7 +45,7 @@ DocumentType
 
 **Description:**
 
-Énumération représentant les différents types de documents de copropriété.
+Ã‰numÃ©ration reprÃ©sentant les diffÃ©rents types de documents de copropriÃ©tÃ©.
 
 **Variants:**
 
@@ -56,26 +56,26 @@ DocumentType
    * - Variant
      - Description
    * - ``MeetingMinutes``
-     - Procès-verbal d'assemblée générale (AGO, AGE)
+     - ProcÃ¨s-verbal d'assemblÃ©e gÃ©nÃ©rale (AGO, AGE)
    * - ``FinancialStatement``
-     - Bilan financier, comptabilité, états des comptes
+     - Bilan financier, comptabilitÃ©, Ã©tats des comptes
    * - ``Invoice``
      - Facture de fournisseurs, prestataires
    * - ``Contract``
      - Contrat de prestation (gardiennage, entretien, assurance)
    * - ``Regulation``
-     - Règlement de copropriété, règlement intérieur
+     - RÃ¨glement de copropriÃ©tÃ©, rÃ¨glement intÃ©rieur
    * - ``WorksQuote``
      - Devis pour travaux
    * - ``Other``
-     - Autre type de document non catégorisé
+     - Autre type de document non catÃ©gorisÃ©
 
-**Traits dérivés:**
+**Traits dÃ©rivÃ©s:**
 
-- ``Debug``: Affichage pour le débogage
+- ``Debug``: Affichage pour le dÃ©bogage
 - ``Clone``: Copie de la valeur
-- ``Serialize/Deserialize``: Sérialisation JSON
-- ``PartialEq``: Comparaison d'égalité
+- ``Serialize/Deserialize``: SÃ©rialisation JSON
+- ``PartialEq``: Comparaison d'Ã©galitÃ©
 
 Structures et Types
 ==================================================
@@ -106,7 +106,7 @@ Document
 
 **Description:**
 
-Structure représentant un document de copropriété avec toutes ses métadonnées et ses liens vers les entités associées.
+Structure reprÃ©sentant un document de copropriÃ©tÃ© avec toutes ses mÃ©tadonnÃ©es et ses liens vers les entitÃ©s associÃ©es.
 
 **Champs:**
 
@@ -122,7 +122,7 @@ Structure représentant un document de copropriété avec toutes ses métadonnées et
      - Identifiant unique du document (UUID v4)
    * - ``building_id``
      - ``Uuid``
-     - Référence vers l'immeuble concerné
+     - RÃ©fÃ©rence vers l'immeuble concernÃ©
    * - ``document_type``
      - ``DocumentType``
      - Type de document (PV, facture, contrat, etc.)
@@ -134,30 +134,30 @@ Structure représentant un document de copropriété avec toutes ses métadonnées et
      - Description optionnelle du document
    * - ``file_path``
      - ``String``
-     - Chemin d'accès au fichier (obligatoire, non vide)
+     - Chemin d'accÃ¨s au fichier (obligatoire, non vide)
    * - ``file_size``
      - ``i64``
-     - Taille du fichier en bytes (doit être > 0)
+     - Taille du fichier en bytes (doit Ãªtre > 0)
    * - ``mime_type``
      - ``String``
      - Type MIME du fichier (ex: ``application/pdf``)
    * - ``uploaded_by``
      - ``Uuid``
-     - ID de l'utilisateur qui a téléversé le document
+     - ID de l'utilisateur qui a tÃ©lÃ©versÃ© le document
    * - ``related_meeting_id``
      - ``Option<Uuid>``
-     - Lien optionnel vers une assemblée générale
+     - Lien optionnel vers une assemblÃ©e gÃ©nÃ©rale
    * - ``related_expense_id``
      - ``Option<Uuid>``
-     - Lien optionnel vers une charge/dépense
+     - Lien optionnel vers une charge/dÃ©pense
    * - ``created_at``
      - ``DateTime<Utc>``
-     - Date et heure de création de l'enregistrement
+     - Date et heure de crÃ©ation de l'enregistrement
    * - ``updated_at``
      - ``DateTime<Utc>``
-     - Date et heure de dernière mise à jour
+     - Date et heure de derniÃ¨re mise Ã  jour
 
-Méthodes
+MÃ©thodes
 ==================================================
 
 Document::new
@@ -180,23 +180,23 @@ Document::new
 
 **Description:**
 
-Constructeur pour créer une nouvelle instance de Document avec validation des données.
+Constructeur pour crÃ©er une nouvelle instance de Document avec validation des donnÃ©es.
 
 **Comportement:**
 
 1. Valide que ``title`` n'est pas vide
 2. Valide que ``file_path`` n'est pas vide
 3. Valide que ``file_size`` est strictement positif (> 0)
-4. Génère un nouvel UUID v4 pour ``id``
-5. Initialise ``related_meeting_id`` et ``related_expense_id`` à ``None``
+4. GÃ©nÃ¨re un nouvel UUID v4 pour ``id``
+5. Initialise ``related_meeting_id`` et ``related_expense_id`` Ã  ``None``
 6. Capture le timestamp actuel UTC pour ``created_at`` et ``updated_at``
 7. Retourne une instance Document si toutes les validations passent
-8. Retourne une erreur descriptive si une validation échoue
+8. Retourne une erreur descriptive si une validation Ã©choue
 
 **Retour:**
 
-- ``Ok(Document)``: Instance Document valide avec ID généré et timestamps
-- ``Err(String)``: Message d'erreur descriptif si validation échoue
+- ``Ok(Document)``: Instance Document valide avec ID gÃ©nÃ©rÃ© et timestamps
+- ``Err(String)``: Message d'erreur descriptif si validation Ã©choue
 
 **Erreurs possibles:**
 
@@ -215,7 +215,7 @@ Document::link_to_meeting
 
 **Description:**
 
-Lie le document à une assemblée générale et met à jour le timestamp.
+Lie le document Ã  une assemblÃ©e gÃ©nÃ©rale et met Ã  jour le timestamp.
 
 Document::link_to_expense
 --------------------------------------------------
@@ -228,7 +228,7 @@ Document::link_to_expense
 
 **Description:**
 
-Lie le document à une charge/dépense et met à jour le timestamp.
+Lie le document Ã  une charge/dÃ©pense et met Ã  jour le timestamp.
 
 Document::file_size_mb
 --------------------------------------------------
@@ -241,23 +241,23 @@ Document::file_size_mb
 
 **Description:**
 
-Convertit et retourne la taille du fichier en mégaoctets (MB). Divise ``file_size`` (en bytes) par 1 048 576 (1024 × 1024).
+Convertit et retourne la taille du fichier en mÃ©gaoctets (MB). Divise ``file_size`` (en bytes) par 1 048 576 (1024 Ã— 1024).
 
 Tests
 ==================================================
 
 Le fichier contient **3 tests unitaires**:
 
-1. ``test_create_document_success``: Création réussie avec données valides
+1. ``test_create_document_success``: CrÃ©ation rÃ©ussie avec donnÃ©es valides
 2. ``test_create_document_empty_title_fails``: Validation titre vide
-3. ``test_link_document_to_meeting``: Lien vers assemblée
+3. ``test_link_document_to_meeting``: Lien vers assemblÃ©e
 
-Fichiers Associés
+Fichiers AssociÃ©s
 ==================================================
 
 .. code-block:: text
 
-    backend/src/domain/entities/document.rs   CE FICHIER
+    backend/src/domain/entities/document.rs  Â CE FICHIER
     backend/src/application/dto/document_dto.rs
     backend/src/application/ports/document_repository.rs
     backend/src/infrastructure/repositories/postgres_document_repository.rs
