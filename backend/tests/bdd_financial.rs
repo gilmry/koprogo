@@ -28,10 +28,9 @@ use koprogo_api::domain::entities::PaymentMethodType;
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresBudgetRepository, PostgresBuildingRepository,
     PostgresCallForFundsRepository, PostgresChargeDistributionRepository,
-    PostgresExpenseRepository, PostgresJournalEntryRepository,
-    PostgresOwnerContributionRepository, PostgresOwnerRepository,
-    PostgresPaymentMethodRepository, PostgresPaymentReminderRepository, PostgresPaymentRepository,
-    PostgresUnitOwnerRepository,
+    PostgresExpenseRepository, PostgresJournalEntryRepository, PostgresOwnerContributionRepository,
+    PostgresOwnerRepository, PostgresPaymentMethodRepository, PostgresPaymentReminderRepository,
+    PostgresPaymentRepository, PostgresUnitOwnerRepository,
 };
 use koprogo_api::infrastructure::pool::DbPool;
 use std::sync::Arc;
@@ -4611,9 +4610,18 @@ async fn given_unit_owner_pcts(world: &mut FinancialWorld, _step: &Step) {
 
 #[when("the charge distribution is calculated")]
 async fn when_calculate_distribution(world: &mut FinancialWorld) {
-    let uc = world.charge_distribution_use_cases.as_ref().unwrap().clone();
-    let expense_id = world.last_invoice_id.unwrap_or_else(|| world.expense_id.unwrap());
-    match uc.calculate_and_save_distribution(expense_id, world.org_id.unwrap()).await {
+    let uc = world
+        .charge_distribution_use_cases
+        .as_ref()
+        .unwrap()
+        .clone();
+    let expense_id = world
+        .last_invoice_id
+        .unwrap_or_else(|| world.expense_id.unwrap());
+    match uc
+        .calculate_and_save_distribution(expense_id, world.org_id.unwrap())
+        .await
+    {
         Ok(list) => {
             world.distribution_list_count = list.len();
             world.operation_success = true;
@@ -4964,8 +4972,12 @@ async fn given_pending_first_reminder(world: &mut FinancialWorld) {
         given_overdue_expense(world, 100.0, 20).await;
     }
     if world.owner_by_name.is_empty() {
-        let owner_id = world.create_owner_sql("Test", "Reminder", "reminder@test.be").await;
-        world.owner_by_name.push(("Test Reminder".to_string(), owner_id));
+        let owner_id = world
+            .create_owner_sql("Test", "Reminder", "reminder@test.be")
+            .await;
+        world
+            .owner_by_name
+            .push(("Test Reminder".to_string(), owner_id));
     }
     when_create_reminder_level(world, "FirstReminder".to_string()).await;
 }
@@ -4976,7 +4988,12 @@ async fn when_mark_sent_pdf(world: &mut FinancialWorld, pdf_path: String) {
     let id = world.last_reminder_id.unwrap();
     use koprogo_api::application::dto::MarkReminderSentDto;
     match uc
-        .mark_as_sent(id, MarkReminderSentDto { pdf_path: Some(pdf_path) })
+        .mark_as_sent(
+            id,
+            MarkReminderSentDto {
+                pdf_path: Some(pdf_path),
+            },
+        )
         .await
     {
         Ok(resp) => {
@@ -5017,9 +5034,14 @@ async fn given_sent_reminder(world: &mut FinancialWorld) {
     let uc = world.payment_reminder_use_cases.as_ref().unwrap().clone();
     let id = world.last_reminder_id.unwrap();
     use koprogo_api::application::dto::MarkReminderSentDto;
-    uc.mark_as_sent(id, MarkReminderSentDto { pdf_path: Some("/test.pdf".to_string()) })
-        .await
-        .expect("mark sent");
+    uc.mark_as_sent(
+        id,
+        MarkReminderSentDto {
+            pdf_path: Some("/test.pdf".to_string()),
+        },
+    )
+    .await
+    .expect("mark sent");
 }
 
 #[when("I escalate the reminder")]
@@ -5027,7 +5049,10 @@ async fn when_escalate_reminder(world: &mut FinancialWorld) {
     let uc = world.payment_reminder_use_cases.as_ref().unwrap().clone();
     let id = world.last_reminder_id.unwrap();
     use koprogo_api::application::dto::EscalateReminderDto;
-    match uc.escalate_reminder(id, EscalateReminderDto { reason: None }).await {
+    match uc
+        .escalate_reminder(id, EscalateReminderDto { reason: None })
+        .await
+    {
         Ok(Some(resp)) => {
             world.last_reminder_id = Some(Uuid::parse_str(&resp.id).unwrap());
             world.last_reminder_level = Some(format!("{:?}", resp.level));
@@ -5220,8 +5245,12 @@ async fn when_create_reminder(world: &mut FinancialWorld) {
         given_overdue_expense(world, 100.0, 20).await;
     }
     if world.owner_by_name.is_empty() {
-        let owner_id = world.create_owner_sql("Syndic", "Test", "syndic@test.be").await;
-        world.owner_by_name.push(("Syndic Test".to_string(), owner_id));
+        let owner_id = world
+            .create_owner_sql("Syndic", "Test", "syndic@test.be")
+            .await;
+        world
+            .owner_by_name
+            .push(("Syndic Test".to_string(), owner_id));
     }
     when_create_reminder_level(world, "FirstReminder".to_string()).await;
 }
@@ -5264,8 +5293,12 @@ async fn given_formal_notice(world: &mut FinancialWorld) {
         given_overdue_expense(world, 100.0, 65).await;
     }
     if world.owner_by_name.is_empty() {
-        let owner_id = world.create_owner_sql("Formal", "Notice", "formal@test.be").await;
-        world.owner_by_name.push(("Formal Notice".to_string(), owner_id));
+        let owner_id = world
+            .create_owner_sql("Formal", "Notice", "formal@test.be")
+            .await;
+        world
+            .owner_by_name
+            .push(("Formal Notice".to_string(), owner_id));
     }
     when_create_reminder_level(world, "FormalNotice".to_string()).await;
 }
@@ -5542,7 +5575,10 @@ async fn given_rejected_budget(world: &mut FinancialWorld) {
     let uc = world.budget_use_cases.as_ref().unwrap().clone();
     let id = world.last_budget_id.unwrap();
     uc.submit_for_approval(id).await.expect("submit");
-    let resp = uc.reject_budget(id, Some("Test rejection".to_string())).await.expect("reject");
+    let resp = uc
+        .reject_budget(id, Some("Test rejection".to_string()))
+        .await
+        .expect("reject");
     world.last_budget_status = Some(format!("{:?}", resp.status));
 }
 
@@ -5602,7 +5638,10 @@ async fn given_approved_budget_with(world: &mut FinancialWorld, _year: i32, step
     if world.meeting_id.is_none() {
         given_meeting(world, "meeting".to_string()).await;
     }
-    let resp = uc.approve_budget(id, world.meeting_id.unwrap()).await.expect("approve");
+    let resp = uc
+        .approve_budget(id, world.meeting_id.unwrap())
+        .await
+        .expect("approve");
     world.last_budget_status = Some(format!("{:?}", resp.status));
     world.last_budget_ordinary = Some(resp.ordinary_budget);
     world.last_budget_extraordinary = Some(resp.extraordinary_budget);
@@ -5632,7 +5671,10 @@ async fn given_approved_budget_ordinary(world: &mut FinancialWorld, _year: i32, 
     if world.meeting_id.is_none() {
         given_meeting(world, "meeting".to_string()).await;
     }
-    let resp = uc.approve_budget(id, world.meeting_id.unwrap()).await.expect("approve");
+    let resp = uc
+        .approve_budget(id, world.meeting_id.unwrap())
+        .await
+        .expect("approve");
     world.last_budget_status = Some(format!("{:?}", resp.status));
 }
 

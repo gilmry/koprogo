@@ -3992,7 +3992,10 @@ async fn given_poll_auth_syndic(_world: &mut GovernanceWorld, _name: String) {
 async fn when_create_yesno_poll(world: &mut GovernanceWorld, step: &Step) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap();
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap();
 
     let table = step.table.as_ref().expect("table expected");
     let mut question = String::new();
@@ -4056,7 +4059,10 @@ async fn when_create_yesno_poll(world: &mut GovernanceWorld, step: &Step) {
 async fn when_create_mc_poll(world: &mut GovernanceWorld, step: &Step) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap();
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap();
 
     let table = step.table.as_ref().expect("table expected");
     let mut question = String::new();
@@ -4131,7 +4137,10 @@ async fn when_add_poll_options(world: &mut GovernanceWorld, step: &Step) {
 async fn when_create_rating_poll(world: &mut GovernanceWorld, step: &Step) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap();
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap();
 
     let table = step.table.as_ref().expect("table expected");
     let mut question = String::new();
@@ -4192,7 +4201,10 @@ async fn when_create_rating_poll(world: &mut GovernanceWorld, step: &Step) {
 async fn when_create_openended_poll(world: &mut GovernanceWorld, step: &Step) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap();
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap();
 
     let table = step.table.as_ref().expect("table expected");
     let mut question = String::new();
@@ -4248,7 +4260,10 @@ async fn then_poll_created(world: &mut GovernanceWorld) {
         "Poll creation should succeed: {:?}",
         world.operation_error
     );
-    assert!(world.last_poll_response.is_some(), "Poll response should exist");
+    assert!(
+        world.last_poll_response.is_some(),
+        "Poll response should exist"
+    );
 }
 
 #[then(regex = r#"^the poll status should be "([^"]*)"$"#)]
@@ -4284,7 +4299,11 @@ async fn then_poll_has_2_options(
 ) {
     let resp = world.last_poll_response.as_ref().expect("poll response");
     assert_eq!(resp.options.len(), count, "Expected {} options", count);
-    let texts: Vec<&str> = resp.options.iter().map(|o| o.option_text.as_str()).collect();
+    let texts: Vec<&str> = resp
+        .options
+        .iter()
+        .map(|o| o.option_text.as_str())
+        .collect();
     assert!(texts.contains(&opt1.as_str()), "Missing option '{}'", opt1);
     assert!(texts.contains(&opt2.as_str()), "Missing option '{}'", opt2);
 }
@@ -4324,7 +4343,12 @@ async fn then_poll_is_anonymous(world: &mut GovernanceWorld, expected: String) {
 #[then(regex = r#"^the poll should have (\d+) rating options \(1-5 stars\)$"#)]
 async fn then_poll_rating_options(world: &mut GovernanceWorld, count: usize) {
     let resp = world.last_poll_response.as_ref().expect("poll response");
-    assert_eq!(resp.options.len(), count, "Expected {} rating options", count);
+    assert_eq!(
+        resp.options.len(),
+        count,
+        "Expected {} rating options",
+        count
+    );
 }
 
 #[then("the poll should allow free text responses")]
@@ -4346,7 +4370,10 @@ async fn given_draft_poll(world: &mut GovernanceWorld, question: String) {
     }
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     let dto = CreatePollDto {
         building_id: building_id.to_string(),
@@ -4354,8 +4381,18 @@ async fn given_draft_poll(world: &mut GovernanceWorld, question: String) {
         description: Some("Test draft poll".to_string()),
         poll_type: "yes_no".to_string(),
         options: vec![
-            CreatePollOptionDto { id: None, option_text: "Yes".to_string(), attachment_url: None, display_order: 1 },
-            CreatePollOptionDto { id: None, option_text: "No".to_string(), attachment_url: None, display_order: 2 },
+            CreatePollOptionDto {
+                id: None,
+                option_text: "Yes".to_string(),
+                attachment_url: None,
+                display_order: 1,
+            },
+            CreatePollOptionDto {
+                id: None,
+                option_text: "No".to_string(),
+                attachment_url: None,
+                display_order: 2,
+            },
         ],
         is_anonymous: Some(false),
         allow_multiple_votes: Some(false),
@@ -4363,7 +4400,10 @@ async fn given_draft_poll(world: &mut GovernanceWorld, question: String) {
         ends_at: (Utc::now() + ChronoDuration::days(7)).to_rfc3339(),
     };
 
-    let resp = uc.create_poll(dto, user_id).await.expect("create draft poll");
+    let resp = uc
+        .create_poll(dto, user_id)
+        .await
+        .expect("create draft poll");
     world.last_poll_id = Some(Uuid::parse_str(&resp.id).unwrap());
     world.last_poll_response = Some(resp);
     world.operation_success = true;
@@ -4373,7 +4413,10 @@ async fn given_draft_poll(world: &mut GovernanceWorld, question: String) {
 async fn when_publish_poll(world: &mut GovernanceWorld) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let poll_id = world.last_poll_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     match uc.publish_poll(poll_id, user_id).await {
         Ok(resp) => {
@@ -4414,7 +4457,10 @@ async fn then_poll_notifications(_world: &mut GovernanceWorld) {
 async fn then_poll_in_active_list(world: &mut GovernanceWorld) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let active = uc.find_active_polls(building_id).await.expect("find active polls");
+    let active = uc
+        .find_active_polls(building_id)
+        .await
+        .expect("find active polls");
     let poll_id_str = world.last_poll_id.unwrap().to_string();
     assert!(
         active.iter().any(|p| p.id == poll_id_str),
@@ -4431,7 +4477,10 @@ async fn given_active_poll(world: &mut GovernanceWorld, question: String) {
     }
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     let dto = CreatePollDto {
         building_id: building_id.to_string(),
@@ -4439,8 +4488,18 @@ async fn given_active_poll(world: &mut GovernanceWorld, question: String) {
         description: Some("Active poll for voting test".to_string()),
         poll_type: "yes_no".to_string(),
         options: vec![
-            CreatePollOptionDto { id: None, option_text: "Yes".to_string(), attachment_url: None, display_order: 1 },
-            CreatePollOptionDto { id: None, option_text: "No".to_string(), attachment_url: None, display_order: 2 },
+            CreatePollOptionDto {
+                id: None,
+                option_text: "Yes".to_string(),
+                attachment_url: None,
+                display_order: 1,
+            },
+            CreatePollOptionDto {
+                id: None,
+                option_text: "No".to_string(),
+                attachment_url: None,
+                display_order: 2,
+            },
         ],
         is_anonymous: Some(false),
         allow_multiple_votes: Some(false),
@@ -4452,7 +4511,10 @@ async fn given_active_poll(world: &mut GovernanceWorld, question: String) {
     let poll_id = Uuid::parse_str(&resp.id).unwrap();
 
     // Publish it
-    let resp = uc.publish_poll(poll_id, user_id).await.expect("publish poll");
+    let resp = uc
+        .publish_poll(poll_id, user_id)
+        .await
+        .expect("publish poll");
     world.last_poll_id = Some(poll_id);
     world.last_poll_response = Some(resp);
 }
@@ -4596,7 +4658,10 @@ async fn given_active_anonymous_poll(world: &mut GovernanceWorld, question: Stri
     }
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     let dto = CreatePollDto {
         building_id: building_id.to_string(),
@@ -4617,9 +4682,15 @@ async fn given_active_anonymous_poll(world: &mut GovernanceWorld, question: Stri
         ends_at: (Utc::now() + ChronoDuration::days(7)).to_rfc3339(),
     };
 
-    let resp = uc.create_poll(dto, user_id).await.expect("create anonymous poll");
+    let resp = uc
+        .create_poll(dto, user_id)
+        .await
+        .expect("create anonymous poll");
     let poll_id = Uuid::parse_str(&resp.id).unwrap();
-    let resp = uc.publish_poll(poll_id, user_id).await.expect("publish anonymous poll");
+    let resp = uc
+        .publish_poll(poll_id, user_id)
+        .await
+        .expect("publish anonymous poll");
     world.last_poll_id = Some(poll_id);
     world.last_poll_response = Some(resp);
 }
@@ -4653,7 +4724,10 @@ async fn when_cast_anonymous_vote(world: &mut GovernanceWorld, rating: i32) {
 
 #[then("the vote should be recorded without my identity")]
 async fn then_anon_vote_recorded(world: &mut GovernanceWorld) {
-    assert!(world.poll_vote_recorded, "Anonymous vote should be recorded");
+    assert!(
+        world.poll_vote_recorded,
+        "Anonymous vote should be recorded"
+    );
 }
 
 #[then("my name should NOT appear in vote records")]
@@ -4690,7 +4764,9 @@ async fn given_already_voted(world: &mut GovernanceWorld, choice: String) {
         open_text: None,
     };
 
-    uc.cast_vote(dto, owner_id).await.expect("cast initial vote");
+    uc.cast_vote(dto, owner_id)
+        .await
+        .expect("cast initial vote");
     world.poll_vote_recorded = true;
 }
 
@@ -4767,8 +4843,18 @@ async fn given_n_owners_voted(
     let building_id = world.building_id.unwrap();
     let resp = world.last_poll_response.as_ref().expect("poll response");
 
-    let yes_option_id = resp.options.iter().find(|o| o.option_text == "Yes").map(|o| o.id.clone()).unwrap();
-    let no_option_id = resp.options.iter().find(|o| o.option_text == "No").map(|o| o.id.clone()).unwrap();
+    let yes_option_id = resp
+        .options
+        .iter()
+        .find(|o| o.option_text == "Yes")
+        .map(|o| o.id.clone())
+        .unwrap();
+    let no_option_id = resp
+        .options
+        .iter()
+        .find(|o| o.option_text == "No")
+        .map(|o| o.id.clone())
+        .unwrap();
 
     // Create and vote with synthetic owners
     for i in 0..total {
@@ -4832,7 +4918,10 @@ async fn given_n_owners_voted(
 async fn when_close_poll(world: &mut GovernanceWorld) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let poll_id = world.last_poll_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     match uc.close_poll(poll_id, user_id).await {
         Ok(resp) => {
@@ -4895,7 +4984,10 @@ async fn given_polls_exist(world: &mut GovernanceWorld, _building: String, step:
     }
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     let table = step.table.as_ref().expect("table");
     for row in table.rows.iter().skip(1) {
@@ -4909,8 +5001,18 @@ async fn given_polls_exist(world: &mut GovernanceWorld, _building: String, step:
             description: None,
             poll_type: "yes_no".to_string(),
             options: vec![
-                CreatePollOptionDto { id: None, option_text: "Yes".to_string(), attachment_url: None, display_order: 1 },
-                CreatePollOptionDto { id: None, option_text: "No".to_string(), attachment_url: None, display_order: 2 },
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "Yes".to_string(),
+                    attachment_url: None,
+                    display_order: 1,
+                },
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "No".to_string(),
+                    attachment_url: None,
+                    display_order: 2,
+                },
             ],
             is_anonymous: Some(false),
             allow_multiple_votes: Some(false),
@@ -4987,7 +5089,10 @@ async fn given_poll_not_published(world: &mut GovernanceWorld) {
 async fn when_cancel_poll(world: &mut GovernanceWorld) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let poll_id = world.last_poll_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     match uc.cancel_poll(poll_id, user_id).await {
         Ok(resp) => {
@@ -5044,7 +5149,11 @@ async fn when_vote_multiple_options(world: &mut GovernanceWorld, step: &Step) {
     let mut selected_ids = Vec::new();
     for row in &table.rows {
         let option_text = row[0].trim();
-        if let Some(opt) = resp.options.iter().find(|o| o.option_text.contains(option_text)) {
+        if let Some(opt) = resp
+            .options
+            .iter()
+            .find(|o| o.option_text.contains(option_text))
+        {
             selected_ids.push(opt.id.clone());
         }
     }
@@ -5083,7 +5192,11 @@ async fn then_each_option_count_increased(_world: &mut GovernanceWorld) {
 // Stub steps for scenarios 11, 13, 14, 17, 18, 19, 20 that need minimal implementation
 
 #[given(regex = r#"^an active poll "([^"]*)" with end date "([^"]*)"$"#)]
-async fn given_poll_with_end_date(world: &mut GovernanceWorld, question: String, _end_date: String) {
+async fn given_poll_with_end_date(
+    world: &mut GovernanceWorld,
+    question: String,
+    _end_date: String,
+) {
     given_active_poll(world, question).await;
 }
 
@@ -5108,7 +5221,11 @@ async fn then_no_more_votes(_world: &mut GovernanceWorld) {
 }
 
 #[given(regex = r#"^a closed poll "([^"]*)" with:$"#)]
-async fn given_closed_poll_with_results(world: &mut GovernanceWorld, question: String, _step: &Step) {
+async fn given_closed_poll_with_results(
+    world: &mut GovernanceWorld,
+    question: String,
+    _step: &Step,
+) {
     given_active_poll(world, question).await;
     when_close_poll(world).await;
 }
@@ -5141,14 +5258,21 @@ async fn then_winning_option_simple(world: &mut GovernanceWorld, _winner: String
 }
 
 #[then(regex = r#"^I should see participation rate ([^%]+)% \(([^)]+)\)$"#)]
-async fn then_participation_rate_simple(world: &mut GovernanceWorld, _rate: String, _detail: String) {
+async fn then_participation_rate_simple(
+    world: &mut GovernanceWorld,
+    _rate: String,
+    _detail: String,
+) {
     assert!(world.last_poll_results.is_some(), "Results should exist");
 }
 
 #[then("I should see vote percentages for all options")]
 async fn then_vote_percentages(world: &mut GovernanceWorld) {
     let results = world.last_poll_results.as_ref().expect("results");
-    assert!(!results.options.is_empty(), "Should have options with percentages");
+    assert!(
+        !results.options.is_empty(),
+        "Should have options with percentages"
+    );
 }
 
 // Poll stats steps
@@ -5198,7 +5322,10 @@ async fn given_urgent_decision(_world: &mut GovernanceWorld) {}
 async fn when_create_simple_poll(world: &mut GovernanceWorld, question: String) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     let dto = CreatePollDto {
         building_id: building_id.to_string(),
@@ -5206,8 +5333,18 @@ async fn when_create_simple_poll(world: &mut GovernanceWorld, question: String) 
         description: None,
         poll_type: "multiple_choice".to_string(),
         options: vec![
-            CreatePollOptionDto { id: None, option_text: "Contractor A".to_string(), attachment_url: None, display_order: 1 },
-            CreatePollOptionDto { id: None, option_text: "Contractor B".to_string(), attachment_url: None, display_order: 2 },
+            CreatePollOptionDto {
+                id: None,
+                option_text: "Contractor A".to_string(),
+                attachment_url: None,
+                display_order: 1,
+            },
+            CreatePollOptionDto {
+                id: None,
+                option_text: "Contractor B".to_string(),
+                attachment_url: None,
+                display_order: 2,
+            },
         ],
         is_anonymous: Some(false),
         allow_multiple_votes: Some(false),
@@ -5270,7 +5407,10 @@ async fn given_active_openended_poll(world: &mut GovernanceWorld, question: Stri
     }
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
-    let user_id = world.poll_syndic_user_id.or(world.created_by_user_id).unwrap_or_else(Uuid::new_v4);
+    let user_id = world
+        .poll_syndic_user_id
+        .or(world.created_by_user_id)
+        .unwrap_or_else(Uuid::new_v4);
 
     let dto = CreatePollDto {
         building_id: building_id.to_string(),
@@ -5284,7 +5424,10 @@ async fn given_active_openended_poll(world: &mut GovernanceWorld, question: Stri
         ends_at: (Utc::now() + ChronoDuration::days(7)).to_rfc3339(),
     };
 
-    let resp = uc.create_poll(dto, user_id).await.expect("create open-ended poll");
+    let resp = uc
+        .create_poll(dto, user_id)
+        .await
+        .expect("create open-ended poll");
     let poll_id = Uuid::parse_str(&resp.id).unwrap();
     let resp = uc.publish_poll(poll_id, user_id).await.expect("publish");
     world.last_poll_id = Some(poll_id);
@@ -5406,7 +5549,12 @@ async fn given_etat_date_unit(world: &mut GovernanceWorld, unit_name: String, _b
 }
 
 #[given(regex = r#"^a user "([^"]*)" exists with email "([^"]*)" in organization "([^"]*)"$"#)]
-async fn given_etat_date_user(world: &mut GovernanceWorld, name: String, email: String, _org: String) {
+async fn given_etat_date_user(
+    world: &mut GovernanceWorld,
+    name: String,
+    email: String,
+    _org: String,
+) {
     if world.pool.is_none() {
         world.setup_database().await;
     }
@@ -5504,7 +5652,10 @@ async fn then_etat_date_created(world: &mut GovernanceWorld) {
 
 #[then(regex = r#"^the status should be "([^"]*)"$"#)]
 async fn then_etat_date_status(world: &mut GovernanceWorld, expected: String) {
-    let resp = world.last_etat_date_response.as_ref().expect("etat date response");
+    let resp = world
+        .last_etat_date_response
+        .as_ref()
+        .expect("etat date response");
     let status_str = format!("{:?}", resp.status);
     assert!(
         status_str.to_lowercase().contains(&expected.to_lowercase()),
@@ -5516,7 +5667,10 @@ async fn then_etat_date_status(world: &mut GovernanceWorld, expected: String) {
 
 #[then(regex = r#"^a reference number should be generated like "([^"]*)"$"#)]
 async fn then_reference_number(world: &mut GovernanceWorld, pattern: String) {
-    let resp = world.last_etat_date_response.as_ref().expect("etat date response");
+    let resp = world
+        .last_etat_date_response
+        .as_ref()
+        .expect("etat date response");
     assert!(
         resp.reference_number.starts_with("ED-"),
         "Reference should start with 'ED-', got '{}'",
@@ -5557,7 +5711,10 @@ async fn given_etat_date_in_status(world: &mut GovernanceWorld, status: String) 
         notary_phone: None,
     };
 
-    let resp = uc.create_etat_date(request).await.expect("create etat date");
+    let resp = uc
+        .create_etat_date(request)
+        .await
+        .expect("create etat date");
     let id = resp.id;
     world.last_etat_date_id = Some(id);
 
@@ -5724,7 +5881,9 @@ async fn given_etat_date_with_sections(world: &mut GovernanceWorld) {
         total_balance: 50000.0,
         approved_works_unpaid: 5000.0,
     };
-    uc.update_financial_data(id, fin_req).await.expect("update financial");
+    uc.update_financial_data(id, fin_req)
+        .await
+        .expect("update financial");
     let add_req = UpdateEtatDateAdditionalDataRequest {
         additional_data: serde_json::json!({
             "regulation_copy_url": "/docs/reg.pdf",
@@ -5735,7 +5894,9 @@ async fn given_etat_date_with_sections(world: &mut GovernanceWorld) {
             "observations": "No remarks"
         }),
     };
-    uc.update_additional_data(id, add_req).await.expect("update additional");
+    uc.update_additional_data(id, add_req)
+        .await
+        .expect("update additional");
 }
 
 #[when("I generate the PDF document")]
@@ -5743,7 +5904,10 @@ async fn when_generate_pdf(world: &mut GovernanceWorld) {
     let uc = world.etat_date_use_cases.as_ref().unwrap().clone();
     let id = world.last_etat_date_id.unwrap();
 
-    match uc.mark_generated(id, "/documents/etat_date_test.pdf".to_string()).await {
+    match uc
+        .mark_generated(id, "/documents/etat_date_test.pdf".to_string())
+        .await
+    {
         Ok(resp) => {
             world.last_etat_date_response = Some(resp);
             world.operation_success = true;
@@ -5758,7 +5922,10 @@ async fn when_generate_pdf(world: &mut GovernanceWorld) {
 
 #[then(regex = r#"^a PDF file should be created at "([^"]*)"$"#)]
 async fn then_pdf_created(world: &mut GovernanceWorld, _path: String) {
-    let resp = world.last_etat_date_response.as_ref().expect("etat date response");
+    let resp = world
+        .last_etat_date_response
+        .as_ref()
+        .expect("etat date response");
     assert!(resp.pdf_file_path.is_some(), "PDF file path should be set");
 }
 
@@ -5769,8 +5936,14 @@ async fn then_pdf_contains_sections(_world: &mut GovernanceWorld) {
 
 #[then("the generated_at timestamp should be set")]
 async fn then_generated_at_set(world: &mut GovernanceWorld) {
-    let resp = world.last_etat_date_response.as_ref().expect("etat date response");
-    assert!(resp.generated_date.is_some(), "generated_date should be set");
+    let resp = world
+        .last_etat_date_response
+        .as_ref()
+        .expect("etat date response");
+    assert!(
+        resp.generated_date.is_some(),
+        "generated_date should be set"
+    );
 }
 
 // --- Deliver ---
@@ -5800,8 +5973,14 @@ async fn when_mark_delivered(world: &mut GovernanceWorld) {
 
 #[then("the delivered_at timestamp should be set")]
 async fn then_delivered_at_set(world: &mut GovernanceWorld) {
-    let resp = world.last_etat_date_response.as_ref().expect("etat date response");
-    assert!(resp.delivered_date.is_some(), "delivered_date should be set");
+    let resp = world
+        .last_etat_date_response
+        .as_ref()
+        .expect("etat date response");
+    assert!(
+        resp.delivered_date.is_some(),
+        "delivered_date should be set"
+    );
 }
 
 #[then("the notary should receive an email with PDF attachment")]
@@ -5920,8 +6099,14 @@ async fn then_found_etat_date(world: &mut GovernanceWorld) {
 
 #[then("all details should be displayed")]
 async fn then_all_details(world: &mut GovernanceWorld) {
-    let resp = world.last_etat_date_response.as_ref().expect("etat date response");
-    assert!(!resp.reference_number.is_empty(), "Reference number should exist");
+    let resp = world
+        .last_etat_date_response
+        .as_ref()
+        .expect("etat date response");
+    assert!(
+        !resp.reference_number.is_empty(),
+        "Reference number should exist"
+    );
 }
 
 // --- List by unit ---
@@ -5961,10 +6146,17 @@ async fn given_n_etats_dates_for_unit(
             notary_phone: None,
         };
 
-        let resp = uc.create_etat_date(request).await.expect("create etat date");
+        let resp = uc
+            .create_etat_date(request)
+            .await
+            .expect("create etat date");
         let id = resp.id;
 
-        if status == "InProgress" || status == "Generated" || status == "Delivered" || status == "Expired" {
+        if status == "InProgress"
+            || status == "Generated"
+            || status == "Delivered"
+            || status == "Expired"
+        {
             let _ = uc.mark_in_progress(id).await;
         }
         if status == "Generated" || status == "Delivered" || status == "Expired" {
@@ -6012,11 +6204,7 @@ async fn then_ordered_by_date(_world: &mut GovernanceWorld) {
 // --- Statistics ---
 
 #[given(regex = r#"^(\d+) États Datés exist for the building with statuses:$"#)]
-async fn given_etats_dates_with_statuses(
-    world: &mut GovernanceWorld,
-    _count: usize,
-    step: &Step,
-) {
+async fn given_etats_dates_with_statuses(world: &mut GovernanceWorld, _count: usize, step: &Step) {
     if world.pool.is_none() {
         world.setup_database().await;
     }
@@ -6046,10 +6234,17 @@ async fn given_etats_dates_with_statuses(
                 notary_phone: None,
             };
 
-            let resp = uc.create_etat_date(request).await.expect("create etat date for stats");
+            let resp = uc
+                .create_etat_date(request)
+                .await
+                .expect("create etat date for stats");
             let id = resp.id;
 
-            if status == "InProgress" || status == "Generated" || status == "Delivered" || status == "Expired" {
+            if status == "InProgress"
+                || status == "Generated"
+                || status == "Delivered"
+                || status == "Expired"
+            {
                 let _ = uc.mark_in_progress(id).await;
             }
             if status == "Generated" || status == "Delivered" || status == "Expired" {
@@ -6101,7 +6296,10 @@ async fn when_try_generate_pdf(world: &mut GovernanceWorld) {
     let uc = world.etat_date_use_cases.as_ref().unwrap().clone();
     let id = world.last_etat_date_id.unwrap();
 
-    match uc.mark_generated(id, "/docs/incomplete.pdf".to_string()).await {
+    match uc
+        .mark_generated(id, "/docs/incomplete.pdf".to_string())
+        .await
+    {
         Ok(resp) => {
             world.last_etat_date_response = Some(resp);
             world.operation_success = true;
@@ -6146,7 +6344,10 @@ async fn then_see_state_transitions(world: &mut GovernanceWorld, _step: &Step) {
         world.operation_success,
         "Audit trail request should succeed"
     );
-    assert!(world.last_etat_date_response.is_some(), "Response should exist");
+    assert!(
+        world.last_etat_date_response.is_some(),
+        "Response should exist"
+    );
 }
 
 // ============================================================

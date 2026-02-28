@@ -64,19 +64,16 @@ test.describe("Notifications - Multi-Channel System", () => {
     const timestamp = Date.now();
 
     // Create notification via API
-    const notifResponse = await page.request.post(
-      `${API_BASE}/notifications`,
-      {
-        data: {
-          user_id: userId,
-          title: `Test Notification ${timestamp}`,
-          message: "This is a test notification for E2E testing",
-          notification_type: "SystemAlert",
-          channel: "InApp",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const notifResponse = await page.request.post(`${API_BASE}/notifications`, {
+      data: {
+        user_id: userId,
+        title: `Test Notification ${timestamp}`,
+        message: "This is a test notification for E2E testing",
+        notification_type: "SystemAlert",
+        channel: "InApp",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(notifResponse.ok()).toBeTruthy();
 
     await page.goto("/notifications");
@@ -92,11 +89,7 @@ test.describe("Notifications - Multi-Channel System", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page
-        .locator(
-          "h1, h2, [data-testid='notification-preferences']",
-        )
-        .first(),
+      page.locator("h1, h2, [data-testid='notification-preferences']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

@@ -32,21 +32,18 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const token = userData.token;
 
   // Create building
-  const buildingResponse = await page.request.post(
-    `${API_BASE}/buildings`,
-    {
-      data: {
-        name: `Expense Building ${timestamp}`,
-        address: `${timestamp} Rue Facture`,
-        city: "Brussels",
-        postal_code: "1000",
-        country: "Belgium",
-        total_units: 5,
-        construction_year: 2020,
-      },
-      headers: { Authorization: `Bearer ${token}` },
+  const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
+    data: {
+      name: `Expense Building ${timestamp}`,
+      address: `${timestamp} Rue Facture`,
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      total_units: 5,
+      construction_year: 2020,
     },
-  );
+    headers: { Authorization: `Bearer ${token}` },
+  });
   expect(buildingResponse.ok()).toBeTruthy();
   const building = await buildingResponse.json();
 
@@ -88,19 +85,16 @@ test.describe("Expenses - Invoice Management", () => {
     const timestamp = Date.now();
 
     // Create expense via API
-    const expenseResponse = await page.request.post(
-      `${API_BASE}/expenses`,
-      {
-        data: {
-          building_id: buildingId,
-          description: `Test Expense ${timestamp}`,
-          amount: 1500.0,
-          date: "2026-02-15",
-          category: "maintenance",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const expenseResponse = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: buildingId,
+        description: `Test Expense ${timestamp}`,
+        amount: 1500.0,
+        date: "2026-02-15",
+        category: "maintenance",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(expenseResponse.ok()).toBeTruthy();
 
     // Navigate to expenses list
@@ -117,28 +111,25 @@ test.describe("Expenses - Invoice Management", () => {
     const timestamp = Date.now();
 
     // Create expense via API
-    const expenseResponse = await page.request.post(
-      `${API_BASE}/expenses`,
-      {
-        data: {
-          building_id: buildingId,
-          description: `Detail Expense ${timestamp}`,
-          amount: 2500.0,
-          date: "2026-02-20",
-          category: "maintenance",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const expenseResponse = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: buildingId,
+        description: `Detail Expense ${timestamp}`,
+        amount: 2500.0,
+        date: "2026-02-20",
+        category: "maintenance",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(expenseResponse.ok()).toBeTruthy();
     const expense = await expenseResponse.json();
 
     // Navigate to expense detail
     await page.goto(`/expense-detail?id=${expense.id}`);
 
-    await expect(
-      page.locator(`text=Detail Expense ${timestamp}`),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=Detail Expense ${timestamp}`)).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should display Belgian VAT information on expense", async ({
@@ -148,19 +139,16 @@ test.describe("Expenses - Invoice Management", () => {
     const timestamp = Date.now();
 
     // Create expense with VAT
-    const expenseResponse = await page.request.post(
-      `${API_BASE}/expenses`,
-      {
-        data: {
-          building_id: buildingId,
-          description: `VAT Expense ${timestamp}`,
-          amount: 1210.0,
-          date: "2026-02-25",
-          category: "maintenance",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const expenseResponse = await page.request.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: buildingId,
+        description: `VAT Expense ${timestamp}`,
+        amount: 1210.0,
+        date: "2026-02-25",
+        category: "maintenance",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(expenseResponse.ok()).toBeTruthy();
     const expense = await expenseResponse.json();
 

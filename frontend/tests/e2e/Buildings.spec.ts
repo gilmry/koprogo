@@ -59,21 +59,18 @@ test.describe("Buildings - List and Detail", () => {
     const buildingName = `Test Building ${timestamp}`;
 
     // Create building via API
-    const createResponse = await page.request.post(
-      `${API_BASE}/buildings`,
-      {
-        data: {
-          name: buildingName,
-          address: `${timestamp} Rue de Test`,
-          city: "Brussels",
-          postal_code: "1000",
-          country: "Belgium",
-          total_units: 10,
-          construction_year: 2020,
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const createResponse = await page.request.post(`${API_BASE}/buildings`, {
+      data: {
+        name: buildingName,
+        address: `${timestamp} Rue de Test`,
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+        total_units: 10,
+        construction_year: 2020,
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(createResponse.ok()).toBeTruthy();
 
     // Navigate to buildings list
@@ -91,21 +88,18 @@ test.describe("Buildings - List and Detail", () => {
     const buildingName = `Detail Building ${timestamp}`;
 
     // Create building via API
-    const createResponse = await page.request.post(
-      `${API_BASE}/buildings`,
-      {
-        data: {
-          name: buildingName,
-          address: `${timestamp} Rue Detail`,
-          city: "Liege",
-          postal_code: "4000",
-          country: "Belgium",
-          total_units: 5,
-          construction_year: 2015,
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const createResponse = await page.request.post(`${API_BASE}/buildings`, {
+      data: {
+        name: buildingName,
+        address: `${timestamp} Rue Detail`,
+        city: "Liege",
+        postal_code: "4000",
+        country: "Belgium",
+        total_units: 5,
+        construction_year: 2015,
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(createResponse.ok()).toBeTruthy();
     const building = await createResponse.json();
 
@@ -123,21 +117,18 @@ test.describe("Buildings - List and Detail", () => {
     const timestamp = Date.now();
 
     // Create building via API
-    const createResponse = await page.request.post(
-      `${API_BASE}/buildings`,
-      {
-        data: {
-          name: `Units Building ${timestamp}`,
-          address: `${timestamp} Rue Units`,
-          city: "Namur",
-          postal_code: "5000",
-          country: "Belgium",
-          total_units: 3,
-          construction_year: 2018,
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const createResponse = await page.request.post(`${API_BASE}/buildings`, {
+      data: {
+        name: `Units Building ${timestamp}`,
+        address: `${timestamp} Rue Units`,
+        city: "Namur",
+        postal_code: "5000",
+        country: "Belgium",
+        total_units: 3,
+        construction_year: 2018,
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(createResponse.ok()).toBeTruthy();
     const building = await createResponse.json();
 
@@ -152,9 +143,7 @@ test.describe("Buildings - List and Detail", () => {
     await registerAndLoginAsSyndic(page);
 
     // Try to access a building that doesn't exist
-    await page.goto(
-      "/building-detail?id=00000000-0000-0000-0000-000000000000",
-    );
+    await page.goto("/building-detail?id=00000000-0000-0000-0000-000000000000");
 
     // Page should not crash - either show error or redirect
     await expect(page.locator("body")).toBeVisible();

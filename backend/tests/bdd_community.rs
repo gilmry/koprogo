@@ -4142,7 +4142,10 @@ async fn then_exchange_created(world: &mut CommunityWorld) {
 
 #[then(regex = r#"^the exchange type should be "([^"]*)"$"#)]
 async fn then_exchange_type(world: &mut CommunityWorld, expected: String) {
-    let resp = world.last_exchange_response.as_ref().expect("exchange response");
+    let resp = world
+        .last_exchange_response
+        .as_ref()
+        .expect("exchange response");
     let type_str = format!("{:?}", resp.exchange_type);
     assert!(
         type_str.contains(&expected),
@@ -4165,7 +4168,10 @@ async fn then_offer_in_marketplace(world: &mut CommunityWorld) {
 
 #[then(regex = r#"^credits should be (\d+)"#)]
 async fn then_credits_amount(world: &mut CommunityWorld, expected: i32) {
-    let resp = world.last_exchange_response.as_ref().expect("exchange response");
+    let resp = world
+        .last_exchange_response
+        .as_ref()
+        .expect("exchange response");
     assert_eq!(resp.credits, expected, "Credits should be {}", expected);
 }
 
@@ -4204,7 +4210,10 @@ async fn given_exchanges_exist(world: &mut CommunityWorld, step: &Step) {
             credits,
         };
 
-        let resp = uc.create_exchange(user_id, dto).await.expect("create exchange");
+        let resp = uc
+            .create_exchange(user_id, dto)
+            .await
+            .expect("create exchange");
 
         // Advance to desired status if needed
         if status == "Requested" {
@@ -4272,7 +4281,10 @@ async fn given_alice_offer(world: &mut CommunityWorld, title: String, credits: i
         credits,
     };
 
-    let resp = uc.create_exchange(alice_user_id, dto).await.expect("alice create exchange");
+    let resp = uc
+        .create_exchange(alice_user_id, dto)
+        .await
+        .expect("alice create exchange");
     world.last_exchange_id = Some(resp.id);
     world.last_exchange_response = Some(resp);
 }
@@ -4289,7 +4301,10 @@ async fn when_request_exchange(world: &mut CommunityWorld) {
     let owner_name = world.current_owner_name.as_ref().unwrap().clone();
     let (_, user_id) = *world.owner_map.get(&owner_name).expect("owner exists");
 
-    match uc.request_exchange(exchange_id, user_id, RequestExchangeDto {}).await {
+    match uc
+        .request_exchange(exchange_id, user_id, RequestExchangeDto {})
+        .await
+    {
         Ok(resp) => {
             world.last_exchange_response = Some(resp);
             world.last_exchange_error = None;
@@ -4302,7 +4317,10 @@ async fn when_request_exchange(world: &mut CommunityWorld) {
 
 #[then(regex = r#"^the exchange status should change to "([^"]*)"$"#)]
 async fn then_exchange_status_changed(world: &mut CommunityWorld, expected: String) {
-    let resp = world.last_exchange_response.as_ref().expect("exchange response");
+    let resp = world
+        .last_exchange_response
+        .as_ref()
+        .expect("exchange response");
     let status_str = format!("{:?}", resp.status);
     assert!(
         status_str.to_lowercase().contains(&expected.to_lowercase()),
@@ -4314,7 +4332,10 @@ async fn then_exchange_status_changed(world: &mut CommunityWorld, expected: Stri
 
 #[then("I should become the requester")]
 async fn then_am_requester(world: &mut CommunityWorld) {
-    let resp = world.last_exchange_response.as_ref().expect("exchange response");
+    let resp = world
+        .last_exchange_response
+        .as_ref()
+        .expect("exchange response");
     assert!(resp.requester_id.is_some(), "Requester should be set");
 }
 
@@ -4357,13 +4378,18 @@ async fn when_start_exchange(world: &mut CommunityWorld) {
 
 #[then("the started_at timestamp should be set")]
 async fn then_started_at_set(world: &mut CommunityWorld) {
-    let resp = world.last_exchange_response.as_ref().expect("exchange response");
+    let resp = world
+        .last_exchange_response
+        .as_ref()
+        .expect("exchange response");
     assert!(resp.started_at.is_some(), "started_at should be set");
 }
 
 // --- Complete exchange + credit transfer ---
 
-#[given(regex = r#"^an exchange in status "([^"]*)" between Alice \(provider\) and Bob \(requester\) for (\d+) credits$"#)]
+#[given(
+    regex = r#"^an exchange in status "([^"]*)" between Alice \(provider\) and Bob \(requester\) for (\d+) credits$"#
+)]
 async fn given_exchange_in_progress(world: &mut CommunityWorld, status: String, credits: i32) {
     if world.pool.is_none() {
         world.setup_database().await;
@@ -4381,20 +4407,32 @@ async fn given_exchange_in_progress(world: &mut CommunityWorld, status: String, 
         credits,
     };
 
-    let resp = uc.create_exchange(alice_user, dto).await.expect("create exchange");
+    let resp = uc
+        .create_exchange(alice_user, dto)
+        .await
+        .expect("create exchange");
     let exchange_id = resp.id;
     world.last_exchange_id = Some(exchange_id);
 
     if status == "Requested" || status == "InProgress" || status == "Completed" {
-        let resp = uc.request_exchange(exchange_id, bob_user, RequestExchangeDto {}).await.expect("request");
+        let resp = uc
+            .request_exchange(exchange_id, bob_user, RequestExchangeDto {})
+            .await
+            .expect("request");
         world.last_exchange_response = Some(resp);
     }
     if status == "InProgress" || status == "Completed" {
-        let resp = uc.start_exchange(exchange_id, alice_user).await.expect("start");
+        let resp = uc
+            .start_exchange(exchange_id, alice_user)
+            .await
+            .expect("start");
         world.last_exchange_response = Some(resp);
     }
     if status == "Completed" {
-        let resp = uc.complete_exchange(exchange_id, alice_user, CompleteExchangeDto {}).await.expect("complete");
+        let resp = uc
+            .complete_exchange(exchange_id, alice_user, CompleteExchangeDto {})
+            .await
+            .expect("complete");
         world.last_exchange_response = Some(resp);
     }
 }
@@ -4421,7 +4459,10 @@ async fn when_complete_exchange(world: &mut CommunityWorld) {
     let owner_name = world.current_owner_name.as_ref().unwrap().clone();
     let (_, user_id) = *world.owner_map.get(&owner_name).expect("owner exists");
 
-    match uc.complete_exchange(exchange_id, user_id, CompleteExchangeDto {}).await {
+    match uc
+        .complete_exchange(exchange_id, user_id, CompleteExchangeDto {})
+        .await
+    {
         Ok(resp) => {
             world.last_exchange_response = Some(resp);
             world.last_exchange_error = None;
@@ -4581,7 +4622,10 @@ async fn when_cancel_exchange(world: &mut CommunityWorld, reason: String) {
 
 #[then("the cancellation reason should be recorded")]
 async fn then_cancellation_recorded(world: &mut CommunityWorld) {
-    let resp = world.last_exchange_response.as_ref().expect("exchange response");
+    let resp = world
+        .last_exchange_response
+        .as_ref()
+        .expect("exchange response");
     assert!(
         resp.cancellation_reason.is_some(),
         "Cancellation reason should be recorded"
@@ -4617,9 +4661,13 @@ async fn given_completed_n_exchanges(world: &mut CommunityWorld, count: usize) {
 
         let resp = uc.create_exchange(user_id, dto).await.expect("create");
         let eid = resp.id;
-        let _ = uc.request_exchange(eid, other_user, RequestExchangeDto {}).await;
+        let _ = uc
+            .request_exchange(eid, other_user, RequestExchangeDto {})
+            .await;
         let _ = uc.start_exchange(eid, user_id).await;
-        let _ = uc.complete_exchange(eid, user_id, CompleteExchangeDto {}).await;
+        let _ = uc
+            .complete_exchange(eid, user_id, CompleteExchangeDto {})
+            .await;
     }
 }
 
@@ -4782,7 +4830,12 @@ async fn given_participate_in_buildings(_world: &mut CommunityWorld, _count: usi
 }
 
 #[given(regex = r#"^I have offered (\d+) services, requested (\d+), completed (\d+) total$"#)]
-async fn given_exchange_counts(_world: &mut CommunityWorld, _offered: usize, _requested: usize, _completed: usize) {
+async fn given_exchange_counts(
+    _world: &mut CommunityWorld,
+    _offered: usize,
+    _requested: usize,
+    _completed: usize,
+) {
     // Exchange counts come from activity
 }
 
@@ -4859,7 +4912,10 @@ async fn given_my_exchange_offer(world: &mut CommunityWorld) {
         credits: 1,
     };
 
-    let resp = uc.create_exchange(user_id, dto).await.expect("create offer");
+    let resp = uc
+        .create_exchange(user_id, dto)
+        .await
+        .expect("create offer");
     world.last_exchange_id = Some(resp.id);
     world.last_exchange_response = Some(resp);
 }
@@ -4871,7 +4927,10 @@ async fn when_self_request(world: &mut CommunityWorld) {
     let owner_name = world.current_owner_name.as_ref().unwrap().clone();
     let (_, user_id) = *world.owner_map.get(&owner_name).expect("owner exists");
 
-    match uc.request_exchange(exchange_id, user_id, RequestExchangeDto {}).await {
+    match uc
+        .request_exchange(exchange_id, user_id, RequestExchangeDto {})
+        .await
+    {
         Ok(resp) => {
             world.last_exchange_response = Some(resp);
             world.last_exchange_error = None;
@@ -4892,7 +4951,10 @@ async fn then_request_fails(world: &mut CommunityWorld) {
 
 #[then(regex = r#"^I should see error "([^"]*)"$"#)]
 async fn then_sel_error(world: &mut CommunityWorld, expected: String) {
-    let err = world.last_exchange_error.as_ref().expect("error should exist");
+    let err = world
+        .last_exchange_error
+        .as_ref()
+        .expect("error should exist");
     assert!(
         err.to_lowercase().contains(&expected.to_lowercase()),
         "Error '{}' should contain '{}'",

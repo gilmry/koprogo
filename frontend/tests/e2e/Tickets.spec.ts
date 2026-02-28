@@ -32,21 +32,18 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const token = userData.token;
   const orgId = userData.user.organization_id || userData.user.org_id || "";
 
-  const buildingResponse = await page.request.post(
-    `${API_BASE}/buildings`,
-    {
-      data: {
-        name: `Ticket Building ${timestamp}`,
-        address: `${timestamp} Rue Maintenance`,
-        city: "Antwerp",
-        postal_code: "2000",
-        country: "Belgium",
-        total_units: 8,
-        construction_year: 2015,
-      },
-      headers: { Authorization: `Bearer ${token}` },
+  const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
+    data: {
+      name: `Ticket Building ${timestamp}`,
+      address: `${timestamp} Rue Maintenance`,
+      city: "Antwerp",
+      postal_code: "2000",
+      country: "Belgium",
+      total_units: 8,
+      construction_year: 2015,
     },
-  );
+    headers: { Authorization: `Bearer ${token}` },
+  });
   expect(buildingResponse.ok()).toBeTruthy();
   const building = await buildingResponse.json();
 
@@ -77,19 +74,16 @@ test.describe("Tickets - Maintenance Requests", () => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
     const timestamp = Date.now();
 
-    const ticketResponse = await page.request.post(
-      `${API_BASE}/tickets`,
-      {
-        data: {
-          building_id: buildingId,
-          title: `Fuite eau ${timestamp}`,
-          description: "Fuite d'eau dans le hall d'entree au 2eme etage",
-          priority: "High",
-          category: "Plumbing",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const ticketResponse = await page.request.post(`${API_BASE}/tickets`, {
+      data: {
+        building_id: buildingId,
+        title: `Fuite eau ${timestamp}`,
+        description: "Fuite d'eau dans le hall d'entree au 2eme etage",
+        priority: "High",
+        category: "Plumbing",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(ticketResponse.ok()).toBeTruthy();
 
     await page.goto("/tickets");
@@ -103,27 +97,24 @@ test.describe("Tickets - Maintenance Requests", () => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
     const timestamp = Date.now();
 
-    const ticketResponse = await page.request.post(
-      `${API_BASE}/tickets`,
-      {
-        data: {
-          building_id: buildingId,
-          title: `Detail Ticket ${timestamp}`,
-          description: "Panne ascenseur",
-          priority: "Critical",
-          category: "General",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const ticketResponse = await page.request.post(`${API_BASE}/tickets`, {
+      data: {
+        building_id: buildingId,
+        title: `Detail Ticket ${timestamp}`,
+        description: "Panne ascenseur",
+        priority: "Critical",
+        category: "General",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(ticketResponse.ok()).toBeTruthy();
     const ticket = await ticketResponse.json();
 
     await page.goto(`/ticket-detail?id=${ticket.id}`);
 
-    await expect(
-      page.locator(`text=Detail Ticket ${timestamp}`),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=Detail Ticket ${timestamp}`)).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should show ticket priority indicator", async ({ page }) => {
@@ -131,27 +122,24 @@ test.describe("Tickets - Maintenance Requests", () => {
     const timestamp = Date.now();
 
     // Create an urgent ticket
-    const ticketResponse = await page.request.post(
-      `${API_BASE}/tickets`,
-      {
-        data: {
-          building_id: buildingId,
-          title: `Urgent Ticket ${timestamp}`,
-          description: "Panne electrique totale",
-          priority: "Urgent",
-          category: "Electrical",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const ticketResponse = await page.request.post(`${API_BASE}/tickets`, {
+      data: {
+        building_id: buildingId,
+        title: `Urgent Ticket ${timestamp}`,
+        description: "Panne electrique totale",
+        priority: "Urgent",
+        category: "Electrical",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(ticketResponse.ok()).toBeTruthy();
 
     await page.goto("/tickets");
 
     // Ticket should be visible
-    await expect(
-      page.locator(`text=Urgent Ticket ${timestamp}`),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=Urgent Ticket ${timestamp}`)).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should filter tickets by status", async ({ page }) => {

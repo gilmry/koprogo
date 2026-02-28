@@ -30,21 +30,18 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const userData = await regResponse.json();
   const token = userData.token;
 
-  const buildingResponse = await page.request.post(
-    `${API_BASE}/buildings`,
-    {
-      data: {
-        name: `Meeting Building ${timestamp}`,
-        address: `${timestamp} Rue AG`,
-        city: "Brussels",
-        postal_code: "1000",
-        country: "Belgium",
-        total_units: 10,
-        construction_year: 2020,
-      },
-      headers: { Authorization: `Bearer ${token}` },
+  const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
+    data: {
+      name: `Meeting Building ${timestamp}`,
+      address: `${timestamp} Rue AG`,
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      total_units: 10,
+      construction_year: 2020,
     },
-  );
+    headers: { Authorization: `Bearer ${token}` },
+  });
   expect(buildingResponse.ok()).toBeTruthy();
   const building = await buildingResponse.json();
 
@@ -76,53 +73,47 @@ test.describe("Meetings - General Assembly", () => {
     const timestamp = Date.now();
     const meetingDate = "2026-06-15T14:00:00Z";
 
-    const meetingResponse = await page.request.post(
-      `${API_BASE}/meetings`,
-      {
-        data: {
-          building_id: buildingId,
-          title: `AG Ordinaire ${timestamp}`,
-          meeting_date: meetingDate,
-          location: "Salle communale",
-          agenda: "Point 1: Comptes annuels\nPoint 2: Budget",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const meetingResponse = await page.request.post(`${API_BASE}/meetings`, {
+      data: {
+        building_id: buildingId,
+        title: `AG Ordinaire ${timestamp}`,
+        meeting_date: meetingDate,
+        location: "Salle communale",
+        agenda: "Point 1: Comptes annuels\nPoint 2: Budget",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(meetingResponse.ok()).toBeTruthy();
 
     await page.goto("/meetings");
 
-    await expect(
-      page.locator(`text=AG Ordinaire ${timestamp}`),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=AG Ordinaire ${timestamp}`)).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should navigate to meeting detail page", async ({ page }) => {
     const { token, buildingId } = await setupSyndicWithBuilding(page);
     const timestamp = Date.now();
 
-    const meetingResponse = await page.request.post(
-      `${API_BASE}/meetings`,
-      {
-        data: {
-          building_id: buildingId,
-          title: `Detail Meeting ${timestamp}`,
-          meeting_date: "2026-07-20T10:00:00Z",
-          location: "Bureau syndic",
-          agenda: "Point 1: Travaux",
-        },
-        headers: { Authorization: `Bearer ${token}` },
+    const meetingResponse = await page.request.post(`${API_BASE}/meetings`, {
+      data: {
+        building_id: buildingId,
+        title: `Detail Meeting ${timestamp}`,
+        meeting_date: "2026-07-20T10:00:00Z",
+        location: "Bureau syndic",
+        agenda: "Point 1: Travaux",
       },
-    );
+      headers: { Authorization: `Bearer ${token}` },
+    });
     expect(meetingResponse.ok()).toBeTruthy();
     const meeting = await meetingResponse.json();
 
     await page.goto(`/meeting-detail?id=${meeting.id}`);
 
-    await expect(
-      page.locator(`text=Detail Meeting ${timestamp}`),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator(`text=Detail Meeting ${timestamp}`)).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("should display convocations page", async ({ page }) => {

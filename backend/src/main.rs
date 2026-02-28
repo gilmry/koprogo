@@ -447,8 +447,10 @@ async fn main() -> std::io::Result<()> {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(900);
-    let login_rate_limiter =
-        LoginRateLimiter::new(login_max_attempts, std::time::Duration::from_secs(login_window_secs));
+    let login_rate_limiter = LoginRateLimiter::new(
+        login_max_attempts,
+        std::time::Duration::from_secs(login_window_secs),
+    );
 
     HttpServer::new(move || {
         // Configure CORS with allowed origins from environment
