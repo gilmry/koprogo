@@ -17,9 +17,8 @@ use koprogo_api::application::use_cases::{
     PaymentReminderUseCases, PaymentUseCases,
 };
 use koprogo_api::domain::entities::{
-    ApprovalStatus, BudgetStatus, ContributionPaymentMethod, ContributionType, ExpenseCategory,
-    JournalEntry, JournalEntryLine, OwnerContribution, PaymentStatus, ReminderLevel,
-    ReminderStatus,
+    ContributionPaymentMethod, ContributionType, ExpenseCategory,
+    JournalEntry, JournalEntryLine, OwnerContribution, ReminderLevel,
 };
 // Two separate PaymentMethodType enums exist in the domain:
 // payment.rs defines one (for Payment entity), payment_method.rs defines another (for PaymentMethod entity)
@@ -3902,7 +3901,7 @@ async fn given_syndic_user(world: &mut FinancialWorld, email: String) {
 async fn given_unit_owner_relationships(world: &mut FinancialWorld) {
     let pool = world.pool.as_ref().unwrap();
     let org_id = world.org_id.unwrap();
-    let building_id = world.building_id.unwrap();
+    let _building_id = world.building_id.unwrap();
     let percentages = [0.25, 0.25, 0.20, 0.20, 0.10];
     for (i, pct) in percentages.iter().enumerate() {
         let owner_id = Uuid::new_v4();
@@ -4446,7 +4445,7 @@ async fn then_rejection_fail(world: &mut FinancialWorld) {
 
 // Permission & dashboard steps (simplified — verify pass/fail)
 #[given(regex = r#"^an owner user "([^"]*)"$"#)]
-async fn given_owner_user_inv(world: &mut FinancialWorld, _email: String) {
+async fn given_owner_user_inv(_world: &mut FinancialWorld, _email: String) {
     // Owner user exists — test structure only
 }
 
@@ -4604,12 +4603,12 @@ async fn given_pending_invoice_amount(world: &mut FinancialWorld, _amount: f64) 
 }
 
 #[given("5 unit-owner relationships with percentages:")]
-async fn given_unit_owner_pcts(world: &mut FinancialWorld, _step: &Step) {
+async fn given_unit_owner_pcts(_world: &mut FinancialWorld) {
     // Already set up by background step
 }
 
 #[when("the charge distribution is calculated")]
-async fn when_calculate_distribution(world: &mut FinancialWorld) {
+async fn when_calculate_invoice_charge_distribution(world: &mut FinancialWorld) {
     let uc = world
         .charge_distribution_use_cases
         .as_ref()
@@ -4619,7 +4618,7 @@ async fn when_calculate_distribution(world: &mut FinancialWorld) {
         .last_invoice_id
         .unwrap_or_else(|| world.expense_id.unwrap());
     match uc
-        .calculate_and_save_distribution(expense_id, world.org_id.unwrap())
+        .calculate_and_save_distribution(expense_id)
         .await
     {
         Ok(list) => {
@@ -4664,7 +4663,7 @@ async fn given_create_invoice_ht_vat(world: &mut FinancialWorld, amount: f64, va
 }
 
 #[when("the accountant marks the invoice as paid")]
-async fn when_mark_paid(world: &mut FinancialWorld) {
+async fn when_mark_invoice_paid(world: &mut FinancialWorld) {
     let uc = world.expense_use_cases.as_ref().unwrap().clone();
     let id = world.last_invoice_id.expect("no invoice id");
     match uc.mark_as_paid(id).await {
@@ -4769,7 +4768,7 @@ async fn when_request_distributions_owner(world: &mut FinancialWorld) {
 async fn then_each_has_amount(_world: &mut FinancialWorld) {}
 
 #[given("3 approved invoices with distributions for Owner 1:")]
-async fn given_3_with_amounts(world: &mut FinancialWorld, _step: &Step) {
+async fn given_3_with_amounts(world: &mut FinancialWorld) {
     given_approved_invoice(world).await;
 }
 
@@ -4810,7 +4809,7 @@ async fn given_test_org_recovery(world: &mut FinancialWorld, _name: String) {
 }
 
 #[given(regex = r#"^a building "([^"]*)" in organization "([^"]*)"$"#)]
-async fn given_building_recovery(world: &mut FinancialWorld, _bname: String, _oname: String) {
+async fn given_building_recovery(_world: &mut FinancialWorld, _bname: String, _oname: String) {
     // Building already set up by setup_database
 }
 
@@ -5343,7 +5342,7 @@ async fn given_budget_org(world: &mut FinancialWorld, _name: String, _id: String
 }
 
 #[given(regex = r#"^a building "([^"]*)" exists in organization "([^"]*)"$"#)]
-async fn given_budget_building(world: &mut FinancialWorld, _bname: String, _org_id: String) {
+async fn given_budget_building(_world: &mut FinancialWorld, _bname: String, _org_id: String) {
     // Building already created in setup_database
 }
 
@@ -5820,7 +5819,7 @@ async fn when_budget_stats(world: &mut FinancialWorld) {
 }
 
 #[then("I should see:")]
-async fn then_should_see_table(_world: &mut FinancialWorld, _step: &Step) {
+async fn then_should_see_table(_world: &mut FinancialWorld) {
     // Stats table verification — simplified
 }
 

@@ -18,7 +18,7 @@ use koprogo_api::application::use_cases::{
     NoticeUseCases, ResourceBookingUseCases, SharedObjectUseCases, SkillUseCases,
 };
 use koprogo_api::domain::entities::{
-    AchievementCategory, AchievementTier, ChallengeType, ExchangeStatus, ExchangeType,
+    AchievementCategory, AchievementTier, ChallengeType, ExchangeType,
     ExpertiseLevel, NoticeCategory, NoticeType, ObjectCondition, Owner, RecurringPattern,
     ResourceType, SharedObjectCategory, SkillCategory,
 };
@@ -4253,12 +4253,12 @@ async fn then_n_exchanges(world: &mut CommunityWorld, count: usize) {
 }
 
 #[then(regex = r#"^I should see "([^"]*)" by (\w+)$"#)]
-async fn then_see_exchange_by(world: &mut CommunityWorld, _title: String, _provider: String) {
+async fn then_see_exchange_by(_world: &mut CommunityWorld, _title: String, _provider: String) {
     // Verified by available list
 }
 
 #[then(regex = r#"^I should NOT see "([^"]*)"$"#)]
-async fn then_not_see_exchange(world: &mut CommunityWorld, _title: String) {
+async fn then_not_see_exchange(_world: &mut CommunityWorld, _title: String) {
     // Filtering is verified by the count check
 }
 
@@ -4438,12 +4438,12 @@ async fn given_exchange_in_progress(world: &mut CommunityWorld, status: String, 
 }
 
 #[given(regex = r#"^Alice's current balance is (\d+) credits$"#)]
-async fn given_alice_balance(world: &mut CommunityWorld, _credits: i32) {
+async fn given_alice_balance(_world: &mut CommunityWorld, _credits: i32) {
     // Balance is managed by the system; we just note the expected starting balance
 }
 
 #[given(regex = r#"^Bob's current balance is (\d+) credits$"#)]
-async fn given_bob_balance(world: &mut CommunityWorld, _credits: i32) {
+async fn given_bob_balance(_world: &mut CommunityWorld, _credits: i32) {
     // Balance is managed by the system
 }
 
@@ -4775,7 +4775,7 @@ async fn then_top_10(world: &mut CommunityWorld) {
 }
 
 #[then(regex = r#"^(\w+) should be ranked #(\d+) with (-?\d+) credits$"#)]
-async fn then_ranked(world: &mut CommunityWorld, _name: String, _rank: usize, _credits: i32) {
+async fn then_ranked(_world: &mut CommunityWorld, _name: String, _rank: usize, _credits: i32) {
     // Ranking verified by leaderboard order
 }
 
@@ -4787,7 +4787,7 @@ async fn then_leaderboard_encourages(_world: &mut CommunityWorld) {
 // --- SEL Statistics ---
 
 #[given(regex = r#"^(\d+) exchanges exist in building with:$"#)]
-async fn given_n_exchanges_stats(world: &mut CommunityWorld, _count: usize, _step: &Step) {
+async fn given_n_exchanges_stats(world: &mut CommunityWorld, _count: usize) {
     if world.pool.is_none() {
         world.setup_database().await;
     }
@@ -4818,7 +4818,7 @@ async fn then_see_all_stats(world: &mut CommunityWorld) {
 }
 
 #[then(regex = r#"^most popular exchange type should be "([^"]*)"$"#)]
-async fn then_most_popular_type(world: &mut CommunityWorld, _expected: String) {
+async fn then_most_popular_type(_world: &mut CommunityWorld, _expected: String) {
     // Statistics computation verified at repository level
 }
 
@@ -4856,7 +4856,7 @@ async fn when_request_summary(world: &mut CommunityWorld) {
 }
 
 #[then("I should see:")]
-async fn then_see_summary(world: &mut CommunityWorld, _step: &Step) {
+async fn then_see_summary(world: &mut CommunityWorld) {
     assert!(
         world.last_exchange_summary.is_some(),
         "Summary should be available"

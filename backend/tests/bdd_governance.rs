@@ -6,7 +6,7 @@ use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
     CastVoteDto, ConvocationRecipientResponse, ConvocationResponse, CreateConvocationRequest,
     CreateEtatDateRequest, CreatePollDto, CreatePollOptionDto, CreateQuoteDto, Disable2FADto,
-    Enable2FADto, EtatDateResponse, EtatDateStatsResponse, PollFilters, PollResponseDto,
+    Enable2FADto, EtatDateResponse, EtatDateStatsResponse, PollResponseDto,
     PollResultsDto, QuoteComparisonRequestDto, QuoteComparisonResponseDto, QuoteDecisionDto,
     QuoteResponseDto, RecipientTrackingSummaryResponse, RegenerateBackupCodesDto,
     ScheduleConvocationRequest, SendConvocationRequest, Setup2FAResponseDto, TwoFactorStatusDto,
@@ -19,8 +19,8 @@ use koprogo_api::application::use_cases::{
     QuoteUseCases, ResolutionUseCases, TwoFactorUseCases,
 };
 use koprogo_api::domain::entities::{
-    AttendanceStatus, ConvocationStatus, ConvocationType, EtatDateLanguage, EtatDateStatus,
-    MajorityType, Organization, PollStatus, PollType, ResolutionStatus, ResolutionType,
+    AttendanceStatus, ConvocationStatus, ConvocationType, EtatDateLanguage,
+    MajorityType, Organization, ResolutionStatus, ResolutionType,
     SubscriptionPlan, User, UserRole, VoteChoice,
 };
 use koprogo_api::infrastructure::database::{
@@ -4118,14 +4118,14 @@ async fn when_add_poll_options(world: &mut GovernanceWorld, step: &Step) {
     // Options were already passed in creation or we update the poll
     // For simplicity, verify last poll was created with options
     let table = step.table.as_ref().expect("table expected");
-    let option_count = table.rows.len().saturating_sub(1); // exclude header
+    let _option_count = table.rows.len().saturating_sub(1); // exclude header
     assert!(
         world.last_poll_response.is_some(),
         "Poll should have been created"
     );
     // The poll was created - options are part of the creation in a real scenario
     // For BDD, we just track the expected option count
-    if let Some(ref resp) = world.last_poll_response {
+    if let Some(ref _resp) = world.last_poll_response {
         // MC polls might have been created without options initially;
         // in a real flow, options are part of CreatePollDto
         // We'll just assert the poll was created successfully
@@ -4527,7 +4527,7 @@ async fn given_auth_as_owner(world: &mut GovernanceWorld, name: String) {
         .iter()
         .find(|(n, _)| n == &name)
         .map(|(_, id)| *id)
-        .expect(&format!("Owner '{}' not found in poll_owner_ids", name));
+        .unwrap_or_else(|| panic!("Owner '{}' not found in poll_owner_ids", name));
     world.last_user_id = Some(owner_id);
 }
 
@@ -4544,7 +4544,7 @@ async fn when_vote_on_poll(world: &mut GovernanceWorld, vote_choice: String) {
         .iter()
         .find(|o| o.option_text.to_lowercase() == vote_choice.to_lowercase())
         .map(|o| o.id.clone())
-        .expect(&format!("Option '{}' not found in poll", vote_choice));
+        .unwrap_or_else(|| panic!("Option '{}' not found in poll", vote_choice));
 
     let dto = CastVoteDto {
         poll_id: poll_id.to_string(),
@@ -4581,7 +4581,7 @@ async fn when_vote_for_option(world: &mut GovernanceWorld, option_text: String) 
         .iter()
         .find(|o| o.option_text.contains(&option_text))
         .map(|o| o.id.clone())
-        .expect(&format!("Option containing '{}' not found", option_text));
+        .unwrap_or_else(|| panic!("Option containing '{}' not found", option_text));
 
     let dto = CastVoteDto {
         poll_id: poll_id.to_string(),
@@ -4605,7 +4605,7 @@ async fn when_vote_for_option(world: &mut GovernanceWorld, option_text: String) 
 }
 
 #[then("my vote should be recorded")]
-async fn then_vote_recorded(world: &mut GovernanceWorld) {
+async fn then_poll_vote_recorded(world: &mut GovernanceWorld) {
     assert!(
         world.poll_vote_recorded,
         "Vote should be recorded: {:?}",
@@ -4755,7 +4755,7 @@ async fn given_already_voted(world: &mut GovernanceWorld, choice: String) {
         .iter()
         .find(|o| o.option_text.to_lowercase() == choice.to_lowercase())
         .map(|o| o.id.clone())
-        .expect(&format!("Option '{}' not found", choice));
+        .unwrap_or_else(|| panic!("Option '{}' not found", choice));
 
     let dto = CastVoteDto {
         poll_id: poll_id.to_string(),
@@ -4782,7 +4782,7 @@ async fn when_try_duplicate_vote(world: &mut GovernanceWorld, choice: String) {
         .iter()
         .find(|o| o.option_text.to_lowercase() == choice.to_lowercase())
         .map(|o| o.id.clone())
-        .expect(&format!("Option '{}' not found", choice));
+        .unwrap_or_else(|| panic!("Option '{}' not found", choice));
 
     let dto = CastVoteDto {
         poll_id: poll_id.to_string(),
@@ -4804,7 +4804,7 @@ async fn when_try_duplicate_vote(world: &mut GovernanceWorld, choice: String) {
 }
 
 #[then("the system should reject my vote")]
-async fn then_vote_rejected(world: &mut GovernanceWorld) {
+async fn then_poll_vote_rejected(world: &mut GovernanceWorld) {
     assert!(
         !world.operation_success,
         "Duplicate vote should be rejected"
@@ -4834,7 +4834,7 @@ async fn given_n_owners_voted(
     world: &mut GovernanceWorld,
     total: usize,
     yes_count: usize,
-    no_count: usize,
+    _no_count: usize,
 ) {
     let uc = world.poll_use_cases.as_ref().unwrap().clone();
     let poll_id = world.last_poll_id.unwrap();
@@ -5127,13 +5127,13 @@ async fn then_no_notifications_sent(_world: &mut GovernanceWorld) {
 // --- Remaining poll scenarios (simplified stubs) ---
 
 #[given(regex = r#"^an active poll "([^"]*)" with:$"#)]
-async fn given_active_poll_with_opts(world: &mut GovernanceWorld, question: String, step: &Step) {
+async fn given_active_poll_with_opts(world: &mut GovernanceWorld, question: String) {
     // Create poll and publish it (reuse given_active_poll logic)
     given_active_poll(world, question).await;
 }
 
 #[given(regex = r#"^the poll has options:$"#)]
-async fn given_poll_has_options(_world: &mut GovernanceWorld, _step: &Step) {
+async fn given_poll_has_options(_world: &mut GovernanceWorld) {
     // Options are part of poll creation
 }
 
@@ -5224,7 +5224,6 @@ async fn then_no_more_votes(_world: &mut GovernanceWorld) {
 async fn given_closed_poll_with_results(
     world: &mut GovernanceWorld,
     question: String,
-    _step: &Step,
 ) {
     given_active_poll(world, question).await;
     when_close_poll(world).await;
@@ -5390,7 +5389,7 @@ async fn given_creating_poll(world: &mut GovernanceWorld, question: String) {
 }
 
 #[when("I add the following options with attachments:")]
-async fn when_add_options_with_attachments(_world: &mut GovernanceWorld, _step: &Step) {
+async fn when_add_options_with_attachments(_world: &mut GovernanceWorld) {
     // Attachments are part of option creation
 }
 
@@ -5442,8 +5441,7 @@ async fn when_submit_open_response(world: &mut GovernanceWorld, step: &Step) {
 
     let text = step
         .docstring
-        .as_ref()
-        .map(|d| d.content.clone())
+        .clone()
         .unwrap_or_else(|| "Test response text".to_string());
 
     let dto = CastVoteDto {
@@ -5666,7 +5664,7 @@ async fn then_etat_date_status(world: &mut GovernanceWorld, expected: String) {
 }
 
 #[then(regex = r#"^a reference number should be generated like "([^"]*)"$"#)]
-async fn then_reference_number(world: &mut GovernanceWorld, pattern: String) {
+async fn then_reference_number(world: &mut GovernanceWorld, _pattern: String) {
     let resp = world
         .last_etat_date_response
         .as_ref()
@@ -6114,7 +6112,7 @@ async fn then_all_details(world: &mut GovernanceWorld) {
 #[given(regex = r#"^(\d+) États Datés exist for unit "([^"]*)" with statuses:$"#)]
 async fn given_n_etats_dates_for_unit(
     world: &mut GovernanceWorld,
-    count: usize,
+    _count: usize,
     _unit: String,
     step: &Step,
 ) {
@@ -6275,7 +6273,7 @@ async fn when_request_stats(world: &mut GovernanceWorld) {
 }
 
 #[then("I should see:")]
-async fn then_should_see_stats(world: &mut GovernanceWorld, step: &Step) {
+async fn then_should_see_stats(world: &mut GovernanceWorld) {
     assert!(
         world.operation_success,
         "Stats request should succeed: {:?}",
@@ -6313,7 +6311,7 @@ async fn when_try_generate_pdf(world: &mut GovernanceWorld) {
 }
 
 #[then("the generation should fail")]
-async fn then_generation_fails(world: &mut GovernanceWorld) {
+async fn then_generation_fails(_world: &mut GovernanceWorld) {
     // Note: The current implementation may or may not validate all 16 sections
     // This step verifies the intent - if validation is not implemented yet, it will pass anyway
     // to avoid blocking BDD execution
@@ -6339,7 +6337,7 @@ async fn when_request_audit_trail(world: &mut GovernanceWorld) {
 }
 
 #[then("I should see all state transitions:")]
-async fn then_see_state_transitions(world: &mut GovernanceWorld, _step: &Step) {
+async fn then_see_state_transitions(world: &mut GovernanceWorld) {
     assert!(
         world.operation_success,
         "Audit trail request should succeed"
