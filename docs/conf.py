@@ -23,6 +23,7 @@ extensions = [
     'sphinx.ext.todo',
     'myst_parser',
     'ablog',
+    'sphinx_design',
 ]
 
 # Support for Markdown files
@@ -104,5 +105,6 @@ blog_baseurl = 'https://doc.koprogo.com'
 blog_post_pattern = 'blog/*.rst'
 post_auto_excerpt = 1
 post_auto_image = 0
-blog_feed_fulltext = True
+blog_feed_fulltext = False
+blog_feed_length = 0
 fontawesome_included = True

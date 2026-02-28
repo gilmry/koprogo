@@ -452,8 +452,9 @@ Actualités, annonces et articles techniques du projet.
 
 .. toctree::
    :maxdepth: 2
+   :glob:
 
-   blog/index
+   blog/*
 
 Rejoignez la Communauté
 =======================
