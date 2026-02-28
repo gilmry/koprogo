@@ -445,6 +445,16 @@ Composants frontend, templates email et guide i18n.
    EMAIL_TEMPLATES
    I18N_GUIDE
 
+📝 Blog
+-------
+
+Actualités, annonces et articles techniques du projet.
+
+.. toctree::
+   :maxdepth: 2
+
+   blog/index
+
 Rejoignez la Communauté
 =======================
 

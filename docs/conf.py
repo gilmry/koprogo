@@ -22,6 +22,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'myst_parser',
+    'ablog',
 ]
 
 # Support for Markdown files
@@ -95,3 +96,13 @@ myst_enable_extensions = [
 
 # Todo extension
 todo_include_todos = True
+
+# -- ABlog configuration -----------------------------------------------------
+blog_path = 'blog'
+blog_title = 'Blog KoproGo'
+blog_baseurl = 'https://doc.koprogo.com'
+blog_post_pattern = 'blog/*.rst'
+post_auto_excerpt = 1
+post_auto_image = 0
+blog_feed_fulltext = True
+fontawesome_included = True
