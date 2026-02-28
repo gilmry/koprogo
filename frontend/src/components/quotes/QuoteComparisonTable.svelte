@@ -107,7 +107,7 @@
               {#if comparison.complies_with_belgian_law}
                 ✅ Complies with Belgian Law
               {:else}
-                ⚠️ Belgian Law Requirement: 3 quotes needed for works >5000€
+                ⚠️ Best Practice: 3 quotes recommended for works >5000€
               {/if}
             </h3>
             <p class="mt-1 text-sm {comparison.complies_with_belgian_law ? 'text-green-700' : 'text-red-700'}">

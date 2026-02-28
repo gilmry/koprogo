@@ -2,7 +2,7 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, develop, "claude/**" ]
+    branches: [ main, develop, "claude/**", "release/**" ]
   pull_request:
     branches: [ main, develop ]
 
@@ -146,7 +146,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
         run: |
           cd backend
-          cargo test --test bdd
+          cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
 
   test-e2e:
     name: E2E Tests
@@ -234,6 +234,80 @@ jobs:
         run: |
           cd frontend
           npx prettier --check .
+
+  playwright:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    needs: [frontend-check]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: koprogo_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd frontend
+          npx playwright install chromium --with-deps
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: backend/target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build and start backend
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
+        run: |
+          cd backend
+          cargo install sqlx-cli --no-default-features --features postgres
+          sqlx migrate run
+          cargo build
+          cargo run &
+          sleep 5
+
+      - name: Run Playwright tests
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:8080
+        run: |
+          cd frontend
+          npx playwright test
+        continue-on-error: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
 
   build:
     name: Build

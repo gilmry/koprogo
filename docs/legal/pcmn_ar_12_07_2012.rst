@@ -1,0 +1,253 @@
+Plan Comptable Minimum Normalise (PCMN) — AR 12/07/2012
+=========================================================
+
+.. contents:: Table des matieres
+   :local:
+   :depth: 2
+
+Introduction
+------------
+
+L'Arrete Royal du 12 juillet 2012 fixe le plan comptable minimum normalise
+applicable aux associations de coproprietaires (ACP) en Belgique.
+
+Ce plan est **obligatoire** pour les coproprietes d'au moins **20 lots**
+(hors caves, garages et parkings). Les coproprietes de moins de 20 lots
+peuvent opter pour une comptabilite simplifiee.
+
+Dispositions principales de l'AR
+---------------------------------
+
+Art. 1 — Champ d'application
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Le plan comptable s'applique aux associations de coproprietaires visees a
+l'article 577-5 du Code civil (recodifie Art. 3.86).
+
+Art. 2 — Comptabilite en partie double
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Les associations de coproprietaires tiennent leur comptabilite selon les regles
+de la **comptabilite en partie double** (double-entry bookkeeping).
+
+**Alignement KoproGo** :
+
+- Entite ``JournalEntry`` + ``JournalEntryLine`` avec debit/credit
+- Validation : somme debits = somme credits par ecriture
+- Types de journaux : ACH (achats), VEN (ventes), FIN (financier), ODS (operations diverses)
+- Inspire de Noalyss (logiciel comptable belge open source)
+
+**Statut** : CONFORME
+
+Art. 3 — Structure du plan comptable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Le plan comptable comprend les classes suivantes :
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 40 20 30
+
+   * - Classe
+     - Description
+     - Nombre de comptes KoproGo
+     - Statut
+   * - 1
+     - Fonds propres, provisions, dettes a long terme
+     - ~10 comptes
+     - CONFORME
+   * - 2
+     - Frais d'etablissement, actifs immobilises
+     - ~8 comptes
+     - CONFORME
+   * - 3
+     - Stocks (rarement utilise en copropriete)
+     - ~2 comptes
+     - CONFORME
+   * - 4
+     - Creances, dettes a court terme, regularisations
+     - ~15 comptes
+     - CONFORME
+   * - 5
+     - Tresorerie (banques, caisse)
+     - ~8 comptes
+     - CONFORME
+   * - 6
+     - Charges (fonctionnement, entretien, personnel)
+     - ~25 comptes
+     - CONFORME
+   * - 7
+     - Produits (quotes-parts, recuperations)
+     - ~12 comptes
+     - CONFORME
+   * - 9
+     - Hors-bilan (engagements, garanties)
+     - ~5 comptes
+     - CONFORME
+
+**Total** : ~90 comptes pre-seedes dans KoproGo (via ``POST /accounts/seed/belgian-pcmn``).
+
+Art. 4 — Pieces justificatives
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Toute ecriture comptable doit etre appuyee par une **piece justificative datee**.
+
+**Alignement KoproGo** :
+
+- Champ ``document_ref`` dans ``JournalEntry``
+- Entite ``Document`` pour le stockage de fichiers (factures, contrats, PV)
+- Lien possible entre documents et depenses (``PUT /documents/{id}/link-expense``)
+
+**Statut** : CONFORME
+
+Art. 5 — Conservation des documents
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Les documents comptables doivent etre conserves pendant **7 ans** a compter
+de la cloture de l'exercice.
+
+.. warning::
+
+   Les pieces justificatives emanant de tiers (factures fournisseurs, contrats)
+   doivent etre conservees **10 ans** (prescription civile de droit commun).
+
+**Alignement KoproGo** :
+
+- Logs d'audit avec retention calculee (7 ans dans les tables d'audit)
+- Pas de cron job de nettoyage automatique (LACUNE identifiee dans l'audit RGPD)
+- Stockage documents via S3 avec backups chiffres GPG
+
+**Statut** : CONFORME (partiel — nettoyage automatique a implementer)
+
+Comptes specifiques copropriete
+--------------------------------
+
+Voici les comptes les plus importants pour une copropriete belge :
+
+Classe 1 — Fonds propres
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``1000`` - Capital de depart
+- ``1300`` - Reserves legales
+- ``1310`` - Fonds de reserve (obligatoire Art. 3.86 §3)
+- ``1320`` - Fonds de roulement (obligatoire Art. 3.86 §3)
+
+Classe 4 — Creances et dettes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``4000`` - Coproprietaires — appels de fonds
+- ``4010`` - Coproprietaires — arrieres
+- ``4400`` - Fournisseurs
+- ``4500`` - TVA a payer
+- ``4510`` - TVA a recuperer
+
+Classe 5 — Tresorerie
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``5500`` - Compte courant (fonds de roulement)
+- ``5510`` - Compte epargne (fonds de reserve)
+- ``5700`` - Caisse
+
+Classe 6 — Charges
+~~~~~~~~~~~~~~~~~~~~
+
+- ``6100`` - Chauffage
+- ``6110`` - Eau
+- ``6120`` - Electricite parties communes
+- ``6200`` - Entretien et reparations
+- ``6300`` - Assurances
+- ``6400`` - Honoraires syndic
+- ``6500`` - Frais d'administration
+
+Classe 7 — Produits
+~~~~~~~~~~~~~~~~~~~~~
+
+- ``7000`` - Quotes-parts ordinaires
+- ``7100`` - Quotes-parts extraordinaires
+- ``7200`` - Interets bancaires
+- ``7500`` - Recuperations sur coproprietaires
+
+TVA belge applicable
+---------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 35 50
+
+   * - Taux
+     - Application
+     - Exemple
+   * - 6%
+     - Travaux de renovation (immeuble > 10 ans)
+     - Renovation facade, isolation
+   * - 12%
+     - Taux intermediaire (cas specifiques)
+     - Logements sociaux
+   * - 21%
+     - Taux standard (construction neuve, services)
+     - Honoraires syndic, fournitures neuves
+
+**Alignement KoproGo** :
+
+- 3 taux supportes dans ``InvoiceLineItem`` et ``Quote``
+- Calculs automatiques TTC
+- Precision DECIMAL(12,2) en base de donnees
+
+**Statut** : CONFORME
+
+Obligations du commissaire aux comptes
+---------------------------------------
+
+Pour les coproprietes d'au moins **20 lots**, la designation d'un **commissaire
+aux comptes** est obligatoire. Celui-ci :
+
+- Verifie les comptes annuels
+- Rapport a l'assemblee generale
+- Peut etre un coproprietaire ou un professionnel externe
+
+**Alignement KoproGo** : Pas de gestion du commissaire aux comptes dans le systeme.
+Les rapports financiers (bilan, compte de resultats) sont generes automatiquement
+et peuvent etre fournis au commissaire.
+
+**Statut** : HORS SCOPE (le commissaire est une personne physique, pas un processus logiciel)
+
+Rapports financiers
+--------------------
+
+KoproGo genere les rapports obligatoires suivants :
+
+1. **Bilan** (Balance Sheet) — ``GET /reports/balance-sheet``
+   - Actifs (classes 2-5) = Passifs (classes 1, 4)
+   - Filtrage par periode
+
+2. **Compte de resultats** (Income Statement) — ``GET /reports/income-statement``
+   - Charges (classe 6) vs Produits (classe 7)
+   - Calcul du resultat net
+
+**Statut** : CONFORME
+
+Risques de non-conformite comptable
+-------------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 30 40
+
+   * - Risque
+     - Consequence
+     - Mitigation KoproGo
+   * - Comptes non conformes PCMN
+     - Rejet des comptes par l'AG, revocation syndic
+     - ~90 comptes pre-seedes conformes
+   * - Absence de piece justificative
+     - Contestation des ecritures
+     - Champ document_ref + entite Document
+   * - Conservation < 7 ans
+     - Amendes, impossibilite de justifier
+     - Backups chiffres S3 (a verifier retention)
+   * - Absence comptabilite partie double
+     - Non-conformite AR 12/07/2012
+     - JournalEntry avec validation debit=credit
+   * - Pas de commissaire aux comptes (>=20 lots)
+     - Non-conformite legale
+     - Hors scope logiciel

@@ -196,7 +196,7 @@ pub async fn withdraw_quote(
 }
 
 /// POST /api/v1/quotes/compare
-/// Compare multiple quotes (Belgian legal requirement: 3 quotes minimum)
+/// Compare multiple quotes (Belgian professional best practice: 3 quotes minimum)
 /// Returns quotes sorted by automatic score (best first)
 #[post("/quotes/compare")]
 pub async fn compare_quotes(

@@ -340,7 +340,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
             FROM etats_dates
             WHERE organization_id = $1
               AND status IN ('requested', 'in_progress')
-              AND requested_date < NOW() - INTERVAL '10 days'
+              AND requested_date < NOW() - INTERVAL '15 days'
             ORDER BY requested_date ASC
             "#,
         )
@@ -451,7 +451,7 @@ impl EtatDateRepository for PostgresEtatDateRepository {
                 COUNT(*) FILTER (WHERE status = 'generated') as generated_count,
                 COUNT(*) FILTER (WHERE status = 'delivered') as delivered_count,
                 COUNT(*) FILTER (WHERE reference_date < NOW() - INTERVAL '90 days') as expired_count,
-                COUNT(*) FILTER (WHERE status IN ('requested', 'in_progress') AND requested_date < NOW() - INTERVAL '10 days') as overdue_count,
+                COUNT(*) FILTER (WHERE status IN ('requested', 'in_progress') AND requested_date < NOW() - INTERVAL '15 days') as overdue_count,
                 COALESCE(AVG(EXTRACT(EPOCH FROM (COALESCE(generated_date, NOW()) - requested_date)) / 86400), 0)::FLOAT8 as avg_processing_days
             FROM etats_dates
             WHERE organization_id = $1

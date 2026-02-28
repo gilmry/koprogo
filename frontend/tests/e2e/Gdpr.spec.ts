@@ -73,7 +73,6 @@ test.describe("GDPR - Complete User Journey (Idempotent)", () => {
     // Step 3: Navigate to GDPR panel
     await page.goto("/settings/gdpr");
     await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
-    await page.waitForTimeout(1000); // Wait for Svelte hydration
 
     // Step 4: Export personal data (Article 15)
     await page.getByTestId("gdpr-export-button").click();
@@ -138,7 +137,6 @@ test.describe.skip("GDPR - Admin Operations (Idempotent)", () => {
 
     // Step 4: Search for test user
     await page.getByTestId("admin-gdpr-search").fill(user.email);
-    await page.waitForTimeout(500); // Wait for reactive filter to apply
 
     // Step 5: Export user data as admin
     const userRow = page
@@ -192,7 +190,6 @@ test.describe
     // Step 2: User logs in and navigates around (creates activity)
     await loginViaUI(page, user.email, user.password);
     await page.goto("/syndic");
-    await page.waitForTimeout(500);
 
     // Step 3: User logs out
     await page.getByTestId("user-menu-button").click();
@@ -208,7 +205,6 @@ test.describe
       timeout: 10000,
     });
     await page.getByTestId("admin-gdpr-search").fill(user.email);
-    await page.waitForTimeout(500);
 
     const userRow = page
       .getByTestId("admin-gdpr-user-row")
@@ -234,7 +230,6 @@ test.describe
     await loginViaUI(page, user.email, user.password);
     await page.goto("/settings/gdpr");
     await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
-    await page.waitForTimeout(1000);
 
     await page.getByTestId("gdpr-export-button").click();
     await expect(page.getByTestId("gdpr-export-modal")).toBeVisible({
@@ -264,7 +259,6 @@ test.describe.skip("GDPR - Audit Logs Verification", () => {
 
     await page.goto("/settings/gdpr");
     await expect(page.getByTestId("gdpr-data-panel")).toBeVisible();
-    await page.waitForTimeout(1000);
 
     // Trigger export (creates audit log)
     await page.getByTestId("gdpr-export-button").click();
@@ -299,7 +293,6 @@ test.describe.skip("GDPR - Audit Logs Verification", () => {
       timeout: 10000,
     });
     await page.getByTestId("admin-gdpr-search").fill(user.email);
-    await page.waitForTimeout(500);
 
     const userRow = page
       .getByTestId("admin-gdpr-user-row")
@@ -330,7 +323,6 @@ test.describe.skip("GDPR - Cross-Organization Access", () => {
 
     // Search user1
     await page.getByTestId("admin-gdpr-search").fill(user1.email);
-    await page.waitForTimeout(500);
 
     let userRow = page
       .getByTestId("admin-gdpr-user-row")
@@ -339,7 +331,6 @@ test.describe.skip("GDPR - Cross-Organization Access", () => {
 
     // Search user2
     await page.getByTestId("admin-gdpr-search").fill(user2.email);
-    await page.waitForTimeout(500);
 
     userRow = page
       .getByTestId("admin-gdpr-user-row")
@@ -349,7 +340,6 @@ test.describe.skip("GDPR - Cross-Organization Access", () => {
     // Cleanup both users
     for (const user of [user1, user2]) {
       await page.getByTestId("admin-gdpr-search").fill(user.email);
-      await page.waitForTimeout(500);
 
       userRow = page
         .getByTestId("admin-gdpr-user-row")
@@ -359,7 +349,6 @@ test.describe.skip("GDPR - Cross-Organization Access", () => {
       await expect(page.getByTestId("admin-gdpr-erasure-result")).toBeVisible({
         timeout: 10000,
       });
-      await page.waitForTimeout(1000);
     }
   });
 });

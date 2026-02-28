@@ -30,8 +30,9 @@ pub enum EtatDateLanguage {
 /// Un état daté est un document légal obligatoire pour toute vente de lot en copropriété.
 /// Il contient 16 sections légales détaillant la situation financière et juridique du lot.
 ///
-/// **Délai légal**: Maximum 15 jours pour génération (rappels si > 10j)
-/// **Validité**: 3 mois à partir de la date de référence
+/// **Délai légal**: Art. 3.94 CC — 15 jours ouvrables (demande simple),
+/// 30 jours (demande notaire par recommandé)
+/// **Validité**: 3 mois à partir de la date de référence (pratique professionnelle, non légale)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct EtatDate {
     pub id: Uuid,
@@ -282,7 +283,8 @@ impl EtatDate {
         now > expiration_date
     }
 
-    /// Vérifie si la génération est en retard (>10 jours depuis la demande)
+    /// Vérifie si la génération est en retard (>15 jours depuis la demande)
+    /// Art. 3.94 CC: le syndic doit répondre sous 15 jours (demande simple)
     pub fn is_overdue(&self) -> bool {
         if matches!(
             self.status,
@@ -292,7 +294,7 @@ impl EtatDate {
         }
 
         let now = Utc::now();
-        let deadline = self.requested_date + chrono::Duration::days(10);
+        let deadline = self.requested_date + chrono::Duration::days(15);
         now > deadline
     }
 
@@ -578,8 +580,8 @@ mod tests {
         )
         .unwrap();
 
-        // Simuler une demande vieille de 11 jours
-        ed.requested_date = Utc::now() - chrono::Duration::days(11);
+        // Simuler une demande vieille de 16 jours (>15 jours Art. 3.94 CC)
+        ed.requested_date = Utc::now() - chrono::Duration::days(16);
 
         assert!(ed.is_overdue());
     }

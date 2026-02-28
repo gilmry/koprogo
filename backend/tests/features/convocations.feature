@@ -1,5 +1,5 @@
 # Feature: Automatic AG Convocations (Issue #88)
-# Belgian legal deadlines: Ordinary (15 days), Extraordinary (8 days)
+# Belgian legal deadline: 15 days for ALL types per Art. 3.87 §3 Code Civil
 # Workflow: Draft -> Scheduled -> Sent -> Cancelled
 
 Feature: Automatic AG Convocations
@@ -23,13 +23,13 @@ Feature: Automatic AG Convocations
     Then the convocation should be created with status "Draft"
     And the minimum send date should be at least 15 days before the meeting
 
-  Scenario: Create convocation for extraordinary AG (8-day minimum)
-    Given a meeting "AG Extraordinaire" scheduled in 12 days exists
+  Scenario: Create convocation for extraordinary AG (15-day minimum per Art. 3.87 §3)
+    Given a meeting "AG Extraordinaire" scheduled in 20 days exists
     When I create a convocation:
       | meeting_type | Extraordinary |
       | language     | FR            |
     Then the convocation should be created
-    And the minimum send date should be at least 8 days before the meeting
+    And the minimum send date should be at least 15 days before the meeting
 
   Scenario: Reject convocation violating legal deadline
     Given a meeting "AG Last Minute" scheduled in 3 days exists

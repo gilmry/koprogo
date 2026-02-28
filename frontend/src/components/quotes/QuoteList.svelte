@@ -157,7 +157,7 @@
           Devis entrepreneurs
         </h3>
         <p class="mt-1 text-sm text-gray-500">
-          Gestion des devis conformément à la loi belge (3 devis obligatoires pour travaux &gt;5000EUR).
+          Gestion des devis (bonne pratique professionnelle : 3 devis pour travaux &gt;5000EUR).
         </p>
       </div>
       {#if isAdmin}
@@ -265,7 +265,7 @@
         </button>
       </div>
       <p class="mt-2 text-xs text-gray-400">
-        Loi belge : 3 devis minimum obligatoires pour travaux &gt;5000EUR (conformité copropriété).
+        Bonne pratique : 3 devis minimum recommandés pour travaux &gt;5000EUR.
       </p>
     </div>
   {/if}
@@ -343,7 +343,7 @@
   {#if quotes.length > 0 && quotes.length < 3}
     <div class="px-4 py-3 bg-yellow-50 border-t border-yellow-200">
       <p class="text-xs text-yellow-800">
-        <strong>Rappel légal belge :</strong> Pour des travaux &gt;5000EUR, la loi belge exige au minimum 3 devis comparables.
+        <strong>Bonne pratique professionnelle :</strong> Pour des travaux &gt;5000EUR, il est recommandé d'obtenir au minimum 3 devis comparables.
         Vous avez actuellement {quotes.length} devis.
       </p>
     </div>

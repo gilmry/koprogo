@@ -68,7 +68,7 @@ test-e2e-backend: ## 🔗 Tests E2E backend (e2e_http.rs only - e2e.rs and e2e_a
 
 test-bdd: ## 🥒 Tests BDD/Cucumber (backend)
 	@echo "$(GREEN)🥒 Tests BDD...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo test --test bdd
+	cd backend && SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community
 
 test-e2e: ## 🌐 Tests E2E Playwright (frontend + backend)
 	@echo "$(GREEN)🌐 Tests E2E...$(NC)"
@@ -367,7 +367,7 @@ ci: ## ✅ Vérifications CI locales (IDENTIQUE au CI GitHub)
 	@echo "$(GREEN)🔧 Vérification compilation tests E2E...$(NC)"
 	cd backend && SQLX_OFFLINE=true cargo test --test e2e --no-run
 	@echo "$(GREEN)🔧 Vérification compilation tests BDD...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo test --test bdd --no-run
+	cd backend && SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community --no-run
 	@echo "$(GREEN)🔨 Build frontend production (identique CI GitHub)...$(NC)"
 	cd frontend && npm run build
 	@echo ""

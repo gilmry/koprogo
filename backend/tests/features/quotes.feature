@@ -1,5 +1,5 @@
 # Feature: Contractor Quotes Management (Issue #91)
-# Belgian legal: 3 quotes mandatory for works > 5000 EUR
+# Belgian professional best practice: 3 quotes recommended for works > 5000 EUR
 # Scoring: price 40%, delay 30%, warranty 20%, reputation 10%
 
 Feature: Contractor Quotes Management
@@ -73,7 +73,7 @@ Feature: Contractor Quotes Management
     When the contractor withdraws the quote
     Then the quote status should be "Withdrawn"
 
-  # === QUOTE COMPARISON (Belgian law: 3 quotes for >5000 EUR) ===
+  # === QUOTE COMPARISON (Best practice: 3 quotes for >5000 EUR) ===
 
   Scenario: Compare 3 quotes with automatic scoring
     Given 3 submitted quotes exist for the same project:

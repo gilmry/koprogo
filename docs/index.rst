@@ -415,6 +415,12 @@ GDPR, comptabilité belge (PCMN), workflow de facturation et recouvrement.
    BELGIAN_ACCOUNTING_PCMN
    INVOICE_WORKFLOW
    PAYMENT_RECOVERY_WORKFLOW
+   PAYMENT_INTEGRATION
+   TICKET_MANAGEMENT_SYSTEM
+   NOTIFICATION_SYSTEM
+   CONVOCATIONS_SYSTEM
+   CONTRACTOR_QUOTES
+   COMMUNITY_FEATURES
    GDPR_COMPLIANCE_CHECKLIST
    GDPR_IMPLEMENTATION_STATUS
    GDPR_ADDITIONAL_RIGHTS
@@ -445,10 +451,26 @@ Composants frontend, templates email et guide i18n.
    EMAIL_TEMPLATES
    I18N_GUIDE
 
+Conformite Juridique
+---------------------
+
+Bases legales belges, extraits de loi, matrice de conformite et analyse des risques.
+
+.. toctree::
+   :maxdepth: 2
+
+   legal/index
+   legal/copropriete_art_3_84_3_92
+   legal/pcmn_ar_12_07_2012
+   legal/rgpd_conformite
+   legal/audit_conformite
+   legal/matrice_conformite
+   legal/risques_juridiques
+
 📝 Blog
 -------
 
-Actualités, annonces et articles techniques du projet.
+Actualites, annonces et articles techniques du projet.
 
 .. toctree::
    :maxdepth: 2

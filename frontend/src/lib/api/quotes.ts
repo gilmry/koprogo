@@ -3,7 +3,7 @@ import { api } from "../api";
 /**
  * Quote API Client
  * Wraps all 15 backend endpoints for contractor quote management
- * Belgian legal requirement: 3 quotes for works >5000€
+ * Belgian professional best practice: 3 quotes for works >5000€
  */
 
 export interface Quote {

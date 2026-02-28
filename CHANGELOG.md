@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Note de transparence
+
+Ce projet est en version **0.1.0** (fondations techniques). Un audit de conformite juridique
+a identifie des corrections necessaires (convocations 15j, taux d'interet legal 4.5%, etat date 15j).
+Les tests BDD (752 scenarios) et Playwright (7 specs) ont ete ecrits mais n'ont pas tous ete valides
+en environnement d'integration complet. Des corrections seront publiees au fur et a mesure.
+La montee en version n'interviendra qu'apres conformite juridique belge verifiee.
+
+### Added - Legal Compliance Audit & Documentation (2026-02-28)
+
+**Audit de conformite juridique complet et documentation legale structuree.**
+
+#### Documentation Juridique (`docs/legal/`)
+
+- **7 fichiers RST thematiques** couvrant les bases legales belges :
+  - `copropriete_art_3_84_3_92.rst` : Extraits de loi in extenso (Art. 3.84-3.94 CC)
+  - `pcmn_ar_12_07_2012.rst` : Plan Comptable Minimum Normalise (AR 12/07/2012)
+  - `rgpd_conformite.rst` : RGPD + loi belge APD (sanctions, articles implementes/manquants)
+  - `audit_conformite.rst` : Audit de conformite revise (score 65%)
+  - `matrice_conformite.rst` : Matrice code-loi avec fichiers, scenarios BDD et statuts
+  - `risques_juridiques.rst` : Analyse des risques (copropriete, RGPD, comptabilite)
+  - `index.rst` : Index de la section juridique
+- **Section "Conformite Juridique"** ajoutee a `docs/index.rst` et a la page d'accueil GitHub Pages
+
+#### Blog
+
+- **Reecriture `bienvenue.rst`** : Presentation honnete de v0.1.0 avec score audit et plan de remediation
+- **Nouveau `audit-conformite-juridique.rst`** : Article dedie a l'audit (methodologie, resultats, corrections, lacunes)
+
+### Fixed - Legal Compliance Corrections (2026-02-28)
+
+**Corrections de bugs juridiques identifies par l'audit de conformite.**
+
+- **Convocations AG** : Delai corrige de 8j a **15j pour tous les types** (Art. 3.87 §3 CC). La loi ne fait aucune distinction entre AG ordinaire, extraordinaire ou 2eme convocation.
+  - Fichiers : `convocation.rs`, `convocations.feature`
+- **Taux d'interet de retard** : Corrige de 8% a **4.5%** (taux legal civil 2026, Moniteur belge). Le taux change annuellement par AR.
+  - Fichier : `payment_reminder.rs`
+- **Etat date** : Seuil de retard corrige de 10j a **15j** (Art. 3.94 CC)
+  - Fichiers : `etat_date.rs`, `etat_date_repository_impl.rs`
+- **Devis entrepreneurs** : Terminologie corrigee de "Belgian legal requirement" a "Belgian professional best practice" pour la regle des 3 devis >5000 EUR (aucun article de loi n'impose cette regle)
+  - Fichiers : ~15 fichiers backend + frontend
+
+### Changed - Version Policy (2026-02-28)
+
+- **Version maintenue a 0.1.0** : La montee en version est conditionnee a la conformite juridique belge verifiee. Le projet reste en v0.1.0 tant que les lacunes critiques (quorum AG, procurations, lien agenda-resolutions) ne sont pas corrigees.
+
+### Added - BDD Test Infrastructure (2026-02-27)
+
+- **5 fichiers BDD par domaine** : `bdd.rs`, `bdd_governance.rs`, `bdd_financial.rs`, `bdd_operations.rs`, `bdd_community.rs`
+- **48 fichiers feature** (752 scenarios Gherkin) couvrant tous les domaines
+- **7 specs Playwright E2E** (frontend)
+- **CI/CD** : Job Playwright, support branches release
+
 ### Added - Frontend Feature Pages & Navigation Refactoring (2026-02-17)
 
 **Major frontend expansion: 8 thematic commits delivering 6 new feature areas with full UI coverage for existing backend APIs.**
@@ -687,7 +740,11 @@ Implémentation complète du support multi-rôles pour les utilisateurs, permett
 ---
 
 **Status** : ✅ Prêt pour review et merge
-## [2025-1-29] - v4.0.0
+
+## [0.1.0-internal] - 2025-01-29
+
+> **Note**: Previously tagged as "v4.0.0" internally. Renamed to 0.1.0-internal for SemVer compliance.
+> This was the initial development milestone, not a public release.
 
 ### Added - Pluggable Document Storage & Frontend Workflows
 

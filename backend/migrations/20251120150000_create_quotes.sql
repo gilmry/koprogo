@@ -1,5 +1,5 @@
 -- Migration: Create quotes table (Issue #91 - Contractor Quotes Module)
--- Belgian legal requirement: 3 quotes mandatory for works >5000€
+-- Belgian professional best practice: 3 quotes recommended for works >5000€
 
 -- Create custom ENUM for quote status
 CREATE TYPE quote_status AS ENUM (
@@ -61,7 +61,7 @@ CREATE INDEX idx_quotes_validity_date ON quotes(validity_date);
 CREATE INDEX idx_quotes_project_title ON quotes(project_title);
 CREATE INDEX idx_quotes_created_at ON quotes(created_at DESC);
 
--- Composite index for comparison queries (Belgian law: 3 quotes minimum)
+-- Composite index for comparison queries (best practice: 3 quotes minimum)
 CREATE INDEX idx_quotes_building_status ON quotes(building_id, status);
 
 -- Index for background job (find expired quotes)
@@ -69,7 +69,7 @@ CREATE INDEX idx_quotes_expired ON quotes(validity_date, status)
 WHERE status NOT IN ('Accepted', 'Rejected', 'Expired', 'Withdrawn');
 
 -- Column comments for documentation
-COMMENT ON TABLE quotes IS 'Contractor quotes for works (Belgian legal requirement: 3 quotes >5000€)';
+COMMENT ON TABLE quotes IS 'Contractor quotes for works (Belgian professional best practice: 3 quotes >5000€)';
 COMMENT ON COLUMN quotes.amount_excl_vat IS 'Quote amount excluding VAT (Belgian: 21% standard)';
 COMMENT ON COLUMN quotes.vat_rate IS 'VAT rate (e.g., 0.21 for 21%)';
 COMMENT ON COLUMN quotes.amount_incl_vat IS 'Quote amount including VAT (auto-calculated: amount_excl_vat * (1 + vat_rate))';
