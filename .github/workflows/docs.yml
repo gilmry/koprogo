@@ -143,7 +143,7 @@ jobs:
                       <p>Documentation technique de l'API backend générée par cargo doc</p>
                   </a>
 
-                  <a href="docs/blog/index.html" class="doc-card">
+                  <a href="docs/blog.html" class="doc-card">
                       <h2>📝 Blog</h2>
                       <p>Actualités, annonces et articles techniques du projet KoproGo</p>
                   </a>
