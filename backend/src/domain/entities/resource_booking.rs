@@ -187,7 +187,7 @@ impl ResourceBooking {
             booked_by,
             start_time,
             end_time,
-            status: BookingStatus::Confirmed, // Auto-confirm by default (can be Pending if approval workflow needed)
+            status: BookingStatus::Pending, // Pending until syndic confirms
             notes,
             recurring_pattern,
             recurrence_end_date,
@@ -416,7 +416,7 @@ mod tests {
     #[test]
     fn test_create_booking_success() {
         let booking = create_test_booking();
-        assert_eq!(booking.status, BookingStatus::Confirmed);
+        assert_eq!(booking.status, BookingStatus::Pending);
         assert_eq!(booking.resource_type, ResourceType::MeetingRoom);
         assert_eq!(booking.resource_name, "Meeting Room A");
     }
@@ -587,6 +587,7 @@ mod tests {
     #[test]
     fn test_complete_booking_success() {
         let mut booking = create_test_booking();
+        booking.confirm().unwrap();
         let result = booking.complete();
         assert!(result.is_ok());
         assert_eq!(booking.status, BookingStatus::Completed);
@@ -595,6 +596,7 @@ mod tests {
     #[test]
     fn test_mark_no_show_success() {
         let mut booking = create_test_booking();
+        booking.confirm().unwrap();
         let result = booking.mark_no_show();
         assert!(result.is_ok());
         assert_eq!(booking.status, BookingStatus::NoShow);

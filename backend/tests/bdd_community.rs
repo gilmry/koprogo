@@ -765,18 +765,23 @@ async fn given_notices_of_types(world: &mut CommunityWorld, type1: String, type2
     let uc = world.notice_use_cases.as_ref().unwrap().clone();
 
     for nt in [&type1, &type2] {
+        let is_event = *nt == "Event";
         let dto = CreateNoticeDto {
             building_id,
             notice_type: parse_notice_type(nt),
             category: NoticeCategory::General,
             title: format!("{} notice", nt),
             content: format!("{} content", nt),
-            event_date: if *nt == "Event" {
+            event_date: if is_event {
                 Some(Utc::now() + chrono::Duration::days(30))
             } else {
                 None
             },
-            event_location: None,
+            event_location: if is_event {
+                Some("Community Hall".to_string())
+            } else {
+                None
+            },
             contact_info: None,
             expires_at: None,
         };
@@ -1700,19 +1705,47 @@ async fn given_owner_shared_object(world: &mut CommunityWorld, name: String, obj
 }
 
 #[given(regex = r#"^the "([^"]*)" is currently borrowed$"#)]
-async fn given_object_is_borrowed(world: &mut CommunityWorld, _obj_name: String) {
-    // First ensure the object exists, then have someone borrow it
+async fn given_object_is_borrowed(world: &mut CommunityWorld, obj_name: String) {
+    let org_id = world.org_id.unwrap();
+    let building_id = world.building_id.unwrap();
+    let uc = world.shared_object_use_cases.as_ref().unwrap().clone();
+
+    // Create the object if it doesn't exist yet
+    if world.last_object_id.is_none() {
+        let (_, sharer_uid) = world.get_first_owner_ids();
+        let dto = CreateSharedObjectDto {
+            building_id,
+            object_category: SharedObjectCategory::Tools,
+            object_name: obj_name,
+            description: "Shared object".to_string(),
+            condition: ObjectCondition::Good,
+            is_available: true,
+            rental_credits_per_day: None,
+            deposit_credits: Some(1),
+            borrowing_duration_days: Some(7),
+            photos: None,
+            location_details: None,
+            usage_instructions: None,
+        };
+        let resp = uc
+            .create_shared_object(sharer_uid, org_id, dto)
+            .await
+            .expect("create shared object");
+        world.last_object_id = Some(resp.id);
+        world.last_object_response = Some(resp);
+    }
+
+    // Find a borrower who is NOT the object owner
     let names: Vec<String> = world.owner_map.keys().cloned().collect();
+    let object_owner_id = world.last_object_response.as_ref().map(|r| r.owner_id);
     let borrower_name = names.iter().find(|n| {
         let (oid, _) = world.get_owner_ids(n);
-        world.last_object_response.as_ref().map(|r| r.owner_id) != Some(oid)
+        object_owner_id != Some(oid)
     });
 
     if let Some(borrower) = borrower_name.cloned() {
         let (_, user_id) = world.get_owner_ids(&borrower);
-        let org_id = world.org_id.unwrap();
         let object_id = world.last_object_id.unwrap();
-        let uc = world.shared_object_use_cases.as_ref().unwrap().clone();
         let dto = BorrowObjectDto {
             duration_days: None,
         };

@@ -20,7 +20,7 @@ impl PostgresResourceBookingRepository {
     fn row_to_entity(row: &sqlx::postgres::PgRow) -> Result<ResourceBooking, String> {
         // Parse ENUMs from database strings
         let resource_type_str: String = row
-            .try_get("resource_type")
+            .try_get("res_type")
             .map_err(|e| format!("Failed to get resource_type: {}", e))?;
         let resource_type: ResourceType =
             serde_json::from_str(&format!("\"{}\"", resource_type_str))
@@ -130,8 +130,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<ResourceBooking>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE id = $1
@@ -151,8 +151,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<ResourceBooking>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE building_id = $1
@@ -179,8 +179,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE building_id = $1 AND resource_type = $2::resource_type
@@ -214,8 +214,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE building_id = $1 AND resource_type = $2::resource_type AND resource_name = $3
@@ -235,8 +235,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
     async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<ResourceBooking>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE booked_by = $1
@@ -263,8 +263,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE booked_by = $1 AND status = $2::booking_status
@@ -292,8 +292,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE building_id = $1 AND status = $2::booking_status
@@ -318,8 +318,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE building_id = $1
@@ -341,8 +341,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
     async fn find_active(&self, building_id: Uuid) -> Result<Vec<ResourceBooking>, String> {
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE building_id = $1
@@ -369,8 +369,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, building_id, resource_type, resource_name, booked_by,
-                   start_time, end_time, status, notes, recurring_pattern,
+            SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                   start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                    recurrence_end_date, created_at, updated_at
             FROM resource_bookings
             WHERE building_id = $1
@@ -407,8 +407,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
         let rows = if let Some(exclude_id) = exclude_booking_id {
             sqlx::query(
                 r#"
-                SELECT id, building_id, resource_type, resource_name, booked_by,
-                       start_time, end_time, status, notes, recurring_pattern,
+                SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                       start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                        recurrence_end_date, created_at, updated_at
                 FROM resource_bookings
                 WHERE building_id = $1
@@ -432,8 +432,8 @@ impl ResourceBookingRepository for PostgresResourceBookingRepository {
         } else {
             sqlx::query(
                 r#"
-                SELECT id, building_id, resource_type, resource_name, booked_by,
-                       start_time, end_time, status, notes, recurring_pattern,
+                SELECT id, building_id, resource_type::text AS res_type, resource_name, booked_by,
+                       start_time, end_time, status::text AS status, notes, recurring_pattern::text AS recurring_pattern,
                        recurrence_end_date, created_at, updated_at
                 FROM resource_bookings
                 WHERE building_id = $1
