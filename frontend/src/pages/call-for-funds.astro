@@ -107,7 +107,7 @@ import Layout from '../layouts/Layout.astro';
       container.innerHTML = '';
     }
 
-    listComponent = mount(CallForFundsList, {
+    listComponent = mount(CallForFundsList as any, {
       target: container,
       props: {
         onCreate: showModal,
@@ -150,7 +150,7 @@ import Layout from '../layouts/Layout.astro';
       // Initialize form
       const formContainer = document.getElementById('form-container');
       if (formContainer) {
-        mount(CallForFundsForm, {
+        mount(CallForFundsForm as any, {
           target: formContainer,
           props: {
             onSuccess: () => {

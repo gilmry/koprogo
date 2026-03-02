@@ -102,15 +102,15 @@ import Layout from "../layouts/Layout.astro";
       // Mount badges
       const badgesContainer = document.getElementById("badges");
       if (badgesContainer) {
-        mount(ObjectCategoryBadge, {
+        mount(ObjectCategoryBadge as any, {
           target: badgesContainer,
           props: { category: object.object_category },
         });
-        mount(ObjectConditionBadge, {
+        mount(ObjectConditionBadge as any, {
           target: badgesContainer,
           props: { condition: object.condition },
         });
-        mount(AvailabilityStatusBadge, {
+        mount(AvailabilityStatusBadge as any, {
           target: badgesContainer,
           props: { status: object.availability_status },
         });
@@ -119,7 +119,7 @@ import Layout from "../layouts/Layout.astro";
       // Mount loan panel (button + modal) below the detail card
       const panelContainer = document.getElementById("loan-panel-container");
       if (panelContainer) {
-        mount(LoanPanel, {
+        mount(LoanPanel as any, {
           target: panelContainer,
           props: { object, borrowerId },
         });

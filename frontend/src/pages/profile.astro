@@ -17,6 +17,6 @@ import Layout from '../layouts/Layout.astro';
 
   const container = document.getElementById('profile-container');
   if (container) {
-    mount(ProfilePanel, { target: container });
+    mount(ProfilePanel as any, { target: container });
   }
 </script>

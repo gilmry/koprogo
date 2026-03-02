@@ -82,19 +82,19 @@ import Layout from "../../layouts/Layout.astro";
 
     switch (tab) {
       case "achievements":
-        mounted[tab] = mount(AdminAchievementList, {
+        mounted[tab] = mount(AdminAchievementList as any, {
           target: container,
           props: { organizationId },
         });
         break;
       case "challenges":
-        mounted[tab] = mount(AdminChallengeList, {
+        mounted[tab] = mount(AdminChallengeList as any, {
           target: container,
           props: { organizationId },
         });
         break;
       case "leaderboard":
-        mounted[tab] = mount(GamificationLeaderboard, {
+        mounted[tab] = mount(GamificationLeaderboard as any, {
           target: container,
           props: { organizationId },
         });

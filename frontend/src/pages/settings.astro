@@ -42,7 +42,7 @@ import Layout from '../layouts/Layout.astro';
     const container = document.getElementById("user-settings-panel");
     if (container) {
       container.innerHTML = "";
-      mount(UserSettings, { target: container });
+      mount(UserSettings as any, { target: container });
     }
   }
 </script>

@@ -29,14 +29,14 @@ import Layout from "../layouts/Layout.astro";
     if (!listContainer) return;
     if (listComponent) { try { unmount(listComponent); } catch {} }
     listContainer.innerHTML = "";
-    listComponent = mount(InspectionList, {
+    listComponent = mount(InspectionList as any, {
       target: listContainer,
       props: { buildingId },
     });
   }
 
   if (selectorContainer) {
-    mount(BuildingSelector, {
+    mount(BuildingSelector as any, {
       target: selectorContainer,
       props: {
         label: "Immeuble",

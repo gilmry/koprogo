@@ -55,7 +55,7 @@ import Layout from "../layouts/Layout.astro";
 
     if (achContainer) {
       achContainer.innerHTML = "";
-      achComponent = mount(AchievementList, {
+      achComponent = mount(AchievementList as any, {
         target: achContainer,
         props: { organizationId },
       });
@@ -63,7 +63,7 @@ import Layout from "../layouts/Layout.astro";
 
     if (chalContainer) {
       chalContainer.innerHTML = "";
-      chalComponent = mount(ChallengeList, {
+      chalComponent = mount(ChallengeList as any, {
         target: chalContainer,
         props: { buildingId, organizationId },
       });
@@ -71,7 +71,7 @@ import Layout from "../layouts/Layout.astro";
 
     if (lbContainer) {
       lbContainer.innerHTML = "";
-      lbComponent = mount(GamificationLeaderboard, {
+      lbComponent = mount(GamificationLeaderboard as any, {
         target: lbContainer,
         props: { organizationId, buildingId },
       });
@@ -79,7 +79,7 @@ import Layout from "../layouts/Layout.astro";
   }
 
   if (selectorContainer) {
-    mount(BuildingSelector, {
+    mount(BuildingSelector as any, {
       target: selectorContainer,
       props: {
         label: "Immeuble",

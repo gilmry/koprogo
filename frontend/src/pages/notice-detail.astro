@@ -43,7 +43,7 @@ import Layout from "../layouts/Layout.astro";
 
       const container = document.getElementById("notice-detail-container");
       if (container) {
-        mount(NoticeDetail, {
+        mount(NoticeDetail as any, {
           target: container,
           props: {
             noticeId: noticeId!,

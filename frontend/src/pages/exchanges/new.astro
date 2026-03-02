@@ -109,7 +109,7 @@ import Layout from "../../layouts/Layout.astro";
 
   const formContainer = document.getElementById("create-form-container");
   if (formContainer) {
-    mount(CreateExchangeForm, {
+    mount(CreateExchangeForm as any, {
       target: formContainer,
     });
   }

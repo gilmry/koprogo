@@ -44,7 +44,7 @@ import Layout from "../layouts/Layout.astro";
     if (!listContainer) return;
     if (listComponent) { try { unmount(listComponent); } catch {} }
     listContainer.innerHTML = "";
-    listComponent = mount(NoticeList, {
+    listComponent = mount(NoticeList as any, {
       target: listContainer,
       props: { buildingId, showFilters: true },
     });
@@ -62,7 +62,7 @@ import Layout from "../layouts/Layout.astro";
     if (!currentBuildingId) return;
     closeModal();
     if (modalContainer) {
-      createModalComponent = mount(NoticeCreateModal, {
+      createModalComponent = mount(NoticeCreateModal as any, {
         target: modalContainer,
         props: {
           isOpen: true,
@@ -84,7 +84,7 @@ import Layout from "../layouts/Layout.astro";
     }
 
     if (selectorContainer) {
-      mount(BuildingSelector, {
+      mount(BuildingSelector as any, {
         target: selectorContainer,
         props: {
           label: "Immeuble",

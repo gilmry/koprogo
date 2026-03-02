@@ -44,14 +44,14 @@ import Layout from '../../layouts/Layout.astro';
       try { unmount(listComponent); } catch {}
     }
     listContainer.innerHTML = '';
-    listComponent = mount(ExpenseList, {
+    listComponent = mount(ExpenseList as any, {
       target: listContainer,
       props: { buildingId },
     });
   }
 
   if (selectorContainer) {
-    mount(BuildingSelector, {
+    mount(BuildingSelector as any, {
       target: selectorContainer,
       props: {
         label: 'Immeuble',

@@ -81,7 +81,7 @@ import Layout from "../../layouts/Layout.astro";
       // Mount comparison table
       const comparisonContainer = document.getElementById("quote-comparison");
       if (comparisonContainer) {
-        mount(QuoteComparisonTable, {
+        mount(QuoteComparisonTable as any, {
           target: comparisonContainer,
           props: {
             quoteIds,

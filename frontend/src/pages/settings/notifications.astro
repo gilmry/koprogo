@@ -94,7 +94,7 @@ import Layout from "../../layouts/Layout.astro";
     const userId = localStorage.getItem("koprogo_user_id") || "";
 
     if (userId) {
-      mount(NotificationPreferences, {
+      mount(NotificationPreferences as any, {
         target: preferencesContainer,
         props: {
           userId,

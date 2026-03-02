@@ -36,7 +36,7 @@ import Layout from "../../layouts/Layout.astro";
   // Mount Poll Detail
   const detailContainer = document.getElementById("poll-detail-container");
   if (detailContainer && pollId) {
-    mount(PollDetail, {
+    mount(PollDetail as any, {
       target: detailContainer,
       props: {
         pollId: pollId,

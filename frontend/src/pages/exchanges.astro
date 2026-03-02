@@ -78,28 +78,28 @@ import Layout from "../layouts/Layout.astro";
     if (listContainer) listContainer.innerHTML = "";
 
     if (balanceContainer && currentOwnerId) {
-      mounted.push(mount(CreditBalance, {
+      mounted.push(mount(CreditBalance as any, {
         target: balanceContainer,
         props: { ownerId: currentOwnerId, buildingId },
       }));
     }
 
     if (leaderboardContainer) {
-      mounted.push(mount(Leaderboard, {
+      mounted.push(mount(Leaderboard as any, {
         target: leaderboardContainer,
         props: { buildingId, limit: 10 },
       }));
     }
 
     if (statsContainer) {
-      mounted.push(mount(SelStatistics, {
+      mounted.push(mount(SelStatistics as any, {
         target: statsContainer,
         props: { buildingId },
       }));
     }
 
     if (listContainer) {
-      mounted.push(mount(ExchangeList, {
+      mounted.push(mount(ExchangeList as any, {
         target: listContainer,
         props: { buildingId, currentOwnerId, showOnlyAvailable: false, showFilters: true },
       }));
@@ -114,7 +114,7 @@ import Layout from "../layouts/Layout.astro";
     }
 
     if (selectorContainer) {
-      mount(BuildingSelector, {
+      mount(BuildingSelector as any, {
         target: selectorContainer,
         props: {
           label: "Immeuble",
