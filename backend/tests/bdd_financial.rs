@@ -17,8 +17,8 @@ use koprogo_api::application::use_cases::{
     PaymentReminderUseCases, PaymentUseCases,
 };
 use koprogo_api::domain::entities::{
-    ContributionPaymentMethod, ContributionType, ExpenseCategory,
-    JournalEntry, JournalEntryLine, OwnerContribution, ReminderLevel,
+    ContributionPaymentMethod, ContributionType, ExpenseCategory, JournalEntry, JournalEntryLine,
+    OwnerContribution, ReminderLevel,
 };
 // Two separate PaymentMethodType enums exist in the domain:
 // payment.rs defines one (for Payment entity), payment_method.rs defines another (for PaymentMethod entity)
@@ -4617,10 +4617,7 @@ async fn when_calculate_invoice_charge_distribution(world: &mut FinancialWorld) 
     let expense_id = world
         .last_invoice_id
         .unwrap_or_else(|| world.expense_id.unwrap());
-    match uc
-        .calculate_and_save_distribution(expense_id)
-        .await
-    {
+    match uc.calculate_and_save_distribution(expense_id).await {
         Ok(list) => {
             world.distribution_list_count = list.len();
             world.operation_success = true;

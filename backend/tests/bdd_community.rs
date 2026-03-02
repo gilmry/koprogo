@@ -18,9 +18,9 @@ use koprogo_api::application::use_cases::{
     NoticeUseCases, ResourceBookingUseCases, SharedObjectUseCases, SkillUseCases,
 };
 use koprogo_api::domain::entities::{
-    AchievementCategory, AchievementTier, ChallengeType, ExchangeType,
-    ExpertiseLevel, NoticeCategory, NoticeType, ObjectCondition, Owner, RecurringPattern,
-    ResourceType, SharedObjectCategory, SkillCategory,
+    AchievementCategory, AchievementTier, ChallengeType, ExchangeType, ExpertiseLevel,
+    NoticeCategory, NoticeType, ObjectCondition, Owner, RecurringPattern, ResourceType,
+    SharedObjectCategory, SkillCategory,
 };
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresAchievementRepository, PostgresBuildingRepository,

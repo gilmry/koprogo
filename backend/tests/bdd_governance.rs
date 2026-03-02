@@ -6,10 +6,10 @@ use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
     CastVoteDto, ConvocationRecipientResponse, ConvocationResponse, CreateConvocationRequest,
     CreateEtatDateRequest, CreatePollDto, CreatePollOptionDto, CreateQuoteDto, Disable2FADto,
-    Enable2FADto, EtatDateResponse, EtatDateStatsResponse, PollResponseDto,
-    PollResultsDto, QuoteComparisonRequestDto, QuoteComparisonResponseDto, QuoteDecisionDto,
-    QuoteResponseDto, RecipientTrackingSummaryResponse, RegenerateBackupCodesDto,
-    ScheduleConvocationRequest, SendConvocationRequest, Setup2FAResponseDto, TwoFactorStatusDto,
+    Enable2FADto, EtatDateResponse, EtatDateStatsResponse, PollResponseDto, PollResultsDto,
+    QuoteComparisonRequestDto, QuoteComparisonResponseDto, QuoteDecisionDto, QuoteResponseDto,
+    RecipientTrackingSummaryResponse, RegenerateBackupCodesDto, ScheduleConvocationRequest,
+    SendConvocationRequest, Setup2FAResponseDto, TwoFactorStatusDto,
     UpdateEtatDateAdditionalDataRequest, UpdateEtatDateFinancialRequest, Verify2FADto,
     Verify2FAResponseDto,
 };
@@ -19,9 +19,8 @@ use koprogo_api::application::use_cases::{
     QuoteUseCases, ResolutionUseCases, TwoFactorUseCases,
 };
 use koprogo_api::domain::entities::{
-    AttendanceStatus, ConvocationStatus, ConvocationType, EtatDateLanguage,
-    MajorityType, Organization, ResolutionStatus, ResolutionType,
-    SubscriptionPlan, User, UserRole, VoteChoice,
+    AttendanceStatus, ConvocationStatus, ConvocationType, EtatDateLanguage, MajorityType,
+    Organization, ResolutionStatus, ResolutionType, SubscriptionPlan, User, UserRole, VoteChoice,
 };
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresBuildingRepository, PostgresConvocationRecipientRepository,
@@ -5221,10 +5220,7 @@ async fn then_no_more_votes(_world: &mut GovernanceWorld) {
 }
 
 #[given(regex = r#"^a closed poll "([^"]*)" with:$"#)]
-async fn given_closed_poll_with_results(
-    world: &mut GovernanceWorld,
-    question: String,
-) {
+async fn given_closed_poll_with_results(world: &mut GovernanceWorld, question: String) {
     given_active_poll(world, question).await;
     when_close_poll(world).await;
 }
