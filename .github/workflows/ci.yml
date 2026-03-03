@@ -99,7 +99,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -159,7 +159,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -247,7 +247,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: koprogo_test
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -285,21 +285,38 @@ jobs:
       - name: Build and start backend
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/koprogo_test
+          JWT_SECRET: ci-test-jwt-secret-for-playwright-minimum-32-chars
+          TOTP_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          SERVER_HOST: 127.0.0.1
+          SERVER_PORT: 8080
+          UPLOAD_DIR: ./uploads
+          CORS_ALLOWED_ORIGINS: http://localhost:3000
+          ENABLE_RATE_LIMITING: false
+          SMTP_ENABLED: false
+          RUST_LOG: warn
         run: |
           cd backend
           cargo install sqlx-cli --no-default-features --features postgres
           sqlx migrate run
           cargo build
           cargo run &
-          sleep 5
+          sleep 10
+
+      - name: Start frontend dev server
+        env:
+          PUBLIC_API_URL: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          node scripts/generate-config.js
+          npx astro dev --port 3000 &
+          sleep 10
 
       - name: Run Playwright tests
         env:
-          PLAYWRIGHT_BASE_URL: http://localhost:8080
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
         run: |
           cd frontend
           npx playwright test
-        continue-on-error: true
 
       - name: Upload Playwright report
         if: always()
