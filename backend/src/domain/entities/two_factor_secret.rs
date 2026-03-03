@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 /// Two-factor authentication secret for TOTP (Time-based One-Time Password)
 /// Stores encrypted TOTP secret and backup codes for account recovery
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct TwoFactorSecret {
     pub id: Uuid,
     pub user_id: Uuid,
@@ -129,6 +129,24 @@ impl TwoFactorSecret {
     /// Generate placeholder backup codes (will be replaced with real codes)
     fn generate_backup_codes_placeholders() -> Vec<String> {
         vec!["placeholder".to_string(); 10]
+    }
+}
+
+/// Custom Debug implementation that redacts sensitive cryptographic fields
+/// to prevent accidental logging of TOTP secrets and backup codes.
+impl std::fmt::Debug for TwoFactorSecret {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TwoFactorSecret")
+            .field("id", &self.id)
+            .field("user_id", &self.user_id)
+            .field("secret_encrypted", &"[REDACTED]")
+            .field("backup_codes_encrypted", &format!("[REDACTED × {}]", self.backup_codes_encrypted.len()))
+            .field("is_enabled", &self.is_enabled)
+            .field("verified_at", &self.verified_at)
+            .field("last_used_at", &self.last_used_at)
+            .field("created_at", &self.created_at)
+            .field("updated_at", &self.updated_at)
+            .finish()
     }
 }
 

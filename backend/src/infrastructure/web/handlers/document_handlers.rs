@@ -73,6 +73,14 @@ pub async fn upload_document(
         .map(|ct| ct.to_string())
         .unwrap_or_else(|| "application/octet-stream".to_string());
 
+    // Enforce file size limit before reading into memory (prevent uncontrolled allocation)
+    const MAX_FILE_SIZE: usize = 50 * 1024 * 1024; // 50MB
+    if form.file.size > MAX_FILE_SIZE {
+        return HttpResponse::PayloadTooLarge().json(serde_json::json!({
+            "error": "File too large. Maximum allowed size is 50MB."
+        }));
+    }
+
     // Read file content
     let file_content = match std::fs::read(form.file.file.path()) {
         Ok(content) => content,
