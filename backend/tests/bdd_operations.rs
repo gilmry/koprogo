@@ -1743,8 +1743,8 @@ async fn given_building_with_units(world: &mut OperationsWorld, _name: String, c
     for i in 0..count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, share_percentage, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, 50.0, 0.1, NOW(), NOW())"#
+            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', $5, 50.0, 100.0, NOW(), NOW())"#
         )
         .bind(unit_id)
         .bind(building_id)
@@ -1963,8 +1963,8 @@ async fn given_2_uploads(world: &mut OperationsWorld) {
         for i in 0..2 {
             let uid = Uuid::new_v4();
             sqlx::query(
-                r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, share_percentage, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, 0, 50.0, 0.1, NOW(), NOW())"#
+                r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
             )
             .bind(uid).bind(building_id).bind(org_id).bind(format!("BU{}", i))
             .execute(pool).await.expect("insert unit");
@@ -2022,8 +2022,8 @@ async fn given_unverified_upload(world: &mut OperationsWorld) {
     if world.unit_ids.is_empty() {
         let uid = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, share_percentage, created_at, updated_at)
-               VALUES ($1, $2, $3, 'UV1', 0, 50.0, 0.1, NOW(), NOW())"#
+            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, 'UV1', 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
         )
         .bind(uid).bind(building_id).bind(org_id)
         .execute(pool).await.expect("insert unit");
@@ -2224,8 +2224,8 @@ async fn given_n_participants(world: &mut OperationsWorld, count: usize) {
         } else {
             let uid = Uuid::new_v4();
             sqlx::query(
-                r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, share_percentage, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, 0, 50.0, 0.1, NOW(), NOW())"#
+                r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, 'apartment', 0, 50.0, 100.0, NOW(), NOW())"#
             )
             .bind(uid).bind(building_id).bind(org_id).bind(format!("P{}", i))
             .execute(pool).await.expect("insert unit");

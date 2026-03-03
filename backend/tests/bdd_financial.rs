@@ -2022,15 +2022,14 @@ async fn given_building_with_units(
     for i in 1..=unit_count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())"#,
+            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
         .bind(org_id)
         .bind(format!("Unit-{}", i))
         .bind(i as i32)
-        .bind(50.0 + i as f64 * 10.0)
         .execute(pool)
         .await
         .expect("insert unit");
@@ -2469,8 +2468,8 @@ async fn given_2_owners_with_pcts(world: &mut FinancialWorld, pct1: f64, pct2: f
         for i in 1..=2 {
             let unit_id = Uuid::new_v4();
             sqlx::query(
-                r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, created_at, updated_at)
-                   VALUES ($1, $2, $3, $4, 1, 50.0, NOW(), NOW())"#,
+                r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+                   VALUES ($1, $2, $3, $4, 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
             )
             .bind(unit_id)
             .bind(building_id)
@@ -2574,8 +2573,8 @@ async fn given_sent_call_with_contributions(world: &mut FinancialWorld) {
 
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, created_at, updated_at)
-               VALUES ($1, $2, $3, 'CFF-Unit', 1, 50.0, NOW(), NOW())"#,
+            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, 'CFF-Unit', 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
@@ -2700,8 +2699,8 @@ async fn given_owner_with_unit(world: &mut FinancialWorld, name: String) {
     // Create a unit and link
     let unit_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, created_at, updated_at)
-           VALUES ($1, $2, $3, 'OC-Unit', 1, 50.0, NOW(), NOW())"#,
+        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+           VALUES ($1, $2, $3, 'OC-Unit', 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
@@ -3219,8 +3218,8 @@ async fn given_building_with_n_units(world: &mut FinancialWorld, _name: String, 
     for i in 1..=count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, 60.0, NOW(), NOW())"#,
+            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', $5, 60.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
@@ -3887,8 +3886,8 @@ async fn given_invoice_building(world: &mut FinancialWorld, _name: String, count
     for i in 0..count {
         let unit_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area_sqm, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, 75.0, NOW(), NOW())"#,
+            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', $5, 75.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)

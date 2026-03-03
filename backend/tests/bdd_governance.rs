@@ -3953,8 +3953,8 @@ async fn given_poll_owner(world: &mut GovernanceWorld, name: String, _building: 
 
     // Create unit
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area_sqm, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, 1, 80.0, NOW(), NOW())"#,
+        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, 'apartment', 1, 80.0, 100.0, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
@@ -4873,8 +4873,8 @@ async fn given_n_owners_voted(
         .expect("insert voter");
 
         sqlx::query(
-            r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area_sqm, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, 1, 50.0, NOW(), NOW())"#,
+            r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'apartment', 1, 50.0, 100.0, NOW(), NOW())"#,
         )
         .bind(unit_id)
         .bind(building_id)
@@ -5528,8 +5528,8 @@ async fn given_etat_date_unit(world: &mut GovernanceWorld, unit_name: String, _b
     let org_id = world.org_id.unwrap();
 
     sqlx::query(
-        r#"INSERT INTO units (id, building_id, organization_id, unit_number, floor, area_sqm, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, 1, 85.0, NOW(), NOW())"#,
+        r#"INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, 'apartment', 1, 85.0, 100.0, NOW(), NOW())"#,
     )
     .bind(unit_id)
     .bind(building_id)
