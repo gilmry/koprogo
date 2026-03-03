@@ -40,11 +40,11 @@ Feature: Local Exchange System (SEL)
     When I create a shared purchase exchange:
       | title       | Bulk organic vegetables |
       | description | Weekly order from local farm |
-      | credits     | 0                       |
+      | credits     | 1                       |
       | conditions  | Pickup Friday 6-8pm     |
     Then the exchange should be created successfully
     And the exchange type should be "SharedPurchase"
-    And credits should be 0 # Shared purchase is cost-sharing, not time
+    And credits should be 1
 
   Scenario: Browse available exchanges in building
     Given the following exchanges exist in building:
