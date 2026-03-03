@@ -8,7 +8,7 @@ import type { Page } from "@playwright/test";
  * Covers AG convocations and resolution viewing.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 async function setupSyndicWithBuilding(page: Page): Promise<{
   token: string;

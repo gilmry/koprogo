@@ -7,7 +7,7 @@ import type { Page } from "@playwright/test";
  * Tests notification listing, read marking, and preference management.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 async function registerAndLogin(
   page: Page,

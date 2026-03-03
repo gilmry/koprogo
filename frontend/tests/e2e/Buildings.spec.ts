@@ -8,7 +8,7 @@ import type { Page } from "@playwright/test";
  * Idempotent: each test creates its own data with unique timestamps.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 async function registerAndLoginAsSyndic(
   page: Page,
