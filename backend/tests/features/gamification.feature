@@ -65,8 +65,8 @@ Feature: Gamification & Achievements
       | target_metric | bookings_created                |
       | target_value  | 5                               |
       | reward_points | 100                             |
-      | start_date    | 2026-03-01T00:00:00Z            |
-      | end_date      | 2026-03-31T23:59:59Z            |
+      | start_date    | 2026-04-01T00:00:00Z            |
+      | end_date      | 2026-04-30T23:59:59Z            |
     Then the challenge should be created with status "Draft"
 
   Scenario: Activate a challenge
