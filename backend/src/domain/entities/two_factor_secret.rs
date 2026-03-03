@@ -140,7 +140,10 @@ impl std::fmt::Debug for TwoFactorSecret {
             .field("id", &self.id)
             .field("user_id", &self.user_id)
             .field("secret_encrypted", &"[REDACTED]")
-            .field("backup_codes_encrypted", &format!("[REDACTED × {}]", self.backup_codes_encrypted.len()))
+            .field(
+                "backup_codes_encrypted",
+                &format!("[REDACTED × {}]", self.backup_codes_encrypted.len()),
+            )
             .field("is_enabled", &self.is_enabled)
             .field("verified_at", &self.verified_at)
             .field("last_used_at", &self.last_used_at)

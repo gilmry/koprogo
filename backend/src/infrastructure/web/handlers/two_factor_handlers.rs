@@ -53,7 +53,11 @@ pub async fn setup_2fa(auth: AuthenticatedUser, state: web::Data<AppState>) -> H
             }))
         }
         Err(e) => {
-            log::error!("Failed to setup 2FA for user {}: {}", auth.user_id, "internal error");
+            log::error!(
+                "Failed to setup 2FA for user {}: {}",
+                auth.user_id,
+                "internal error"
+            );
             let _ = e; // error details intentionally not logged (may contain sensitive data)
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to setup 2FA"
@@ -118,7 +122,11 @@ pub async fn enable_2fa(
             "error": "2FA setup not found. Please run setup first."
         })),
         Err(e) => {
-            log::error!("Failed to enable 2FA for user {}: {}", auth.user_id, "internal error");
+            log::error!(
+                "Failed to enable 2FA for user {}: {}",
+                auth.user_id,
+                "internal error"
+            );
             let _ = e; // error details intentionally not logged (may contain sensitive data)
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to enable 2FA"
@@ -180,7 +188,11 @@ pub async fn verify_2fa(
             "error": "2FA is not enabled for this account"
         })),
         Err(e) => {
-            log::error!("Failed to verify 2FA for user {}: {}", auth.user_id, "internal error");
+            log::error!(
+                "Failed to verify 2FA for user {}: {}",
+                auth.user_id,
+                "internal error"
+            );
             let _ = e; // error details intentionally not logged (may contain sensitive data)
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to verify 2FA"
@@ -240,7 +252,11 @@ pub async fn disable_2fa(
             }))
         }
         Err(e) => {
-            log::error!("Failed to disable 2FA for user {}: {}", auth.user_id, "internal error");
+            log::error!(
+                "Failed to disable 2FA for user {}: {}",
+                auth.user_id,
+                "internal error"
+            );
             let _ = e; // error details intentionally not logged (may contain sensitive data)
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to disable 2FA"
@@ -309,7 +325,11 @@ pub async fn regenerate_backup_codes(
             "error": "2FA is not enabled for this account"
         })),
         Err(e) => {
-            log::error!("Failed to regenerate backup codes for user {}: {}", auth.user_id, "internal error");
+            log::error!(
+                "Failed to regenerate backup codes for user {}: {}",
+                auth.user_id,
+                "internal error"
+            );
             let _ = e; // error details intentionally not logged (may contain sensitive data)
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to regenerate backup codes"
@@ -354,7 +374,11 @@ pub async fn get_2fa_status(auth: AuthenticatedUser, state: web::Data<AppState>)
     {
         Ok(status) => HttpResponse::Ok().json(status),
         Err(e) => {
-            log::error!("Failed to get 2FA status for user {}: {}", auth.user_id, "internal error");
+            log::error!(
+                "Failed to get 2FA status for user {}: {}",
+                auth.user_id,
+                "internal error"
+            );
             let _ = e; // error details intentionally not logged (may contain sensitive data)
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to retrieve 2FA status"
