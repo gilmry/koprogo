@@ -5333,15 +5333,8 @@ async fn when_escalated_to_formal(_world: &mut FinancialWorld) {}
 // BUDGET STEPS
 // ============================================================
 
-#[given(regex = r#"^an organization "([^"]*)" exists with id "([^"]*)"$"#)]
-async fn given_budget_org(world: &mut FinancialWorld, _name: String, _id: String) {
-    world.setup_database().await;
-}
-
-#[given(regex = r#"^a building "([^"]*)" exists in organization "([^"]*)"$"#)]
-async fn given_budget_building(_world: &mut FinancialWorld, _bname: String, _org_id: String) {
-    // Building already created in setup_database
-}
+// given_organization_exists (line 470) already handles: ^an organization "..." exists with id "..."$
+// given_building_exists (line 475) already handles: ^a building "..." exists in organization "..."$
 
 #[given(regex = r#"^a user "([^"]*)" exists with email "([^"]*)" in organization "([^"]*)"$"#)]
 async fn given_budget_user(world: &mut FinancialWorld, _name: String, email: String, _org: String) {
