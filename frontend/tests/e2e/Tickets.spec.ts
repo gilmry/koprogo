@@ -18,6 +18,25 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const timestamp = Date.now();
   const email = `ticket-test-${timestamp}@example.com`;
 
+  // Create organization first (required for syndic to create buildings/tickets)
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminData = await adminLoginResp.json();
+  const adminToken = adminData.token;
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `Ticket Test Org ${timestamp}`,
+      slug: `ticket-test-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
+  const orgId = org.id;
+
   const regResponse = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
       email,
@@ -25,12 +44,12 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
       first_name: "Ticket",
       last_name: `Test${timestamp}`,
       role: "syndic",
+      organization_id: orgId,
     },
   });
   expect(regResponse.ok()).toBeTruthy();
   const userData = await regResponse.json();
   const token = userData.token;
-  const orgId = userData.user.organization_id || userData.user.org_id || "";
 
   const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
     data: {

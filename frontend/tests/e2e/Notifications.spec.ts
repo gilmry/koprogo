@@ -16,6 +16,25 @@ async function registerAndLogin(
   const timestamp = Date.now();
   const email = `notif-test-${timestamp}@example.com`;
 
+  // Create organization first (required for users to create notifications)
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminData = await adminLoginResp.json();
+  const adminToken = adminData.token;
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `Notif Test Org ${timestamp}`,
+      slug: `notif-test-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
+  const orgId = org.id;
+
   const response = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
       email,
@@ -23,6 +42,7 @@ async function registerAndLogin(
       first_name: "Notif",
       last_name: `Test${timestamp}`,
       role,
+      organization_id: orgId,
     },
   });
   expect(response.ok()).toBeTruthy();
