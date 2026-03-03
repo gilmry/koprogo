@@ -3867,8 +3867,8 @@ async fn given_accountant_user(world: &mut FinancialWorld, email: String) {
     let org_id = world.org_id.unwrap();
     let user_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, organization_id, is_active, created_at, updated_at)
-           VALUES ($1, $2, '$argon2id$v=19$m=16,t=2,p=1$dGVzdA$test', 'Comptable', 'Test', $3, true, NOW(), NOW())"#,
+        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
+           VALUES ($1, $2, '$argon2id$v=19$m=16,t=2,p=1$dGVzdA$test', 'Comptable', 'Test', 'accountant', $3, true, NOW(), NOW())"#,
     )
     .bind(user_id)
     .bind(&email)
@@ -3885,8 +3885,8 @@ async fn given_syndic_user(world: &mut FinancialWorld, email: String) {
     let org_id = world.org_id.unwrap();
     let user_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, organization_id, is_active, created_at, updated_at)
-           VALUES ($1, $2, '$argon2id$v=19$m=16,t=2,p=1$dGVzdA$test', 'Syndic', 'Test', $3, true, NOW(), NOW())"#,
+        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
+           VALUES ($1, $2, '$argon2id$v=19$m=16,t=2,p=1$dGVzdA$test', 'Syndic', 'Test', 'syndic', $3, true, NOW(), NOW())"#,
     )
     .bind(user_id)
     .bind(&email)

@@ -2728,8 +2728,8 @@ impl GovernanceWorld {
         let password_hash = bcrypt::hash(password, 4).expect("hash password");
 
         sqlx::query(
-            r#"INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, is_active, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, 'Test', 'User', true, NOW(), NOW())"#,
+            r#"INSERT INTO users (id, organization_id, email, password_hash, first_name, last_name, role, is_active, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'Test', 'User', 'syndic', true, NOW(), NOW())"#,
         )
         .bind(user_id)
         .bind(org_id)
