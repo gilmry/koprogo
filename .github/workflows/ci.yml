@@ -292,6 +292,7 @@ jobs:
           UPLOAD_DIR: ./uploads
           CORS_ALLOWED_ORIGINS: http://localhost:3000
           ENABLE_RATE_LIMITING: false
+          LOGIN_RATE_LIMIT_MAX: 1000
           SMTP_ENABLED: false
           RUST_LOG: warn
         run: |
@@ -300,7 +301,7 @@ jobs:
           sqlx migrate run
           cargo build
           cargo run &
-          sleep 10
+          sleep 15
 
       - name: Start frontend dev server
         env:

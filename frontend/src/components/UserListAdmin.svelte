@@ -220,10 +220,6 @@ interface BackendUser {
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
         <p class="mt-2 text-gray-600">Chargement...</p>
       </div>
-    {:else if filteredUsers.length === 0}
-      <div class="p-12 text-center text-gray-500">
-        {searchTerm || roleFilter !== 'all' ? 'Aucun utilisateur trouvé pour cette recherche.' : 'Aucun utilisateur enregistré.'}
-      </div>
     {:else}
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
@@ -253,6 +249,13 @@ interface BackendUser {
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200" data-testid="users-table-body">
+            {#if filteredUsers.length === 0}
+              <tr data-testid="users-empty-row">
+                <td colspan="7" class="p-12 text-center text-gray-500">
+                  {searchTerm || roleFilter !== 'all' ? 'Aucun utilisateur trouvé pour cette recherche.' : 'Aucun utilisateur enregistré.'}
+                </td>
+              </tr>
+            {:else}
             {#each filteredUsers as user (user.id)}
               <tr
                 class="hover:bg-gray-50"
@@ -354,11 +357,13 @@ interface BackendUser {
                 </td>
               </tr>
             {/each}
+            {/if}
           </tbody>
         </table>
       </div>
 
       <!-- Footer -->
+      {#if filteredUsers.length > 0}
       <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
         <p class="text-sm text-gray-700">
           <span class="font-medium">{filteredUsers.length}</span>
@@ -366,6 +371,7 @@ interface BackendUser {
           {searchTerm || roleFilter !== 'all' ? ' (filtrés)' : ''}
         </p>
       </div>
+      {/if}
     {/if}
   </div>
 </div>
