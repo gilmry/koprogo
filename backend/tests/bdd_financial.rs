@@ -1502,6 +1502,30 @@ async fn then_pm_deleted(world: &mut FinancialWorld) {
 
 // ==================== JOURNAL ENTRY STEPS ====================
 
+/// Seed accounts needed for journal entry FK constraint (fk_account).
+/// Journal entry lines reference accounts(organization_id, code) — must exist before creation.
+async fn seed_journal_accounts(pool: &sqlx::PgPool, org_id: uuid::Uuid) {
+    for (code, account_type) in [
+        ("604000", "EXPENSE"),
+        ("440000", "ASSET"),
+        ("612100", "EXPENSE"),
+        ("411000", "ASSET"),
+    ] {
+        sqlx::query(
+            r#"INSERT INTO accounts (code, label, account_type, organization_id, created_at, updated_at)
+               VALUES ($1, $2, $3::account_type, $4, NOW(), NOW())
+               ON CONFLICT (code, organization_id) DO NOTHING"#,
+        )
+        .bind(code)
+        .bind(format!("Compte {}", code))
+        .bind(account_type)
+        .bind(org_id)
+        .execute(pool)
+        .await
+        .expect("seed journal account");
+    }
+}
+
 #[when("I create a journal entry:")]
 async fn when_create_journal_entry(world: &mut FinancialWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
@@ -1569,6 +1593,10 @@ async fn when_add_journal_lines(world: &mut FinancialWorld, step: &Step) {
     let uc = world.journal_entry_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id;
+
+    // Seed required accounts for FK constraint fk_account
+    let pool = world.pool.as_ref().unwrap();
+    seed_journal_accounts(pool, org_id).await;
 
     let result = uc
         .create_manual_entry(
@@ -1647,6 +1675,10 @@ async fn given_n_journal_entries(world: &mut FinancialWorld, count: usize) {
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id;
 
+    // Seed required accounts for FK constraint
+    let pool = world.pool.as_ref().unwrap();
+    seed_journal_accounts(pool, org_id).await;
+
     for i in 0..count {
         let lines = vec![
             (
@@ -1714,6 +1746,9 @@ async fn given_journal_entries_ach_ods(world: &mut FinancialWorld) {
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id;
 
+    let pool = world.pool.as_ref().unwrap();
+    seed_journal_accounts(pool, org_id).await;
+
     for jtype in &["ACH", "ODS"] {
         let lines = vec![
             ("604000".to_string(), 100.0, 0.0, "Debit".to_string()),
@@ -1758,6 +1793,9 @@ async fn given_journal_entry_with_3_lines(world: &mut FinancialWorld) {
     let uc = world.journal_entry_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id;
+
+    let pool = world.pool.as_ref().unwrap();
+    seed_journal_accounts(pool, org_id).await;
 
     let lines = vec![
         ("612100".to_string(), 1000.0, 0.0, "Electricite".to_string()),
@@ -1833,6 +1871,9 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
     let uc = world.journal_entry_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id;
+
+    let pool = world.pool.as_ref().unwrap();
+    seed_journal_accounts(pool, org_id).await;
 
     // Create entry for main building
     let lines = vec![
