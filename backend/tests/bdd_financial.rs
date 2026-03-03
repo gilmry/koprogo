@@ -5338,7 +5338,8 @@ async fn when_escalated_to_formal(_world: &mut FinancialWorld) {}
 
 #[given(regex = r#"^a user "([^"]*)" exists with email "([^"]*)" in organization "([^"]*)"$"#)]
 async fn given_budget_user(world: &mut FinancialWorld, _name: String, email: String, _org: String) {
-    given_accountant_user(world, email).await;
+    // Use syndic role so that step "the user is authenticated as Syndic" finds world.syndic_user_id set
+    given_syndic_user(world, email).await;
 }
 
 #[given("the user is authenticated as Syndic")]
