@@ -3966,13 +3966,12 @@ async fn given_poll_owner(world: &mut GovernanceWorld, name: String, _building: 
 
     // Link owner to unit
     sqlx::query(
-        r#"INSERT INTO unit_owners (id, unit_id, owner_id, organization_id, ownership_percentage, is_primary_contact, start_date, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, 0.50, true, NOW(), NOW(), NOW())"#,
+        r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, is_primary_contact, start_date, created_at, updated_at)
+           VALUES ($1, $2, $3, 0.50, true, NOW(), NOW(), NOW())"#,
     )
     .bind(Uuid::new_v4())
     .bind(unit_id)
     .bind(owner_id)
-    .bind(org_id)
     .execute(pool)
     .await
     .expect("link poll owner to unit");
@@ -4885,13 +4884,12 @@ async fn given_n_owners_voted(
         .expect("insert voter unit");
 
         sqlx::query(
-            r#"INSERT INTO unit_owners (id, unit_id, owner_id, organization_id, ownership_percentage, is_primary_contact, start_date, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, 0.10, true, NOW(), NOW(), NOW())"#,
+            r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, is_primary_contact, start_date, created_at, updated_at)
+               VALUES ($1, $2, $3, 0.10, true, NOW(), NOW(), NOW())"#,
         )
         .bind(Uuid::new_v4())
         .bind(unit_id)
         .bind(owner_id)
-        .bind(org_id)
         .execute(pool)
         .await
         .expect("link voter");

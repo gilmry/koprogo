@@ -57,6 +57,11 @@ impl OwnerContributionUseCases {
             .await?
             .ok_or_else(|| format!("Contribution not found: {}", contribution_id))?;
 
+        // Prevent double payment
+        if contribution.is_paid() {
+            return Err("Contribution is already paid".to_string());
+        }
+
         // Mark as paid (domain logic)
         contribution.mark_as_paid(payment_date, payment_method, payment_reference);
 

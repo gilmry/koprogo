@@ -231,6 +231,11 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        if filters.organization_id.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("organization_id = ${}", param_count));
+        }
+
         if filters.building_id.is_some() {
             param_count += 1;
             where_clauses.push(format!("building_id = ${}", param_count));
@@ -284,6 +289,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let count_query = format!("SELECT COUNT(*) FROM expenses {}", where_clause);
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
+        if let Some(organization_id) = filters.organization_id {
+            count_query = count_query.bind(organization_id);
+        }
         if let Some(building_id) = filters.building_id {
             count_query = count_query.bind(building_id);
         }
@@ -329,6 +337,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
         let mut data_query = sqlx::query(&data_query);
 
+        if let Some(organization_id) = filters.organization_id {
+            data_query = data_query.bind(organization_id);
+        }
         if let Some(building_id) = filters.building_id {
             data_query = data_query.bind(building_id);
         }
