@@ -32,7 +32,9 @@
 
 ## 🎬 Tutoriels Vidéo
 
-<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/videoseries?si=mTtmmByojlHISmph&amp;list=PLBxLivSdjkRtGNabcvJuV68_9_VFmGVc-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Playlist YouTube KoproGo](https://img.shields.io/badge/YouTube-Playlist%20Tutoriels-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/playlist?list=PLBxLivSdjkRtGNabcvJuV68_9_VFmGVc-)
+
+> 📺 **[Voir la playlist complète sur YouTube](https://www.youtube.com/playlist?list=PLBxLivSdjkRtGNabcvJuV68_9_VFmGVc-)**
 
 ---
 
