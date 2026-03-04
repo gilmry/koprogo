@@ -160,11 +160,13 @@ impl BudgetUseCases {
             .await?
             .ok_or_else(|| "Budget not found".to_string())?;
 
-        // Apply updates
-        if let Some(ordinary) = request.ordinary_budget {
-            if let Some(extraordinary) = request.extraordinary_budget {
-                budget.update_amounts(ordinary, extraordinary)?;
-            }
+        // Apply updates (use existing values as defaults for partial updates)
+        if request.ordinary_budget.is_some() || request.extraordinary_budget.is_some() {
+            let ordinary = request.ordinary_budget.unwrap_or(budget.ordinary_budget);
+            let extraordinary = request
+                .extraordinary_budget
+                .unwrap_or(budget.extraordinary_budget);
+            budget.update_amounts(ordinary, extraordinary)?;
         }
 
         if let Some(notes) = request.notes {

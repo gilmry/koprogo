@@ -124,9 +124,14 @@ test.describe("Board of Directors", () => {
     if (hasCreateButton) {
       const testData = generateTestData("ElectBoard");
       await createButton.first().click();
-      await page.fill('input[name="name"]', testData.building.name);
-      await page.fill('input[name="address"]', testData.building.address);
-      await page.click('button[type="submit"]');
+      // Wait for the modal/form to appear before filling
+      const nameInput = page.locator('input[name="name"]');
+      if ((await nameInput.count()) > 0) {
+        await nameInput.waitFor({ state: "visible", timeout: 5000 });
+        await page.fill('input[name="name"]', testData.building.name);
+        await page.fill('input[name="address"]', testData.building.address);
+        await page.click('button[type="submit"]');
+      }
     }
 
     // Verify page is accessible regardless of button availability

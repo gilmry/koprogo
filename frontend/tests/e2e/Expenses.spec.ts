@@ -52,6 +52,7 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const token = userData.token;
 
   // Create building
+  // Create building (only SuperAdmin can create buildings)
   const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
     data: {
       name: `Expense Building ${timestamp}`,
@@ -61,8 +62,9 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
       country: "Belgium",
       total_units: 5,
       construction_year: 2020,
+      organization_id: orgId,
     },
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   expect(buildingResponse.ok()).toBeTruthy();
   const building = await buildingResponse.json();
