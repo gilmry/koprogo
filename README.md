@@ -30,6 +30,12 @@
 
 ---
 
+## 🎬 Tutoriels Vidéo
+
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/videoseries?si=mTtmmByojlHISmph&amp;list=PLBxLivSdjkRtGNabcvJuV68_9_VFmGVc-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+---
+
 ## 🎯 KoproGo Complète Votre Immeuble
 
 **KoproGo s'adapte à votre situation** - Vous n'avez pas besoin de tout changer pour bénéficier de KoproGo.

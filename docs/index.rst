@@ -9,6 +9,12 @@ Documentation KoproGo
 
    Retrouvez des tutoriels vidéo pour démarrer avec KoproGo, comprendre l'architecture hexagonale, et découvrir les fonctionnalités avancées de la plateforme.
 
+.. raw:: html
+
+   <div style="margin: 1.5rem 0;">
+       <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/videoseries?si=mTtmmByojlHISmph&amp;list=PLBxLivSdjkRtGNabcvJuV68_9_VFmGVc-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+   </div>
+
 L'Histoire Humaine Derrière KoproGo
 ====================================
 
