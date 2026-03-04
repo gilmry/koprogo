@@ -69,10 +69,12 @@ import Layout from "../layouts/Layout.astro";
   // Mount tickets list
   const listContainer = document.getElementById("tickets-list");
   if (listContainer) {
+    const urlBuildingId = new URLSearchParams(window.location.search).get("building_id") || undefined;
     mount(TicketList as any, {
       target: listContainer,
       props: {
-        view: "all",
+        view: urlBuildingId ? "all" : "my",
+        buildingId: urlBuildingId,
       },
     });
 

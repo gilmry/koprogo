@@ -271,6 +271,11 @@ impl ExpenseRepository for PostgresExpenseRepository {
             where_clauses.push(format!("amount <= ${}", param_count));
         }
 
+        if filters.approval_status.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("approval_status::text = ${}", param_count));
+        }
+
         let where_clause = if where_clauses.is_empty() {
             String::new()
         } else {
@@ -312,6 +317,15 @@ impl ExpenseRepository for PostgresExpenseRepository {
         }
         if let Some(max_amount) = filters.max_amount {
             count_query = count_query.bind(max_amount);
+        }
+        if let Some(ref approval_status) = filters.approval_status {
+            let status_str = match approval_status {
+                ApprovalStatus::Draft => "draft",
+                ApprovalStatus::PendingApproval => "pending_approval",
+                ApprovalStatus::Approved => "approved",
+                ApprovalStatus::Rejected => "rejected",
+            };
+            count_query = count_query.bind(status_str);
         }
 
         let total_items = count_query
@@ -360,6 +374,15 @@ impl ExpenseRepository for PostgresExpenseRepository {
         }
         if let Some(max_amount) = filters.max_amount {
             data_query = data_query.bind(max_amount);
+        }
+        if let Some(ref approval_status) = filters.approval_status {
+            let status_str = match approval_status {
+                ApprovalStatus::Draft => "draft",
+                ApprovalStatus::PendingApproval => "pending_approval",
+                ApprovalStatus::Approved => "approved",
+                ApprovalStatus::Rejected => "rejected",
+            };
+            data_query = data_query.bind(status_str);
         }
 
         data_query = data_query

@@ -132,7 +132,7 @@ test.describe("Buildings - List and Detail", () => {
     await page.goto(`/building-detail?id=${building.id}`);
 
     // Should see building name on the detail page
-    await expect(page.locator(`text=${buildingName}`)).toBeVisible({
+    await expect(page.locator(`text=${buildingName}`).first()).toBeVisible({
       timeout: 10000,
     });
   });

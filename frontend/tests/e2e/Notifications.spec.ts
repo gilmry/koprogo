@@ -89,9 +89,9 @@ test.describe("Notifications - Multi-Channel System", () => {
         user_id: userId,
         title: `Test Notification ${timestamp}`,
         message: "This is a test notification for E2E testing",
-        notification_type: "SystemAlert",
+        notification_type: "System",
         channel: "InApp",
-        priority: "Normal",
+        priority: "Medium",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -125,9 +125,9 @@ test.describe("Notifications - Multi-Channel System", () => {
           user_id: userId,
           title: `Batch Notif ${timestamp}-${i}`,
           message: `Batch notification ${i}`,
-          notification_type: "SystemAlert",
+          notification_type: "System",
           channel: "InApp",
-          priority: "Normal",
+          priority: "Medium",
         },
         headers: { Authorization: `Bearer ${token}` },
       });

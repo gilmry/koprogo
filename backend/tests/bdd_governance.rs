@@ -556,7 +556,7 @@ async fn given_meeting_exists(world: &mut GovernanceWorld, title: String) {
 
     sqlx::query(
         r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'Ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'Planned', NOW(), NOW())"#,
+           VALUES ($1, $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'Planned', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -1150,7 +1150,7 @@ async fn given_meeting_in_n_days(world: &mut GovernanceWorld, _title: String, da
 
     sqlx::query(
         r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'Ordinary', $4, $5, 'Salle AG', 'Planned', NOW(), NOW())"#,
+           VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'Planned', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -1349,7 +1349,7 @@ async fn given_n_convocations(world: &mut GovernanceWorld, count: i32) {
 
         sqlx::query(
             r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'Ordinary', $4, $5, 'Salle AG', 'Planned', NOW(), NOW())"#,
+               VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'Planned', NOW(), NOW())"#,
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -2119,17 +2119,19 @@ async fn given_expired_quote(world: &mut GovernanceWorld) {
     let quote_id = Uuid::new_v4();
     let past_validity = Utc::now() - ChronoDuration::days(5);
 
+    let past_created_at = past_validity - ChronoDuration::days(2); // created before validity_date
     sqlx::query(
         r#"INSERT INTO quotes (id, building_id, contractor_id, project_title, project_description,
            amount_excl_vat, vat_rate, amount_incl_vat, validity_date, estimated_duration_days,
            warranty_years, status, requested_at, created_at, updated_at)
            VALUES ($1, $2, $3, 'Expired Project', 'Expired desc',
-           10000, 0.21, 12100, $4, 14, 2, 'Requested', NOW(), NOW(), NOW())"#,
+           10000, 0.21, 12100, $4, 14, 2, 'Requested', $5, $5, NOW())"#,
     )
     .bind(quote_id)
     .bind(building_id)
     .bind(contractor_id)
     .bind(past_validity)
+    .bind(past_created_at)
     .execute(pool)
     .await
     .expect("insert expired quote");
@@ -3723,9 +3725,9 @@ async fn given_building_with_syndic(world: &mut GovernanceWorld, _name: String, 
         }
     }
 
-    // Update the building with syndic info via SQL
+    // Update the building with syndic info and slug via SQL
     sqlx::query(
-        r#"UPDATE buildings SET syndic_name = $1, syndic_email = $2, syndic_phone = $3, syndic_address = $4, updated_at = NOW()
+        r#"UPDATE buildings SET syndic_name = $1, syndic_email = $2, syndic_phone = $3, syndic_address = $4, slug = 'residence-publique-bruxelles', updated_at = NOW()
            WHERE id = $5"#,
     )
     .bind(&syndic_name)
@@ -3940,8 +3942,8 @@ async fn given_poll_owner(world: &mut GovernanceWorld, name: String, _building: 
 
     // Create owner
     sqlx::query(
-        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, created_at, updated_at)
-           VALUES ($1, $2, $3, 'Owner', $4, '+32470000000', NOW(), NOW())"#,
+        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+           VALUES ($1, $2, $3, 'Owner', $4, '+32470000000', 'Rue du Test 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
     )
     .bind(owner_id)
     .bind(org_id)
@@ -5536,6 +5538,30 @@ async fn given_etat_date_unit(world: &mut GovernanceWorld, unit_name: String, _b
     .execute(pool)
     .await
     .expect("insert etat date unit");
+
+    // Create an owner and unit_owner relationship (required for etat date creation)
+    let owner_id = Uuid::new_v4();
+    sqlx::query(
+        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+           VALUES ($1, $2, 'EtatDate', 'Owner', $3, '+32470000000', 'Rue du Test 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
+    )
+    .bind(owner_id)
+    .bind(org_id)
+    .bind(format!("etatdate-owner-{}@test.be", unit_id))
+    .execute(pool)
+    .await
+    .expect("insert etat date owner");
+
+    sqlx::query(
+        r#"INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, is_primary_contact, start_date, created_at, updated_at)
+           VALUES ($1, $2, $3, 1.0, true, NOW(), NOW(), NOW())"#,
+    )
+    .bind(Uuid::new_v4())
+    .bind(unit_id)
+    .bind(owner_id)
+    .execute(pool)
+    .await
+    .expect("insert etat date unit_owner");
 
     world.etat_date_unit_id = Some(unit_id);
 }

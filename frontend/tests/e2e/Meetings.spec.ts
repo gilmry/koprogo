@@ -99,9 +99,9 @@ test.describe("Meetings - General Assembly", () => {
       data: {
         building_id: buildingId,
         title: `AG Ordinaire ${timestamp}`,
-        meeting_date: meetingDate,
+        meeting_type: "ordinary",
+        scheduled_date: meetingDate,
         location: "Salle communale",
-        agenda: "Point 1: Comptes annuels\nPoint 2: Budget",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -122,9 +122,9 @@ test.describe("Meetings - General Assembly", () => {
       data: {
         building_id: buildingId,
         title: `Detail Meeting ${timestamp}`,
-        meeting_date: "2026-07-20T10:00:00Z",
+        meeting_type: "ordinary",
+        scheduled_date: "2026-07-20T10:00:00Z",
         location: "Bureau syndic",
-        agenda: "Point 1: Travaux",
       },
       headers: { Authorization: `Bearer ${token}` },
     });

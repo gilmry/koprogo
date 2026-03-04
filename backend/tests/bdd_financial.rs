@@ -4017,7 +4017,13 @@ async fn when_create_invoice_draft(world: &mut FinancialWorld, step: &Step) {
         amount_excl_vat,
         vat_rate,
         invoice_date,
-        due_date: get_invoice_table_value(step, "due_date"),
+        due_date: get_invoice_table_value(step, "due_date").map(|d| {
+            if d.contains('T') {
+                d
+            } else {
+                format!("{}T00:00:00Z", d)
+            }
+        }),
         supplier: get_invoice_table_value(step, "supplier"),
         invoice_number: get_invoice_table_value(step, "invoice_number"),
     };
@@ -4801,6 +4807,10 @@ async fn when_update_rejected(world: &mut FinancialWorld) {
 
 #[when("trying to calculate charge distribution")]
 async fn when_try_calc_distribution(world: &mut FinancialWorld) {
+    // In invoice context, expense_id may not be set but last_invoice_id is
+    if world.expense_id.is_none() {
+        world.expense_id = world.last_invoice_id;
+    }
     when_calculate_distribution(world).await;
 }
 

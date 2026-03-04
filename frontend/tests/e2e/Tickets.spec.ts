@@ -107,7 +107,7 @@ test.describe("Tickets - Maintenance Requests", () => {
     });
     expect(ticketResponse.ok()).toBeTruthy();
 
-    await page.goto("/tickets");
+    await page.goto(`/tickets?building_id=${buildingId}`);
 
     await expect(page.locator(`text=Fuite eau ${timestamp}`)).toBeVisible({
       timeout: 10000,
@@ -155,7 +155,7 @@ test.describe("Tickets - Maintenance Requests", () => {
     });
     expect(ticketResponse.ok()).toBeTruthy();
 
-    await page.goto("/tickets");
+    await page.goto(`/tickets?building_id=${buildingId}`);
 
     // Ticket should be visible
     await expect(page.locator(`text=Urgent Ticket ${timestamp}`)).toBeVisible({
