@@ -501,6 +501,8 @@ async fn given_owner_exists(world: &mut OperationsWorld, name: String, _building
 
     let (first_name, last_name) = name.split_once(' ').unwrap_or((&name, "BDD"));
 
+    let email = format!("{}@bdd-ops.be", name.to_lowercase().replace(' ', "."));
+
     sqlx::query(
         r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
            VALUES ($1, $2, $3, $4, $5, '+32123456789', 'Rue du Test 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
@@ -509,13 +511,25 @@ async fn given_owner_exists(world: &mut OperationsWorld, name: String, _building
     .bind(org_id)
     .bind(first_name)
     .bind(last_name)
-    .bind(format!(
-        "{}@bdd-ops.be",
-        name.to_lowercase().replace(' ', ".")
-    ))
+    .bind(&email)
     .execute(pool)
     .await
     .expect("insert owner");
+
+    // Also create a corresponding users row (tickets.created_by and energy_campaigns.created_by reference users(id))
+    sqlx::query(
+        r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
+           VALUES ($1, $2, 'hashed_password_bdd', $3, $4, 'owner', $5, true, NOW(), NOW())
+           ON CONFLICT DO NOTHING"#,
+    )
+    .bind(owner_id)
+    .bind(&email)
+    .bind(first_name)
+    .bind(last_name)
+    .bind(org_id)
+    .execute(pool)
+    .await
+    .expect("insert user for owner");
 
     match name.as_str() {
         "Marie Proprietaire" => world.owner_marie_id = Some(owner_id),
@@ -1764,18 +1778,37 @@ async fn given_owners_in_building(world: &mut OperationsWorld, count: usize) {
     let org_id = world.org_id.unwrap();
     for i in 0..count {
         let owner_id = Uuid::new_v4();
+        let email = format!("owner{}@test.be", i + 1);
+        let first_name = format!("Owner{}", i + 1);
         sqlx::query(
             r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
                VALUES ($1, $2, $3, $4, $5, '+32123456789', 'Rue du Test 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#
         )
         .bind(owner_id)
         .bind(org_id)
-        .bind(format!("Owner{}", i + 1))
+        .bind(&first_name)
         .bind("Test")
-        .bind(format!("owner{}@test.be", i + 1))
+        .bind(&email)
         .execute(pool)
         .await
         .expect("insert owner");
+        // Also create a corresponding users row (energy_campaigns.created_by references users(id))
+        sqlx::query(
+            r#"INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
+               VALUES ($1, $2, 'hashed_password_bdd', $3, 'Test', 'owner', $4, true, NOW(), NOW())
+               ON CONFLICT DO NOTHING"#
+        )
+        .bind(owner_id)
+        .bind(&email)
+        .bind(&first_name)
+        .bind(org_id)
+        .execute(pool)
+        .await
+        .expect("insert user for owner");
+        // Set first owner as authenticated user
+        if i == 0 {
+            world.authenticated_user_id = Some(owner_id);
+        }
     }
 }
 
@@ -1824,7 +1857,7 @@ async fn given_n_campaigns(world: &mut OperationsWorld, count: usize) {
     let building_id = world.building_id;
 
     use koprogo_api::domain::entities::EnergyCampaign;
-    let user_id = Uuid::new_v4();
+    let user_id = world.authenticated_user_id.unwrap_or_else(Uuid::new_v4);
     for i in 0..count {
         let deadline = Utc::now() + ChronoDuration::days(30 + i as i64);
         let campaign = EnergyCampaign::new(
@@ -1864,7 +1897,7 @@ async fn given_open_campaign(world: &mut OperationsWorld) {
         let building_id = world.building_id;
 
         use koprogo_api::domain::entities::EnergyCampaign;
-        let user_id = Uuid::new_v4();
+        let user_id = world.authenticated_user_id.unwrap_or_else(Uuid::new_v4);
         let deadline = Utc::now() + ChronoDuration::days(30);
         let campaign = EnergyCampaign::new(
             org_id,
@@ -2750,13 +2783,12 @@ async fn given_linky_configured(world: &mut OperationsWorld) {
     // Insert directly via SQL since LinkyUseCases needs mock API client
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
-    let org_id = world.org_id.unwrap();
     let device_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO linky_devices (id, building_id, organization_id, prm, provider, sync_enabled, created_at, updated_at)
-           VALUES ($1, $2, $3, '12345678901234', 'Enedis', true, NOW(), NOW())"#
+        r#"INSERT INTO linky_devices (id, building_id, prm, provider, api_key_encrypted, sync_enabled, created_at, updated_at)
+           VALUES ($1, $2, '12345678901234', 'enedis', 'encrypted_key_bdd', true, NOW(), NOW())"#
     )
-    .bind(device_id).bind(building_id).bind(org_id)
+    .bind(device_id).bind(building_id)
     .execute(pool).await.expect("insert linky device");
     world.last_linky_device_id = Some(device_id);
     world.linky_sync_enabled = Some(true);
@@ -2767,14 +2799,13 @@ async fn when_configure_linky(world: &mut OperationsWorld, step: &Step) {
     // Since LinkyUseCases requires external API, we insert directly
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
-    let org_id = world.org_id.unwrap();
     let device_id = Uuid::new_v4();
     let prm = get_table_value(step, "prm");
     sqlx::query(
-        r#"INSERT INTO linky_devices (id, building_id, organization_id, prm, provider, sync_enabled, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, 'Enedis', true, NOW(), NOW())"#
+        r#"INSERT INTO linky_devices (id, building_id, prm, provider, api_key_encrypted, sync_enabled, created_at, updated_at)
+           VALUES ($1, $2, $3, 'enedis', 'encrypted_key_bdd', true, NOW(), NOW())"#
     )
-    .bind(device_id).bind(building_id).bind(org_id).bind(prm)
+    .bind(device_id).bind(building_id).bind(prm)
     .execute(pool).await.expect("insert linky device");
     world.last_linky_device_id = Some(device_id);
     world.linky_sync_enabled = Some(true);
@@ -2821,13 +2852,12 @@ async fn when_toggle_sync_off(world: &mut OperationsWorld) {
 async fn given_stale_devices(world: &mut OperationsWorld) {
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
-    let org_id = world.org_id.unwrap();
     let device_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO linky_devices (id, building_id, organization_id, prm, provider, sync_enabled, last_sync_at, created_at, updated_at)
-           VALUES ($1, $2, $3, '99999999999999', 'Enedis', true, NOW() - INTERVAL '48 hours', NOW(), NOW())"#
+        r#"INSERT INTO linky_devices (id, building_id, prm, provider, api_key_encrypted, sync_enabled, last_sync_at, created_at, updated_at)
+           VALUES ($1, $2, '99999999999999', 'enedis', 'encrypted_key_bdd', true, NOW() - INTERVAL '48 hours', NOW(), NOW())"#
     )
-    .bind(device_id).bind(building_id).bind(org_id)
+    .bind(device_id).bind(building_id)
     .execute(pool).await.expect("insert stale device");
     world.last_linky_device_id = Some(device_id);
 }
@@ -3304,8 +3334,8 @@ async fn given_work_reports_2_orgs(world: &mut OperationsWorld) {
     // Insert a work report for other org directly
     let building_id = Uuid::new_v4();
     sqlx::query(
-        r#"INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, total_shares, created_at, updated_at)
-           VALUES ($1, $2, 'Other Building', '1 Other St', 'Brussels', '1000', 'Belgique', 5, 500, NOW(), NOW())"#
+        r#"INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
+           VALUES ($1, $2, 'Other Building', '1 Other St', 'Brussels', '1000', 'Belgique', 5, NOW(), NOW())"#
     )
     .bind(building_id).bind(other_org_id).execute(pool).await.expect("insert other building");
 }
@@ -3358,10 +3388,7 @@ async fn then_expiring_warranty(world: &mut OperationsWorld) {
     );
 }
 
-#[then("the photo should be attached")]
-async fn then_photo_attached_wr(world: &mut OperationsWorld) {
-    assert!(world.work_report_photo_attached);
-}
+// Photo attached step is defined once at then_photo_attached_ti (checks both work_report and inspection)
 
 #[then("the document should be attached")]
 async fn then_doc_attached_wr(world: &mut OperationsWorld) {
@@ -3641,7 +3668,9 @@ async fn when_list_by_type(world: &mut OperationsWorld, type_str: String) {
         .unwrap()
         .clone();
     let building_id = world.building_id.unwrap();
-    match uc.get_inspections_by_type(building_id, &type_str).await {
+    // Convert PascalCase to snake_case to match DB storage (e.g., "Elevator" -> "elevator")
+    let sql_type = type_str.to_lowercase();
+    match uc.get_inspections_by_type(building_id, &sql_type).await {
         Ok(list) => {
             world.inspection_list_count = list.len();
             world.operation_success = true;

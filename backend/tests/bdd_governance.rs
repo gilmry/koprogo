@@ -4510,25 +4510,59 @@ async fn given_active_poll(world: &mut GovernanceWorld, question: String) {
         .or(world.created_by_user_id)
         .unwrap_or_else(Uuid::new_v4);
 
+    // Detect if question implies multiple choice (e.g., contractor selection)
+    let is_mc =
+        question.to_lowercase().contains("contractor") || question.to_lowercase().contains("which");
+    let (poll_type, options) = if is_mc {
+        (
+            "multiple_choice".to_string(),
+            vec![
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "Contractor A - €12,500".to_string(),
+                    attachment_url: None,
+                    display_order: 1,
+                },
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "Contractor B - €13,800".to_string(),
+                    attachment_url: None,
+                    display_order: 2,
+                },
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "Contractor C - €14,200".to_string(),
+                    attachment_url: None,
+                    display_order: 3,
+                },
+            ],
+        )
+    } else {
+        (
+            "yes_no".to_string(),
+            vec![
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "Yes".to_string(),
+                    attachment_url: None,
+                    display_order: 1,
+                },
+                CreatePollOptionDto {
+                    id: None,
+                    option_text: "No".to_string(),
+                    attachment_url: None,
+                    display_order: 2,
+                },
+            ],
+        )
+    };
+
     let dto = CreatePollDto {
         building_id: building_id.to_string(),
         title: question,
         description: Some("Active poll for voting test".to_string()),
-        poll_type: "yes_no".to_string(),
-        options: vec![
-            CreatePollOptionDto {
-                id: None,
-                option_text: "Yes".to_string(),
-                attachment_url: None,
-                display_order: 1,
-            },
-            CreatePollOptionDto {
-                id: None,
-                option_text: "No".to_string(),
-                attachment_url: None,
-                display_order: 2,
-            },
-        ],
+        poll_type,
+        options,
         is_anonymous: Some(false),
         allow_multiple_votes: Some(false),
         require_all_owners: None,
