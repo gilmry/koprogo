@@ -56,7 +56,7 @@ import Layout from "../layouts/Layout.astro";
 
       if (loadingEl) loadingEl.style.display = "none";
 
-      mount(ConvocationDetailView, {
+      mount(ConvocationDetailView as any, {
         target: detailContainer,
         props: { convocation },
       });

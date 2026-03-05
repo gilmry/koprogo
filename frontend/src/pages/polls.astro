@@ -42,7 +42,7 @@ import Layout from "../layouts/Layout.astro";
     if (!listContainer) return;
     if (listComponent) { try { unmount(listComponent); } catch {} }
     listContainer.innerHTML = "";
-    listComponent = mount(PollList, {
+    listComponent = mount(PollList as any, {
       target: listContainer,
       props: {
         buildingId: buildingId,
@@ -52,7 +52,7 @@ import Layout from "../layouts/Layout.astro";
   }
 
   if (selectorContainer) {
-    mount(BuildingSelector, {
+    mount(BuildingSelector as any, {
       target: selectorContainer,
       props: {
         label: "Immeuble",

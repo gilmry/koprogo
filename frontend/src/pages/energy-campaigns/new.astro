@@ -35,7 +35,7 @@ import Layout from "../../layouts/Layout.astro";
 
   const formContainer = document.getElementById("create-form-container");
   if (formContainer) {
-    mount(CreateCampaignForm, {
+    mount(CreateCampaignForm as any, {
       target: formContainer,
       props: {
         organizationId: organizationId,

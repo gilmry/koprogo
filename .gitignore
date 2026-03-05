@@ -49,3 +49,5 @@ __pycache__/
 docs/_build/
 
 backend/uploads/*
+
+podcasts

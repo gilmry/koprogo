@@ -9,7 +9,7 @@ import type { Page } from "@playwright/test";
  * Tests mix user and admin actors for realistic scenarios.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 // Helper: Register and login a new user
 async function registerAndLogin(

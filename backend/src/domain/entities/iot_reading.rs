@@ -181,12 +181,12 @@ pub enum DeviceType {
 impl std::fmt::Display for DeviceType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DeviceType::ElectricityMeter => write!(f, "ElectricityMeter"),
-            DeviceType::WaterMeter => write!(f, "WaterMeter"),
-            DeviceType::GasMeter => write!(f, "GasMeter"),
-            DeviceType::TemperatureSensor => write!(f, "TemperatureSensor"),
-            DeviceType::HumiditySensor => write!(f, "HumiditySensor"),
-            DeviceType::PowerMeter => write!(f, "PowerMeter"),
+            DeviceType::ElectricityMeter => write!(f, "electricity_meter"),
+            DeviceType::WaterMeter => write!(f, "water_meter"),
+            DeviceType::GasMeter => write!(f, "gas_meter"),
+            DeviceType::TemperatureSensor => write!(f, "temperature_sensor"),
+            DeviceType::HumiditySensor => write!(f, "humidity_sensor"),
+            DeviceType::PowerMeter => write!(f, "power_meter"),
         }
     }
 }
@@ -195,12 +195,12 @@ impl std::str::FromStr for DeviceType {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "ElectricityMeter" => Ok(DeviceType::ElectricityMeter),
-            "WaterMeter" => Ok(DeviceType::WaterMeter),
-            "GasMeter" => Ok(DeviceType::GasMeter),
-            "TemperatureSensor" => Ok(DeviceType::TemperatureSensor),
-            "HumiditySensor" => Ok(DeviceType::HumiditySensor),
-            "PowerMeter" => Ok(DeviceType::PowerMeter),
+            "ElectricityMeter" | "electricity_meter" => Ok(DeviceType::ElectricityMeter),
+            "WaterMeter" | "water_meter" => Ok(DeviceType::WaterMeter),
+            "GasMeter" | "gas_meter" => Ok(DeviceType::GasMeter),
+            "TemperatureSensor" | "temperature_sensor" => Ok(DeviceType::TemperatureSensor),
+            "HumiditySensor" | "humidity_sensor" => Ok(DeviceType::HumiditySensor),
+            "PowerMeter" | "power_meter" => Ok(DeviceType::PowerMeter),
             _ => Err(format!("Invalid DeviceType: {}", s)),
         }
     }
@@ -222,13 +222,13 @@ pub enum MetricType {
 impl std::fmt::Display for MetricType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            MetricType::ElectricityConsumption => write!(f, "ElectricityConsumption"),
-            MetricType::WaterConsumption => write!(f, "WaterConsumption"),
-            MetricType::GasConsumption => write!(f, "GasConsumption"),
-            MetricType::Temperature => write!(f, "Temperature"),
-            MetricType::Humidity => write!(f, "Humidity"),
-            MetricType::Power => write!(f, "Power"),
-            MetricType::Voltage => write!(f, "Voltage"),
+            MetricType::ElectricityConsumption => write!(f, "electricity_consumption"),
+            MetricType::WaterConsumption => write!(f, "water_consumption"),
+            MetricType::GasConsumption => write!(f, "gas_consumption"),
+            MetricType::Temperature => write!(f, "temperature"),
+            MetricType::Humidity => write!(f, "humidity"),
+            MetricType::Power => write!(f, "power"),
+            MetricType::Voltage => write!(f, "voltage"),
         }
     }
 }
@@ -237,13 +237,15 @@ impl std::str::FromStr for MetricType {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "ElectricityConsumption" => Ok(MetricType::ElectricityConsumption),
-            "WaterConsumption" => Ok(MetricType::WaterConsumption),
-            "GasConsumption" => Ok(MetricType::GasConsumption),
-            "Temperature" => Ok(MetricType::Temperature),
-            "Humidity" => Ok(MetricType::Humidity),
-            "Power" => Ok(MetricType::Power),
-            "Voltage" => Ok(MetricType::Voltage),
+            "ElectricityConsumption" | "electricity_consumption" => {
+                Ok(MetricType::ElectricityConsumption)
+            }
+            "WaterConsumption" | "water_consumption" => Ok(MetricType::WaterConsumption),
+            "GasConsumption" | "gas_consumption" => Ok(MetricType::GasConsumption),
+            "Temperature" | "temperature" => Ok(MetricType::Temperature),
+            "Humidity" | "humidity" => Ok(MetricType::Humidity),
+            "Power" | "power" => Ok(MetricType::Power),
+            "Voltage" | "voltage" => Ok(MetricType::Voltage),
             _ => Err(format!("Invalid MetricType: {}", s)),
         }
     }

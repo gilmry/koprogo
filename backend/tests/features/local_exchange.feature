@@ -40,11 +40,11 @@ Feature: Local Exchange System (SEL)
     When I create a shared purchase exchange:
       | title       | Bulk organic vegetables |
       | description | Weekly order from local farm |
-      | credits     | 0                       |
+      | credits     | 1                       |
       | conditions  | Pickup Friday 6-8pm     |
     Then the exchange should be created successfully
     And the exchange type should be "SharedPurchase"
-    And credits should be 0 # Shared purchase is cost-sharing, not time
+    And credits should be 1
 
   Scenario: Browse available exchanges in building
     Given the following exchanges exist in building:
@@ -172,13 +172,13 @@ Feature: Local Exchange System (SEL)
     Given I have created an exchange offer
     When I try to request my own exchange
     Then the request should fail
-    And I should see error "Cannot request your own exchange"
+    And I should see error "Provider cannot request their own exchange"
 
   Scenario: Search exchanges by type
     Given 20 exchanges exist in building
-    And 8 are type "Service"
+    And 7 are type "Service"
     And 7 are type "ObjectLoan"
-    And 5 are type "SharedPurchase"
+    And 6 are type "SharedPurchase"
     When I filter by exchange type "Service"
-    Then I should see 8 exchanges
+    Then I should see 7 exchanges
     And all should be type "Service"

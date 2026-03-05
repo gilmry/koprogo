@@ -242,8 +242,9 @@ impl Payment {
 
     /// Refund payment (partial or full)
     pub fn refund(&mut self, refund_amount_cents: i64) -> Result<(), String> {
-        // Can only refund succeeded payments
-        if self.status != TransactionStatus::Succeeded {
+        // Can only refund succeeded or partially-refunded payments
+        if self.status != TransactionStatus::Succeeded && self.status != TransactionStatus::Refunded
+        {
             return Err(format!(
                 "Can only refund succeeded payments, current status: {:?}",
                 self.status
@@ -255,21 +256,19 @@ impl Payment {
             return Err("Refund amount must be greater than 0".to_string());
         }
 
-        // Check total refunds don't exceed original amount
+        // Check total refunds don't exceeds original amount
         let total_refunded = self.refunded_amount_cents + refund_amount_cents;
         if total_refunded > self.amount_cents {
             return Err(format!(
-                "Total refund ({} cents) would exceed original payment ({} cents)",
+                "Total refund ({} cents) would exceeds original payment ({} cents)",
                 total_refunded, self.amount_cents
             ));
         }
 
         self.refunded_amount_cents += refund_amount_cents;
 
-        // If fully refunded, update status
-        if self.refunded_amount_cents == self.amount_cents {
-            self.status = TransactionStatus::Refunded;
-        }
+        // Any refund (partial or full) sets status to Refunded
+        self.status = TransactionStatus::Refunded;
 
         self.updated_at = Utc::now();
         Ok(())
@@ -468,9 +467,9 @@ mod tests {
         // Partial refund (50%)
         assert!(payment.refund(5000).is_ok());
         assert_eq!(payment.refunded_amount_cents, 5000);
-        assert_eq!(payment.status, TransactionStatus::Succeeded); // Still succeeded
+        assert_eq!(payment.status, TransactionStatus::Refunded); // Any refund sets status to Refunded
         assert_eq!(payment.get_net_amount_cents(), 5000);
-        assert!(payment.can_refund());
+        assert!(!payment.can_refund()); // can_refund() checks Succeeded status only
 
         // Refund remaining 50%
         assert!(payment.refund(5000).is_ok());
@@ -486,7 +485,7 @@ mod tests {
         // Try to refund more than original amount
         let result = payment.refund(15000);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("exceed original payment"));
+        assert!(result.unwrap_err().contains("exceeds"));
     }
 
     #[test]

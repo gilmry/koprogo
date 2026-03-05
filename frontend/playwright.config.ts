@@ -2,11 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * See https://playwright.dev/docs/test-configuration.
- * E2E tests use Traefik reverse proxy on http://localhost
+ * Local dev: Traefik on http://localhost (port 80)
+ * CI: Astro dev server on http://localhost:3000 (PLAYWRIGHT_BASE_URL env var)
  */
-const baseURL = "http://localhost"; // Traefik on port 80
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://localhost"; // Traefik on port 80
 
-const useTraefik = true; // Always use Traefik for E2E tests
+const useTraefik = !process.env.PLAYWRIGHT_BASE_URL; // false in CI (no Traefik)
 
 export default defineConfig({
   testDir: "./tests/e2e",

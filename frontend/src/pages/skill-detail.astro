@@ -42,7 +42,7 @@ import Layout from "../layouts/Layout.astro";
 
       const container = document.getElementById("skill-detail-container");
       if (container) {
-        mount(SkillOfferDetail, {
+        mount(SkillOfferDetail as any, {
           target: container,
           props: {
             offerId: offerId!,

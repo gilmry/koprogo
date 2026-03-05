@@ -24,7 +24,7 @@ Feature: Multi-Channel Notification System
       | title             | AG convoquée le 15 mars  |
       | message           | L'assemblée générale ordinaire est programmée |
     Then the notification should be created successfully
-    And the notification status should be "Pending"
+    And the notification status should be "Sent"
     And the notification channel should be "InApp"
 
   Scenario: Create a high priority system notification

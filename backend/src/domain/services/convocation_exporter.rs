@@ -588,7 +588,7 @@ mod tests {
             building.id,
             meeting.id,
             ConvocationType::Extraordinary,
-            Utc::now() + chrono::Duration::days(10),
+            Utc::now() + chrono::Duration::days(30),
             "FR".to_string(),
             Uuid::new_v4(),
         )

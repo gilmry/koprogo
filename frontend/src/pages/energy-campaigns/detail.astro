@@ -35,7 +35,7 @@ import Layout from "../../layouts/Layout.astro";
 
   const container = document.getElementById("campaign-detail-container");
   if (container && campaignId) {
-    mount(CampaignDetail, {
+    mount(CampaignDetail as any, {
       target: container,
       props: {
         campaignId: campaignId,

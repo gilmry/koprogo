@@ -91,7 +91,7 @@ import Layout from '../../layouts/Layout.astro';
     const container = document.getElementById("syndic-contact-panel");
     if (container) {
       container.innerHTML = "";
-      mount(SyndicContactPanel, {
+      mount(SyndicContactPanel as any, {
         target: container,
         props: { buildingIds },
       });

@@ -55,7 +55,7 @@ import Layout from "../../layouts/Layout.astro";
     if (ownerId) {
       const statsContainer = document.getElementById("payment-stats");
       if (statsContainer) {
-        mount(PaymentStats, {
+        mount(PaymentStats as any, {
           target: statsContainer,
           props: { ownerId },
         });
@@ -63,7 +63,7 @@ import Layout from "../../layouts/Layout.astro";
 
       const listContainer = document.getElementById("payment-list");
       if (listContainer) {
-        mount(PaymentList, {
+        mount(PaymentList as any, {
           target: listContainer,
           props: { ownerId },
         });

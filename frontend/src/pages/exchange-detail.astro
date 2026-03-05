@@ -62,7 +62,7 @@ import Layout from "../layouts/Layout.astro";
 
       if (loadingEl) loadingEl.style.display = "none";
 
-      mount(ExchangeDetail, {
+      mount(ExchangeDetail as any, {
         target: detailContainer,
         props: {
           exchange,

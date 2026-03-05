@@ -231,6 +231,11 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        if filters.organization_id.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("organization_id = ${}", param_count));
+        }
+
         if filters.building_id.is_some() {
             param_count += 1;
             where_clauses.push(format!("building_id = ${}", param_count));
@@ -266,6 +271,11 @@ impl ExpenseRepository for PostgresExpenseRepository {
             where_clauses.push(format!("amount <= ${}", param_count));
         }
 
+        if filters.approval_status.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("approval_status::text = ${}", param_count));
+        }
+
         let where_clause = if where_clauses.is_empty() {
             String::new()
         } else {
@@ -284,6 +294,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
         let count_query = format!("SELECT COUNT(*) FROM expenses {}", where_clause);
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
+        if let Some(organization_id) = filters.organization_id {
+            count_query = count_query.bind(organization_id);
+        }
         if let Some(building_id) = filters.building_id {
             count_query = count_query.bind(building_id);
         }
@@ -304,6 +317,15 @@ impl ExpenseRepository for PostgresExpenseRepository {
         }
         if let Some(max_amount) = filters.max_amount {
             count_query = count_query.bind(max_amount);
+        }
+        if let Some(ref approval_status) = filters.approval_status {
+            let status_str = match approval_status {
+                ApprovalStatus::Draft => "draft",
+                ApprovalStatus::PendingApproval => "pending_approval",
+                ApprovalStatus::Approved => "approved",
+                ApprovalStatus::Rejected => "rejected",
+            };
+            count_query = count_query.bind(status_str);
         }
 
         let total_items = count_query
@@ -329,6 +351,9 @@ impl ExpenseRepository for PostgresExpenseRepository {
 
         let mut data_query = sqlx::query(&data_query);
 
+        if let Some(organization_id) = filters.organization_id {
+            data_query = data_query.bind(organization_id);
+        }
         if let Some(building_id) = filters.building_id {
             data_query = data_query.bind(building_id);
         }
@@ -349,6 +374,15 @@ impl ExpenseRepository for PostgresExpenseRepository {
         }
         if let Some(max_amount) = filters.max_amount {
             data_query = data_query.bind(max_amount);
+        }
+        if let Some(ref approval_status) = filters.approval_status {
+            let status_str = match approval_status {
+                ApprovalStatus::Draft => "draft",
+                ApprovalStatus::PendingApproval => "pending_approval",
+                ApprovalStatus::Approved => "approved",
+                ApprovalStatus::Rejected => "rejected",
+            };
+            data_query = data_query.bind(status_str);
         }
 
         data_query = data_query

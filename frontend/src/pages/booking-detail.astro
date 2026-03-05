@@ -113,7 +113,7 @@ import Layout from "../layouts/Layout.astro";
       // Mount resource type badge
       const badgeContainer = document.getElementById("badge");
       if (badgeContainer) {
-        mount(ResourceTypeBadge, {
+        mount(ResourceTypeBadge as any, {
           target: badgeContainer,
           props: { type: resource.resource_type },
         });
@@ -122,7 +122,7 @@ import Layout from "../layouts/Layout.astro";
       // Mount booking panel (button + modal) below the detail card
       const panelContainer = document.getElementById("booking-panel-container");
       if (panelContainer) {
-        mount(BookingPanel, {
+        mount(BookingPanel as any, {
           target: panelContainer,
           props: { resource, ownerId },
         });

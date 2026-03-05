@@ -8,13 +8,35 @@ import type { Page } from "@playwright/test";
  * Idempotent: each test creates its own data with unique timestamps.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function registerAndLoginAsSyndic(
-  page: Page,
-): Promise<{ token: string; email: string }> {
+async function registerAndLoginAsSyndic(page: Page): Promise<{
+  token: string;
+  email: string;
+  adminToken: string;
+  orgId: string;
+}> {
   const timestamp = Date.now();
   const email = `building-test-${timestamp}@example.com`;
+
+  // Create an organization first (required for syndic to create buildings)
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminData = await adminLoginResp.json();
+  const adminToken = adminData.token;
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `Building Test Org ${timestamp}`,
+      slug: `building-test-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
+  const orgId = org.id;
 
   const response = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
@@ -23,6 +45,7 @@ async function registerAndLoginAsSyndic(
       first_name: "Building",
       last_name: `Test${timestamp}`,
       role: "syndic",
+      organization_id: orgId,
     },
   });
   expect(response.ok()).toBeTruthy();
@@ -35,7 +58,7 @@ async function registerAndLoginAsSyndic(
   await page.getByTestId("login-submit").click();
   await page.waitForURL(/\/(syndic|admin|owner)/, { timeout: 15000 });
 
-  return { token: data.token, email };
+  return { token: data.token, email, adminToken, orgId };
 }
 
 test.describe("Buildings - List and Detail", () => {
@@ -54,11 +77,11 @@ test.describe("Buildings - List and Detail", () => {
   test("should create a new building via API and see it in the list", async ({
     page,
   }) => {
-    const { token } = await registerAndLoginAsSyndic(page);
+    const { adminToken, orgId } = await registerAndLoginAsSyndic(page);
     const timestamp = Date.now();
     const buildingName = `Test Building ${timestamp}`;
 
-    // Create building via API
+    // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
       data: {
         name: buildingName,
@@ -68,8 +91,9 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 10,
         construction_year: 2020,
+        organization_id: orgId,
       },
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(createResponse.ok()).toBeTruthy();
 
@@ -83,11 +107,11 @@ test.describe("Buildings - List and Detail", () => {
   });
 
   test("should navigate to building detail page", async ({ page }) => {
-    const { token } = await registerAndLoginAsSyndic(page);
+    const { adminToken, orgId } = await registerAndLoginAsSyndic(page);
     const timestamp = Date.now();
     const buildingName = `Detail Building ${timestamp}`;
 
-    // Create building via API
+    // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
       data: {
         name: buildingName,
@@ -97,8 +121,9 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 5,
         construction_year: 2015,
+        organization_id: orgId,
       },
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(createResponse.ok()).toBeTruthy();
     const building = await createResponse.json();
@@ -107,16 +132,16 @@ test.describe("Buildings - List and Detail", () => {
     await page.goto(`/building-detail?id=${building.id}`);
 
     // Should see building name on the detail page
-    await expect(page.locator(`text=${buildingName}`)).toBeVisible({
+    await expect(page.locator(`text=${buildingName}`).first()).toBeVisible({
       timeout: 10000,
     });
   });
 
   test("should display building units section", async ({ page }) => {
-    const { token } = await registerAndLoginAsSyndic(page);
+    const { adminToken, orgId } = await registerAndLoginAsSyndic(page);
     const timestamp = Date.now();
 
-    // Create building via API
+    // Create building via API (only SuperAdmin can create buildings)
     const createResponse = await page.request.post(`${API_BASE}/buildings`, {
       data: {
         name: `Units Building ${timestamp}`,
@@ -126,8 +151,9 @@ test.describe("Buildings - List and Detail", () => {
         country: "Belgium",
         total_units: 3,
         construction_year: 2018,
+        organization_id: orgId,
       },
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(createResponse.ok()).toBeTruthy();
     const building = await createResponse.json();

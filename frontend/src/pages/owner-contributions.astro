@@ -34,7 +34,7 @@ import Layout from '../layouts/Layout.astro';
   // Mount the form component using Svelte 5 API
   const formContainer = document.getElementById('contribution-form-container');
   if (formContainer) {
-    mount(OwnerContributionForm, {
+    mount(OwnerContributionForm as any, {
       target: formContainer,
       props: {
         organizationId,
@@ -49,7 +49,7 @@ import Layout from '../layouts/Layout.astro';
   // Mount the list component using Svelte 5 API
   const listContainer = document.getElementById('contribution-list-container');
   if (listContainer) {
-    mount(OwnerContributionList, {
+    mount(OwnerContributionList as any, {
       target: listContainer,
       props: {
         organizationId,

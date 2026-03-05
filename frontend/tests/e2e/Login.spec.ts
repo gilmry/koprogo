@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
  * Uses Traefik on http://localhost.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 test.describe("Login - Authentication Flow", () => {
   test("should display login form with email and password fields", async ({

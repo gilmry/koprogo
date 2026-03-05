@@ -8,7 +8,7 @@ import type { Page } from "@playwright/test";
  * Covers owner and syndic perspectives.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 async function setupSyndicWithBuilding(page: Page): Promise<{
   token: string;
@@ -18,6 +18,25 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const timestamp = Date.now();
   const email = `ticket-test-${timestamp}@example.com`;
 
+  // Create organization first (required for syndic to create buildings/tickets)
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminData = await adminLoginResp.json();
+  const adminToken = adminData.token;
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `Ticket Test Org ${timestamp}`,
+      slug: `ticket-test-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
+  const orgId = org.id;
+
   const regResponse = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
       email,
@@ -25,13 +44,14 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
       first_name: "Ticket",
       last_name: `Test${timestamp}`,
       role: "syndic",
+      organization_id: orgId,
     },
   });
   expect(regResponse.ok()).toBeTruthy();
   const userData = await regResponse.json();
   const token = userData.token;
-  const orgId = userData.user.organization_id || userData.user.org_id || "";
 
+  // Create building (only SuperAdmin can create buildings)
   const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
     data: {
       name: `Ticket Building ${timestamp}`,
@@ -41,8 +61,9 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
       country: "Belgium",
       total_units: 8,
       construction_year: 2015,
+      organization_id: orgId,
     },
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   expect(buildingResponse.ok()).toBeTruthy();
   const building = await buildingResponse.json();
@@ -86,7 +107,7 @@ test.describe("Tickets - Maintenance Requests", () => {
     });
     expect(ticketResponse.ok()).toBeTruthy();
 
-    await page.goto("/tickets");
+    await page.goto(`/tickets?building_id=${buildingId}`);
 
     await expect(page.locator(`text=Fuite eau ${timestamp}`)).toBeVisible({
       timeout: 10000,
@@ -103,7 +124,7 @@ test.describe("Tickets - Maintenance Requests", () => {
         title: `Detail Ticket ${timestamp}`,
         description: "Panne ascenseur",
         priority: "Critical",
-        category: "General",
+        category: "Other",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -127,14 +148,14 @@ test.describe("Tickets - Maintenance Requests", () => {
         building_id: buildingId,
         title: `Urgent Ticket ${timestamp}`,
         description: "Panne electrique totale",
-        priority: "Urgent",
+        priority: "Critical",
         category: "Electrical",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
     expect(ticketResponse.ok()).toBeTruthy();
 
-    await page.goto("/tickets");
+    await page.goto(`/tickets?building_id=${buildingId}`);
 
     // Ticket should be visible
     await expect(page.locator(`text=Urgent Ticket ${timestamp}`)).toBeVisible({

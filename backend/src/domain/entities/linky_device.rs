@@ -172,8 +172,8 @@ pub enum LinkyProvider {
 impl std::fmt::Display for LinkyProvider {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LinkyProvider::Ores => write!(f, "Ores"),
-            LinkyProvider::Enedis => write!(f, "Enedis"),
+            LinkyProvider::Ores => write!(f, "ores"),
+            LinkyProvider::Enedis => write!(f, "enedis"),
         }
     }
 }
@@ -182,8 +182,8 @@ impl std::str::FromStr for LinkyProvider {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Ores" => Ok(LinkyProvider::Ores),
-            "Enedis" => Ok(LinkyProvider::Enedis),
+            "Ores" | "ores" => Ok(LinkyProvider::Ores),
+            "Enedis" | "enedis" => Ok(LinkyProvider::Enedis),
             _ => Err(format!("Invalid LinkyProvider: {}", s)),
         }
     }

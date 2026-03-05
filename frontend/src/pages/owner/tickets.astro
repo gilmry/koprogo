@@ -52,7 +52,7 @@ import Layout from "../../layouts/Layout.astro";
   let currentOwnerId = "";
   let currentBuildingId = "";
 
-  function showPageToast(message: string, type: "success" | "error" | "warning" = "info") {
+  function showPageToast(message: string, type: "success" | "error" | "warning" | "info" = "info") {
     const colors = { success: "bg-green-600", error: "bg-red-600", warning: "bg-yellow-500", info: "bg-blue-600" };
     const el = document.createElement("div");
     el.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white text-sm ${colors[type]}`;
@@ -74,7 +74,7 @@ import Layout from "../../layouts/Layout.astro";
       try { unmount(listComponent); } catch {}
     }
     listContainer.innerHTML = "";
-    listComponent = mount(TicketList, {
+    listComponent = mount(TicketList as any, {
       target: listContainer,
       props: { view: "my", buildingId },
     });
@@ -95,7 +95,7 @@ import Layout from "../../layouts/Layout.astro";
     }
 
     if (selectorContainer) {
-      mount(BuildingSelector, {
+      mount(BuildingSelector as any, {
         target: selectorContainer,
         props: {
           label: "Immeuble",
@@ -117,7 +117,7 @@ import Layout from "../../layouts/Layout.astro";
 
       closeModal();
       if (modalContainer) {
-        createModal = mount(TicketCreateModal, {
+        createModal = mount(TicketCreateModal as any, {
           target: modalContainer,
           props: {
             open: true,

@@ -78,7 +78,7 @@ import Layout from "../../layouts/Layout.astro";
     if (ownerId) {
       const listContainer = document.getElementById("payment-methods-list");
       if (listContainer) {
-        mount(PaymentMethodList, {
+        mount(PaymentMethodList as any, {
           target: listContainer,
           props: { ownerId, canManage: true },
         });

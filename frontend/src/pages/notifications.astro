@@ -49,6 +49,6 @@ import Layout from "../layouts/Layout.astro";
   // Mount notification list
   const listContainer = document.getElementById("notification-list");
   if (listContainer) {
-    mount(NotificationList, { target: listContainer });
+    mount(NotificationList as any, { target: listContainer });
   }
 </script>

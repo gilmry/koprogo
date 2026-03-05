@@ -42,7 +42,7 @@ import Layout from '../../layouts/Layout.astro';
     const container = document.getElementById("owner-units-container");
     if (container) {
       container.innerHTML = "";
-      mount(OwnerUnitList, {
+      mount(OwnerUnitList as any, {
         target: container,
         props: { buildingIds },
       });

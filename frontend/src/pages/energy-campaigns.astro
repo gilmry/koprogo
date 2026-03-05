@@ -40,7 +40,7 @@ import Layout from "../layouts/Layout.astro";
   // Mount Campaign List
   const listContainer = document.getElementById("campaign-list-container");
   if (listContainer) {
-    mount(EnergyCampaignList, {
+    mount(EnergyCampaignList as any, {
       target: listContainer,
       props: {
         organizationId: organizationId,

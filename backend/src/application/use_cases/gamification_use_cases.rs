@@ -645,7 +645,7 @@ impl GamificationStatsUseCases {
         organization_id: Uuid,
     ) -> Result<UserGamificationStatsDto, String> {
         // Calculate achievement points
-        let total_points = self
+        let achievement_points = self
             .user_achievement_repo
             .calculate_total_points(user_id)
             .await?;
@@ -675,14 +675,16 @@ impl GamificationStatsUseCases {
             }
         }
 
-        // Calculate rank from leaderboard
-        // Get leaderboard with large limit to find user's rank
+        // Calculate rank and total points from leaderboard (includes achievements + challenges)
         let leaderboard = self.get_leaderboard(organization_id, None, 10000).await?;
-        let rank = leaderboard
+        let leaderboard_entry = leaderboard
             .entries
             .iter()
-            .find(|entry| entry.user_id == user_id)
-            .map(|entry| entry.rank);
+            .find(|entry| entry.user_id == user_id);
+        let rank = leaderboard_entry.map(|entry| entry.rank);
+        let total_points = leaderboard_entry
+            .map(|entry| entry.total_points)
+            .unwrap_or(achievement_points);
 
         Ok(UserGamificationStatsDto {
             user_id,

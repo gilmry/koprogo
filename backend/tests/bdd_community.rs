@@ -18,9 +18,9 @@ use koprogo_api::application::use_cases::{
     NoticeUseCases, ResourceBookingUseCases, SharedObjectUseCases, SkillUseCases,
 };
 use koprogo_api::domain::entities::{
-    AchievementCategory, AchievementTier, ChallengeType, ExchangeType,
-    ExpertiseLevel, NoticeCategory, NoticeType, ObjectCondition, Owner, RecurringPattern,
-    ResourceType, SharedObjectCategory, SkillCategory,
+    AchievementCategory, AchievementTier, ChallengeType, ExchangeType, ExpertiseLevel,
+    NoticeCategory, NoticeType, ObjectCondition, Owner, RecurringPattern, ResourceType,
+    SharedObjectCategory, SkillCategory,
 };
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresAchievementRepository, PostgresBuildingRepository,
@@ -174,7 +174,7 @@ impl CommunityWorld {
         let postgres_container = loop {
             match Postgres::default().start().await {
                 Ok(container) => break container,
-                Err(e) if attempts < 3 => {
+                Err(_e) if attempts < 3 => {
                     attempts += 1;
                     sleep(Duration::from_millis(500)).await;
                 }
@@ -765,18 +765,23 @@ async fn given_notices_of_types(world: &mut CommunityWorld, type1: String, type2
     let uc = world.notice_use_cases.as_ref().unwrap().clone();
 
     for nt in [&type1, &type2] {
+        let is_event = *nt == "Event";
         let dto = CreateNoticeDto {
             building_id,
             notice_type: parse_notice_type(nt),
             category: NoticeCategory::General,
             title: format!("{} notice", nt),
             content: format!("{} content", nt),
-            event_date: if *nt == "Event" {
+            event_date: if is_event {
                 Some(Utc::now() + chrono::Duration::days(30))
             } else {
                 None
             },
-            event_location: None,
+            event_location: if is_event {
+                Some("Community Hall".to_string())
+            } else {
+                None
+            },
             contact_info: None,
             expires_at: None,
         };
@@ -1700,19 +1705,47 @@ async fn given_owner_shared_object(world: &mut CommunityWorld, name: String, obj
 }
 
 #[given(regex = r#"^the "([^"]*)" is currently borrowed$"#)]
-async fn given_object_is_borrowed(world: &mut CommunityWorld, _obj_name: String) {
-    // First ensure the object exists, then have someone borrow it
+async fn given_object_is_borrowed(world: &mut CommunityWorld, obj_name: String) {
+    let org_id = world.org_id.unwrap();
+    let building_id = world.building_id.unwrap();
+    let uc = world.shared_object_use_cases.as_ref().unwrap().clone();
+
+    // Create the object if it doesn't exist yet
+    if world.last_object_id.is_none() {
+        let (_, sharer_uid) = world.get_first_owner_ids();
+        let dto = CreateSharedObjectDto {
+            building_id,
+            object_category: SharedObjectCategory::Tools,
+            object_name: obj_name,
+            description: "Shared object".to_string(),
+            condition: ObjectCondition::Good,
+            is_available: true,
+            rental_credits_per_day: None,
+            deposit_credits: Some(1),
+            borrowing_duration_days: Some(7),
+            photos: None,
+            location_details: None,
+            usage_instructions: None,
+        };
+        let resp = uc
+            .create_shared_object(sharer_uid, org_id, dto)
+            .await
+            .expect("create shared object");
+        world.last_object_id = Some(resp.id);
+        world.last_object_response = Some(resp);
+    }
+
+    // Find a borrower who is NOT the object owner
     let names: Vec<String> = world.owner_map.keys().cloned().collect();
+    let object_owner_id = world.last_object_response.as_ref().map(|r| r.owner_id);
     let borrower_name = names.iter().find(|n| {
         let (oid, _) = world.get_owner_ids(n);
-        world.last_object_response.as_ref().map(|r| r.owner_id) != Some(oid)
+        object_owner_id != Some(oid)
     });
 
     if let Some(borrower) = borrower_name.cloned() {
         let (_, user_id) = world.get_owner_ids(&borrower);
-        let org_id = world.org_id.unwrap();
         let object_id = world.last_object_id.unwrap();
-        let uc = world.shared_object_use_cases.as_ref().unwrap().clone();
         let dto = BorrowObjectDto {
             duration_days: None,
         };
@@ -2756,7 +2789,15 @@ async fn when_book_adjacent(
 }
 
 async fn create_pending_booking(world: &mut CommunityWorld) {
-    let (_, user_id) = world.get_first_owner_ids();
+    // Use alphabetically first owner for deterministic booking ownership
+    // (important for cancel tests where a specific owner must cancel their own booking)
+    let first_name = world
+        .owner_map
+        .keys()
+        .min()
+        .cloned()
+        .expect("No owner in map");
+    let (_, user_id) = world.get_owner_ids(&first_name);
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
 
@@ -2868,13 +2909,15 @@ async fn given_active_and_cancelled(world: &mut CommunityWorld, active: usize, c
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
+    let pool = world.pool.as_ref().unwrap();
 
+    // Create "active" bookings: Confirmed + currently in progress (start_time <= NOW < end_time)
     for i in 0..active {
-        let start = Utc::now() + chrono::Duration::days(20 + i as i64);
+        let start = Utc::now() + chrono::Duration::days(5 + i as i64);
         let dto = CreateResourceBookingDto {
             building_id,
             resource_type: ResourceType::CommonSpace,
-            resource_name: "Active room".to_string(),
+            resource_name: format!("Active room {}", i + 1),
             start_time: start,
             end_time: start + chrono::Duration::hours(2),
             notes: None,
@@ -2883,12 +2926,24 @@ async fn given_active_and_cancelled(world: &mut CommunityWorld, active: usize, c
             max_duration_hours: None,
             max_advance_days: None,
         };
-        uc.create_booking(user_id, org_id, dto)
+        let resp = uc
+            .create_booking(user_id, org_id, dto)
             .await
             .expect("create active");
+        // Confirm booking, then backdate to be currently in progress
+        uc.confirm_booking(resp.id).await.expect("confirm active");
+        let active_start = Utc::now() - chrono::Duration::hours(1);
+        let active_end = Utc::now() + chrono::Duration::hours(3);
+        sqlx::query("UPDATE resource_bookings SET start_time = $1, end_time = $2 WHERE id = $3")
+            .bind(active_start)
+            .bind(active_end)
+            .bind(resp.id)
+            .execute(pool)
+            .await
+            .expect("backdate active");
     }
     for i in 0..cancelled {
-        let start = Utc::now() + chrono::Duration::days(30 + i as i64);
+        let start = Utc::now() + chrono::Duration::days(10 + i as i64);
         let dto = CreateResourceBookingDto {
             building_id,
             resource_type: ResourceType::CommonSpace,
@@ -2981,8 +3036,8 @@ async fn given_future_and_past_bookings(world: &mut CommunityWorld) {
     let building_id = world.building_id.unwrap();
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
 
-    // Future booking
-    let start = Utc::now() + chrono::Duration::days(60);
+    // Future booking (within 30-day advance limit)
+    let start = Utc::now() + chrono::Duration::days(10);
     let dto = CreateResourceBookingDto {
         building_id,
         resource_type: ResourceType::CommonSpace,
@@ -2999,8 +3054,8 @@ async fn given_future_and_past_bookings(world: &mut CommunityWorld) {
         .await
         .expect("create future");
 
-    // Past booking (create then backdate)
-    let start2 = Utc::now() + chrono::Duration::days(61);
+    // Past booking (create within 30-day limit then backdate via SQL)
+    let start2 = Utc::now() + chrono::Duration::days(11);
     let dto2 = CreateResourceBookingDto {
         building_id,
         resource_type: ResourceType::CommonSpace,
@@ -3037,7 +3092,7 @@ async fn given_various_status_bookings(world: &mut CommunityWorld) {
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
 
     for i in 0..3 {
-        let start = Utc::now() + chrono::Duration::days(70 + i);
+        let start = Utc::now() + chrono::Duration::days(5 + i);
         let dto = CreateResourceBookingDto {
             building_id,
             resource_type: ResourceType::CommonSpace,
@@ -3165,7 +3220,14 @@ async fn when_list_past(world: &mut CommunityWorld) {
 
 #[when(regex = r#"^I update the booking purpose to "([^"]*)"$"#)]
 async fn when_update_booking_purpose(world: &mut CommunityWorld, purpose: String) {
-    let (_, user_id) = world.get_first_owner_ids();
+    // Use same owner as create_pending_booking (alphabetically first)
+    let first_name = world
+        .owner_map
+        .keys()
+        .min()
+        .cloned()
+        .expect("No owner in map");
+    let (_, user_id) = world.get_owner_ids(&first_name);
     let org_id = world.org_id.unwrap();
     let booking_id = world.last_booking_id.unwrap();
     let uc = world.resource_booking_use_cases.as_ref().unwrap().clone();
@@ -3235,8 +3297,17 @@ async fn then_booking_count(world: &mut CommunityWorld, count: usize) {
 #[then(regex = r#"^all returned bookings should be for "([^"]*)"$"#)]
 async fn then_all_bookings_for(world: &mut CommunityWorld, expected: String) {
     for b in &world.booking_list {
-        let matches = format!("{:?}", b.resource_type) == expected || b.resource_name == expected;
-        assert!(matches, "Booking should be for '{}'", expected);
+        let type_str = format!("{:?}", b.resource_type);
+        // Handle alias: "CommonRoom" in feature files maps to "CommonSpace" enum variant
+        let type_matches = type_str == expected
+            || (expected == "CommonRoom" && type_str == "CommonSpace")
+            || (expected == "CommonSpace" && type_str == "CommonRoom");
+        let matches = type_matches || b.resource_name == expected;
+        assert!(
+            matches,
+            "Booking should be for '{}', got type='{}' name='{}'",
+            expected, type_str, b.resource_name
+        );
     }
 }
 
@@ -3567,7 +3638,7 @@ async fn when_create_challenge(world: &mut CommunityWorld, step: &Step) {
         .unwrap_or(100);
     let start_date = get_table_value(step, "start_date")
         .and_then(|s| s.parse::<DateTime<Utc>>().ok())
-        .unwrap_or_else(Utc::now);
+        .unwrap_or_else(|| Utc::now() + chrono::Duration::hours(1));
     let end_date = get_table_value(step, "end_date")
         .and_then(|s| s.parse::<DateTime<Utc>>().ok())
         .unwrap_or_else(|| Utc::now() + chrono::Duration::days(30));
@@ -3608,7 +3679,7 @@ async fn given_draft_challenge(world: &mut CommunityWorld, _title: String) {
         title: "March Challenge".to_string(),
         description: "Challenge desc".to_string(),
         icon: "trophy".to_string(),
-        start_date: Utc::now(),
+        start_date: Utc::now() + chrono::Duration::hours(1),
         end_date: Utc::now() + chrono::Duration::days(30),
         target_metric: "bookings".to_string(),
         target_value: 5,
@@ -3630,7 +3701,7 @@ async fn given_active_challenge_with_target(world: &mut CommunityWorld, target: 
         title: format!("Target {} challenge", target),
         description: "Active challenge".to_string(),
         icon: "trophy".to_string(),
-        start_date: Utc::now() - chrono::Duration::days(1),
+        start_date: Utc::now() + chrono::Duration::hours(1),
         end_date: Utc::now() + chrono::Duration::days(30),
         target_metric: "bookings".to_string(),
         target_value: target,
@@ -3638,6 +3709,14 @@ async fn given_active_challenge_with_target(world: &mut CommunityWorld, target: 
     };
     let resp = uc.create_challenge(dto).await.expect("create");
     uc.activate_challenge(resp.id).await.expect("activate");
+    // Backdate start_date so the challenge is currently active
+    let pool = world.pool.as_ref().unwrap();
+    sqlx::query("UPDATE challenges SET start_date = $1 WHERE id = $2")
+        .bind(Utc::now() - chrono::Duration::days(1))
+        .bind(resp.id)
+        .execute(pool)
+        .await
+        .expect("backdate challenge start");
     world.last_challenge_id = Some(resp.id);
 }
 
@@ -3665,9 +3744,9 @@ async fn given_active_challenge(world: &mut CommunityWorld) {
         building_id: None,
         challenge_type: ChallengeType::Individual,
         title: "Active challenge".to_string(),
-        description: "Active".to_string(),
+        description: "Active challenge for testing".to_string(),
         icon: "trophy".to_string(),
-        start_date: Utc::now() - chrono::Duration::days(1),
+        start_date: Utc::now() + chrono::Duration::hours(1),
         end_date: Utc::now() + chrono::Duration::days(30),
         target_metric: "bookings".to_string(),
         target_value: 10,
@@ -3675,6 +3754,14 @@ async fn given_active_challenge(world: &mut CommunityWorld) {
     };
     let resp = uc.create_challenge(dto).await.expect("create");
     uc.activate_challenge(resp.id).await.expect("activate");
+    // Backdate start_date so the challenge is currently active
+    let pool = world.pool.as_ref().unwrap();
+    sqlx::query("UPDATE challenges SET start_date = $1 WHERE id = $2")
+        .bind(Utc::now() - chrono::Duration::days(1))
+        .bind(resp.id)
+        .execute(pool)
+        .await
+        .expect("backdate challenge start");
     world.last_challenge_id = Some(resp.id);
 }
 
@@ -3715,9 +3802,9 @@ async fn given_completed_challenges_worth(world: &mut CommunityWorld, points: i3
         building_id: None,
         challenge_type: ChallengeType::Individual,
         title: "Points challenge".to_string(),
-        description: "For stats".to_string(),
+        description: "For stats testing".to_string(),
         icon: "trophy".to_string(),
-        start_date: Utc::now() - chrono::Duration::days(1),
+        start_date: Utc::now() + chrono::Duration::hours(1),
         end_date: Utc::now() + chrono::Duration::days(30),
         target_metric: "test".to_string(),
         target_value: 1,
@@ -3725,6 +3812,14 @@ async fn given_completed_challenges_worth(world: &mut CommunityWorld, points: i3
     };
     let resp = uc.create_challenge(dto).await.expect("create");
     uc.activate_challenge(resp.id).await.expect("activate");
+    // Backdate start_date so the challenge is currently active
+    let pool = world.pool.as_ref().unwrap();
+    sqlx::query("UPDATE challenges SET start_date = $1 WHERE id = $2")
+        .bind(Utc::now() - chrono::Duration::days(1))
+        .bind(resp.id)
+        .execute(pool)
+        .await
+        .expect("backdate challenge start");
     // Complete it by reaching target
     uc.increment_progress(user_id, resp.id, 1)
         .await

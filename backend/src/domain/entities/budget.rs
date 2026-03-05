@@ -178,8 +178,8 @@ impl Budget {
         ordinary_budget: f64,
         extraordinary_budget: f64,
     ) -> Result<(), String> {
-        if self.status != BudgetStatus::Draft {
-            return Err("Can only update amounts in Draft status".to_string());
+        if !self.is_editable() {
+            return Err("Can only update amounts in Draft or Rejected status".to_string());
         }
 
         if ordinary_budget < 0.0 {
@@ -356,7 +356,9 @@ mod tests {
 
         let result = budget.update_amounts(60000.0, 30000.0);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("only update amounts in Draft"));
+        assert!(result
+            .unwrap_err()
+            .contains("only update amounts in Draft or Rejected"));
     }
 
     #[test]

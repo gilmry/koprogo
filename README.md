@@ -30,6 +30,14 @@
 
 ---
 
+## 🎬 Tutoriels Vidéo
+
+[![Playlist YouTube KoproGo](https://img.shields.io/badge/YouTube-Playlist%20Tutoriels-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/playlist?list=PLBxLivSdjkRtGNabcvJuV68_9_VFmGVc-)
+
+> 📺 **[Voir la playlist complète sur YouTube](https://www.youtube.com/playlist?list=PLBxLivSdjkRtGNabcvJuV68_9_VFmGVc-)**
+
+---
+
 ## 🎯 KoproGo Complète Votre Immeuble
 
 **KoproGo s'adapte à votre situation** - Vous n'avez pas besoin de tout changer pour bénéficier de KoproGo.

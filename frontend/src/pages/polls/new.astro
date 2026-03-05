@@ -71,7 +71,7 @@ import Layout from "../../layouts/Layout.astro";
 
   const formContainer = document.getElementById("create-poll-form-container");
   if (formContainer) {
-    mount(CreatePollForm, {
+    mount(CreatePollForm as any, {
       target: formContainer,
     });
   }

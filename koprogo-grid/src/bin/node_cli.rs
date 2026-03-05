@@ -59,6 +59,23 @@ enum Commands {
     },
 }
 
+/// Validate that the server URL uses HTTPS for non-local connections.
+/// Localhost/127.0.0.1 is allowed with HTTP for local development.
+fn validate_server_url(server: &str) -> Result<(), String> {
+    if server.starts_with("http://") {
+        let host = server.trim_start_matches("http://");
+        let is_local = host.starts_with("localhost") || host.starts_with("127.0.0.1");
+        if !is_local {
+            return Err(format!(
+                "Insecure connection rejected: '{}' uses HTTP. Use HTTPS for non-local servers.",
+                server
+            ));
+        }
+        log::warn!("Using HTTP for local development server. Use HTTPS in production.");
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
@@ -73,6 +90,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             solar,
             location,
         } => {
+            validate_server_url(&server)?;
             register_node(&server, &name, cores, solar, &location).await?;
         }
         Commands::Run {
@@ -81,6 +99,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             solar_watts,
             interval,
         } => {
+            validate_server_url(&server)?;
             run_worker(&server, &node_id, solar_watts, interval).await?;
         }
     }

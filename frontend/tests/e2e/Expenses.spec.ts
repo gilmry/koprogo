@@ -8,7 +8,7 @@ import type { Page } from "@playwright/test";
  * Uses API-first setup for data, then validates UI.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 async function setupSyndicWithBuilding(page: Page): Promise<{
   token: string;
@@ -17,7 +17,26 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const timestamp = Date.now();
   const email = `expense-test-${timestamp}@example.com`;
 
-  // Register syndic
+  // Create organization first (required for syndic to create buildings/expenses)
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminData = await adminLoginResp.json();
+  const adminToken = adminData.token;
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `Expense Test Org ${timestamp}`,
+      slug: `expense-test-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
+  const orgId = org.id;
+
+  // Register syndic with organization
   const regResponse = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
       email,
@@ -25,6 +44,7 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
       first_name: "Expense",
       last_name: `Test${timestamp}`,
       role: "syndic",
+      organization_id: orgId,
     },
   });
   expect(regResponse.ok()).toBeTruthy();
@@ -32,6 +52,7 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const token = userData.token;
 
   // Create building
+  // Create building (only SuperAdmin can create buildings)
   const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
     data: {
       name: `Expense Building ${timestamp}`,
@@ -41,8 +62,9 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
       country: "Belgium",
       total_units: 5,
       construction_year: 2020,
+      organization_id: orgId,
     },
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   expect(buildingResponse.ok()).toBeTruthy();
   const building = await buildingResponse.json();
@@ -90,8 +112,8 @@ test.describe("Expenses - Invoice Management", () => {
         building_id: buildingId,
         description: `Test Expense ${timestamp}`,
         amount: 1500.0,
-        date: "2026-02-15",
-        category: "maintenance",
+        expense_date: "2026-02-15T00:00:00Z",
+        category: "Maintenance",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -116,8 +138,8 @@ test.describe("Expenses - Invoice Management", () => {
         building_id: buildingId,
         description: `Detail Expense ${timestamp}`,
         amount: 2500.0,
-        date: "2026-02-20",
-        category: "maintenance",
+        expense_date: "2026-02-20T00:00:00Z",
+        category: "Maintenance",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -144,8 +166,8 @@ test.describe("Expenses - Invoice Management", () => {
         building_id: buildingId,
         description: `VAT Expense ${timestamp}`,
         amount: 1210.0,
-        date: "2026-02-25",
-        category: "maintenance",
+        expense_date: "2026-02-25T00:00:00Z",
+        category: "Maintenance",
       },
       headers: { Authorization: `Bearer ${token}` },
     });

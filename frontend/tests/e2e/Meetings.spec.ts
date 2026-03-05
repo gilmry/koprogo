@@ -8,7 +8,7 @@ import type { Page } from "@playwright/test";
  * Covers AG convocations and resolution viewing.
  */
 
-const API_BASE = "http://localhost/api/v1";
+const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 async function setupSyndicWithBuilding(page: Page): Promise<{
   token: string;
@@ -17,6 +17,25 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
   const timestamp = Date.now();
   const email = `meeting-test-${timestamp}@example.com`;
 
+  // Create organization first (required for syndic to create buildings/meetings)
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminData = await adminLoginResp.json();
+  const adminToken = adminData.token;
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `Meeting Test Org ${timestamp}`,
+      slug: `meeting-test-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
+  const orgId = org.id;
+
   const regResponse = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
       email,
@@ -24,12 +43,14 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
       first_name: "Meeting",
       last_name: `Test${timestamp}`,
       role: "syndic",
+      organization_id: orgId,
     },
   });
   expect(regResponse.ok()).toBeTruthy();
   const userData = await regResponse.json();
   const token = userData.token;
 
+  // Create building (only SuperAdmin can create buildings)
   const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
     data: {
       name: `Meeting Building ${timestamp}`,
@@ -39,8 +60,9 @@ async function setupSyndicWithBuilding(page: Page): Promise<{
       country: "Belgium",
       total_units: 10,
       construction_year: 2020,
+      organization_id: orgId,
     },
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${adminToken}` },
   });
   expect(buildingResponse.ok()).toBeTruthy();
   const building = await buildingResponse.json();
@@ -77,9 +99,9 @@ test.describe("Meetings - General Assembly", () => {
       data: {
         building_id: buildingId,
         title: `AG Ordinaire ${timestamp}`,
-        meeting_date: meetingDate,
+        meeting_type: "Ordinary",
+        scheduled_date: meetingDate,
         location: "Salle communale",
-        agenda: "Point 1: Comptes annuels\nPoint 2: Budget",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -100,9 +122,9 @@ test.describe("Meetings - General Assembly", () => {
       data: {
         building_id: buildingId,
         title: `Detail Meeting ${timestamp}`,
-        meeting_date: "2026-07-20T10:00:00Z",
+        meeting_type: "Ordinary",
+        scheduled_date: "2026-07-20T10:00:00Z",
         location: "Bureau syndic",
-        agenda: "Point 1: Travaux",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
