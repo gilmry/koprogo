@@ -78,8 +78,8 @@ Feature: Meeting Resolutions and Voting System
     And "Bob" (200) voted "Pour"
     And "Charlie" (500) voted "Contre"
     When I close voting on the resolution
-    Then the resolution should be "Adopted"
-    # 500 Pour vs 500 Contre - depends on implementation
+    Then the resolution should be "Rejected"
+    # 500 Pour vs 500 Contre - tie is rejected (strict > required)
 
   Scenario: Close voting - Absolute majority adopted
     Given a pending resolution "Absolute vote" with absolute majority

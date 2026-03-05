@@ -1,7 +1,11 @@
 use chrono::{DateTime, Utc};
 use f64;
 use serde::{Deserialize, Serialize};
+use std::sync::atomic::{AtomicU64, Ordering};
 use uuid::Uuid;
+
+/// Atomic counter for generating unique reference numbers
+static ETAT_DATE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Statut de l'état daté (workflow de génération)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
@@ -215,12 +219,17 @@ impl EtatDate {
         let building_short = &building_id.to_string()[..8];
         let unit_short = &unit_id.to_string()[..8];
 
-        // Le compteur (NNN) devrait idéalement venir de la DB, mais pour simplifier on utilise un timestamp
-        let counter = date.timestamp() % 1000;
+        // Use atomic counter + timestamp for guaranteed uniqueness
+        let seq = ETAT_DATE_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let unique_id = &Uuid::new_v4().to_string()[..8];
 
         format!(
-            "ED-{}-{:03}-BLD{}-U{}",
-            year, counter, building_short, unit_short
+            "ED-{}-{:03}-{}-BLD{}-U{}",
+            year,
+            seq % 1000,
+            unique_id,
+            building_short,
+            unit_short
         )
     }
 

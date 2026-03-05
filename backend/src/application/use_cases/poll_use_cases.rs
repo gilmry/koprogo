@@ -340,6 +340,18 @@ impl PollUseCases {
             return Err("Poll has expired".to_string());
         }
 
+        // Verify owner belongs to the building (authorization check)
+        if let Some(oid) = owner_id {
+            let active_unit_owners = self
+                .unit_owner_repository
+                .find_active_by_building(poll.building_id)
+                .await?;
+            let is_building_owner = active_unit_owners.iter().any(|(_, owner, _)| *owner == oid);
+            if !is_building_owner {
+                return Err("You are not authorized to vote on this poll".to_string());
+            }
+        }
+
         // Check if user already voted (if not anonymous)
         if let Some(oid) = owner_id {
             if !poll.is_anonymous {
