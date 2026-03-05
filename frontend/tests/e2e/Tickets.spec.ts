@@ -124,7 +124,7 @@ test.describe("Tickets - Maintenance Requests", () => {
         title: `Detail Ticket ${timestamp}`,
         description: "Panne ascenseur",
         priority: "Critical",
-        category: "General",
+        category: "Other",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -148,7 +148,7 @@ test.describe("Tickets - Maintenance Requests", () => {
         building_id: buildingId,
         title: `Urgent Ticket ${timestamp}`,
         description: "Panne electrique totale",
-        priority: "Urgent",
+        priority: "Critical",
         category: "Electrical",
       },
       headers: { Authorization: `Bearer ${token}` },

@@ -240,7 +240,7 @@ impl OperationsWorld {
         let postgres_container = loop {
             match Postgres::default().start().await {
                 Ok(container) => break container,
-                Err(e) if attempts < 3 => {
+                Err(_e) if attempts < 3 => {
                     attempts += 1;
                     sleep(Duration::from_millis(500)).await;
                 }
@@ -502,8 +502,8 @@ async fn given_owner_exists(world: &mut OperationsWorld, name: String, _building
     let (first_name, last_name) = name.split_once(' ').unwrap_or((&name, "BDD"));
 
     sqlx::query(
-        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, '+32123456789', NOW(), NOW())"#,
+        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, '+32123456789', 'Rue du Test 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
     )
     .bind(owner_id)
     .bind(org_id)
@@ -1765,8 +1765,8 @@ async fn given_owners_in_building(world: &mut OperationsWorld, count: usize) {
     for i in 0..count {
         let owner_id = Uuid::new_v4();
         sqlx::query(
-            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, created_at, updated_at)
-               VALUES ($1, $2, $3, $4, $5, NOW(), NOW())"#
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, '+32123456789', 'Rue du Test 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#
         )
         .bind(owner_id)
         .bind(org_id)

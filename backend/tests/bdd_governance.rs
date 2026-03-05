@@ -583,8 +583,8 @@ async fn given_owner_with_voting_power(
 
     // Create owner
     sqlx::query(
-        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, created_at, updated_at)
-           VALUES ($1, $2, $3, 'BDD', $4, '+32123456789', NOW(), NOW())"#,
+        r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+           VALUES ($1, $2, $3, 'BDD', $4, '+32123456789', 'Rue du Test 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
     )
     .bind(owner_id)
     .bind(org_id)
@@ -1193,8 +1193,8 @@ async fn given_n_owners_with_emails(world: &mut GovernanceWorld, count: i32) {
         let owner_id = Uuid::new_v4();
         let email = format!("owner{}@test.be", i + 1);
         sqlx::query(
-            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, created_at, updated_at)
-               VALUES ($1, $2, $3, 'Owner', $4, '+32123456789', NOW(), NOW())"#,
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, 'Owner', $4, '+32123456789', 'Rue du Test 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
         )
         .bind(owner_id)
         .bind(org_id)

@@ -174,7 +174,7 @@ impl CommunityWorld {
         let postgres_container = loop {
             match Postgres::default().start().await {
                 Ok(container) => break container,
-                Err(e) if attempts < 3 => {
+                Err(_e) if attempts < 3 => {
                     attempts += 1;
                     sleep(Duration::from_millis(500)).await;
                 }
