@@ -99,7 +99,7 @@ test.describe("Meetings - General Assembly", () => {
       data: {
         building_id: buildingId,
         title: `AG Ordinaire ${timestamp}`,
-        meeting_type: "ordinary",
+        meeting_type: "Ordinary",
         scheduled_date: meetingDate,
         location: "Salle communale",
       },
@@ -122,7 +122,7 @@ test.describe("Meetings - General Assembly", () => {
       data: {
         building_id: buildingId,
         title: `Detail Meeting ${timestamp}`,
-        meeting_type: "ordinary",
+        meeting_type: "Ordinary",
         scheduled_date: "2026-07-20T10:00:00Z",
         location: "Bureau syndic",
       },

@@ -556,7 +556,7 @@ async fn given_meeting_exists(world: &mut GovernanceWorld, title: String) {
 
     sqlx::query(
         r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'Planned', NOW(), NOW())"#,
+           VALUES ($1, $2, $3, 'ordinary', $4, NOW() + interval '30 days', 'Salle AG', 'scheduled', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -1150,7 +1150,7 @@ async fn given_meeting_in_n_days(world: &mut GovernanceWorld, _title: String, da
 
     sqlx::query(
         r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-           VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'Planned', NOW(), NOW())"#,
+           VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
     )
     .bind(meeting_id)
     .bind(org_id)
@@ -1349,7 +1349,7 @@ async fn given_n_convocations(world: &mut GovernanceWorld, count: i32) {
 
         sqlx::query(
             r#"INSERT INTO meetings (id, organization_id, building_id, meeting_type, title, scheduled_date, location, status, created_at, updated_at)
-               VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'Planned', NOW(), NOW())"#,
+               VALUES ($1, $2, $3, 'ordinary', $4, $5, 'Salle AG', 'scheduled', NOW(), NOW())"#,
         )
         .bind(meeting_id)
         .bind(org_id)
@@ -4000,7 +4000,7 @@ async fn when_create_yesno_poll(world: &mut GovernanceWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut question = String::new();
     let mut description = None;
-    let mut ends_at = String::new();
+    let mut _ends_at = String::new();
     let mut is_anonymous = false;
 
     for row in &table.rows {
@@ -4010,11 +4010,14 @@ async fn when_create_yesno_poll(world: &mut GovernanceWorld, step: &Step) {
             "question" => question = val.to_string(),
             "description" => description = Some(val.to_string()),
             "starts_at" => {} // Ignored, auto-set
-            "ends_at" => ends_at = val.to_string(),
+            "ends_at" => _ends_at = val.to_string(),
             "is_anonymous" => is_anonymous = val == "true",
             _ => {}
         }
     }
+
+    // Always use a future date for ends_at (feature files may have past dates)
+    let ends_at = (Utc::now() + ChronoDuration::days(7)).to_rfc3339();
 
     let dto = CreatePollDto {
         building_id: building_id.to_string(),
@@ -4067,7 +4070,7 @@ async fn when_create_mc_poll(world: &mut GovernanceWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut question = String::new();
     let mut description = None;
-    let mut ends_at = String::new();
+    let mut _ends_at = String::new();
     let mut is_anonymous = false;
     let mut allow_multiple = false;
 
@@ -4078,12 +4081,15 @@ async fn when_create_mc_poll(world: &mut GovernanceWorld, step: &Step) {
             "question" => question = val.to_string(),
             "description" => description = Some(val.to_string()),
             "starts_at" => {}
-            "ends_at" => ends_at = val.to_string(),
+            "ends_at" => _ends_at = val.to_string(),
             "is_anonymous" => is_anonymous = val == "true",
             "allow_multiple_votes" => allow_multiple = val == "true",
             _ => {}
         }
     }
+
+    // Always use a future date for ends_at (feature files may have past dates)
+    let ends_at = (Utc::now() + ChronoDuration::days(7)).to_rfc3339();
 
     // Options will be added in a subsequent step; start with empty
     let dto = CreatePollDto {
@@ -4145,7 +4151,7 @@ async fn when_create_rating_poll(world: &mut GovernanceWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut question = String::new();
     let mut description = None;
-    let mut ends_at = String::new();
+    let mut _ends_at = String::new();
     let mut is_anonymous = false;
 
     for row in &table.rows {
@@ -4155,11 +4161,14 @@ async fn when_create_rating_poll(world: &mut GovernanceWorld, step: &Step) {
             "question" => question = val.to_string(),
             "description" => description = Some(val.to_string()),
             "starts_at" => {}
-            "ends_at" => ends_at = val.to_string(),
+            "ends_at" => _ends_at = val.to_string(),
             "is_anonymous" => is_anonymous = val == "true",
             _ => {}
         }
     }
+
+    // Always use a future date for ends_at (feature files may have past dates)
+    let ends_at = (Utc::now() + ChronoDuration::days(7)).to_rfc3339();
 
     // Rating poll: create 5 options for 1-5 stars
     let options: Vec<CreatePollOptionDto> = (1..=5)
@@ -4209,7 +4218,7 @@ async fn when_create_openended_poll(world: &mut GovernanceWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut question = String::new();
     let mut description = None;
-    let mut ends_at = String::new();
+    let mut _ends_at = String::new();
     let mut is_anonymous = false;
 
     for row in &table.rows {
@@ -4219,11 +4228,14 @@ async fn when_create_openended_poll(world: &mut GovernanceWorld, step: &Step) {
             "question" => question = val.to_string(),
             "description" => description = Some(val.to_string()),
             "starts_at" => {}
-            "ends_at" => ends_at = val.to_string(),
+            "ends_at" => _ends_at = val.to_string(),
             "is_anonymous" => is_anonymous = val == "true",
             _ => {}
         }
     }
+
+    // Always use a future date for ends_at (feature files may have past dates)
+    let ends_at = (Utc::now() + ChronoDuration::days(7)).to_rfc3339();
 
     let dto = CreatePollDto {
         building_id: building_id.to_string(),
@@ -4862,8 +4874,8 @@ async fn given_n_owners_voted(
         let unit_id = Uuid::new_v4();
 
         sqlx::query(
-            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, created_at, updated_at)
-               VALUES ($1, $2, $3, 'Voter', $4, '+32470000000', NOW(), NOW())"#,
+            r#"INSERT INTO owners (id, organization_id, first_name, last_name, email, phone, address, city, postal_code, country, created_at, updated_at)
+               VALUES ($1, $2, $3, 'Voter', $4, '+32470000000', 'Rue du Vote 1', 'Bruxelles', '1000', 'Belgique', NOW(), NOW())"#,
         )
         .bind(owner_id)
         .bind(org_id)
@@ -4992,7 +5004,10 @@ async fn given_polls_exist(world: &mut GovernanceWorld, _building: String, step:
     for row in table.rows.iter().skip(1) {
         let question = row[0].trim();
         let status = row[1].trim();
-        let ends_at = row[2].trim();
+        let _ends_at = row[2].trim();
+
+        // Always use a future date (feature file dates may be in the past)
+        let ends_at = (Utc::now() + ChronoDuration::days(7)).to_rfc3339();
 
         let dto = CreatePollDto {
             building_id: building_id.to_string(),
@@ -5016,7 +5031,7 @@ async fn given_polls_exist(world: &mut GovernanceWorld, _building: String, step:
             is_anonymous: Some(false),
             allow_multiple_votes: Some(false),
             require_all_owners: None,
-            ends_at: format!("{}:00Z", ends_at.replace(' ', "T")),
+            ends_at,
         };
 
         let resp = uc.create_poll(dto, user_id).await.expect("create poll");

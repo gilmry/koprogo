@@ -113,7 +113,7 @@ test.describe("Expenses - Invoice Management", () => {
         description: `Test Expense ${timestamp}`,
         amount: 1500.0,
         expense_date: "2026-02-15T00:00:00Z",
-        category: "maintenance",
+        category: "Maintenance",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -139,7 +139,7 @@ test.describe("Expenses - Invoice Management", () => {
         description: `Detail Expense ${timestamp}`,
         amount: 2500.0,
         expense_date: "2026-02-20T00:00:00Z",
-        category: "maintenance",
+        category: "Maintenance",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -167,7 +167,7 @@ test.describe("Expenses - Invoice Management", () => {
         description: `VAT Expense ${timestamp}`,
         amount: 1210.0,
         expense_date: "2026-02-25T00:00:00Z",
-        category: "maintenance",
+        category: "Maintenance",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
