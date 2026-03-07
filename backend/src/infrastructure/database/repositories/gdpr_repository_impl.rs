@@ -96,16 +96,17 @@ impl GdprRepository for PostgresGdprRepository {
     }
 
     async fn anonymize_owner(&self, owner_id: Uuid) -> Result<(), String> {
+        let anonymized_email = format!("anonymized-{}@deleted.local", owner_id);
         let result = sqlx::query!(
             r#"
             UPDATE owners
             SET
-                email = NULL,
+                email = $2,
                 phone = NULL,
-                address = NULL,
-                city = NULL,
-                postal_code = NULL,
-                country = NULL,
+                address = 'Anonymized',
+                city = 'Anonymized',
+                postal_code = '0000',
+                country = 'Anonymized',
                 first_name = 'Anonymized',
                 last_name = 'User',
                 is_anonymized = TRUE,
@@ -113,7 +114,8 @@ impl GdprRepository for PostgresGdprRepository {
                 updated_at = NOW()
             WHERE id = $1 AND is_anonymized = FALSE
             "#,
-            owner_id
+            owner_id,
+            anonymized_email
         )
         .execute(self.pool.as_ref())
         .await

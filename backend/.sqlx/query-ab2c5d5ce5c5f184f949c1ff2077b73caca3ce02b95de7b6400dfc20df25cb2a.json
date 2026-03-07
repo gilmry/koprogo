@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE owners\n            SET\n                email = $2,\n                phone = NULL,\n                address = 'Anonymized',\n                city = 'Anonymized',\n                postal_code = '0000',\n                country = 'Anonymized',\n                first_name = 'Anonymized',\n                last_name = 'User',\n                is_anonymized = TRUE,\n                anonymized_at = NOW(),\n                updated_at = NOW()\n            WHERE id = $1 AND is_anonymized = FALSE\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ab2c5d5ce5c5f184f949c1ff2077b73caca3ce02b95de7b6400dfc20df25cb2a"
+}

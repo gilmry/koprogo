@@ -1100,6 +1100,50 @@ async fn then_no_cross_org(_world: &mut BuildingWorld) {}
 // GDPR BDD Steps (Articles 15 & 17)
 // ============================================================================
 
+#[given("I am an authenticated user")]
+async fn given_authenticated_user(world: &mut BuildingWorld) {
+    let email = format!("gdpr+{}@test.com", Uuid::new_v4());
+    let password = "Passw0rd!".to_string();
+    let reg = RegisterRequest {
+        email: email.clone(),
+        password: password.clone(),
+        first_name: "GDPR".to_string(),
+        last_name: "User".to_string(),
+        role: "owner".to_string(),
+        organization_id: world.org_id,
+    };
+    let auth_uc = world.auth_use_cases.as_ref().unwrap();
+    auth_uc.register(reg).await.expect("register user");
+
+    let login = LoginRequest {
+        email: email.clone(),
+        password,
+    };
+    let login_resp = auth_uc.login(login).await.expect("login");
+    world.last_user_id = Some(login_resp.user.id);
+    world.multi_user_email = Some(email.clone());
+
+    // Create an owner record linked to this user (needed for erase scenarios)
+    let owner_repo = world.owner_repo.as_ref().unwrap();
+    let mut owner = koprogo_api::domain::entities::Owner::new(
+        world.org_id.unwrap(),
+        "GDPR".to_string(),
+        "User".to_string(),
+        email,
+        Some("0032123456789".to_string()),
+        "123 Test Street".to_string(),
+        "Brussels".to_string(),
+        "1000".to_string(),
+        "Belgium".to_string(),
+    )
+    .unwrap();
+    owner.user_id = world.last_user_id;
+    owner_repo
+        .create(&owner)
+        .await
+        .expect("create owner for authenticated user");
+}
+
 #[given("I am an authenticated user with personal data")]
 async fn given_authenticated_user_with_data(world: &mut BuildingWorld) {
     // Register a user
@@ -1236,10 +1280,23 @@ async fn given_no_legal_holds(_world: &mut BuildingWorld) {
 
 #[when("I check if I can erase my data")]
 async fn when_check_can_erase(world: &mut BuildingWorld) {
+    use koprogo_api::infrastructure::audit::{AuditEventType, AuditLogEntry};
+
     let gdpr_uc = world.gdpr_use_cases.as_ref().unwrap();
     let user_id = world.last_user_id.unwrap();
 
     let result = gdpr_uc.can_erase_user(user_id).await;
+
+    // Create audit log (mimicking HTTP handler behavior)
+    if let Some(audit_repo) = world.audit_log_repo.as_ref() {
+        let audit_entry = AuditLogEntry::new(
+            AuditEventType::GdprErasureCheckRequested,
+            Some(user_id),
+            world.org_id,
+        )
+        .with_resource("User", user_id);
+        let _ = audit_repo.create(&audit_entry).await;
+    }
 
     match result {
         Ok(can_erase) => world.last_can_erase = Some(can_erase),
@@ -1258,6 +1315,8 @@ async fn then_erasure_possible(world: &mut BuildingWorld) {
 
 #[when("I request to erase my personal data")]
 async fn when_request_erase_data(world: &mut BuildingWorld) {
+    use koprogo_api::infrastructure::audit::{AuditEventType, AuditLogEntry};
+
     let gdpr_uc = world.gdpr_use_cases.as_ref().unwrap();
     let user_id = world.last_user_id.unwrap();
 
@@ -1266,8 +1325,30 @@ async fn when_request_erase_data(world: &mut BuildingWorld) {
         .await;
 
     match result {
-        Ok(erase_resp) => world.last_gdpr_erase = Some(erase_resp),
-        Err(e) => world.last_result = Some(Err(e)),
+        Ok(erase_resp) => {
+            // Create audit log (mimicking HTTP handler behavior)
+            if let Some(audit_repo) = world.audit_log_repo.as_ref() {
+                let audit_entry =
+                    AuditLogEntry::new(AuditEventType::GdprDataErased, Some(user_id), world.org_id)
+                        .with_resource("User", user_id);
+                let _ = audit_repo.create(&audit_entry).await;
+            }
+            world.last_gdpr_erase = Some(erase_resp);
+        }
+        Err(e) => {
+            // Create audit log for failed erasure
+            if let Some(audit_repo) = world.audit_log_repo.as_ref() {
+                let audit_entry = AuditLogEntry::new(
+                    AuditEventType::GdprDataErasureFailed,
+                    Some(user_id),
+                    world.org_id,
+                )
+                .with_resource("User", user_id)
+                .with_error(e.clone());
+                let _ = audit_repo.create(&audit_entry).await;
+            }
+            world.last_result = Some(Err(e));
+        }
     }
 }
 
@@ -1298,27 +1379,70 @@ async fn then_anonymization_timestamp_recorded(world: &mut BuildingWorld) {
 
 #[given("I have active legal holds on my data")]
 async fn given_active_legal_holds(world: &mut BuildingWorld) {
-    // Create an owner with a different email (legal hold scenario)
-    // In real implementation, legal holds would be tracked explicitly
-    // For BDD, we simulate this by creating owner records with different emails
-    let owner_repo = world.owner_repo.as_ref().unwrap();
+    // Legal holds = unpaid expenses linked to the user via owner → unit_owner → unit → building → expense
+    // We need the full chain for check_legal_holds() SQL query to find them
+    let pool = world.pool.as_ref().unwrap();
+    let user_id = world.last_user_id.unwrap();
+    let org_id = world.org_id.unwrap();
 
-    let owner = koprogo_api::domain::entities::Owner::new(
-        world.org_id.unwrap(),
-        "Legal".to_string(),
-        "Hold".to_string(),
-        "different@email.com".to_string(), // Different email = legal hold
-        Some("0032111111111".to_string()),
-        "456 Legal Street".to_string(),
-        "Brussels".to_string(),
-        "1000".to_string(),
-        "Belgium".to_string(),
-    )
-    .unwrap();
-    owner_repo
-        .create(&owner)
+    // Find the existing owner linked to this user (created in "I am an authenticated user" step)
+    let owner_row = sqlx::query("SELECT id FROM owners WHERE user_id = $1")
+        .bind(user_id)
+        .fetch_one(pool)
         .await
-        .expect("create owner with legal hold");
+        .expect("find owner for legal holds");
+    let owner_id: Uuid = sqlx::Row::get(&owner_row, "id");
+
+    // Create a building
+    let building_id = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, created_at, updated_at)
+         VALUES ($1, $2, 'Legal Hold Building', '789 Hold Ave', 'Brussels', '1000', 'Belgium', 1, NOW(), NOW())",
+    )
+    .bind(building_id)
+    .bind(org_id)
+    .execute(pool)
+    .await
+    .expect("create building for legal holds");
+
+    // Create a unit in the building
+    let unit_id = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO units (id, building_id, organization_id, unit_number, unit_type, floor, surface_area, quota, created_at, updated_at)
+         VALUES ($1, $2, $3, 'LH-01', 'apartment', 0, 50.0, 100.0, NOW(), NOW())",
+    )
+    .bind(unit_id)
+    .bind(building_id)
+    .bind(org_id)
+    .execute(pool)
+    .await
+    .expect("create unit for legal holds");
+
+    // Link owner to unit
+    let uo_id = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO unit_owners (id, unit_id, owner_id, ownership_percentage, start_date, is_primary_contact, created_at, updated_at)
+         VALUES ($1, $2, $3, 1.0, NOW(), true, NOW(), NOW())",
+    )
+    .bind(uo_id)
+    .bind(unit_id)
+    .bind(owner_id)
+    .execute(pool)
+    .await
+    .expect("create unit_owner for legal holds");
+
+    // Create an unpaid expense on the building
+    let expense_id = Uuid::new_v4();
+    sqlx::query(
+        "INSERT INTO expenses (id, building_id, organization_id, category, description, amount, expense_date, payment_status, created_at, updated_at)
+         VALUES ($1, $2, $3, 'maintenance', 'Unpaid charge', 500.00, NOW(), 'pending', NOW(), NOW())",
+    )
+    .bind(expense_id)
+    .bind(building_id)
+    .bind(org_id)
+    .execute(pool)
+    .await
+    .expect("create unpaid expense for legal holds");
 }
 
 #[then("the erasure request should be rejected")]

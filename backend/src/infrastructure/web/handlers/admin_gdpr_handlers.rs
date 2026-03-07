@@ -231,7 +231,7 @@ pub async fn admin_export_user_data(
     // SuperAdmin can export any user's data (no organization restriction)
     match data
         .gdpr_use_cases
-        .export_user_data(auth.user_id, target_user_id, None)
+        .export_user_data(target_user_id, auth.user_id, None)
         .await
     {
         Ok(export_data) => {
@@ -348,7 +348,7 @@ pub async fn admin_erase_user_data(
     // SuperAdmin can erase any user's data (no organization restriction)
     match data
         .gdpr_use_cases
-        .erase_user_data(auth.user_id, target_user_id, None)
+        .erase_user_data(target_user_id, auth.user_id, None)
         .await
     {
         Ok(erase_response) => {
