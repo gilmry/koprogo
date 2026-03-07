@@ -151,14 +151,14 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Immeuble / Lot</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notaire</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date ref.</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Solde</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delai</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Immeuble / Lot</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notaire</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date ref.</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Solde</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Delai</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">

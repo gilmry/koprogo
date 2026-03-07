@@ -117,7 +117,9 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <!-- Search -->
       <div>
+        <label for="ticket-search" class="sr-only">Search tickets</label>
         <input
+          id="ticket-search"
           type="text"
           bind:value={searchQuery}
           placeholder="Search tickets..."

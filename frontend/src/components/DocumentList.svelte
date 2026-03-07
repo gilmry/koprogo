@@ -259,12 +259,12 @@
       <table class="min-w-full divide-y divide-gray-100 text-sm">
         <thead class="bg-gray-50">
           <tr class="text-left text-gray-500 uppercase text-xs tracking-wider">
-            <th class="px-5 py-3">Titre</th>
-            <th class="px-5 py-3">Bâtiment</th>
-            <th class="px-5 py-3">Type</th>
-            <th class="px-5 py-3">Taille</th>
-            <th class="px-5 py-3">Ajouté le</th>
-            <th class="px-5 py-3 text-right">Actions</th>
+            <th scope="col" class="px-5 py-3">Titre</th>
+            <th scope="col" class="px-5 py-3">Bâtiment</th>
+            <th scope="col" class="px-5 py-3">Type</th>
+            <th scope="col" class="px-5 py-3">Taille</th>
+            <th scope="col" class="px-5 py-3">Ajouté le</th>
+            <th scope="col" class="px-5 py-3 text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">

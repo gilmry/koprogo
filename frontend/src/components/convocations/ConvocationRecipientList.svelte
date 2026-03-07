@@ -135,13 +135,13 @@
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-xs text-gray-500 uppercase border-b border-gray-200">
-            <th class="px-4 py-2">Propriétaire</th>
-            <th class="px-4 py-2">Email</th>
-            <th class="px-4 py-2">Envoyé</th>
-            <th class="px-4 py-2">Ouvert</th>
-            <th class="px-4 py-2">Présence</th>
-            <th class="px-4 py-2">Procuration</th>
-            <th class="px-4 py-2">Actions</th>
+            <th scope="col" class="px-4 py-2">Propriétaire</th>
+            <th scope="col" class="px-4 py-2">Email</th>
+            <th scope="col" class="px-4 py-2">Envoyé</th>
+            <th scope="col" class="px-4 py-2">Ouvert</th>
+            <th scope="col" class="px-4 py-2">Présence</th>
+            <th scope="col" class="px-4 py-2">Procuration</th>
+            <th scope="col" class="px-4 py-2">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">

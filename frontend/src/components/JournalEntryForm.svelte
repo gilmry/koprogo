@@ -238,11 +238,11 @@
         <table class="journal-lines-table">
           <thead>
             <tr>
-              <th class="w-32">Compte</th>
-              <th class="flex-1">Libellé</th>
-              <th class="w-32 text-right">Débit (€)</th>
-              <th class="w-32 text-right">Crédit (€)</th>
-              <th class="w-20"></th>
+              <th scope="col" class="w-32">Compte</th>
+              <th scope="col" class="flex-1">Libellé</th>
+              <th scope="col" class="w-32 text-right">Débit (€)</th>
+              <th scope="col" class="w-32 text-right">Crédit (€)</th>
+              <th scope="col" class="w-20"></th>
             </tr>
           </thead>
           <tbody>
