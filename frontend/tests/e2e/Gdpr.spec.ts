@@ -54,10 +54,19 @@ async function loginViaUI(page: Page, email: string, password: string) {
 // Helper: Clear browser state (localStorage, cookies) to prevent stale auth
 async function clearBrowserState(page: Page) {
   await page.context().clearCookies();
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
+  // Navigate to the app first so localStorage is accessible (avoids SecurityError on about:blank)
+  try {
+    const url = page.url();
+    if (!url || url === "about:blank" || url.startsWith("chrome:")) {
+      await page.goto("/login");
+    }
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+  } catch {
+    // Ignore if localStorage is not accessible (e.g., cross-origin page)
+  }
 }
 
 // Helper: Login as SuperAdmin
