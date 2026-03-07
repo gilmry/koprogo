@@ -51,8 +51,18 @@ async function loginViaUI(page: Page, email: string, password: string) {
   await page.waitForURL(/\/(owner|syndic|accountant|admin)/);
 }
 
+// Helper: Clear browser state (localStorage, cookies) to prevent stale auth
+async function clearBrowserState(page: Page) {
+  await page.context().clearCookies();
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+}
+
 // Helper: Login as SuperAdmin
 async function loginAsSuperAdmin(page: Page) {
+  await clearBrowserState(page);
   await loginViaUI(page, "admin@koprogo.com", "admin123");
 }
 
@@ -117,8 +127,7 @@ test.describe("GDPR - Complete User Journey (Idempotent)", () => {
   });
 });
 
-// TODO: Requires database cleanup before tests (see issue #66)
-test.describe.skip("GDPR - Admin Operations (Idempotent)", () => {
+test.describe("GDPR - Admin Operations (Idempotent)", () => {
   test("should allow admin to export and erase user data", async ({ page }) => {
     // Step 1: Create test user
     const user = await registerAndLogin(page, "owner");
@@ -178,9 +187,7 @@ test.describe.skip("GDPR - Admin Operations (Idempotent)", () => {
   });
 });
 
-// TODO: Requires database cleanup before tests (see issue #66)
-test.describe
-  .skip("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
+test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
   test("should handle user creating data then admin exporting it", async ({
     page,
   }) => {
@@ -191,10 +198,11 @@ test.describe
     await loginViaUI(page, user.email, user.password);
     await page.goto("/syndic");
 
-    // Step 3: User logs out
+    // Step 3: User logs out and clear browser state
     await page.getByTestId("user-menu-button").click();
     await page.getByTestId("user-menu-logout").click();
     await page.waitForURL("/login");
+    await clearBrowserState(page);
 
     // Step 4: Admin logs in
     await loginAsSuperAdmin(page);
@@ -226,6 +234,7 @@ test.describe
     // Step 6: User logs back in and exports own data
     await page.getByTestId("user-menu-button").click();
     await page.getByTestId("user-menu-logout").click();
+    await clearBrowserState(page);
 
     await loginViaUI(page, user.email, user.password);
     await page.goto("/settings/gdpr");
@@ -250,8 +259,7 @@ test.describe
   });
 });
 
-// TODO: Requires database cleanup before tests (see issue #66)
-test.describe.skip("GDPR - Audit Logs Verification", () => {
+test.describe("GDPR - Audit Logs Verification", () => {
   test("should record all GDPR operations in audit logs", async ({ page }) => {
     // Step 1: Create user and perform export
     const user = await registerAndLogin(page, "owner");
@@ -268,9 +276,10 @@ test.describe.skip("GDPR - Audit Logs Verification", () => {
     await page.getByTestId("gdpr-export-modal-close").click();
     await expect(page.getByTestId("gdpr-export-modal")).not.toBeVisible();
 
-    // Logout
+    // Logout and clear browser state
     await page.getByTestId("user-menu-button").click();
     await page.getByTestId("user-menu-logout").click();
+    await clearBrowserState(page);
 
     // Step 2: Admin checks audit logs
     await loginAsSuperAdmin(page);
@@ -305,8 +314,7 @@ test.describe.skip("GDPR - Audit Logs Verification", () => {
   });
 });
 
-// TODO: Requires database cleanup before tests (see issue #66)
-test.describe.skip("GDPR - Cross-Organization Access", () => {
+test.describe("GDPR - Cross-Organization Access", () => {
   test("should allow SuperAdmin to access any user regardless of organization", async ({
     page,
   }) => {
