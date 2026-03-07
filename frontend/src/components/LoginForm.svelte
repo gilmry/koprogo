@@ -63,6 +63,7 @@
   {#if error}
     <div
       class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+      role="alert"
       data-testid="login-error"
     >
       {error}
@@ -80,6 +81,7 @@
       required
       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       placeholder="votre@email.com"
+      autocomplete="email"
       data-testid="login-email"
     />
   </div>
@@ -95,6 +97,7 @@
       required
       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       placeholder="••••••••"
+      autocomplete="current-password"
       data-testid="login-password"
     />
   </div>
@@ -120,7 +123,7 @@
   <button
     type="submit"
     disabled={loading}
-    class="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+    class="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
     data-testid="login-submit"
   >
     {loading ? 'Connexion...' : 'Se connecter'}

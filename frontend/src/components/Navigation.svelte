@@ -431,12 +431,14 @@
 <!-- ============================================================ -->
 {#if drawerOpen && isAuthenticated}
   <!-- Backdrop -->
-  <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div
     class="fixed inset-0 bg-black/40 z-40 lg:hidden"
     transition:fade={{ duration: 200 }}
     on:click={closeDrawer}
     on:keydown={(e) => e.key === 'Escape' && closeDrawer()}
+    role="button"
+    tabindex="-1"
+    aria-label="Fermer le menu"
   ></div>
 
   <!-- Drawer panel -->
