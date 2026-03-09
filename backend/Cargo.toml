@@ -74,14 +74,14 @@ printpdf = "0.7"
 rust_xlsxwriter = "0.94.0"
 
 # Random data generation (for seed scripts)
-rand = "0.9"
+rand = "0.10"
 fake = { version = "4.4", features = ["derive", "chrono", "uuid", "http"] }
 
 # Email
 lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-native-tls"] }
 
 # HTTP client
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["json", "form", "query"] }
 
 # OpenAPI documentation
 utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }
@@ -99,7 +99,7 @@ rust_decimal_macros = "1.36"
 cucumber = { version = "0.21", features = ["macros"] }
 
 # E2E tests
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["json"] }
 
 # Load tests
 criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }

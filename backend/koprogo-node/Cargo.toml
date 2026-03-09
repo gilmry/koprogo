@@ -45,7 +45,7 @@ config = "0.14"
 dotenv = "0.15"
 
 # HTTP client (for grid communication)
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.13", features = ["json"] }
 
 [dev-dependencies]
 tokio-test = "0.4"

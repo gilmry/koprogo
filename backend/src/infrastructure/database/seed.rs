@@ -4,7 +4,7 @@ use chrono::{NaiveDate, Utc};
 use fake::faker::address::en::*;
 use fake::faker::name::en::*;
 use fake::Fake;
-use rand::Rng;
+use rand::RngExt;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
