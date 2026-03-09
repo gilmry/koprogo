@@ -68,7 +68,7 @@ aws-types = "1"
 aws-credential-types = "1"
 
 # PDF generation
-printpdf = "0.7"
+printpdf = "0.9"
 
 # Excel generation
 rust_xlsxwriter = "0.94.0"
