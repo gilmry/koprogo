@@ -301,10 +301,10 @@
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-xs text-gray-500 uppercase">
-            <th class="pb-2">Votant</th>
-            <th class="pb-2">Choix</th>
-            <th class="pb-2 text-right">Millièmes</th>
-            <th class="pb-2 text-right">Date</th>
+            <th scope="col" class="pb-2">Votant</th>
+            <th scope="col" class="pb-2">Choix</th>
+            <th scope="col" class="pb-2 text-right">Millièmes</th>
+            <th scope="col" class="pb-2 text-right">Date</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">

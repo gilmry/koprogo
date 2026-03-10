@@ -46,10 +46,7 @@
   <div
     class="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
     on:click={handleClose}
-    on:keydown={(e) => e.key === 'Enter' && handleClose()}
-    role="button"
-    tabindex="0"
-    aria-label="Close modal"
+    aria-hidden="true"
   ></div>
 
   <!-- Modal -->

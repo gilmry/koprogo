@@ -169,12 +169,12 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Achievement</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categorie</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Niveau</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flags</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Achievement</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categorie</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Niveau</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flags</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">

@@ -122,7 +122,9 @@
   <!-- Search -->
   <div class="bg-white rounded-lg shadow p-4">
     <div class="relative">
+      <label for="building-search" class="sr-only">Rechercher par nom, adresse, ville</label>
       <input
+        id="building-search"
         type="text"
         bind:value={searchTerm}
         placeholder="Rechercher par nom, adresse, ville..."

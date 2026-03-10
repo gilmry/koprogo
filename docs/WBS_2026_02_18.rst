@@ -2,84 +2,96 @@
 KoproGo - Work Breakdown Structure (WBS)
 =========================================================
 
-:Version: 1.0
-:Date: 18 février 2026
-:Méthode: Audit croisé GitHub Issues + Code Source
-:Auteur: Audit automatisé Claude Code
+:Version: 2.0
+:Date: 7 mars 2026
+:Methode: Audit croise GitHub Issues + Code Source
+:Auteur: Audit automatise Claude Code
+:Derniere mise a jour: 7 mars 2026
 
-.. contents:: Table des matières
+.. contents:: Table des matieres
    :depth: 3
    :local:
 
 =========================================================
-Méthodologie
+Methodologie
 =========================================================
 
-Ce WBS a été produit par un audit croisé entre :
+Ce WBS a ete produit par un audit croise entre :
 
-1. **GitHub Issues** : 61 issues (44 fermées, 17 ouvertes) sur 8 milestones
-2. **Code source réel** : Exploration exhaustive de 7 couches (domain, application, infrastructure, migrations, frontend, tests, infra)
+1. **GitHub Issues** : 81 issues (51 fermees, 30 ouvertes) sur 8 milestones + 17 R&D
+2. **Code source reel** : Exploration exhaustive de 7 couches (domain, application, infrastructure, migrations, frontend, tests, infra)
 
-L'audit a révélé un écart significatif entre le tracking GitHub et le code réel :
-plusieurs features étaient implémentées mais non trackées. La synchronisation
-du 2026-02-18 a corrigé ces écarts.
+Historique des audits :
 
-Actions de synchronisation effectuées :
+- **2026-02-18 v1.0** : Audit initial, 3 issues fermees, 5 commentees, 6 creees retroactivement
+- **2026-03-07 v2.0** : Mise a jour post-release 0.5.0, 12 issues fermees depuis v1.0, 17 issues R&D ajoutees
 
-- **3 issues fermées** (#52, #55, #78) : code complet mais issues encore ouvertes
-- **5 issues commentées** (#47, #87, #93, #94, #109) : progression réelle documentée
-- **6 issues créées rétroactivement** (#200-#205) puis fermées : features codées non trackées
+Changements majeurs depuis v1.0 :
+
+- **12 issues fermees** depuis le 18 fevrier 2026 :
+  - #47 PDF generation (J3, ferme 07/03)
+  - #66 E2E admin login bug (J1, ferme 07/03)
+  - #69 Playwright E2E tests (J1, ferme 07/03)
+  - #158 E2E compilation errors (J1, ferme 07/03)
+  - #206 Frontend UI wiring (J3, ferme 07/03)
+  - #207 Release 0.5.0 umbrella (J1, ferme 07/03)
+  - #208 BDD step definitions 24 features (J1, ferme 07/03)
+  - #209 Playwright expansion 7 specs (J1, ferme 07/03)
+  - #210 Feature documentation 6 docs (J1, ferme 07/03)
+  - #200-#205 fermes 18/02 (audit retroactif, deja dans v1.0)
+- **4 issues replanifiees** vers release v0.7.0 : #67, #71, #72, #93
+- **17 issues R&D creees** (#220-#236, sans milestone)
 
 =========================================================
 Vue d'ensemble par Jalon
 =========================================================
 
-.. list-table:: Progression par Jalon (2026-02-18)
+.. list-table:: Progression par Jalon (2026-03-07)
    :header-rows: 1
    :widths: 30 10 10 10 10 30
 
    * - Jalon
      - Issues
-     - Fermées
+     - Fermees
      - Ouvertes
      - Progress
      - Bloqueur
    * - J0 Fondations Techniques
-     - 3
-     - 3
+     - 4
+     - 4
      - 0
      - 100%
      - (Complet)
-   * - J1 Sécurité & GDPR
-     - 11
-     - 8
-     - 3
-     - 72%
-     - eID/itsme (#48), tests E2E (#66, #69)
-   * - J2 Conformité Légale Belge
-     - 17
-     - 17
-     - 0
-     - 100%
-     - (Complet)
-   * - J3 Features Différenciantes
-     - 8
-     - 7
-     - 1
-     - 87%
-     - PDF generation (#47)
-   * - J4 Automation & Intégrations
+   * - J1 Securite & GDPR
      - 15
-     - 10
-     - 5
-     - 67%
-     - GDPR docs (#67), RBAC (#71, #72), A11y (#93), Frontend wiring (#206)
+     - 14
+     - 1
+     - 93%
+     - eID/itsme (#48) - defere v0.7.0
+   * - J2 Conformite Legale Belge
+     - 17
+     - 17
+     - 0
+     - 100%
+     - (Complet)
+   * - J3 Features Differenciantes
+     - 9
+     - 9
+     - 0
+     - 100%
+     - (Complet)
+   * - J4 Automation & Integrations
+     - 14
+     - 11
+     - 3
+     - 79%
+     - GDPR docs (#67), RBAC (#71, #72) - deferes v0.7.0
    * - J5 Mobile & API Publique
      - 4
      - 1
      - 3
      - 25%
-     - PWA (#87, 70% codé), BI (#97), Mobile (#98)
+     - PWA (#87), BI (#97), Mobile (#98)
    * - J6 PropTech 2.0
      - 5
      - 1
@@ -92,8 +104,20 @@ Vue d'ensemble par Jalon
      - 1
      - 0%
      - Public API v2 (#111)
+   * - R&D (sans milestone)
+     - 17
+     - 0
+     - 17
+     - N/A
+     - Investigations a planifier
+   * - **TOTAL**
+     - **86**
+     - **57**
+     - **29**
+     - **66%**
+     -
 
-**Total** : 64 issues, 47 fermées (73%), 18 ouvertes
+**Delta vs v1.0** : +22 issues, +10 fermees (47/64 -> 57/86)
 
 =========================================================
 Jalon 0 : Fondations Techniques (100%)
@@ -101,27 +125,27 @@ Jalon 0 : Fondations Techniques (100%)
 
 .. code-block:: text
 
-   ████████████████████ 100%  ✅ COMPLET
+   ████████████████████ 100%  COMPLET
 
 Toutes les fondations sont en place :
 
 - Architecture hexagonale (Ports & Adapters)
-- 200+ endpoints REST API
-- PostgreSQL 15 + SQLx migrations (57 fichiers)
+- 450+ endpoints REST API
+- PostgreSQL 15 + SQLx migrations (59 fichiers)
 - Docker Compose (dev + prod + monitoring)
 - CI/CD GitHub Actions (4 workflows)
-- Test pyramid (unit + BDD + E2E + benchmarks)
+- Test pyramid (unit + BDD + E2E + Playwright + benchmarks)
 
 =========================================================
-Jalon 1 : Sécurité & GDPR (72%)
+Jalon 1 : Securite & GDPR (93%)
 =========================================================
 
 .. code-block:: text
 
-   ██████████████░░░░░░ 72%  🔒 3 issues restantes
+   ██████████████████░░ 93%  1 issue restante
 
-Issues fermées (8)
-------------------
+Issues fermees (14)
+--------------------
 
 .. list-table::
    :header-rows: 1
@@ -132,7 +156,7 @@ Issues fermées (8)
      - Note
    * - #32
      - Rewrite E2E tests for unit_owner
-     - Tests refactorisés
+     - Tests refactorises
    * - #39
      - LUKS encryption at rest
      - AES-XTS-512, Ansible
@@ -150,71 +174,31 @@ Issues fermées (8)
      - fail2ban, WAF, IDS, SSH
    * - #55
      - MinIO/S3 bucket bootstrap
-     - **Fermée 2026-02-18** (audit)
+     - Fermee 2026-02-18 (audit)
    * - #78
      - Security hardening (2FA, rate limiting, audit)
-     - **Fermée 2026-02-18** (audit)
-
-Issues ouvertes (3)
--------------------
-
-.. list-table::
-   :header-rows: 1
-   :widths: 10 50 20 20
-
-   * - #
-     - Titre
-     - Code existant
-     - Estimation restante
-   * - #48
-     - Strong auth itsme/eID
-     - 0%
-     - 15-20h
+     - Fermee 2026-02-18 (audit)
    * - #66
      - E2E: Admin login timeout bug
-     - Bug test
-     - 2-3h
+     - **Fermee 2026-03-07** (fix GDPR test isolation)
    * - #69
      - Playwright E2E tests (units, documents)
-     - 0%
-     - 6-8h
-
-=========================================================
-Jalon 2 : Conformité Légale Belge (100%)
-=========================================================
-
-.. code-block:: text
-
-   ████████████████████ 100%  ✅ COMPLET
-
-17 issues fermées incluant 4 créées rétroactivement :
-
-- #200 Journal Entries (comptabilité partie double)
-- #201 Call for Funds (appels de fonds)
-- #202 Owner Contributions (suivi versements)
-- #205 Charge Distribution (répartition charges)
-
-Couverture complète : PCMN belge, facturation TVA, état daté, budgets,
-conseil de copropriété, workflow recouvrement, validation quotes-parts.
-
-=========================================================
-Jalon 3 : Features Différenciantes (87%)
-=========================================================
-
-.. code-block:: text
-
-   █████████████████░░░ 87%  🎯 1 issue restante
-
-Issues fermées (7)
-------------------
-
-- #46 Meeting voting system (resolutions, tantièmes)
-- #49 Community features (SEL, 6 phases complètes, 21,100 LOC)
-- #52 Contractor backoffice — **Fermée 2026-02-18** (work reports + inspections + quotes)
-- #84 Online payments (Stripe + SEPA, 38 endpoints)
-- #99 Community modules (notices, skills, sharing, bookings)
-- #133 Linky/Ores smart meter integration
-- #134 Work reports & technical inspections
+     - **Fermee 2026-03-07** (11 spec files)
+   * - #158
+     - E2E tests 200+ compilation errors
+     - **Fermee 2026-03-07** (tous corrigent)
+   * - #207
+     - Release 0.5.0 umbrella
+     - **Fermee 2026-03-07**
+   * - #208
+     - BDD step definitions 24 features
+     - **Fermee 2026-03-07** (537 scenarios)
+   * - #209
+     - Playwright expansion 7 new specs
+     - **Fermee 2026-03-07** (11 specs total)
+   * - #210
+     - Feature documentation 6 docs + READMEs
+     - **Fermee 2026-03-07**
 
 Issue ouverte (1)
 -----------------
@@ -227,21 +211,64 @@ Issue ouverte (1)
      - Titre
      - Code existant
      - Estimation restante
-   * - #47
-     - PDF generation (PV AG, relevés, contrats)
-     - ~40%
-     - 8-10h
+   * - #48
+     - Strong auth itsme/eID
+     - 0%
+     - 15-20h (defere v0.7.0)
 
 =========================================================
-Jalon 4 : Automation & Intégrations (71%)
+Jalon 2 : Conformite Legale Belge (100%)
 =========================================================
 
 .. code-block:: text
 
-   ██████████████░░░░░░ 71%  📋 5 issues restantes
+   ████████████████████ 100%  COMPLET
 
-Issues fermées (10)
+17 issues fermees incluant 4 creees retroactivement :
+
+- #200 Journal Entries (comptabilite partie double)
+- #201 Call for Funds (appels de fonds)
+- #202 Owner Contributions (suivi versements)
+- #205 Charge Distribution (repartition charges)
+
+Couverture complete : PCMN belge, facturation TVA, etat date, budgets,
+conseil de copropriete, workflow recouvrement, validation quotes-parts.
+
+=========================================================
+Jalon 3 : Features Differenciantes (100%)
+=========================================================
+
+.. code-block:: text
+
+   ████████████████████ 100%  COMPLET
+
+**Delta vs v1.0** : 87% -> 100% (+2 issues fermees)
+
+Issues fermees (9)
 -------------------
+
+- #46 Meeting voting system (resolutions, tantiemes)
+- #47 PDF generation (PV AG, releves, contrats) - **Fermee 2026-03-07**
+- #49 Community features (SEL, 6 phases completes, 21,100 LOC)
+- #52 Contractor backoffice (work reports + inspections + quotes)
+- #84 Online payments (Stripe + SEPA, 38 endpoints)
+- #99 Community modules (notices, skills, sharing, bookings)
+- #133 Linky/Ores smart meter integration
+- #134 Work reports & technical inspections
+- #206 Frontend UI wiring (bookings, sharing, work reports) - **Fermee 2026-03-07**
+
+=========================================================
+Jalon 4 : Automation & Integrations (79%)
+=========================================================
+
+.. code-block:: text
+
+   ███████████████░░░░░ 79%  3 issues restantes (deferes v0.7.0)
+
+**Delta vs v1.0** : 71% -> 79% (#93 a11y +avancee, #204 ferme)
+
+Issues fermees (11)
+--------------------
 
 - #64 GDPR Article 21 (marketing objection)
 - #65 GDPR Articles 16 & 18 (rectification, restriction)
@@ -252,10 +279,11 @@ Issues fermées (10)
 - #90 GDPR complementary articles
 - #91 Contractor quotes (comparison scoring)
 - #92 Public syndic information
-- #204 Statistics dashboard — **Créée 2026-02-18** (rétroactif)
+- #93 WCAG 2.1 Level AA Accessibility - **Avance ~60%** (scope="col", sr-only, aria, modal fixes)
+- #204 Statistics dashboard
 
-Issues ouvertes (5)
--------------------
+Issues ouvertes (3) - deferes v0.7.0
+--------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -267,24 +295,20 @@ Issues ouvertes (5)
      - Estimation restante
    * - #67
      - GDPR documentation & QA review
-     - 0%
-     - 6-8h
+     - ~30% (docs RST creees)
+     - 4-5h (defere v0.7.0)
    * - #71
-     - Rôles Organization Admin / Building Manager
-     - 0%
-     - 8-10h
+     - Roles Organization Admin / Building Manager
+     - ~20% (RBAC_STUDY.rst)
+     - 8-10h (defere v0.7.0)
    * - #72
      - RBAC granulaire (matrice droits dynamique)
-     - 0%
-     - 10-12h
-   * - #93
-     - WCAG 2.1 Level AA Accessibility
-     - ~20%
-     - 6-8h
-   * - #206
-     - Frontend: Complete UI action wiring (bookings, sharing, work reports, inspections, settings)
-     - ~70% (API ✅, composants action manquants)
-     - 8-10h
+     - ~20% (RBAC_STUDY.rst)
+     - 10-12h (defere v0.7.0)
+
+Note: #93 (A11y) est marque v0.7.0 mais a deja ~60% d'avancement
+grace aux commits 35c81e9 et 4ed495b (scope="col", sr-only labels,
+aria-modal, backdrop fixes sur 19 composants).
 
 =========================================================
 Jalon 5 : Mobile & API Publique (25%)
@@ -292,15 +316,15 @@ Jalon 5 : Mobile & API Publique (25%)
 
 .. code-block:: text
 
-   █████░░░░░░░░░░░░░░░ 25%  📱 3 issues restantes
+   █████░░░░░░░░░░░░░░░ 25%  3 issues restantes
 
-Issue fermée (1)
-----------------
+Issue fermee (1)
+-----------------
 
-- #203 i18n 4 langues (NL/FR/DE/EN) — **Créée 2026-02-18** (rétroactif)
+- #203 i18n 4 langues (NL/FR/DE/EN)
 
 Issues ouvertes (3)
--------------------
+--------------------
 
 .. list-table::
    :header-rows: 1
@@ -329,15 +353,15 @@ Jalon 6 : Intelligence & Expansion (20%)
 
 .. code-block:: text
 
-   ████░░░░░░░░░░░░░░░░ 20%  🤖 4 issues restantes
+   ████░░░░░░░░░░░░░░░░ 20%  4 issues restantes
 
-Issue fermée (1)
-----------------
+Issue fermee (1)
+-----------------
 
 - #110 Energy Buying Groups Platform
 
 Issues ouvertes (4)
--------------------
+--------------------
 
 .. list-table::
    :header-rows: 1
@@ -370,87 +394,330 @@ Jalon 7 : Platform Economy (0%)
 
 .. code-block:: text
 
-   ░░░░░░░░░░░░░░░░░░░░ 0%  🚀 1 issue restante
+   ░░░░░░░░░░░░░░░░░░░░ 0%  1 issue restante
 
 - #111 Public API v2 + SDK + Marketplace (0%, 40-60h)
 
 =========================================================
-Bug non-milestoned
+Issues R&D (17 issues, sans milestone)
 =========================================================
 
-- #158 E2E tests have 200+ compilation errors after API changes
+.. code-block:: text
+
+   Recherche et etude prealable - pas de code attendu
+
+Issues creees pour investigation et documentation prealable avant
+implementation. Classees par priorite et jalon cible.
+
+R&D Priorite Haute (4)
+------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 60 30
+
+   * - #
+     - Titre
+     - Jalon cible
+   * - #220
+     - RBAC - Choix architectural (Hybrid vs Dynamic vs Casbin)
+     - J4
+   * - #222
+     - Architecture generation PDF documents legaux belges
+     - J3-J4
+   * - #223
+     - Authentification forte eID/itsme pour votes AG
+     - J1
+   * - #235
+     - Backoffice prestataires PWA - Magic link, ordres de service
+     - J3-J4
+
+R&D Priorite Moyenne (9)
+--------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 60 30
+
+   * - #
+     - Titre
+     - Jalon cible
+   * - #221
+     - Roles Tenant & Guest - Modele participation communautaire
+     - J4
+   * - #224
+     - Architecture BI Dashboard - Pipeline agregation
+     - J5
+   * - #225
+     - Application mobile native - Evaluation framework
+     - J5
+   * - #227
+     - Architecture IoT - Integration capteurs et base time-series
+     - J6
+   * - #231
+     - Strategie scaling infrastructure - K8s et partitionnement DB
+     - J5-J6
+   * - #232
+     - API Publique v1 - Design OpenAPI et integration tiers
+     - J7
+   * - #234
+     - PWA offline sync - Architecture synchronisation
+     - J5
+   * - #226
+     - Assistant IA Syndic - Architecture LLM, RAG et GDPR
+     - J6
+   * - #236
+     - Orchestration achats groupes energie - Courtier CREG
+     - J4-J6
+
+R&D Priorite Basse (4)
+------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 60 30
+
+   * - #
+     - Titre
+     - Jalon cible
+   * - #228
+     - Marketplace prestataires - Modele business et verification
+     - J6
+   * - #229
+     - Empreinte carbone et reporting ESG/durabilite
+     - J6
+   * - #230
+     - Vote blockchain - Smart contract et GDPR
+     - J6-J7
+   * - #233
+     - Strategies de test avancees (property-based, contract, load)
+     - Transverse
 
 =========================================================
-Statistiques du Codebase (2026-02-18)
+Statistiques du Codebase (2026-03-07)
 =========================================================
 
 .. list-table:: Inventaire technique
    :header-rows: 1
-   :widths: 40 30 30
+   :widths: 40 15 15 20
 
    * - Composant
      - Fichiers
-     - LOC estimé
+     - LOC
+     - Delta vs v1.0
    * - Backend Domain (entities + services)
-     - 52 entities, 9 services
-     - ~12,000
+     - 53
+     - ~21,900
+     - +1 fichier
    * - Backend Application (ports + use cases + DTOs)
-     - 50 ports, 43 use cases, 45 DTOs
-     - ~18,000
+     - 141 (51+45+45)
+     - ~25,400
+     - +1 fichier
    * - Backend Infrastructure (repos + handlers)
-     - 49 repos, 51 handlers
-     - ~44,000
+     - 102 (50+52)
+     - ~42,300
+     - +2 fichiers
    * - Migrations SQL
-     - 57 fichiers
+     - 59
      - ~4,500
+     - +2 fichiers
    * - Frontend Pages (Astro)
-     - 79 pages
-     - ~1,500
+     - 79
+     - ~4,600
+     - (stable)
    * - Frontend Components (Svelte)
-     - 161 composants
-     - ~36,700
-   * - Frontend API modules
-     - 22 modules
-     - ~3,500
-   * - Frontend Lib/Utils
-     - 9 fichiers
-     - ~3,000
-   * - Tests (unit + BDD + E2E + bench)
-     - 45+ fichiers
-     - ~8,000
-   * - Infrastructure (Terraform + Ansible + Docker)
-     - 50+ fichiers
-     - ~3,000
+     - 173
+     - ~38,300
+     - +12 composants
+   * - Frontend Lib/Utils (TS)
+     - ~20
+     - ~6,700
+     - +3,200 LOC
+   * - Tests backend (unit + BDD + E2E)
+     - 75+
+     - ~39,000
+     - +22,000 LOC
+   * - Tests features (.feature)
+     - 49
+     - ~4,550
+     - +1 feature
+   * - Tests Playwright (.spec.ts)
+     - 11
+     - ~2,000
+     - +8 specs
+   * - Documentation (RST)
+     - 844
+     - ~60,000
+     - +500 fichiers
    * - **TOTAL**
-     - **~600 fichiers**
-     - **~134,000 LOC**
+     - **~1,600+**
+     - **~249,000 LOC**
+     -
 
-API Endpoints : **200+** sur 47 domaines fonctionnels
+.. list-table:: Metriques de tests (2026-03-07)
+   :header-rows: 1
+   :widths: 30 15 15 15
+
+   * - Type de test
+     - v1.0 (18/02)
+     - v2.0 (07/03)
+     - Delta
+   * - Unit tests (domain)
+     - 501
+     - 659
+     - +158
+   * - BDD scenarios (features)
+     - 473
+     - 537
+     - +64
+   * - BDD fichiers step defs
+     - 5
+     - 5
+     - (stable)
+   * - E2E backend (fichiers)
+     - 20
+     - 20
+     - (stable)
+   * - Playwright specs
+     - 3
+     - 11
+     - +8
+   * - Benchmarks
+     - 5
+     - 5
+     - (stable)
+
+API Endpoints : **450+** sur 50+ domaines fonctionnels
 
 Tables PostgreSQL : **60+** avec 35 ENUMs, 200+ indexes
 
 =========================================================
-Prochaines Priorités Recommandées
+Prochaines Priorites Recommandees
 =========================================================
 
-1. **J1 Sécurité** (bloqueur beta publique)
+**Phase immediate : Stabilisation v0.5.0 -> merge main**
 
-   - #66 Fix E2E test bug (2-3h)
-   - #69 Playwright tests (6-8h)
-   - #48 itsme/eID auth peut être dépriorisé (phase ultérieure)
+1. **Merger integration -> main** (release 0.5.0 effective)
 
-2. **J3 PDF** (compléter le jalon)
+   - Tous les bloqueurs sont fermes (#158, #66, #69, #206, #207, #208, #209, #210)
+   - CI pipeline verte
+   - Tag v0.5.0 + GitHub Release
 
-   - #47 PV d'assemblée générale avec votes (8-10h)
+**Phase suivante : v0.6.0 (stabilite + fonctionnel)**
 
-3. **J5 PWA** (quick win)
+2. **J4 WCAG A11y** (#93, ~40% restant, ~3-4h)
 
-   - #87 Finaliser icons + tests offline (3-4h)
+   - Audit restant : formulaires, navigation clavier, contrastes
+   - aria-live regions pour messages dynamiques
 
-4. **J4 Frontend wiring** (quick win — API déjà complète)
+3. **J5 PWA** (#87, quick win, ~3-4h)
 
-   - #206 BookingCreateModal, LoanRequestModal, WorkReport/Inspection forms (8-10h)
+   - Finaliser icons + tests offline
+   - Manifest.json complet
 
-5. **J4 Accessibility** (conformité)
+4. **J4 GDPR docs** (#67, ~4-5h)
 
-   - #93 WCAG 2.1 AA audit + corrections (6-8h)
+   - Review QA + documentation finale
+
+**Phase ulterieure : v0.7.0 (RBAC + auth forte)**
+
+5. **R&D RBAC** (#220 -> #71, #72)
+
+   - Etude puis implementation
+   - 20-25h estime
+
+6. **R&D eID/itsme** (#223 -> #48)
+
+   - Etude puis implementation
+   - 15-20h estime
+
+**Phase long terme : Jalons 5-7**
+
+7. **R&D Prestataires** (#235 -> #95)
+
+   - Magic link, ordres de service, backoffice PWA
+   - Prerequis : #87 (PWA)
+
+8. **R&D Energie** (#236 -> #110)
+
+   - Orchestration achats groupes, courtier CREG
+   - Prerequis : #94 (OCR pour factures)
+
+=========================================================
+Matrice d'Impact Issues Ouvertes
+=========================================================
+
+.. list-table:: Issues ouvertes par priorite d'impact
+   :header-rows: 1
+   :widths: 10 40 15 15 20
+
+   * - #
+     - Titre
+     - Jalon
+     - Effort
+     - Bloque par
+   * - #93
+     - WCAG 2.1 Level AA
+     - J4
+     - 3-4h
+     - (aucun)
+   * - #87
+     - PWA Offline Mode
+     - J5
+     - 3-4h
+     - (aucun)
+   * - #67
+     - GDPR documentation
+     - J4
+     - 4-5h
+     - (aucun)
+   * - #71
+     - Roles Org Admin / Building Manager
+     - J4
+     - 8-10h
+     - R&D #220
+   * - #72
+     - RBAC granulaire
+     - J4
+     - 10-12h
+     - R&D #220
+   * - #48
+     - eID/itsme auth
+     - J1
+     - 15-20h
+     - R&D #223
+   * - #97
+     - BI Dashboard
+     - J5
+     - 15-20h
+     - R&D #224
+   * - #94
+     - AI Features (OCR, etc.)
+     - J6
+     - 25-30h
+     - R&D #226
+   * - #95
+     - Marketplace prestataires
+     - J6
+     - 15-20h
+     - R&D #228, #235
+   * - #96
+     - Ecology Tracking
+     - J6
+     - 15-20h
+     - R&D #229
+   * - #98
+     - Mobile Native
+     - J5
+     - 40-60h
+     - R&D #225
+   * - #109
+     - IoT Platform
+     - J6
+     - 20-25h
+     - R&D #227
+   * - #111
+     - Public API v2
+     - J7
+     - 40-60h
+     - R&D #232

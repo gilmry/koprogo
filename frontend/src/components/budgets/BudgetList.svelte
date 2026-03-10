@@ -175,14 +175,14 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annee</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Immeuble</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ordinaire</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Extraordinaire</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provision/mois</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annee</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Immeuble</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ordinaire</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Extraordinaire</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provision/mois</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">

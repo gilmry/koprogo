@@ -104,17 +104,19 @@
       <div
         class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         on:click={handleClose}
+        aria-hidden="true"
       ></div>
 
       <!-- Modal -->
-      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10" role="dialog" aria-modal="true" aria-labelledby="add-owner-title">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-gray-900">Ajouter un copropriétaire</h2>
+          <h2 id="add-owner-title" class="text-xl font-bold text-gray-900">Ajouter un copropriétaire</h2>
           <button
             on:click={handleClose}
             class="text-gray-400 hover:text-gray-500"
+            aria-label="Fermer"
           >
-            <span class="text-2xl">&times;</span>
+            <span class="text-2xl" aria-hidden="true">&times;</span>
           </button>
         </div>
 
@@ -134,10 +136,12 @@
               <p class="text-sm text-gray-500">Chargement...</p>
             {:else}
               <!-- Search field -->
+              <label for="owner-search" class="sr-only">Rechercher par nom ou email</label>
               <input
+                id="owner-search"
                 type="text"
                 bind:value={searchQuery}
-                placeholder="🔍 Rechercher par nom ou email..."
+                placeholder="Rechercher par nom ou email..."
                 class="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
 

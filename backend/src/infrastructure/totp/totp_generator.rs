@@ -5,7 +5,7 @@ use aes_gcm::{
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use image::Luma;
 use qrcode::QrCode;
-use rand::Rng;
+use rand::RngExt;
 use totp_lite::{totp_custom, Sha1};
 
 /// TOTP Generator for Two-Factor Authentication

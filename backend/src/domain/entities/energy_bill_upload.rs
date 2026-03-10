@@ -187,7 +187,7 @@ impl EnergyBillUpload {
 
     /// Générer nonce aléatoire de 12 bytes
     fn generate_nonce() -> [u8; 12] {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         let mut nonce = [0u8; 12];
         rng.fill(&mut nonce);

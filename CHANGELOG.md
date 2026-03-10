@@ -11,9 +11,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Ce projet est en version **0.1.0** (fondations techniques). Un audit de conformite juridique
 a identifie des corrections necessaires (convocations 15j, taux d'interet legal 4.5%, etat date 15j).
-Les tests BDD (752 scenarios) et Playwright (7 specs) ont ete ecrits mais n'ont pas tous ete valides
-en environnement d'integration complet. Des corrections seront publiees au fur et a mesure.
-La montee en version n'interviendra qu'apres conformite juridique belge verifiee.
+Les tests BDD (537 scenarios) et Playwright (11 specs) ont ete ecrits et valides en CI.
+659 tests unitaires domain passent. La montee en version n'interviendra qu'apres conformite
+juridique belge verifiee.
+
+### Added - R&D Issues & WBS Update (2026-03-07)
+
+**17 issues R&D creees (#220-#236) pour investiguer les sujets techniques avant implementation.**
+
+#### Issues R&D (priorite haute)
+
+- **#220** R&D: RBAC - Choix architectural (Hybrid vs Dynamic vs Casbin)
+- **#222** R&D: Architecture generation PDF documents legaux belges
+- **#223** R&D: Authentification forte eID/itsme pour votes AG
+- **#235** R&D: Backoffice prestataires PWA - Magic link, ordres de service et compte-rendu
+
+#### Issues R&D (priorite moyenne)
+
+- **#221** Roles Tenant & Guest - Modele participation communautaire
+- **#224** Architecture BI Dashboard - Pipeline agregation
+- **#225** Application mobile native - Evaluation framework (RN vs Flutter vs Tauri)
+- **#226** Assistant IA Syndic - Architecture LLM, RAG et GDPR
+- **#227** Architecture IoT - Integration capteurs et base time-series
+- **#231** Strategie scaling infrastructure - K8s et partitionnement DB
+- **#232** API Publique v1 - Design OpenAPI et integration tiers
+- **#234** PWA offline sync - Architecture synchronisation
+- **#236** Orchestration achats groupes energie - Courtier CREG
+
+#### Issues R&D (priorite basse)
+
+- **#228** Marketplace prestataires - Modele business et verification
+- **#229** Empreinte carbone et reporting ESG/durabilite
+- **#230** Vote blockchain - Smart contract et GDPR
+- **#233** Strategies de test avancees (property-based, contract, load)
+
+#### WBS
+
+- Mise a jour WBS v2.0 (`docs/WBS_2026_02_18.rst`) :
+  - J1 Securite : 72% -> 93% (6 issues fermees)
+  - J3 Features : 87% -> 100% (#47 PDF + #206 frontend wiring fermes)
+  - J4 Automation : 71% -> 79%
+  - Metriques codebase : 659 unit tests, 537 BDD scenarios, 11 Playwright specs, 173 composants Svelte
+  - 17 issues R&D ajoutees et classees par priorite/jalon cible
+
+### Fixed - Accessibility WCAG 2.1 AA (2026-03-07)
+
+**Conformite WCAG 2.1 Level AA sur 19 composants Svelte.**
+
+#### scope="col" sur en-tetes de tableaux (15 composants)
+
+- `PaymentList.svelte`, `UserListAdmin.svelte`, `OrganizationList.svelte`,
+  `PaymentReminderList.svelte`, `BudgetList.svelte`, `EtatDateList.svelte`,
+  `AdminAchievementList.svelte`, `CallForFundsList.svelte`,
+  `ConvocationRecipientList.svelte`, `ResolutionVotePanel.svelte`,
+  `StorageMetrics.svelte`, `UserOwnerLinkManager.svelte`, `DocumentList.svelte`,
+  `JournalEntryForm.svelte`, `OwnerContributionList.svelte`
+
+#### Corrections modales et formulaires
+
+- `Modal.svelte` : Suppression `role="button"` et `tabindex` sur backdrop, ajout `aria-hidden="true"`
+- `UnitOwnerAddModal.svelte` : Ajout `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, labels sr-only
+- `BuildingList.svelte` : Ajout label sr-only pour input recherche
+- `TicketList.svelte` : Ajout label sr-only pour input recherche
+
+### Added - Documentation & Studies (2026-03-07)
+
+**Documentation technique et etudes pour jalons futurs.**
+
+- **RBAC_STUDY.rst** : Etude complete RBAC avec roles Tenant/Guest, matrice permissions, recommandation Hybrid RBAC
+- **PWA_DOCUMENTATION.rst** : Documentation PWA avec Service Worker, Cache API, IndexedDB, Background Sync
+- **GDPR docs** : Documentation QA review complete
+- **6 docs feature** + READMEs backend/frontend (closes #210)
+
+### Fixed - CI/CD & Test Infrastructure (2026-03-01 to 2026-03-07)
+
+**Stabilisation complete de la pipeline CI : tous les tests passent.**
+
+#### BDD (537 scenarios, 49 features)
+
+- Correction de 40+ echecs BDD sur 5 fichiers de tests :
+  - `bdd_financial.rs` : payments, budget, dashboard, owner_contributions, payment_recovery, journal_entries
+  - `bdd_governance.rs` : resolutions, convocations, polls, etat_date, 2FA, organizations
+  - `bdd_community.rs` : notices, skills, shared_objects, resource_bookings, gamification, local_exchange
+  - `bdd_operations.rs` : tickets, notifications, energy_campaigns, iot, work_reports, technical_inspections
+- Fixes principaux : colonnes SQL (`area` -> `surface_area`, `share_percentage` -> `quota`), FK constraints, duplicate step defs, date assertions
+
+#### Playwright (11 specs)
+
+- 8 nouvelles specs : `Meetings`, `BoardOfDirectors`, `OwnerDashboard`, `Gdpr`, `Notifications`, `Accessibility`, `Tickets`, `Expenses`
+- Fix setup : creation org avant enregistrement users, env var `API_BASE` au lieu de port hardcode
+- Fix tables vides, rate limiting login, enums tickets
+
+#### E2E Backend
+
+- Fix `e2e_gdpr.rs` : isolation tests admin login timeout (closes #66)
+- Fix compilation 200+ erreurs E2E (closes #158)
+
+#### Securite
+
+- Fix CodeQL alerts (3d8d282)
+- Override `serialize-javascript` 7.0.3 (RCE fix)
+- `npm audit` : 0 vulnerabilite
+
+#### CI Pipeline
+
+- Ajout trigger `workflow_dispatch`
+- Ajout BDD test targets dans `Dockerfile.dev`
+
+### Changed - Dependencies (2026-03-01)
+
+- Mise a jour toutes les dependances pour fermer 24 PRs Dependabot (40a21af)
+- Fix 73 erreurs TypeScript dans appels `mount()` Astro (c4dd03e)
+- Clippy : 0 warning
 
 ### Added - Legal Compliance Audit & Documentation (2026-02-28)
 

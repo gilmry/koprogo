@@ -54,10 +54,19 @@ async function loginViaUI(page: Page, email: string, password: string) {
 // Helper: Clear browser state (localStorage, cookies) to prevent stale auth
 async function clearBrowserState(page: Page) {
   await page.context().clearCookies();
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
+  // Navigate to the app first so localStorage is accessible (avoids SecurityError on about:blank)
+  try {
+    const url = page.url();
+    if (!url || url === "about:blank" || url.startsWith("chrome:")) {
+      await page.goto("/login");
+    }
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+  } catch {
+    // Ignore if localStorage is not accessible (e.g., cross-origin page)
+  }
 }
 
 // Helper: Login as SuperAdmin
@@ -199,7 +208,6 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
     await page.goto("/syndic");
 
     // Step 3: User logs out and clear browser state
-    await page.getByTestId("user-menu-button").click();
     await page.getByTestId("user-menu-logout").click();
     await page.waitForURL("/login");
     await clearBrowserState(page);
@@ -225,15 +233,18 @@ test.describe("GDPR - Mixed Scenario: User Creates Data, Admin Exports", () => {
 
     // Verify export data contains user info
     await expect(
-      page.getByTestId("admin-gdpr-export-modal").locator(`text=${user.email}`),
+      page
+        .getByTestId("admin-gdpr-export-modal")
+        .locator(`text=${user.email}`)
+        .first(),
     ).toBeVisible();
 
     await page.getByTestId("admin-gdpr-modal-close").click();
     await expect(page.getByTestId("admin-gdpr-export-modal")).not.toBeVisible();
 
     // Step 6: User logs back in and exports own data
-    await page.getByTestId("user-menu-button").click();
     await page.getByTestId("user-menu-logout").click();
+    await page.waitForURL("/login");
     await clearBrowserState(page);
 
     await loginViaUI(page, user.email, user.password);
@@ -277,8 +288,8 @@ test.describe("GDPR - Audit Logs Verification", () => {
     await expect(page.getByTestId("gdpr-export-modal")).not.toBeVisible();
 
     // Logout and clear browser state
-    await page.getByTestId("user-menu-button").click();
     await page.getByTestId("user-menu-logout").click();
+    await page.waitForURL("/login");
     await clearBrowserState(page);
 
     // Step 2: Admin checks audit logs
@@ -294,7 +305,10 @@ test.describe("GDPR - Audit Logs Verification", () => {
 
     // Verify contains "Export" event
     await expect(
-      page.getByTestId("admin-gdpr-audit-logs").locator("text=/Export/i"),
+      page
+        .getByTestId("admin-gdpr-audit-logs")
+        .locator("text=/Export/i")
+        .first(),
     ).toBeVisible();
 
     // Cleanup

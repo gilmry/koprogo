@@ -218,11 +218,11 @@
         <table class="min-w-full text-sm">
           <thead>
             <tr class="text-left text-gray-500 uppercase text-xs tracking-wider">
-              <th class="px-4 py-2">Provider</th>
-              <th class="px-4 py-2">Operation</th>
-              <th class="px-4 py-2">Success</th>
-              <th class="px-4 py-2">Errors</th>
-              <th class="px-4 py-2">Avg Duration</th>
+              <th scope="col" class="px-4 py-2">Provider</th>
+              <th scope="col" class="px-4 py-2">Operation</th>
+              <th scope="col" class="px-4 py-2">Success</th>
+              <th scope="col" class="px-4 py-2">Errors</th>
+              <th scope="col" class="px-4 py-2">Avg Duration</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">

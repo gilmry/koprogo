@@ -309,11 +309,7 @@ pub async fn regenerate_backup_codes(
             "error": "2FA is not enabled for this account"
         })),
         Err(e) => {
-            log::error!(
-                "Failed to regenerate backup codes for user {}: {}",
-                auth.user_id,
-                "internal error"
-            );
+            log::error!("Failed to regenerate backup codes: internal error");
             let _ = e; // error details intentionally not logged (may contain sensitive data)
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "error": "Failed to regenerate backup codes"

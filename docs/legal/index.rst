@@ -15,7 +15,26 @@ sans les corrections identifiees dans l'audit.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation Juridique
+   :caption: Vue d'ensemble
+
+   base_legale
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Roles et obligations
+
+   syndic/index
+   coproprietaire/index
+   locataire/index
+   commissaire/index
+   conseil-copropriete/index
+   acp/index
+   notaire/index
+   assemblee-generale/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Analyse juridique
 
    copropriete_art_3_84_3_92
    pcmn_ar_12_07_2012
