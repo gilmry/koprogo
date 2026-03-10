@@ -42,3 +42,4 @@ sans les corrections identifiees dans l'audit.
    audit_conformite
    matrice_conformite
    risques_juridiques
+   achat-groupe-energie/module-specification

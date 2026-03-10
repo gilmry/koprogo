@@ -28,8 +28,8 @@ test.describe("Accessibility - WCAG 2.1 AA Compliance", () => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
-    // Check h1 exists
-    const h1 = page.locator("h1");
+    // Check h1 exists (use first() to avoid strict mode with browser extensions)
+    const h1 = page.locator("main h1, h1.text-4xl").first();
     await expect(h1).toBeVisible();
 
     // Check page title
