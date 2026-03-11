@@ -555,12 +555,35 @@ Infrastructure Actuelle (VPS d2-2)
 * 99.74% disponibilité
 
 **Modèle économique ASBL (Option Cloud)** :
-| Copros Cloud | MRR | Coût infra | Excédent | Coût/copro |
-|--------------|-----|------------|----------|------------|
-| 500 | 500€ | 8€ | 492€ | 0.016€ |
-| 1,000 | 1,000€ | 8€ | 992€ | 0.008€ |
-| 2,000 | 2,000€ | 8€ | 1,992€ | **0.004€** |
-| 3,000 | 3,000€ | 8€ | 2,992€ | 0.003€ |
+
+.. list-table::
+   :header-rows: 1
+
+   * - Copros Cloud
+     - MRR
+     - Coût infra
+     - Excédent
+     - Coût/copro
+   * - 500
+     - 500€
+     - 8€
+     - 492€
+     - 0.016€
+   * - 1,000
+     - 1,000€
+     - 8€
+     - 992€
+     - 0.008€
+   * - 2,000
+     - 2,000€
+     - 8€
+     - 1,992€
+     - **0.004€**
+   * - 3,000
+     - 3,000€
+     - 8€
+     - 2,992€
+     - 0.003€
 
 **Coût réel par copropriété** : **0.003€ - 0.016€ /mois** (99.6%-98.4% d'excédent)
 
@@ -591,10 +614,25 @@ Tier 2 : Growth (Projection 2-4x)
 * ~600 req/s soutenus
 
 **Modèle économique** :
-| Clients | MRR | Coût infra | Marge brute | % Marge |
-|---------|-----|------------|-------------|---------|
-| 3,000 | 3,000€ | 10€ | 2,990€ | **99.67%** |
-| 4,000 | 4,000€ | 10€ | 3,990€ | **99.75%** |
+
+.. list-table::
+   :header-rows: 1
+
+   * - Clients
+     - MRR
+     - Coût infra
+     - Marge brute
+     - % Marge
+   * - 3,000
+     - 3,000€
+     - 10€
+     - 2,990€
+     - **99.67%**
+   * - 4,000
+     - 4,000€
+     - 10€
+     - 3,990€
+     - **99.75%**
 
 Tier 3 : Scale (Projection 10x)
 """""""""""""""""""""""""""""""
@@ -615,10 +653,25 @@ Tier 3 : Scale (Projection 10x)
 * ~1,200 req/s soutenus
 
 **Modèle économique** :
-| Clients | MRR | Coût infra | Marge brute | % Marge |
-|---------|-----|------------|-------------|---------|
-| 8,000 | 8,000€ | 20€ | 7,980€ | **99.75%** |
-| 10,000 | 10,000€ | 20€ | 9,980€ | **99.8%** |
+
+.. list-table::
+   :header-rows: 1
+
+   * - Clients
+     - MRR
+     - Coût infra
+     - Marge brute
+     - % Marge
+   * - 8,000
+     - 8,000€
+     - 20€
+     - 7,980€
+     - **99.75%**
+   * - 10,000
+     - 10,000€
+     - 20€
+     - 9,980€
+     - **99.8%**
 
 3.3 Projection de Croissance ASBL (Modèle Hybride)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -860,13 +913,28 @@ Tier 3 : Scale (Projection 10x)
 **Avantage France** : Le mix énergétique français (60g CO₂/kWh) est **5.8x plus propre** que la moyenne européenne (350g) grâce au nucléaire et aux renouvelables. L'hébergement OVH France réduit drastiquement les émissions serveur.
 
 **Comparaison industrie** :
-| Acteur | CO₂/requête | vs KoproGo |
-|--------|-------------|------------|
-| **KoproGo (OVH France)** | **0.12g** | **Baseline** ⭐ |
-| SaaS cloud Europe (AWS/Azure) | 0.8-1.2g | **7-10x plus** |
-| SaaS cloud US (AWS/Azure) | 1.5-2g | **12-17x plus** |
-| Solutions legacy on-premise | 2-3g | **17-25x plus** |
-| Objectif neutralité carbone 2030 | < 0.05g | Notre cible |
+
+.. list-table::
+   :header-rows: 1
+
+   * - Acteur
+     - CO2/requête
+     - vs KoproGo
+   * - **KoproGo (OVH France)**
+     - **0.12g**
+     - **Baseline**
+   * - SaaS cloud Europe (AWS/Azure)
+     - 0.8-1.2g
+     - **7-10x plus**
+   * - SaaS cloud US (AWS/Azure)
+     - 1.5-2g
+     - **12-17x plus**
+   * - Solutions legacy on-premise
+     - 2-3g
+     - **17-25x plus**
+   * - Objectif neutralité carbone 2030
+     - < 0.05g
+     - Notre cible
 
 4.3 Empreinte Carbone Annuelle (projections)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

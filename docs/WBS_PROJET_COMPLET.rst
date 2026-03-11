@@ -400,7 +400,7 @@ load tests (287 req/s), documentation Sphinx.
 **Issues ouvertes** : #69, #66, #48
 
 9.1 WP-FEAT-J1 : Features restantes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -439,7 +439,7 @@ load tests (287 req/s), documentation Sphinx.
      - TDD: integration test avec mock itsme
 
 9.2 WP-BDD-J1 : Step Definitions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -459,7 +459,7 @@ load tests (287 req/s), documentation Sphinx.
      - 3h
 
 9.3 WP-E2E-J1 : Fix E2E
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
 .. list-table::
    :header-rows: 1
@@ -476,7 +476,7 @@ load tests (287 req/s), documentation Sphinx.
      - 1h
 
 9.4 WP-DOC-J1 : Documentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -549,7 +549,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
 **Issue ouverte** : #47
 
 11.1 WP-FEAT-J3 : Features restantes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -599,7 +599,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - Pages Astro + composants Svelte + API calls
 
 11.2 WP-BDD-J3 : Step Definitions (dette)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -627,7 +627,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 4h
 
 11.3 WP-E2E-J3 : Fix E2E (dette)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -650,7 +650,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 0.5h
 
 11.4 WP-BDD-J3 NEW : BDD pour nouvelles features
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+---------------------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -670,7 +670,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 3h
 
 11.5 WP-DOC-J3
-~~~~~~~~~~~~~~~~
+----------------
 
 .. list-table::
    :header-rows: 1
@@ -705,7 +705,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
 **Issues ouvertes** : #67, #71, #72, #93
 
 12.1 WP-FEAT-J4 : Features restantes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -757,7 +757,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - Principalement documentation, pas de code.
 
 12.2 WP-BDD-J4 : Step Definitions (dette)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -781,7 +781,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 5h
 
 12.3 WP-BDD-J4 NEW : BDD nouvelles features
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -805,7 +805,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 5h
 
 12.4 WP-E2E-J4 : Fix E2E (dette)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -828,7 +828,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 1h
 
 12.5 WP-DOC-J4
-~~~~~~~~~~~~~~~~
+----------------
 
 .. list-table::
    :header-rows: 1
@@ -854,7 +854,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 3h
 
 12.6 WP-PW-J4 : Playwright
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 .. list-table::
    :header-rows: 1
@@ -886,7 +886,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
 **Issues ouvertes** : #87, #97, #98
 
 13.1 WP-FEAT-J5 : Features
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 .. list-table::
    :header-rows: 1
@@ -933,7 +933,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
        **BDD** : ``mobile.feature`` scenarios cross-platform.
 
 13.2 WP-BDD-J5
-~~~~~~~~~~~~~~~~
+----------------
 
 .. list-table::
    :header-rows: 1
@@ -953,7 +953,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 6h
 
 13.3 WP-DOC-J5
-~~~~~~~~~~~~~~~~
+----------------
 
 .. list-table::
    :header-rows: 1
@@ -973,7 +973,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 5h
 
 13.4 WP-PW-J5
-~~~~~~~~~~~~~~~
+---------------
 
 .. list-table::
    :header-rows: 1
@@ -1010,7 +1010,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
    quand les prerequis seront remplis.
 
 14.1 WP-FEAT-J6 : Features
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 .. list-table::
    :header-rows: 1
@@ -1066,7 +1066,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
        **BDD** : ``sustainability.feature`` (10 scenarios).
 
 14.2 WP-BDD-J6
-~~~~~~~~~~~~~~~~
+----------------
 
 .. list-table::
    :header-rows: 1
@@ -1094,7 +1094,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - 5h
 
 14.3 WP-DOC-J6
-~~~~~~~~~~~~~~~~
+----------------
 
 .. list-table::
    :header-rows: 1
@@ -1131,7 +1131,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
 **Issue ouverte** : #111
 
 15.1 WP-FEAT-J7 : Features
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-----------------------------
 
 .. list-table::
    :header-rows: 1

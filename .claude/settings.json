@@ -6,7 +6,8 @@
       "Bash(git -C /home/user/koprogo log --oneline main..blog)",
       "Bash(git -C /home/user/koprogo log --oneline -10)",
       "Bash(git -C /home/user/koprogo show f67bfbe --name-only)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

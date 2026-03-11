@@ -15,14 +15,19 @@ Systeme de notifications multi-canal avec 22 types de notifications, preferences
 Canaux de notification
 ----------------------
 
-+----------+------------------------------------------+
-| Canal    | Usage                                    |
-+==========+==========================================+
-| Email    | Canal principal, toutes notifications     |
-| SMS      | Notifications urgentes uniquement         |
-| Push     | Notifications mobiles                    |
-| InApp    | Dashboard web (auto-sent a la creation)  |
-+----------+------------------------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Canal
+     - Usage
+   * - Email
+     - Canal principal, toutes notifications
+   * - SMS
+     - Notifications urgentes uniquement
+   * - Push
+     - Notifications mobiles
+   * - InApp
+     - Dashboard web (auto-sent a la creation)
 
 Types de notifications (22)
 ---------------------------

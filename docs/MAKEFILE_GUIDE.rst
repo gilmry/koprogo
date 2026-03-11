@@ -198,7 +198,7 @@ Déploiement automatisé
    make setup-infra       # Déploiement complet VPS OVH (Terraform + Ansible + GitOps)
    make ci                # Pipeline CI complet (format, lint, tests, audit)
 
-**\ ``make setup-infra``\ ** déploie automatiquement :
+``make setup-infra`` déploie automatiquement :
 
 
 * ✅ Provisionne VPS OVH avec Terraform
@@ -210,7 +210,7 @@ Déploiement automatisé
 
 **Durée** : ~20-30 minutes
 
-**\ ``make ci``\ ** exécute :
+``make ci`` exécute :
 
 
 * ✅ ``make format`` - Formate le code (Rust + Frontend)

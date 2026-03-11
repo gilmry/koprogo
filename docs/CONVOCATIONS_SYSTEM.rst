@@ -14,15 +14,21 @@ Belgian Legal Requirements
 Article 577-6 §2 of the Belgian Civil Code mandates minimum notice
 periods for general assembly convocations:
 
-+-------------------+-------------------+-------------------------+
-| Meeting Type      | Minimum Notice    | Legal Basis             |
-+===================+===================+=========================+
-| Ordinary AG       | 15 calendar days  | Art. 577-6 §2 al. 1    |
-+-------------------+-------------------+-------------------------+
-| Extraordinary AG  | 8 calendar days   | Art. 577-6 §2 al. 2    |
-+-------------------+-------------------+-------------------------+
-| Second Convoc.    | 8 calendar days   | After quorum failure    |
-+-------------------+-------------------+-------------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Meeting Type
+     - Minimum Notice
+     - Legal Basis
+   * - Ordinary AG
+     - 15 calendar days
+     - Art. 577-6 §2 al. 1
+   * - Extraordinary AG
+     - 8 calendar days
+     - Art. 577-6 §2 al. 2
+   * - Second Convoc.
+     - 8 calendar days
+     - After quorum failure
 
 The system automatically calculates the ``minimum_send_date`` based on
 the meeting date and type, and blocks sending if the legal deadline

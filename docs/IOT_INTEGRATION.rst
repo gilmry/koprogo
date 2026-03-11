@@ -450,12 +450,12 @@ Migration TimescaleDB (159 lignes)
 **Statistiques Stockage**
 
 Avec compression TimescaleDB 10x:
-- **1 building, 1 compteur Linky, 2 ans données**:
-  * Sans compression: ~350 MB (1 reading/30min * 2 ans * 50 bytes)
-  * Avec compression: ~35 MB (10x compression)
-- **100 buildings**:
-  * Sans compression: 35 GB
-  * Avec compression: 3.5 GB ✅
+- **1 building, 1 compteur Linky, 2 ans données** :
+  Sans compression: ~350 MB (1 reading/30min * 2 ans * 50 bytes),
+  Avec compression: ~35 MB (10x compression)
+- **100 buildings** :
+  Sans compression: 35 GB,
+  Avec compression: 3.5 GB
 
 ==================================================
 API REST Endpoints

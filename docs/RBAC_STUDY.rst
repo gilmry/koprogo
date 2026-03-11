@@ -1,6 +1,6 @@
-=====================================================
+=======================================================
 RBAC Granulaire : Etude d'Opportunite (Issues #72, #71)
-=====================================================
+=======================================================
 
 .. contents:: Table des matieres
    :depth: 3
@@ -92,9 +92,9 @@ Organization Admin
 +----------------------------------+-------------------------------------------+
 | Toutes permissions Syndic        | Owners, expenses, meetings, documents     |
 +----------------------------------+-------------------------------------------+
-| Acces tous immeubles org         | Lecture + ecriture sur tous les buildings  |
+| Acces tous immeubles org         | Lecture + ecriture sur tous les buildings |
 +----------------------------------+-------------------------------------------+
-| Donnees structurelles            | Lecture seule (buildings, units)           |
+| Donnees structurelles            | Lecture seule (buildings, units)          |
 +----------------------------------+-------------------------------------------+
 
 **Restrictions** :
@@ -224,7 +224,7 @@ invite a une bourse d'echanges, un prestataire participant aux competences.
 | Modules communautaires           | SEL, competences, prets d'objets          |
 |                                  | (configurable par invitation)             |
 +----------------------------------+-------------------------------------------+
-| Tableau d'affichage              | Lecture seule                              |
+| Tableau d'affichage              | Lecture seule                             ||
 +----------------------------------+-------------------------------------------+
 | Reservations                     | Non autorise (espace reserve residents)   |
 +----------------------------------+-------------------------------------------+

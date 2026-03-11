@@ -1125,29 +1125,64 @@ Stack KoproGo avec Intégrations Open Source
 Matrice de Décision: Containeriser vs Réimplémenter
 ====================================================
 
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| Projet                    | Licence     | Containerisation | Réimplémentation    | Recommandation       |
-+===========================+=============+==================+=====================+======================+
-| **Diacamma Syndic**       | GPL-3.0     | ❌ Contamination | ✅ S'inspirer       | **Réimplémenter**    |
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **Condo**                 | MIT         | ✅ Compatible    | ✅ Compatible       | **Les deux options** |
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **Novu**                  | MIT         | ✅ **RECOMMANDÉ**| ⚠️ Complexe (Node) | **Containeriser**    |
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **ThingsBoard**           | Apache 2.0  | ✅ **RECOMMANDÉ**| ⚠️ Complexe (Java) | **Containeriser**    |
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **TimeOverflow**          | AGPL-3.0    | ❌ Contamination | ✅ Obligatoire      | **Réimplémenter**    |
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **ElectionGuard**         | MIT         | ⚠️ Trop complexe | ✅ Concepts crypto  | **Inspiration**      |
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **Helios Voting**         | Apache/GPL  | ❌ GPL frontend  | ✅ Concepts crypto  | **Inspiration**      |
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **Paperless-ngx**         | GPL-3.0     | ❌ Contamination | ✅ Pattern DMS      | **Réimplémenter**    |
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **Hyperledger Fabric**    | Apache 2.0  | ⚠️ Phase 3+      | ✅ Rust chaincode   | **Phase 3 optionnel**|
-+---------------------------+-------------+------------------+---------------------+----------------------+
-| **OpenRemote**            | AGPL-3.0    | ❌ Contamination | ⚠️ Non prioritaire  | **Éviter**           |
-+---------------------------+-------------+------------------+---------------------+----------------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Projet
+     - Licence
+     - Containerisation
+     - Réimplémentation
+     - Recommandation
+   * - **Diacamma Syndic**
+     - GPL-3.0
+     - Non (Contamination GPL)
+     - Oui (S'inspirer)
+     - **Réimplémenter**
+   * - **Condo**
+     - MIT
+     - Oui (Compatible)
+     - Oui (Compatible)
+     - **Les deux options**
+   * - **Novu**
+     - MIT
+     - Oui (**RECOMMANDE**)
+     - Avec conditions (Complexe Node)
+     - **Containeriser**
+   * - **ThingsBoard**
+     - Apache 2.0
+     - Oui (**RECOMMANDE**)
+     - Avec conditions (Complexe Java)
+     - **Containeriser**
+   * - **TimeOverflow**
+     - AGPL-3.0
+     - Non (Contamination)
+     - Oui (Obligatoire)
+     - **Réimplémenter**
+   * - **ElectionGuard**
+     - MIT
+     - Avec conditions (Trop complexe)
+     - Oui (Concepts crypto)
+     - **Inspiration**
+   * - **Helios Voting**
+     - Apache/GPL
+     - Non (GPL frontend)
+     - Oui (Concepts crypto)
+     - **Inspiration**
+   * - **Paperless-ngx**
+     - GPL-3.0
+     - Non (Contamination)
+     - Oui (Pattern DMS)
+     - **Réimplémenter**
+   * - **Hyperledger Fabric**
+     - Apache 2.0
+     - Avec conditions (Phase 3+)
+     - Oui (Rust chaincode)
+     - **Phase 3 optionnel**
+   * - **OpenRemote**
+     - AGPL-3.0
+     - Non (Contamination)
+     - Avec conditions (Non prioritaire)
+     - **Éviter**
 
 **Légende:**
 

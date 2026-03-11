@@ -35,7 +35,7 @@ Semantic HTML & Landmarks
 +------------------------+------------------------------------------+
 | Navigation landmark    | ``<aside role="navigation">``            |
 +------------------------+------------------------------------------+
-| Screen reader live     | ``#sr-announcer-polite`` and              |
+| Screen reader live     | ``#sr-announcer-polite`` and             |
 | regions                | ``#sr-announcer-assertive``              |
 +------------------------+------------------------------------------+
 

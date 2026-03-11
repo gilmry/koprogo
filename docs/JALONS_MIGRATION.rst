@@ -749,7 +749,7 @@ Documents à mettre à jour pour référencer "Jalons" au lieu de "Phases":
 * ⏳ README.md
 * ⏳ CLAUDE.md
 * ⏳ docs/ROADMAP.md (si existe)
-* ⏳ Autres références dans docs/*.rst
+* ⏳ Autres références dans ``docs/*.rst``
 
 ================================================
 Références

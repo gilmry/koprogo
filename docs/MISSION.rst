@@ -108,7 +108,7 @@ Qui contribue au bien commun en bénéficie davantage :
 * **Principe** : Le bénévolat est récompensé concrètement
 
 Impact par Paliers (objectif 5.000 copros)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Scénario Participation Croissante** (prix fixe 5€, évolution par vote AG):
 

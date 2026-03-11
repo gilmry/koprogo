@@ -95,9 +95,9 @@ Jalon 1: Sécurité & GDPR 🔒 (COMPLET)
 
 **Documentation**: Voir ``JWT_REFRESH_TOKENS.md`` (section 2FA)
 
-============================================
+=============================================
 Jalon 2: Conformité Légale Belge 📋 (COMPLET)
-============================================
+=============================================
 
 2.1 Budget Annuel (Issue #81)
 ------------------------------
@@ -342,9 +342,9 @@ Jalon 2: Conformité Légale Belge 📋 (COMPLET)
 
 **Documentation**: Nouvelle (ce document)
 
-============================================
+==============================================
 Jalon 3: Features Différenciantes 🎯 (COMPLET)
-============================================
+==============================================
 
 3.1 Système de Sondages (Poll System - Issue #51)
 --------------------------------------------------
@@ -593,10 +593,7 @@ Jalon 3: Features Différenciantes 🎯 (COMPLET)
 - ✅ Calendrier disponibilités (vue journalière/hebdomadaire/mensuelle)
 - ✅ Créneaux horaires configurables (1h, 2h, demi-journée, journée complète)
 - ✅ Tarification: Gratuit ou payant (hourly_rate / daily_rate)
-- ✅ Règles de réservation:
-  * Max reservations simultanées par owner
-  * Advance booking (combien de jours à l'avance)
-  * Max duration (durée max réservation)
+- ✅ Règles de réservation: Max reservations simultanées par owner, Advance booking (combien de jours à l'avance), Max duration (durée max réservation)
 - ✅ Caution obligatoire (optionnel)
 - ✅ Système d'approbation (auto-approve ou validation syndic)
 - ✅ Annulation avec politique (délai annulation gratuite)
@@ -639,10 +636,11 @@ Jalon 3: Features Différenciantes 🎯 (COMPLET)
 - Caution débitée si check-out > 1h après end_time
 
 **Exemple Configuration Salle Fêtes**
+
 .. code-block:: json
 
    {
-     "name": "Salle des Fêtes",
+     "name": "Salle des Fetes",
      "type": "Room",
      "hourly_rate": 15.00,
      "daily_rate": 100.00,
@@ -673,17 +671,21 @@ Jalon 4: Automation & Intégrations 📅
 - ✅ Time-to-market: 1 semaine vs 3-6 mois hardware
 
 **Use Cases**
+
 1. **Monitoring Temps-Réel**
+
    - Consommation électrique quotidienne/mensuelle/annuelle
    - Courbe de charge (granularité 30 min)
    - Historique 36 mois
 
 2. **Alertes Intelligentes**
+
    - Détection surconsommation (> 120% moyenne)
    - Prévision factures énergie
    - Recommandations économies CO₂
 
 3. **Analytics**
+
    - Graphiques consommations (Chart.js/Recharts)
    - Comparaison périodes (MoM, YoY)
    - Export PDF rapports énergétiques
@@ -707,17 +709,21 @@ Jalon 4: Automation & Intégrations 📅
 - Linky Client: ``linky_api_client_impl.rs`` (587 lignes, OAuth2 + Ores/Enedis APIs)
 
 **APIs Intégrées**
+
 1. **Ores Belgium API**
+
    - Endpoint: https://ext.prod-eu.oresnet.be/v1/consumption_load_curve
    - Authentication: OAuth2 Bearer token
    - Parameters: prm (Point Reference Measure), start/end date
 
 2. **Enedis Linky France API**
+
    - Endpoint: https://ext.hml.myelectricaldata.fr/v1/
    - Authentication: OAuth2 (consent utilisateur)
    - Mêmes paramètres que Ores
 
 **TimescaleDB Hypertable**
+
 .. code-block:: sql
 
    -- Optimisé pour time-series data
@@ -748,6 +754,7 @@ Jalon 4: Automation & Intégrations 📅
 - Intégration avec Issue #86 (Notifications System)
 
 **Cron Job Daily Sync**
+
 .. code-block:: rust
 
    // Synchronisation quotidienne à 2:00 AM
@@ -819,6 +826,7 @@ B. Architecture Hexagonale - Rappel
 3. Infrastructure: PostgreSQL, Actix-web, External APIs
 
 **Pattern Exemple**
+
 .. code-block:: rust
 
    // Domain: backend/src/domain/entities/poll.rs
