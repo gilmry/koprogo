@@ -41,9 +41,7 @@ exclude_patterns = [
     '.venv/**',
     '**/.venv',
     '**/.venv/**',
-    # Large auto-generated directories not part of published docs
-    'mirror',
-    'mirror/**',
+    # Auto-generated issue exports (orphaned pages)
     'github-export/issues',
     'github-export/issues/**',
     # Binary/office files

@@ -484,6 +484,16 @@ Actualites, annonces et articles techniques du projet.
 
    blog/*
 
+Documentation Miroir du Code Source
+=====================================
+
+Documentation complète de chaque fichier source (Rust, Svelte, TypeScript, Infrastructure).
+
+.. toctree::
+   :maxdepth: 1
+
+   mirror/index
+
 Rejoignez la Communauté
 =======================
 
