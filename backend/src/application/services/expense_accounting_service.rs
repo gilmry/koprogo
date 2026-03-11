@@ -38,7 +38,7 @@ impl ExpenseAccountingService {
     ///
     /// Example: 1,000€ HT + 210€ VAT (21%) = 1,210€ TTC
     ///
-    /// ```
+    /// ```text
     /// Debit:  6100 (Expense account)     1,000.00€
     /// Debit:  4110 (VAT Recoverable)       210.00€
     /// Credit: 4400 (Suppliers)           1,210.00€
@@ -141,7 +141,7 @@ impl ExpenseAccountingService {
     ///
     /// When an expense is paid, we record the payment:
     ///
-    /// ```
+    /// ```text
     /// Debit:  4400 (Suppliers)           1,210.00€
     /// Credit: 5500 (Bank)                1,210.00€
     /// ```
