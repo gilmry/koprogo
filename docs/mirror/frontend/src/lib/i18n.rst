@@ -1,0 +1,27 @@
+===========
+lib/i18n.ts
+===========
+
+:Fichier: ``frontend/src/lib/i18n.ts``
+:Type: TYPESCRIPT
+:Lignes: 29
+:Taille: 888 octets
+
+À quoi sert ce fichier ?
+========================
+
+Utilitaire **i18n**. Fonctions helper réutilisables (formatage, validation, helpers).
+
+Code Source
+===========
+
+Voir: ``frontend/src/lib/i18n.ts``
+
+Documentation Connexe
+=====================
+
+.. seealso::
+
+   - :doc:`/CLAUDE`
+   - :doc:`/ARCHITECTURE`
+

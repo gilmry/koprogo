@@ -1,0 +1,49 @@
+==============
+domain/i18n.rs
+==============
+
+:Fichier: ``backend/src/domain/i18n.rs``
+:Type: RUST
+:Lignes de Code: 290
+:Couche: Domain (Métier)
+:Tests: ✅ Oui
+
+À quoi sert ce fichier ?
+========================
+
+Module Rust **i18n**. Fait partie de la couche Domain (Métier).
+
+API Publique
+============
+
+Structures
+----------
+
+- ``I18n``
+
+Énumérations
+------------
+
+- ``Language``
+- ``TranslationKey``
+
+Fonctions
+---------
+
+- ``from_code()``
+- ``code()``
+- ``translate()``
+
+Code Source
+===========
+
+Voir: ``backend/src/domain/i18n.rs``
+
+Documentation Connexe
+=====================
+
+.. seealso::
+
+   - :doc:`/CLAUDE`
+   - :doc:`/ARCHITECTURE`
+

@@ -1,0 +1,2742 @@
+openapi: 3.0.3
+info:
+  title: KoproGo API
+  description: |
+    **KoproGo** - Plateforme SaaS de gestion de copropriété
+
+    API REST pour la gestion complète de copropriétés belges avec :
+    - Plan Comptable Minimum Normalisé (PCMN) belge
+    - Workflow d'approbation des factures
+    - Relances de paiement automatisées
+    - Multi-propriétaires et multi-rôles
+    - Conformité GDPR (Articles 15, 16, 17, 20, 30)
+    - Monitoring et métriques Prometheus
+
+    **Stack**: Rust + Actix-web + PostgreSQL 15 + Astro + Svelte
+
+    **Performance**:
+    - Latence P99: < 752ms
+    - Throughput: 287 req/s
+    - CO2/requête: 0.12g
+
+    **Architecture**: Hexagonal (Ports & Adapters) + Domain-Driven Design (DDD)
+
+    **Documentation complète**: https://docs.koprogo.com
+  version: 1.0.0
+  contact:
+    name: KoproGo Support
+    email: support@koprogo.com
+    url: https://koprogo.com
+  license:
+    name: AGPL-3.0-or-later
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+
+servers:
+  - url: https://api.koprogo.com/api/v1
+    description: Production server
+  - url: https://staging.koprogo.com/api/v1
+    description: Staging server
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: Authentication and authorization endpoints
+  - name: Buildings
+    description: Building management
+  - name: Units
+    description: Unit (apartment) management
+  - name: Owners
+    description: Owner management
+  - name: Unit Owners
+    description: Unit-owner relationships (multi-ownership)
+  - name: Expenses
+    description: Expense and invoice management
+  - name: Accounts
+    description: Belgian PCMN accounting
+  - name: Financial Reports
+    description: Financial reporting (balance sheet, income statement)
+  - name: Payment Reminders
+    description: Automated payment recovery workflow
+  - name: Meetings
+    description: General assembly management
+  - name: Documents
+    description: Document storage and management
+  - name: GDPR
+    description: GDPR compliance endpoints
+  - name: Health
+    description: Health check and monitoring
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from `/auth/login` endpoint.
+        Include in header: `Authorization: Bearer <token>`
+
+  schemas:
+    # ============================================================================
+    # Authentication
+    # ============================================================================
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: syndic@example.com
+        password:
+          type: string
+          format: password
+          example: secure_password_123
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refresh_token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Token expiration in seconds
+          example: 3600
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRole'
+        active_role:
+          type: string
+          format: uuid
+
+    UserRole:
+      type: object
+      properties:
+        role_id:
+          type: string
+          format: uuid
+        role_type:
+          type: string
+          enum: [Owner, Syndic, Accountant, BoardMember, SuperAdmin]
+        organization_id:
+          type: string
+          format: uuid
+        organization_name:
+          type: string
+
+    SwitchRoleRequest:
+      type: object
+      required:
+        - role_id
+      properties:
+        role_id:
+          type: string
+          format: uuid
+
+    # ============================================================================
+    # Buildings
+    # ============================================================================
+    Building:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Résidence Les Érables
+        address:
+          type: string
+          example: 123 Avenue de Tervuren, 1040 Bruxelles
+        total_units:
+          type: integer
+          minimum: 1
+          example: 24
+        construction_year:
+          type: integer
+          minimum: 1800
+          maximum: 2100
+          example: 1985
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateBuildingRequest:
+      type: object
+      required:
+        - name
+        - address
+        - total_units
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          type: string
+          minLength: 1
+          maxLength: 500
+        total_units:
+          type: integer
+          minimum: 1
+        construction_year:
+          type: integer
+          minimum: 1800
+          maximum: 2100
+
+    # ============================================================================
+    # Units
+    # ============================================================================
+    Unit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        building_id:
+          type: string
+          format: uuid
+        unit_number:
+          type: string
+          example: "2B"
+        floor:
+          type: integer
+          example: 2
+        area:
+          type: number
+          format: double
+          description: Area in square meters
+          example: 85.5
+        type:
+          type: string
+          enum: [Apartment, Commercial, Parking, Storage, Other]
+          example: Apartment
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateUnitRequest:
+      type: object
+      required:
+        - building_id
+        - unit_number
+      properties:
+        building_id:
+          type: string
+          format: uuid
+        unit_number:
+          type: string
+          minLength: 1
+        floor:
+          type: integer
+        area:
+          type: number
+          format: double
+          minimum: 0
+        type:
+          type: string
+          enum: [Apartment, Commercial, Parking, Storage, Other]
+
+    # ============================================================================
+    # Owners
+    # ============================================================================
+    Owner:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Jean Dupont
+        email:
+          type: string
+          format: email
+          example: jean.dupont@example.com
+        phone:
+          type: string
+          example: "+32 2 123 45 67"
+        address:
+          type: string
+          example: 123 Avenue de Tervuren, 1040 Bruxelles
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateOwnerRequest:
+      type: object
+      required:
+        - name
+        - email
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+
+    # ============================================================================
+    # Unit Owners (Multi-ownership)
+    # ============================================================================
+    UnitOwner:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        unit_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        ownership_percentage:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Ownership percentage (0.0 to 1.0)
+          example: 0.5
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+          nullable: true
+        is_primary_contact:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AddOwnerToUnitRequest:
+      type: object
+      required:
+        - owner_id
+        - ownership_percentage
+      properties:
+        owner_id:
+          type: string
+          format: uuid
+        ownership_percentage:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          example: 0.5
+        is_primary_contact:
+          type: boolean
+          default: false
+
+    TransferOwnershipRequest:
+      type: object
+      required:
+        - from_owner_id
+        - to_owner_id
+      properties:
+        from_owner_id:
+          type: string
+          format: uuid
+        to_owner_id:
+          type: string
+          format: uuid
+
+    # ============================================================================
+    # Expenses
+    # ============================================================================
+    Expense:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        building_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          example: Réparation ascenseur - Maintenance annuelle
+        amount:
+          type: number
+          format: double
+          example: 1250.00
+        expense_date:
+          type: string
+          format: date
+          example: "2025-11-10"
+        category:
+          type: string
+          enum: [Maintenance, Utilities, Insurance, ManagementFees, Repairs, Improvements, Legal, Other]
+          example: Maintenance
+        status:
+          type: string
+          enum: [Draft, PendingApproval, Approved, Rejected, Paid]
+          example: Approved
+        rejection_reason:
+          type: string
+          nullable: true
+        paid:
+          type: boolean
+          default: false
+        line_items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceLineItem'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    InvoiceLineItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+          example: Main d'œuvre technicien
+        quantity:
+          type: number
+          format: double
+          example: 4.0
+        unit_price:
+          type: number
+          format: double
+          example: 75.00
+        vat_rate:
+          type: number
+          format: double
+          enum: [0.06, 0.12, 0.21]
+          description: Belgian VAT rates (6%, 12%, 21%)
+          example: 0.21
+        total_excl_vat:
+          type: number
+          format: double
+          example: 300.00
+        vat_amount:
+          type: number
+          format: double
+          example: 63.00
+        total_incl_vat:
+          type: number
+          format: double
+          example: 363.00
+
+    CreateExpenseRequest:
+      type: object
+      required:
+        - building_id
+        - description
+        - amount
+        - expense_date
+        - category
+      properties:
+        building_id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        expense_date:
+          type: string
+          format: date
+        category:
+          type: string
+          enum: [Maintenance, Utilities, Insurance, ManagementFees, Repairs, Improvements, Legal, Other]
+        status:
+          type: string
+          enum: [Draft, PendingApproval, Approved, Rejected]
+          default: Draft
+
+    # ============================================================================
+    # Accounts (PCMN)
+    # ============================================================================
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          example: "451000"
+          description: PCMN account code
+        name:
+          type: string
+          example: TVA à récupérer
+        account_type:
+          type: string
+          enum: [Asset, Liability, Equity, Income, Expense, OffBalance]
+          example: Asset
+        parent_code:
+          type: string
+          nullable: true
+          example: "45"
+        organization_id:
+          type: string
+          format: uuid
+        is_active:
+          type: boolean
+          default: true
+        created_at:
+          type: string
+          format: date-time
+
+    CreateAccountRequest:
+      type: object
+      required:
+        - code
+        - name
+        - account_type
+      properties:
+        code:
+          type: string
+          pattern: '^\d{2,6}$'
+        name:
+          type: string
+        account_type:
+          type: string
+          enum: [Asset, Liability, Equity, Income, Expense, OffBalance]
+        parent_code:
+          type: string
+          nullable: true
+
+    # ============================================================================
+    # Financial Reports
+    # ============================================================================
+    BalanceSheet:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2025"
+        assets:
+          type: object
+          properties:
+            fixed_assets:
+              type: object
+              properties:
+                buildings:
+                  type: number
+                  format: double
+                equipment:
+                  type: number
+                  format: double
+                total:
+                  type: number
+                  format: double
+            current_assets:
+              type: object
+              properties:
+                receivables:
+                  type: number
+                  format: double
+                bank:
+                  type: number
+                  format: double
+                cash:
+                  type: number
+                  format: double
+                total:
+                  type: number
+                  format: double
+            total_assets:
+              type: number
+              format: double
+        liabilities:
+          type: object
+          properties:
+            equity:
+              type: object
+            long_term_liabilities:
+              type: object
+            current_liabilities:
+              type: object
+            total_liabilities:
+              type: number
+              format: double
+        balance_check:
+          type: object
+          properties:
+            assets:
+              type: number
+              format: double
+            liabilities:
+              type: number
+              format: double
+            difference:
+              type: number
+              format: double
+            balanced:
+              type: boolean
+
+    IncomeStatement:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2025-Q4"
+        income:
+          type: object
+          properties:
+            rental_charges:
+              type: number
+              format: double
+            other_income:
+              type: number
+              format: double
+            total_income:
+              type: number
+              format: double
+        expenses:
+          type: object
+          properties:
+            property_expenses:
+              type: number
+              format: double
+            utilities:
+              type: number
+              format: double
+            maintenance:
+              type: number
+              format: double
+            management_fees:
+              type: number
+              format: double
+            insurance:
+              type: number
+              format: double
+            other_expenses:
+              type: number
+              format: double
+            total_expenses:
+              type: number
+              format: double
+        operating_result:
+          type: number
+          format: double
+        financial_result:
+          type: number
+          format: double
+        net_result:
+          type: number
+          format: double
+
+    # ============================================================================
+    # Payment Reminders
+    # ============================================================================
+    PaymentReminder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        expense_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        reminder_level:
+          type: string
+          enum: [Gentle, Formal, FinalNotice, LegalAction]
+          description: |
+            - Gentle: D+15, friendly reminder
+            - Formal: D+30, formal notice
+            - FinalNotice: D+45, final warning with penalties
+            - LegalAction: D+60, legal proceedings
+          example: Gentle
+        message:
+          type: string
+        sent_date:
+          type: string
+          format: date-time
+          nullable: true
+        tracking_number:
+          type: string
+          nullable: true
+        late_payment_penalty:
+          type: number
+          format: double
+          description: Calculated Belgian late payment penalty (8% annual)
+          example: 13.15
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    CreatePaymentReminderRequest:
+      type: object
+      required:
+        - expense_id
+        - owner_id
+        - reminder_level
+      properties:
+        expense_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        reminder_level:
+          type: string
+          enum: [Gentle, Formal, FinalNotice, LegalAction]
+        message:
+          type: string
+
+    # ============================================================================
+    # Meetings
+    # ============================================================================
+    Meeting:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        building_id:
+          type: string
+          format: uuid
+        meeting_type:
+          type: string
+          enum: [GeneralAssembly, BoardMeeting, ExtraordinaryAssembly]
+          example: GeneralAssembly
+        scheduled_date:
+          type: string
+          format: date-time
+        location:
+          type: string
+          example: Salle communautaire - Rez-de-chaussée
+        agenda:
+          type: string
+        minutes:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [Scheduled, Completed, Cancelled]
+          default: Scheduled
+        created_at:
+          type: string
+          format: date-time
+
+    CreateMeetingRequest:
+      type: object
+      required:
+        - building_id
+        - meeting_type
+        - scheduled_date
+      properties:
+        building_id:
+          type: string
+          format: uuid
+        meeting_type:
+          type: string
+          enum: [GeneralAssembly, BoardMeeting, ExtraordinaryAssembly]
+        scheduled_date:
+          type: string
+          format: date-time
+        location:
+          type: string
+        agenda:
+          type: string
+
+    # ============================================================================
+    # Documents
+    # ============================================================================
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: Convocation AG - 15 décembre 2025
+        document_type:
+          type: string
+          enum: [Invoice, Contract, MeetingInvitation, MeetingMinutes, InsurancePolicy, MaintenanceReport, FinancialReport, Other]
+          example: MeetingInvitation
+        file_path:
+          type: string
+          example: /uploads/convocation-ag-2025-12.pdf
+        building_id:
+          type: string
+          format: uuid
+          nullable: true
+        expense_id:
+          type: string
+          format: uuid
+          nullable: true
+        meeting_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    CreateDocumentRequest:
+      type: object
+      required:
+        - title
+        - document_type
+        - file_path
+      properties:
+        title:
+          type: string
+        document_type:
+          type: string
+          enum: [Invoice, Contract, MeetingInvitation, MeetingMinutes, InsurancePolicy, MaintenanceReport, FinancialReport, Other]
+        file_path:
+          type: string
+        building_id:
+          type: string
+          format: uuid
+        expense_id:
+          type: string
+          format: uuid
+        meeting_id:
+          type: string
+          format: uuid
+
+    # ============================================================================
+    # Common
+    # ============================================================================
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Resource not found
+        code:
+          type: string
+          example: NOT_FOUND
+        details:
+          type: object
+
+    HealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          example: healthy
+        version:
+          type: string
+          example: 1.0.0
+        database:
+          type: string
+          example: connected
+        uptime_seconds:
+          type: integer
+          example: 86400
+
+paths:
+  # ============================================================================
+  # Authentication
+  # ============================================================================
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login and obtain JWT tokens
+      description: |
+        Authenticate with email and password to obtain JWT access and refresh tokens.
+        Returns user roles and active role.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/switch-role:
+    post:
+      tags:
+        - Authentication
+      summary: Switch active user role
+      description: |
+        Switch between different roles (e.g., Owner → BoardMember).
+        All subsequent requests will use the new active role.
+      operationId: switchRole
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwitchRoleRequest'
+      responses:
+        '200':
+          description: Role switched successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Role switched successfully
+                  active_role:
+                    $ref: '#/components/schemas/UserRole'
+        '400':
+          description: Invalid role ID or unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Returns authenticated user information with roles and active role
+      operationId: getCurrentUser
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  email:
+                    type: string
+                  name:
+                    type: string
+                  roles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserRole'
+                  active_role:
+                    type: string
+                    format: uuid
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ============================================================================
+  # Buildings
+  # ============================================================================
+  /buildings:
+    get:
+      tags:
+        - Buildings
+      summary: List all buildings
+      description: Returns a list of all buildings accessible to the current user
+      operationId: listBuildings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Buildings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Building'
+    post:
+      tags:
+        - Buildings
+      summary: Create a new building
+      description: Create a new building (requires Syndic or SuperAdmin role)
+      operationId: createBuilding
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBuildingRequest'
+      responses:
+        '201':
+          description: Building created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Insufficient permissions
+
+  /buildings/{id}:
+    get:
+      tags:
+        - Buildings
+      summary: Get building by ID
+      operationId: getBuildingById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Building retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+        '404':
+          description: Building not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags:
+        - Buildings
+      summary: Update building
+      operationId: updateBuilding
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBuildingRequest'
+      responses:
+        '200':
+          description: Building updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Building'
+        '404':
+          description: Building not found
+    delete:
+      tags:
+        - Buildings
+      summary: Delete building
+      operationId: deleteBuilding
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Building deleted successfully
+        '404':
+          description: Building not found
+
+  # ============================================================================
+  # Units
+  # ============================================================================
+  /units:
+    get:
+      tags:
+        - Units
+      summary: List all units
+      operationId: listUnits
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: building_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by building ID
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Units retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Unit'
+    post:
+      tags:
+        - Units
+      summary: Create a new unit
+      operationId: createUnit
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUnitRequest'
+      responses:
+        '201':
+          description: Unit created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
+
+  /units/{id}:
+    get:
+      tags:
+        - Units
+      summary: Get unit by ID
+      operationId: getUnitById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Unit retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
+        '404':
+          description: Unit not found
+
+  /buildings/{id}/units:
+    get:
+      tags:
+        - Units
+      summary: Get all units in a building
+      operationId: getUnitsByBuilding
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Units retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Unit'
+
+  # ============================================================================
+  # Unit Owners
+  # ============================================================================
+  /units/{unit_id}/owners:
+    get:
+      tags:
+        - Unit Owners
+      summary: Get active owners of a unit
+      description: Returns all active owners (end_date is null) of a specific unit
+      operationId: getUnitOwners
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Owners retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnitOwner'
+    post:
+      tags:
+        - Unit Owners
+      summary: Add owner to unit
+      description: |
+        Add an owner to a unit with ownership percentage.
+        Validates that total ownership percentage ≤ 100%.
+      operationId: addOwnerToUnit
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddOwnerToUnitRequest'
+      responses:
+        '201':
+          description: Owner added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitOwner'
+        '400':
+          description: Invalid input or total ownership > 100%
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                example:
+                  error: Total ownership percentage would exceed 100%
+                  code: OWNERSHIP_LIMIT_EXCEEDED
+
+  /units/{unit_id}/owners/history:
+    get:
+      tags:
+        - Unit Owners
+      summary: Get ownership history of a unit
+      description: Returns all owners (active and past) of a unit
+      operationId: getUnitOwnershipHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Ownership history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnitOwner'
+
+  /units/{unit_id}/owners/total-percentage:
+    get:
+      tags:
+        - Unit Owners
+      summary: Get total ownership percentage of a unit
+      description: Returns the sum of all active ownership percentages (should be ≤ 1.0)
+      operationId: getTotalOwnershipPercentage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Total percentage calculated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unit_id:
+                    type: string
+                    format: uuid
+                  total_percentage:
+                    type: number
+                    format: double
+                    example: 1.0
+
+  /units/{unit_id}/owners/{owner_id}:
+    delete:
+      tags:
+        - Unit Owners
+      summary: Remove owner from unit
+      description: Ends the ownership relationship by setting end_date to current timestamp
+      operationId: removeOwnerFromUnit
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: owner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Owner removed successfully
+        '404':
+          description: Ownership relationship not found
+
+  /unit-owners/{relationship_id}:
+    put:
+      tags:
+        - Unit Owners
+      summary: Update ownership relationship
+      description: Update ownership percentage or set primary contact
+      operationId: updateUnitOwner
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: relationship_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ownership_percentage:
+                  type: number
+                  format: double
+                  minimum: 0
+                  maximum: 1
+                is_primary_contact:
+                  type: boolean
+      responses:
+        '200':
+          description: Ownership updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitOwner'
+        '400':
+          description: Invalid input or total ownership > 100%
+
+  /units/{unit_id}/owners/transfer:
+    post:
+      tags:
+        - Unit Owners
+      summary: Transfer ownership between owners
+      description: |
+        Transfer ownership from one owner to another.
+        Automatically closes the old relationship and creates a new one with the same percentage.
+      operationId: transferOwnership
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: unit_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferOwnershipRequest'
+      responses:
+        '200':
+          description: Ownership transferred successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitOwner'
+        '404':
+          description: Owner or unit not found
+
+  # ============================================================================
+  # Owners
+  # ============================================================================
+  /owners:
+    get:
+      tags:
+        - Owners
+      summary: List all owners
+      operationId: listOwners
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Owners retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Owner'
+    post:
+      tags:
+        - Owners
+      summary: Create a new owner
+      operationId: createOwner
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOwnerRequest'
+      responses:
+        '201':
+          description: Owner created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+
+  /owners/{id}:
+    get:
+      tags:
+        - Owners
+      summary: Get owner by ID
+      operationId: getOwnerById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Owner retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Owner'
+        '404':
+          description: Owner not found
+
+  /owners/{id}/units:
+    get:
+      tags:
+        - Owners
+      summary: Get all active units owned by an owner
+      operationId: getOwnerUnits
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Units retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnitOwner'
+
+  /owners/{id}/units/history:
+    get:
+      tags:
+        - Owners
+      summary: Get ownership history of an owner
+      description: Returns all units (active and past) owned by an owner
+      operationId: getOwnerUnitsHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Ownership history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnitOwner'
+
+  # ============================================================================
+  # Expenses
+  # ============================================================================
+  /expenses:
+    get:
+      tags:
+        - Expenses
+      summary: List expenses
+      operationId: listExpenses
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: building_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Draft, PendingApproval, Approved, Rejected, Paid]
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Expenses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+    post:
+      tags:
+        - Expenses
+      summary: Create a new expense
+      operationId: createExpense
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExpenseRequest'
+      responses:
+        '201':
+          description: Expense created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+  /expenses/{id}:
+    get:
+      tags:
+        - Expenses
+      summary: Get expense by ID
+      operationId: getExpenseById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Expense retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '404':
+          description: Expense not found
+
+  /expenses/{id}/submit-for-approval:
+    put:
+      tags:
+        - Expenses
+      summary: Submit expense for approval
+      description: |
+        Changes status from Draft to PendingApproval.
+        Expense becomes immutable after submission.
+      operationId: submitExpenseForApproval
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Expense submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: Expense not in Draft status
+
+  /expenses/{id}/approve:
+    put:
+      tags:
+        - Expenses
+      summary: Approve expense
+      description: |
+        Changes status from PendingApproval to Approved.
+        Requires BoardMember role.
+      operationId: approveExpense
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approval_notes:
+                  type: string
+      responses:
+        '200':
+          description: Expense approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '400':
+          description: Expense not in PendingApproval status
+        '403':
+          description: Insufficient permissions
+
+  /expenses/{id}/reject:
+    put:
+      tags:
+        - Expenses
+      summary: Reject expense
+      description: |
+        Changes status from PendingApproval to Rejected.
+        Requires BoardMember role.
+      operationId: rejectExpense
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rejection_reason
+              properties:
+                rejection_reason:
+                  type: string
+      responses:
+        '200':
+          description: Expense rejected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+  /expenses/{id}/mark-paid:
+    put:
+      tags:
+        - Expenses
+      summary: Mark expense as paid
+      operationId: markExpenseAsPaid
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Expense marked as paid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+
+  /buildings/{id}/expenses:
+    get:
+      tags:
+        - Expenses
+      summary: Get all expenses for a building
+      operationId: getBuildingExpenses
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Expenses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+
+  # ============================================================================
+  # Accounts (PCMN)
+  # ============================================================================
+  /accounts:
+    get:
+      tags:
+        - Accounts
+      summary: List all accounts
+      description: Returns Belgian PCMN accounts for the current organization
+      operationId: listAccounts
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: organization_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: account_type
+          in: query
+          schema:
+            type: string
+            enum: [Asset, Liability, Equity, Income, Expense, OffBalance]
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Account'
+    post:
+      tags:
+        - Accounts
+      summary: Create a new account
+      description: Create a custom PCMN account (requires Accountant role)
+      operationId: createAccount
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '400':
+          description: Invalid input or duplicate code
+
+  /accounts/{id}:
+    get:
+      tags:
+        - Accounts
+      summary: Get account by ID
+      operationId: getAccountById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Account retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+    put:
+      tags:
+        - Accounts
+      summary: Update account
+      operationId: updateAccount
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                is_active:
+                  type: boolean
+      responses:
+        '200':
+          description: Account updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+    delete:
+      tags:
+        - Accounts
+      summary: Delete account
+      operationId: deleteAccount
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Account deleted successfully
+        '404':
+          description: Account not found
+
+  /accounts/code/{code}:
+    get:
+      tags:
+        - Accounts
+      summary: Get account by PCMN code
+      operationId: getAccountByCode
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "451000"
+      responses:
+        '200':
+          description: Account retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+
+  /accounts/seed/belgian-pcmn:
+    post:
+      tags:
+        - Accounts
+      summary: Seed Belgian PCMN accounts
+      description: |
+        Seeds ~90 standard Belgian PCMN accounts for a new organization.
+        Should only be called once per organization.
+      operationId: seedBelgianPCMN
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: organization_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Accounts seeded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 90 accounts created successfully
+                  accounts_created:
+                    type: integer
+                    example: 90
+        '400':
+          description: Accounts already seeded
+
+  # ============================================================================
+  # Financial Reports
+  # ============================================================================
+  /reports/balance-sheet:
+    get:
+      tags:
+        - Financial Reports
+      summary: Generate balance sheet
+      description: Generate Belgian PCMN balance sheet for a given period
+      operationId: getBalanceSheet
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: organization_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            example: 2025
+      responses:
+        '200':
+          description: Balance sheet generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceSheet'
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /reports/income-statement:
+    get:
+      tags:
+        - Financial Reports
+      summary: Generate income statement
+      description: Generate income statement (compte de résultats) for a given period
+      operationId: getIncomeStatement
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: organization_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: quarter
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 4
+            description: Optional quarter filter (1-4)
+      responses:
+        '200':
+          description: Income statement generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeStatement'
+
+  # ============================================================================
+  # Payment Reminders
+  # ============================================================================
+  /payment-reminders:
+    get:
+      tags:
+        - Payment Reminders
+      summary: List payment reminders
+      operationId: listPaymentReminders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: expense_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: owner_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: reminder_level
+          in: query
+          schema:
+            type: string
+            enum: [Gentle, Formal, FinalNotice, LegalAction]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Payment reminders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentReminder'
+    post:
+      tags:
+        - Payment Reminders
+      summary: Create payment reminder
+      description: |
+        Create a new payment reminder for an overdue expense.
+        Belgian late payment penalties (8% annual) are calculated automatically.
+      operationId: createPaymentReminder
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentReminderRequest'
+      responses:
+        '201':
+          description: Payment reminder created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReminder'
+
+  /payment-reminders/{id}:
+    get:
+      tags:
+        - Payment Reminders
+      summary: Get payment reminder by ID
+      operationId: getPaymentReminderById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment reminder retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReminder'
+        '404':
+          description: Payment reminder not found
+
+  /payment-reminders/{id}/mark-sent:
+    put:
+      tags:
+        - Payment Reminders
+      summary: Mark reminder as sent
+      operationId: markReminderAsSent
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tracking_number:
+                  type: string
+      responses:
+        '200':
+          description: Reminder marked as sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReminder'
+
+  /payment-reminders/{id}/escalate:
+    put:
+      tags:
+        - Payment Reminders
+      summary: Escalate reminder to next level
+      description: |
+        Automatically escalate reminder to next level:
+        Gentle → Formal → FinalNotice → LegalAction
+      operationId: escalateReminder
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reminder escalated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReminder'
+        '400':
+          description: Already at maximum escalation level
+
+  /payment-reminders/stats:
+    get:
+      tags:
+        - Payment Reminders
+      summary: Get payment reminder statistics
+      operationId: getPaymentReminderStats
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: organization_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_reminders:
+                    type: integer
+                  by_level:
+                    type: object
+                    properties:
+                      Gentle:
+                        type: integer
+                      Formal:
+                        type: integer
+                      FinalNotice:
+                        type: integer
+                      LegalAction:
+                        type: integer
+                  total_penalties:
+                    type: number
+                    format: double
+                  recovery_rate:
+                    type: number
+                    format: double
+
+  /expenses/{expense_id}/payment-reminders:
+    get:
+      tags:
+        - Payment Reminders
+      summary: Get reminders for an expense
+      operationId: getExpenseReminders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: expense_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reminders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentReminder'
+
+  /owners/{owner_id}/payment-reminders:
+    get:
+      tags:
+        - Payment Reminders
+      summary: Get reminders for an owner
+      operationId: getOwnerReminders
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: owner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reminders retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentReminder'
+
+  # ============================================================================
+  # Meetings
+  # ============================================================================
+  /meetings:
+    get:
+      tags:
+        - Meetings
+      summary: List meetings
+      operationId: listMeetings
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: building_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Scheduled, Completed, Cancelled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Meetings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Meeting'
+    post:
+      tags:
+        - Meetings
+      summary: Create a new meeting
+      operationId: createMeeting
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeetingRequest'
+      responses:
+        '201':
+          description: Meeting created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meeting'
+
+  /meetings/{id}:
+    get:
+      tags:
+        - Meetings
+      summary: Get meeting by ID
+      operationId: getMeetingById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Meeting retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meeting'
+        '404':
+          description: Meeting not found
+    put:
+      tags:
+        - Meetings
+      summary: Update meeting
+      operationId: updateMeeting
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                agenda:
+                  type: string
+                minutes:
+                  type: string
+                status:
+                  type: string
+                  enum: [Scheduled, Completed, Cancelled]
+      responses:
+        '200':
+          description: Meeting updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meeting'
+
+  # ============================================================================
+  # Documents
+  # ============================================================================
+  /documents:
+    get:
+      tags:
+        - Documents
+      summary: List documents
+      operationId: listDocuments
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: building_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: document_type
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Documents retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Document'
+    post:
+      tags:
+        - Documents
+      summary: Create a new document
+      operationId: createDocument
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentRequest'
+      responses:
+        '201':
+          description: Document created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+
+  /documents/{id}:
+    get:
+      tags:
+        - Documents
+      summary: Get document by ID
+      operationId: getDocumentById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+        '404':
+          description: Document not found
+    delete:
+      tags:
+        - Documents
+      summary: Delete document
+      operationId: deleteDocument
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Document deleted successfully
+        '404':
+          description: Document not found
+
+  /documents/{id}/download:
+    get:
+      tags:
+        - Documents
+      summary: Download document file
+      operationId: downloadDocument
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Document not found
+
+  # ============================================================================
+  # GDPR
+  # ============================================================================
+  /gdpr/owners/{owner_id}/data-export:
+    get:
+      tags:
+        - GDPR
+      summary: Export owner data (GDPR Art. 15)
+      description: |
+        Right of access (GDPR Article 15).
+        Returns all personal data stored for an owner.
+      operationId: exportOwnerData
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: owner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Data exported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  owner:
+                    $ref: '#/components/schemas/Owner'
+                  units:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UnitOwner'
+                  expenses:
+                    type: array
+                  documents:
+                    type: array
+                  meetings:
+                    type: array
+
+  /gdpr/owners/{owner_id}/portable-data:
+    get:
+      tags:
+        - GDPR
+      summary: Get portable owner data (GDPR Art. 20)
+      description: |
+        Right to data portability (GDPR Article 20).
+        Returns data in structured, machine-readable format.
+      operationId: getPortableOwnerData
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: owner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Portable data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /gdpr/owners/{owner_id}/delete-data:
+    delete:
+      tags:
+        - GDPR
+      summary: Delete owner data (GDPR Art. 17)
+      description: |
+        Right to erasure (GDPR Article 17).
+        Permanently deletes owner data if no legal obligations prevent it.
+
+        **Conditions**:
+        - No outstanding debts
+        - No ongoing litigation
+        - No active ownership
+      operationId: deleteOwnerData
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: owner_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Data deleted successfully
+        '400':
+          description: Cannot delete due to legal obligations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+                example:
+                  error: Cannot delete owner with outstanding debts
+                  code: DELETION_NOT_ALLOWED
+
+  # ============================================================================
+  # Health
+  # ============================================================================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns API health status and version
+      operationId: healthCheck
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+
+  /metrics:
+    get:
+      tags:
+        - Health
+      summary: Prometheus metrics
+      description: Returns Prometheus-formatted metrics for monitoring
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP http_requests_total Total number of HTTP requests
+                  # TYPE http_requests_total counter
+                  http_requests_total{method="GET",path="/api/v1/buildings"} 1234
