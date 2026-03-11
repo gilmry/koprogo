@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sphinx-build -M html . _build)",
+      "Bash(du -sh /home/user/koprogo/docs/*/)",
+      "Bash(git -C /home/user/koprogo log --oneline main..blog)",
+      "Bash(git -C /home/user/koprogo log --oneline -10)",
+      "Bash(git -C /home/user/koprogo show f67bfbe --name-only)",
+      "Bash(git revert:*)"
+    ]
+  }
+}
