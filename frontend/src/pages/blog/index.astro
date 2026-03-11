@@ -1,0 +1,122 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('blog');
+const sortedPosts = posts.sort((a, b) =>
+	new Date(b.data.publishedAt).getTime() - new Date(a.data.publishedAt).getTime()
+);
+
+const categoryLabels: Record<string, string> = {
+	'syndic': 'Syndic',
+	'coproprietaire': 'Copropriétaire',
+	'assemblee-generale': 'Assemblée Générale',
+	'comptabilite': 'Comptabilité',
+	'locataire': 'Locataire',
+	'conseil-copropriete': 'Conseil de Copropriété',
+	'notaire': 'Notaire',
+	'rgpd': 'RGPD',
+	'acp': 'ACP',
+};
+
+const categoryColors: Record<string, string> = {
+	'syndic': 'bg-blue-100 text-blue-800',
+	'coproprietaire': 'bg-emerald-100 text-emerald-800',
+	'assemblee-generale': 'bg-purple-100 text-purple-800',
+	'comptabilite': 'bg-amber-100 text-amber-800',
+	'locataire': 'bg-rose-100 text-rose-800',
+	'conseil-copropriete': 'bg-indigo-100 text-indigo-800',
+	'notaire': 'bg-cyan-100 text-cyan-800',
+	'rgpd': 'bg-orange-100 text-orange-800',
+	'acp': 'bg-teal-100 text-teal-800',
+};
+
+const categories = [...new Set(sortedPosts.map(p => p.data.category))];
+---
+
+<Layout title="Blog Juridique - Copropriété Belge" showNav={false} showFooter={false}>
+	<header class="bg-primary-700 text-white">
+		<div class="container mx-auto px-4 py-6 flex items-center justify-between">
+			<a href="/" class="text-2xl font-bold hover:text-primary-200 transition">KoproGo</a>
+			<nav class="flex items-center gap-6">
+				<a href="/" class="text-primary-100 hover:text-white transition">Accueil</a>
+				<a href="/blog" class="text-white font-semibold">Blog</a>
+				<a href="/login" class="bg-white text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition">
+					Se connecter
+				</a>
+			</nav>
+		</div>
+	</header>
+
+	<main class="container mx-auto px-4 py-12 max-w-6xl">
+		<div class="text-center mb-12">
+			<h1 class="text-4xl font-bold text-gray-900 mb-4">Blog Juridique</h1>
+			<p class="text-xl text-gray-600 max-w-2xl mx-auto">
+				Guide pratique de la copropriété en Belgique : droits, obligations et bonnes pratiques,
+				basé sur le Code civil belge et le Code de déontologie IPI.
+			</p>
+		</div>
+
+		<!-- Category filter -->
+		<div class="flex flex-wrap gap-2 justify-center mb-10">
+			{categories.map(cat => (
+				<span class={`px-3 py-1 rounded-full text-sm font-medium ${categoryColors[cat] || 'bg-gray-100 text-gray-800'}`}>
+					{categoryLabels[cat] || cat}
+				</span>
+			))}
+		</div>
+
+		<!-- Articles grid -->
+		<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+			{sortedPosts.map(post => (
+				<a href={`/blog/${post.id}`} class="group bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden">
+					<div class="p-6">
+						<div class="flex items-center gap-2 mb-3">
+							<span class={`px-2 py-0.5 rounded-full text-xs font-medium ${categoryColors[post.data.category] || 'bg-gray-100 text-gray-800'}`}>
+								{categoryLabels[post.data.category] || post.data.category}
+							</span>
+							<time class="text-xs text-gray-400" datetime={post.data.publishedAt.toISOString()}>
+								{post.data.publishedAt.toLocaleDateString('fr-BE', { year: 'numeric', month: 'long', day: 'numeric' })}
+							</time>
+						</div>
+						<h2 class="text-lg font-semibold text-gray-900 group-hover:text-primary-700 transition mb-2 line-clamp-2">
+							{post.data.title}
+						</h2>
+						<p class="text-sm text-gray-600 line-clamp-3">
+							{post.data.description}
+						</p>
+						{post.data.legalRefs && (
+							<div class="mt-3 flex flex-wrap gap-1">
+								{post.data.legalRefs.map(ref => (
+									<span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+										{ref}
+									</span>
+								))}
+							</div>
+						)}
+					</div>
+				</a>
+			))}
+		</div>
+
+		<!-- Legal disclaimer -->
+		<div class="mt-16 bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
+			<p class="text-sm text-amber-800">
+				<strong>Avertissement</strong> : les articles de ce blog sont fournis à titre informatif.
+				Seuls les textes publiés au Moniteur belge font foi.
+				Une vérification par un juriste spécialisé est recommandée avant toute action.
+			</p>
+		</div>
+	</main>
+
+	<footer class="bg-gray-900 text-gray-400 py-8 mt-16">
+		<div class="container mx-auto px-4 text-center text-sm">
+			<p>&copy; 2025 KoproGo - Gestion de Copropriété SaaS</p>
+			<p class="mt-2">
+				<a href="/mentions-legales" class="hover:text-white transition">Mentions légales</a>
+				<span class="mx-2">·</span>
+				<a href="/settings/gdpr" class="hover:text-white transition">RGPD</a>
+			</p>
+		</div>
+	</footer>
+</Layout>

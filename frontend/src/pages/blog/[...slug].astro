@@ -1,0 +1,148 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog');
+	return posts.map(post => ({
+		params: { slug: post.id },
+		props: { post },
+	}));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const categoryLabels: Record<string, string> = {
+	'syndic': 'Syndic',
+	'coproprietaire': 'Copropriétaire',
+	'assemblee-generale': 'Assemblée Générale',
+	'comptabilite': 'Comptabilité',
+	'locataire': 'Locataire',
+	'conseil-copropriete': 'Conseil de Copropriété',
+	'notaire': 'Notaire',
+	'rgpd': 'RGPD',
+	'acp': 'ACP',
+};
+
+const categoryColors: Record<string, string> = {
+	'syndic': 'bg-blue-100 text-blue-800',
+	'coproprietaire': 'bg-emerald-100 text-emerald-800',
+	'assemblee-generale': 'bg-purple-100 text-purple-800',
+	'comptabilite': 'bg-amber-100 text-amber-800',
+	'locataire': 'bg-rose-100 text-rose-800',
+	'conseil-copropriete': 'bg-indigo-100 text-indigo-800',
+	'notaire': 'bg-cyan-100 text-cyan-800',
+	'rgpd': 'bg-orange-100 text-orange-800',
+	'acp': 'bg-teal-100 text-teal-800',
+};
+---
+
+<Layout title={`${post.data.title} - Blog KoproGo`} showNav={false} showFooter={false}>
+	<header class="bg-primary-700 text-white">
+		<div class="container mx-auto px-4 py-6 flex items-center justify-between">
+			<a href="/" class="text-2xl font-bold hover:text-primary-200 transition">KoproGo</a>
+			<nav class="flex items-center gap-6">
+				<a href="/" class="text-primary-100 hover:text-white transition">Accueil</a>
+				<a href="/blog" class="text-white font-semibold">Blog</a>
+				<a href="/login" class="bg-white text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition">
+					Se connecter
+				</a>
+			</nav>
+		</div>
+	</header>
+
+	<main class="container mx-auto px-4 py-12 max-w-3xl">
+		<!-- Breadcrumb -->
+		<nav class="mb-8 text-sm text-gray-500">
+			<a href="/" class="hover:text-primary-700 transition">Accueil</a>
+			<span class="mx-2">/</span>
+			<a href="/blog" class="hover:text-primary-700 transition">Blog</a>
+			<span class="mx-2">/</span>
+			<span class="text-gray-700">{post.data.title}</span>
+		</nav>
+
+		<article>
+			<!-- Header -->
+			<header class="mb-10">
+				<div class="flex items-center gap-3 mb-4">
+					<span class={`px-3 py-1 rounded-full text-sm font-medium ${categoryColors[post.data.category] || 'bg-gray-100 text-gray-800'}`}>
+						{categoryLabels[post.data.category] || post.data.category}
+					</span>
+					<time class="text-sm text-gray-400" datetime={post.data.publishedAt.toISOString()}>
+						{post.data.publishedAt.toLocaleDateString('fr-BE', { year: 'numeric', month: 'long', day: 'numeric' })}
+					</time>
+				</div>
+				<h1 class="text-4xl font-bold text-gray-900 mb-4 leading-tight">{post.data.title}</h1>
+				<p class="text-xl text-gray-600">{post.data.description}</p>
+
+				{post.data.legalRefs && (
+					<div class="mt-4 flex flex-wrap gap-2">
+						{post.data.legalRefs.map(ref => (
+							<span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+								{ref}
+							</span>
+						))}
+					</div>
+				)}
+			</header>
+
+			<!-- Content -->
+			<div class="prose prose-lg max-w-none
+				prose-headings:text-gray-900 prose-headings:font-bold
+				prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-200
+				prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+				prose-p:text-gray-700 prose-p:leading-relaxed
+				prose-strong:text-gray-900
+				prose-a:text-primary-700 prose-a:no-underline hover:prose-a:underline
+				prose-blockquote:border-l-primary-500 prose-blockquote:bg-primary-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg prose-blockquote:not-italic
+				prose-table:text-sm
+				prose-th:bg-gray-100 prose-th:font-semibold
+				prose-td:border-gray-200
+				prose-li:text-gray-700">
+				<Content />
+			</div>
+		</article>
+
+		<!-- Tags -->
+		{post.data.tags && (
+			<div class="mt-12 pt-6 border-t border-gray-200">
+				<h3 class="text-sm font-medium text-gray-500 mb-3">Tags</h3>
+				<div class="flex flex-wrap gap-2">
+					{post.data.tags.map(tag => (
+						<span class="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+							{tag}
+						</span>
+					))}
+				</div>
+			</div>
+		)}
+
+		<!-- Legal disclaimer -->
+		<div class="mt-10 bg-amber-50 border border-amber-200 rounded-lg p-6">
+			<p class="text-sm text-amber-800">
+				<strong>Avertissement</strong> : cet article est fourni à titre informatif.
+				Seuls les textes publiés au Moniteur belge font foi.
+				Une vérification par un juriste spécialisé est recommandée avant toute action.
+			</p>
+		</div>
+
+		<!-- Navigation -->
+		<div class="mt-10 flex justify-between">
+			<a href="/blog" class="text-primary-700 hover:text-primary-800 font-medium transition">
+				&larr; Retour au blog
+			</a>
+		</div>
+	</main>
+
+	<footer class="bg-gray-900 text-gray-400 py-8 mt-16">
+		<div class="container mx-auto px-4 text-center text-sm">
+			<p>&copy; 2025 KoproGo - Gestion de Copropriété SaaS</p>
+			<p class="mt-2">
+				<a href="/mentions-legales" class="hover:text-white transition">Mentions légales</a>
+				<span class="mx-2">·</span>
+				<a href="/settings/gdpr" class="hover:text-white transition">RGPD</a>
+			</p>
+		</div>
+	</footer>
+</Layout>

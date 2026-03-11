@@ -216,7 +216,7 @@ pub struct AwardAchievementRequest {
 ///
 /// # Request Body
 /// - achievement_id: UUID
-/// - progress_data: Option<String> (JSON)
+/// - progress_data: `Option<String>` (JSON)
 ///
 /// # Responses
 /// - 201 Created: Achievement awarded successfully
@@ -300,7 +300,7 @@ pub async fn get_recent_achievements(
 ///
 /// # Request Body
 /// - organization_id: UUID
-/// - building_id: Option<UUID> (null = organization-wide)
+/// - building_id: `Option<UUID>` (null = organization-wide)
 /// - challenge_type: ChallengeType (Individual, Team, Building)
 /// - title: String (3-100 chars)
 /// - description: String (10-1000 chars)
@@ -720,8 +720,8 @@ pub async fn get_gamification_user_stats(
 /// GET /organizations/:organization_id/gamification/leaderboard?building_id=<uuid>&limit=10
 ///
 /// # Query Parameters
-/// - building_id: Option<UUID> (filter by building)
-/// - limit: i64 (default: 10)
+/// - building_id: `Option<UUID>` (filter by building)
+/// - limit: `i64` (default: 10)
 ///
 /// # Responses
 /// - 200 OK: Leaderboard with top users

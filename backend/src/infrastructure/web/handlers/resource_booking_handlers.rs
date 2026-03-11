@@ -17,11 +17,11 @@ use uuid::Uuid;
 /// - resource_name: String (e.g., "Meeting Room A")
 /// - start_time: DateTime<Utc>
 /// - end_time: DateTime<Utc>
-/// - notes: Option<String>
+/// - notes: `Option<String>`
 /// - recurring_pattern: RecurringPattern (default: None)
-/// - recurrence_end_date: Option<DateTime<Utc>>
-/// - max_duration_hours: Option<i64> (default: 4)
-/// - max_advance_days: Option<i64> (default: 30)
+/// - recurrence_end_date: `Option<DateTime<Utc>>`
+/// - max_duration_hours: `Option<i64>` (default: 4)
+/// - max_advance_days: `Option<i64>` (default: 30)
 ///
 /// # Responses
 /// - 201 Created: Booking created successfully
@@ -354,8 +354,8 @@ pub async fn list_past_bookings(
 /// PUT /resource-bookings/:id
 ///
 /// # Request Body
-/// - resource_name: Option<String>
-/// - notes: Option<String>
+/// - resource_name: `Option<String>`
+/// - notes: `Option<String>`
 ///
 /// # Responses
 /// - 200 OK: Booking updated
@@ -580,7 +580,7 @@ pub struct CheckConflictsQuery {
 /// - resource_name: String
 /// - start_time: ISO 8601 DateTime
 /// - end_time: ISO 8601 DateTime
-/// - exclude_booking_id: Option<UUID>
+/// - exclude_booking_id: `Option<UUID>`
 ///
 /// # Responses
 /// - 200 OK: List of conflicting bookings (empty if no conflicts)

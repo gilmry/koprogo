@@ -139,5 +139,7 @@ export const publicRoutes = ["/", "/login", "/register", "/mentions-legales"];
  * @returns true if the route is public
  */
 export function isPublicRoute(route: string): boolean {
-  return publicRoutes.includes(route);
+  if (publicRoutes.includes(route)) return true;
+  if (route === "/blog" || route.startsWith("/blog/")) return true;
+  return false;
 }
