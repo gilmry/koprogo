@@ -41,6 +41,14 @@ exclude_patterns = [
     '.venv/**',
     '**/.venv',
     '**/.venv/**',
+    # Large auto-generated directories not part of published docs
+    'mirror',
+    'mirror/**',
+    'github-export/issues',
+    'github-export/issues/**',
+    # Binary/office files
+    '*.docx',
+    '*.pdf',
 ]
 
 # -- Options for HTML output -------------------------------------------------
