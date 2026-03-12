@@ -103,7 +103,7 @@ Lacunes CRITIQUES identifiees : **3** (quorum, 2e convocation, procurations max 
 2.2 WP-BC15 — AG Visioconference (PRIORITE P0)
 -----------------------------------------------
 
-**Estimation** : ~12h | **Prerequis** : WP-LEGAL | **Issue** : #274 (cloture #237) | **Statut** : 🔄 EN COURS
+**Estimation** : ~12h | **Prerequis** : WP-LEGAL | **Issue** : #274 (cloture #237) | **Statut** : ✅ TERMINÉ (commit 3c2fbe6)
 
 .. list-table::
    :header-rows: 1
@@ -168,7 +168,7 @@ Lacunes CRITIQUES identifiees : **3** (quorum, 2e convocation, procurations max 
 2.3 WP-BC17 — AGE Agile & Concertation (PRIORITE P0)
 -----------------------------------------------------
 
-**Estimation** : ~14h | **Prerequis** : WP-BC15 | **Issue** : #279
+**Estimation** : ~14h | **Prerequis** : WP-BC15 | **Issue** : #279 | **Statut** : ✅ TERMINÉ (commit suivant)
 
 .. list-table::
    :header-rows: 1

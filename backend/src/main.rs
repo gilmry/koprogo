@@ -204,6 +204,7 @@ async fn main() -> std::io::Result<()> {
     let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
     let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
     let ag_session_repo = Arc::new(PostgresAgSessionRepository::new(pool.clone()));
+    let age_request_repo = Arc::new(PostgresAgeRequestRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -347,6 +348,7 @@ async fn main() -> std::io::Result<()> {
     );
     let ag_session_use_cases =
         AgSessionUseCases::new(ag_session_repo.clone(), meeting_repo.clone());
+    let age_request_use_cases = AgeRequestUseCases::new(age_request_repo.clone());
     let energy_campaign_use_cases = EnergyCampaignUseCases::new(
         energy_campaign_repo.clone(),
         energy_bill_upload_repo.clone(),
@@ -406,6 +408,7 @@ async fn main() -> std::io::Result<()> {
         challenge_use_cases,
         gamification_stats_use_cases,
         ag_session_use_cases,
+        age_request_use_cases,
         audit_logger,
         email_service,
         pool.clone(),

@@ -53,7 +53,10 @@
       "Bash(DATABASE_URL=\"postgresql://koprogo:koprogo123@localhost:5432/koprogo_db\" cargo sqlx prepare)",
       "Bash(DATABASE_URL=postgresql://koprogo:koprogo123@localhost:5432/koprogo_db SQLX_OFFLINE=true cargo clippy --lib -- -D warnings)",
       "Bash(SQLX_OFFLINE=true cargo test --lib ag_session)",
-      "Bash(SQLX_OFFLINE=true cargo test --lib -- ag_session)"
+      "Bash(SQLX_OFFLINE=true cargo test --lib -- ag_session)",
+      "Bash(sed -i 's/^pub mod account_use_cases;/pub mod account_use_cases;\\\\npub mod age_request_use_cases;/' /home/user/koprogo/backend/src/application/use_cases/mod.rs)",
+      "Bash(sed -i 's/^pub use ag_session_use_cases::AgSessionUseCases;/pub use age_request_use_cases::AgeRequestUseCases;\\\\npub use ag_session_use_cases::AgSessionUseCases;/' /home/user/koprogo/backend/src/application/use_cases/mod.rs)",
+      "Bash(SQLX_OFFLINE=true cargo test --lib age_request)"
     ]
   }
 }

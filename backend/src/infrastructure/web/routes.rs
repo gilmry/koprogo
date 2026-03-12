@@ -567,6 +567,19 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(cancel_ag_session) // PUT /ag-sessions/{id}/cancel
             .service(record_remote_join) // POST /ag-sessions/{id}/join
             .service(delete_ag_session) // DELETE /ag-sessions/{id}
-            .service(get_ag_session), // GET /ag-sessions/{id} — LAST (parameterized)
+            .service(get_ag_session) // GET /ag-sessions/{id} — LAST (parameterized)
+            // AGE Agile & Concertation (BC17 - Art. 3.87 §2 CC)
+            // Specific sub-routes BEFORE parameterized /age-requests/{id}
+            .service(create_age_request) // POST /buildings/{building_id}/age-requests
+            .service(list_age_requests) // GET /buildings/{building_id}/age-requests
+            .service(add_cosignatory) // POST /age-requests/{id}/cosignatories
+            .service(remove_cosignatory) // DELETE /age-requests/{id}/cosignatories/{owner_id}
+            .service(open_age_request) // PUT /age-requests/{id}/open
+            .service(submit_age_request) // POST /age-requests/{id}/submit
+            .service(syndic_response) // PUT /age-requests/{id}/syndic-response
+            .service(trigger_auto_convocation) // POST /age-requests/{id}/auto-convocation
+            .service(withdraw_age_request) // POST /age-requests/{id}/withdraw
+            .service(delete_age_request) // DELETE /age-requests/{id}
+            .service(get_age_request), // GET /age-requests/{id} — LAST (parameterized)
     );
 }

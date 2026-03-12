@@ -5,12 +5,12 @@ use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresAccountRepository, PostgresAchievementRepository,
-    PostgresAgSessionRepository, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
-    PostgresBoardMemberRepository, PostgresBudgetRepository, PostgresBuildingRepository,
-    PostgresCallForFundsRepository, PostgresChallengeProgressRepository,
-    PostgresChallengeRepository, PostgresChargeDistributionRepository,
-    PostgresConvocationRecipientRepository, PostgresConvocationRepository,
-    PostgresDocumentRepository, PostgresEnergyBillUploadRepository,
+    PostgresAgSessionRepository, PostgresAgeRequestRepository, PostgresAuditLogRepository,
+    PostgresBoardDecisionRepository, PostgresBoardMemberRepository, PostgresBudgetRepository,
+    PostgresBuildingRepository, PostgresCallForFundsRepository,
+    PostgresChallengeProgressRepository, PostgresChallengeRepository,
+    PostgresChargeDistributionRepository, PostgresConvocationRecipientRepository,
+    PostgresConvocationRepository, PostgresDocumentRepository, PostgresEnergyBillUploadRepository,
     PostgresEnergyCampaignRepository, PostgresEtatDateRepository, PostgresExpenseRepository,
     PostgresGdprRepository, PostgresIoTRepository, PostgresJournalEntryRepository,
     PostgresLocalExchangeRepository, PostgresNoticeRepository,
@@ -293,6 +293,8 @@ pub async fn setup_test_db() -> (
     );
     let ag_session_repo = Arc::new(PostgresAgSessionRepository::new(pool.clone()));
     let ag_session_use_cases = AgSessionUseCases::new(ag_session_repo, meeting_repo.clone());
+    let age_request_repo = Arc::new(PostgresAgeRequestRepository::new(pool.clone()));
+    let age_request_use_cases = AgeRequestUseCases::new(age_request_repo);
 
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
@@ -342,6 +344,7 @@ pub async fn setup_test_db() -> (
         challenge_use_cases,
         gamification_stats_use_cases,
         ag_session_use_cases,
+        age_request_use_cases,
         audit_logger,
         EmailService::from_env().expect("email service"),
         pool.clone(),
