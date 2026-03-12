@@ -316,4 +316,32 @@ impl VoteRepository for PostgresVoteRepository {
             row.get::<f64, _>("abstention_power"),
         ))
     }
+
+    /// Count proxy votes held by a mandataire on a given resolution (Art. 3.87 §7 CC)
+    async fn count_proxy_votes_for_mandataire(
+        &self,
+        resolution_id: Uuid,
+        proxy_owner_id: Uuid,
+    ) -> Result<(i64, f64), String> {
+        let row = sqlx::query(
+            r#"
+            SELECT
+                COUNT(*)::BIGINT AS proxy_count,
+                COALESCE(SUM(voting_power), 0)::FLOAT8 AS total_proxy_power
+            FROM votes
+            WHERE resolution_id = $1
+              AND proxy_owner_id = $2
+            "#,
+        )
+        .bind(resolution_id)
+        .bind(proxy_owner_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Database error counting proxies: {}", e))?;
+
+        Ok((
+            row.get::<i64, _>("proxy_count"),
+            row.get::<f64, _>("total_proxy_power"),
+        ))
+    }
 }

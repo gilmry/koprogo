@@ -16,6 +16,7 @@ const blog = defineCollection({
       "notaire",
       "rgpd",
       "acp",
+      "energie",
     ]),
     tags: z.array(z.string()),
     publishedAt: z.coerce.date(),

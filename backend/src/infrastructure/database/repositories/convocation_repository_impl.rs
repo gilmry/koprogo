@@ -49,14 +49,14 @@ impl ConvocationRepository for PostgresConvocationRepository {
                 status, minimum_send_date, actual_send_date, scheduled_send_date,
                 pdf_file_path, language, total_recipients, opened_count,
                 will_attend_count, will_not_attend_count, reminder_sent_at,
-                created_at, updated_at, created_by
+                first_meeting_id, created_at, updated_at, created_by
             )
-            VALUES ($1, $2, $3, $4, $5::TEXT::convocation_type, $6, $7::TEXT::convocation_status, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+            VALUES ($1, $2, $3, $4, $5::TEXT::convocation_type, $6, $7::TEXT::convocation_status, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
             RETURNING id, organization_id, building_id, meeting_id, meeting_type::text AS "meeting_type!", meeting_date,
                       status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                       pdf_file_path, language, total_recipients, opened_count,
                       will_attend_count, will_not_attend_count, reminder_sent_at,
-                      created_at, updated_at, created_by
+                      first_meeting_id, created_at, updated_at, created_by
             "#,
             convocation.id,
             convocation.organization_id,
@@ -75,6 +75,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             convocation.will_attend_count,
             convocation.will_not_attend_count,
             convocation.reminder_sent_at,
+            convocation.first_meeting_id,
             convocation.created_at,
             convocation.updated_at,
             convocation.created_by,
@@ -101,6 +102,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             will_attend_count: row.will_attend_count,
             will_not_attend_count: row.will_not_attend_count,
             reminder_sent_at: row.reminder_sent_at,
+            first_meeting_id: row.first_meeting_id,
             created_at: row.created_at,
             updated_at: row.updated_at,
             created_by: row.created_by,
@@ -114,7 +116,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
-                   created_at, updated_at, created_by
+                   first_meeting_id, created_at, updated_at, created_by
             FROM convocations
             WHERE id = $1
             "#,
@@ -143,6 +145,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                 will_attend_count: row.will_attend_count,
                 will_not_attend_count: row.will_not_attend_count,
                 reminder_sent_at: row.reminder_sent_at,
+                first_meeting_id: row.first_meeting_id,
                 created_at: row.created_at,
                 updated_at: row.updated_at,
                 created_by: row.created_by,
@@ -158,7 +161,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
-                   created_at, updated_at, created_by
+                   first_meeting_id, created_at, updated_at, created_by
             FROM convocations
             WHERE meeting_id = $1
             "#,
@@ -187,6 +190,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                 will_attend_count: row.will_attend_count,
                 will_not_attend_count: row.will_not_attend_count,
                 reminder_sent_at: row.reminder_sent_at,
+                first_meeting_id: row.first_meeting_id,
                 created_at: row.created_at,
                 updated_at: row.updated_at,
                 created_by: row.created_by,
@@ -202,7 +206,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
-                   created_at, updated_at, created_by
+                   first_meeting_id, created_at, updated_at, created_by
             FROM convocations
             WHERE building_id = $1
             ORDER BY meeting_date DESC
@@ -233,6 +237,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                     will_attend_count: row.will_attend_count,
                     will_not_attend_count: row.will_not_attend_count,
                     reminder_sent_at: row.reminder_sent_at,
+                    first_meeting_id: row.first_meeting_id,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                     created_by: row.created_by,
@@ -251,7 +256,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
-                   created_at, updated_at, created_by
+                   first_meeting_id, created_at, updated_at, created_by
             FROM convocations
             WHERE organization_id = $1
             ORDER BY meeting_date DESC
@@ -282,6 +287,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                     will_attend_count: row.will_attend_count,
                     will_not_attend_count: row.will_not_attend_count,
                     reminder_sent_at: row.reminder_sent_at,
+                    first_meeting_id: row.first_meeting_id,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                     created_by: row.created_by,
@@ -303,7 +309,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
-                   created_at, updated_at, created_by
+                   first_meeting_id, created_at, updated_at, created_by
             FROM convocations
             WHERE organization_id = $1 AND status = $2::TEXT::convocation_status
             ORDER BY meeting_date DESC
@@ -335,6 +341,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                     will_attend_count: row.will_attend_count,
                     will_not_attend_count: row.will_not_attend_count,
                     reminder_sent_at: row.reminder_sent_at,
+                    first_meeting_id: row.first_meeting_id,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                     created_by: row.created_by,
@@ -350,7 +357,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
-                   created_at, updated_at, created_by
+                   first_meeting_id, created_at, updated_at, created_by
             FROM convocations
             WHERE status = 'scheduled'
               AND scheduled_send_date IS NOT NULL
@@ -383,6 +390,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                     will_attend_count: row.will_attend_count,
                     will_not_attend_count: row.will_not_attend_count,
                     reminder_sent_at: row.reminder_sent_at,
+                    first_meeting_id: row.first_meeting_id,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                     created_by: row.created_by,
@@ -404,7 +412,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                    status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                    pdf_file_path, language, total_recipients, opened_count,
                    will_attend_count, will_not_attend_count, reminder_sent_at,
-                   created_at, updated_at, created_by
+                   first_meeting_id, created_at, updated_at, created_by
             FROM convocations
             WHERE status = 'sent'
               AND meeting_date >= $1
@@ -439,6 +447,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                     will_attend_count: row.will_attend_count,
                     will_not_attend_count: row.will_not_attend_count,
                     reminder_sent_at: row.reminder_sent_at,
+                    first_meeting_id: row.first_meeting_id,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                     created_by: row.created_by,
@@ -464,7 +473,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
                       status::text AS "status!", minimum_send_date, actual_send_date, scheduled_send_date,
                       pdf_file_path, language, total_recipients, opened_count,
                       will_attend_count, will_not_attend_count, reminder_sent_at,
-                      created_at, updated_at, created_by
+                      first_meeting_id, created_at, updated_at, created_by
             "#,
             convocation.id,
             convocation.organization_id,
@@ -507,6 +516,7 @@ impl ConvocationRepository for PostgresConvocationRepository {
             will_attend_count: row.will_attend_count,
             will_not_attend_count: row.will_not_attend_count,
             reminder_sent_at: row.reminder_sent_at,
+            first_meeting_id: row.first_meeting_id,
             created_at: row.created_at,
             updated_at: row.updated_at,
             created_by: row.created_by,

@@ -89,6 +89,7 @@ impl ConvocationStatus {
 /// Implements Belgian copropriété legal requirements for meeting convocations:
 /// Art. 3.87 §3 Code Civil: 15 days minimum notice for ALL types
 /// (Ordinary, Extraordinary, and Second Convocation after quorum failure)
+/// Art. 3.87 §5 CC: 2e convocation si quorum non atteint — pas de quorum minimum requis
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Convocation {
     pub id: Uuid,
@@ -98,6 +99,9 @@ pub struct Convocation {
     pub meeting_type: ConvocationType,
     pub meeting_date: DateTime<Utc>,
     pub status: ConvocationStatus,
+
+    // Lien vers la 1ère AG si 2e convocation (quorum non atteint — Art. 3.87 §5 CC)
+    pub first_meeting_id: Option<Uuid>,
 
     // Legal deadline tracking
     pub minimum_send_date: DateTime<Utc>, // Latest date to send (meeting_date - minimum_notice_days)
@@ -181,6 +185,7 @@ impl Convocation {
             meeting_type,
             meeting_date,
             status: ConvocationStatus::Draft,
+            first_meeting_id: None,
             minimum_send_date,
             actual_send_date: None,
             scheduled_send_date: None,
@@ -195,6 +200,49 @@ impl Convocation {
             updated_at: now,
             created_by,
         })
+    }
+
+    /// Crée une 2e convocation après échec du quorum (Art. 3.87 §5 CC).
+    ///
+    /// Règles légales:
+    /// - La 2e AG doit avoir lieu ≥15 jours après la 1ère AG (Art. 3.87 §3)
+    /// - La 2e AG délibère valablement quel que soit le nombre de présents
+    ///   (aucun quorum minimum requis)
+    /// - Le contenu de l'ordre du jour est identique à la 1ère AG
+    pub fn new_second_convocation(
+        organization_id: Uuid,
+        building_id: Uuid,
+        new_meeting_id: Uuid,
+        first_meeting_id: Uuid,
+        first_meeting_date: DateTime<Utc>,
+        new_meeting_date: DateTime<Utc>,
+        language: String,
+        created_by: Uuid,
+    ) -> Result<Self, String> {
+        // Validation: la 2e AG doit être au moins 15 jours après la 1ère
+        let min_second_date = first_meeting_date + Duration::days(15);
+        if new_meeting_date < min_second_date {
+            return Err(format!(
+                "Second convocation meeting date {} must be at least 15 days after the first \
+                 meeting date {} (Art. 3.87 §3 CC). Minimum date: {}",
+                new_meeting_date.format("%Y-%m-%d"),
+                first_meeting_date.format("%Y-%m-%d"),
+                min_second_date.format("%Y-%m-%d")
+            ));
+        }
+
+        let mut convocation = Self::new(
+            organization_id,
+            building_id,
+            new_meeting_id,
+            ConvocationType::SecondConvocation,
+            new_meeting_date,
+            language,
+            created_by,
+        )?;
+
+        convocation.first_meeting_id = Some(first_meeting_id);
+        Ok(convocation)
     }
 
     /// Schedule convocation to be sent at specific date
@@ -548,5 +596,74 @@ mod tests {
             .mark_sent("/uploads/conv.pdf".to_string(), 30)
             .unwrap();
         assert!(convocation.respects_legal_deadline());
+    }
+
+    #[test]
+    fn test_second_convocation_success() {
+        // 1ère AG dans 30 jours → 2e AG dans 50 jours (>15 jours après la 1ère)
+        let first_meeting_date = Utc::now() + Duration::days(30);
+        let second_meeting_date = Utc::now() + Duration::days(50);
+        let first_meeting_id = Uuid::new_v4();
+        let new_meeting_id = Uuid::new_v4();
+
+        let result = Convocation::new_second_convocation(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            new_meeting_id,
+            first_meeting_id,
+            first_meeting_date,
+            second_meeting_date,
+            "FR".to_string(),
+            Uuid::new_v4(),
+        );
+
+        assert!(result.is_ok(), "Expected Ok but got: {:?}", result.err());
+        let conv = result.unwrap();
+        assert_eq!(conv.meeting_type, ConvocationType::SecondConvocation);
+        assert_eq!(conv.first_meeting_id, Some(first_meeting_id));
+        assert_eq!(conv.meeting_id, new_meeting_id);
+    }
+
+    #[test]
+    fn test_second_convocation_too_soon_fails() {
+        // 1ère AG dans 30 jours → 2e AG dans 40 jours (seulement 10 jours après → KO)
+        let first_meeting_date = Utc::now() + Duration::days(30);
+        let second_meeting_date = Utc::now() + Duration::days(40); // 10 jours seulement
+
+        let result = Convocation::new_second_convocation(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            first_meeting_date,
+            second_meeting_date,
+            "FR".to_string(),
+            Uuid::new_v4(),
+        );
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("15 days after"));
+    }
+
+    #[test]
+    fn test_second_convocation_exactly_15_days_ok() {
+        // 1ère AG dans 30 jours → 2e AG dans 45 jours (exactement 15 jours → OK)
+        let first_meeting_date = Utc::now() + Duration::days(30);
+        let second_meeting_date = Utc::now() + Duration::days(45);
+
+        let result = Convocation::new_second_convocation(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            first_meeting_date,
+            second_meeting_date,
+            "FR".to_string(),
+            Uuid::new_v4(),
+        );
+
+        assert!(result.is_ok());
+        let conv = result.unwrap();
+        assert_eq!(conv.meeting_type, ConvocationType::SecondConvocation);
     }
 }

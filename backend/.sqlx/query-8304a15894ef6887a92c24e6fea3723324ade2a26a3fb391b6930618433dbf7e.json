@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   created_at, updated_at, created_by\n            FROM convocations\n            WHERE status = 'sent'\n              AND meeting_date >= $1\n              AND meeting_date <= $2\n              AND reminder_sent_at IS NULL\n            ORDER BY meeting_date ASC\n            ",
+  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, created_at, updated_at, created_by\n            FROM convocations\n            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status\n            ORDER BY meeting_date DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -90,24 +90,29 @@
       },
       {
         "ordinal": 17,
+        "name": "first_meeting_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 18,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "created_by",
         "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
-        "Timestamptz",
-        "Timestamptz"
+        "Uuid",
+        "Text"
       ]
     },
     "nullable": [
@@ -128,10 +133,11 @@
       false,
       false,
       true,
+      true,
       false,
       false,
       false
     ]
   },
-  "hash": "1638661a2ca1797d4a0e5d8f06be6bb7ad4d3c70a8d8c26b7bd1562edf78a686"
+  "hash": "8304a15894ef6887a92c24e6fea3723324ade2a26a3fb391b6930618433dbf7e"
 }

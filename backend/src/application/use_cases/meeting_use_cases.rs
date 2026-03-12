@@ -168,4 +168,24 @@ impl MeetingUseCases {
     pub async fn delete_meeting(&self, id: Uuid) -> Result<bool, String> {
         self.repository.delete(id).await
     }
+
+    /// Valide le quorum d'une AG (Art. 3.87 §5 CC).
+    /// Doit être appelé AVANT que les votes soient ouverts.
+    /// Retourne Ok(true) si quorum atteint, Ok(false) si 2e convocation requise.
+    pub async fn validate_quorum(
+        &self,
+        meeting_id: Uuid,
+        present_quotas: f64,
+        total_quotas: f64,
+    ) -> Result<(bool, MeetingResponse), String> {
+        let mut meeting = self
+            .repository
+            .find_by_id(meeting_id)
+            .await?
+            .ok_or_else(|| "Meeting not found".to_string())?;
+
+        let quorum_reached = meeting.validate_quorum(present_quotas, total_quotas)?;
+        let updated = self.repository.update(&meeting).await?;
+        Ok((quorum_reached, MeetingResponse::from(updated)))
+    }
 }

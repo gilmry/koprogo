@@ -23,7 +23,7 @@ PARTIE I : CADRE METHODOLOGIQUE
 1.1 Bounded Contexts
 ~~~~~~~~~~~~~~~~~~~~~
 
-Le projet est decompose en **13 Bounded Contexts** (BC), chacun autonome
+Le projet est decompose en **17 Bounded Contexts** (BC), chacun autonome
 avec ses propres entites, ports, use cases et adaptateurs.
 
 .. code-block:: text
@@ -41,6 +41,10 @@ avec ses propres entites, ports, use cases et adaptateurs.
    BC11 SaaS Administration      Organization CRUD, User CRUD (SuperAdmin)
    BC12 Revenue Management       CallForFunds, OwnerContribution
    BC13 Public & Open            PublicSyndicPage (no auth)
+   BC14 Marketplace & Evaluations  ServiceProvider, ContractEvaluation (ancre L13 Art. 3.89 §5 12°)
+   BC15 AG Visioconference        AgSession, quorum combine, convocation enrichie (Art. 3.87 §1)
+   BC16 Contractor Backoffice PWA ContractorReport, magic link JWT, CdC validation -> paiement
+   BC17 AGE Agile & Concertation   AgeRequest, petition 1/5 quotites, auto-convocation (Art. 3.87 §2 al.2)
 
 1.2 Context Map (relations inter-BC)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -67,6 +71,10 @@ avec ses propres entites, ports, use cases et adaptateurs.
    BC9 (Security)      <--- SEPARATE WAYS (module autonome, pas de deps)
    BC10 (Reporting)    <--- PUBLISHED LANGUAGE (agregation cross-context)
    BC12 (Revenue)      <--- CONFORMIST (depend de BC1 + BC2)
+   BC14 (Marketplace)  <--- CUSTOMER/SUPPLIER (depend de BC4 Ticket+Quote pour auto-trigger evaluation)
+   BC15 (AG Visio)     <--- CUSTOMER/SUPPLIER (depend de BC3 Meeting+Convocation)
+   BC16 (Contractor)   <--- CUSTOMER/SUPPLIER (depend de BC4 Ticket+Quote + BC2 Payment)
+   BC17 (AGE Agile)    <--- CUSTOMER/SUPPLIER (depend de BC3 Convocation + BC15 AG Visio)
 
 1.3 Ubiquitous Language
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -301,6 +309,12 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
    Documentation  : ~24,600 LOC (45 RST/MD files)
    Infrastructure : ~5,000 LOC (Ansible, Docker, CI)
    TOTAL          : ~138,800 LOC
+
+   -- Post-release 0.5.0 (Mars 2026) : ajouts prevus en 0.6.0 --
+   Bounded Contexts : 13 -> 17 (+BC14 Marketplace, +BC15 AG Visio, +BC16 Contractor PWA, +BC17 AGE Agile)
+   Nouvelles entites prevues : +AgSession, +ServiceProvider, +ContractEvaluation, +ContractorReport, +AgeRequest
+   Nouveaux endpoints prevus : +~45 endpoints (560+ -> 605+)
+   Nouvelles migrations prevues : +7 (58 -> 65+)
 
 7. Dette Technique Identifiee
 -------------------------------

@@ -37,6 +37,9 @@ pub struct ConvocationResponse {
     // Reminders
     pub reminder_sent_at: Option<DateTime<Utc>>,
 
+    // 2e convocation — Art. 3.87 §5 CC
+    pub first_meeting_id: Option<Uuid>,
+
     // Audit
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -72,6 +75,7 @@ impl From<Convocation> for ConvocationResponse {
             days_until_meeting,
             respects_legal_deadline,
             reminder_sent_at: convocation.reminder_sent_at,
+            first_meeting_id: convocation.first_meeting_id,
             created_at: convocation.created_at,
             updated_at: convocation.updated_at,
             created_by: convocation.created_by,

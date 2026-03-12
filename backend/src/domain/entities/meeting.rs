@@ -31,6 +31,11 @@ pub struct Meeting {
     pub status: MeetingStatus,
     pub agenda: Vec<String>,
     pub attendees_count: Option<i32>,
+    // Quorum — Art. 3.87 §5 CC : AG valide si >50% des quotes-parts présentes/représentées
+    pub quorum_validated: bool,
+    pub quorum_percentage: Option<f64>, // % des quotes-parts présentes/représentées (0.0-100.0)
+    pub total_quotas: Option<f64>,      // Total millièmes du bâtiment (généralement 1000)
+    pub present_quotas: Option<f64>,    // Millièmes présents + représentés par procuration
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -65,6 +70,10 @@ impl Meeting {
             status: MeetingStatus::Scheduled,
             agenda: Vec::new(),
             attendees_count: None,
+            quorum_validated: false,
+            quorum_percentage: None,
+            total_quotas: None,
+            present_quotas: None,
             created_at: now,
             updated_at: now,
         })
@@ -118,6 +127,54 @@ impl Meeting {
 
     pub fn is_upcoming(&self) -> bool {
         self.status == MeetingStatus::Scheduled && self.scheduled_date > Utc::now()
+    }
+
+    /// Valide le quorum de l'AG (Art. 3.87 §5 CC).
+    /// Quorum atteint si les quotes-parts présentes/représentées dépassent 50% du total.
+    /// Retourne Ok(true) si quorum atteint, Ok(false) si insuffisant (2e convocation requise).
+    pub fn validate_quorum(
+        &mut self,
+        present_quotas: f64,
+        total_quotas: f64,
+    ) -> Result<bool, String> {
+        if total_quotas <= 0.0 {
+            return Err("Total quotas must be positive".to_string());
+        }
+        if present_quotas < 0.0 {
+            return Err("Present quotas cannot be negative".to_string());
+        }
+        if present_quotas > total_quotas {
+            return Err("Present quotas cannot exceed total quotas".to_string());
+        }
+
+        let percentage = (present_quotas / total_quotas) * 100.0;
+        // Quorum : >50% des quotes-parts (Art. 3.87 §5 — majorité stricte)
+        let quorum_reached = percentage > 50.0;
+
+        self.present_quotas = Some(present_quotas);
+        self.total_quotas = Some(total_quotas);
+        self.quorum_percentage = Some(percentage);
+        self.quorum_validated = quorum_reached;
+        self.updated_at = Utc::now();
+
+        Ok(quorum_reached)
+    }
+
+    /// Vérifie si le quorum est atteint avant d'autoriser un vote.
+    /// Retourne Err si le quorum n'a pas encore été validé ou n'est pas atteint.
+    pub fn check_quorum_for_voting(&self) -> Result<(), String> {
+        if self.quorum_percentage.is_none() {
+            return Err("Quorum has not been validated yet (Art. 3.87 §5 CC)".to_string());
+        }
+        if !self.quorum_validated {
+            let pct = self.quorum_percentage.unwrap_or(0.0);
+            return Err(format!(
+                "Quorum not reached: {:.1}% present (>50% required, Art. 3.87 §5 CC). \
+                 A second convocation is required.",
+                pct
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -238,6 +295,145 @@ mod tests {
         let result = meeting.cancel();
         assert!(result.is_ok());
         assert_eq!(meeting.status, MeetingStatus::Cancelled);
+    }
+
+    #[test]
+    fn test_quorum_reached_above_50_percent() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // 600 millièmes présents sur 1000 = 60% → quorum atteint
+        let result = meeting.validate_quorum(600.0, 1000.0);
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+        assert!(meeting.quorum_validated);
+        assert!((meeting.quorum_percentage.unwrap() - 60.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_quorum_not_reached_at_50_percent_exact() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // 500 millièmes sur 1000 = exactement 50% → quorum NON atteint (Art. 3.87 §5 : >50% requis)
+        let result = meeting.validate_quorum(500.0, 1000.0);
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
+        assert!(!meeting.quorum_validated);
+    }
+
+    #[test]
+    fn test_quorum_not_reached_below_50_percent() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // 400 millièmes sur 1000 = 40% → quorum non atteint
+        let result = meeting.validate_quorum(400.0, 1000.0);
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
+        assert!(!meeting.quorum_validated);
+    }
+
+    #[test]
+    fn test_check_quorum_blocks_vote_when_not_validated() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        let result = meeting.check_quorum_for_voting();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not been validated yet"));
+    }
+
+    #[test]
+    fn test_check_quorum_blocks_vote_when_quorum_not_reached() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        meeting.validate_quorum(400.0, 1000.0).unwrap();
+        let result = meeting.check_quorum_for_voting();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("second convocation"));
+    }
+
+    #[test]
+    fn test_quorum_invalid_total_quotas() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        let result = meeting.validate_quorum(100.0, 0.0);
+        assert!(result.is_err());
     }
 
     #[test]

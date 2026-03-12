@@ -570,7 +570,7 @@ Jalon 3: Features Différenciantes ⏳ (~70%)
 
 **Débloque**: 500-1.000 copropriétés (différenciation marché)
 
-**État**: En cours - 70% complété (Février 2026)
+**État**: En cours - 70% complété (Mars 2026)
 
 **Issues**:
 
@@ -579,9 +579,23 @@ Jalon 3: Features Différenciantes ⏳ (~70%)
 * ✅ #84 : Paiements en ligne (Stripe Payment Intents + SEPA Direct Debit, remboursements, 38 endpoints)
 * ✅ #51 : Sondages Board (YesNo/MultipleChoice/Rating/OpenEnded, vote anonyme, résultats)
 * ✅ #99 : Community modules SEL, Swap Shop, Skills, Object Lending (toutes 6 phases complètes)
+* ✅ #133 : IoT Linky integration (Smart Electricity Monitoring)
+* ✅ #134 : Work Reports & Technical Inspections REST API (COMPLÉTÉ)
 * ⏳ #47 : PDF Generation étendue (PV AG, états financiers, contrats) (EN COURS)
 * ⏳ #52 : Contractor Backoffice (Work reports, photos, payment validation) (EN COURS)
-* ✅ #134 : Work Reports & Technical Inspections REST API (COMPLÉTÉ)
+* ⏳ #237 : AG Visioconférence → remplacé par #274 (implémentation BC15)
+* ⏳ #235 : Backoffice prestataires PWA → remplacé par #275 (implémentation BC16)
+* ⏳ #271 : Correction légale CRITIQUE — Quorum 50%+ (Art. 3.87 §5) [WP-LEGAL P0]
+* ⏳ #272 : Correction légale CRITIQUE — 2e convocation si quorum KO (Art. 3.87 §5) [WP-LEGAL P0]
+* ⏳ #273 : Correction légale CRITIQUE — Procurations max 3 (Art. 3.87 §7) [WP-LEGAL P0]
+* ⏳ #274 : BC15 — AG Visioconférence (AgSession, quorum combiné, Art. 3.87 §1) [P0]
+* ⏳ #275 : BC16 — Backoffice corps de métier PWA (ContractorReport, magic link) [P1]
+* ⏳ #276 : BC14 — Marketplace + enquêtes satisfaction (ancre L13 Art. 3.89 §5 12°) [P1]
+* ⏳ #277 : Guide légal contextuel UI (LegalHelper.svelte, AG Wizard) [P1]
+* ⏳ #278 : Blog série Bâtiment & Copropriété (18 articles RST) [P2]
+* ⏳ #279 : BC17 — AGE Agile 1/5 quotités + concertation officielle (Art. 3.87 §2 al.2) [P0]
+* ⏳ #280 : Orchestrateur neutre achat groupé énergie + CER (CREG-compliant) [P1]
+* ⏳ #252-265 : MCP Tools AI Syndic (14 tools dont legal_search, travaux_qualifier) [P1]
 
 **Livrables complétés**:
 
@@ -592,18 +606,35 @@ Jalon 3: Features Différenciantes ⏳ (~70%)
 * ✅ Gamification complète (achievements 8 catégories, challenges, leaderboard)
 * ✅ Paiements Stripe + SEPA avec méthodes de paiement stockées
 * ✅ Work Reports & Technical Inspections REST API (Issue #134)
-* ✅ Frontend UI complet pour toutes les features (PR #196)
+* ✅ IoT Linky integration (Issue #133)
+* ✅ Frontend UI complet pour toutes les features
 
-**Livrables restants**:
+**Livrables restants (Jalon 3+)**:
 
+* ⏳ **WP-LEGAL (P0, ~6h)** — Corrections critiques légales (quorum, 2e convoc, procurations)
+* ⏳ **BC15 (P0, ~12h)** — AG Visioconférence avec quorum combiné (présentiel + distanciel)
+* ⏳ **BC17 (P0, ~14h)** — AGE Agile : pétition 1/5 quotités + auto-convocation distance
+* ⏳ **BC16 (P1, ~16h)** — Backoffice corps de métier PWA + magic link + validation CdC
+* ⏳ **BC14 (P1, ~20h)** — Marketplace prestataires + rapport L13 automatique
+* ⏳ **WP-GUIDE (P1, ~10h)** — Guide légal contextuel (LegalHelper + AG Wizard)
+* ⏳ **WP-ENERGY (P1, ~16h)** — Orchestrateur énergie neutre (CER, maisons individuelles, CREG)
+* ⏳ **WP-MCP (P1, ~30h)** — 14 MCP tools AI Syndic (#252-265)
+* ⏳ **WP-BLOG (P2, ~22h)** — 18 articles blog (bâtiment + énergie)
 * ⏳ Templates PDF documents légaux (PV AG, relevé charges, contrats)
 * ⏳ Contractor Backoffice frontend
 
-**Conformité légale**: 90%
+**Nouveaux Bounded Contexts (Jalon 3+)**:
 
-**Avantage compétitif**: Features communautaires uniques (mission ASBL)
+* **BC14 Marketplace & Evaluations** — ServiceProvider, ContractEvaluation (ancre L13 Art. 3.89 §5 12°)
+* **BC15 AG Visioconférence** — AgSession, quorum combiné, convocation enrichie (Art. 3.87 §1)
+* **BC16 Contractor Backoffice PWA** — ContractorReport, magic link JWT, CdC validation → paiement
+* **BC17 AGE Agile & Concertation** — AgeRequest, pétition 1/5 quotités, auto-convocation (Art. 3.87 §2 al.2)
 
-**Effort restant estimé**: 2-3 semaines (solo) - PDF + Contractor frontend
+**Conformité légale**: 65% (3 lacunes critiques identifiées → WP-LEGAL)
+
+**Avantage compétitif**: Features communautaires uniques + achat groupé énergie transparent (0 commission)
+
+**Effort restant estimé**: ~150h (WBS_RELEASE_0_6_0.rst)
 
 Jalon 4: Automation & Intégrations ⏳ (~71%)
 ----------------------------------------------

@@ -44,4 +44,12 @@ pub trait VoteRepository: Send + Sync {
         &self,
         resolution_id: Uuid,
     ) -> Result<(f64, f64, f64), String>; // (pour, contre, abstention)
+
+    /// Count proxy votes held by a mandataire on a given resolution (Art. 3.87 §7 CC).
+    /// Returns (count_proxies, total_proxy_voting_power).
+    async fn count_proxy_votes_for_mandataire(
+        &self,
+        resolution_id: Uuid,
+        proxy_owner_id: Uuid,
+    ) -> Result<(i64, f64), String>;
 }

@@ -365,6 +365,10 @@ mod tests {
                 "Travaux de façade".to_string(),
             ],
             attendees_count: Some(2),
+            quorum_validated: false,
+            quorum_percentage: None,
+            total_quotas: None,
+            present_quotas: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };

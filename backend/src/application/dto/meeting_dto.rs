@@ -16,6 +16,11 @@ pub struct MeetingResponse {
     pub status: MeetingStatus,
     pub agenda: Vec<String>,
     pub attendees_count: Option<i32>,
+    // Quorum — Art. 3.87 §5 CC
+    pub quorum_validated: bool,
+    pub quorum_percentage: Option<f64>,
+    pub total_quotas: Option<f64>,
+    pub present_quotas: Option<f64>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -33,10 +38,23 @@ impl From<Meeting> for MeetingResponse {
             status: meeting.status,
             agenda: meeting.agenda,
             attendees_count: meeting.attendees_count,
+            quorum_validated: meeting.quorum_validated,
+            quorum_percentage: meeting.quorum_percentage,
+            total_quotas: meeting.total_quotas,
+            present_quotas: meeting.present_quotas,
             created_at: meeting.created_at,
             updated_at: meeting.updated_at,
         }
     }
+}
+
+/// Request DTO for validating quorum (Art. 3.87 §5 CC)
+#[derive(Debug, Deserialize)]
+pub struct ValidateQuorumRequest {
+    /// Millièmes présents + représentés par procuration
+    pub present_quotas: f64,
+    /// Total millièmes du bâtiment (généralement 1000)
+    pub total_quotas: f64,
 }
 
 /// Request DTO for creating a meeting

@@ -486,6 +486,10 @@ pub async fn export_meeting_minutes_pdf(
         status: meeting.status,
         agenda: meeting.agenda,
         attendees_count: meeting.attendees_count,
+        quorum_validated: meeting.quorum_validated,
+        quorum_percentage: meeting.quorum_percentage,
+        total_quotas: meeting.total_quotas,
+        present_quotas: meeting.present_quotas,
         created_at: meeting.created_at,
         updated_at: meeting.updated_at,
     };

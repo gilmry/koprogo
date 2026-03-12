@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   created_at, updated_at, created_by\n            FROM convocations\n            WHERE meeting_id = $1\n            ",
+  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, created_at, updated_at, created_by\n            FROM convocations\n            WHERE organization_id = $1\n            ORDER BY meeting_date DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -90,16 +90,21 @@
       },
       {
         "ordinal": 17,
+        "name": "first_meeting_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 18,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "created_by",
         "type_info": "Uuid"
       }
@@ -127,10 +132,11 @@
       false,
       false,
       true,
+      true,
       false,
       false,
       false
     ]
   },
-  "hash": "62d9ea6a2d1137ebaa00b5e79b22533233353ba222c08a6b44b431e3e3795fcd"
+  "hash": "9c3ccac3b4c98f63c5aae53bcac1cf44a94626612ff06d88b1c98d2ad8b62841"
 }

@@ -114,6 +114,13 @@ impl ResolutionUseCases {
             return Err("This unit has already voted on this resolution".to_string());
         }
 
+        // Art. 3.87 §7 CC — un mandataire ne peut détenir plus de 3 procurations
+        // Exception : si le total des voix de ses procurations < 10% du total général
+        if let Some(proxy_id) = proxy_owner_id {
+            self.validate_proxy_limit(resolution_id, proxy_id, voting_power)
+                .await?;
+        }
+
         // Create and save the vote
         let vote = Vote::new(
             resolution_id,
@@ -246,6 +253,66 @@ impl ResolutionUseCases {
     /// Check if a unit has voted on a resolution
     pub async fn has_unit_voted(&self, resolution_id: Uuid, unit_id: Uuid) -> Result<bool, String> {
         self.vote_repository.has_voted(resolution_id, unit_id).await
+    }
+
+    /// Valide la limite de procurations par mandataire (Art. 3.87 §7 CC).
+    ///
+    /// Règle: un mandataire ne peut détenir plus de 3 procurations.
+    /// Exception: si le total des voix représentées < 10% du total général,
+    /// la limite de 3 ne s'applique pas.
+    ///
+    /// Le `new_voting_power` est le pouvoir de vote de la nouvelle procuration
+    /// envisagée (utilisé pour le calcul de l'exception 10%).
+    async fn validate_proxy_limit(
+        &self,
+        resolution_id: Uuid,
+        proxy_owner_id: Uuid,
+        new_voting_power: f64,
+    ) -> Result<(), String> {
+        let (existing_count, existing_power) = self
+            .vote_repository
+            .count_proxy_votes_for_mandataire(resolution_id, proxy_owner_id)
+            .await?;
+
+        // Total du pouvoir de vote représenté après ajout de la nouvelle procuration
+        let total_proxy_power = existing_power + new_voting_power;
+
+        // Exception 10% : si le total des procurations < 10% du total AG, pas de limite
+        // On récupère le total de la résolution
+        let resolution = self
+            .resolution_repository
+            .find_by_id(resolution_id)
+            .await?
+            .ok_or_else(|| "Resolution not found".to_string())?;
+
+        // total_voting_power_* contient les votes déjà exprimés
+        // Pour l'exception, on compare la puissance des procurations au total millièmes
+        // En pratique, le syndic passe le total_quotas du meeting — on utilise une heuristique
+        let total_all_votes = resolution.total_voting_power_pour
+            + resolution.total_voting_power_contre
+            + resolution.total_voting_power_abstention
+            + new_voting_power; // inclure ce qu'on est en train d'ajouter
+
+        // Exception: si total procurations < 10% du total général → pas de limite
+        if total_all_votes > 0.0 && (total_proxy_power / total_all_votes) < 0.10 {
+            return Ok(()); // Exception 10% s'applique
+        }
+
+        // Règle générale: max 3 procurations
+        if existing_count >= 3 {
+            return Err(format!(
+                "Le mandataire détient déjà {} procurations. Maximum autorisé : 3 (Art. 3.87 §7 CC). \
+                 Exception 10% non applicable (procurations représentent >{:.1}% des votes).",
+                existing_count,
+                if total_all_votes > 0.0 {
+                    (total_proxy_power / total_all_votes) * 100.0
+                } else {
+                    0.0
+                }
+            ));
+        }
+
+        Ok(())
     }
 
     /// Get vote statistics for a resolution
@@ -519,6 +586,21 @@ mod tests {
                 .sum();
             Ok((pour, contre, abstention))
         }
+
+        async fn count_proxy_votes_for_mandataire(
+            &self,
+            resolution_id: Uuid,
+            proxy_owner_id: Uuid,
+        ) -> Result<(i64, f64), String> {
+            let votes = self.find_by_resolution_id(resolution_id).await?;
+            let proxy_votes: Vec<_> = votes
+                .iter()
+                .filter(|v| v.proxy_owner_id == Some(proxy_owner_id))
+                .collect();
+            let count = proxy_votes.len() as i64;
+            let power: f64 = proxy_votes.iter().map(|v| v.voting_power).sum();
+            Ok((count, power))
+        }
     }
 
     #[tokio::test]
@@ -637,5 +719,125 @@ mod tests {
             .await;
         assert!(result2.is_err());
         assert!(result2.unwrap_err().contains("already voted"));
+    }
+
+    /// Art. 3.87 §7 CC — un mandataire ne peut pas détenir plus de 3 procurations
+    #[tokio::test]
+    async fn test_proxy_limit_max_3_enforced() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone());
+
+        let meeting_id = Uuid::new_v4();
+        let resolution = use_cases
+            .create_resolution(
+                meeting_id,
+                "Test procurations".to_string(),
+                "Description".to_string(),
+                ResolutionType::Ordinary,
+                MajorityType::Simple,
+            )
+            .await
+            .unwrap();
+
+        let mandataire_id = Uuid::new_v4();
+
+        // Cast 3 proxy votes for the same mandataire (should all succeed)
+        for i in 0..3 {
+            let owner_id = Uuid::new_v4();
+            let unit_id = Uuid::new_v4();
+            let result = use_cases
+                .cast_vote(
+                    resolution.id,
+                    owner_id,
+                    unit_id,
+                    VoteChoice::Pour,
+                    100.0, // 100 millièmes chacun = 300 total
+                    Some(mandataire_id),
+                )
+                .await;
+            assert!(
+                result.is_ok(),
+                "Proxy vote {} should succeed, got: {:?}",
+                i + 1,
+                result.err()
+            );
+        }
+
+        // 4th proxy vote for the same mandataire should fail (>3 proxies AND >10% of votes)
+        let owner_id_4 = Uuid::new_v4();
+        let unit_id_4 = Uuid::new_v4();
+        let result4 = use_cases
+            .cast_vote(
+                resolution.id,
+                owner_id_4,
+                unit_id_4,
+                VoteChoice::Pour,
+                100.0,
+                Some(mandataire_id),
+            )
+            .await;
+        assert!(result4.is_err(), "4th proxy vote should be rejected");
+        assert!(
+            result4.unwrap_err().contains("3"),
+            "Error should mention the 3-proxy limit"
+        );
+    }
+
+    /// Art. 3.87 §7 CC — exception 10% : si total procurations < 10% → pas de limite
+    #[tokio::test]
+    async fn test_proxy_limit_10_percent_exception_allows_more() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone());
+
+        let meeting_id = Uuid::new_v4();
+        let resolution = use_cases
+            .create_resolution(
+                meeting_id,
+                "Test exception 10%".to_string(),
+                "Description".to_string(),
+                ResolutionType::Ordinary,
+                MajorityType::Simple,
+            )
+            .await
+            .unwrap();
+
+        let mandataire_id = Uuid::new_v4();
+
+        // First, add many direct votes to make the total large (900 millièmes direct)
+        for _ in 0..9 {
+            let _ = use_cases
+                .cast_vote(
+                    resolution.id,
+                    Uuid::new_v4(),
+                    Uuid::new_v4(),
+                    VoteChoice::Pour,
+                    100.0, // 100 millièmes each, 9 × 100 = 900 total direct
+                    None,
+                )
+                .await;
+        }
+
+        // Now add 4 proxy votes of 5 millièmes each = 20 millièmes proxy
+        // Total votes = 900 + 20 = 920 → 20/920 = 2.2% < 10% → exception applies
+        for i in 0..4 {
+            let result = use_cases
+                .cast_vote(
+                    resolution.id,
+                    Uuid::new_v4(),
+                    Uuid::new_v4(),
+                    VoteChoice::Pour,
+                    5.0, // 5 millièmes chacun
+                    Some(mandataire_id),
+                )
+                .await;
+            assert!(
+                result.is_ok(),
+                "Proxy vote {} (10% exception) should succeed, got: {:?}",
+                i + 1,
+                result.err()
+            );
+        }
     }
 }
