@@ -50,7 +50,10 @@
       "Bash(pg_isready)",
       "Bash(sudo service:*)",
       "Bash(sudo systemctl:*)",
-      "Bash(DATABASE_URL=\"postgresql://koprogo:koprogo123@localhost:5432/koprogo_db\" cargo sqlx prepare)"
+      "Bash(DATABASE_URL=\"postgresql://koprogo:koprogo123@localhost:5432/koprogo_db\" cargo sqlx prepare)",
+      "Bash(DATABASE_URL=postgresql://koprogo:koprogo123@localhost:5432/koprogo_db SQLX_OFFLINE=true cargo clippy --lib -- -D warnings)",
+      "Bash(SQLX_OFFLINE=true cargo test --lib ag_session)",
+      "Bash(SQLX_OFFLINE=true cargo test --lib -- ag_session)"
     ]
   }
 }

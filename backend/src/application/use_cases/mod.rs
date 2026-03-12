@@ -1,4 +1,5 @@
 pub mod account_use_cases;
+pub mod ag_session_use_cases;
 pub mod auth_use_cases;
 pub mod board_dashboard_use_cases;
 pub mod board_decision_use_cases;
@@ -43,6 +44,7 @@ pub mod unit_use_cases;
 pub mod work_report_use_cases;
 
 pub use account_use_cases::AccountUseCases;
+pub use ag_session_use_cases::AgSessionUseCases;
 pub use auth_use_cases::AuthUseCases;
 pub use board_dashboard_use_cases::{BoardDashboardResponse, BoardDashboardUseCases};
 pub use board_decision_use_cases::BoardDecisionUseCases;

@@ -555,6 +555,18 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(add_inspection_photo)
             .service(add_certificate)
             // IoT Smart Meters (Linky/Ores - Issue #133 - IoT Phase 0)
-            .configure(iot_handlers::configure_iot_routes),
+            .configure(iot_handlers::configure_iot_routes)
+            // AG Visioconférence (BC15 - Art. 3.87 §1 CC)
+            // Specific routes BEFORE parameterized /ag-sessions/{id}
+            .service(list_ag_sessions) // GET /ag-sessions
+            .service(create_ag_session) // POST /meetings/{meeting_id}/ag-session
+            .service(get_ag_session_for_meeting) // GET /meetings/{meeting_id}/ag-session
+            .service(get_combined_quorum) // GET /ag-sessions/{id}/quorum
+            .service(start_ag_session) // PUT /ag-sessions/{id}/start
+            .service(end_ag_session) // PUT /ag-sessions/{id}/end
+            .service(cancel_ag_session) // PUT /ag-sessions/{id}/cancel
+            .service(record_remote_join) // POST /ag-sessions/{id}/join
+            .service(delete_ag_session) // DELETE /ag-sessions/{id}
+            .service(get_ag_session), // GET /ag-sessions/{id} — LAST (parameterized)
     );
 }

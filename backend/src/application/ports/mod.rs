@@ -1,5 +1,6 @@
 pub mod account_repository;
 pub mod achievement_repository;
+pub mod ag_session_repository;
 pub mod audit_log_repository;
 pub mod board_decision_repository;
 pub mod board_member_repository;
@@ -51,6 +52,7 @@ pub mod work_report_repository;
 
 pub use account_repository::AccountRepository;
 pub use achievement_repository::{AchievementRepository, UserAchievementRepository};
+pub use ag_session_repository::AgSessionRepository;
 pub use audit_log_repository::{AuditLogFilters, AuditLogRepository};
 pub use board_decision_repository::BoardDecisionRepository;
 pub use board_member_repository::BoardMemberRepository;

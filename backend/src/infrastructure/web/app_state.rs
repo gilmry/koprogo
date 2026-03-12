@@ -1,5 +1,5 @@
 use crate::application::use_cases::{
-    AccountUseCases, AchievementUseCases, AuthUseCases, BoardDashboardUseCases,
+    AccountUseCases, AchievementUseCases, AgSessionUseCases, AuthUseCases, BoardDashboardUseCases,
     BoardDecisionUseCases, BoardMemberUseCases, BudgetUseCases, BuildingUseCases,
     CallForFundsUseCases, ChallengeUseCases, ChargeDistributionUseCases, ConvocationUseCases,
     DashboardUseCases, DocumentUseCases, EnergyBillUploadUseCases, EnergyCampaignUseCases,
@@ -63,6 +63,7 @@ pub struct AppState {
     pub achievement_use_cases: Arc<AchievementUseCases>,
     pub challenge_use_cases: Arc<ChallengeUseCases>,
     pub gamification_stats_use_cases: Arc<GamificationStatsUseCases>,
+    pub ag_session_use_cases: Arc<AgSessionUseCases>,
     pub audit_logger: Arc<AuditLogger>,
     pub email_service: Arc<EmailService>,
     pub pool: DbPool, // For seeding operations
@@ -117,6 +118,7 @@ impl AppState {
         achievement_use_cases: AchievementUseCases,
         challenge_use_cases: ChallengeUseCases,
         gamification_stats_use_cases: GamificationStatsUseCases,
+        ag_session_use_cases: AgSessionUseCases,
         audit_logger: AuditLogger,
         email_service: EmailService,
         pool: DbPool,
@@ -168,6 +170,7 @@ impl AppState {
             achievement_use_cases: Arc::new(achievement_use_cases),
             challenge_use_cases: Arc::new(challenge_use_cases),
             gamification_stats_use_cases: Arc::new(gamification_stats_use_cases),
+            ag_session_use_cases: Arc::new(ag_session_use_cases),
             audit_logger: Arc::new(audit_logger),
             email_service: Arc::new(email_service),
             pool,

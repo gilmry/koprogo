@@ -203,6 +203,7 @@ async fn main() -> std::io::Result<()> {
     let challenge_repo = Arc::new(PostgresChallengeRepository::new(pool.clone()));
     let challenge_progress_repo = Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
     let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
+    let ag_session_repo = Arc::new(PostgresAgSessionRepository::new(pool.clone()));
 
     // Initialize audit logger with database persistence
     let audit_logger = AuditLogger::new(Some(audit_log_repo.clone()));
@@ -298,7 +299,7 @@ async fn main() -> std::io::Result<()> {
     let board_decision_use_cases = BoardDecisionUseCases::new(
         board_decision_repo.clone(),
         building_repo.clone(),
-        meeting_repo,
+        meeting_repo.clone(),
     );
     let board_dashboard_use_cases = BoardDashboardUseCases::new(
         board_member_repo,
@@ -344,6 +345,8 @@ async fn main() -> std::io::Result<()> {
         challenge_progress_repo,
         user_repo.clone(),
     );
+    let ag_session_use_cases =
+        AgSessionUseCases::new(ag_session_repo.clone(), meeting_repo.clone());
     let energy_campaign_use_cases = EnergyCampaignUseCases::new(
         energy_campaign_repo.clone(),
         energy_bill_upload_repo.clone(),
@@ -402,6 +405,7 @@ async fn main() -> std::io::Result<()> {
         achievement_use_cases,
         challenge_use_cases,
         gamification_stats_use_cases,
+        ag_session_use_cases,
         audit_logger,
         email_service,
         pool.clone(),

@@ -48,7 +48,7 @@ Lacunes CRITIQUES identifiees : **3** (quorum, 2e convocation, procurations max 
 2.1 WP-LEGAL — Corrections legales critiques (PRIORITE P0 — BLOQUANT)
 -----------------------------------------------------------------------
 
-**Estimation** : ~6h | **Prerequis** : aucun | **Issues** : #271, #272, #273
+**Estimation** : ~6h | **Prerequis** : aucun | **Issues** : #271, #272, #273 | **Statut** : ✅ TERMINÉ (commit f642fbb)
 
 .. list-table::
    :header-rows: 1
@@ -103,7 +103,7 @@ Lacunes CRITIQUES identifiees : **3** (quorum, 2e convocation, procurations max 
 2.2 WP-BC15 — AG Visioconference (PRIORITE P0)
 -----------------------------------------------
 
-**Estimation** : ~12h | **Prerequis** : WP-LEGAL | **Issue** : #274 (cloture #237)
+**Estimation** : ~12h | **Prerequis** : WP-LEGAL | **Issue** : #274 (cloture #237) | **Statut** : 🔄 EN COURS
 
 .. list-table::
    :header-rows: 1

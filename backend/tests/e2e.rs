@@ -4,11 +4,12 @@ use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresAccountRepository, PostgresAchievementRepository,
-    PostgresAuditLogRepository, PostgresBoardDecisionRepository, PostgresBoardMemberRepository,
-    PostgresBudgetRepository, PostgresBuildingRepository, PostgresCallForFundsRepository,
-    PostgresChallengeProgressRepository, PostgresChallengeRepository,
-    PostgresChargeDistributionRepository, PostgresConvocationRecipientRepository,
-    PostgresConvocationRepository, PostgresDocumentRepository, PostgresEnergyBillUploadRepository,
+    PostgresAgSessionRepository, PostgresAuditLogRepository, PostgresBoardDecisionRepository,
+    PostgresBoardMemberRepository, PostgresBudgetRepository, PostgresBuildingRepository,
+    PostgresCallForFundsRepository, PostgresChallengeProgressRepository,
+    PostgresChallengeRepository, PostgresChargeDistributionRepository,
+    PostgresConvocationRecipientRepository, PostgresConvocationRepository,
+    PostgresDocumentRepository, PostgresEnergyBillUploadRepository,
     PostgresEnergyCampaignRepository, PostgresEtatDateRepository, PostgresExpenseRepository,
     PostgresGdprRepository, PostgresIoTRepository, PostgresJournalEntryRepository,
     PostgresLocalExchangeRepository, PostgresNoticeRepository,
@@ -295,6 +296,8 @@ async fn setup_test_db() -> (
         challenge_progress_repo,
         user_repo.clone(),
     );
+    let ag_session_repo = Arc::new(PostgresAgSessionRepository::new(pool.clone()));
+    let ag_session_use_cases = AgSessionUseCases::new(ag_session_repo, meeting_repo.clone());
 
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
@@ -343,6 +346,7 @@ async fn setup_test_db() -> (
         achievement_use_cases,
         challenge_use_cases,
         gamification_stats_use_cases,
+        ag_session_use_cases,
         audit_logger,
         EmailService::from_env().expect("email service"),
         pool.clone(),

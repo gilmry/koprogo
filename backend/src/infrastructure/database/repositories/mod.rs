@@ -1,5 +1,6 @@
 pub mod account_repository_impl;
 pub mod achievement_repository_impl;
+pub mod ag_session_repository_impl;
 pub mod audit_log_repository_impl;
 pub mod board_decision_repository_impl;
 pub mod board_member_repository_impl;
@@ -52,6 +53,7 @@ pub use account_repository_impl::PostgresAccountRepository;
 pub use achievement_repository_impl::{
     PostgresAchievementRepository, PostgresUserAchievementRepository,
 };
+pub use ag_session_repository_impl::PostgresAgSessionRepository;
 pub use audit_log_repository_impl::PostgresAuditLogRepository;
 pub use board_decision_repository_impl::PostgresBoardDecisionRepository;
 pub use board_member_repository_impl::PostgresBoardMemberRepository;
