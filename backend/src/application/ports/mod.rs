@@ -10,6 +10,7 @@ pub mod building_repository;
 pub mod call_for_funds_repository;
 pub mod challenge_repository;
 pub mod charge_distribution_repository;
+pub mod contractor_report_repository;
 pub mod convocation_recipient_repository;
 pub mod convocation_repository;
 pub mod document_repository;
@@ -63,6 +64,7 @@ pub use building_repository::BuildingRepository;
 pub use call_for_funds_repository::CallForFundsRepository;
 pub use challenge_repository::{ChallengeProgressRepository, ChallengeRepository};
 pub use charge_distribution_repository::ChargeDistributionRepository;
+pub use contractor_report_repository::ContractorReportRepository;
 pub use convocation_recipient_repository::{
     ConvocationRecipientRepository, RecipientTrackingSummary,
 };

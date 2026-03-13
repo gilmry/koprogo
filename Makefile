@@ -111,9 +111,9 @@ coverage: ## 📊 Génération rapport de couverture
 ## 🔍 Qualité du code
 ##
 
-lint: ## 🔍 Linter (clippy + prettier)
+lint: ## 🔍 Linter (clippy dans container Docker + prettier local)
 	@echo "$(GREEN)🔍 Linting backend...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings
+	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings"
 	@echo "$(GREEN)🔍 Linting frontend...$(NC)"
 	cd frontend && npx prettier --check .
 
@@ -121,9 +121,9 @@ check-frontend: ## 🔍 Vérification TypeScript frontend (astro check)
 	@echo "$(GREEN)🔍 Checking TypeScript frontend...$(NC)"
 	cd frontend && npx astro check
 
-format: ## ✨ Formatter le code (rustfmt + prettier)
+format: ## ✨ Formatter le code (rustfmt dans container Docker + prettier local)
 	@echo "$(GREEN)✨ Formatting backend...$(NC)"
-	cd backend && cargo fmt
+	docker compose exec -T backend sh -c "cargo fmt"
 	@echo "$(GREEN)✨ Formatting frontend...$(NC)"
 	cd frontend && npx prettier --write .
 
@@ -355,19 +355,19 @@ docs-serve-videos: docs-with-videos ## 🌐 Servir docs avec vidéos sur http://
 ## 🚀 CI/CD & Déploiement
 ##
 
-ci: ## ✅ Vérifications CI locales (IDENTIQUE au CI GitHub)
-	@echo "$(GREEN)🔍 Linting backend...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings
+ci: ## ✅ Vérifications CI locales via container Docker (économise l'espace disque)
+	@echo "$(GREEN)🔍 Linting backend (dans container Docker)...$(NC)"
+	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo clippy --all-targets --all-features -- -D warnings"
 	@echo "$(GREEN)🔍 Linting frontend...$(NC)"
 	cd frontend && npx prettier --check .
 	@echo "$(GREEN)🔍 Checking TypeScript frontend...$(NC)"
 	cd frontend && npx astro check
-	@echo "$(GREEN)🧪 Tests unitaires...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo test --lib
-	@echo "$(GREEN)🔧 Vérification compilation tests E2E...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo test --test e2e --no-run
-	@echo "$(GREEN)🔧 Vérification compilation tests BDD...$(NC)"
-	cd backend && SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community --no-run
+	@echo "$(GREEN)🧪 Tests unitaires (dans container Docker)...$(NC)"
+	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --lib"
+	@echo "$(GREEN)🔧 Vérification compilation tests E2E (dans container Docker)...$(NC)"
+	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --test e2e --no-run"
+	@echo "$(GREEN)🔧 Vérification compilation tests BDD (dans container Docker)...$(NC)"
+	docker compose exec -T backend sh -c "SQLX_OFFLINE=true cargo test --test bdd --test bdd_governance --test bdd_financial --test bdd_operations --test bdd_community --no-run"
 	@echo "$(GREEN)🔨 Build frontend production (identique CI GitHub)...$(NC)"
 	cd frontend && npm run build
 	@echo ""

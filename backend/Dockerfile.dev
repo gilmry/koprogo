@@ -4,6 +4,9 @@ FROM rustlang/rust:nightly-bookworm-slim
 
 WORKDIR /app
 
+# Install rustfmt and clippy for the nightly toolchain
+RUN rustup component add rustfmt clippy
+
 # Install cargo-watch for hot reload
 RUN cargo install cargo-watch
 
