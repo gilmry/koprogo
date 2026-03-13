@@ -68,7 +68,7 @@ jobs:
       - name: Build Sphinx documentation
         run: |
           cd docs
-          sphinx-build -j auto -M html . _build
+          sphinx-build -b html -j auto . _build/html
 
       - name: Combine documentation
         run: |
