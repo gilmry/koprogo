@@ -214,7 +214,7 @@ impl DashboardUseCases {
         all_transactions.extend(contribution_transactions);
 
         // Sort by date (most recent first)
-        all_transactions.sort_by(|a, b| b.date.cmp(&a.date));
+        all_transactions.sort_by_key(|t| std::cmp::Reverse(t.date));
 
         // Take the most recent ones
         let recent_transactions: Vec<RecentTransaction> =

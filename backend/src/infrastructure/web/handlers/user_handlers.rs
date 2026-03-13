@@ -618,7 +618,7 @@ fn normalize_roles(
         }
     }
 
-    normalized.sort_by(|a, b| b.is_primary.cmp(&a.is_primary));
+    normalized.sort_by_key(|r| std::cmp::Reverse(r.is_primary));
     Ok(normalized)
 }
 
@@ -758,7 +758,7 @@ fn normalize_primary_role(roles: &mut [RoleResponse]) {
         roles[0].is_primary = true;
     }
 
-    roles.sort_by(|a, b| b.is_primary.cmp(&a.is_primary));
+    roles.sort_by_key(|r| std::cmp::Reverse(r.is_primary));
 }
 
 #[cfg(test)]

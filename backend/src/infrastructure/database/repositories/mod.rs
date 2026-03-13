@@ -10,6 +10,7 @@ pub mod building_repository_impl;
 pub mod call_for_funds_repository_impl;
 pub mod challenge_repository_impl;
 pub mod charge_distribution_repository_impl;
+pub mod contractor_report_repository_impl;
 pub mod convocation_recipient_repository_impl;
 pub mod convocation_repository_impl;
 pub mod document_repository_impl;
@@ -66,6 +67,7 @@ pub use challenge_repository_impl::{
     PostgresChallengeProgressRepository, PostgresChallengeRepository,
 };
 pub use charge_distribution_repository_impl::PostgresChargeDistributionRepository;
+pub use contractor_report_repository_impl::PostgresContractorReportRepository;
 pub use convocation_recipient_repository_impl::PostgresConvocationRecipientRepository;
 pub use convocation_repository_impl::PostgresConvocationRepository;
 pub use document_repository_impl::PostgresDocumentRepository;

@@ -580,6 +580,22 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(trigger_auto_convocation) // POST /age-requests/{id}/auto-convocation
             .service(withdraw_age_request) // POST /age-requests/{id}/withdraw
             .service(delete_age_request) // DELETE /age-requests/{id}
-            .service(get_age_request), // GET /age-requests/{id} — LAST (parameterized)
+            .service(get_age_request) // GET /age-requests/{id} — LAST (parameterized)
+            // Backoffice Prestataires PWA (BC16)
+            // PWA routes sans auth (magic link) BEFORE routes auth
+            .service(get_report_by_token) // GET /contractor/token/{token}
+            .service(submit_report_by_token) // POST /contractor/token/{token}/submit
+            // Routes authentifiées — spécifiques BEFORE paramétrées
+            .service(generate_magic_link) // POST /contractor-reports/magic-link
+            .service(list_contractor_reports_by_building) // GET /buildings/{building_id}/contractor-reports
+            .service(list_contractor_reports_by_ticket) // GET /tickets/{ticket_id}/contractor-reports
+            .service(create_contractor_report) // POST /contractor-reports
+            .service(submit_contractor_report) // POST /contractor-reports/{id}/submit
+            .service(validate_contractor_report) // PUT /contractor-reports/{id}/validate
+            .service(request_corrections) // PUT /contractor-reports/{id}/request-corrections
+            .service(reject_contractor_report) // PUT /contractor-reports/{id}/reject
+            .service(update_contractor_report) // PUT /contractor-reports/{id}
+            .service(delete_contractor_report) // DELETE /contractor-reports/{id}
+            .service(get_contractor_report), // GET /contractor-reports/{id} — LAST (parameterized)
     );
 }
