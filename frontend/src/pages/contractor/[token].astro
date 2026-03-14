@@ -1,0 +1,510 @@
+---
+import Layout from "../../layouts/Layout.astro";
+---
+
+<Layout title="Rapport Prestataire" showNav={false} requireAuth={false} showFooter={false}>
+  <div class="min-h-screen bg-gray-50">
+    <!-- Header PWA mobile -->
+    <header class="bg-blue-600 text-white px-4 py-3 sticky top-0 z-50 shadow-md">
+      <div class="flex items-center justify-between max-w-lg mx-auto">
+        <div class="flex items-center gap-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <h1 class="text-lg font-semibold">Compte-rendu</h1>
+        </div>
+        <div id="offline-badge" class="hidden bg-yellow-500 text-xs font-bold px-2 py-1 rounded-full">HORS LIGNE</div>
+      </div>
+    </header>
+
+    <!-- Loading -->
+    <div id="loading-state" class="flex flex-col items-center justify-center py-20">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <p class="mt-4 text-gray-600">Chargement du rapport...</p>
+    </div>
+
+    <!-- Error -->
+    <div id="error-state" class="hidden px-4 py-12 max-w-lg mx-auto">
+      <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <svg class="w-12 h-12 text-red-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.072 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+        <h2 class="text-lg font-semibold text-red-900 mb-2">Lien invalide ou expiré</h2>
+        <p class="text-red-700 text-sm" id="error-message">Ce lien d'accès n'est plus valide. Contactez votre syndic pour obtenir un nouveau lien.</p>
+      </div>
+    </div>
+
+    <!-- Already Submitted -->
+    <div id="submitted-state" class="hidden px-4 py-12 max-w-lg mx-auto">
+      <div class="bg-green-50 border border-green-200 rounded-xl p-6 text-center">
+        <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <h2 class="text-xl font-semibold text-green-900 mb-2">Rapport soumis</h2>
+        <p class="text-green-700">Votre compte-rendu a été transmis au syndic pour validation. Merci !</p>
+      </div>
+    </div>
+
+    <!-- Main Form -->
+    <div id="form-state" class="hidden px-4 py-6 max-w-lg mx-auto pb-24">
+      <!-- Report info banner -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <h2 class="font-semibold text-blue-900" id="report-title">Intervention</h2>
+        <p class="text-sm text-blue-700 mt-1" id="report-building"></p>
+        <p class="text-xs text-blue-500 mt-1" id="report-expires"></p>
+      </div>
+
+      <form id="contractor-form" class="space-y-6">
+        <!-- Date d'intervention -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Date d'intervention *</label>
+          <input type="date" id="work-date" required
+            class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base py-3 px-4" />
+        </div>
+
+        <!-- Compte-rendu texte -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Compte-rendu *</label>
+          <div class="relative">
+            <textarea id="compte-rendu" rows="5" required placeholder="Décrivez les travaux réalisés..."
+              class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base py-3 px-4 pr-12"></textarea>
+            <!-- Voice-to-text button -->
+            <button type="button" id="btn-voice"
+              class="absolute bottom-3 right-3 p-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 active:bg-blue-300 transition"
+              title="Dictée vocale">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m14 0a7 7 0 00-14 0m14 0v1a7 7 0 01-14 0v-1m7 8v4m-4 0h8"></path>
+              </svg>
+            </button>
+          </div>
+          <p id="voice-status" class="text-xs text-gray-400 mt-1 hidden">Parlez maintenant...</p>
+        </div>
+
+        <!-- Photos AVANT -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Photos AVANT intervention</label>
+          <div id="photos-before-preview" class="grid grid-cols-3 gap-2 mb-2"></div>
+          <label class="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span class="text-sm text-gray-500">Ajouter photos</span>
+            <input type="file" id="photos-before-input" accept="image/*" capture="environment" multiple class="hidden" />
+          </label>
+        </div>
+
+        <!-- Photos APRES -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Photos APRES intervention</label>
+          <div id="photos-after-preview" class="grid grid-cols-3 gap-2 mb-2"></div>
+          <label class="flex items-center justify-center gap-2 w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-green-400 hover:bg-green-50 transition">
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span class="text-sm text-gray-500">Ajouter photos</span>
+            <input type="file" id="photos-after-input" accept="image/*" capture="environment" multiple class="hidden" />
+          </label>
+        </div>
+
+        <!-- Pieces remplacees -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Pièces remplacées</label>
+          <div id="parts-list" class="space-y-2 mb-2"></div>
+          <button type="button" id="btn-add-part"
+            class="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            Ajouter une pièce
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Fixed bottom submit bar -->
+    <div id="submit-bar" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-40">
+      <div class="max-w-lg mx-auto flex gap-3">
+        <button type="button" id="btn-save-draft"
+          class="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition text-sm">
+          Sauvegarder brouillon
+        </button>
+        <button type="button" id="btn-submit"
+          class="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition text-sm">
+          Soumettre au syndic
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { apiEndpoint } from '../../lib/config';
+
+  // === State ===
+  const token = window.location.pathname.split('/contractor/')[1];
+  let reportData: any = null;
+  let photosBefore: File[] = [];
+  let photosAfter: File[] = [];
+  let parts: { name: string; reference: string; quantity: number }[] = [];
+
+  // === DOM refs ===
+  const loadingEl = document.getElementById('loading-state')!;
+  const errorEl = document.getElementById('error-state')!;
+  const errorMsg = document.getElementById('error-message')!;
+  const submittedEl = document.getElementById('submitted-state')!;
+  const formEl = document.getElementById('form-state')!;
+  const submitBar = document.getElementById('submit-bar')!;
+  const offlineBadge = document.getElementById('offline-badge')!;
+
+  // === IndexedDB for offline ===
+  const DB_NAME = 'contractor-reports';
+  const DB_VERSION = 1;
+
+  function openDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains('drafts')) {
+          db.createObjectStore('drafts', { keyPath: 'token' });
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function saveDraft() {
+    const db = await openDB();
+    const tx = db.transaction('drafts', 'readwrite');
+    tx.objectStore('drafts').put({
+      token,
+      workDate: (document.getElementById('work-date') as HTMLInputElement).value,
+      compteRendu: (document.getElementById('compte-rendu') as HTMLTextAreaElement).value,
+      parts,
+      savedAt: new Date().toISOString(),
+    });
+    return new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async function loadDraft() {
+    const db = await openDB();
+    const tx = db.transaction('drafts', 'readonly');
+    const req = tx.objectStore('drafts').get(token);
+    return new Promise<any>((resolve) => {
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  async function deleteDraft() {
+    const db = await openDB();
+    const tx = db.transaction('drafts', 'readwrite');
+    tx.objectStore('drafts').delete(token);
+  }
+
+  // === Show/hide states ===
+  function showState(state: 'loading' | 'error' | 'submitted' | 'form') {
+    loadingEl.classList.toggle('hidden', state !== 'loading');
+    errorEl.classList.toggle('hidden', state !== 'error');
+    submittedEl.classList.toggle('hidden', state !== 'submitted');
+    formEl.classList.toggle('hidden', state !== 'form');
+    submitBar.classList.toggle('hidden', state !== 'form');
+  }
+
+  // === Fetch report by token ===
+  async function fetchReport() {
+    try {
+      const res = await fetch(apiEndpoint(`/contractor/token/${token}`));
+      if (!res.ok) {
+        const body = await res.text();
+        let msg = 'Ce lien d\'accès n\'est plus valide.';
+        try {
+          const json = JSON.parse(body);
+          msg = json.error || msg;
+        } catch {}
+        errorMsg.textContent = msg;
+        showState('error');
+        return;
+      }
+      reportData = await res.json();
+
+      // Already submitted?
+      if (reportData.status !== 'Draft' && reportData.status !== 'RequiresCorrection') {
+        showState('submitted');
+        return;
+      }
+
+      // Populate form
+      document.getElementById('report-title')!.textContent =
+        reportData.contractor_name ? `Intervention — ${reportData.contractor_name}` : 'Intervention';
+      if (reportData.review_comments) {
+        const banner = document.querySelector('.bg-blue-50')!;
+        banner.insertAdjacentHTML('afterend', `
+          <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+            <p class="text-sm font-medium text-yellow-800">Corrections demandées :</p>
+            <p class="text-sm text-yellow-700 mt-1">${reportData.review_comments}</p>
+          </div>
+        `);
+      }
+
+      // Load draft if available
+      const draft = await loadDraft();
+      if (draft) {
+        (document.getElementById('work-date') as HTMLInputElement).value = draft.workDate || '';
+        (document.getElementById('compte-rendu') as HTMLTextAreaElement).value = draft.compteRendu || '';
+        if (draft.parts) {
+          parts = draft.parts;
+          renderParts();
+        }
+      } else if (reportData.work_date) {
+        (document.getElementById('work-date') as HTMLInputElement).value = reportData.work_date.split('T')[0];
+      }
+      if (!draft && reportData.compte_rendu) {
+        (document.getElementById('compte-rendu') as HTMLTextAreaElement).value = reportData.compte_rendu;
+      }
+
+      showState('form');
+    } catch (err) {
+      // Offline — try to show cached draft
+      const draft = await loadDraft();
+      if (draft) {
+        (document.getElementById('work-date') as HTMLInputElement).value = draft.workDate || '';
+        (document.getElementById('compte-rendu') as HTMLTextAreaElement).value = draft.compteRendu || '';
+        parts = draft.parts || [];
+        renderParts();
+        showState('form');
+      } else {
+        errorMsg.textContent = 'Impossible de charger le rapport. Vérifiez votre connexion.';
+        showState('error');
+      }
+    }
+  }
+
+  // === Photo handling ===
+  function handlePhotos(input: HTMLInputElement, list: File[], previewEl: HTMLElement) {
+    input.addEventListener('change', () => {
+      if (!input.files) return;
+      for (const file of Array.from(input.files)) {
+        list.push(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'relative';
+          wrapper.innerHTML = `
+            <img src="${e.target!.result}" class="w-full h-24 object-cover rounded-lg" />
+            <button type="button" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow">&times;</button>
+          `;
+          wrapper.querySelector('button')!.addEventListener('click', () => {
+            const idx = list.indexOf(file);
+            if (idx > -1) list.splice(idx, 1);
+            wrapper.remove();
+          });
+          previewEl.appendChild(wrapper);
+        };
+        reader.readAsDataURL(file);
+      }
+      input.value = '';
+    });
+  }
+
+  handlePhotos(
+    document.getElementById('photos-before-input') as HTMLInputElement,
+    photosBefore,
+    document.getElementById('photos-before-preview')!
+  );
+  handlePhotos(
+    document.getElementById('photos-after-input') as HTMLInputElement,
+    photosAfter,
+    document.getElementById('photos-after-preview')!
+  );
+
+  // === Parts replaced ===
+  function renderParts() {
+    const container = document.getElementById('parts-list')!;
+    container.innerHTML = '';
+    parts.forEach((part, idx) => {
+      const div = document.createElement('div');
+      div.className = 'flex items-center gap-2 bg-gray-50 rounded-lg p-3';
+      div.innerHTML = `
+        <div class="flex-1 grid grid-cols-3 gap-2">
+          <input type="text" value="${part.name}" placeholder="Nom" class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="name" />
+          <input type="text" value="${part.reference}" placeholder="Réf." class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="reference" />
+          <input type="number" value="${part.quantity}" min="1" placeholder="Qté" class="col-span-1 text-sm rounded border-gray-300 py-1 px-2" data-idx="${idx}" data-field="quantity" />
+        </div>
+        <button type="button" class="text-red-500 hover:text-red-700 p-1 remove-part" data-idx="${idx}">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+          </svg>
+        </button>
+      `;
+      // Event listeners for edits
+      div.querySelectorAll('input').forEach((inp) => {
+        inp.addEventListener('change', () => {
+          const i = parseInt(inp.dataset.idx!);
+          const field = inp.dataset.field!;
+          if (field === 'quantity') {
+            parts[i].quantity = parseInt(inp.value) || 1;
+          } else {
+            (parts[i] as any)[field] = inp.value;
+          }
+        });
+      });
+      div.querySelector('.remove-part')!.addEventListener('click', () => {
+        parts.splice(idx, 1);
+        renderParts();
+      });
+      container.appendChild(div);
+    });
+  }
+
+  document.getElementById('btn-add-part')!.addEventListener('click', () => {
+    parts.push({ name: '', reference: '', quantity: 1 });
+    renderParts();
+  });
+
+  // === Voice-to-text (Web Speech API) ===
+  const btnVoice = document.getElementById('btn-voice')!;
+  const voiceStatus = document.getElementById('voice-status')!;
+
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'fr-BE';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    let isRecording = false;
+
+    btnVoice.addEventListener('click', () => {
+      if (isRecording) {
+        recognition.stop();
+        return;
+      }
+      recognition.start();
+    });
+
+    recognition.onstart = () => {
+      isRecording = true;
+      btnVoice.classList.add('bg-red-100', 'text-red-600');
+      btnVoice.classList.remove('bg-blue-100', 'text-blue-600');
+      voiceStatus.classList.remove('hidden');
+      voiceStatus.textContent = 'Parlez maintenant...';
+    };
+
+    recognition.onresult = (event: any) => {
+      const textarea = document.getElementById('compte-rendu') as HTMLTextAreaElement;
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        textarea.value += (textarea.value ? ' ' : '') + finalTranscript;
+      }
+    };
+
+    recognition.onend = () => {
+      isRecording = false;
+      btnVoice.classList.remove('bg-red-100', 'text-red-600');
+      btnVoice.classList.add('bg-blue-100', 'text-blue-600');
+      voiceStatus.classList.add('hidden');
+    };
+
+    recognition.onerror = () => {
+      isRecording = false;
+      btnVoice.classList.remove('bg-red-100', 'text-red-600');
+      btnVoice.classList.add('bg-blue-100', 'text-blue-600');
+      voiceStatus.textContent = 'Erreur de reconnaissance vocale';
+      setTimeout(() => voiceStatus.classList.add('hidden'), 2000);
+    };
+  } else {
+    btnVoice.classList.add('hidden');
+  }
+
+  // === Save draft ===
+  document.getElementById('btn-save-draft')!.addEventListener('click', async () => {
+    await saveDraft();
+    const btn = document.getElementById('btn-save-draft')!;
+    const orig = btn.textContent;
+    btn.textContent = 'Sauvegardé !';
+    btn.classList.add('bg-green-100', 'text-green-700');
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.classList.remove('bg-green-100', 'text-green-700');
+    }, 2000);
+  });
+
+  // === Submit report ===
+  document.getElementById('btn-submit')!.addEventListener('click', async () => {
+    const workDate = (document.getElementById('work-date') as HTMLInputElement).value;
+    const compteRendu = (document.getElementById('compte-rendu') as HTMLTextAreaElement).value;
+
+    if (!workDate || !compteRendu.trim()) {
+      alert('Veuillez remplir la date et le compte-rendu.');
+      return;
+    }
+
+    const btn = document.getElementById('btn-submit') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Envoi en cours...';
+
+    try {
+      // 1. Update report data
+      const updateRes = await fetch(apiEndpoint(`/contractor/token/${token}/submit`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          work_date: new Date(workDate).toISOString(),
+          compte_rendu: compteRendu,
+          parts_replaced: parts.filter(p => p.name.trim()),
+        }),
+      });
+
+      if (!updateRes.ok) {
+        const body = await updateRes.text();
+        let msg = 'Erreur lors de la soumission.';
+        try { msg = JSON.parse(body).error || msg; } catch {}
+        alert(msg);
+        btn.disabled = false;
+        btn.textContent = 'Soumettre au syndic';
+        return;
+      }
+
+      // Clean up draft
+      await deleteDraft();
+      showState('submitted');
+    } catch (err) {
+      // Save offline for later sync
+      await saveDraft();
+      alert('Vous êtes hors ligne. Le brouillon a été sauvegardé et sera envoyé automatiquement une fois la connexion rétablie.');
+      btn.disabled = false;
+      btn.textContent = 'Soumettre au syndic';
+    }
+  });
+
+  // === Online/Offline detection ===
+  function updateOnlineStatus() {
+    offlineBadge.classList.toggle('hidden', navigator.onLine);
+  }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+
+  // Auto-sync when back online
+  window.addEventListener('online', async () => {
+    const draft = await loadDraft();
+    if (draft && draft.compteRendu) {
+      // Auto-retry submit
+      document.getElementById('btn-submit')!.click();
+    }
+  });
+
+  // === Init ===
+  fetchReport();
+</script>
