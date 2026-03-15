@@ -4352,7 +4352,7 @@ async fn then_see_exchange_by(_world: &mut CommunityWorld, _title: String, _prov
     // Verified by available list
 }
 
-#[then(regex = r#"^I should NOT see "([^"]*)"$"#)]
+#[then(regex = r#"^I should NOT see "([^"]*)"#)]
 async fn then_not_see_exchange(_world: &mut CommunityWorld, _title: String) {
     // Filtering is verified by the count check
 }
@@ -4568,7 +4568,7 @@ async fn when_complete_exchange(world: &mut CommunityWorld) {
     }
 }
 
-#[then(regex = r#"^Alice's balance should be (\d+) credits$"#)]
+#[then(regex = r#"^Alice's balance should be (\d+) credits"#)]
 async fn then_alice_balance(world: &mut CommunityWorld, _expected: i32) {
     // Balance verification - the system handles credit transfer automatically
     let uc = world.local_exchange_use_cases.as_ref().unwrap().clone();
@@ -4578,7 +4578,7 @@ async fn then_alice_balance(world: &mut CommunityWorld, _expected: i32) {
     assert!(balance.is_ok(), "Should get Alice's balance");
 }
 
-#[then(regex = r#"^Bob's balance should be (-?\d+) credits?$"#)]
+#[then(regex = r#"^Bob's balance should be (-?\d+) credits?"#)]
 async fn then_bob_balance(world: &mut CommunityWorld, _expected: i32) {
     let uc = world.local_exchange_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
@@ -4744,6 +4744,8 @@ async fn given_completed_n_exchanges(world: &mut CommunityWorld, count: usize) {
     let owner_name = world.current_owner_name.as_ref().unwrap().clone();
     let (_, user_id) = world.create_test_owner(&owner_name).await;
     let (_, other_user) = world.create_test_owner("Helper Exchange").await;
+    // Restore current_owner_name since create_test_owner overwrites it
+    world.current_owner_name = Some(owner_name);
 
     for i in 0..count {
         let dto = CreateLocalExchangeDto {
@@ -4806,7 +4808,7 @@ async fn then_total_exchanges(world: &mut CommunityWorld, expected: i32) {
     );
 }
 
-#[then(regex = r#"^my participation level should be "([^"]*)"$"#)]
+#[then(regex = r#"^my participation level should be "([^"]*)"#)]
 async fn then_participation_level(world: &mut CommunityWorld, expected: String) {
     let balance = world.last_credit_balance.as_ref().expect("credit balance");
     let level = format!("{:?}", balance.participation_level);
@@ -4818,7 +4820,7 @@ async fn then_participation_level(world: &mut CommunityWorld, expected: String) 
     );
 }
 
-#[then(regex = r#"^my credit status should be "([^"]*)"$"#)]
+#[then(regex = r#"^my credit status should be "([^"]*)"#)]
 async fn then_credit_status(world: &mut CommunityWorld, expected: String) {
     let balance = world.last_credit_balance.as_ref().expect("credit balance");
     let status = format!("{:?}", balance.credit_status);

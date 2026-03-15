@@ -99,7 +99,7 @@ Feature: Board Decision Poll System
     And I am authenticated as owner "Pierre Coproprietaire"
     When I vote for option "Contractor C - €14,200"
     Then my vote should be recorded
-    And the vote_count for "Contractor C" should increase by 1
+    And the vote_count for "Contractor C" option should increase by 1
     And I should not be able to vote again on this poll
 
   # Scenario 8: Anonymous Voting
@@ -182,7 +182,7 @@ Feature: Board Decision Poll System
 
   # Scenario 15: Cancel Poll (Not Started)
   Scenario: Syndic cancels poll before it starts
-    Given a draft poll "Future decision poll"
+    Given a draft poll "Future decision poll" exists
     And the poll has not been published
     When I cancel the poll
     Then the poll status should change to "Cancelled"
@@ -207,7 +207,7 @@ Feature: Board Decision Poll System
       | EV charging   |
     Then all 3 votes should be recorded
     And each selected option vote_count should increase by 1
-    And I should not be able to vote again
+    And I should not be able to vote again on this poll
 
   # Scenario 17: Belgian Legal Compliance - Quick Consultation
   Scenario: Syndic uses poll for urgent decision between GAs

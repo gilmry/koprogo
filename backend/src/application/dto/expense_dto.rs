@@ -129,7 +129,7 @@ pub struct CreateInvoiceLineItemDto {
 // ========== Response DTOs ==========
 
 /// Response enrichie avec tous les champs invoice/workflow
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct InvoiceResponseDto {
     pub id: String,
     pub organization_id: String,
