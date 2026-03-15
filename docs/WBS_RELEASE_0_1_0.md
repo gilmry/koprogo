@@ -142,16 +142,16 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 - [ ] 0.3 CI : diff check types générés
 
 ### Phase 1 — Nettoyage
-- [ ] 1.1 Supprimer .bak et .disabled
-- [ ] 1.2 Commit fichiers non-trackés
-- [ ] 1.3 Câbler features BDD orphelines (i18n, legal_compliance)
+- [x] 1.1 Supprimer .bak et .disabled — commit `a9100b7`
+- [x] 1.2 Commit fichiers non-trackés — commits `6c1e26a`, `6196593`, `73b2de6`
+- [x] 1.3 Câbler features BDD orphelines (i18n, legal_compliance) — dans bdd.rs
 
 ### Phase 2 — BDD manquants (5 features)
-- [ ] 2.1 ag_sessions.feature → bdd_governance.rs
-- [ ] 2.2 age_requests.feature → bdd_governance.rs
-- [ ] 2.3 contractor_reports.feature → bdd_operations.rs
-- [ ] 2.4 accounts.feature (PCMN dédié) → bdd_financial.rs
-- [ ] 2.5 expenses.feature (dédié, consolider partiel) → bdd_financial.rs
+- [x] 2.1 ag_sessions.feature → bdd_governance.rs — ✅ 0 failures, 0 skips
+- [x] 2.2 age_requests.feature → bdd_governance.rs — ✅ 0 failures, 0 skips
+- [x] 2.3 contractor_reports.feature → bdd_operations.rs — ✅ 0 failures, 0 skips
+- [x] 2.4 accounts.feature (PCMN dédié) → bdd_financial.rs — ✅ 0 failures, 0 skips
+- [x] 2.5 expenses.feature (dédié, consolider partiel) → bdd_financial.rs — ✅ 0 failures, 0 skips
 
 ### Phase 3 — E2E Backend manquants (les 27 trous)
 Par priorité — features avec logique métier complexe d'abord :

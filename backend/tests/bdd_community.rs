@@ -2561,11 +2561,23 @@ async fn when_create_booking(
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
 
+    // If the parsed date is in the past, shift to 2 days from now keeping the same time-of-day
+    // (stays within the 30-day max-advance booking constraint)
+    let make_future = |dt: DateTime<Utc>| {
+        if dt <= Utc::now() {
+            let base = Utc::now() + chrono::Duration::days(2);
+            base.date_naive().and_time(dt.time()).and_utc()
+        } else {
+            dt
+        }
+    };
     let start_time = get_table_value(step, "start_time")
         .and_then(|s| s.parse::<DateTime<Utc>>().ok())
+        .map(make_future)
         .unwrap_or_else(|| Utc::now() + chrono::Duration::days(7));
     let end_time = get_table_value(step, "end_time")
         .and_then(|s| s.parse::<DateTime<Utc>>().ok())
+        .map(make_future)
         .unwrap_or_else(|| Utc::now() + chrono::Duration::days(7) + chrono::Duration::hours(2));
     let notes = get_table_value(step, "purpose");
 
@@ -2617,12 +2629,11 @@ async fn given_booked_on_date(
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
 
-    let start = format!("2026-03-{:02}T{:02}:{:02}:00Z", day, sh, sm)
-        .parse::<DateTime<Utc>>()
-        .unwrap();
-    let end = format!("2026-03-{:02}T{:02}:{:02}:00Z", day, eh, em)
-        .parse::<DateTime<Utc>>()
-        .unwrap();
+    // Use a date 7 days from now keeping the specified time (avoids "past" and "30-day" constraints)
+    let base_date = (Utc::now() + chrono::Duration::days(7)).date_naive();
+    let start = base_date.and_hms_opt(sh, sm, 0).unwrap().and_utc();
+    let end = base_date.and_hms_opt(eh, em, 0).unwrap().and_utc();
+    let _ = day; // day from feature file replaced by dynamic future date
 
     let dto = CreateResourceBookingDto {
         building_id,
@@ -2667,12 +2678,10 @@ async fn when_try_book_conflict(
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
 
-    let start = format!("2026-03-{:02}T{:02}:{:02}:00Z", day, sh, sm)
-        .parse::<DateTime<Utc>>()
-        .unwrap();
-    let end = format!("2026-03-{:02}T{:02}:{:02}:00Z", day, eh, em)
-        .parse::<DateTime<Utc>>()
-        .unwrap();
+    let base_date = (Utc::now() + chrono::Duration::days(7)).date_naive();
+    let start = base_date.and_hms_opt(sh, sm, 0).unwrap().and_utc();
+    let end = base_date.and_hms_opt(eh, em, 0).unwrap().and_utc();
+    let _ = day;
 
     let dto = CreateResourceBookingDto {
         building_id,
