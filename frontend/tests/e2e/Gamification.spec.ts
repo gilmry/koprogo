@@ -1,51 +1,11 @@
 import { test, expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import { loginAsSyndic } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function setupSyndic(page: Page): Promise<{
-  token: string;
-  orgId: string;
-}> {
-  const timestamp = Date.now();
-  const email = `gamification-test-${timestamp}@example.com`;
-
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
-
-  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
-    data: {
-      name: `Gamification Test Org ${timestamp}`,
-      slug: `gamif-test-${timestamp}`,
-      contact_email: email,
-      subscription_plan: "professional",
-    },
-    headers: { Authorization: `Bearer ${adminToken}` },
-  });
-  const org = await orgResp.json();
-
-  const regResp = await page.request.post(`${API_BASE}/auth/register`, {
-    data: {
-      email,
-      password: "test123456",
-      first_name: "Gamification",
-      last_name: `Test${timestamp}`,
-      role: "syndic",
-      organization_id: org.id,
-    },
-  });
-  const userData = await regResp.json();
-
-  await page.goto("/login");
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill("test123456");
-  await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(syndic|admin|owner)/, { timeout: 15000 });
-
-  return { token: userData.token, orgId: org.id };
+async function setupSyndic(page: import("@playwright/test").Page) {
+  const ctx = await loginAsSyndic(page, "gamification");
+  return { token: ctx.token, orgId: ctx.orgId };
 }
 
 test.describe("Gamification - Achievements & Challenges", () => {

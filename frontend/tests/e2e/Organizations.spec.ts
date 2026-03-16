@@ -1,22 +1,7 @@
 import { test, expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import { loginAsAdmin } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
-
-async function loginAsAdmin(page: Page): Promise<{ adminToken: string }> {
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-
-  await page.goto("/login");
-  await page.getByTestId("login-email").fill("admin@koprogo.com");
-  await page.getByTestId("login-password").fill("admin123");
-  await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(syndic|admin|owner)/, { timeout: 15000 });
-
-  return { adminToken: adminData.token };
-}
 
 test.describe("Organizations - SuperAdmin Management", () => {
   test("should display admin organizations page", async ({ page }) => {
