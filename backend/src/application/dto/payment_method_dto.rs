@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Payment method response DTO
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct PaymentMethodResponse {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -49,7 +49,7 @@ impl From<PaymentMethod> for PaymentMethodResponse {
 }
 
 /// Create payment method request DTO (from Stripe)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct CreatePaymentMethodRequest {
     pub owner_id: Uuid,
     pub method_type: PaymentMethodType,
@@ -62,7 +62,7 @@ pub struct CreatePaymentMethodRequest {
 }
 
 /// Update payment method request DTO
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct UpdatePaymentMethodRequest {
     pub display_label: Option<String>,
     pub is_default: Option<bool>,

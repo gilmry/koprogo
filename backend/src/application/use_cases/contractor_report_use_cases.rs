@@ -288,7 +288,7 @@ impl ContractorReportUseCases {
         self.repo.update(&report).await?;
 
         let magic_link = format!(
-            "{}/contractor/token/{}",
+            "{}/contractor/?token={}",
             base_url.trim_end_matches('/'),
             raw_token
         );

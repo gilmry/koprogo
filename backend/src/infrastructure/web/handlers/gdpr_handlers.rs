@@ -46,6 +46,21 @@ fn extract_user_agent(req: &HttpRequest) -> Option<String> {
 /// * `403 Forbidden` - User attempting to export another user's data
 /// * `404 Not Found` - User not found
 /// * `500 Internal Server Error` - Database or processing error
+#[utoipa::path(
+    get,
+    path = "/gdpr/export",
+    tag = "GDPR",
+    summary = "Export user personal data (Article 15 - Right to Access)",
+    responses(
+        (status = 200, description = "User data exported"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "User not found"),
+        (status = 410, description = "User already anonymized"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/gdpr/export")]
 pub async fn export_user_data(
     req: HttpRequest,
@@ -164,6 +179,22 @@ pub async fn export_user_data(
 /// * `409 Conflict` - Legal holds prevent erasure (e.g., unpaid expenses)
 /// * `410 Gone` - User already anonymized
 /// * `500 Internal Server Error` - Database or processing error
+#[utoipa::path(
+    delete,
+    path = "/gdpr/erase",
+    tag = "GDPR",
+    summary = "Erase user data by anonymization (Article 17 - Right to Erasure)",
+    responses(
+        (status = 200, description = "User data anonymized"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "User not found"),
+        (status = 409, description = "Legal holds prevent erasure"),
+        (status = 410, description = "User already anonymized"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/gdpr/erase")]
 pub async fn erase_user_data(
     req: HttpRequest,
@@ -279,6 +310,18 @@ pub async fn erase_user_data(
 /// * `200 OK` - JSON with erasure eligibility status
 /// * `401 Unauthorized` - Missing or invalid authentication
 /// * `500 Internal Server Error` - Database or processing error
+#[utoipa::path(
+    get,
+    path = "/gdpr/can-erase",
+    tag = "GDPR",
+    summary = "Check if user data can be erased (no legal holds)",
+    responses(
+        (status = 200, description = "Erasure eligibility status returned"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/gdpr/can-erase")]
 pub async fn can_erase_user(
     req: HttpRequest,
@@ -342,6 +385,22 @@ pub async fn can_erase_user(
 /// * `403 Forbidden` - User attempting to rectify another user's data
 /// * `404 Not Found` - User not found
 /// * `500 Internal Server Error` - Database or processing error
+#[utoipa::path(
+    put,
+    path = "/gdpr/rectify",
+    tag = "GDPR",
+    summary = "Rectify user personal data (Article 16 - Right to Rectification)",
+    request_body = GdprRectifyRequest,
+    responses(
+        (status = 200, description = "Data successfully rectified"),
+        (status = 400, description = "Validation error"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/gdpr/rectify")]
 pub async fn rectify_user_data(
     req: HttpRequest,
@@ -454,6 +513,22 @@ pub async fn rectify_user_data(
 /// * `403 Forbidden` - User attempting to restrict another user's processing
 /// * `404 Not Found` - User not found
 /// * `500 Internal Server Error` - Database or processing error
+#[utoipa::path(
+    put,
+    path = "/gdpr/restrict-processing",
+    tag = "GDPR",
+    summary = "Restrict data processing (Article 18 - Right to Restriction)",
+    request_body = GdprRestrictProcessingRequest,
+    responses(
+        (status = 200, description = "Processing restriction applied"),
+        (status = 400, description = "Processing already restricted"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/gdpr/restrict-processing")]
 pub async fn restrict_user_processing(
     req: HttpRequest,
@@ -551,6 +626,21 @@ pub async fn restrict_user_processing(
 /// * `403 Forbidden` - User attempting to change another user's preferences
 /// * `404 Not Found` - User not found
 /// * `500 Internal Server Error` - Database or processing error
+#[utoipa::path(
+    put,
+    path = "/gdpr/marketing-preference",
+    tag = "GDPR",
+    summary = "Set marketing opt-out preference (Article 21 - Right to Object)",
+    request_body = GdprMarketingPreferenceRequest,
+    responses(
+        (status = 200, description = "Marketing preference updated"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/gdpr/marketing-preference")]
 pub async fn set_marketing_preference(
     req: HttpRequest,

@@ -209,6 +209,44 @@ jobs:
           cd backend
           cargo test --test e2e
 
+  api-breaking-changes:
+    name: API Breaking Change Detection (oasdiff)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v6
+        with:
+          path: pr
+
+      - name: Checkout base branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Install oasdiff
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/Tufin/oasdiff/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Check for breaking API changes
+        run: |
+          oasdiff breaking base/docs/api/openapi.yaml pr/docs/api/openapi.yaml \
+            --fail-on ERR \
+            --format text || {
+            echo ""
+            echo "❌ Breaking API changes detected!"
+            echo "   If intentional, document the migration in the PR description."
+            echo "   See: https://www.oasdiff.com/breaking-changes"
+            exit 1
+          }
+
+      - name: Report non-breaking API changes
+        if: always()
+        run: |
+          echo "📋 API changelog (non-breaking):"
+          oasdiff changelog base/docs/api/openapi.yaml pr/docs/api/openapi.yaml --format text || true
+
   contract-types:
     name: Contract Types Check (DTO drift)
     runs-on: ubuntu-latest

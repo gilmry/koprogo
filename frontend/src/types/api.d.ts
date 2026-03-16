@@ -937,6 +937,6662 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/payments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Créer un paiement
+     * @description Crée une nouvelle transaction de paiement.
+     *     Nécessite une organisation active. Supporte Card, SepaDebit, BankTransfer, Cash.
+     */
+    post: operations["createPayment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir un paiement par ID */
+    get: operations["getPayment"];
+    put?: never;
+    post?: never;
+    /** Supprimer un paiement */
+    delete: operations["deletePayment"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/stripe/{stripe_payment_intent_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir un paiement par Stripe Payment Intent ID */
+    get: operations["getPaymentByStripeIntent"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les paiements par statut */
+    get: operations["listPaymentsByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/pending": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les paiements en attente */
+    get: operations["listPendingPayments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/failed": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les paiements échoués */
+    get: operations["listFailedPayments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/{id}/processing": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer un paiement en cours de traitement */
+    put: operations["markPaymentProcessing"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/{id}/requires-action": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer un paiement nécessitant une action */
+    put: operations["markPaymentRequiresAction"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/{id}/succeeded": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer un paiement comme réussi */
+    put: operations["markPaymentSucceeded"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/{id}/failed": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer un paiement comme échoué */
+    put: operations["markPaymentFailed"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/{id}/cancelled": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Annuler un paiement */
+    put: operations["markPaymentCancelled"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payments/{id}/refund": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Rembourser un paiement (partiel ou total)
+     * @description Effectue un remboursement partiel ou total sur un paiement réussi.
+     *     Protection anti-sur-remboursement intégrée.
+     */
+    post: operations["refundPayment"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les paiements d'un propriétaire */
+    get: operations["listOwnerPayments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/payments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les paiements d'un immeuble */
+    get: operations["listBuildingPayments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{expense_id}/payments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les paiements d'une dépense */
+    get: operations["listExpensePayments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/payments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les paiements d'une organisation */
+    get: operations["listOrganizationPayments"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payments/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Statistiques de paiement d'un propriétaire */
+    get: operations["getOwnerPaymentStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/payments/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Statistiques de paiement d'un immeuble */
+    get: operations["getBuildingPaymentStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/expenses/{expense_id}/payments/total": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Total payé pour une dépense */
+    get: operations["getExpenseTotalPaid"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payments/total": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Total payé par un propriétaire */
+    get: operations["getOwnerTotalPaid"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/payments/total": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Total payé pour un immeuble */
+    get: operations["getBuildingTotalPaid"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Créer un moyen de paiement
+     * @description Enregistre un moyen de paiement Stripe (carte ou SEPA).
+     *     Les données sensibles sont stockées côté Stripe (PCI-DSS compliant).
+     */
+    post: operations["createPaymentMethod"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir un moyen de paiement par ID */
+    get: operations["getPaymentMethod"];
+    /** Mettre à jour un moyen de paiement */
+    put: operations["updatePaymentMethod"];
+    post?: never;
+    /** Supprimer un moyen de paiement */
+    delete: operations["deletePaymentMethod"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/stripe/{stripe_payment_method_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir un moyen de paiement par ID Stripe */
+    get: operations["getPaymentMethodByStripeId"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/set-default": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Définir un moyen de paiement par défaut
+     * @description Un seul moyen de paiement par défaut par propriétaire (transaction atomique PostgreSQL).
+     */
+    put: operations["setPaymentMethodAsDefault"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/deactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Désactiver un moyen de paiement */
+    put: operations["deactivatePaymentMethod"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/payment-methods/{id}/reactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Réactiver un moyen de paiement */
+    put: operations["reactivatePaymentMethod"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement d'un propriétaire */
+    get: operations["listOwnerPaymentMethods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement actifs d'un propriétaire */
+    get: operations["listActiveOwnerPaymentMethods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/default": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir le moyen de paiement par défaut d'un propriétaire */
+    get: operations["getDefaultPaymentMethod"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/type/{method_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement par type */
+    get: operations["listPaymentMethodsByType"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/count": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Compter les moyens de paiement actifs d'un propriétaire */
+    get: operations["countActivePaymentMethods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/payment-methods/has-active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Vérifier si un propriétaire a des moyens de paiement actifs */
+    get: operations["hasActivePaymentMethods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/payment-methods": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les moyens de paiement d'une organisation */
+    get: operations["listOrganizationPaymentMethods"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/gdpr/export": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Exporter les données personnelles (Article 15 — Droit d'accès)
+     * @description Exporte toutes les données personnelles de l'utilisateur authentifié
+     *     au format JSON. Inclut : profil, propriétés, dépenses, documents, réunions.
+     *     Un email de confirmation est envoyé après l'export.
+     */
+    get: operations["exportUserData"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/gdpr/erase": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Effacer les données personnelles (Article 17 — Droit à l'effacement)
+     * @description Anonymise le compte utilisateur et tous les profils propriétaire liés.
+     *     Les données ne sont pas supprimées entièrement pour préserver l'intégrité
+     *     référentielle et respecter les obligations légales de conservation (7 ans pour
+     *     les données financières belges).
+     */
+    delete: operations["eraseUserData"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/gdpr/can-erase": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Vérifier l'éligibilité à l'effacement
+     * @description Vérifie si les données de l'utilisateur peuvent être effacées
+     *     (absence d'obligations légales bloquantes).
+     */
+    get: operations["canEraseUser"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/gdpr/rectify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Rectifier les données personnelles (Article 16 — Droit de rectification)
+     * @description Permet à l'utilisateur de corriger des données personnelles inexactes ou incomplètes.
+     *     Les utilisateurs ne peuvent rectifier que leurs propres données.
+     */
+    put: operations["rectifyUserData"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/gdpr/restrict-processing": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Restreindre le traitement des données (Article 18)
+     * @description Demande la limitation temporaire du traitement des données.
+     *     Lorsque le traitement est restreint :
+     *     - Les données sont stockées mais non traitées pour certaines opérations
+     *     - Les communications marketing sont bloquées
+     *     - Le profilage/analytics est désactivé
+     */
+    put: operations["restrictUserProcessing"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/gdpr/marketing-preference": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Préférence marketing (Article 21 — Droit d'opposition)
+     * @description Permet à l'utilisateur de s'opposer aux communications marketing et au profilage.
+     */
+    put: operations["setMarketingPreference"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Créer un ticket de maintenance
+     * @description Crée une demande de maintenance. La date d'échéance est calculée
+     *     automatiquement selon la priorité (Critical: 1h, Urgent: 4h, High: 24h,
+     *     Medium: 3j, Low: 7j).
+     */
+    post: operations["createTicket"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir un ticket par ID */
+    get: operations["getTicket"];
+    put?: never;
+    post?: never;
+    /** Supprimer un ticket */
+    delete: operations["deleteTicket"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/my": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister mes tickets (créés par moi) */
+    get: operations["listMyTickets"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/assigned-to-me": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les tickets qui me sont assignés */
+    get: operations["listAssignedTickets"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Statistiques des tickets de l'organisation */
+    get: operations["getTicketStatisticsOrg"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les tickets en retard de l'organisation */
+    get: operations["getOverdueTicketsOrg"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/tickets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les tickets d'un immeuble */
+    get: operations["listBuildingTickets"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/tickets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les tickets d'une organisation */
+    get: operations["listOrganizationTickets"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/tickets/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les tickets d'un immeuble par statut */
+    get: operations["listTicketsByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/tickets/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Statistiques des tickets d'un immeuble */
+    get: operations["getTicketStatistics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/tickets/overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister les tickets en retard d'un immeuble */
+    get: operations["getOverdueTickets"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{id}/assign": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Assigner un ticket à un prestataire */
+    put: operations["assignTicket"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{id}/start-work": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Démarrer les travaux sur un ticket */
+    put: operations["startWork"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{id}/resolve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer un ticket comme résolu */
+    put: operations["resolveTicket"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{id}/close": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Clôturer un ticket */
+    put: operations["closeTicket"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Annuler un ticket */
+    put: operations["cancelTicket"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{id}/reopen": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Rouvrir un ticket */
+    put: operations["reopenTicket"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Créer une notification */
+    post: operations["createNotification"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir une notification par ID */
+    get: operations["getNotification"];
+    put?: never;
+    post?: never;
+    /** Supprimer une notification */
+    delete: operations["deleteNotification"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/my": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister mes notifications */
+    get: operations["listMyNotifications"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/unread": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lister mes notifications non lues */
+    get: operations["listUnreadNotifications"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Statistiques des notifications */
+    get: operations["getNotificationStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/{id}/read": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer une notification comme lue */
+    put: operations["markNotificationRead"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notifications/read-all": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Marquer toutes les notifications comme lues */
+    put: operations["markAllNotificationsRead"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notification-preferences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir toutes les préférences de notification */
+    get: operations["getUserPreferences"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notification-preferences/{notification_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Obtenir une préférence de notification par type */
+    get: operations["getPreference"];
+    /** Mettre à jour une préférence de notification */
+    put: operations["updatePreference"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetings/{meeting_id}/resolutions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all resolutions for a meeting */
+    get: operations["listMeetingResolutions"];
+    put?: never;
+    /**
+     * Create a resolution for a meeting
+     * @description Create a new resolution linked to a general assembly meeting.
+     *     Supports Simple, Absolute, and Qualified majority types per Belgian copropriete law.
+     */
+    post: operations["createResolution"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resolutions/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get resolution by ID */
+    get: operations["getResolution"];
+    put?: never;
+    post?: never;
+    /** Delete a resolution */
+    delete: operations["deleteResolution"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resolutions/{resolution_id}/vote": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Cast a vote on a resolution
+     * @description Cast a vote (Pour/Contre/Abstention) on a resolution with voting power in milliemes.
+     *     Supports proxy voting for absent owners.
+     */
+    post: operations["castVote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resolutions/{resolution_id}/votes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all votes for a resolution */
+    get: operations["listResolutionVotes"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/votes/{vote_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Change an existing vote */
+    put: operations["changeVote"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resolutions/{resolution_id}/close": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Close voting on a resolution and calculate result
+     * @description Close voting and automatically calculate the result based on majority type
+     *     (Simple, Absolute, or Qualified). Sets resolution status to Adopted or Rejected.
+     */
+    put: operations["closeVoting"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetings/{meeting_id}/vote-summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get vote summary for a meeting
+     * @description Returns all resolutions with their vote counts and percentages for the meeting.
+     */
+    get: operations["getMeetingVoteSummary"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Elect a new board member
+     * @description Elect a co-owner as a board member (President, Treasurer, Secretary, etc.).
+     *     Requires syndic or superadmin role.
+     */
+    post: operations["electBoardMember"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-members/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get board member by ID */
+    get: operations["getBoardMember"];
+    put?: never;
+    post?: never;
+    /** Remove a board member (early mandate termination) */
+    delete: operations["removeBoardMember"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-members/{id}/renew": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Renew a board member mandate */
+    put: operations["renewMandate"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-members/my-mandates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all active board mandates for the authenticated user */
+    get: operations["getMyMandates"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-members/dashboard": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get board member dashboard
+     * @description Get dashboard data for a board member. Accessible only to active board members
+     *     for the specified building, or superadmins.
+     */
+    get: operations["getBoardDashboard"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/board-members/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active board members for a building */
+    get: operations["listActiveBoardMembers"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/board-members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all board members for a building (active and historical) */
+    get: operations["listAllBoardMembers"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/board-members/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get board statistics for a building */
+    get: operations["getBoardStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-decisions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new board decision to track post-AG */
+    post: operations["createDecision"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-decisions/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a board decision by ID */
+    get: operations["getDecision"];
+    /** Update decision status */
+    put: operations["updateDecisionStatus"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-decisions/{id}/notes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add notes to a board decision */
+    post: operations["addDecisionNotes"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/board-decisions/{id}/complete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Mark a board decision as completed */
+    put: operations["completeDecision"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/board-decisions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all board decisions for a building */
+    get: operations["listDecisionsByBuilding"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/board-decisions/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List board decisions by status for a building */
+    get: operations["listDecisionsByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/board-decisions/overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List overdue board decisions for a building */
+    get: operations["listOverdueDecisions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/board-decisions/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get board decision statistics for a building */
+    get: operations["getDecisionStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create a convocation with legal deadline validation
+     * @description Create a convocation for a general assembly meeting.
+     *     Automatically calculates the minimum send date based on Belgian legal deadlines:
+     *     - Ordinary AG: 15 days minimum
+     *     - Extraordinary AG: 15 days minimum
+     *     - Second Convocation: 15 days minimum
+     */
+    post: operations["createConvocation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocations/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get convocation by ID */
+    get: operations["getConvocation"];
+    put?: never;
+    post?: never;
+    /** Delete a convocation */
+    delete: operations["deleteConvocation"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetings/{meeting_id}/convocation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get convocation by meeting ID */
+    get: operations["getConvocationByMeeting"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/convocations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all convocations for a building */
+    get: operations["listBuildingConvocations"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/convocations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all convocations for an organization */
+    get: operations["listOrganizationConvocations"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocations/{id}/schedule": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Schedule a convocation send date
+     * @description Validates that the scheduled date is before the legal deadline.
+     */
+    put: operations["scheduleConvocation"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocations/{id}/send": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Send convocation to owners
+     * @description Send the convocation to specified owners. Generates PDF, creates recipients,
+     *     and triggers email notifications.
+     */
+    post: operations["sendConvocation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocations/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Cancel a convocation */
+    put: operations["cancelConvocation"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocations/{id}/recipients": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all recipients with tracking data */
+    get: operations["listConvocationRecipients"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocations/{id}/tracking-summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get aggregate tracking statistics for a convocation
+     * @description Returns opening rate, attendance rate, and other tracking metrics.
+     */
+    get: operations["getConvocationTrackingSummary"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocation-recipients/{id}/email-opened": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Mark recipient email as opened (tracking pixel endpoint) */
+    put: operations["markRecipientEmailOpened"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocation-recipients/{id}/attendance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Update recipient attendance status
+     * @description Update attendance status: Pending -> WillAttend/WillNotAttend -> Attended/DidNotAttend (post-meeting).
+     */
+    put: operations["updateRecipientAttendance"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocation-recipients/{id}/proxy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Set proxy delegation for a recipient (Belgian procuration) */
+    put: operations["setRecipientProxy"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/convocations/{id}/reminders": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Send J-3 reminders to recipients who have not opened the email */
+    post: operations["sendConvocationReminders"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create a new quote request (syndic action)
+     * @description Create a quote request for contractor works. Belgian law requires 3 quotes minimum
+     *     for construction works exceeding 5000 EUR.
+     */
+    post: operations["createQuote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get quote by ID */
+    get: operations["getQuote"];
+    put?: never;
+    post?: never;
+    /** Delete a quote */
+    delete: operations["deleteQuote"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/quotes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all quotes for a building */
+    get: operations["listBuildingQuotes"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractors/{contractor_id}/quotes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all quotes for a contractor */
+    get: operations["listContractorQuotes"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/quotes/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List quotes by status for a building */
+    get: operations["listQuotesByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes/{id}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Contractor submits quote with pricing
+     * @description Transition from Requested to Received status.
+     */
+    post: operations["submitQuote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes/{id}/review": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Start quote review (syndic action)
+     * @description Transition from Received to UnderReview status.
+     */
+    post: operations["startQuoteReview"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes/{id}/accept": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Accept a quote (syndic decision)
+     * @description Accept a quote as the winner. Records decision audit trail.
+     */
+    post: operations["acceptQuote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes/{id}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Reject a quote (syndic decision)
+     * @description Reject a quote. Records decision audit trail with optional notes.
+     */
+    post: operations["rejectQuote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes/{id}/withdraw": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Withdraw a quote (contractor action) */
+    post: operations["withdrawQuote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes/compare": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Compare multiple quotes with automatic scoring
+     * @description Compare quotes with automatic scoring algorithm:
+     *     - Price: 40% weight (lower is better)
+     *     - Delay: 30% weight (shorter is better)
+     *     - Warranty: 20% weight (longer is better)
+     *     - Reputation: 10% weight (contractor rating 0-100)
+     *
+     *     Belgian law requires minimum 3 quotes for works exceeding 5000 EUR.
+     */
+    post: operations["compareQuotes"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/quotes/{id}/contractor-rating": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update contractor rating for scoring algorithm */
+    put: operations["updateContractorRating"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/quotes/count": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Count total quotes for a building */
+    get: operations["countBuildingQuotes"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/quotes/status/{status}/count": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Count quotes by status for a building */
+    get: operations["countQuotesByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/polls": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List polls with pagination and filters */
+    get: operations["listPolls"];
+    put?: never;
+    /**
+     * Create a new poll (draft status)
+     * @description Create a poll for owner consultations between general assemblies.
+     *     Supports YesNo, MultipleChoice, Rating, and OpenEnded poll types.
+     *     Belgian legal context: Art. 577-8/4 par.4 Code Civil.
+     */
+    post: operations["createPoll"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/polls/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get poll by ID with options and vote counts */
+    get: operations["getPoll"];
+    /** Update a poll (draft polls only) */
+    put: operations["updatePoll"];
+    post?: never;
+    /** Delete a poll (only draft or cancelled) */
+    delete: operations["deletePoll"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/polls/{id}/publish": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Publish a poll (Draft to Active)
+     * @description Changes the poll from draft to active status, enabling voting.
+     */
+    post: operations["publishPoll"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/polls/{id}/close": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Close a poll manually (Active to Closed)
+     * @description Close voting and calculate results.
+     */
+    post: operations["closePoll"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/polls/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel a poll */
+    post: operations["cancelPoll"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/polls/vote": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Cast a vote on a poll
+     * @description Cast a vote on an active poll. Supports:
+     *     - YesNo/MultipleChoice: provide selected_option_ids
+     *     - Rating: provide rating_value (1-5)
+     *     - OpenEnded: provide open_text
+     *     Duplicate votes are prevented (409 Conflict).
+     */
+    post: operations["castPollVote"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/polls/{id}/results": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get poll results with statistics
+     * @description Returns vote counts, percentages, participation rate, and winning option.
+     */
+    get: operations["getPollResults"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/polls/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active polls for a building */
+    get: operations["findActivePolls"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/polls/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get poll statistics for a building */
+    get: operations["getPollBuildingStatistics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/exchanges": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new exchange offer */
+    post: operations["createExchange"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/exchanges/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get exchange by ID */
+    get: operations["getExchange"];
+    put?: never;
+    post?: never;
+    /** Delete an exchange (provider only, not completed) */
+    delete: operations["deleteExchange"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/exchanges": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all exchanges for a building */
+    get: operations["listBuildingExchanges"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/exchanges/available": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List available exchanges (status = Offered) */
+    get: operations["listAvailableExchanges"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/exchanges": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List exchanges for an owner (as provider or requester) */
+    get: operations["listOwnerExchanges"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/exchanges/type/{exchange_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List exchanges by type */
+    get: operations["listExchangesByType"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/exchanges/{id}/request": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Request an exchange (Offered -> Requested) */
+    post: operations["requestExchange"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/exchanges/{id}/start": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Start an exchange (Requested -> InProgress, provider only) */
+    post: operations["startExchange"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/exchanges/{id}/complete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Complete an exchange (InProgress -> Completed, updates credit balances) */
+    post: operations["completeExchange"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/exchanges/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel an exchange */
+    post: operations["cancelExchange"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/exchanges/{id}/rate-provider": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Rate the provider (requester only, completed exchanges) */
+    put: operations["rateProvider"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/exchanges/{id}/rate-requester": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Rate the requester (provider only, completed exchanges) */
+    put: operations["rateRequester"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/buildings/{building_id}/credit-balance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get credit balance for an owner in a building */
+    get: operations["getCreditBalance"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/leaderboard": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get leaderboard (top contributors by balance) */
+    get: operations["getLeaderboard"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/sel-statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get SEL statistics for a building */
+    get: operations["getSelStatistics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/exchange-summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get owner exchange summary */
+    get: operations["getOwnerExchangeSummary"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notices": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new notice (Draft status) */
+    post: operations["createNotice"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notices/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get notice by ID with author name enrichment */
+    get: operations["getNotice"];
+    /** Update a notice (Draft only) */
+    put: operations["updateNotice"];
+    post?: never;
+    /** Delete a notice */
+    delete: operations["deleteNotice"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/notices": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all notices for a building */
+    get: operations["listBuildingNotices"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/notices/published": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List published notices (visible to members) */
+    get: operations["listPublishedNotices"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/notices/pinned": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List pinned notices (important announcements) */
+    get: operations["listPinnedNotices"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/notices/type/{notice_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List notices by type */
+    get: operations["listNoticesByType"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/notices/category/{category}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List notices by category */
+    get: operations["listNoticesByCategory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/notices/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List notices by status */
+    get: operations["listNoticesByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{author_id}/notices": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all notices created by an author */
+    get: operations["listAuthorNotices"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notices/{id}/publish": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Publish a notice (Draft -> Published) */
+    post: operations["publishNotice"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notices/{id}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Archive a notice (Published/Expired -> Archived) */
+    post: operations["archiveNotice"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notices/{id}/pin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Pin a notice to top of board (Published only) */
+    post: operations["pinNotice"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notices/{id}/unpin": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Unpin a notice */
+    post: operations["unpinNotice"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/notices/{id}/expiration": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Set expiration date for a notice */
+    put: operations["setNoticeExpiration"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/notices/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get notice statistics for a building */
+    get: operations["getNoticeStatistics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/skills": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new skill */
+    post: operations["createSkill"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/skills/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get skill by ID with owner name enrichment */
+    get: operations["getSkill"];
+    /** Update a skill */
+    put: operations["updateSkill"];
+    post?: never;
+    /** Delete a skill */
+    delete: operations["deleteSkill"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/skills": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all skills for a building */
+    get: operations["listBuildingSkills"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/skills/available": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List available skills (marketplace view) */
+    get: operations["listAvailableSkills"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/skills/free": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List free/volunteer skills */
+    get: operations["listFreeSkills"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/skills/professional": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List professional skills */
+    get: operations["listProfessionalSkills"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/skills/category/{category}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List skills by category */
+    get: operations["listSkillsByCategory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/skills/expertise/{level}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List skills by expertise level */
+    get: operations["listSkillsByExpertise"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/skills": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all skills created by an owner */
+    get: operations["listOwnerSkills"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/skills/{id}/mark-available": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark skill as available for help */
+    post: operations["markSkillAvailable"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/skills/{id}/mark-unavailable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark skill as unavailable for help */
+    post: operations["markSkillUnavailable"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/skills/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get skill statistics for a building */
+    get: operations["getSkillStatistics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared-objects": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new shared object */
+    post: operations["createSharedObject"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared-objects/my-borrowed": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List objects currently borrowed by authenticated user */
+    get: operations["listMyBorrowedObjects"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared-objects/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get shared object by ID */
+    get: operations["getSharedObject"];
+    /** Update a shared object */
+    put: operations["updateSharedObject"];
+    post?: never;
+    /** Delete a shared object */
+    delete: operations["deleteSharedObject"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/shared-objects": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all shared objects for a building */
+    get: operations["listBuildingObjects"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/shared-objects/available": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List available shared objects (marketplace view) */
+    get: operations["listAvailableObjects"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/shared-objects/borrowed": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List borrowed shared objects */
+    get: operations["listBorrowedObjects"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/shared-objects/overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List overdue shared objects */
+    get: operations["listOverdueObjects"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/shared-objects/free": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List free shared objects */
+    get: operations["listFreeObjects"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/shared-objects/category/{category}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List shared objects by category */
+    get: operations["listObjectsByCategory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/shared-objects": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all shared objects created by an owner */
+    get: operations["listOwnerObjects"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared-objects/{id}/mark-available": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark shared object as available */
+    post: operations["markObjectAvailable"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared-objects/{id}/mark-unavailable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark shared object as unavailable */
+    post: operations["markObjectUnavailable"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared-objects/{id}/borrow": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Borrow a shared object */
+    post: operations["borrowObject"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/shared-objects/{id}/return": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Return a borrowed object */
+    post: operations["returnObject"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/shared-objects/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get shared object statistics for a building */
+    get: operations["getObjectStatistics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new resource booking */
+    post: operations["createBooking"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings/my": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List user's bookings */
+    get: operations["listMyBookings"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings/my/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List user's bookings by status */
+    get: operations["listMyBookingsByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings/check-conflicts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Check for booking conflicts (preview before creating) */
+    get: operations["checkConflicts"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get booking by ID */
+    get: operations["getBooking"];
+    /** Update booking details (resource_name, notes) */
+    put: operations["updateBooking"];
+    post?: never;
+    /** Delete a booking */
+    delete: operations["deleteBooking"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Cancel a booking */
+    post: operations["cancelBooking"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings/{id}/complete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Complete a booking (admin only) */
+    post: operations["completeBooking"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings/{id}/no-show": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Mark booking as no-show (admin only) */
+    post: operations["markNoShow"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/resource-bookings/{id}/confirm": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Confirm a pending booking (admin only) */
+    post: operations["confirmBooking"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/resource-bookings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all bookings for a building */
+    get: operations["listBuildingBookings"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/resource-bookings/type/{resource_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List bookings by resource type */
+    get: operations["listBookingsByResourceType"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/resource-bookings/resource/{resource_type}/{resource_name}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List bookings for a specific resource */
+    get: operations["listBookingsByResource"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/resource-bookings/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List building bookings by status */
+    get: operations["listBuildingBookingsByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/resource-bookings/upcoming": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List upcoming bookings (future, confirmed or pending) */
+    get: operations["listUpcomingBookings"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/resource-bookings/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active bookings (currently in progress) */
+    get: operations["listActiveBookings"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/resource-bookings/past": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List past bookings */
+    get: operations["listPastBookings"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/resource-bookings/statistics": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get booking statistics for a building */
+    get: operations["getBookingStatistics"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/achievements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new achievement (admin only) */
+    post: operations["createAchievement"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/achievements/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get achievement by ID */
+    get: operations["getAchievement"];
+    /** Update achievement (admin only) */
+    put: operations["updateAchievement"];
+    post?: never;
+    /** Delete achievement (admin only) */
+    delete: operations["deleteAchievement"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/achievements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all achievements for an organization */
+    get: operations["listAchievements"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/achievements/category/{category}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List achievements by category */
+    get: operations["listAchievementsByCategory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/achievements/visible": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List visible achievements (non-secret + earned secret achievements) */
+    get: operations["listVisibleAchievements"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/achievements": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all achievements earned by current user */
+    get: operations["getUserAchievements"];
+    put?: never;
+    /** Award achievement to user */
+    post: operations["awardAchievement"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/achievements/recent": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get recent achievements for current user */
+    get: operations["getRecentAchievements"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/challenges": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a new challenge (admin only) */
+    post: operations["createChallenge"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/challenges/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get challenge by ID */
+    get: operations["getChallenge"];
+    /** Update challenge (Draft only, admin only) */
+    put: operations["updateChallenge"];
+    post?: never;
+    /** Delete challenge (admin only) */
+    delete: operations["deleteChallenge"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/challenges/{id}/activate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Activate challenge (Draft -> Active) */
+    put: operations["activateChallenge"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/challenges/{id}/complete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Complete challenge (Active -> Completed) */
+    put: operations["completeChallenge"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/challenges/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Cancel challenge (Draft/Active -> Cancelled) */
+    put: operations["cancelChallenge"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/challenges": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all challenges for an organization */
+    get: operations["listChallenges"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/challenges/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List challenges by status */
+    get: operations["listChallengesByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/challenges/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active challenges (Active status + date range) */
+    get: operations["listActiveChallenges"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/challenges": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List challenges for a building */
+    get: operations["listBuildingChallenges"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/challenges/{challenge_id}/progress": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get user progress for a challenge */
+    get: operations["getChallengeProgress"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/challenges/{challenge_id}/all-progress": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all progress for a challenge */
+    get: operations["listChallengeProgress"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/challenges/{challenge_id}/progress/increment": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Increment user progress (auto-completes if target reached) */
+    post: operations["incrementProgress"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/challenges/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List active challenges for current user with progress */
+    get: operations["listUserActiveChallenges"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/gamification/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get gamification stats for current user */
+    get: operations["getGamificationUserStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/gamification/leaderboard": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get leaderboard for organization or building */
+    get: operations["getGamificationLeaderboard"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-campaigns": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all campaigns for current organization */
+    get: operations["listEnergyCampaigns"];
+    put?: never;
+    /** Create a new energy campaign */
+    post: operations["createEnergyCampaign"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-campaigns/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get campaign by ID */
+    get: operations["getEnergyCampaign"];
+    put?: never;
+    post?: never;
+    /** Delete campaign */
+    delete: operations["deleteEnergyCampaign"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-campaigns/{id}/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update campaign status */
+    put: operations["updateEnergyCampaignStatus"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-campaigns/{id}/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get campaign statistics (anonymized, k-anonymity >= 5) */
+    get: operations["getEnergyCampaignStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-campaigns/{id}/offers": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all offers for a campaign */
+    get: operations["listProviderOffers"];
+    put?: never;
+    /** Add provider offer (broker/admin only) */
+    post: operations["addProviderOffer"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-campaigns/{id}/select-offer": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Select winning offer (after vote) */
+    post: operations["selectOffer"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-campaigns/{id}/finalize": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Finalize campaign (after final vote) */
+    post: operations["finalizeCampaign"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-campaigns/{campaign_id}/uploads": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all uploads for a campaign (admin) */
+    get: operations["getCampaignUploads"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-bills/upload": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Upload energy bill with GDPR consent */
+    post: operations["uploadEnergyBill"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-bills/my-uploads": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get my energy bill uploads */
+    get: operations["getMyEnergyBillUploads"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-bills/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get upload by ID */
+    get: operations["getEnergyBillUpload"];
+    put?: never;
+    post?: never;
+    /** Delete upload (GDPR Art. 17 - Right to erasure) */
+    delete: operations["deleteEnergyBillUpload"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-bills/{id}/decrypt": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Decrypt consumption data (owner only) */
+    get: operations["decryptConsumption"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-bills/{id}/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Verify upload (admin only) */
+    put: operations["verifyEnergyBillUpload"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/energy-bills/{id}/withdraw-consent": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Withdraw GDPR consent (Art. 7.3 - immediate deletion) */
+    post: operations["withdrawConsent"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List all organizations
+     * @description Returns all organizations. SuperAdmin only.
+     */
+    get: operations["listOrganizations"];
+    put?: never;
+    /**
+     * Create organization
+     * @description Create a new organization. SuperAdmin only. Limits (max_buildings, max_users) are auto-set based on subscription_plan.
+     */
+    post: operations["createOrganization"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Update organization
+     * @description Update an existing organization. SuperAdmin only.
+     */
+    put: operations["updateOrganization"];
+    post?: never;
+    /**
+     * Delete organization
+     * @description Delete an organization. SuperAdmin only.
+     */
+    delete: operations["deleteOrganization"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{id}/activate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Activate organization
+     * @description Set organization as active. SuperAdmin only.
+     */
+    put: operations["activateOrganization"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{id}/suspend": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Suspend organization
+     * @description Suspend an organization (set is_active to false). SuperAdmin only.
+     */
+    put: operations["suspendOrganization"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List all users
+     * @description Returns all users with their role assignments. SuperAdmin only.
+     */
+    get: operations["listUsers"];
+    put?: never;
+    /**
+     * Create user
+     * @description Create a new user with role assignments. SuperAdmin only.
+     *     Supports both new `roles[]` array and backward-compatible `role`/`organization_id` fields.
+     *     Allowed roles: superadmin, syndic, accountant, owner.
+     *     Non-superadmin roles require an organization_id.
+     */
+    post: operations["createUser"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Update user
+     * @description Update an existing user with optional role reassignment and password change. SuperAdmin only.
+     */
+    put: operations["updateUser"];
+    post?: never;
+    /**
+     * Delete user
+     * @description Delete a user. SuperAdmin only. Cannot delete own account.
+     */
+    delete: operations["deleteUser"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/{id}/activate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Activate user
+     * @description Set user as active. SuperAdmin only.
+     */
+    put: operations["activateUser"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/users/{id}/deactivate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Deactivate user
+     * @description Set user as inactive. SuperAdmin only.
+     */
+    put: operations["deactivateUser"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List budgets (paginated)
+     * @description List budgets for the authenticated user's organization with optional filters.
+     */
+    get: operations["listBudgets"];
+    put?: never;
+    /**
+     * Create a new budget
+     * @description Create a new annual budget. Organization ID is taken from JWT token.
+     */
+    post: operations["createBudget"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get budget by ID */
+    get: operations["getBudget"];
+    /**
+     * Update budget (Draft only)
+     * @description Update a budget. Only budgets in Draft status can be updated.
+     */
+    put: operations["updateBudget"];
+    post?: never;
+    /** Delete budget */
+    delete: operations["deleteBudget"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/{id}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Submit budget for approval
+     * @description Transition budget from Draft to Submitted status.
+     */
+    put: operations["submitBudget"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/{id}/approve": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Approve budget
+     * @description Approve a submitted budget. Requires meeting_id.
+     */
+    put: operations["approveBudget"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/{id}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Reject budget
+     * @description Reject a submitted budget with optional reason.
+     */
+    put: operations["rejectBudget"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/{id}/archive": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Archive budget */
+    put: operations["archiveBudget"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/{id}/variance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get budget variance analysis
+     * @description Budget vs actual expenses comparison with projected year-end totals.
+     */
+    get: operations["getBudgetVariance"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get budget statistics
+     * @description Aggregate budget statistics for the organization.
+     */
+    get: operations["getBudgetStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/fiscal-year/{fiscal_year}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List budgets by fiscal year */
+    get: operations["listBudgetsByFiscalYear"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/budgets/status/{status}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List budgets by status */
+    get: operations["listBudgetsByStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/budgets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List budgets for a building */
+    get: operations["listBudgetsByBuilding"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/budgets/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get active budget for a building */
+    get: operations["getActiveBudget"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/budgets/fiscal-year/{fiscal_year}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get budget by building and fiscal year */
+    get: operations["getBudgetByBuildingAndFiscalYear"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List etats dates (paginated)
+     * @description List etats dates for the authenticated user's organization with optional status filter.
+     */
+    get: operations["listEtatsDates"];
+    put?: never;
+    /**
+     * Create a new etat date request
+     * @description Create a new etat date for a property sale. Organization ID is taken from JWT token.
+     */
+    post: operations["createEtatDate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get etat date by ID */
+    get: operations["getEtatDate"];
+    put?: never;
+    post?: never;
+    /** Delete etat date */
+    delete: operations["deleteEtatDate"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/reference/{reference_number}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get etat date by reference number */
+    get: operations["getEtatDateByReference"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List overdue etats dates
+     * @description Returns etats dates older than 10 days that are not yet generated.
+     */
+    get: operations["listOverdueEtatsDates"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/expired": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List expired etats dates
+     * @description Returns etats dates older than 3 months from reference date.
+     */
+    get: operations["listExpiredEtatsDates"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get etat date statistics
+     * @description Aggregate statistics for syndic dashboard.
+     */
+    get: operations["getEtatDateStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/{id}/mark-in-progress": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Mark etat date as in progress */
+    put: operations["markEtatDateInProgress"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/{id}/mark-generated": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /**
+     * Mark etat date as generated
+     * @description Mark as generated with PDF file path.
+     */
+    put: operations["markEtatDateGenerated"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/{id}/mark-delivered": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Mark etat date as delivered to notary */
+    put: operations["markEtatDateDelivered"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/{id}/financial": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update financial data */
+    put: operations["updateEtatDateFinancial"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/etats-dates/{id}/additional-data": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update additional data (sections 7-16) */
+    put: operations["updateEtatDateAdditionalData"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/units/{unit_id}/etats-dates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List etats dates by unit */
+    get: operations["listEtatsDatesbyUnit"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/etats-dates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List etats dates by building */
+    get: operations["listEtatsDatesbyBuilding"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{expense_id}/calculate-distribution": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Calculate and save charge distribution
+     * @description Calculate charge distribution for an invoice based on unit ownership percentages.
+     *     Only accountant, syndic, or superadmin can trigger this.
+     */
+    post: operations["calculateDistribution"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/invoices/{expense_id}/distribution": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get charge distribution for an invoice */
+    get: operations["getDistributionByExpense"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/distributions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all charge distributions for an owner */
+    get: operations["getDistributionsByOwner"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/total-due": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get total amount due for an owner */
+    get: operations["getTotalDueByOwner"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/journal-entries": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List journal entries with filters
+     * @description List journal entries for the authenticated user's organization.
+     *     Accessible to accountant, syndic, and superadmin roles.
+     */
+    get: operations["listJournalEntries"];
+    put?: never;
+    /**
+     * Create a manual journal entry
+     * @description Create a manual double-entry journal entry. Accountant and superadmin only.
+     *     Journal types: ACH (Purchases), VEN (Sales), FIN (Financial), ODS (Miscellaneous).
+     *     Debits must equal credits (double-entry validation).
+     */
+    post: operations["createJournalEntry"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/journal-entries/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get journal entry with lines
+     * @description Get a single journal entry with all its debit/credit lines.
+     */
+    get: operations["getJournalEntry"];
+    put?: never;
+    post?: never;
+    /**
+     * Delete a manual journal entry
+     * @description Delete a manual journal entry. Only manual entries (not auto-generated) can be deleted. Accountant and superadmin only.
+     */
+    delete: operations["deleteJournalEntry"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owner-contributions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List contributions
+     * @description Get contributions by owner (if owner_id query param provided) or all contributions
+     *     for the authenticated user's organization.
+     */
+    get: operations["listOwnerContributions"];
+    put?: never;
+    /** Create a new owner contribution */
+    post: operations["createOwnerContribution"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owner-contributions/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get contribution by ID */
+    get: operations["getOwnerContribution"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owner-contributions/outstanding": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get outstanding (unpaid) contributions
+     * @description Returns unpaid contributions for a specific owner.
+     */
+    get: operations["getOutstandingContributions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owner-contributions/{id}/mark-paid": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Record payment for a contribution */
+    put: operations["recordContributionPayment"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List calls for funds
+     * @description List calls for funds filtered by building_id (if provided) or all calls
+     *     for the authenticated user's organization.
+     */
+    get: operations["listCallForFunds"];
+    put?: never;
+    /** Create a new call for funds */
+    post: operations["createCallForFunds"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get a call for funds by ID */
+    get: operations["getCallForFunds"];
+    put?: never;
+    post?: never;
+    /**
+     * Delete a call for funds
+     * @description Delete a call for funds. Only Draft status calls can be deleted.
+     */
+    delete: operations["deleteCallForFunds"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds/overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all overdue calls for funds */
+    get: operations["getOverdueCallsForFunds"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds/{id}/send": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Send a call for funds
+     * @description Mark as sent and generate individual contributions for each unit owner
+     *     based on ownership percentages.
+     */
+    post: operations["sendCallForFunds"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/call-for-funds/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Cancel a call for funds */
+    put: operations["cancelCallForFunds"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/dashboard/accountant/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get accountant dashboard statistics
+     * @description Aggregate financial statistics for the accountant dashboard.
+     */
+    get: operations["getAccountantDashboardStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/dashboard/accountant/transactions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get recent transactions for dashboard
+     * @description Returns recent transactions for the accountant dashboard.
+     */
+    get: operations["getRecentTransactions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/setup": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Setup 2FA for a user
+     * @description Initiate 2FA setup by generating a TOTP secret, QR code, and backup codes.
+     *     The user must then verify a TOTP code via `POST /2fa/enable` to activate 2FA.
+     *     Secret and backup codes are only returned once during setup.
+     */
+    post: operations["setup2FA"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/enable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Enable 2FA after verifying TOTP code
+     * @description After setup, verify a TOTP code from the authenticator app to activate 2FA.
+     *     Confirms the user has successfully saved the secret.
+     */
+    post: operations["enable2FA"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Verify 2FA code during login
+     * @description Validate a TOTP code or backup code during login.
+     *     Called after successful password authentication when 2FA is enabled.
+     *     Backup codes are one-time use.
+     */
+    post: operations["verify2FA"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/disable": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Disable 2FA
+     * @description Disable 2FA for the authenticated user. Requires current password verification.
+     *     All 2FA configuration (secret + backup codes) is deleted.
+     */
+    post: operations["disable2FA"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/regenerate-backup-codes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Regenerate backup codes
+     * @description Generate a new set of 10 backup codes, replacing the old ones.
+     *     Requires TOTP verification. New codes are only shown once.
+     */
+    post: operations["regenerateBackupCodes"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/2fa/status": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get 2FA status
+     * @description Returns current 2FA configuration status including whether 2FA is enabled,
+     *     backup codes remaining, and whether reverification is needed.
+     */
+    get: operations["get2FAStatus"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/readings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Query IoT readings with filters */
+    get: operations["queryIoTReadings"];
+    put?: never;
+    /** Create a single IoT reading */
+    post: operations["createIoTReading"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/readings/bulk": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create multiple IoT readings in bulk */
+    post: operations["createIoTReadingsBulk"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/buildings/{building_id}/consumption/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get consumption statistics for a building */
+    get: operations["getConsumptionStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/buildings/{building_id}/consumption/daily": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get daily consumption aggregates for a building */
+    get: operations["getDailyAggregates"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/buildings/{building_id}/consumption/monthly": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get monthly consumption aggregates for a building */
+    get: operations["getMonthlyAggregates"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/buildings/{building_id}/consumption/anomalies": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Detect consumption anomalies for a building */
+    get: operations["detectAnomalies"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/linky/devices": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Configure a Linky device for a building */
+    post: operations["configureLinkyDevice"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/linky/buildings/{building_id}/device": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get Linky device for a building */
+    get: operations["getLinkyDevice"];
+    put?: never;
+    post?: never;
+    /** Delete Linky device for a building */
+    delete: operations["deleteLinkyDevice"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/linky/buildings/{building_id}/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Sync Linky data for a building */
+    post: operations["syncLinkyData"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/linky/buildings/{building_id}/sync/toggle": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Toggle automatic sync for a Linky device */
+    put: operations["toggleLinkySync"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/linky/devices/needing-sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Find Linky devices needing sync */
+    get: operations["findDevicesNeedingSync"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/iot/linky/devices/expired-tokens": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Find Linky devices with expired tokens */
+    get: operations["findDevicesWithExpiredTokens"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Create a contractor report */
+    post: operations["createContractorReport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-reports/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get contractor report by ID */
+    get: operations["getContractorReport"];
+    /** Update a contractor report draft */
+    put: operations["updateContractorReport"];
+    post?: never;
+    /** Delete a contractor report (Draft only) */
+    delete: operations["deleteContractorReport"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-reports/{id}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Submit contractor report for board validation */
+    post: operations["submitContractorReport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-reports/{id}/validate": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Board validates the report (triggers payment) */
+    put: operations["validateContractorReport"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-reports/{id}/request-corrections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Board requests corrections on the report */
+    put: operations["requestCorrections"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-reports/{id}/reject": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Board rejects the contractor report */
+    put: operations["rejectContractorReport"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor-reports/magic-link": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate a 72h magic link for contractor PWA access */
+    post: operations["generateMagicLink"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/contractor-reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List contractor reports for a building */
+    get: operations["listContractorReportsByBuilding"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/tickets/{ticket_id}/contractor-reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List contractor reports linked to a ticket */
+    get: operations["listContractorReportsByTicket"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor/token/{token}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** View report via magic link (no authentication) */
+    get: operations["getReportByToken"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/contractor/token/{token}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Submit report via magic link (no authentication) */
+    post: operations["submitReportByToken"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-inspections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List technical inspections with pagination and filters */
+    get: operations["listTechnicalInspectionsPaginated"];
+    put?: never;
+    /** Create a new technical inspection */
+    post: operations["createTechnicalInspection"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-inspections/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get technical inspection by ID */
+    get: operations["getTechnicalInspection"];
+    /** Update technical inspection */
+    put: operations["updateTechnicalInspection"];
+    post?: never;
+    /** Delete technical inspection */
+    delete: operations["deleteTechnicalInspection"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/technical-inspections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List technical inspections for a building */
+    get: operations["listBuildingTechnicalInspections"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/technical-inspections": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List technical inspections for an organization */
+    get: operations["listOrganizationTechnicalInspections"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/technical-inspections/overdue": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get overdue inspections for a building */
+    get: operations["getOverdueInspections"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/technical-inspections/upcoming": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get upcoming inspections for a building (within X days) */
+    get: operations["getUpcomingInspections"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/technical-inspections/type/{inspection_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get inspections by type for a building */
+    get: operations["getInspectionsByType"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-inspections/{id}/reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add report to technical inspection */
+    post: operations["addInspectionReport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-inspections/{id}/photos": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add photo to technical inspection */
+    post: operations["addInspectionPhoto"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/technical-inspections/{id}/certificates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add certificate to technical inspection */
+    post: operations["addInspectionCertificate"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/work-reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List work reports with pagination and filters */
+    get: operations["listWorkReportsPaginated"];
+    put?: never;
+    /** Create a new work report */
+    post: operations["createWorkReport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/work-reports/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get work report by ID */
+    get: operations["getWorkReport"];
+    /** Update work report */
+    put: operations["updateWorkReport"];
+    post?: never;
+    /** Delete work report */
+    delete: operations["deleteWorkReport"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/work-reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List work reports for a building */
+    get: operations["listBuildingWorkReports"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/organizations/{organization_id}/work-reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List work reports for an organization */
+    get: operations["listOrganizationWorkReports"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/work-reports/warranties/active": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get active warranties for a building */
+    get: operations["getActiveWarranties"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/work-reports/warranties/expiring": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get expiring warranties for a building (within X days) */
+    get: operations["getExpiringWarranties"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/work-reports/{id}/photos": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add photo to work report */
+    post: operations["addWorkReportPhoto"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/work-reports/{id}/documents": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add document to work report */
+    post: operations["addWorkReportDocument"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/age-requests": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List AGE requests for a building */
+    get: operations["listAgeRequests"];
+    put?: never;
+    /** Create an AGE request (Art. 3.87 §2 CC) */
+    post: operations["createAgeRequest"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/age-requests/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get AGE request details */
+    get: operations["getAgeRequest"];
+    put?: never;
+    post?: never;
+    /** Delete AGE request (Draft/Withdrawn only) */
+    delete: operations["deleteAgeRequest"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/age-requests/{id}/open": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Open AGE request for signatures (Draft -> Open) */
+    put: operations["openAgeRequest"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/age-requests/{id}/cosignatories": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Add a cosignatory (auto-threshold check at 1/5) */
+    post: operations["addCosignatory"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/age-requests/{id}/cosignatories/{owner_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Remove a cosignatory */
+    delete: operations["removeCosignatory"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/age-requests/{id}/submit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Submit AGE request to syndic (starts 15-day deadline) */
+    post: operations["submitAgeRequest"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/age-requests/{id}/syndic-response": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Syndic responds (accept or reject) */
+    put: operations["syndicResponse"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/age-requests/{id}/auto-convocation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Trigger auto-convocation (if syndic deadline expired) */
+    post: operations["triggerAutoConvocation"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/age-requests/{id}/withdraw": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Withdraw AGE request */
+    post: operations["withdrawAgeRequest"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/meetings/{meeting_id}/ag-session": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get AG session for a meeting */
+    get: operations["getAgSessionForMeeting"];
+    put?: never;
+    /** Create a video conference session for a meeting */
+    post: operations["createAgSession"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ag-sessions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List all AG sessions for the organization */
+    get: operations["listAgSessions"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ag-sessions/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get AG session by ID */
+    get: operations["getAgSession"];
+    put?: never;
+    post?: never;
+    /** Delete AG session (Scheduled or Cancelled only) */
+    delete: operations["deleteAgSession"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ag-sessions/{id}/start": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Start AG session (Scheduled -> Live) */
+    put: operations["startAgSession"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ag-sessions/{id}/end": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** End AG session (Live -> Ended) */
+    put: operations["endAgSession"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ag-sessions/{id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Cancel AG session (Scheduled -> Cancelled) */
+    put: operations["cancelAgSession"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ag-sessions/{id}/join": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Record a remote participant joining (updates quorum) */
+    post: operations["recordRemoteJoin"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/ag-sessions/{id}/quorum": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Calculate combined quorum (physical + remote) */
+    get: operations["getCombinedQuorum"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/unit-owners/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Update unit-owner relationship (percentage or primary contact) */
+    put: operations["updateUnitOwner"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/units": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get all current units owned by an owner */
+    get: operations["getOwnerUnits"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/owners/{owner_id}/units/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get ownership history for an owner */
+    get: operations["getOwnerOwnershipHistory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/unit-owners/{id}/export-contract-pdf": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Export ownership contract as PDF */
+    get: operations["exportOwnershipContractPdf"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/dashboard": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get dashboard statistics (SuperAdmin only) */
+    get: operations["getDashboardStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/owner": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get owner dashboard statistics (Owner role) */
+    get: operations["getOwnerStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/syndic": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get syndic dashboard statistics (Syndic/Accountant role) */
+    get: operations["getSyndicStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/syndic/urgent-tasks": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get urgent tasks for syndic dashboard */
+    get: operations["getSyndicUrgentTasks"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats/seed-data": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Get seed data statistics (SuperAdmin only) */
+    get: operations["getSeedDataStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/gdpr/audit-logs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** List audit logs with pagination and filters (SuperAdmin only) */
+    get: operations["listAuditLogs"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/gdpr/users/{user_id}/export": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Export user data as SuperAdmin (GDPR Article 15) */
+    get: operations["adminExportUserData"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/gdpr/users/{user_id}/erase": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Erase (anonymize) user data as SuperAdmin (GDPR Article 17) */
+    delete: operations["adminEraseUserData"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/pcn/report/{building_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Generate PCN accounting report (JSON) */
+    post: operations["generatePcnReport"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/pcn/export/pdf/{building_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Export PCN report as PDF */
+    get: operations["exportPcnPdf"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/pcn/export/excel/{building_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Export PCN report as Excel */
+    get: operations["exportPcnExcel"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/seed/demo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Seed demo data (SuperAdmin only) */
+    post: operations["seedDemoData"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/seed/clear": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Clear demo data (SuperAdmin only) */
+    post: operations["clearDemoData"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/reports/balance-sheet": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Generate balance sheet for a specific building */
+    get: operations["generateBalanceSheetForBuilding"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/buildings/{building_id}/reports/income-statement": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Generate income statement for a specific building */
+    get: operations["generateIncomeStatementForBuilding"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1480,6 +8136,3147 @@ export interface components {
       database?: string;
       /** @example 86400 */
       uptime_seconds?: number;
+    };
+    PaymentResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** Format: uuid */
+      expense_id?: string | null;
+      /**
+       * Format: int64
+       * @description Montant en centimes EUR
+       */
+      amount_cents?: number;
+      /** @example EUR */
+      currency?: string;
+      /** @enum {string} */
+      status?:
+        | "Pending"
+        | "Processing"
+        | "RequiresAction"
+        | "Succeeded"
+        | "Failed"
+        | "Cancelled"
+        | "Refunded";
+      /** @enum {string} */
+      payment_method_type?: "Card" | "SepaDebit" | "BankTransfer" | "Cash";
+      stripe_payment_intent_id?: string | null;
+      stripe_customer_id?: string | null;
+      /** Format: uuid */
+      payment_method_id?: string | null;
+      idempotency_key?: string;
+      description?: string | null;
+      metadata?: string | null;
+      failure_reason?: string | null;
+      /** Format: int64 */
+      refunded_amount_cents?: number;
+      /**
+       * Format: int64
+       * @description amount_cents - refunded_amount_cents
+       */
+      net_amount_cents?: number;
+      /** Format: date-time */
+      succeeded_at?: string | null;
+      /** Format: date-time */
+      failed_at?: string | null;
+      /** Format: date-time */
+      cancelled_at?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    PaymentStatsResponse: {
+      /** Format: int64 */
+      total_count?: number;
+      /** Format: int64 */
+      succeeded_count?: number;
+      /** Format: int64 */
+      failed_count?: number;
+      /** Format: int64 */
+      pending_count?: number;
+      /** Format: int64 */
+      total_amount_cents?: number;
+      /** Format: int64 */
+      total_succeeded_cents?: number;
+      /** Format: int64 */
+      total_refunded_cents?: number;
+      /** Format: int64 */
+      net_amount_cents?: number;
+    };
+    PaymentMethodResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** @enum {string} */
+      method_type?: "Card" | "SepaDebit";
+      stripe_payment_method_id?: string;
+      stripe_customer_id?: string;
+      /** @example Visa ****4242 */
+      display_label?: string;
+      is_default?: boolean;
+      is_active?: boolean;
+      metadata?: string | null;
+      /** Format: date-time */
+      expires_at?: string | null;
+      /** @description Calculé depuis expires_at */
+      is_expired?: boolean;
+      /** @description is_active && !is_expired */
+      is_usable?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    TicketResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      unit_id?: string | null;
+      /** Format: uuid */
+      created_by?: string;
+      /** Format: uuid */
+      assigned_to?: string | null;
+      title?: string;
+      description?: string;
+      /** @enum {string} */
+      category?:
+        | "Plumbing"
+        | "Electrical"
+        | "Heating"
+        | "Cleaning"
+        | "Security"
+        | "General"
+        | "Emergency";
+      /** @enum {string} */
+      priority?: "Low" | "Medium" | "High" | "Urgent" | "Critical";
+      /** @enum {string} */
+      status?: "Open" | "InProgress" | "Resolved" | "Closed" | "Cancelled";
+      resolution_notes?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      /** Format: date-time */
+      resolved_at?: string | null;
+      /** Format: date-time */
+      closed_at?: string | null;
+    };
+    NotificationResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      user_id?: string;
+      /** @enum {string} */
+      notification_type?:
+        | "ExpenseCreated"
+        | "MeetingConvocation"
+        | "PaymentReceived"
+        | "TicketResolved"
+        | "DocumentAdded"
+        | "BoardMessage"
+        | "PaymentReminder"
+        | "BudgetApproved"
+        | "ResolutionVote"
+        | "System";
+      /** @enum {string} */
+      channel?: "Email" | "Sms" | "Push" | "InApp";
+      /** @enum {string} */
+      priority?: "Low" | "Normal" | "High" | "Urgent";
+      /** @enum {string} */
+      status?: "Pending" | "Sent" | "Delivered" | "Failed";
+      title?: string;
+      message?: string;
+      link_url?: string | null;
+      metadata?: string | null;
+      /** Format: date-time */
+      sent_at?: string | null;
+      /** Format: date-time */
+      read_at?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      error_message?: string | null;
+    };
+    NotificationPreferenceResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      user_id?: string;
+      notification_type?: string;
+      email_enabled?: boolean;
+      in_app_enabled?: boolean;
+      push_enabled?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    GdprExportResponse: {
+      /** Format: date-time */
+      export_date?: string;
+      user?: {
+        /** Format: uuid */
+        id?: string;
+        email?: string;
+        first_name?: string;
+        last_name?: string;
+        /** Format: uuid */
+        organization_id?: string | null;
+        is_active?: boolean;
+        is_anonymized?: boolean;
+        /** Format: date-time */
+        created_at?: string;
+        /** Format: date-time */
+        updated_at?: string;
+      };
+      owners?: {
+        id?: string;
+        organization_id?: string;
+        first_name?: string;
+        last_name?: string;
+        email?: string | null;
+        phone?: string | null;
+        address?: string | null;
+        city?: string | null;
+        postal_code?: string | null;
+        country?: string | null;
+        is_anonymized?: boolean;
+        created_at?: string;
+        updated_at?: string;
+      }[];
+      units?: {
+        building_name?: string;
+        building_address?: string;
+        unit_number?: string;
+        floor?: number | null;
+        /** Format: double */
+        ownership_percentage?: number;
+        start_date?: string;
+        end_date?: string | null;
+        is_primary_contact?: boolean;
+      }[];
+      expenses?: {
+        description?: string;
+        /** Format: double */
+        amount?: number;
+        due_date?: string;
+        paid?: boolean;
+        building_name?: string;
+      }[];
+      documents?: {
+        title?: string;
+        document_type?: string;
+        uploaded_at?: string;
+        building_name?: string | null;
+      }[];
+      meetings?: {
+        title?: string;
+        meeting_date?: string;
+        agenda?: string | null;
+        building_name?: string;
+      }[];
+      total_items?: number;
+    };
+    GdprEraseResponse: {
+      success?: boolean;
+      message?: string;
+      /** Format: date-time */
+      anonymized_at?: string;
+      /** Format: uuid */
+      user_id?: string;
+      user_email?: string;
+      user_first_name?: string;
+      user_last_name?: string;
+      owners_anonymized?: number;
+    };
+    GdprActionResponse: {
+      success?: boolean;
+      message?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    ErrorResponse: {
+      /** @description Error message */
+      error?: string;
+    };
+    CreateResolutionRequest: {
+      /** Format: uuid */
+      meeting_id: string;
+      /** @example Approbation des comptes annuels */
+      title: string;
+      /** @example Approbation des comptes de l'exercice 2025 */
+      description: string;
+      /**
+       * @description Type of resolution
+       * @enum {string}
+       */
+      resolution_type: "Ordinary" | "Extraordinary" | "Special";
+      /**
+       * @description Majority type required for adoption
+       * @enum {string}
+       */
+      majority_required: "Simple" | "Absolute" | "Qualified";
+    };
+    ResolutionResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      meeting_id?: string;
+      title?: string;
+      description?: string;
+      resolution_type?: string;
+      majority_required?: string;
+      vote_count_pour?: number;
+      vote_count_contre?: number;
+      vote_count_abstention?: number;
+      /** Format: double */
+      total_voting_power_pour?: number;
+      /** Format: double */
+      total_voting_power_contre?: number;
+      /** Format: double */
+      total_voting_power_abstention?: number;
+      /** @enum {string} */
+      status?: "Pending" | "Adopted" | "Rejected";
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      voted_at?: string | null;
+      /** @description Computed total of all votes */
+      total_votes?: number;
+      /** Format: double */
+      pour_percentage?: number;
+      /** Format: double */
+      contre_percentage?: number;
+      /** Format: double */
+      abstention_percentage?: number;
+    };
+    CastVoteRequest: {
+      /** Format: uuid */
+      owner_id: string;
+      /** Format: uuid */
+      unit_id: string;
+      /** @enum {string} */
+      vote_choice: "Pour" | "Contre" | "Abstention";
+      /**
+       * Format: double
+       * @description Voting power in milliemes (0-1000)
+       * @example 150
+       */
+      voting_power: number;
+      /**
+       * Format: uuid
+       * @description Owner ID of the proxy voter (if proxy vote)
+       */
+      proxy_owner_id?: string | null;
+    };
+    ChangeVoteRequest: {
+      /** @enum {string} */
+      vote_choice: "Pour" | "Contre" | "Abstention";
+    };
+    CloseVotingRequest: {
+      /**
+       * Format: double
+       * @description Total voting power for majority calculation
+       */
+      total_voting_power: number;
+    };
+    VoteResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      resolution_id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** Format: uuid */
+      unit_id?: string;
+      /** @enum {string} */
+      vote_choice?: "Pour" | "Contre" | "Abstention";
+      /** Format: double */
+      voting_power?: number;
+      /** Format: uuid */
+      proxy_owner_id?: string | null;
+      /** Format: date-time */
+      voted_at?: string;
+      is_proxy_vote?: boolean;
+    };
+    CreateBoardMemberDto: {
+      /**
+       * Format: uuid
+       * @description Co-owner (Owner) UUID
+       */
+      owner_id: string;
+      /** Format: uuid */
+      building_id: string;
+      /**
+       * @description Board position
+       * @enum {string}
+       */
+      position:
+        | "president"
+        | "vice_president"
+        | "treasurer"
+        | "secretary"
+        | "member";
+      /**
+       * Format: date-time
+       * @description ISO 8601 datetime
+       */
+      mandate_start: string;
+      /**
+       * Format: date-time
+       * @description ISO 8601 datetime
+       */
+      mandate_end: string;
+      /**
+       * Format: uuid
+       * @description AG meeting that elected this member
+       */
+      elected_by_meeting_id: string;
+    };
+    RenewMandateDto: {
+      /**
+       * Format: uuid
+       * @description UUID of the new AG meeting that renews the mandate
+       */
+      new_elected_by_meeting_id: string;
+    };
+    BoardMemberResponseDto: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      position?: string;
+      /** Format: date-time */
+      mandate_start?: string;
+      /** Format: date-time */
+      mandate_end?: string;
+      /** Format: uuid */
+      elected_by_meeting_id?: string;
+      /** @description Whether the mandate is currently active */
+      is_active?: boolean;
+      /** @description Days remaining in the mandate */
+      days_remaining?: number;
+      /** @description True if mandate expires within 60 days */
+      expires_soon?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    BoardStatsDto: {
+      /** Format: uuid */
+      building_id?: string;
+      total_members?: number;
+      active_members?: number;
+      /** @description Number of mandates expiring within 60 days */
+      expiring_soon?: number;
+      has_president?: boolean;
+      has_treasurer?: boolean;
+    };
+    CreateBoardDecisionDto: {
+      /** Format: uuid */
+      building_id: string;
+      /**
+       * Format: uuid
+       * @description AG meeting that made the decision
+       */
+      meeting_id: string;
+      /** @example Remplacement chaudiere commune */
+      subject: string;
+      /** @example Le conseil decide de remplacer la chaudiere avant fin mars */
+      decision_text: string;
+      /**
+       * Format: date-time
+       * @description Optional deadline for completion
+       */
+      deadline?: string | null;
+    };
+    UpdateBoardDecisionDto: {
+      /** @enum {string} */
+      status: "pending" | "in_progress" | "completed" | "overdue" | "cancelled";
+      notes?: string | null;
+    };
+    AddDecisionNotesDto: {
+      notes: string;
+    };
+    BoardDecisionResponseDto: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      meeting_id?: string;
+      subject?: string;
+      decision_text?: string;
+      /** Format: date-time */
+      deadline?: string | null;
+      status?: string;
+      /** Format: date-time */
+      completed_at?: string | null;
+      notes?: string | null;
+      /** @description Whether deadline has passed */
+      is_overdue?: boolean;
+      /** @description Days remaining until deadline */
+      days_until_deadline?: number | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    DecisionStatsDto: {
+      /** Format: uuid */
+      building_id?: string;
+      total_decisions?: number;
+      pending?: number;
+      in_progress?: number;
+      completed?: number;
+      overdue?: number;
+      cancelled?: number;
+    };
+    CreateConvocationRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** Format: uuid */
+      meeting_id: string;
+      /**
+       * @description Type of AG meeting
+       * @enum {string}
+       */
+      meeting_type: "Ordinary" | "Extraordinary" | "SecondConvocation";
+      /**
+       * Format: date-time
+       * @description Date and time of the meeting
+       */
+      meeting_date: string;
+      /**
+       * @description Language for PDF generation
+       * @enum {string}
+       */
+      language: "FR" | "NL" | "DE" | "EN";
+    };
+    ScheduleConvocationRequest: {
+      /**
+       * Format: date-time
+       * @description Scheduled date to send the convocation (must be before legal deadline)
+       */
+      send_date: string;
+    };
+    SendConvocationRequest: {
+      /** @description List of owner UUIDs to send the convocation to */
+      recipient_owner_ids: string[];
+    };
+    ConvocationResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      meeting_id?: string;
+      meeting_type?: string;
+      /** Format: date-time */
+      meeting_date?: string;
+      /** @enum {string} */
+      status?: "Draft" | "Scheduled" | "Sent" | "Cancelled";
+      /**
+       * Format: date-time
+       * @description Legal minimum date to send the convocation
+       */
+      minimum_send_date?: string;
+      /** Format: date-time */
+      actual_send_date?: string | null;
+      /** Format: date-time */
+      scheduled_send_date?: string | null;
+      pdf_file_path?: string | null;
+      language?: string;
+      total_recipients?: number;
+      opened_count?: number;
+      will_attend_count?: number;
+      will_not_attend_count?: number;
+      /**
+       * Format: double
+       * @description Percentage of recipients who opened the email
+       */
+      opening_rate?: number;
+      /**
+       * Format: double
+       * @description Percentage of recipients who will attend
+       */
+      attendance_rate?: number;
+      days_until_meeting?: number;
+      /** @description Whether the convocation was sent before the legal deadline */
+      respects_legal_deadline?: boolean;
+      /** Format: date-time */
+      reminder_sent_at?: string | null;
+      /**
+       * Format: uuid
+       * @description For second convocations, the first meeting ID (Art. 3.87 par.5 CC)
+       */
+      first_meeting_id?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      /** Format: uuid */
+      created_by?: string;
+    };
+    UpdateAttendanceRequest: {
+      /** @enum {string} */
+      attendance_status:
+        | "Pending"
+        | "WillAttend"
+        | "WillNotAttend"
+        | "Attended"
+        | "DidNotAttend";
+    };
+    SetProxyRequest: {
+      /**
+       * Format: uuid
+       * @description Owner UUID who will act as proxy (procuration belge)
+       */
+      proxy_owner_id: string;
+    };
+    ConvocationRecipientResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      convocation_id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** Format: email */
+      email?: string;
+      /** Format: date-time */
+      email_sent_at?: string | null;
+      /** Format: date-time */
+      email_opened_at?: string | null;
+      email_failed?: boolean;
+      email_failure_reason?: string | null;
+      /** Format: date-time */
+      reminder_sent_at?: string | null;
+      /** Format: date-time */
+      reminder_opened_at?: string | null;
+      /** @enum {string} */
+      attendance_status?:
+        | "Pending"
+        | "WillAttend"
+        | "WillNotAttend"
+        | "Attended"
+        | "DidNotAttend";
+      /** Format: date-time */
+      attendance_updated_at?: string | null;
+      /** Format: uuid */
+      proxy_owner_id?: string | null;
+      has_opened_email?: boolean;
+      has_opened_reminder?: boolean;
+      needs_reminder?: boolean;
+      has_confirmed_attendance?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    RecipientTrackingSummaryResponse: {
+      total_count?: number;
+      opened_count?: number;
+      will_attend_count?: number;
+      will_not_attend_count?: number;
+      attended_count?: number;
+      did_not_attend_count?: number;
+      pending_count?: number;
+      failed_email_count?: number;
+      /** Format: double */
+      opening_rate?: number;
+      /** Format: double */
+      attendance_rate?: number;
+    };
+    CreateQuoteDto: {
+      /** Format: uuid */
+      building_id: string;
+      /** Format: uuid */
+      contractor_id: string;
+      /** @example Renovation toiture */
+      project_title: string;
+      /** @example Remplacement tuiles et etancheite */
+      project_description: string;
+      /**
+       * Format: decimal
+       * @example 5000.00
+       */
+      amount_excl_vat: string;
+      /**
+       * Format: decimal
+       * @description Belgian VAT rate (0.06 for renovations, 0.21 for new construction)
+       * @example 0.21
+       */
+      vat_rate: string;
+      /**
+       * Format: date-time
+       * @description Quote expiration date
+       */
+      validity_date: string;
+      /** Format: date-time */
+      estimated_start_date?: string | null;
+      /**
+       * @description Estimated work duration in days
+       * @example 14
+       */
+      estimated_duration_days: number;
+      /**
+       * @description Warranty period (Belgian standard 2 or 10 years)
+       * @example 10
+       */
+      warranty_years: number;
+    };
+    QuoteDecisionDto: {
+      /** @description Optional notes for the decision audit trail */
+      decision_notes?: string | null;
+    };
+    QuoteComparisonRequestDto: {
+      /** @description List of quote UUIDs to compare (Belgian law requires minimum 3 for works over 5000 EUR) */
+      quote_ids: string[];
+    };
+    QuoteResponseDto: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      contractor_id?: string;
+      project_title?: string;
+      project_description?: string;
+      /** @description Decimal as string */
+      amount_excl_vat?: string;
+      /** @description Decimal as string */
+      vat_rate?: string;
+      /** @description Computed amount including VAT */
+      amount_incl_vat?: string;
+      /** Format: date-time */
+      validity_date?: string;
+      /** Format: date-time */
+      estimated_start_date?: string | null;
+      estimated_duration_days?: number;
+      warranty_years?: number;
+      contractor_rating?: number | null;
+      /** @enum {string} */
+      status?:
+        | "Requested"
+        | "Received"
+        | "UnderReview"
+        | "Accepted"
+        | "Rejected"
+        | "Expired"
+        | "Withdrawn";
+      is_expired?: boolean;
+      /** Format: date-time */
+      requested_at?: string;
+      /** Format: date-time */
+      submitted_at?: string | null;
+      /** Format: date-time */
+      reviewed_at?: string | null;
+      /** Format: date-time */
+      decision_at?: string | null;
+      /** Format: uuid */
+      decision_by?: string | null;
+      decision_notes?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    QuoteComparisonResponseDto: {
+      project_title?: string;
+      /** Format: uuid */
+      building_id?: string;
+      total_quotes?: number;
+      comparison_items?: {
+        quote?: components["schemas"]["QuoteResponseDto"];
+        score?: {
+          /** Format: uuid */
+          quote_id?: string;
+          /** Format: float */
+          total_score?: number;
+          /** Format: float */
+          price_score?: number;
+          /** Format: float */
+          delay_score?: number;
+          /** Format: float */
+          warranty_score?: number;
+          /** Format: float */
+          reputation_score?: number;
+        } | null;
+        /** @description Ranking position (1 = best) */
+        rank?: number;
+      }[];
+      /** @description Minimum price (decimal as string) */
+      min_price?: string;
+      /** @description Maximum price (decimal as string) */
+      max_price?: string;
+      /** @description Average price (decimal as string) */
+      avg_price?: string;
+      min_duration_days?: number;
+      max_duration_days?: number;
+      /** Format: float */
+      avg_duration_days?: number;
+      /**
+       * Format: uuid
+       * @description Top-ranked quote ID (recommendation)
+       */
+      recommended_quote_id?: string | null;
+    };
+    CreatePollDto: {
+      /** Format: uuid */
+      building_id: string;
+      /** @example Should we repaint the lobby? */
+      title: string;
+      description?: string | null;
+      /** @enum {string} */
+      poll_type: "yes_no" | "multiple_choice" | "rating" | "open_ended";
+      options: {
+        /**
+         * Format: uuid
+         * @description Optional UUID, auto-generated if not provided
+         */
+        id?: string | null;
+        option_text: string;
+        attachment_url?: string | null;
+        display_order: number;
+      }[];
+      /** @default false */
+      is_anonymous: boolean;
+      /** @default false */
+      allow_multiple_votes: boolean;
+      /** @default false */
+      require_all_owners: boolean;
+      /**
+       * Format: date-time
+       * @description Poll end date (ISO 8601)
+       */
+      ends_at: string;
+    };
+    UpdatePollDto: {
+      title?: string | null;
+      description?: string | null;
+      options?:
+        | {
+            /** Format: uuid */
+            id?: string | null;
+            option_text?: string;
+            attachment_url?: string | null;
+            display_order?: number;
+          }[]
+        | null;
+      is_anonymous?: boolean | null;
+      allow_multiple_votes?: boolean | null;
+      require_all_owners?: boolean | null;
+      /** Format: date-time */
+      ends_at?: string | null;
+    };
+    CastVoteDto: {
+      /** Format: uuid */
+      poll_id: string;
+      /** @description For YesNo/MultipleChoice polls */
+      selected_option_ids?: string[] | null;
+      /** @description For Rating polls */
+      rating_value?: number | null;
+      /** @description For OpenEnded polls */
+      open_text?: string | null;
+    };
+    PollResponseDto: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      created_by?: string;
+      title?: string;
+      description?: string | null;
+      /** @enum {string} */
+      poll_type?: "YesNo" | "MultipleChoice" | "Rating" | "OpenEnded";
+      options?: components["schemas"]["PollOptionDto"][];
+      is_anonymous?: boolean;
+      allow_multiple_votes?: boolean;
+      require_all_owners?: boolean;
+      /** Format: date-time */
+      starts_at?: string;
+      /** Format: date-time */
+      ends_at?: string;
+      /** @enum {string} */
+      status?: "Draft" | "Active" | "Closed" | "Cancelled";
+      total_eligible_voters?: number;
+      total_votes_cast?: number;
+      /** Format: double */
+      participation_rate?: number;
+      is_active?: boolean;
+      is_ended?: boolean;
+      winning_option?: components["schemas"]["PollOptionDto"];
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    PollOptionDto: {
+      /** Format: uuid */
+      id?: string;
+      option_text?: string;
+      attachment_url?: string | null;
+      vote_count?: number;
+      /** Format: double */
+      vote_percentage?: number;
+      display_order?: number;
+    };
+    PollListResponseDto: {
+      polls?: components["schemas"]["PollResponseDto"][];
+      /** Format: int64 */
+      total?: number;
+      /** Format: int64 */
+      page?: number;
+      /** Format: int64 */
+      page_size?: number;
+    };
+    PollResultsDto: {
+      /** Format: uuid */
+      poll_id?: string;
+      total_votes_cast?: number;
+      total_eligible_voters?: number;
+      /** Format: double */
+      participation_rate?: number;
+      options?: components["schemas"]["PollOptionDto"][];
+      winning_option?: components["schemas"]["PollOptionDto"];
+    };
+    CreateLocalExchangeRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** @enum {string} */
+      exchange_type: "Service" | "ObjectLoan" | "SharedPurchase";
+      /** @example Plumbing help */
+      title: string;
+      /** @example Can help fix leaky faucets */
+      description: string;
+      /** @example 2 */
+      credits: number;
+    };
+    /** @description Empty body - requester ID comes from JWT */
+    RequestExchangeRequest: Record<string, never>;
+    /** @description Empty body - actor ID comes from JWT */
+    CompleteExchangeRequest: Record<string, never>;
+    CancelExchangeRequest: {
+      /** @example Schedule conflict */
+      reason?: string;
+    };
+    RateExchangeRequest: {
+      /** @example 4 */
+      rating: number;
+    };
+    LocalExchangeResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      provider_id?: string;
+      provider_name?: string;
+      /** Format: uuid */
+      requester_id?: string | null;
+      requester_name?: string | null;
+      /** @enum {string} */
+      exchange_type?: "Service" | "ObjectLoan" | "SharedPurchase";
+      title?: string;
+      description?: string;
+      credits?: number;
+      /** @enum {string} */
+      status?:
+        | "Offered"
+        | "Requested"
+        | "InProgress"
+        | "Completed"
+        | "Cancelled";
+      /** Format: date-time */
+      offered_at?: string;
+      /** Format: date-time */
+      requested_at?: string | null;
+      /** Format: date-time */
+      started_at?: string | null;
+      /** Format: date-time */
+      completed_at?: string | null;
+      /** Format: date-time */
+      cancelled_at?: string | null;
+      cancellation_reason?: string | null;
+      provider_rating?: number | null;
+      requester_rating?: number | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    OwnerCreditBalanceResponse: {
+      /** Format: uuid */
+      owner_id?: string;
+      owner_name?: string;
+      /** Format: uuid */
+      building_id?: string;
+      credits_earned?: number;
+      credits_spent?: number;
+      balance?: number;
+      /** @enum {string} */
+      credit_status?: "Positive" | "Balanced" | "Negative";
+      total_exchanges?: number;
+      /** Format: float */
+      average_rating?: number | null;
+      /** @enum {string} */
+      participation_level?:
+        | "New"
+        | "Beginner"
+        | "Active"
+        | "Veteran"
+        | "Expert";
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    SelStatisticsResponse: {
+      /** Format: uuid */
+      building_id?: string;
+      total_exchanges?: number;
+      active_exchanges?: number;
+      completed_exchanges?: number;
+      total_credits_exchanged?: number;
+      active_participants?: number;
+      /** Format: float */
+      average_exchange_rating?: number | null;
+      most_popular_exchange_type?: string | null;
+    };
+    OwnerExchangeSummaryResponse: {
+      /** Format: uuid */
+      owner_id?: string;
+      owner_name?: string;
+      as_provider?: number;
+      as_requester?: number;
+      total_exchanges?: number;
+      /** Format: float */
+      average_rating?: number | null;
+      recent_exchanges?: components["schemas"]["LocalExchangeResponse"][];
+    };
+    CreateNoticeRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** @enum {string} */
+      notice_type: "Announcement" | "Event" | "LostAndFound" | "ClassifiedAd";
+      /** @enum {string} */
+      category:
+        | "General"
+        | "Maintenance"
+        | "Social"
+        | "Security"
+        | "Environment"
+        | "Parking"
+        | "Other";
+      /** @example Building maintenance scheduled */
+      title: string;
+      /** @example The elevator will be serviced on Monday. */
+      content: string;
+      /** Format: date-time */
+      event_date?: string | null;
+      event_location?: string | null;
+      contact_info?: string | null;
+      /** Format: date-time */
+      expires_at?: string | null;
+    };
+    UpdateNoticeRequest: {
+      title?: string;
+      content?: string;
+      /** @enum {string} */
+      category?:
+        | "General"
+        | "Maintenance"
+        | "Social"
+        | "Security"
+        | "Environment"
+        | "Parking"
+        | "Other";
+      /** Format: date-time */
+      event_date?: string | null;
+      event_location?: string | null;
+      contact_info?: string | null;
+      /** Format: date-time */
+      expires_at?: string | null;
+    };
+    SetExpirationRequest: {
+      /** Format: date-time */
+      expires_at?: string | null;
+    };
+    NoticeResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      author_id?: string;
+      author_name?: string;
+      /** @enum {string} */
+      notice_type?: "Announcement" | "Event" | "LostAndFound" | "ClassifiedAd";
+      /** @enum {string} */
+      category?:
+        | "General"
+        | "Maintenance"
+        | "Social"
+        | "Security"
+        | "Environment"
+        | "Parking"
+        | "Other";
+      title?: string;
+      content?: string;
+      /** @enum {string} */
+      status?: "Draft" | "Published" | "Archived" | "Expired";
+      is_pinned?: boolean;
+      /** Format: date-time */
+      published_at?: string | null;
+      /** Format: date-time */
+      expires_at?: string | null;
+      /** Format: date-time */
+      archived_at?: string | null;
+      /** Format: date-time */
+      event_date?: string | null;
+      event_location?: string | null;
+      contact_info?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      is_expired?: boolean;
+      /** Format: int64 */
+      days_until_event?: number | null;
+    };
+    CreateSkillRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** @enum {string} */
+      skill_category:
+        | "HomeRepair"
+        | "Languages"
+        | "Technology"
+        | "Education"
+        | "Arts"
+        | "Sports"
+        | "Cooking"
+        | "Gardening"
+        | "Health"
+        | "Legal"
+        | "Financial"
+        | "PetCare"
+        | "Other";
+      /** @example Web Development */
+      skill_name: string;
+      /** @enum {string} */
+      expertise_level: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+      /** @example Full-stack web development */
+      description: string;
+      is_available_for_help: boolean;
+      hourly_rate_credits?: number | null;
+      years_of_experience?: number | null;
+      certifications?: string | null;
+    };
+    UpdateSkillRequest: {
+      skill_name?: string;
+      /** @enum {string} */
+      expertise_level?: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+      description?: string;
+      is_available_for_help?: boolean;
+      hourly_rate_credits?: number | null;
+      years_of_experience?: number | null;
+      certifications?: string | null;
+    };
+    SkillResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      owner_name?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** @enum {string} */
+      skill_category?:
+        | "HomeRepair"
+        | "Languages"
+        | "Technology"
+        | "Education"
+        | "Arts"
+        | "Sports"
+        | "Cooking"
+        | "Gardening"
+        | "Health"
+        | "Legal"
+        | "Financial"
+        | "PetCare"
+        | "Other";
+      skill_name?: string;
+      /** @enum {string} */
+      expertise_level?: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+      description?: string;
+      is_available_for_help?: boolean;
+      hourly_rate_credits?: number | null;
+      years_of_experience?: number | null;
+      certifications?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      is_free?: boolean;
+      is_professional?: boolean;
+    };
+    SkillStatisticsResponse: {
+      /** Format: int64 */
+      total_skills?: number;
+      /** Format: int64 */
+      available_skills?: number;
+      /** Format: int64 */
+      free_skills?: number;
+      /** Format: int64 */
+      paid_skills?: number;
+      /** Format: int64 */
+      professional_skills?: number;
+      skills_by_category?: {
+        category?: string;
+        /** Format: int64 */
+        count?: number;
+      }[];
+      skills_by_expertise?: {
+        level?: string;
+        /** Format: int64 */
+        count?: number;
+      }[];
+    };
+    CreateSharedObjectRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** @enum {string} */
+      object_category:
+        | "Tools"
+        | "Books"
+        | "Electronics"
+        | "Sports"
+        | "Gardening"
+        | "Kitchen"
+        | "Baby"
+        | "Other";
+      /** @example Power Drill */
+      object_name: string;
+      /** @example 18V cordless drill */
+      description: string;
+      /** @enum {string} */
+      condition: "New" | "Excellent" | "Good" | "Fair" | "Poor";
+      is_available: boolean;
+      rental_credits_per_day?: number | null;
+      deposit_credits?: number | null;
+      borrowing_duration_days?: number | null;
+      photos?: string[] | null;
+      location_details?: string | null;
+      usage_instructions?: string | null;
+    };
+    UpdateSharedObjectRequest: {
+      object_name?: string;
+      description?: string;
+      /** @enum {string} */
+      condition?: "New" | "Excellent" | "Good" | "Fair" | "Poor";
+      is_available?: boolean;
+      rental_credits_per_day?: number | null;
+      deposit_credits?: number | null;
+      borrowing_duration_days?: number | null;
+      photos?: string[] | null;
+      location_details?: string | null;
+      usage_instructions?: string | null;
+    };
+    BorrowObjectRequest: {
+      /** @description Override default borrowing duration */
+      duration_days?: number | null;
+    };
+    SharedObjectResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      owner_name?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** @enum {string} */
+      object_category?:
+        | "Tools"
+        | "Books"
+        | "Electronics"
+        | "Sports"
+        | "Gardening"
+        | "Kitchen"
+        | "Baby"
+        | "Other";
+      object_name?: string;
+      description?: string;
+      /** @enum {string} */
+      condition?: "New" | "Excellent" | "Good" | "Fair" | "Poor";
+      is_available?: boolean;
+      rental_credits_per_day?: number | null;
+      deposit_credits?: number | null;
+      borrowing_duration_days?: number | null;
+      /** Format: uuid */
+      current_borrower_id?: string | null;
+      current_borrower_name?: string | null;
+      /** Format: date-time */
+      borrowed_at?: string | null;
+      /** Format: date-time */
+      due_back_at?: string | null;
+      photos?: string[] | null;
+      location_details?: string | null;
+      usage_instructions?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      is_free?: boolean;
+      is_borrowed?: boolean;
+      is_overdue?: boolean;
+      days_overdue?: number;
+    };
+    SharedObjectStatisticsResponse: {
+      /** Format: int64 */
+      total_objects?: number;
+      /** Format: int64 */
+      available_objects?: number;
+      /** Format: int64 */
+      borrowed_objects?: number;
+      /** Format: int64 */
+      overdue_objects?: number;
+      /** Format: int64 */
+      free_objects?: number;
+      /** Format: int64 */
+      paid_objects?: number;
+      objects_by_category?: {
+        category?: string;
+        /** Format: int64 */
+        count?: number;
+      }[];
+    };
+    CreateResourceBookingRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** @enum {string} */
+      resource_type:
+        | "MeetingRoom"
+        | "LaundryRoom"
+        | "Gym"
+        | "PartyRoom"
+        | "GuestParking"
+        | "Barbecue"
+        | "Garden"
+        | "RoofTerrace"
+        | "Storage"
+        | "Other";
+      /** @example Meeting Room A */
+      resource_name: string;
+      /** Format: date-time */
+      start_time: string;
+      /** Format: date-time */
+      end_time: string;
+      notes?: string | null;
+      /**
+       * @default None
+       * @enum {string}
+       */
+      recurring_pattern: "None" | "Daily" | "Weekly" | "Biweekly" | "Monthly";
+      /** Format: date-time */
+      recurrence_end_date?: string | null;
+      /** Format: int64 */
+      max_duration_hours?: number | null;
+      /** Format: int64 */
+      max_advance_days?: number | null;
+    };
+    UpdateResourceBookingRequest: {
+      resource_name?: string;
+      notes?: string;
+    };
+    ResourceBookingResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** @enum {string} */
+      resource_type?:
+        | "MeetingRoom"
+        | "LaundryRoom"
+        | "Gym"
+        | "PartyRoom"
+        | "GuestParking"
+        | "Barbecue"
+        | "Garden"
+        | "RoofTerrace"
+        | "Storage"
+        | "Other";
+      resource_name?: string;
+      /** Format: uuid */
+      booked_by?: string;
+      booked_by_name?: string;
+      /** Format: date-time */
+      start_time?: string;
+      /** Format: date-time */
+      end_time?: string;
+      /** @enum {string} */
+      status?: "Pending" | "Confirmed" | "Completed" | "Cancelled" | "NoShow";
+      notes?: string | null;
+      /** @enum {string} */
+      recurring_pattern?: "None" | "Daily" | "Weekly" | "Biweekly" | "Monthly";
+      /** Format: date-time */
+      recurrence_end_date?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      /** Format: double */
+      duration_hours?: number;
+      is_active?: boolean;
+      is_past?: boolean;
+      is_future?: boolean;
+      is_modifiable?: boolean;
+      is_recurring?: boolean;
+    };
+    BookingStatisticsResponse: {
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: int64 */
+      total_bookings?: number;
+      /** Format: int64 */
+      confirmed_bookings?: number;
+      /** Format: int64 */
+      pending_bookings?: number;
+      /** Format: int64 */
+      completed_bookings?: number;
+      /** Format: int64 */
+      cancelled_bookings?: number;
+      /** Format: int64 */
+      no_show_bookings?: number;
+      /** Format: int64 */
+      active_bookings?: number;
+      /** Format: int64 */
+      upcoming_bookings?: number;
+      /** Format: double */
+      total_hours_booked?: number;
+      most_popular_resource?: string | null;
+    };
+    CreateAchievementRequest: {
+      /** Format: uuid */
+      organization_id: string;
+      /** @enum {string} */
+      category:
+        | "Community"
+        | "Sel"
+        | "Booking"
+        | "Sharing"
+        | "Skills"
+        | "Notice"
+        | "Governance"
+        | "Milestone";
+      /** @enum {string} */
+      tier: "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond";
+      /** @example First Booking */
+      name: string;
+      /** @example Made your first resource booking */
+      description: string;
+      /** @example 🎉 */
+      icon: string;
+      points_value: number;
+      /**
+       * @description JSON criteria
+       * @example {"action":"booking_created","count":1}
+       */
+      requirements: string;
+      is_secret: boolean;
+      is_repeatable: boolean;
+      display_order: number;
+    };
+    UpdateAchievementRequest: {
+      name?: string;
+      description?: string;
+      /** @enum {string} */
+      category?:
+        | "Community"
+        | "Sel"
+        | "Booking"
+        | "Sharing"
+        | "Skills"
+        | "Notice"
+        | "Governance"
+        | "Milestone";
+      /** @enum {string} */
+      tier?: "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond";
+      icon?: string;
+      points_value?: number;
+      requirements?: string;
+      is_secret?: boolean;
+      is_repeatable?: boolean;
+      display_order?: number;
+    };
+    AchievementResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** @enum {string} */
+      category?:
+        | "Community"
+        | "Sel"
+        | "Booking"
+        | "Sharing"
+        | "Skills"
+        | "Notice"
+        | "Governance"
+        | "Milestone";
+      /** @enum {string} */
+      tier?: "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond";
+      name?: string;
+      description?: string;
+      icon?: string;
+      points_value?: number;
+      requirements?: string;
+      is_secret?: boolean;
+      is_repeatable?: boolean;
+      display_order?: number;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    AwardAchievementRequest: {
+      /** Format: uuid */
+      achievement_id: string;
+      /** @description JSON progress data */
+      progress_data?: string | null;
+    };
+    UserAchievementResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      user_id?: string;
+      /** Format: uuid */
+      achievement_id?: string;
+      /** Format: date-time */
+      earned_at?: string;
+      progress_data?: string | null;
+      times_earned?: number;
+      achievement?: components["schemas"]["AchievementResponse"];
+    };
+    CreateChallengeRequest: {
+      /** Format: uuid */
+      organization_id: string;
+      /** Format: uuid */
+      building_id?: string | null;
+      /** @enum {string} */
+      challenge_type: "Individual" | "Team" | "Building";
+      /** @example Booking Week */
+      title: string;
+      /** @example Make 5 resource bookings this week */
+      description: string;
+      icon: string;
+      /** Format: date-time */
+      start_date: string;
+      /** Format: date-time */
+      end_date: string;
+      /** @example bookings_created */
+      target_metric: string;
+      /** @example 5 */
+      target_value: number;
+      /** @example 50 */
+      reward_points: number;
+    };
+    UpdateChallengeRequest: {
+      title?: string;
+      description?: string;
+      icon?: string;
+      /** Format: date-time */
+      start_date?: string;
+      /** Format: date-time */
+      end_date?: string;
+      target_value?: number;
+      reward_points?: number;
+    };
+    ChallengeResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string | null;
+      /** @enum {string} */
+      challenge_type?: "Individual" | "Team" | "Building";
+      /** @enum {string} */
+      status?: "Draft" | "Active" | "Completed" | "Cancelled";
+      title?: string;
+      description?: string;
+      icon?: string;
+      /** Format: date-time */
+      start_date?: string;
+      /** Format: date-time */
+      end_date?: string;
+      target_metric?: string;
+      target_value?: number;
+      reward_points?: number;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      /** Format: int64 */
+      duration_days?: number;
+      is_currently_active?: boolean;
+      has_ended?: boolean;
+    };
+    ChallengeProgressResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      challenge_id?: string;
+      /** Format: uuid */
+      user_id?: string;
+      current_value?: number;
+      completed?: boolean;
+      /** Format: date-time */
+      completed_at?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      challenge?: components["schemas"]["ChallengeResponse"];
+      /** Format: double */
+      completion_percentage?: number;
+    };
+    IncrementProgressRequest: {
+      /** @example 1 */
+      increment: number;
+    };
+    LeaderboardResponse: {
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string | null;
+      entries?: components["schemas"]["LeaderboardEntryResponse"][];
+      total_users?: number;
+    };
+    LeaderboardEntryResponse: {
+      /** Format: uuid */
+      user_id?: string;
+      username?: string;
+      total_points?: number;
+      achievements_count?: number;
+      challenges_completed?: number;
+      rank?: number;
+    };
+    UserGamificationStatsResponse: {
+      /** Format: uuid */
+      user_id?: string;
+      total_points?: number;
+      achievements_earned?: number;
+      achievements_available?: number;
+      challenges_completed?: number;
+      challenges_active?: number;
+      rank?: number | null;
+      recent_achievements?: components["schemas"]["UserAchievementResponse"][];
+    };
+    CreateEnergyCampaignRequest: {
+      /** Format: uuid */
+      building_id?: string | null;
+      /** @example Winter 2026 Group Buy */
+      campaign_name: string;
+      /** Format: date-time */
+      deadline_participation: string;
+      energy_types: ("Electricity" | "Gas" | "Dual")[];
+      contract_duration_months?: number | null;
+      /** @enum {string|null} */
+      contract_type?: "Fixed" | "Variable" | "Dynamic" | null;
+    };
+    UpdateCampaignStatusRequest: {
+      /** @enum {string} */
+      status:
+        | "CollectingData"
+        | "Negotiating"
+        | "Voting"
+        | "OfferSelected"
+        | "Finalized"
+        | "Cancelled";
+    };
+    EnergyCampaignResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string | null;
+      campaign_name?: string;
+      campaign_type?: string;
+      /** @enum {string} */
+      status?:
+        | "CollectingData"
+        | "Negotiating"
+        | "Voting"
+        | "OfferSelected"
+        | "Finalized"
+        | "Cancelled";
+      /** Format: date-time */
+      deadline_participation?: string;
+      /** Format: date-time */
+      deadline_vote?: string | null;
+      /** Format: date-time */
+      contract_start_date?: string | null;
+      energy_types?: string[];
+      contract_duration_months?: number;
+      contract_type?: string;
+      total_participants?: number;
+      /** Format: double */
+      total_kwh_electricity?: number | null;
+      /** Format: double */
+      total_kwh_gas?: number | null;
+      /** Format: double */
+      avg_kwh_per_unit?: number | null;
+      offers_received?: components["schemas"]["ProviderOfferResponse"][];
+      /** Format: uuid */
+      selected_offer_id?: string | null;
+      /** Format: double */
+      estimated_savings_pct?: number | null;
+      /** Format: uuid */
+      created_by?: string;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    CampaignStatsResponse: {
+      total_participants?: number;
+      /** Format: double */
+      participation_rate?: number;
+      /** Format: double */
+      total_kwh_electricity?: number | null;
+      /** Format: double */
+      total_kwh_gas?: number | null;
+      /** Format: double */
+      avg_kwh_per_unit?: number | null;
+      can_negotiate?: boolean;
+      /** Format: double */
+      estimated_savings_pct?: number | null;
+      /** @description True if >= 5 participants (GDPR k-anonymity) */
+      k_anonymity_met?: boolean;
+    };
+    CreateProviderOfferRequest: {
+      /** @example Engie */
+      provider_name: string;
+      /** Format: double */
+      price_kwh_electricity?: number | null;
+      /** Format: double */
+      price_kwh_gas?: number | null;
+      /** Format: double */
+      fixed_monthly_fee: number;
+      /** Format: double */
+      green_energy_pct: number;
+      contract_duration_months: number;
+      /** Format: double */
+      estimated_savings_pct: number;
+      /** Format: date-time */
+      offer_valid_until: string;
+    };
+    ProviderOfferResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      campaign_id?: string;
+      provider_name?: string;
+      /** Format: double */
+      price_kwh_electricity?: number | null;
+      /** Format: double */
+      price_kwh_gas?: number | null;
+      /** Format: double */
+      fixed_monthly_fee?: number;
+      /** Format: double */
+      green_energy_pct?: number;
+      /** @description Calculated 0/5/10 */
+      green_score?: number;
+      contract_duration_months?: number;
+      /** Format: double */
+      estimated_savings_pct?: number;
+      /** Format: date-time */
+      offer_valid_until?: string;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    SelectOfferRequest: {
+      /** Format: uuid */
+      offer_id: string;
+      /**
+       * Format: uuid
+       * @description Reference to voting poll
+       */
+      poll_id?: string | null;
+    };
+    UploadEnergyBillRequest: {
+      /** Format: uuid */
+      campaign_id: string;
+      /** Format: uuid */
+      unit_id: string;
+      /** Format: uuid */
+      building_id: string;
+      /** Format: date-time */
+      bill_period_start: string;
+      /** Format: date-time */
+      bill_period_end: string;
+      /**
+       * Format: double
+       * @description Plain text (will be encrypted)
+       */
+      total_kwh: number;
+      /** @enum {string} */
+      energy_type: "Electricity" | "Gas" | "Dual";
+      provider?: string | null;
+      /**
+       * @description 4-digit Belgian postal code
+       * @example 1000
+       */
+      postal_code: string;
+      /** @description SHA-256 of uploaded PDF */
+      file_hash: string;
+      /** @description S3 path (will be encrypted) */
+      file_path: string;
+      /** Format: double */
+      ocr_confidence?: number | null;
+      consent: components["schemas"]["GdprConsentData"];
+    };
+    GdprConsentData: {
+      /** @description Must be true */
+      accepted: boolean;
+      /** Format: date-time */
+      timestamp: string;
+      ip: string;
+      user_agent: string;
+    };
+    EnergyBillUploadResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      campaign_id?: string;
+      /** Format: uuid */
+      unit_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: date-time */
+      bill_period_start?: string;
+      /** Format: date-time */
+      bill_period_end?: string;
+      energy_type?: string;
+      provider?: string | null;
+      postal_code?: string;
+      file_hash?: string;
+      /** Format: double */
+      ocr_confidence?: number;
+      manually_verified?: boolean;
+      /** Format: date-time */
+      verified_at?: string | null;
+      /** Format: date-time */
+      consent_timestamp?: string;
+      anonymized?: boolean;
+      /** Format: date-time */
+      retention_until?: string;
+      /** Format: date-time */
+      deleted_at?: string | null;
+      /** Format: date-time */
+      uploaded_at?: string;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    DecryptedConsumptionResponse: {
+      /** Format: uuid */
+      upload_id?: string;
+      /**
+       * Format: double
+       * @description Decrypted value
+       */
+      total_kwh?: number;
+      energy_type?: string;
+      /** Format: date-time */
+      bill_period_start?: string;
+      /** Format: date-time */
+      bill_period_end?: string;
+    };
+    VerifyUploadRequest: {
+      verified: boolean;
+    };
+    OrganizationResponse: {
+      /** Format: uuid */
+      id?: string;
+      name?: string;
+      slug?: string;
+      /** Format: email */
+      contact_email?: string;
+      contact_phone?: string | null;
+      /** @enum {string} */
+      subscription_plan?: "free" | "starter" | "professional" | "enterprise";
+      max_buildings?: number;
+      max_users?: number;
+      is_active?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+    };
+    CreateOrganizationRequest: {
+      /** @example Copro Bruxelles */
+      name: string;
+      /** @example copro-bruxelles */
+      slug: string;
+      /**
+       * Format: email
+       * @example contact@copro-bruxelles.be
+       */
+      contact_email: string;
+      /** @example +32 2 123 45 67 */
+      contact_phone?: string | null;
+      /**
+       * @example professional
+       * @enum {string}
+       */
+      subscription_plan: "free" | "starter" | "professional" | "enterprise";
+    };
+    UpdateOrganizationRequest: {
+      name: string;
+      slug: string;
+      /** Format: email */
+      contact_email: string;
+      contact_phone?: string | null;
+      /** @enum {string} */
+      subscription_plan: "free" | "starter" | "professional" | "enterprise";
+    };
+    UserResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: email */
+      email?: string;
+      first_name?: string;
+      last_name?: string;
+      /** @description Active role name */
+      role?: string;
+      /** Format: uuid */
+      organization_id?: string | null;
+      is_active?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+      roles?: components["schemas"]["RoleResponse"][];
+      active_role?: components["schemas"]["RoleResponse"];
+    };
+    RoleResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** @enum {string} */
+      role?: "superadmin" | "syndic" | "accountant" | "owner";
+      /** Format: uuid */
+      organization_id?: string | null;
+      is_primary?: boolean;
+    };
+    RoleAssignmentRequest: {
+      /** @enum {string} */
+      role: "superadmin" | "syndic" | "accountant" | "owner";
+      /**
+       * Format: uuid
+       * @description Required for non-superadmin roles
+       */
+      organization_id?: string | null;
+      /** @default false */
+      is_primary: boolean;
+    };
+    CreateUserRequest: {
+      /** Format: email */
+      email: string;
+      /** Format: password */
+      password: string;
+      first_name: string;
+      last_name: string;
+      /** @description New multi-role format */
+      roles?: components["schemas"]["RoleAssignmentRequest"][];
+      /** @description Backward-compatible single role */
+      role?: string;
+      /**
+       * Format: uuid
+       * @description Backward-compatible organization
+       */
+      organization_id?: string;
+    };
+    UpdateUserRequest: {
+      /** Format: email */
+      email: string;
+      first_name: string;
+      last_name: string;
+      /**
+       * Format: password
+       * @description Optional password change
+       */
+      password?: string | null;
+      roles?: components["schemas"]["RoleAssignmentRequest"][];
+      /** @description Backward-compatible single role */
+      role?: string;
+      /**
+       * Format: uuid
+       * @description Backward-compatible organization
+       */
+      organization_id?: string;
+    };
+    CreateBudgetRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** @example 2025 */
+      fiscal_year: number;
+      /**
+       * Format: double
+       * @example 50000
+       */
+      ordinary_budget: number;
+      /**
+       * Format: double
+       * @example 15000
+       */
+      extraordinary_budget: number;
+      notes?: string | null;
+    };
+    UpdateBudgetRequest: {
+      /** Format: double */
+      ordinary_budget?: number | null;
+      /** Format: double */
+      extraordinary_budget?: number | null;
+      notes?: string | null;
+    };
+    BudgetResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      fiscal_year?: number;
+      /** Format: double */
+      ordinary_budget?: number;
+      /** Format: double */
+      extraordinary_budget?: number;
+      /** Format: double */
+      total_budget?: number;
+      /** @enum {string} */
+      status?: "draft" | "submitted" | "approved" | "rejected" | "archived";
+      /** Format: date-time */
+      submitted_date?: string | null;
+      /** Format: date-time */
+      approved_date?: string | null;
+      /** Format: uuid */
+      approved_by_meeting_id?: string | null;
+      /** Format: double */
+      monthly_provision_amount?: number;
+      notes?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      is_active?: boolean;
+      is_editable?: boolean;
+    };
+    BudgetVarianceResponse: {
+      /** Format: uuid */
+      budget_id?: string;
+      fiscal_year?: number;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: double */
+      budgeted_ordinary?: number;
+      /** Format: double */
+      budgeted_extraordinary?: number;
+      /** Format: double */
+      budgeted_total?: number;
+      /** Format: double */
+      actual_ordinary?: number;
+      /** Format: double */
+      actual_extraordinary?: number;
+      /** Format: double */
+      actual_total?: number;
+      /** Format: double */
+      variance_ordinary?: number;
+      /** Format: double */
+      variance_extraordinary?: number;
+      /** Format: double */
+      variance_total?: number;
+      /** Format: double */
+      variance_ordinary_pct?: number;
+      /** Format: double */
+      variance_extraordinary_pct?: number;
+      /** Format: double */
+      variance_total_pct?: number;
+      has_overruns?: boolean;
+      overrun_categories?: string[];
+      months_elapsed?: number;
+      /** Format: double */
+      projected_year_end_total?: number;
+    };
+    BudgetStatsResponse: {
+      total_budgets?: number;
+      draft_count?: number;
+      submitted_count?: number;
+      approved_count?: number;
+      rejected_count?: number;
+      archived_count?: number;
+      /** Format: double */
+      average_total_budget?: number;
+      /** Format: double */
+      average_monthly_provision?: number;
+    };
+    CreateEtatDateRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** Format: uuid */
+      unit_id: string;
+      /** Format: date-time */
+      reference_date: string;
+      /** @enum {string} */
+      language: "fr" | "nl" | "de" | "en";
+      /** @example Maitre Dupont */
+      notary_name: string;
+      /**
+       * Format: email
+       * @example dupont@notaire.be
+       */
+      notary_email: string;
+      notary_phone?: string | null;
+    };
+    UpdateEtatDateFinancialRequest: {
+      /** Format: double */
+      owner_balance: number;
+      /** Format: double */
+      arrears_amount: number;
+      /** Format: double */
+      monthly_provision_amount: number;
+      /** Format: double */
+      total_balance: number;
+      /** Format: double */
+      approved_works_unpaid: number;
+    };
+    EtatDateResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      unit_id?: string;
+      /** Format: date-time */
+      reference_date?: string;
+      /** Format: date-time */
+      requested_date?: string;
+      /** Format: date-time */
+      generated_date?: string | null;
+      /** Format: date-time */
+      delivered_date?: string | null;
+      /** @enum {string} */
+      status?:
+        | "requested"
+        | "in_progress"
+        | "generated"
+        | "delivered"
+        | "expired";
+      /** @enum {string} */
+      language?: "fr" | "nl" | "de" | "en";
+      reference_number?: string;
+      notary_name?: string;
+      notary_email?: string;
+      notary_phone?: string | null;
+      building_name?: string;
+      building_address?: string;
+      unit_number?: string;
+      unit_floor?: string | null;
+      /** Format: double */
+      unit_area?: number | null;
+      /** Format: double */
+      ordinary_charges_quota?: number;
+      /** Format: double */
+      extraordinary_charges_quota?: number;
+      /** Format: double */
+      owner_balance?: number;
+      /** Format: double */
+      arrears_amount?: number;
+      /** Format: double */
+      monthly_provision_amount?: number;
+      /** Format: double */
+      total_balance?: number;
+      /** Format: double */
+      approved_works_unpaid?: number;
+      additional_data?: Record<string, never>;
+      pdf_file_path?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      is_overdue?: boolean;
+      is_expired?: boolean;
+      days_since_request?: number;
+    };
+    EtatDateStatsResponse: {
+      total_requests?: number;
+      requested_count?: number;
+      in_progress_count?: number;
+      generated_count?: number;
+      delivered_count?: number;
+      expired_count?: number;
+      overdue_count?: number;
+      /** Format: double */
+      average_processing_days?: number;
+    };
+    ChargeDistributionResponse: {
+      /** Format: uuid */
+      expense_id?: string;
+      /** Format: uuid */
+      unit_id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** Format: double */
+      percentage?: number;
+      amount_cents?: number;
+    };
+    CreateJournalEntryRequest: {
+      /** Format: uuid */
+      building_id?: string | null;
+      /**
+       * @description ACH=Purchases, VEN=Sales, FIN=Financial, ODS=Miscellaneous
+       * @enum {string}
+       */
+      journal_type: "ACH" | "VEN" | "FIN" | "ODS";
+      /** Format: date-time */
+      entry_date: string;
+      description: string;
+      document_ref?: string | null;
+      lines: components["schemas"]["JournalEntryLineRequest"][];
+    };
+    JournalEntryLineRequest: {
+      /**
+       * @description PCMN account code
+       * @example 604
+       */
+      account_code: string;
+      /**
+       * Format: double
+       * @example 100
+       */
+      debit: number;
+      /**
+       * Format: double
+       * @example 0
+       */
+      credit: number;
+      /** @example Fournitures */
+      description: string;
+    };
+    JournalEntryResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string | null;
+      journal_type?: string | null;
+      /** Format: date-time */
+      entry_date?: string;
+      description?: string | null;
+      document_ref?: string | null;
+      /** Format: uuid */
+      expense_id?: string | null;
+      /** Format: uuid */
+      contribution_id?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    JournalEntryLineResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      journal_entry_id?: string;
+      account_code?: string;
+      /** Format: double */
+      debit?: number;
+      /** Format: double */
+      credit?: number;
+      description?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+    };
+    JournalEntryWithLinesResponse: {
+      entry?: components["schemas"]["JournalEntryResponse"];
+      lines?: components["schemas"]["JournalEntryLineResponse"][];
+    };
+    CreateOwnerContributionRequest: {
+      /** Format: uuid */
+      owner_id: string;
+      /** Format: uuid */
+      unit_id?: string | null;
+      description: string;
+      /** Format: double */
+      amount: number;
+      /** @enum {string} */
+      contribution_type: "regular" | "extraordinary" | "advance" | "adjustment";
+      /** Format: date-time */
+      contribution_date: string;
+      account_code?: string | null;
+    };
+    RecordPaymentRequest: {
+      /** Format: date-time */
+      payment_date: string;
+      /** @enum {string} */
+      payment_method:
+        | "bank_transfer"
+        | "cash"
+        | "check"
+        | "card"
+        | "sepa_direct_debit";
+      payment_reference?: string | null;
+    };
+    OwnerContributionResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** Format: uuid */
+      unit_id?: string | null;
+      description?: string;
+      /** Format: double */
+      amount?: number;
+      account_code?: string | null;
+      /** @enum {string} */
+      contribution_type?:
+        | "regular"
+        | "extraordinary"
+        | "advance"
+        | "adjustment";
+      /** Format: date-time */
+      contribution_date?: string;
+      /** Format: date-time */
+      payment_date?: string | null;
+      payment_method?: string | null;
+      payment_reference?: string | null;
+      /** @enum {string} */
+      payment_status?: "pending" | "paid" | "overdue" | "cancelled";
+      notes?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    CreateCallForFundsRequest: {
+      /** Format: uuid */
+      building_id: string;
+      /** @example Appel de fonds Q1 2025 */
+      title: string;
+      description: string;
+      /**
+       * Format: double
+       * @example 25000
+       */
+      total_amount: number;
+      /** @enum {string} */
+      contribution_type: "regular" | "extraordinary" | "advance" | "adjustment";
+      /** Format: date-time */
+      call_date: string;
+      /** Format: date-time */
+      due_date: string;
+      account_code?: string | null;
+    };
+    CallForFundsResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      title?: string;
+      description?: string;
+      /** Format: double */
+      total_amount?: number;
+      /** @enum {string} */
+      contribution_type?:
+        | "regular"
+        | "extraordinary"
+        | "advance"
+        | "adjustment";
+      /** Format: date-time */
+      call_date?: string;
+      /** Format: date-time */
+      due_date?: string;
+      /** Format: date-time */
+      sent_date?: string | null;
+      /** @enum {string} */
+      status?: "draft" | "sent" | "partial" | "completed" | "cancelled";
+      account_code?: string | null;
+      notes?: string | null;
+      is_overdue?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      /** Format: uuid */
+      created_by?: string | null;
+    };
+    SendCallForFundsResponse: {
+      call_for_funds?: components["schemas"]["CallForFundsResponse"];
+      contributions_generated?: number;
+    };
+    Setup2FAResponse: {
+      /** @description TOTP secret (Base32 encoded) */
+      secret?: string;
+      /** @description QR code as data URL (data:image/png;base64,...) */
+      qr_code_data_url?: string;
+      /** @description 10 one-time backup codes (shown only once) */
+      backup_codes?: string[];
+      /** @example KoproGo */
+      issuer?: string;
+      /** @example user@example.com */
+      account_name?: string;
+    };
+    Enable2FARequest: {
+      /**
+       * @description 6-digit TOTP code from authenticator app
+       * @example 123456
+       */
+      totp_code: string;
+    };
+    Verify2FARequest: {
+      /**
+       * @description 6-digit TOTP code or backup code (e.g., ABCD-EFGH)
+       * @example 123456
+       */
+      totp_code: string;
+    };
+    Disable2FARequest: {
+      /**
+       * Format: password
+       * @description Current user password for verification
+       */
+      current_password: string;
+    };
+    RegenerateBackupCodesRequest: {
+      /**
+       * @description 6-digit TOTP code for verification
+       * @example 123456
+       */
+      totp_code: string;
+    };
+    RegenerateBackupCodesResponse: {
+      /** @description 10 new one-time backup codes */
+      backup_codes?: string[];
+      /** Format: date-time */
+      regenerated_at?: string;
+    };
+    TwoFactorStatusResponse: {
+      is_enabled?: boolean;
+      /** Format: date-time */
+      verified_at?: string | null;
+      /** Format: date-time */
+      last_used_at?: string | null;
+      backup_codes_remaining?: number;
+      /** @description True if fewer than 3 backup codes remain */
+      backup_codes_low?: boolean;
+      /** @description True if 2FA not used in 90 days */
+      needs_reverification?: boolean;
+    };
+    CreateIoTReadingDto: {
+      /** Format: uuid */
+      building_id: string;
+      /** @enum {string} */
+      device_type: "Linky" | "Ores" | "SmartMeter" | "OtherIoT";
+      /** @enum {string} */
+      metric_type:
+        | "ElectricityConsumption"
+        | "GasConsumption"
+        | "WaterConsumption"
+        | "Temperature"
+        | "Humidity";
+      /** Format: double */
+      value: number;
+      /** @example kWh */
+      unit: string;
+      /** Format: date-time */
+      timestamp: string;
+      /** @example Enedis */
+      source: string;
+      metadata?: Record<string, never> | null;
+    };
+    IoTReadingResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      device_type?: string;
+      metric_type?: string;
+      /** Format: double */
+      value?: number;
+      unit?: string;
+      /** Format: date-time */
+      timestamp?: string;
+      source?: string;
+      metadata?: Record<string, never> | null;
+      /** Format: date-time */
+      created_at?: string;
+    };
+    ConfigureLinkyDeviceDto: {
+      /** Format: uuid */
+      building_id: string;
+      /**
+       * @description Point Reference Measure (14-digit PRM number)
+       * @example 12345678901234
+       */
+      prm: string;
+      /**
+       * @description Linky data provider
+       * @example Enedis
+       */
+      provider: string;
+      /** @description OAuth2 authorization code */
+      authorization_code: string;
+    };
+    LinkyDeviceResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      prm?: string;
+      provider?: string;
+      sync_enabled?: boolean;
+      /** Format: date-time */
+      last_sync_at?: string | null;
+      /** Format: date-time */
+      token_expires_at?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    SyncLinkyDataDto: {
+      /** Format: uuid */
+      building_id: string;
+      /** Format: date-time */
+      start_date: string;
+      /** Format: date-time */
+      end_date: string;
+    };
+    LinkySyncResponse: {
+      /** Format: uuid */
+      device_id?: string;
+      /** Format: date-time */
+      sync_started_at?: string;
+      readings_count?: number;
+      message?: string;
+    };
+    CreateContractorReportDto: {
+      /** Format: uuid */
+      building_id: string;
+      contractor_name: string;
+      /** Format: uuid */
+      ticket_id?: string | null;
+      /** Format: uuid */
+      quote_id?: string | null;
+      /** Format: uuid */
+      contractor_user_id?: string | null;
+    };
+    UpdateContractorReportDto: {
+      /** Format: date-time */
+      work_date?: string | null;
+      compte_rendu?: string | null;
+      photos_before?: string[] | null;
+      photos_after?: string[] | null;
+      parts_replaced?: components["schemas"]["ReplacedPartDto"][] | null;
+    };
+    ReplacedPartDto: {
+      name: string;
+      reference?: string | null;
+      quantity: number;
+      /** Format: uuid */
+      photo_document_id?: string | null;
+    };
+    RequestCorrectionsDto: {
+      comments: string;
+    };
+    RejectReportDto: {
+      comments: string;
+    };
+    GenerateMagicLinkDto: {
+      /** Format: uuid */
+      report_id: string;
+    };
+    MagicLinkResponse: {
+      magic_link?: string;
+      /** Format: date-time */
+      expires_at?: string;
+    };
+    ContractorReportResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      /** Format: uuid */
+      ticket_id?: string | null;
+      /** Format: uuid */
+      quote_id?: string | null;
+      /** Format: uuid */
+      contractor_user_id?: string | null;
+      contractor_name?: string;
+      /** Format: date-time */
+      work_date?: string | null;
+      compte_rendu?: string | null;
+      photos_before?: string[];
+      photos_after?: string[];
+      parts_replaced?: components["schemas"]["ReplacedPartDto"][];
+      /** @enum {string} */
+      status?:
+        | "draft"
+        | "submitted"
+        | "under_review"
+        | "validated"
+        | "rejected"
+        | "requires_correction";
+      /** Format: date-time */
+      submitted_at?: string | null;
+      /** Format: date-time */
+      validated_at?: string | null;
+      /** Format: uuid */
+      validated_by?: string | null;
+      review_comments?: string | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    CreateTechnicalInspectionDto: {
+      /** Format: uuid */
+      organization_id: string;
+      /** Format: uuid */
+      building_id: string;
+      title: string;
+      description?: string | null;
+      /** @enum {string} */
+      inspection_type:
+        | "Electrical"
+        | "Gas"
+        | "Elevator"
+        | "Fire"
+        | "Asbestos"
+        | "DPE"
+        | "Structural"
+        | "Plumbing"
+        | "Other";
+      inspector_name: string;
+      inspector_company?: string | null;
+      inspector_certification?: string | null;
+      /** Format: date */
+      inspection_date: string;
+      result_summary?: string | null;
+      defects_found?: string | null;
+      recommendations?: string | null;
+      compliant?: boolean | null;
+      compliance_certificate_number?: string | null;
+      /** Format: date */
+      compliance_valid_until?: string | null;
+      /** Format: double */
+      cost?: number | null;
+      invoice_number?: string | null;
+      notes?: string | null;
+    };
+    UpdateTechnicalInspectionDto: {
+      title?: string | null;
+      description?: string | null;
+      inspection_type?: string | null;
+      inspector_name?: string | null;
+      inspector_company?: string | null;
+      inspector_certification?: string | null;
+      inspection_date?: string | null;
+      status?: string | null;
+      result_summary?: string | null;
+      defects_found?: string | null;
+      recommendations?: string | null;
+      compliant?: boolean | null;
+      compliance_certificate_number?: string | null;
+      compliance_valid_until?: string | null;
+      /** Format: double */
+      cost?: number | null;
+      invoice_number?: string | null;
+      notes?: string | null;
+    };
+    TechnicalInspectionResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      title?: string;
+      description?: string | null;
+      inspection_type?: string;
+      inspector_name?: string;
+      inspector_company?: string | null;
+      inspector_certification?: string | null;
+      inspection_date?: string;
+      next_due_date?: string;
+      status?: string;
+      result_summary?: string | null;
+      defects_found?: string | null;
+      recommendations?: string | null;
+      compliant?: boolean | null;
+      compliance_certificate_number?: string | null;
+      compliance_valid_until?: string | null;
+      /** Format: double */
+      cost?: number | null;
+      invoice_number?: string | null;
+      reports?: string[];
+      photos?: string[];
+      certificates?: string[];
+      notes?: string | null;
+      is_overdue?: boolean;
+      days_until_due?: number;
+      created_at?: string;
+      updated_at?: string;
+    };
+    TechnicalInspectionListResponse: {
+      inspections?: components["schemas"]["TechnicalInspectionResponse"][];
+      total?: number;
+      page?: number;
+      page_size?: number;
+    };
+    AddReportDto: {
+      report_path: string;
+    };
+    AddInspectionPhotoDto: {
+      photo_path: string;
+    };
+    AddCertificateDto: {
+      certificate_path: string;
+    };
+    CreateWorkReportDto: {
+      /** Format: uuid */
+      organization_id: string;
+      /** Format: uuid */
+      building_id: string;
+      title: string;
+      description: string;
+      /** @enum {string} */
+      work_type:
+        | "Plumbing"
+        | "Electrical"
+        | "Roofing"
+        | "Painting"
+        | "Structural"
+        | "Elevator"
+        | "HVAC"
+        | "Landscaping"
+        | "Cleaning"
+        | "Other";
+      contractor_name: string;
+      contractor_contact?: string | null;
+      /** Format: date */
+      work_date: string;
+      /** Format: date */
+      completion_date?: string | null;
+      /** Format: double */
+      cost: number;
+      invoice_number?: string | null;
+      notes?: string | null;
+      /** @enum {string} */
+      warranty_type:
+        | "None"
+        | "Standard"
+        | "Extended"
+        | "Decennale"
+        | "Biennale";
+    };
+    UpdateWorkReportDto: {
+      title?: string | null;
+      description?: string | null;
+      work_type?: string | null;
+      contractor_name?: string | null;
+      contractor_contact?: string | null;
+      work_date?: string | null;
+      completion_date?: string | null;
+      /** Format: double */
+      cost?: number | null;
+      invoice_number?: string | null;
+      notes?: string | null;
+      warranty_type?: string | null;
+    };
+    WorkReportResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      title?: string;
+      description?: string;
+      work_type?: string;
+      contractor_name?: string;
+      contractor_contact?: string | null;
+      work_date?: string;
+      completion_date?: string | null;
+      /** Format: double */
+      cost?: number;
+      invoice_number?: string | null;
+      photos?: string[];
+      documents?: string[];
+      notes?: string | null;
+      warranty_type?: string;
+      warranty_expiry?: string;
+      is_warranty_valid?: boolean;
+      warranty_days_remaining?: number;
+      created_at?: string;
+      updated_at?: string;
+    };
+    WorkReportListResponse: {
+      work_reports?: components["schemas"]["WorkReportResponse"][];
+      total?: number;
+      page?: number;
+      page_size?: number;
+    };
+    WarrantyStatusDto: {
+      /** Format: uuid */
+      work_report_id?: string;
+      title?: string;
+      warranty_type?: string;
+      warranty_expiry?: string;
+      is_valid?: boolean;
+      days_remaining?: number;
+    };
+    AddPhotoDto: {
+      photo_path: string;
+    };
+    AddDocumentDto: {
+      document_path: string;
+    };
+    AddCosignatoryDto: {
+      /** Format: uuid */
+      owner_id: string;
+      /**
+       * Format: double
+       * @description Ownership share percentage (0.0 to 1.0)
+       */
+      shares_pct: number;
+    };
+    SyndicResponseDto: {
+      accepted: boolean;
+      /** @description Required if accepted = false */
+      notes?: string | null;
+    };
+    AgeRequestCosignatoryDto: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** Format: double */
+      shares_pct?: number;
+      /** Format: date-time */
+      signed_at?: string;
+    };
+    AgeRequestResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      building_id?: string;
+      title?: string;
+      description?: string | null;
+      /** @enum {string} */
+      status?:
+        | "draft"
+        | "open"
+        | "reached"
+        | "submitted"
+        | "accepted"
+        | "expired"
+        | "rejected"
+        | "withdrawn";
+      /** Format: uuid */
+      created_by?: string;
+      cosignatories?: components["schemas"]["AgeRequestCosignatoryDto"][];
+      /** Format: double */
+      total_shares_pct?: number;
+      /**
+       * Format: double
+       * @description Required threshold (default 0.20 = 1/5)
+       */
+      threshold_pct?: number;
+      threshold_reached?: boolean;
+      /** Format: date-time */
+      threshold_reached_at?: string | null;
+      /** Format: date-time */
+      submitted_to_syndic_at?: string | null;
+      /** Format: date-time */
+      syndic_deadline_at?: string | null;
+      /** Format: date-time */
+      syndic_response_at?: string | null;
+      syndic_notes?: string | null;
+      auto_convocation_triggered?: boolean;
+      /** Format: uuid */
+      meeting_id?: string | null;
+      /** Format: uuid */
+      concertation_poll_id?: string | null;
+      /**
+       * Format: double
+       * @description Percentage missing to reach threshold (0.0 if already reached)
+       */
+      shares_pct_missing?: number;
+      is_deadline_expired?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    CreateAgSessionDto: {
+      /**
+       * Format: uuid
+       * @description Set from path parameter
+       */
+      meeting_id?: string;
+      /** @enum {string} */
+      platform:
+        | "zoom"
+        | "microsoft_teams"
+        | "google_meet"
+        | "jitsi"
+        | "whereby"
+        | "other";
+      /** Format: uri */
+      video_url: string;
+      /** Format: uri */
+      host_url?: string | null;
+      /** Format: date-time */
+      scheduled_start: string;
+      access_password?: string | null;
+      waiting_room_enabled?: boolean | null;
+      recording_enabled?: boolean | null;
+    };
+    EndAgSessionDto: {
+      /** Format: uri */
+      recording_url?: string | null;
+    };
+    RecordRemoteJoinDto: {
+      /** Format: double */
+      voting_power: number;
+      /** Format: double */
+      total_building_quotas: number;
+    };
+    AgSessionResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      organization_id?: string;
+      /** Format: uuid */
+      meeting_id?: string;
+      platform?: string;
+      video_url?: string;
+      host_url?: string | null;
+      /** @enum {string} */
+      status?: "scheduled" | "live" | "ended" | "cancelled";
+      /** Format: date-time */
+      scheduled_start?: string;
+      /** Format: date-time */
+      actual_start?: string | null;
+      /** Format: date-time */
+      actual_end?: string | null;
+      remote_attendees_count?: number;
+      /** Format: double */
+      remote_voting_power?: number;
+      /** Format: double */
+      quorum_remote_contribution?: number;
+      waiting_room_enabled?: boolean;
+      recording_enabled?: boolean;
+      recording_url?: string | null;
+      duration_minutes?: number | null;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+      /** Format: uuid */
+      created_by?: string;
+    };
+    CombinedQuorumResponse: {
+      /** Format: uuid */
+      session_id?: string;
+      /** Format: uuid */
+      meeting_id?: string;
+      /** Format: double */
+      physical_quotas?: number;
+      /** Format: double */
+      remote_quotas?: number;
+      /** Format: double */
+      total_building_quotas?: number;
+      /** Format: double */
+      combined_percentage?: number;
+      /** @description true if combined_percentage > 50.0 */
+      quorum_reached?: boolean;
+    };
+    AddOwnerToUnitDto: {
+      /** Format: uuid */
+      owner_id: string;
+      /** Format: double */
+      ownership_percentage: number;
+      is_primary_contact: boolean;
+    };
+    UpdateOwnershipDto: {
+      /** Format: double */
+      ownership_percentage?: number | null;
+      is_primary_contact?: boolean | null;
+    };
+    TransferOwnershipDto: {
+      /** Format: uuid */
+      from_owner_id: string;
+      /** Format: uuid */
+      to_owner_id: string;
+    };
+    UnitOwnerResponse: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: uuid */
+      unit_id?: string;
+      /** Format: uuid */
+      owner_id?: string;
+      /** Format: double */
+      ownership_percentage?: number;
+      /** Format: date-time */
+      start_date?: string;
+      /** Format: date-time */
+      end_date?: string | null;
+      is_primary_contact?: boolean;
+      is_active?: boolean;
+      /** Format: date-time */
+      created_at?: string;
+      /** Format: date-time */
+      updated_at?: string;
+    };
+    DashboardStats: {
+      /** Format: int64 */
+      total_organizations?: number;
+      /** Format: int64 */
+      total_users?: number;
+      /** Format: int64 */
+      total_buildings?: number;
+      /** Format: int64 */
+      active_subscriptions?: number;
+      /** Format: int64 */
+      total_owners?: number;
+      /** Format: int64 */
+      total_units?: number;
+      /** Format: int64 */
+      total_expenses?: number;
+      /** Format: int64 */
+      total_meetings?: number;
+    };
+    SyndicDashboardStats: {
+      /** Format: int64 */
+      total_buildings?: number;
+      /** Format: int64 */
+      total_units?: number;
+      /** Format: int64 */
+      total_owners?: number;
+      /** Format: int64 */
+      pending_expenses_count?: number;
+      /** Format: double */
+      pending_expenses_amount?: number;
+      next_meeting?: components["schemas"]["NextMeetingInfo"];
+    };
+    NextMeetingInfo: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: date-time */
+      date?: string;
+      building_name?: string;
+    };
+    UrgentTask: {
+      /** @enum {string} */
+      task_type?: "expense" | "meeting" | "other";
+      title?: string;
+      description?: string;
+      /** @enum {string} */
+      priority?: "urgent" | "high" | "medium";
+      building_name?: string | null;
+      entity_id?: string | null;
+      /** Format: date-time */
+      due_date?: string | null;
+    };
+    SeedDataStats: {
+      /** Format: int64 */
+      seed_organizations?: number;
+      /** Format: int64 */
+      production_organizations?: number;
+      /** Format: int64 */
+      seed_buildings?: number;
+      /** Format: int64 */
+      seed_units?: number;
+      /** Format: int64 */
+      seed_owners?: number;
+      /** Format: int64 */
+      seed_unit_owners?: number;
+      /** Format: int64 */
+      seed_expenses?: number;
+      /** Format: int64 */
+      seed_meetings?: number;
+      /** Format: int64 */
+      seed_users?: number;
+    };
+    AuditLogsResponse: {
+      logs?: components["schemas"]["AuditLogDto"][];
+      /** Format: int64 */
+      total?: number;
+      /** Format: int64 */
+      page?: number;
+      /** Format: int64 */
+      per_page?: number;
+      /** Format: int64 */
+      total_pages?: number;
+    };
+    AuditLogDto: {
+      /** Format: uuid */
+      id?: string;
+      /** Format: date-time */
+      timestamp?: string;
+      event_type?: string;
+      /** Format: uuid */
+      user_id?: string | null;
+      /** Format: uuid */
+      organization_id?: string | null;
+      resource_type?: string | null;
+      /** Format: uuid */
+      resource_id?: string | null;
+      success?: boolean;
+      error_message?: string | null;
+      metadata?: Record<string, never> | null;
     };
   };
   responses: never;
@@ -3238,6 +13035,16015 @@ export interface operations {
         };
         content: {
           "text/plain": string;
+        };
+      };
+    };
+  };
+  createPayment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: uuid */
+          building_id: string;
+          /** Format: uuid */
+          owner_id: string;
+          /**
+           * Format: uuid
+           * @description Optionnel — lie le paiement à une dépense
+           */
+          expense_id?: string;
+          /**
+           * Format: int64
+           * @description Montant en centimes EUR
+           * @example 15000
+           */
+          amount_cents: number;
+          /** @enum {string} */
+          payment_method_type: "Card" | "SepaDebit" | "BankTransfer" | "Cash";
+          /**
+           * Format: uuid
+           * @description Optionnel — utilise un moyen de paiement enregistré
+           */
+          payment_method_id?: string;
+          description?: string;
+          metadata?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Paiement créé */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Données invalides */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié ou organisation manquante */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getPayment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Détails du paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Paiement non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  deletePayment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paiement supprimé */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Paiement non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getPaymentByStripeIntent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @example pi_3MtwBwLkdIwHu7ix28a3tqPa */
+        stripe_payment_intent_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Détails du paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Paiement non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listPaymentsByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        status:
+          | "pending"
+          | "processing"
+          | "requires_action"
+          | "succeeded"
+          | "failed"
+          | "cancelled"
+          | "refunded";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des paiements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"][];
+        };
+      };
+      /** @description Statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listPendingPayments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des paiements en attente */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"][];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listFailedPayments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des paiements échoués */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"][];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  markPaymentProcessing: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paiement mis à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  markPaymentRequiresAction: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paiement mis à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  markPaymentSucceeded: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paiement marqué comme réussi */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  markPaymentFailed: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /**
+           * @description Raison de l'échec
+           * @example Insufficient funds
+           */
+          reason?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Paiement marqué comme échoué */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  markPaymentCancelled: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paiement annulé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  refundPayment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /**
+           * Format: int64
+           * @description Montant à rembourser en centimes EUR
+           * @example 5000
+           */
+          amount_cents: number;
+          /** @description Raison du remboursement */
+          reason?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Remboursement effectué */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"];
+        };
+      };
+      /** @description Remboursement invalide (montant > solde restant, mauvais statut) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listOwnerPayments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des paiements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listBuildingPayments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des paiements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listExpensePayments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        expense_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des paiements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listOrganizationPayments: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des paiements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getOwnerPaymentStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Statistiques de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentStatsResponse"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getBuildingPaymentStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Statistiques de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentStatsResponse"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getExpenseTotalPaid: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        expense_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Total payé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            expense_id?: string;
+            /** Format: int64 */
+            total_paid_cents?: number;
+          };
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getOwnerTotalPaid: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Total payé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            owner_id?: string;
+            /** Format: int64 */
+            total_paid_cents?: number;
+          };
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getBuildingTotalPaid: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Total payé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            building_id?: string;
+            /** Format: int64 */
+            total_paid_cents?: number;
+          };
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  createPaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: uuid */
+          owner_id: string;
+          /** @enum {string} */
+          method_type: "Card" | "SepaDebit";
+          /** @example pm_1MtwBwLkdIwHu7ix */
+          stripe_payment_method_id: string;
+          /** @example cus_NffrFeUfNV2Hib */
+          stripe_customer_id: string;
+          /** @example Visa ****4242 */
+          display_label: string;
+          is_default: boolean;
+          metadata?: string;
+          /** Format: date-time */
+          expires_at?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Moyen de paiement créé */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Données invalides */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getPaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Détails du moyen de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Moyen de paiement non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  updatePaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          display_label?: string;
+          is_default?: boolean;
+          metadata?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Moyen de paiement mis à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Données invalides */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  deletePaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen de paiement supprimé */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Moyen de paiement non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getPaymentMethodByStripeId: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @example pm_1MtwBwLkdIwHu7ix */
+        stripe_payment_method_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Détails du moyen de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Moyen de paiement non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  setPaymentMethodAsDefault: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: uuid */
+          owner_id: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Moyen de paiement défini par défaut */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description owner_id manquant ou format invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  deactivatePaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen de paiement désactivé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Transition invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  reactivatePaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen de paiement réactivé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Transition invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listOwnerPaymentMethods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listActiveOwnerPaymentMethods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens de paiement actifs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getDefaultPaymentMethod: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Moyen de paiement par défaut */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"];
+        };
+      };
+      /** @description Aucun moyen de paiement par défaut trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listPaymentMethodsByType: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+        method_type: "card" | "sepa_debit";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens de paiement filtrés par type */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+      /** @description Type de moyen de paiement invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  countActivePaymentMethods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Nombre de moyens de paiement actifs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            owner_id?: string;
+            /** Format: int64 */
+            active_payment_methods_count?: number;
+          };
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  hasActivePaymentMethods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Statut de disponibilité */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            owner_id?: string;
+            has_active_payment_methods?: boolean;
+          };
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listOrganizationPaymentMethods: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des moyens de paiement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaymentMethodResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  exportUserData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Export des données personnelles */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GdprExportResponse"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Tentative d'export des données d'un autre utilisateur */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Utilisateur non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Utilisateur déjà anonymisé */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  eraseUserData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Données anonymisées avec succès */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GdprEraseResponse"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Tentative d'effacement des données d'un autre utilisateur */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Utilisateur non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Obligations légales empêchent l'effacement (dépenses impayées) */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Utilisateur déjà anonymisé */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  canEraseUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Statut d'éligibilité à l'effacement */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @description Indique si l'effacement est possible */
+            can_erase?: boolean;
+            /** Format: uuid */
+            user_id?: string;
+          };
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  rectifyUserData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /**
+           * Format: email
+           * @description Nouvel email (optionnel)
+           */
+          email?: string;
+          /** @description Nouveau prénom (optionnel) */
+          first_name?: string;
+          /** @description Nouveau nom de famille (optionnel) */
+          last_name?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Données rectifiées avec succès */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GdprActionResponse"];
+        };
+      };
+      /** @description Erreur de validation (email invalide, champs vides, aucun champ fourni) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Tentative de rectification des données d'un autre utilisateur */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Utilisateur non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  restrictUserProcessing: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description Restriction de traitement appliquée */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GdprActionResponse"];
+        };
+      };
+      /** @description Traitement déjà restreint */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Tentative de restriction pour un autre utilisateur */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Utilisateur non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  setMarketingPreference: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description true pour se désinscrire, false pour se réinscrire */
+          opt_out: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Préférence marketing mise à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GdprActionResponse"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Tentative de modification pour un autre utilisateur */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Utilisateur non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  createTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: uuid */
+          building_id: string;
+          /**
+           * Format: uuid
+           * @description Optionnel — lot concerné
+           */
+          unit_id?: string;
+          /** @example Fuite d'eau dans le hall */
+          title: string;
+          /** @example Fuite visible au plafond du hall d'entrée, eau stagnante */
+          description: string;
+          /** @enum {string} */
+          category:
+            | "Plumbing"
+            | "Electrical"
+            | "Heating"
+            | "Cleaning"
+            | "Security"
+            | "General"
+            | "Emergency";
+          /** @enum {string} */
+          priority: "Low" | "Medium" | "High" | "Urgent" | "Critical";
+        };
+      };
+    };
+    responses: {
+      /** @description Ticket créé */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"];
+        };
+      };
+      /** @description Données invalides */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Détails du ticket */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"];
+        };
+      };
+      /** @description Ticket non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  deleteTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Ticket supprimé */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Ticket non trouvé */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listMyTickets: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste de mes tickets */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listAssignedTickets: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des tickets assignés */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getTicketStatisticsOrg: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Statistiques des tickets */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getOverdueTicketsOrg: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximum de jours de retard */
+        max_days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des tickets en retard */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"][];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listBuildingTickets: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des tickets */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listOrganizationTickets: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des tickets */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listTicketsByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        status: "Open" | "InProgress" | "Resolved" | "Closed" | "Cancelled";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des tickets filtrés par statut */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"][];
+        };
+      };
+      /** @description Statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getTicketStatistics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Statistiques des tickets */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getOverdueTickets: {
+    parameters: {
+      query?: {
+        /** @description Nombre maximum de jours de retard */
+        max_days?: number;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des tickets en retard */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  assignTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /**
+           * Format: uuid
+           * @description ID du prestataire assigné
+           */
+          assigned_to: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Ticket assigné */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  startWork: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Travaux démarrés */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  resolveTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /**
+           * @description Notes de résolution
+           * @example Fuite colmatée, joint remplacé
+           */
+          resolution_notes: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Ticket résolu */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  closeTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Ticket clôturé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  cancelTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Raison de l'annulation */
+          reason: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Ticket annulé */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  reopenTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Raison de la réouverture */
+          reason: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Ticket rouvert */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TicketResponse"];
+        };
+      };
+      /** @description Transition de statut invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  createNotification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /**
+           * Format: uuid
+           * @description Destinataire de la notification
+           */
+          user_id: string;
+          /** @enum {string} */
+          notification_type:
+            | "ExpenseCreated"
+            | "MeetingConvocation"
+            | "PaymentReceived"
+            | "TicketResolved"
+            | "DocumentAdded"
+            | "BoardMessage"
+            | "PaymentReminder"
+            | "BudgetApproved"
+            | "ResolutionVote"
+            | "System";
+          /** @enum {string} */
+          channel: "Email" | "Sms" | "Push" | "InApp";
+          /** @enum {string} */
+          priority: "Low" | "Normal" | "High" | "Urgent";
+          /** @example Nouvelle facture disponible */
+          title: string;
+          /** @example Une nouvelle facture de 150 EUR a été créée pour votre lot */
+          message: string;
+          /** @description URL de redirection optionnelle */
+          link_url?: string;
+          /** @description Métadonnées JSON optionnelles (contexte spécifique) */
+          metadata?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Notification créée */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationResponse"];
+        };
+      };
+      /** @description Données invalides */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getNotification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Détails de la notification */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationResponse"];
+        };
+      };
+      /** @description Notification non trouvée */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  deleteNotification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notification supprimée */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Notification non trouvée */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listMyNotifications: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste de mes notifications */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listUnreadNotifications: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des notifications non lues */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getNotificationStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Statistiques des notifications */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: int64 */
+            total?: number;
+            /** Format: int64 */
+            unread?: number;
+            /** Format: int64 */
+            pending?: number;
+            /** Format: int64 */
+            sent?: number;
+            /** Format: int64 */
+            failed?: number;
+          };
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  markNotificationRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description Notification marquée comme lue */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationResponse"];
+        };
+      };
+      /** @description Erreur de mise à jour */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  markAllNotificationsRead: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notifications marquées comme lues */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /**
+             * Format: int64
+             * @description Nombre de notifications marquées comme lues
+             */
+            marked_read?: number;
+          };
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getUserPreferences: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Liste des préférences de notification */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationPreferenceResponse"][];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getPreference: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Type de notification (snake_case ou PascalCase accepté) */
+        notification_type:
+          | "expense_created"
+          | "meeting_convocation"
+          | "payment_received"
+          | "ticket_resolved"
+          | "document_added"
+          | "board_message"
+          | "payment_reminder"
+          | "budget_approved"
+          | "resolution_vote"
+          | "system";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Préférence de notification */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationPreferenceResponse"];
+        };
+      };
+      /** @description Type de notification invalide */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Préférence non trouvée */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Erreur interne */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  updatePreference: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        notification_type:
+          | "expense_created"
+          | "meeting_convocation"
+          | "payment_received"
+          | "ticket_resolved"
+          | "document_added"
+          | "board_message"
+          | "payment_reminder"
+          | "budget_approved"
+          | "resolution_vote"
+          | "system";
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          email_enabled?: boolean;
+          in_app_enabled?: boolean;
+          push_enabled?: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Préférence mise à jour */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NotificationPreferenceResponse"];
+        };
+      };
+      /** @description Type de notification invalide ou erreur de mise à jour */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Non authentifié */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listMeetingResolutions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Meeting UUID */
+        meeting_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of resolutions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResolutionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createResolution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Meeting UUID */
+        meeting_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateResolutionRequest"];
+      };
+    };
+    responses: {
+      /** @description Resolution created successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResolutionResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized - missing or invalid JWT token */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getResolution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Resolution UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Resolution details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResolutionResponse"];
+        };
+      };
+      /** @description Resolution not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteResolution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Resolution UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Resolution deleted successfully */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Deletion error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Resolution not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  castVote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Resolution UUID */
+        resolution_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CastVoteRequest"];
+      };
+    };
+    responses: {
+      /** @description Vote cast successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["VoteResponse"];
+        };
+      };
+      /** @description Validation error (e.g., voting closed, duplicate vote) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listResolutionVotes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Resolution UUID */
+        resolution_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of votes */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["VoteResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  changeVote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Vote UUID */
+        vote_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ChangeVoteRequest"];
+      };
+    };
+    responses: {
+      /** @description Vote changed successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["VoteResponse"];
+        };
+      };
+      /** @description Validation error (e.g., voting already closed) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  closeVoting: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Resolution UUID */
+        resolution_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CloseVotingRequest"];
+      };
+    };
+    responses: {
+      /** @description Voting closed, result calculated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResolutionResponse"];
+        };
+      };
+      /** @description Error closing voting */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getMeetingVoteSummary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Meeting UUID */
+        meeting_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Vote summary for all meeting resolutions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResolutionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  electBoardMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateBoardMemberDto"];
+      };
+    };
+    responses: {
+      /** @description Board member elected successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardMemberResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getBoardMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Board member UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Board member details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardMemberResponseDto"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Board member not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  removeBoardMember: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Board member UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Board member removed successfully */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Board member not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  renewMandate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Board member UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RenewMandateDto"];
+      };
+    };
+    responses: {
+      /** @description Mandate renewed successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardMemberResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getMyMandates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of active mandates */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            mandates?: {
+              /** Format: uuid */
+              id?: string;
+              /** Format: uuid */
+              building_id?: string;
+              building_name?: string;
+              building_address?: string;
+              position?: string;
+              /** Format: date */
+              mandate_start?: string;
+              /** Format: date */
+              mandate_end?: string;
+              days_remaining?: number;
+              expires_soon?: boolean;
+            }[];
+          };
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getBoardDashboard: {
+    parameters: {
+      query: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Board dashboard data */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Missing or invalid building_id */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden - user is not an active board member */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listActiveBoardMembers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of active board members */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardMemberResponseDto"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listAllBoardMembers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of all board members */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardMemberResponseDto"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getBoardStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Board statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardStatsDto"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createDecision: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateBoardDecisionDto"];
+      };
+    };
+    responses: {
+      /** @description Decision created successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardDecisionResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getDecision: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Board decision UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Decision details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardDecisionResponseDto"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Decision not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  updateDecisionStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Board decision UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateBoardDecisionDto"];
+      };
+    };
+    responses: {
+      /** @description Decision updated successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardDecisionResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  addDecisionNotes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Board decision UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddDecisionNotesDto"];
+      };
+    };
+    responses: {
+      /** @description Notes added successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardDecisionResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  completeDecision: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Board decision UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Decision marked as completed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardDecisionResponseDto"];
+        };
+      };
+      /** @description Error completing decision */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listDecisionsByBuilding: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of board decisions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardDecisionResponseDto"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listDecisionsByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+        /** @description Decision status filter */
+        status:
+          | "pending"
+          | "in_progress"
+          | "completed"
+          | "overdue"
+          | "cancelled";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Filtered list of board decisions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardDecisionResponseDto"][];
+        };
+      };
+      /** @description Invalid status value */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listOverdueDecisions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of overdue decisions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BoardDecisionResponseDto"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getDecisionStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Decision statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DecisionStatsDto"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createConvocation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateConvocationRequest"];
+      };
+    };
+    responses: {
+      /** @description Convocation created successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationResponse"];
+        };
+      };
+      /** @description Validation error (e.g., meeting date too soon for legal deadline) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getConvocation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Convocation details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationResponse"];
+        };
+      };
+      /** @description Convocation not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteConvocation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Convocation deleted successfully */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Convocation not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getConvocationByMeeting: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Meeting UUID */
+        meeting_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Convocation for the meeting */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationResponse"];
+        };
+      };
+      /** @description Convocation not found for this meeting */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listBuildingConvocations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of convocations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listOrganizationConvocations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Organization UUID */
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of convocations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  scheduleConvocation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ScheduleConvocationRequest"];
+      };
+    };
+    responses: {
+      /** @description Convocation scheduled successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationResponse"];
+        };
+      };
+      /** @description Validation error (e.g., date after legal deadline) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  sendConvocation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SendConvocationRequest"];
+      };
+    };
+    responses: {
+      /** @description Convocation sent successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  cancelConvocation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Convocation cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationResponse"];
+        };
+      };
+      /** @description Error cancelling convocation */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listConvocationRecipients: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of recipients */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationRecipientResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getConvocationTrackingSummary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Tracking summary */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipientTrackingSummaryResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  markRecipientEmailOpened: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation recipient UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Email marked as opened */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationRecipientResponse"];
+        };
+      };
+      /** @description Error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  updateRecipientAttendance: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation recipient UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateAttendanceRequest"];
+      };
+    };
+    responses: {
+      /** @description Attendance updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationRecipientResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  setRecipientProxy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation recipient UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetProxyRequest"];
+      };
+    };
+    responses: {
+      /** @description Proxy set successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationRecipientResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  sendConvocationReminders: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Convocation UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Reminders sent, returns list of reminded recipients */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConvocationRecipientResponse"][];
+        };
+      };
+      /** @description Error sending reminders */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createQuote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateQuoteDto"];
+      };
+    };
+    responses: {
+      /** @description Quote request created successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getQuote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Quote UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quote details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"];
+        };
+      };
+      /** @description Quote not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteQuote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Quote UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quote deleted successfully */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Quote not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listBuildingQuotes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of quotes */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listContractorQuotes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Contractor UUID */
+        contractor_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of quotes */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listQuotesByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+        /** @description Quote status filter */
+        status:
+          | "Requested"
+          | "Received"
+          | "UnderReview"
+          | "Accepted"
+          | "Rejected"
+          | "Expired"
+          | "Withdrawn";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Filtered list of quotes */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  submitQuote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Quote UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quote submitted successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  startQuoteReview: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Quote UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quote review started */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  acceptQuote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Quote UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["QuoteDecisionDto"];
+      };
+    };
+    responses: {
+      /** @description Quote accepted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"];
+        };
+      };
+      /** @description Invalid state transition or validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  rejectQuote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Quote UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["QuoteDecisionDto"];
+      };
+    };
+    responses: {
+      /** @description Quote rejected */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"];
+        };
+      };
+      /** @description Invalid state transition or validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  withdrawQuote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Quote UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quote withdrawn */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  compareQuotes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["QuoteComparisonRequestDto"];
+      };
+    };
+    responses: {
+      /** @description Quote comparison results sorted by score */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteComparisonResponseDto"];
+        };
+      };
+      /** @description Validation error (e.g., fewer than 3 quotes) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  updateContractorRating: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Quote UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description Contractor rating (0-100 scale) */
+          rating: number;
+        };
+      };
+    };
+    responses: {
+      /** @description Rating updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  countBuildingQuotes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quote count */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            count?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  countQuotesByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+        /** @description Quote status filter */
+        status:
+          | "Requested"
+          | "Received"
+          | "UnderReview"
+          | "Accepted"
+          | "Rejected"
+          | "Expired"
+          | "Withdrawn";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Quote count by status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            count?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listPolls: {
+    parameters: {
+      query?: {
+        /** @description Page number */
+        page?: number;
+        /** @description Items per page */
+        per_page?: number;
+        /** @description Filter by building UUID */
+        building_id?: string;
+        /** @description Filter by creator UUID */
+        created_by?: string;
+        /** @description Filter polls ending before this date */
+        ends_before?: string;
+        /** @description Filter polls ending after this date */
+        ends_after?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated list of polls */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollListResponseDto"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createPoll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreatePollDto"];
+      };
+    };
+    responses: {
+      /** @description Poll created in draft status */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollResponseDto"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getPoll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Poll UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Poll details with options */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollResponseDto"];
+        };
+      };
+      /** @description Invalid poll ID format */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Poll not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  updatePoll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Poll UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdatePollDto"];
+      };
+    };
+    responses: {
+      /** @description Poll updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollResponseDto"];
+        };
+      };
+      /** @description Validation error (e.g., poll is not in draft status) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden - only the poll creator can update */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Poll not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deletePoll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Poll UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Poll deleted successfully */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Cannot delete active or closed poll */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden - only the poll creator can delete */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Poll not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  publishPoll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Poll UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Poll published successfully */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollResponseDto"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden - only the poll creator can publish */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Poll not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  closePoll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Poll UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Poll closed, results calculated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollResponseDto"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden - only the poll creator can close */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Poll not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  cancelPoll: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Poll UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Poll cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollResponseDto"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden - only the poll creator can cancel */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Poll not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  castPollVote: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CastVoteDto"];
+      };
+    };
+    responses: {
+      /** @description Vote cast successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            message?: string;
+          };
+        };
+      };
+      /** @description Validation error (e.g., poll not active, expired) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Poll not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Duplicate vote - already voted on this poll */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getPollResults: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Poll UUID */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Poll results */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollResultsDto"];
+        };
+      };
+      /** @description Poll not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  findActivePolls: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of active polls */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PollResponseDto"][];
+        };
+      };
+      /** @description Invalid building ID format */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getPollBuildingStatistics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Building UUID */
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Poll statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            total_polls?: number;
+            active_polls?: number;
+            closed_polls?: number;
+            /** Format: double */
+            average_participation_rate?: number;
+          };
+        };
+      };
+      /** @description Invalid building ID format */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createExchange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateLocalExchangeRequest"];
+      };
+    };
+    responses: {
+      /** @description Exchange created successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getExchange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Exchange details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"];
+        };
+      };
+      /** @description Exchange not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteExchange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Exchange deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Cannot delete exchange */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBuildingExchanges: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of exchanges */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"][];
+        };
+      };
+    };
+  };
+  listAvailableExchanges: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of available exchanges */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"][];
+        };
+      };
+    };
+  };
+  listOwnerExchanges: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of owner exchanges */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"][];
+        };
+      };
+      /** @description Can only view own exchanges */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Owner not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listExchangesByType: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        exchange_type: "Service" | "ObjectLoan" | "SharedPurchase";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of exchanges by type */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"][];
+        };
+      };
+      /** @description Invalid exchange type */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  requestExchange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequestExchangeRequest"];
+      };
+    };
+    responses: {
+      /** @description Exchange requested */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  startExchange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Exchange started */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  completeExchange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CompleteExchangeRequest"];
+      };
+    };
+    responses: {
+      /** @description Exchange completed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancelExchange: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CancelExchangeRequest"];
+      };
+    };
+    responses: {
+      /** @description Exchange cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  rateProvider: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RateExchangeRequest"];
+      };
+    };
+    responses: {
+      /** @description Provider rated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"];
+        };
+      };
+      /** @description Rating error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  rateRequester: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RateExchangeRequest"];
+      };
+    };
+    responses: {
+      /** @description Requester rated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LocalExchangeResponse"];
+        };
+      };
+      /** @description Rating error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getCreditBalance: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Credit balance */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerCreditBalanceResponse"];
+        };
+      };
+      /** @description Can only view own credit balance */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Owner not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getLeaderboard: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Leaderboard entries */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerCreditBalanceResponse"][];
+        };
+      };
+    };
+  };
+  getSelStatistics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description SEL statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SelStatisticsResponse"];
+        };
+      };
+    };
+  };
+  getOwnerExchangeSummary: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Owner exchange summary */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerExchangeSummaryResponse"];
+        };
+      };
+      /** @description Can only view own summary */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Owner not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createNotice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateNoticeRequest"];
+      };
+    };
+    responses: {
+      /** @description Notice created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized (no organization) */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getNotice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notice details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"];
+        };
+      };
+      /** @description Notice not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateNotice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateNoticeRequest"];
+      };
+    };
+    responses: {
+      /** @description Notice updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized to update */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Notice not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteNotice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notice deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized to delete */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Notice not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBuildingNotices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of notices */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"][];
+        };
+      };
+    };
+  };
+  listPublishedNotices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of published notices */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"][];
+        };
+      };
+    };
+  };
+  listPinnedNotices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of pinned notices */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"][];
+        };
+      };
+    };
+  };
+  listNoticesByType: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        notice_type: "Announcement" | "Event" | "LostAndFound" | "ClassifiedAd";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of notices by type */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"][];
+        };
+      };
+      /** @description Invalid notice type */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listNoticesByCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        category:
+          | "General"
+          | "Maintenance"
+          | "Social"
+          | "Security"
+          | "Environment"
+          | "Parking"
+          | "Other";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of notices by category */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"][];
+        };
+      };
+      /** @description Invalid category */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listNoticesByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        status: "Draft" | "Published" | "Archived" | "Expired";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of notices by status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"][];
+        };
+      };
+      /** @description Invalid status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listAuthorNotices: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        author_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of author notices */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"][];
+        };
+      };
+    };
+  };
+  publishNotice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notice published */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Notice not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  archiveNotice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notice archived */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Notice not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  pinNotice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notice pinned */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"];
+        };
+      };
+      /** @description Invalid state */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized (syndic/admin only) */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Notice not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  unpinNotice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notice unpinned */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Notice not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  setNoticeExpiration: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SetExpirationRequest"];
+      };
+    };
+    responses: {
+      /** @description Expiration set */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NoticeResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Notice not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getNoticeStatistics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Notice statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+    };
+  };
+  createSkill: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSkillRequest"];
+      };
+    };
+    responses: {
+      /** @description Skill created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getSkill: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Skill details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"];
+        };
+      };
+      /** @description Skill not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateSkill: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateSkillRequest"];
+      };
+    };
+    responses: {
+      /** @description Skill updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Skill not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteSkill: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Skill deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Skill not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBuildingSkills: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of skills */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"][];
+        };
+      };
+    };
+  };
+  listAvailableSkills: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of available skills */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"][];
+        };
+      };
+    };
+  };
+  listFreeSkills: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of free skills */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"][];
+        };
+      };
+    };
+  };
+  listProfessionalSkills: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of professional skills */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"][];
+        };
+      };
+    };
+  };
+  listSkillsByCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        category:
+          | "HomeRepair"
+          | "Languages"
+          | "Technology"
+          | "Education"
+          | "Arts"
+          | "Sports"
+          | "Cooking"
+          | "Gardening"
+          | "Health"
+          | "Legal"
+          | "Financial"
+          | "PetCare"
+          | "Other";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of skills by category */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"][];
+        };
+      };
+      /** @description Invalid category */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listSkillsByExpertise: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        level: "Beginner" | "Intermediate" | "Advanced" | "Expert";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of skills by expertise level */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"][];
+        };
+      };
+      /** @description Invalid expertise level */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listOwnerSkills: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of owner skills */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"][];
+        };
+      };
+    };
+  };
+  markSkillAvailable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Skill marked available */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Skill not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  markSkillUnavailable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Skill marked unavailable */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Skill not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getSkillStatistics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Skill statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SkillStatisticsResponse"];
+        };
+      };
+    };
+  };
+  createSharedObject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateSharedObjectRequest"];
+      };
+    };
+    responses: {
+      /** @description Shared object created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listMyBorrowedObjects: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of borrowed objects */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"][];
+        };
+      };
+    };
+  };
+  getSharedObject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shared object details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"];
+        };
+      };
+      /** @description Shared object not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateSharedObject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateSharedObjectRequest"];
+      };
+    };
+    responses: {
+      /** @description Shared object updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteSharedObject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shared object deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBuildingObjects: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of shared objects */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"][];
+        };
+      };
+    };
+  };
+  listAvailableObjects: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of available objects */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"][];
+        };
+      };
+    };
+  };
+  listBorrowedObjects: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of borrowed objects */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"][];
+        };
+      };
+    };
+  };
+  listOverdueObjects: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of overdue objects */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"][];
+        };
+      };
+    };
+  };
+  listFreeObjects: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of free objects */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"][];
+        };
+      };
+    };
+  };
+  listObjectsByCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        category:
+          | "Tools"
+          | "Books"
+          | "Electronics"
+          | "Sports"
+          | "Gardening"
+          | "Kitchen"
+          | "Baby"
+          | "Other";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of shared objects by category */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"][];
+        };
+      };
+      /** @description Invalid category */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listOwnerObjects: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of owner objects */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"][];
+        };
+      };
+    };
+  };
+  markObjectAvailable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Object marked available */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  markObjectUnavailable: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Object marked unavailable */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  borrowObject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BorrowObjectRequest"];
+      };
+    };
+    responses: {
+      /** @description Object borrowed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"];
+        };
+      };
+      /** @description Object not available */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Owner cannot borrow own object */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  returnObject: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Object returned */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectResponse"];
+        };
+      };
+      /** @description Object not borrowed */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Only borrower can return */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getObjectStatistics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Shared object statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SharedObjectStatisticsResponse"];
+        };
+      };
+    };
+  };
+  createBooking: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateResourceBookingRequest"];
+      };
+    };
+    responses: {
+      /** @description Booking created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Building not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Booking conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listMyBookings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of user bookings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+    };
+  };
+  listMyBookingsByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        status: "Pending" | "Confirmed" | "Completed" | "Cancelled" | "NoShow";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of user bookings by status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+      /** @description Invalid status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  checkConflicts: {
+    parameters: {
+      query: {
+        building_id: string;
+        resource_type: string;
+        resource_name: string;
+        start_time: string;
+        end_time: string;
+        exclude_booking_id?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of conflicting bookings (empty if no conflicts) */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+    };
+  };
+  getBooking: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Booking details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"];
+        };
+      };
+      /** @description Booking not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateBooking: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateResourceBookingRequest"];
+      };
+    };
+    responses: {
+      /** @description Booking updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not booking owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Booking not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteBooking: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Booking deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not booking owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Booking not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancelBooking: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Booking cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"];
+        };
+      };
+      /** @description Cannot cancel */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not booking owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Booking not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  completeBooking: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Booking completed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"];
+        };
+      };
+      /** @description Cannot complete */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Booking not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  markNoShow: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Booking marked as no-show */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"];
+        };
+      };
+      /** @description Cannot mark as no-show */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Booking not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  confirmBooking: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Booking confirmed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"];
+        };
+      };
+      /** @description Cannot confirm */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Booking not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBuildingBookings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of bookings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+    };
+  };
+  listBookingsByResourceType: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        resource_type:
+          | "MeetingRoom"
+          | "LaundryRoom"
+          | "Gym"
+          | "PartyRoom"
+          | "GuestParking"
+          | "Barbecue"
+          | "Garden"
+          | "RoofTerrace"
+          | "Storage"
+          | "Other";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of bookings by resource type */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+      /** @description Invalid resource type */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBookingsByResource: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        resource_type: string;
+        resource_name: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of bookings for specific resource */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+    };
+  };
+  listBuildingBookingsByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        status: "Pending" | "Confirmed" | "Completed" | "Cancelled" | "NoShow";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of bookings by status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+      /** @description Invalid status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listUpcomingBookings: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of upcoming bookings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+    };
+  };
+  listActiveBookings: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of active bookings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+    };
+  };
+  listPastBookings: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of past bookings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ResourceBookingResponse"][];
+        };
+      };
+    };
+  };
+  getBookingStatistics: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Booking statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BookingStatisticsResponse"];
+        };
+      };
+    };
+  };
+  createAchievement: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateAchievementRequest"];
+      };
+    };
+    responses: {
+      /** @description Achievement created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AchievementResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getAchievement: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Achievement details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AchievementResponse"];
+        };
+      };
+      /** @description Achievement not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateAchievement: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateAchievementRequest"];
+      };
+    };
+    responses: {
+      /** @description Achievement updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AchievementResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Achievement not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteAchievement: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Achievement deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Achievement not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listAchievements: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of achievements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AchievementResponse"][];
+        };
+      };
+    };
+  };
+  listAchievementsByCategory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+        category:
+          | "Community"
+          | "Sel"
+          | "Booking"
+          | "Sharing"
+          | "Skills"
+          | "Notice"
+          | "Governance"
+          | "Milestone";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of achievements in category */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AchievementResponse"][];
+        };
+      };
+      /** @description Invalid category */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listVisibleAchievements: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of visible achievements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AchievementResponse"][];
+        };
+      };
+    };
+  };
+  getUserAchievements: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of user achievements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserAchievementResponse"][];
+        };
+      };
+    };
+  };
+  awardAchievement: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AwardAchievementRequest"];
+      };
+    };
+    responses: {
+      /** @description Achievement awarded */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserAchievementResponse"];
+        };
+      };
+      /** @description Already earned (non-repeatable) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Achievement not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getRecentAchievements: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of recent achievements */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserAchievementResponse"][];
+        };
+      };
+    };
+  };
+  createChallenge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateChallengeRequest"];
+      };
+    };
+    responses: {
+      /** @description Challenge created (Draft status) */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getChallenge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Challenge details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"];
+        };
+      };
+      /** @description Challenge not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateChallenge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateChallengeRequest"];
+      };
+    };
+    responses: {
+      /** @description Challenge updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"];
+        };
+      };
+      /** @description Validation error or not Draft status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Challenge not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteChallenge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Challenge deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Challenge not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  activateChallenge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Challenge activated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Challenge not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  completeChallenge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Challenge completed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Challenge not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancelChallenge: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Challenge cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"];
+        };
+      };
+      /** @description Invalid state transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Challenge not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listChallenges: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of challenges */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"][];
+        };
+      };
+    };
+  };
+  listChallengesByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+        status: "Draft" | "Active" | "Completed" | "Cancelled";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of challenges by status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"][];
+        };
+      };
+      /** @description Invalid status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listActiveChallenges: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of currently active challenges */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"][];
+        };
+      };
+    };
+  };
+  listBuildingChallenges: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of building challenges */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeResponse"][];
+        };
+      };
+    };
+  };
+  getChallengeProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        challenge_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User progress details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeProgressResponse"];
+        };
+      };
+      /** @description Progress not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listChallengeProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        challenge_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of all user progress */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeProgressResponse"][];
+        };
+      };
+    };
+  };
+  incrementProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        challenge_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["IncrementProgressRequest"];
+      };
+    };
+    responses: {
+      /** @description Progress incremented */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeProgressResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Challenge not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listUserActiveChallenges: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of active challenges with user progress */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChallengeProgressResponse"][];
+        };
+      };
+    };
+  };
+  getGamificationUserStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User gamification statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserGamificationStatsResponse"];
+        };
+      };
+    };
+  };
+  getGamificationLeaderboard: {
+    parameters: {
+      query?: {
+        building_id?: string;
+        limit?: number;
+      };
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Leaderboard with top users */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LeaderboardResponse"];
+        };
+      };
+    };
+  };
+  listEnergyCampaigns: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of campaigns */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyCampaignResponse"][];
+        };
+      };
+    };
+  };
+  createEnergyCampaign: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateEnergyCampaignRequest"];
+      };
+    };
+    responses: {
+      /** @description Campaign created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyCampaignResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getEnergyCampaign: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Campaign details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyCampaignResponse"];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Campaign not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteEnergyCampaign: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Campaign deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Campaign not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateEnergyCampaignStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateCampaignStatusRequest"];
+      };
+    };
+    responses: {
+      /** @description Status updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyCampaignResponse"];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Campaign not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getEnergyCampaignStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Campaign statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CampaignStatsResponse"];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Campaign not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listProviderOffers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of offers */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProviderOfferResponse"][];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Campaign not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  addProviderOffer: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateProviderOfferRequest"];
+      };
+    };
+    responses: {
+      /** @description Offer added */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ProviderOfferResponse"];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Campaign not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  selectOffer: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SelectOfferRequest"];
+      };
+    };
+    responses: {
+      /** @description Offer selected */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyCampaignResponse"];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Campaign not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  finalizeCampaign: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Campaign finalized */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyCampaignResponse"];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Campaign not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getCampaignUploads: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        campaign_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of uploads */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyBillUploadResponse"][];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  uploadEnergyBill: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UploadEnergyBillRequest"];
+      };
+    };
+    responses: {
+      /** @description Bill uploaded */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyBillUploadResponse"];
+        };
+      };
+      /** @description GDPR consent required or validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getMyEnergyBillUploads: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of my uploads */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyBillUploadResponse"][];
+        };
+      };
+    };
+  };
+  getEnergyBillUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Upload details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyBillUploadResponse"];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Upload not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteEnergyBillUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Upload deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Upload not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  decryptConsumption: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Decrypted consumption data */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DecryptedConsumptionResponse"];
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Upload not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  verifyEnergyBillUpload: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VerifyUploadRequest"];
+      };
+    };
+    responses: {
+      /** @description Upload verified */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EnergyBillUploadResponse"];
+        };
+      };
+    };
+  };
+  withdrawConsent: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Consent withdrawn and data deleted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Consent withdrawn and data deleted */
+            message?: string;
+            /** @example 7.3 - Right to withdraw consent */
+            gdpr_article?: string;
+          };
+        };
+      };
+      /** @description Access denied */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Upload not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listOrganizations: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of organizations */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data?: components["schemas"]["OrganizationResponse"][];
+          };
+        };
+      };
+      /** @description Forbidden — only SuperAdmin can access */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateOrganizationRequest"];
+      };
+    };
+    responses: {
+      /** @description Organization created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrganizationResponse"];
+        };
+      };
+      /** @description Validation error (invalid plan, email, slug format, or slug already exists) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateOrganizationRequest"];
+      };
+    };
+    responses: {
+      /** @description Organization updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrganizationResponse"];
+        };
+      };
+      /** @description Validation error or slug already exists */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Organization deleted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Organization deleted successfully */
+            message?: string;
+          };
+        };
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  activateOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Organization activated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrganizationResponse"];
+        };
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  suspendOrganization: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Organization suspended */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrganizationResponse"];
+        };
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Organization not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listUsers: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of users */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data?: components["schemas"]["UserResponse"][];
+          };
+        };
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateUserRequest"];
+      };
+    };
+    responses: {
+      /** @description User created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserResponse"];
+        };
+      };
+      /** @description Validation error (email format, name length, password length, invalid role, duplicate role, email already exists) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateUserRequest"];
+      };
+    };
+    responses: {
+      /** @description User updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserResponse"];
+        };
+      };
+      /** @description Validation error or email already exists */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User deleted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example User deleted successfully */
+            message?: string;
+          };
+        };
+      };
+      /** @description Cannot delete your own account */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  activateUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User activated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserResponse"];
+        };
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deactivateUser: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User deactivated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UserResponse"];
+        };
+      };
+      /** @description Forbidden — only SuperAdmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description User not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBudgets: {
+    parameters: {
+      query?: {
+        page?: number;
+        per_page?: number;
+        /** @description Filter by building */
+        building_id?: string;
+        /** @description Filter by status */
+        status?: "draft" | "submitted" | "approved" | "rejected" | "archived";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated list of budgets */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data?: components["schemas"]["BudgetResponse"][];
+            page?: number;
+            per_page?: number;
+            total?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateBudgetRequest"];
+      };
+    };
+    responses: {
+      /** @description Budget created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Budget details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description Budget not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateBudgetRequest"];
+      };
+    };
+    responses: {
+      /** @description Budget updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description Validation error or budget not in Draft status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Budget deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Budget not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  submitBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Budget submitted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description Budget not in Draft status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  approveBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /**
+           * Format: uuid
+           * @description ID of the meeting that approved the budget
+           */
+          meeting_id: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Budget approved */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description Invalid meeting_id format or budget not in Submitted status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  rejectBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": {
+          /** @description Optional rejection reason */
+          reason?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Budget rejected */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description Budget not in Submitted status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  archiveBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Budget archived */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description Budget cannot be archived from current status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getBudgetVariance: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Variance analysis */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetVarianceResponse"];
+        };
+      };
+      /** @description Budget not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getBudgetStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Budget statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetStatsResponse"];
+        };
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBudgetsByFiscalYear: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        fiscal_year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of budgets for the fiscal year */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"][];
+        };
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBudgetsByStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        status: "draft" | "submitted" | "approved" | "rejected" | "archived";
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of budgets with the specified status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"][];
+        };
+      };
+      /** @description Invalid status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listBudgetsByBuilding: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of budgets for the building */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getActiveBudget: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Active budget */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description No active budget found for this building */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getBudgetByBuildingAndFiscalYear: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        fiscal_year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Budget details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetResponse"];
+        };
+      };
+      /** @description Budget not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listEtatsDates: {
+    parameters: {
+      query?: {
+        page?: number;
+        per_page?: number;
+        /** @description Filter by status */
+        status?:
+          | "requested"
+          | "in_progress"
+          | "generated"
+          | "delivered"
+          | "expired";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated list of etats dates */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data?: components["schemas"]["EtatDateResponse"][];
+            page?: number;
+            per_page?: number;
+            total?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createEtatDate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateEtatDateRequest"];
+      };
+    };
+    responses: {
+      /** @description Etat date created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getEtatDate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Etat date details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"];
+        };
+      };
+      /** @description Etat date not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteEtatDate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Etat date deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Etat date not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getEtatDateByReference: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        reference_number: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Etat date details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"];
+        };
+      };
+      /** @description Etat date not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listOverdueEtatsDates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of overdue etats dates */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"][];
+        };
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listExpiredEtatsDates: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of expired etats dates */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"][];
+        };
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getEtatDateStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateStatsResponse"];
+        };
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  markEtatDateInProgress: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Status updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"];
+        };
+      };
+      /** @description Invalid status transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  markEtatDateGenerated: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /**
+           * @description Path to the generated PDF file
+           * @example /uploads/etats-dates/ED-2025-001.pdf
+           */
+          pdf_file_path: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Status updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"];
+        };
+      };
+      /** @description Missing pdf_file_path or invalid status transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  markEtatDateDelivered: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Status updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"];
+        };
+      };
+      /** @description Invalid status transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateEtatDateFinancial: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateEtatDateFinancialRequest"];
+      };
+    };
+    responses: {
+      /** @description Financial data updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  updateEtatDateAdditionalData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @description JSON object with additional data sections 7-16 */
+          additional_data: Record<string, never>;
+        };
+      };
+    };
+    responses: {
+      /** @description Additional data updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listEtatsDatesbyUnit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        unit_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of etats dates for the unit */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listEtatsDatesbyBuilding: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of etats dates for the building */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EtatDateResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  calculateDistribution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        expense_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Distribution calculated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Charge distribution calculated successfully */
+            message?: string;
+            count?: number;
+            distributions?: components["schemas"]["ChargeDistributionResponse"][];
+          };
+        };
+      };
+      /** @description Calculation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only accountant, syndic, or superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getDistributionByExpense: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        expense_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of charge distributions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChargeDistributionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getDistributionsByOwner: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of charge distributions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ChargeDistributionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getTotalDueByOwner: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Total due amount */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** Format: uuid */
+            owner_id?: string;
+            /** Format: double */
+            total_due?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listJournalEntries: {
+    parameters: {
+      query?: {
+        /** @description Filter by building */
+        building_id?: string;
+        /** @description Filter by journal type */
+        journal_type?: "ACH" | "VEN" | "FIN" | "ODS";
+        /** @description Filter by start date (ISO 8601) */
+        start_date?: string;
+        /** @description Filter by end date (ISO 8601) */
+        end_date?: string;
+        page?: number;
+        per_page?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of journal entries */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            data?: components["schemas"]["JournalEntryResponse"][];
+            page?: number;
+            per_page?: number;
+          };
+        };
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only accountant, syndic, or superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createJournalEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        /**
+         * @example {
+         *       "building_id": "550e8400-e29b-41d4-a716-446655440000",
+         *       "journal_type": "ACH",
+         *       "entry_date": "2025-01-01T00:00:00Z",
+         *       "description": "Achat fournitures",
+         *       "document_ref": "FA-2025-001",
+         *       "lines": [
+         *         {
+         *           "account_code": "604",
+         *           "debit": 100,
+         *           "credit": 0,
+         *           "description": "Fournitures"
+         *         },
+         *         {
+         *           "account_code": "440",
+         *           "debit": 0,
+         *           "credit": 100,
+         *           "description": "Fournisseur X"
+         *         }
+         *       ]
+         *     }
+         */
+        "application/json": components["schemas"]["CreateJournalEntryRequest"];
+      };
+    };
+    responses: {
+      /** @description Journal entry created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["JournalEntryResponse"];
+        };
+      };
+      /** @description Validation error (invalid date, debits != credits) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only accountant or superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getJournalEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Journal entry with lines */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["JournalEntryWithLinesResponse"];
+        };
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only accountant, syndic, or superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Journal entry not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteJournalEntry: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Journal entry deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Cannot delete auto-generated entries */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description No organization associated with user */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Forbidden — only accountant or superadmin */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listOwnerContributions: {
+    parameters: {
+      query?: {
+        /** @description Filter by owner (optional) */
+        owner_id?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of contributions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"][];
+        };
+      };
+      /** @description Invalid owner_id format or organization ID required */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createOwnerContribution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateOwnerContributionRequest"];
+      };
+    };
+    responses: {
+      /** @description Contribution created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"];
+        };
+      };
+      /** @description Validation error or organization ID required */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getOwnerContribution: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Contribution details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"];
+        };
+      };
+      /** @description Contribution not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getOutstandingContributions: {
+    parameters: {
+      query: {
+        owner_id: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of outstanding contributions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"][];
+        };
+      };
+      /** @description owner_id is required or invalid format */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  recordContributionPayment: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecordPaymentRequest"];
+      };
+    };
+    responses: {
+      /** @description Payment recorded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OwnerContributionResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  listCallForFunds: {
+    parameters: {
+      query?: {
+        /** @description Filter by building (optional) */
+        building_id?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of calls for funds */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"][];
+        };
+      };
+      /** @description Invalid building_id format or organization ID required */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  createCallForFunds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateCallForFundsRequest"];
+      };
+    };
+    responses: {
+      /** @description Call for funds created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"];
+        };
+      };
+      /** @description Validation error (invalid contribution type, organization ID required) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getCallForFunds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Call for funds details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"];
+        };
+      };
+      /** @description Call for funds not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  deleteCallForFunds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Call for funds deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Cannot delete — not in Draft status */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Call for funds not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getOverdueCallsForFunds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of overdue calls for funds */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  sendCallForFunds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        "application/json": Record<string, never>;
+      };
+    };
+    responses: {
+      /** @description Call for funds sent and contributions generated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SendCallForFundsResponse"];
+        };
+      };
+      /** @description Cannot send — invalid status transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  cancelCallForFunds: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Call for funds cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CallForFundsResponse"];
+        };
+      };
+      /** @description Cannot cancel — invalid status transition */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getAccountantDashboardStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dashboard statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description User does not belong to an organization */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  getRecentTransactions: {
+    parameters: {
+      query?: {
+        /** @description Maximum number of transactions to return (max 50) */
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Recent transactions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>[];
+        };
+      };
+      /** @description User does not belong to an organization */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  setup2FA: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 2FA setup initiated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Setup2FAResponse"];
+        };
+      };
+      /** @description 2FA already enabled or organization ID required */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Setup failed */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  enable2FA: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Enable2FARequest"];
+      };
+    };
+    responses: {
+      /** @description 2FA successfully enabled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid TOTP code, 2FA already enabled, or setup not found */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Enable failed */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  verify2FA: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Verify2FARequest"];
+      };
+    };
+    responses: {
+      /** @description Verification successful */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Invalid code or 2FA not enabled */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rate limit exceeded (3 attempts per 5 min) */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Verification failed */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  disable2FA: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["Disable2FARequest"];
+      };
+    };
+    responses: {
+      /** @description 2FA successfully disabled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example true */
+            success?: boolean;
+            /** @example 2FA successfully disabled */
+            message?: string;
+          };
+        };
+      };
+      /** @description Invalid password or organization ID required */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Disable failed */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  regenerateBackupCodes: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RegenerateBackupCodesRequest"];
+      };
+    };
+    responses: {
+      /** @description Backup codes regenerated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RegenerateBackupCodesResponse"];
+        };
+      };
+      /** @description Invalid TOTP code or 2FA not enabled */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Regeneration failed */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  get2FAStatus: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description 2FA status */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TwoFactorStatusResponse"];
+        };
+      };
+      /** @description Not authenticated */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Failed to retrieve status */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  queryIoTReadings: {
+    parameters: {
+      query: {
+        building_id: string;
+        device_type?: "Linky" | "Ores" | "SmartMeter" | "OtherIoT";
+        metric_type?:
+          | "ElectricityConsumption"
+          | "GasConsumption"
+          | "WaterConsumption"
+          | "Temperature"
+          | "Humidity";
+        start_date: string;
+        end_date: string;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of IoT readings */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IoTReadingResponse"][];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createIoTReading: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateIoTReadingDto"];
+      };
+    };
+    responses: {
+      /** @description IoT reading created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IoTReadingResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createIoTReadingsBulk: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateIoTReadingDto"][];
+      };
+    };
+    responses: {
+      /** @description Bulk readings created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            count?: number;
+            message?: string;
+          };
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getConsumptionStats: {
+    parameters: {
+      query: {
+        metric_type: string;
+        start_date: string;
+        end_date: string;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Consumption statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getDailyAggregates: {
+    parameters: {
+      query: {
+        device_type: string;
+        metric_type: string;
+        start_date: string;
+        end_date: string;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Daily aggregates */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>[];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getMonthlyAggregates: {
+    parameters: {
+      query: {
+        device_type: string;
+        metric_type: string;
+        start_date: string;
+        end_date: string;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Monthly aggregates */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>[];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  detectAnomalies: {
+    parameters: {
+      query: {
+        metric_type: string;
+        threshold_percentage?: number;
+        lookback_days?: number;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Detected anomalies */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>[];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  configureLinkyDevice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ConfigureLinkyDeviceDto"];
+      };
+    };
+    responses: {
+      /** @description Linky device configured */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkyDeviceResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getLinkyDevice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Linky device details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkyDeviceResponse"];
+        };
+      };
+      /** @description Device not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteLinkyDevice: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Device deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  syncLinkyData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SyncLinkyDataDto"];
+      };
+    };
+    responses: {
+      /** @description Sync result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkySyncResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  toggleLinkySync: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          enabled: boolean;
+        };
+      };
+    };
+    responses: {
+      /** @description Sync toggled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkyDeviceResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  findDevicesNeedingSync: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of devices needing sync */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkyDeviceResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  findDevicesWithExpiredTokens: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of devices with expired tokens */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LinkyDeviceResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createContractorReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateContractorReportDto"];
+      };
+    };
+    responses: {
+      /** @description Contractor report created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized — missing organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getContractorReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Contractor report details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden — access refused */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Report not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  updateContractorReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateContractorReportDto"];
+      };
+    };
+    responses: {
+      /** @description Report updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteContractorReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Report deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Report not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  submitContractorReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Report submitted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  validateContractorReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Report validated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  requestCorrections: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RequestCorrectionsDto"];
+      };
+    };
+    responses: {
+      /** @description Corrections requested */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  rejectContractorReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RejectReportDto"];
+      };
+    };
+    responses: {
+      /** @description Report rejected */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  generateMagicLink: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GenerateMagicLinkDto"];
+      };
+    };
+    responses: {
+      /** @description Magic link generated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MagicLinkResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listContractorReportsByBuilding: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of contractor reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listContractorReportsByTicket: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ticket_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of contractor reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getReportByToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Contractor report details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Invalid or expired token */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  submitReportByToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Report submitted */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ContractorReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listTechnicalInspectionsPaginated: {
+    parameters: {
+      query?: {
+        page?: number;
+        per_page?: number;
+        sort_by?: string;
+        order?: "asc" | "desc";
+        organization_id?: string;
+        building_id?: string;
+        inspection_type?: string;
+        status?: string;
+        inspector_name?: string;
+        overdue?: boolean;
+        compliant?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated list of technical inspections */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionListResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createTechnicalInspection: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateTechnicalInspectionDto"];
+      };
+    };
+    responses: {
+      /** @description Technical inspection created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getTechnicalInspection: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Technical inspection details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  updateTechnicalInspection: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateTechnicalInspectionDto"];
+      };
+    };
+    responses: {
+      /** @description Technical inspection updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteTechnicalInspection: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Technical inspection deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listBuildingTechnicalInspections: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of technical inspections */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listOrganizationTechnicalInspections: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of technical inspections */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getOverdueInspections: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of overdue inspections */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getUpcomingInspections: {
+    parameters: {
+      query?: {
+        days?: number;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of upcoming inspections */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getInspectionsByType: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+        inspection_type: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of inspections by type */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  addInspectionReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddReportDto"];
+      };
+    };
+    responses: {
+      /** @description Report added */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  addInspectionPhoto: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddInspectionPhotoDto"];
+      };
+    };
+    responses: {
+      /** @description Photo added */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  addInspectionCertificate: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddCertificateDto"];
+      };
+    };
+    responses: {
+      /** @description Certificate added */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TechnicalInspectionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listWorkReportsPaginated: {
+    parameters: {
+      query?: {
+        page?: number;
+        per_page?: number;
+        sort_by?: string;
+        order?: "asc" | "desc";
+        organization_id?: string;
+        building_id?: string;
+        work_type?: string;
+        warranty_type?: string;
+        contractor_name?: string;
+        min_cost?: number;
+        max_cost?: number;
+        warranty_active?: boolean;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated list of work reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReportListResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createWorkReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateWorkReportDto"];
+      };
+    };
+    responses: {
+      /** @description Work report created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getWorkReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Work report details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReportResponse"];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  updateWorkReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateWorkReportDto"];
+      };
+    };
+    responses: {
+      /** @description Work report updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteWorkReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Work report deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listBuildingWorkReports: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of work reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReportResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listOrganizationWorkReports: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        organization_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of work reports */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReportResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getActiveWarranties: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of active warranties */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WarrantyStatusDto"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getExpiringWarranties: {
+    parameters: {
+      query?: {
+        days?: number;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of expiring warranties */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WarrantyStatusDto"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  addWorkReportPhoto: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddPhotoDto"];
+      };
+    };
+    responses: {
+      /** @description Photo added */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  addWorkReportDocument: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddDocumentDto"];
+      };
+    };
+    responses: {
+      /** @description Document added */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["WorkReportResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listAgeRequests: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of AGE requests */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createAgeRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": {
+          title: string;
+          description?: string;
+        };
+      };
+    };
+    responses: {
+      /** @description AGE request created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getAgeRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description AGE request details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteAgeRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description AGE request deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  openAgeRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description AGE request opened */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  addCosignatory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AddCosignatoryDto"];
+      };
+    };
+    responses: {
+      /** @description Cosignatory added */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  removeCosignatory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Cosignatory removed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  submitAgeRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request submitted to syndic */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  syndicResponse: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["SyndicResponseDto"];
+      };
+    };
+    responses: {
+      /** @description Syndic response recorded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  triggerAutoConvocation: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Auto-convocation triggered */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  withdrawAgeRequest: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Request withdrawn */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgeRequestResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getAgSessionForMeeting: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meeting_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description AG session details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgSessionResponse"];
+        };
+      };
+      /** @description No session for this meeting */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  createAgSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        meeting_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateAgSessionDto"];
+      };
+    };
+    responses: {
+      /** @description AG session created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgSessionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listAgSessions: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of AG sessions */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgSessionResponse"][];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getAgSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description AG session details */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgSessionResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  deleteAgSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Session deleted */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  startAgSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Session started */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgSessionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  endAgSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["EndAgSessionDto"];
+      };
+    };
+    responses: {
+      /** @description Session ended */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgSessionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  cancelAgSession: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Session cancelled */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgSessionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  recordRemoteJoin: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecordRemoteJoinDto"];
+      };
+    };
+    responses: {
+      /** @description Participant recorded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AgSessionResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getCombinedQuorum: {
+    parameters: {
+      query: {
+        physical_quotas: number;
+        total_building_quotas: number;
+      };
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Combined quorum result */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CombinedQuorumResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  updateUnitOwner: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateOwnershipDto"];
+      };
+    };
+    responses: {
+      /** @description Relationship updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnitOwnerResponse"];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getOwnerUnits: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of unit-owner relationships */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnitOwnerResponse"][];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getOwnerOwnershipHistory: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        owner_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Ownership history */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UnitOwnerResponse"][];
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  exportOwnershipContractPdf: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description PDF file */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/pdf": string;
+        };
+      };
+      /** @description Relationship, unit, owner, or building not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description PDF generation failed */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getDashboardStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Dashboard statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DashboardStats"];
+        };
+      };
+      /** @description Forbidden — SuperAdmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getOwnerStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Owner dashboard statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SyndicDashboardStats"];
+        };
+      };
+      /** @description Forbidden — Owner only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getSyndicStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Syndic dashboard statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SyndicDashboardStats"];
+        };
+      };
+      /** @description Forbidden — Syndic/Accountant only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getSyndicUrgentTasks: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of urgent tasks */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UrgentTask"][];
+        };
+      };
+      /** @description Forbidden — Syndic/Accountant only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  getSeedDataStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Seed data statistics */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SeedDataStats"];
+        };
+      };
+      /** @description Forbidden — SuperAdmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  listAuditLogs: {
+    parameters: {
+      query?: {
+        page?: number;
+        per_page?: number;
+        user_id?: string;
+        organization_id?: string;
+        event_type?: string;
+        success?: boolean;
+        start_date?: string;
+        end_date?: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated audit logs */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AuditLogsResponse"];
+        };
+      };
+      /** @description Forbidden — SuperAdmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  adminExportUserData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Complete user data export */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Forbidden — SuperAdmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  adminEraseUserData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        user_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description User data anonymized */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            user_email?: string;
+            user_first_name?: string;
+            user_last_name?: string;
+            owners_anonymized?: number;
+            /** Format: date-time */
+            anonymized_at?: string;
+          };
+        };
+      };
+      /** @description Forbidden — SuperAdmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description User not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Legal holds prevent erasure */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description User already anonymized */
+      410: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  generatePcnReport: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description PCN report in JSON format */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": string;
+        };
+      };
+    };
+  };
+  exportPcnPdf: {
+    parameters: {
+      query?: {
+        /** @description Building name for the report header */
+        name?: string;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description PCN report PDF file */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/pdf": string;
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": string;
+        };
+      };
+    };
+  };
+  exportPcnExcel: {
+    parameters: {
+      query?: {
+        /** @description Building name for the report header */
+        name?: string;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description PCN report Excel file */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": string;
+        };
+      };
+    };
+  };
+  seedDemoData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Demo data seeded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            success?: boolean;
+            message?: string;
+          };
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden — SuperAdmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  clearDemoData: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Demo data cleared */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            success?: boolean;
+            message?: string;
+          };
+        };
+      };
+      /** @description Bad request */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden — SuperAdmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  generateBalanceSheetForBuilding: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Balance sheet report */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Unauthorized — missing organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden — accountant, syndic, or superadmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  generateIncomeStatementForBuilding: {
+    parameters: {
+      query: {
+        /** @description Start date (ISO 8601 / RFC 3339) */
+        period_start: string;
+        /** @description End date (ISO 8601 / RFC 3339) */
+        period_end: string;
+      };
+      header?: never;
+      path: {
+        building_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Income statement report */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": Record<string, never>;
+        };
+      };
+      /** @description Invalid date format or period_start >= period_end */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unauthorized — missing organization */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden — accountant, syndic, or superadmin only */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };

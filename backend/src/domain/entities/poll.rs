@@ -9,7 +9,7 @@ use uuid::Uuid;
 /// - Couleur de peinture
 /// - Horaires de travaux
 /// - Décisions mineures entre AG
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct Poll {
     pub id: Uuid,
     pub building_id: Uuid,
@@ -40,7 +40,7 @@ pub struct Poll {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PollType {
     YesNo,          // Simple yes/no question
@@ -49,7 +49,7 @@ pub enum PollType {
     OpenEnded,      // Free text responses
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PollStatus {
     Draft,     // Not yet published
@@ -58,7 +58,7 @@ pub enum PollStatus {
     Cancelled, // Poll cancelled before completion
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct PollOption {
     pub id: Uuid,
     pub option_text: String,

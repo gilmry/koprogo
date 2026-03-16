@@ -390,10 +390,10 @@ async fn test_contractor_reports_access_via_magic_link() {
     assert_eq!(gen_resp.status(), 200);
     let gen_body: serde_json::Value = test::read_body_json(gen_resp).await;
 
-    // Extract token from magic link URL (format: {base_url}/contractor/token/{token})
+    // Extract token from magic link URL (format: {base_url}/contractor/?token={token})
     let magic_link = gen_body["magic_link"].as_str().unwrap();
     let token_part = magic_link
-        .split("/contractor/token/")
+        .split("?token=")
         .last()
         .unwrap_or("invalid-token");
 

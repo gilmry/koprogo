@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Choix de vote d'un copropriétaire
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum VoteChoice {
     Pour,       // Vote en faveur (For)
@@ -12,7 +12,7 @@ pub enum VoteChoice {
 }
 
 /// Vote d'un propriétaire sur une résolution
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct Vote {
     pub id: Uuid,
     pub resolution_id: Uuid,

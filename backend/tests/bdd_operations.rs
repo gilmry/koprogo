@@ -4250,11 +4250,11 @@ async fn when_generate_magic_link(world: &mut OperationsWorld) {
         .await
     {
         Ok(resp) => {
-            // Extract token from magic_link URL (last path segment)
+            // Extract token from magic_link URL (format: {base_url}/contractor/?token={token})
             let token = resp
                 .magic_link
-                .split('/')
-                .next_back()
+                .split("?token=")
+                .nth(1)
                 .unwrap_or("")
                 .to_string();
             world.magic_link_token = Some(token);

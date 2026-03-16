@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 /// Create a new poll
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct CreatePollDto {
     pub building_id: String,
 
@@ -20,7 +20,7 @@ pub struct CreatePollDto {
     pub ends_at: String, // ISO 8601 format
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, utoipa::ToSchema)]
 pub struct CreatePollOptionDto {
     #[serde(default)]
     pub id: Option<String>, // Optional UUID, will be generated if not provided
@@ -30,7 +30,7 @@ pub struct CreatePollOptionDto {
 }
 
 /// Update poll (only draft polls can be updated)
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct UpdatePollDto {
     #[validate(length(min = 1, max = 255))]
     pub title: Option<String>,
@@ -44,7 +44,7 @@ pub struct UpdatePollDto {
 }
 
 /// Cast a vote on a poll
-#[derive(Debug, Deserialize, Validate, Clone)]
+#[derive(Debug, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct CastVoteDto {
     pub poll_id: String,
 
@@ -55,7 +55,7 @@ pub struct CastVoteDto {
 }
 
 /// Poll response DTO
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PollResponseDto {
     pub id: String,
     pub building_id: String,
@@ -80,7 +80,7 @@ pub struct PollResponseDto {
     pub updated_at: String,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, utoipa::ToSchema)]
 pub struct PollOptionDto {
     pub id: String,
     pub option_text: String,
@@ -104,7 +104,7 @@ impl From<&PollOption> for PollOptionDto {
 }
 
 /// Poll vote response DTO
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PollVoteResponseDto {
     pub id: String,
     pub poll_id: String,
@@ -117,7 +117,7 @@ pub struct PollVoteResponseDto {
 }
 
 /// Poll list response with pagination
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PollListResponseDto {
     pub polls: Vec<PollResponseDto>,
     pub total: i64,
@@ -126,7 +126,7 @@ pub struct PollListResponseDto {
 }
 
 /// Poll results summary
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct PollResultsDto {
     pub poll_id: String,
     pub total_votes_cast: i32,
@@ -137,7 +137,7 @@ pub struct PollResultsDto {
 }
 
 /// Poll filters for queries
-#[derive(Debug, Deserialize, Default, Clone)]
+#[derive(Debug, Deserialize, Default, Clone, utoipa::ToSchema)]
 pub struct PollFilters {
     pub building_id: Option<String>,
     pub created_by: Option<String>,

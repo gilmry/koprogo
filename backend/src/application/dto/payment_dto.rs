@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Payment response DTO
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct PaymentResponse {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -64,7 +64,7 @@ impl From<Payment> for PaymentResponse {
 }
 
 /// Create payment request DTO
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct CreatePaymentRequest {
     pub building_id: Uuid,
     pub owner_id: Uuid,
@@ -77,14 +77,14 @@ pub struct CreatePaymentRequest {
 }
 
 /// Refund payment request DTO
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct RefundPaymentRequest {
     pub amount_cents: i64,
     pub reason: Option<String>,
 }
 
 /// Payment statistics response DTO
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct PaymentStatsResponse {
     pub total_count: i64,
     pub succeeded_count: i64,

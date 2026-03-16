@@ -4,7 +4,7 @@ use crate::domain::entities::gdpr_export::{
 use serde::{Deserialize, Serialize};
 
 /// Response DTO for GDPR data export (Article 15)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct GdprExportResponseDto {
     pub export_date: String, // RFC3339 format
     pub user: UserDataDto,
@@ -16,7 +16,7 @@ pub struct GdprExportResponseDto {
     pub total_items: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct UserDataDto {
     pub id: String,
     pub email: String,
@@ -29,7 +29,7 @@ pub struct UserDataDto {
     pub updated_at: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct OwnerDataDto {
     pub id: String,
     pub organization_id: String,
@@ -46,7 +46,7 @@ pub struct OwnerDataDto {
     pub updated_at: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct UnitOwnershipDataDto {
     pub building_name: String,
     pub building_address: String,
@@ -58,7 +58,7 @@ pub struct UnitOwnershipDataDto {
     pub is_primary_contact: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct ExpenseDataDto {
     pub description: String,
     pub amount: f64,
@@ -67,7 +67,7 @@ pub struct ExpenseDataDto {
     pub building_name: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct DocumentDataDto {
     pub title: String,
     pub document_type: String,
@@ -75,7 +75,7 @@ pub struct DocumentDataDto {
     pub building_name: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct MeetingDataDto {
     pub title: String,
     pub meeting_date: String,
@@ -212,14 +212,14 @@ impl From<MeetingData> for MeetingDataDto {
 }
 
 /// Request DTO for GDPR data erasure (Article 17)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct GdprEraseRequestDto {
     /// Optional confirmation token for security
     pub confirmation: Option<String>,
 }
 
 /// Response DTO for GDPR data erasure
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct GdprEraseResponseDto {
     pub success: bool,
     pub message: String,
@@ -232,7 +232,7 @@ pub struct GdprEraseResponseDto {
 }
 
 // GDPR Article 16: Right to Rectification
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct GdprRectifyRequest {
     pub email: Option<String>,
     pub first_name: Option<String>,
@@ -240,19 +240,19 @@ pub struct GdprRectifyRequest {
 }
 
 // GDPR Article 18: Right to Restriction of Processing
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct GdprRestrictProcessingRequest {
     // No body needed - action is the request itself
 }
 
 // GDPR Article 21: Right to Object (Marketing opt-out)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct GdprMarketingPreferenceRequest {
     pub opt_out: bool,
 }
 
 // Generic success response for GDPR actions
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct GdprActionResponse {
     pub success: bool,
     pub message: String,

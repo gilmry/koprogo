@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Type de résolution (ordinaire ou extraordinaire)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ResolutionType {
     Ordinary,      // Résolution ordinaire (majorité simple)
@@ -11,7 +11,7 @@ pub enum ResolutionType {
 }
 
 /// Type de majorité requise pour adoption
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum MajorityType {
     Simple,         // Majorité simple: 50% + 1 des votes exprimés
@@ -20,7 +20,7 @@ pub enum MajorityType {
 }
 
 /// Statut d'une résolution
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ResolutionStatus {
     Pending,  // En attente de vote
@@ -29,7 +29,7 @@ pub enum ResolutionStatus {
 }
 
 /// Résolution soumise au vote lors d'une assemblée générale
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct Resolution {
     pub id: Uuid,
     pub meeting_id: Uuid,
