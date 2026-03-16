@@ -23,7 +23,7 @@
     "test:docs": "npm run test:e2e && npm run docs:videos"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.6",
+    "@astrojs/check": "^0.9.7",
     "@astrojs/node": "^9.5.2",
     "@astrojs/svelte": "^7.2.5",
     "@tailwindcss/typography": "^0.5.19",
