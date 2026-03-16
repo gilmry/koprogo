@@ -833,7 +833,7 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 ### ✅ NOUVEAU: Automatic AG Convocations System - Issue #88 (Phase 2)
 
 - Système de convocations automatiques pour assemblées générales avec conformité légale belge
-- **Délais légaux obligatoires**: Ordinary AG (15 jours minimum avant réunion), Extraordinary AG (8 jours), Second Convocation (8 jours après quorum non atteint)
+- **Délais légaux obligatoires**: Ordinary AG (15 jours minimum), Extraordinary AG (15 jours minimum), Second Convocation (15 jours minimum) — Art. 3.87 §3 Code Civil belge
 - **Validation multi-niveaux**: Domain entity validation, repository checks, database constraints (minimum_send_date calculation)
 - **Workflow complet**: Draft → Scheduled → Sent → Cancelled
 - **Email tracking**: email_sent_at, email_opened_at (tracking pixel/link click), email_failed (bounce handling)

@@ -209,22 +209,37 @@ impl IoTRepository for PostgresIoTRepository {
             start_date,
             end_date,
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await
         .map_err(|e| format!("Failed to get consumption stats: {}", e))?;
 
-        Ok(ConsumptionStatsDto {
-            building_id,
-            metric_type,
-            period_start: start_date,
-            period_end: end_date,
-            total_consumption: record.total_consumption.unwrap_or(0.0),
-            average_daily: record.average_daily.unwrap_or(0.0),
-            min_value: record.min_value.unwrap_or(0.0),
-            max_value: record.max_value.unwrap_or(0.0),
-            reading_count: record.reading_count,
-            unit: record.unit,
-            source: record.source,
+        Ok(match record {
+            Some(r) => ConsumptionStatsDto {
+                building_id,
+                metric_type,
+                period_start: start_date,
+                period_end: end_date,
+                total_consumption: r.total_consumption.unwrap_or(0.0),
+                average_daily: r.average_daily.unwrap_or(0.0),
+                min_value: r.min_value.unwrap_or(0.0),
+                max_value: r.max_value.unwrap_or(0.0),
+                reading_count: r.reading_count,
+                unit: r.unit,
+                source: r.source,
+            },
+            None => ConsumptionStatsDto {
+                building_id,
+                metric_type,
+                period_start: start_date,
+                period_end: end_date,
+                total_consumption: 0.0,
+                average_daily: 0.0,
+                min_value: 0.0,
+                max_value: 0.0,
+                reading_count: 0,
+                unit: String::new(),
+                source: String::new(),
+            },
         })
     }
 

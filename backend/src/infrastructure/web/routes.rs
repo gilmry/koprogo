@@ -45,10 +45,11 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(link_owner_to_user)
             .service(export_owner_statement_pdf) // PDF Export (Issue #47)
             // Owner Contributions (Revenue)
+            // IMPORTANT: register specific routes BEFORE parameterized {id} routes
             .service(create_contribution)
-            .service(get_contribution)
             .service(get_contributions_by_owner)
             .service(get_outstanding_contributions)
+            .service(get_contribution)
             .service(record_payment)
             // Call for Funds (Collective payment requests)
             .service(create_call_for_funds)

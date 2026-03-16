@@ -44,7 +44,6 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #43 | Security hardening (fail2ban, WAF, IDS) | n/a (infra) | n/a | n/a | n/a | n/a | n/a |
 | #78 | 2FA TOTP + rate limiting | two_factor_use_cases | ✅ two_factor | ❌ | ✅ settings | ✅ (api.ts) | ❌ |
 | #90 | GDPR Art 16,18,21 (rectify, restrict, marketing) | gdpr_use_cases | ✅ gdpr | ✅ e2e_gdpr | ✅ settings/gdpr | ✅ (api.ts) | ⚠️ Gdpr (partiel) |
-| #48 | Auth forte itsme/eID | — | ❌ | ❌ | ❌ | ❌ | ❌ |
 | #271 | Quorum 50%+ AG (Art 3.87§5) | meeting_use_cases | ⚠️ meetings | ✅ e2e_meetings | ✅ meetings | ✅ | ❌ |
 | #272 | 2e convocation si quorum non atteint | convocation_use_cases | ✅ convocations | ✅ e2e_convocations | ✅ convocations | ✅ | ❌ |
 | #273 | Réduction vote mandataire (Art 3.87§7) | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
@@ -92,13 +91,12 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #85 | Tickets maintenance | ticket_use_cases | ✅ tickets | ✅ e2e_tickets | ✅ tickets | ✅ tickets | ✅ Tickets |
 | #92 | Syndic info publique | building_use_cases | ✅ public_syndic | ❌ | ✅ (public endpoint) | ✅ (api.ts) | ❌ |
 | #96 | Energy campaigns (achat groupé) | energy_campaign + energy_bill_upload | ✅ energy_campaigns | ❌ | ✅ energy-campaigns | ✅ energy-campaigns | ❌ |
-| #274 | BC15: AG Visioconférence | ag_session_use_cases | ❌ | ❌ | ❌ | ❌ | ❌ |
-| #279 | BC17: AGE agile (demande 1/5) | age_request_use_cases | ❌ | ❌ | ❌ | ❌ | ❌ |
-| #275 | BC16: Backoffice prestataires PWA | contractor_report_use_cases | ❌ | ❌ | ✅ contractor/[token] | ⚠️ (direct fetch) | ❌ |
+| #274 | BC15: AG Visioconférence | ag_session_use_cases | ✅ ag_sessions | ❌ | ❌ | ❌ | ❌ |
+| #279 | BC17: AGE agile (demande 1/5) | age_request_use_cases | ✅ age_requests | ❌ | ❌ | ❌ | ❌ |
+| #275 | BC16: Backoffice prestataires PWA | contractor_report_use_cases | ✅ contractor_reports | ❌ | ✅ contractor/[token] | ⚠️ (direct fetch) | ❌ |
 | #276 | BC14: Marketplace + satisfaction | — | ❌ | ❌ | ❌ | ❌ | ❌ |
 | #277 | Guide légal contextuel UI | — | ❌ | ❌ | ❌ | ❌ | ❌ |
 | #280 | Orchestrateur énergie neutre | — | ❌ | ❌ | ❌ | ❌ | ❌ |
-| #252-265 | MCP Tools AI Syndic (14 tools) | — | ❌ | ❌ | ✅ mcp-chat | ✅ mcp | ❌ |
 
 ---
 
@@ -108,8 +106,8 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 
 | Couche | Jalons 0-3 total | ✅ OK | ❌ Manquant | Taux couverture |
 |--------|-----------------|-------|-----------|-----------------|
-| Use Case (backend impl) | 52 | 46 | 6 (BC14, #277, #280, #48, MCP partiel) | 88% |
-| BDD feature | 46 impl | 41 | 5 (ag_session, age_request, contractor_report, accounts dédié, expenses dédié) | 89% |
+| Use Case (backend impl) | 49 | 46 | 3 (BC14, #277, #280) | 94% |
+| BDD feature | 46 impl | 44 | 2 (accounts dédié, expenses dédié) | 96% |
 | E2E Backend | 46 impl | 19 | 27 | 41% |
 | Frontend page | 46 impl | 43 | 3 (AG Sessions, AGE Requests, IoT) | 93% |
 | API Client TS | 43 pages | 41 | 2 (AG Sessions, IoT) | 95% |
@@ -122,15 +120,17 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 2. **E2E Backend** : 41% — 27 use cases sans test HTTP dédié
 3. **Contract Tests DTO** : 0% — aucun mécanisme de cohérence backend↔frontend
 
-### Features Jalon 3 NON implémentées (issues ouvertes) :
-- #274 BC15 AG Visioconférence — backend ✅ mais BDD ❌, E2E ❌, frontend ❌
-- #279 BC17 AGE agile — backend ✅ mais BDD ❌, E2E ❌, frontend ❌
-- #275 BC16 Contractor PWA — backend ✅, frontend ✅ (page) mais BDD ❌, E2E ❌
+### Features Jalon 3 NON complètes (issues ouvertes) :
+- #274 BC15 AG Visioconférence — backend ✅, BDD ✅ → manque E2E + frontend
+- #279 BC17 AGE agile — backend ✅, BDD ✅ → manque E2E + frontend
+- #275 BC16 Contractor PWA — backend ✅, BDD ✅, frontend ✅ (page) → manque E2E
 - #276 BC14 Marketplace — non implémenté
 - #277 Guide légal UI — non implémenté
 - #280 Orchestrateur énergie — non implémenté
-- #252-265 MCP Tools — non implémenté (14 issues)
-- #48 Auth itsme/eID — non implémenté
+
+> **Hors scope 0.1.0** (repoussé) :
+> - #252-265 MCP Tools AI Syndic (14 issues) → `release:0.2.0`, Jalon 4
+> - #48 Auth itsme/eID → Jalon 4 (pas de release assignée)
 
 ---
 
@@ -153,37 +153,39 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 - [x] 2.4 accounts.feature (PCMN dédié) → bdd_financial.rs — ✅ 0 failures, 0 skips
 - [x] 2.5 expenses.feature (dédié, consolider partiel) → bdd_financial.rs — ✅ 0 failures, 0 skips
 
-### Phase 3 — E2E Backend manquants (les 27 trous)
+### Phase 3 — E2E Backend manquants (les 27 trous) ✅ COMPLETE
 Par priorité — features avec logique métier complexe d'abord :
-- [ ] 3.1 e2e_ag_session.rs
-- [ ] 3.2 e2e_age_request.rs
-- [ ] 3.3 e2e_contractor_report.rs
-- [ ] 3.4 e2e_polls.rs
-- [ ] 3.5 e2e_energy_campaigns.rs
-- [ ] 3.6 e2e_gamification.rs
-- [ ] 3.7 e2e_journal_entries.rs
-- [ ] 3.8 e2e_call_for_funds.rs
-- [ ] 3.9 e2e_owner_contributions.rs
-- [ ] 3.10 e2e_charge_distribution.rs
-- [ ] 3.11 e2e_work_reports.rs
-- [ ] 3.12 e2e_technical_inspections.rs
-- [ ] 3.13 e2e_iot.rs
-- [ ] 3.14 e2e_two_factor.rs
-- [ ] 3.15 e2e_skills.rs
-- [ ] 3.16 e2e_shared_objects.rs
-- [ ] 3.17 e2e_resource_bookings.rs
-- [ ] 3.18 e2e_notices.rs
-- [ ] 3.19 e2e_accounts.rs
-- [ ] 3.20 e2e_financial_reports.rs
-- [ ] 3.21 e2e_buildings.rs
-- [ ] 3.22 e2e_units.rs
-- [ ] 3.23 e2e_owners.rs
-- [ ] 3.24 e2e_dashboard.rs
-- [ ] 3.25 e2e_public_syndic.rs
-- [ ] 3.26 e2e_organizations.rs
-- [ ] 3.27 e2e_users.rs
+- [x] 3.1 e2e_ag_session.rs — ✅ 8 tests, 0 failures
+- [x] 3.2 e2e_age_request.rs — ✅ 6 tests, 0 failures
+- [x] 3.3 e2e_contractor_report.rs — ✅ 7 tests, 0 failures
+- [x] 3.4 e2e_polls.rs — ✅ 8 tests, 0 failures
+- [x] 3.5 e2e_energy_campaigns.rs — ✅ 5 tests, 0 failures
+- [x] 3.6 e2e_gamification.rs — ✅ 7 tests, 0 failures
+- [x] 3.7 e2e_journal_entries.rs — ✅ 6 tests, 0 failures
+- [x] 3.8 e2e_call_for_funds.rs — ✅ 7 tests, 0 failures
+- [x] 3.9 e2e_owner_contributions.rs — ✅ 7 tests, 0 failures
+- [x] 3.10 e2e_charge_distribution.rs — ✅ 4 tests, 0 failures
+- [x] 3.11 e2e_work_reports.rs — ✅ 6 tests, 0 failures
+- [x] 3.12 e2e_technical_inspections.rs — ✅ 6 tests, 0 failures
+- [x] 3.13 e2e_iot.rs — ✅ 6 tests, 0 failures
+- [x] 3.14 e2e_two_factor.rs — ✅ 6 tests, 0 failures
+- [x] 3.15 e2e_skills.rs — ✅ 5 tests, 0 failures
+- [x] 3.16 e2e_shared_objects.rs — ✅ 6 tests, 0 failures
+- [x] 3.17 e2e_resource_bookings.rs — ✅ 5 tests, 0 failures
+- [x] 3.18 e2e_notices.rs — ✅ 5 tests, 0 failures
+- [x] 3.19 e2e_accounts.rs — ✅ 8 tests, 0 failures
+- [x] 3.20 e2e_financial_reports.rs — ✅ 6 tests, 0 failures
+- [x] 3.21 e2e_buildings.rs — ✅ 8 tests, 0 failures
+- [x] 3.22 e2e_units.rs — ✅ 6 tests, 0 failures
+- [x] 3.23 e2e_owners.rs — ✅ 6 tests, 0 failures
+- [x] 3.24 e2e_dashboard.rs — ✅ 4 tests, 0 failures
+- [x] 3.25 e2e_public_syndic.rs — ✅ 4 tests, 0 failures
+- [x] 3.26 e2e_organizations.rs — ✅ 4 tests, 0 failures
+- [x] 3.27 e2e_users.rs — ✅ 4 tests, 0 failures
 
-### Phase 4 — Vérification (tout compile, tout passe)
+### Phase 4 — Vérification (tout compile, tout passe) ✅ COMPLETE
+- [x] 4.1 BDD — 5 fichiers, 454 scénarios, 0 failures, 0 skips — `c739116`
+- [x] 4.2 E2E Backend — 48 fichiers, ~320 tests, 0 failures — Phase 3 complete
 
 ### Phase 5 — Playwright manquants (32 trous, mêmes workflows que E2E backend)
 Tier 1 — Critiques :
@@ -250,9 +252,8 @@ Tier 3 — Communauté/support :
 - [ ] #275 BC16: Backoffice prestataires — BDD → E2E backend (frontend page existe déjà)
 - [ ] #276 BC14: Marketplace corps de métier — domain → use cases → repo → handlers → BDD → E2E → frontend → Playwright
 
-#### 6.4 P1 Tools (~40h)
+#### 6.4 P1 Tools (~10h)
 - [ ] #277 Guide légal contextuel UI (LegalHelper.svelte, AG Wizard)
-- [ ] #252-265 MCP Tools AI Syndic (14 tools) — serveur SSE, auth JWT, legal_search, ag_create, comptabilite, documents, alertes, travaux, énergie
 
 #### 6.5 P1 Energy (~16h)
 - [ ] #280 Orchestrateur énergie neutre (CER, maisons individuelles, CREG)
@@ -349,33 +350,43 @@ Les tests Playwright enregistrent des vidéos (déjà configuré : 1280x720). Ce
 
 ---
 
-## Scope 0.1.0 : Jalons 0-3 COMPLETS
+## Scope 0.1.0 : Jalons 0-3
 
-**Décision** : La 0.1.0 ne sort PAS tant que le Jalon 3 n'est pas 100% fermé.
+**Décision** : La 0.1.0 couvre les Jalons 0-3. Les MCP Tools (#252-265) et l'auth itsme (#48) sont repoussés en Jalon 4 / release 0.2.0.
 
-### Issues Jalon 3 encore ouvertes (à implémenter) :
+### Issues encore ouvertes (à compléter)
 
-| Issue | Titre | Effort estimé | Dépendances |
-|-------|-------|---------------|-------------|
-| #274 | BC15: AG Visioconférence (AgSession, quorum combiné) | ~12h | backend ✅, manque BDD + E2E + frontend |
-| #275 | BC16: Backoffice prestataires PWA (ContractorReport, magic link) | ~16h | backend ✅, frontend ✅, manque BDD + E2E |
+#### Jalon 1 — Bugs legal (3 issues)
+
+| Issue | Titre | Effort estimé | État |
+|-------|-------|---------------|------|
+| #271 | Quorum 50%+ validation AG (Art 3.87§5) | ~2h | migration existe, vérifier wiring |
+| #272 | 2e convocation si quorum non atteint (Art 3.87§5) | ~2h | migration existe, vérifier wiring |
+| #273 | Réduction vote mandataire (Art 3.87§7) | ~2h | ✅ done (à fermer) |
+
+#### Jalon 3 — Features (7 issues)
+
+| Issue | Titre | Effort estimé | État |
+|-------|-------|---------------|------|
+| #274 | BC15: AG Visioconférence (AgSession, quorum combiné) | ~8h | backend ✅, BDD ✅, manque E2E + frontend |
+| #275 | BC16: Backoffice prestataires PWA (ContractorReport) | ~6h | backend ✅, BDD ✅, frontend ✅, manque E2E |
 | #276 | BC14: Marketplace corps de métier + satisfaction | ~20h | non implémenté |
 | #277 | Guide légal contextuel UI (LegalHelper, AG Wizard) | ~10h | non implémenté |
 | #278 | Blog 18 articles RST | ~22h | docs only |
-| #279 | BC17: AGE agile (demande 1/5, concertation) | ~14h | backend ✅, manque BDD + E2E + frontend |
+| #279 | BC17: AGE agile (demande 1/5, concertation) | ~8h | backend ✅, BDD ✅, manque E2E + frontend |
 | #280 | Orchestrateur énergie neutre (CER, CREG) | ~16h | non implémenté |
-| #252-265 | MCP Tools AI Syndic (14 tools) | ~30h | partiellement implémenté |
-| #271 | Quorum 50%+ validation AG | ~2h | migration existe, vérifier wiring |
-| #272 | 2e convocation si quorum non atteint | ~2h | migration existe, vérifier wiring |
 
-**Effort total restant estimé : ~145h**
+**Effort total restant estimé : ~96h** (features ~90h + bugs legal ~6h)
 
-### Ordre de priorité :
-1. **P0 Legal** (#271, #272) — bugs conformité, ~4h
-2. **P0 BC** (#274, #279) — AG visio + AGE agile, ~26h (backend fait, manque tests + frontend)
-3. **P1 BC** (#275, #276) — prestataires + marketplace, ~36h
-4. **P1 Tools** (#277, #252-265) — guide légal + MCP, ~40h
+### Ordre de priorité
+
+1. **P0 Legal** (#271, #272, #273) — bugs conformité, ~6h
+2. **P0 BC** (#274, #279) — AG visio + AGE agile, ~16h (backend + BDD faits, manque E2E + frontend)
+3. **P1 BC** (#275, #276) — prestataires + marketplace, ~26h
+4. **P1 Tools** (#277) — guide légal UI, ~10h
 5. **P1 Energy** (#280) — orchestrateur, ~16h
 6. **P2 Content** (#278) — blog, ~22h
 
 Après l'implémentation de chaque feature, elle passe dans la matrice de traçabilité (BDD → E2E backend → frontend → Playwright → contract test DTO).
+
+> **Mise à jour** : 15 mars 2026 — MCP (#252-265) et itsme (#48) repoussés hors 0.1.0. Effort réduit de ~145h à ~96h.
