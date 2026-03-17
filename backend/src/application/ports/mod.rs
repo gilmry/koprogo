@@ -19,10 +19,12 @@ pub mod energy_campaign_repository;
 pub mod etat_date_repository;
 pub mod expense_repository;
 pub mod gdpr_repository;
+pub mod grid_participation_port;
 pub mod iot_repository;
 pub mod journal_entry_repository;
 pub mod linky_api_client;
 pub mod local_exchange_repository;
+pub mod mqtt_energy_port;
 pub mod meeting_repository;
 pub mod notice_repository;
 pub mod notification_preference_repository;
@@ -75,7 +77,12 @@ pub use energy_campaign_repository::EnergyCampaignRepository;
 pub use etat_date_repository::EtatDateRepository;
 pub use expense_repository::ExpenseRepository;
 pub use gdpr_repository::GdprRepository;
+pub use grid_participation_port::{
+    BoincConsent, GridError, GridParticipationPort, GridTask, GridTaskId, GridTaskKind,
+    GridTaskStatus,
+};
 pub use iot_repository::IoTRepository;
+pub use mqtt_energy_port::{MqttEnergyPort, MqttError, MqttIncomingReadingDto};
 pub use journal_entry_repository::JournalEntryRepository;
 pub use linky_api_client::{
     ConsumptionDataPoint, LinkyApiClient, LinkyApiError, OAuth2TokenResponse, PowerDataPoint,

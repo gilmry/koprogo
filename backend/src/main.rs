@@ -14,6 +14,9 @@ use koprogo_api::infrastructure::web::{
     configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, LoginRateLimiter,
     SecurityHeaders,
 };
+use koprogo_api::application::ports::mqtt_energy_port::MqttEnergyPort;
+use koprogo_api::infrastructure::grid::BoincGridAdapter;
+use koprogo_api::infrastructure::mqtt::{MqttConfig, MqttEnergyAdapter};
 use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
 use std::sync::Arc;
@@ -251,6 +254,14 @@ async fn main() -> std::io::Result<()> {
     let two_factor_use_cases =
         TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
     let iot_use_cases = IoTUseCases::new(iot_repo.clone());
+
+    // IoT Phase 1: MQTT Home Assistant adapter + BOINC Grid
+    let mqtt_config = MqttConfig::from_env();
+    let mqtt_energy_adapter: Arc<dyn MqttEnergyPort> =
+        Arc::new(MqttEnergyAdapter::new(mqtt_config, iot_repo.clone()));
+    let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
+    let boinc_use_cases = BoincUseCases::new(boinc_grid_adapter, iot_repo.clone());
+
     let oauth_redirect_uri = env::var("OAUTH_REDIRECT_URI").unwrap_or_else(|_| {
         format!(
             "http://{}:{}/api/v1/iot/linky/callback",
@@ -415,6 +426,8 @@ async fn main() -> std::io::Result<()> {
         audit_logger,
         email_service,
         pool.clone(),
+        mqtt_energy_adapter,
+        boinc_use_cases,
     ));
 
     log::info!(
