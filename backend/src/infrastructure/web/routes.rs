@@ -557,6 +557,16 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(add_certificate)
             // IoT Smart Meters (Linky/Ores - Issue #133 - IoT Phase 0)
             .configure(iot_handlers::configure_iot_routes)
+            // IoT Phase 1: MQTT Home Assistant + BOINC Grid Computing
+            // IMPORTANT: specific /iot/grid/consent must be before /iot/grid/tasks
+            .service(start_mqtt_listener) // POST /iot/mqtt/start
+            .service(stop_mqtt_listener)  // POST /iot/mqtt/stop
+            .service(mqtt_status)         // GET  /iot/mqtt/status
+            .service(update_grid_consent) // POST /iot/grid/consent
+            .service(get_grid_consent)    // GET  /iot/grid/consent/{owner_id}
+            .service(submit_grid_task)    // POST /iot/grid/tasks
+            .service(cancel_grid_task)    // DELETE /iot/grid/tasks/{task_id}
+            .service(get_task_status)     // GET  /iot/grid/tasks/{task_id} — LAST (parameterized)
             // AG Visioconférence (BC15 - Art. 3.87 §1 CC)
             // Specific routes BEFORE parameterized /ag-sessions/{id}
             .service(list_ag_sessions) // GET /ag-sessions

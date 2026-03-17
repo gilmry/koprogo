@@ -3,6 +3,8 @@ pub mod audit_logger;
 pub mod database;
 pub mod email;
 pub mod external;
+pub mod grid;
+pub mod mqtt;
 pub mod openapi;
 pub mod storage;
 pub mod totp;
