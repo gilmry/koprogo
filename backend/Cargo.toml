@@ -99,7 +99,7 @@ testcontainers-modules = { version = "0.13", features = ["postgres", "minio"] }
 rust_decimal_macros = "1.36"
 
 # BDD tests
-cucumber = { version = "0.21", features = ["macros"] }
+cucumber = { version = "0.22", features = ["macros"] }
 
 # E2E tests
 reqwest = { version = "0.13", features = ["json"] }
