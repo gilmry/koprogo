@@ -1,4 +1,5 @@
 pub mod account_use_cases;
+pub mod boinc_use_cases;
 pub mod ag_session_use_cases;
 pub mod age_request_use_cases;
 pub mod auth_use_cases;
@@ -46,6 +47,7 @@ pub mod unit_use_cases;
 pub mod work_report_use_cases;
 
 pub use account_use_cases::AccountUseCases;
+pub use boinc_use_cases::{BoincUseCases, GridTaskResponseDto, SubmitOptimisationTaskDto};
 pub use ag_session_use_cases::AgSessionUseCases;
 pub use age_request_use_cases::AgeRequestUseCases;
 pub use auth_use_cases::AuthUseCases;

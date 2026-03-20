@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Ticket Category - Types of maintenance requests
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum TicketCategory {
     Plumbing,    // Plomberie
     Electrical,  // Électricité
@@ -17,7 +17,7 @@ pub enum TicketCategory {
 }
 
 /// Ticket Priority
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, utoipa::ToSchema)]
 pub enum TicketPriority {
     Low,      // Basse
     Medium,   // Moyenne
@@ -26,7 +26,7 @@ pub enum TicketPriority {
 }
 
 /// Ticket Status - Workflow states
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum TicketStatus {
     Open,       // Ouvert (nouveau ticket)
     InProgress, // En cours de traitement
@@ -39,7 +39,7 @@ pub enum TicketStatus {
 ///
 /// Represents a maintenance request (ticket) submitted by a co-owner
 /// for issues in the building (plumbing, electrical, etc.).
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Ticket {
     pub id: Uuid,
     pub organization_id: Uuid,

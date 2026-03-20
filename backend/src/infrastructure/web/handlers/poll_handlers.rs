@@ -13,6 +13,18 @@ use uuid::Uuid;
 
 /// Create a new poll (draft status)
 /// POST /api/v1/polls
+#[utoipa::path(
+    post,
+    path = "/polls",
+    tag = "Polls",
+    summary = "Create a new poll",
+    request_body = CreatePollDto,
+    responses(
+        (status = 201, description = "Poll created"),
+        (status = 400, description = "Bad Request"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/polls")]
 pub async fn create_poll(
     state: web::Data<AppState>,
@@ -33,6 +45,22 @@ pub async fn create_poll(
 
 /// Get poll by ID
 /// GET /api/v1/polls/:id
+#[utoipa::path(
+    get,
+    path = "/polls/{id}",
+    tag = "Polls",
+    summary = "Get poll by ID",
+    params(
+        ("id" = String, Path, description = "Poll UUID")
+    ),
+    responses(
+        (status = 200, description = "Poll found"),
+        (status = 400, description = "Invalid ID format"),
+        (status = 404, description = "Poll not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/polls/{id}")]
 pub async fn get_poll(
     state: web::Data<AppState>,
@@ -66,6 +94,23 @@ pub async fn get_poll(
 
 /// Update poll (only draft polls can be updated)
 /// PUT /api/v1/polls/:id
+#[utoipa::path(
+    put,
+    path = "/polls/{id}",
+    tag = "Polls",
+    summary = "Update a draft poll",
+    params(
+        ("id" = String, Path, description = "Poll UUID")
+    ),
+    request_body = UpdatePollDto,
+    responses(
+        (status = 200, description = "Poll updated"),
+        (status = 400, description = "Bad Request"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Poll not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/polls/{id}")]
 pub async fn update_poll(
     state: web::Data<AppState>,
@@ -108,6 +153,25 @@ pub async fn update_poll(
 
 /// List polls with pagination and filters
 /// GET /api/v1/polls?page=1&per_page=10&building_id=xxx&status=active
+#[utoipa::path(
+    get,
+    path = "/polls",
+    tag = "Polls",
+    summary = "List polls with pagination and filters",
+    params(
+        ("page" = Option<i64>, Query, description = "Page number"),
+        ("per_page" = Option<i64>, Query, description = "Items per page"),
+        ("building_id" = Option<String>, Query, description = "Filter by building UUID"),
+        ("created_by" = Option<String>, Query, description = "Filter by creator UUID"),
+        ("ends_before" = Option<String>, Query, description = "Filter polls ending before date"),
+        ("ends_after" = Option<String>, Query, description = "Filter polls ending after date"),
+    ),
+    responses(
+        (status = 200, description = "Paginated list of polls"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/polls")]
 pub async fn list_polls(
     state: web::Data<AppState>,
@@ -154,6 +218,21 @@ pub struct ListPollsQuery {
 
 /// Find active polls for a building
 /// GET /api/v1/buildings/:building_id/polls/active
+#[utoipa::path(
+    get,
+    path = "/buildings/{building_id}/polls/active",
+    tag = "Polls",
+    summary = "List active polls for a building",
+    params(
+        ("building_id" = String, Path, description = "Building UUID")
+    ),
+    responses(
+        (status = 200, description = "List of active polls"),
+        (status = 400, description = "Invalid building ID format"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/buildings/{building_id}/polls/active")]
 pub async fn find_active_polls(
     state: web::Data<AppState>,
@@ -179,6 +258,22 @@ pub async fn find_active_polls(
 
 /// Publish a poll (change from draft to active)
 /// POST /api/v1/polls/:id/publish
+#[utoipa::path(
+    post,
+    path = "/polls/{id}/publish",
+    tag = "Polls",
+    summary = "Publish a draft poll",
+    params(
+        ("id" = String, Path, description = "Poll UUID")
+    ),
+    responses(
+        (status = 200, description = "Poll published"),
+        (status = 400, description = "Bad Request"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Poll not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/polls/{id}/publish")]
 pub async fn publish_poll(
     state: web::Data<AppState>,
@@ -220,6 +315,22 @@ pub async fn publish_poll(
 
 /// Close a poll manually
 /// POST /api/v1/polls/:id/close
+#[utoipa::path(
+    post,
+    path = "/polls/{id}/close",
+    tag = "Polls",
+    summary = "Close a poll manually",
+    params(
+        ("id" = String, Path, description = "Poll UUID")
+    ),
+    responses(
+        (status = 200, description = "Poll closed"),
+        (status = 400, description = "Bad Request"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Poll not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/polls/{id}/close")]
 pub async fn close_poll(
     state: web::Data<AppState>,
@@ -261,6 +372,22 @@ pub async fn close_poll(
 
 /// Cancel a poll
 /// POST /api/v1/polls/:id/cancel
+#[utoipa::path(
+    post,
+    path = "/polls/{id}/cancel",
+    tag = "Polls",
+    summary = "Cancel a poll",
+    params(
+        ("id" = String, Path, description = "Poll UUID")
+    ),
+    responses(
+        (status = 200, description = "Poll cancelled"),
+        (status = 400, description = "Bad Request"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Poll not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/polls/{id}/cancel")]
 pub async fn cancel_poll(
     state: web::Data<AppState>,
@@ -302,6 +429,22 @@ pub async fn cancel_poll(
 
 /// Delete a poll (only draft or cancelled)
 /// DELETE /api/v1/polls/:id
+#[utoipa::path(
+    delete,
+    path = "/polls/{id}",
+    tag = "Polls",
+    summary = "Delete a draft or cancelled poll",
+    params(
+        ("id" = String, Path, description = "Poll UUID")
+    ),
+    responses(
+        (status = 204, description = "Poll deleted"),
+        (status = 400, description = "Bad Request"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Poll not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/polls/{id}")]
 pub async fn delete_poll(
     state: web::Data<AppState>,
@@ -346,6 +489,20 @@ pub async fn delete_poll(
 
 /// Cast a vote on a poll
 /// POST /api/v1/polls/vote
+#[utoipa::path(
+    post,
+    path = "/polls/vote",
+    tag = "Polls",
+    summary = "Cast a vote on a poll",
+    request_body = CastVoteDto,
+    responses(
+        (status = 201, description = "Vote cast successfully"),
+        (status = 400, description = "Bad Request"),
+        (status = 404, description = "Poll not found"),
+        (status = 409, description = "Already voted"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/polls/vote")]
 pub async fn cast_poll_vote(
     state: web::Data<AppState>,
@@ -390,6 +547,22 @@ pub async fn cast_poll_vote(
 
 /// Get poll results
 /// GET /api/v1/polls/:id/results
+#[utoipa::path(
+    get,
+    path = "/polls/{id}/results",
+    tag = "Polls",
+    summary = "Get poll results and statistics",
+    params(
+        ("id" = String, Path, description = "Poll UUID")
+    ),
+    responses(
+        (status = 200, description = "Poll results"),
+        (status = 400, description = "Invalid ID format"),
+        (status = 404, description = "Poll not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/polls/{id}/results")]
 pub async fn get_poll_results(
     state: web::Data<AppState>,
@@ -427,6 +600,21 @@ pub async fn get_poll_results(
 
 /// Get poll statistics for a building
 /// GET /api/v1/buildings/:building_id/polls/statistics
+#[utoipa::path(
+    get,
+    path = "/buildings/{building_id}/polls/statistics",
+    tag = "Polls",
+    summary = "Get poll statistics for a building",
+    params(
+        ("building_id" = String, Path, description = "Building UUID")
+    ),
+    responses(
+        (status = 200, description = "Poll statistics"),
+        (status = 400, description = "Invalid building ID format"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/buildings/{building_id}/polls/statistics")]
 pub async fn get_poll_building_statistics(
     state: web::Data<AppState>,

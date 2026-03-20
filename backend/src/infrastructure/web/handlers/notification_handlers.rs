@@ -26,6 +26,19 @@ fn parse_notification_type(s: &str) -> Option<NotificationType> {
 
 // ==================== Notification Endpoints ====================
 
+#[utoipa::path(
+    post,
+    path = "/notifications",
+    tag = "Notifications",
+    summary = "Create a notification",
+    request_body = CreateNotificationRequest,
+    responses(
+        (status = 201, description = "Notification created"),
+        (status = 400, description = "Invalid request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/notifications")]
 pub async fn create_notification(
     state: web::Data<AppState>,
@@ -69,6 +82,21 @@ pub async fn create_notification(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/notifications/{id}",
+    tag = "Notifications",
+    summary = "Get a notification by ID",
+    params(
+        ("id" = Uuid, Path, description = "Notification ID")
+    ),
+    responses(
+        (status = 200, description = "Notification retrieved"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Notification not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/notifications/{id}")]
 pub async fn get_notification(
     state: web::Data<AppState>,
@@ -84,6 +112,17 @@ pub async fn get_notification(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/notifications/my",
+    tag = "Notifications",
+    summary = "List my notifications",
+    responses(
+        (status = 200, description = "Notifications retrieved"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/notifications/my")]
 pub async fn list_my_notifications(
     state: web::Data<AppState>,
@@ -99,6 +138,17 @@ pub async fn list_my_notifications(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/notifications/unread",
+    tag = "Notifications",
+    summary = "List unread notifications",
+    responses(
+        (status = 200, description = "Unread notifications retrieved"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/notifications/unread")]
 pub async fn list_unread_notifications(
     state: web::Data<AppState>,
@@ -114,6 +164,22 @@ pub async fn list_unread_notifications(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/notifications/{id}/read",
+    tag = "Notifications",
+    summary = "Mark a notification as read",
+    params(
+        ("id" = Uuid, Path, description = "Notification ID")
+    ),
+    request_body = MarkReadRequest,
+    responses(
+        (status = 200, description = "Notification marked as read"),
+        (status = 400, description = "Invalid request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/notifications/{id}/read")]
 pub async fn mark_notification_read(
     state: web::Data<AppState>,
@@ -154,6 +220,17 @@ pub async fn mark_notification_read(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/notifications/read-all",
+    tag = "Notifications",
+    summary = "Mark all notifications as read",
+    responses(
+        (status = 200, description = "All notifications marked as read"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/notifications/read-all")]
 pub async fn mark_all_notifications_read(
     state: web::Data<AppState>,
@@ -186,6 +263,22 @@ pub async fn mark_all_notifications_read(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/notifications/{id}",
+    tag = "Notifications",
+    summary = "Delete a notification",
+    params(
+        ("id" = Uuid, Path, description = "Notification ID")
+    ),
+    responses(
+        (status = 204, description = "Notification deleted"),
+        (status = 400, description = "Invalid request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Notification not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/notifications/{id}")]
 pub async fn delete_notification(
     state: web::Data<AppState>,
@@ -228,6 +321,17 @@ pub async fn delete_notification(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/notifications/stats",
+    tag = "Notifications",
+    summary = "Get notification statistics for current user",
+    responses(
+        (status = 200, description = "Statistics retrieved"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/notifications/stats")]
 pub async fn get_notification_stats(
     state: web::Data<AppState>,
@@ -245,6 +349,17 @@ pub async fn get_notification_stats(
 
 // ==================== Notification Preference Endpoints ====================
 
+#[utoipa::path(
+    get,
+    path = "/notification-preferences",
+    tag = "Notifications",
+    summary = "Get all notification preferences for current user",
+    responses(
+        (status = 200, description = "Preferences retrieved"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/notification-preferences")]
 pub async fn get_user_preferences(
     state: web::Data<AppState>,
@@ -260,6 +375,22 @@ pub async fn get_user_preferences(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/notification-preferences/{notification_type}",
+    tag = "Notifications",
+    summary = "Get a specific notification preference by type",
+    params(
+        ("notification_type" = String, Path, description = "Notification type (e.g. expense_created, meeting_convocation)")
+    ),
+    responses(
+        (status = 200, description = "Preference retrieved"),
+        (status = 400, description = "Invalid notification type"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Preference not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/notification-preferences/{notification_type}")]
 pub async fn get_preference(
     state: web::Data<AppState>,
@@ -288,6 +419,22 @@ pub async fn get_preference(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/notification-preferences/{notification_type}",
+    tag = "Notifications",
+    summary = "Update a notification preference by type",
+    params(
+        ("notification_type" = String, Path, description = "Notification type (e.g. expense_created, meeting_convocation)")
+    ),
+    request_body = UpdatePreferenceRequest,
+    responses(
+        (status = 200, description = "Preference updated"),
+        (status = 400, description = "Invalid notification type or request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/notification-preferences/{notification_type}")]
 pub async fn update_preference(
     state: web::Data<AppState>,

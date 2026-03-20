@@ -9,6 +9,22 @@ use uuid::Uuid;
 
 // ==================== Resolution Endpoints ====================
 
+#[utoipa::path(
+    post,
+    path = "/meetings/{meeting_id}/resolutions",
+    tag = "Resolutions",
+    summary = "Create a resolution for a meeting",
+    params(
+        ("meeting_id" = Uuid, Path, description = "Meeting UUID")
+    ),
+    request_body = CreateResolutionRequest,
+    responses(
+        (status = 201, description = "Resolution created"),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/meetings/{meeting_id}/resolutions")]
 pub async fn create_resolution(
     state: web::Data<AppState>,
@@ -61,6 +77,21 @@ pub async fn create_resolution(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/resolutions/{id}",
+    tag = "Resolutions",
+    summary = "Get resolution by ID",
+    params(
+        ("id" = Uuid, Path, description = "Resolution UUID")
+    ),
+    responses(
+        (status = 200, description = "Resolution found"),
+        (status = 404, description = "Resolution not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/resolutions/{id}")]
 pub async fn get_resolution(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
     match state.resolution_use_cases.get_resolution(*id).await {
@@ -74,6 +105,20 @@ pub async fn get_resolution(state: web::Data<AppState>, id: web::Path<Uuid>) -> 
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/meetings/{meeting_id}/resolutions",
+    tag = "Resolutions",
+    summary = "List all resolutions for a meeting",
+    params(
+        ("meeting_id" = Uuid, Path, description = "Meeting UUID")
+    ),
+    responses(
+        (status = 200, description = "List of resolutions"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/meetings/{meeting_id}/resolutions")]
 pub async fn list_meeting_resolutions(
     state: web::Data<AppState>,
@@ -97,6 +142,22 @@ pub async fn list_meeting_resolutions(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/resolutions/{id}",
+    tag = "Resolutions",
+    summary = "Delete a resolution",
+    params(
+        ("id" = Uuid, Path, description = "Resolution UUID")
+    ),
+    responses(
+        (status = 204, description = "Resolution deleted"),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Resolution not found"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/resolutions/{id}")]
 pub async fn delete_resolution(
     state: web::Data<AppState>,
@@ -141,6 +202,22 @@ pub async fn delete_resolution(
 
 // ==================== Vote Endpoints ====================
 
+#[utoipa::path(
+    post,
+    path = "/resolutions/{resolution_id}/vote",
+    tag = "Resolutions",
+    summary = "Cast a vote on a resolution",
+    params(
+        ("resolution_id" = Uuid, Path, description = "Resolution UUID")
+    ),
+    request_body = CastVoteRequest,
+    responses(
+        (status = 201, description = "Vote cast"),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/resolutions/{resolution_id}/vote")]
 pub async fn cast_vote(
     state: web::Data<AppState>,
@@ -196,6 +273,20 @@ pub async fn cast_vote(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/resolutions/{resolution_id}/votes",
+    tag = "Resolutions",
+    summary = "List all votes for a resolution",
+    params(
+        ("resolution_id" = Uuid, Path, description = "Resolution UUID")
+    ),
+    responses(
+        (status = 200, description = "List of votes"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/resolutions/{resolution_id}/votes")]
 pub async fn list_resolution_votes(
     state: web::Data<AppState>,
@@ -216,6 +307,22 @@ pub async fn list_resolution_votes(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/votes/{vote_id}",
+    tag = "Resolutions",
+    summary = "Change an existing vote",
+    params(
+        ("vote_id" = Uuid, Path, description = "Vote UUID")
+    ),
+    request_body = ChangeVoteRequest,
+    responses(
+        (status = 200, description = "Vote changed"),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/votes/{vote_id}")]
 pub async fn change_vote(
     state: web::Data<AppState>,
@@ -263,6 +370,22 @@ pub async fn change_vote(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/resolutions/{resolution_id}/close",
+    tag = "Resolutions",
+    summary = "Close voting on a resolution and calculate result",
+    params(
+        ("resolution_id" = Uuid, Path, description = "Resolution UUID")
+    ),
+    request_body = CloseVotingRequest,
+    responses(
+        (status = 200, description = "Voting closed and result calculated"),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/resolutions/{resolution_id}/close")]
 pub async fn close_voting(
     state: web::Data<AppState>,
@@ -310,6 +433,20 @@ pub async fn close_voting(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/meetings/{meeting_id}/vote-summary",
+    tag = "Resolutions",
+    summary = "Get vote summary for a meeting",
+    params(
+        ("meeting_id" = Uuid, Path, description = "Meeting UUID")
+    ),
+    responses(
+        (status = 200, description = "Vote summary for all meeting resolutions"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/meetings/{meeting_id}/vote-summary")]
 pub async fn get_meeting_vote_summary(
     state: web::Data<AppState>,

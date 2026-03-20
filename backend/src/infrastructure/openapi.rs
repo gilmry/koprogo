@@ -7,9 +7,7 @@ use utoipa::{
 };
 use utoipa_swagger_ui::SwaggerUi;
 
-// Import annotated handlers
-// TODO: Re-enable when health_check handler is implemented
-// use crate::infrastructure::web::handlers::health::health_check;
+// Handler imports not needed — utoipa paths() uses full module paths
 
 /// Main OpenAPI documentation structure
 #[derive(OpenApi)]
@@ -33,11 +31,9 @@ use utoipa_swagger_ui::SwaggerUi;
             All endpoints (except /health and /public/*) require JWT Bearer token.\n\
             Get token via POST /api/v1/auth/login\n\n\
             # Complete API Documentation\n\
-            This OpenAPI spec is incrementally being built. Currently includes:\n\
-            - Health check endpoint\n\
-            - ~400 additional endpoints available (see routes.rs)\n\n\
-            To add endpoints to this spec, annotate handlers with #[utoipa::path(...)]\n\
-            See health.rs for example implementation.",
+            90 of 511 endpoints annotated with utoipa (Swagger UI live spec).\n\
+            Full 495-endpoint OpenAPI 3.0.3 spec available at docs/api/openapi.yaml.\n\n\
+            Progressive annotation ongoing — see handlers for pattern.",
         contact(
             name = "KoproGo Support",
             email = "support@koprogo.com"
@@ -52,14 +48,105 @@ use utoipa_swagger_ui::SwaggerUi;
         (url = "https://api.koprogo.com", description = "Production"),
     ),
     paths(
-        // Health & Monitoring
-        // TODO: Re-enable when health_check handler is implemented
-        // health_check,
-    ),
-    components(
-        schemas(
-            // Add DTOs and entities here as they get annotated
-        )
+        // Health
+        crate::infrastructure::web::handlers::health::health_check,
+        // Auth
+        crate::infrastructure::web::handlers::auth_handlers::login,
+        crate::infrastructure::web::handlers::auth_handlers::register,
+        crate::infrastructure::web::handlers::auth_handlers::refresh_token,
+        crate::infrastructure::web::handlers::auth_handlers::switch_role,
+        crate::infrastructure::web::handlers::auth_handlers::get_current_user,
+        // Buildings
+        crate::infrastructure::web::handlers::building_handlers::create_building,
+        crate::infrastructure::web::handlers::building_handlers::list_buildings,
+        crate::infrastructure::web::handlers::building_handlers::get_building,
+        crate::infrastructure::web::handlers::building_handlers::update_building,
+        crate::infrastructure::web::handlers::building_handlers::delete_building,
+        crate::infrastructure::web::handlers::building_handlers::export_annual_report_pdf,
+        // Payments
+        crate::infrastructure::web::handlers::payment_handlers::create_payment,
+        crate::infrastructure::web::handlers::payment_handlers::get_payment,
+        crate::infrastructure::web::handlers::payment_handlers::get_payment_by_stripe_intent,
+        crate::infrastructure::web::handlers::payment_handlers::list_owner_payments,
+        crate::infrastructure::web::handlers::payment_handlers::list_building_payments,
+        crate::infrastructure::web::handlers::payment_handlers::list_expense_payments,
+        crate::infrastructure::web::handlers::payment_handlers::list_organization_payments,
+        crate::infrastructure::web::handlers::payment_handlers::list_payments_by_status,
+        crate::infrastructure::web::handlers::payment_handlers::list_pending_payments,
+        crate::infrastructure::web::handlers::payment_handlers::list_failed_payments,
+        crate::infrastructure::web::handlers::payment_handlers::mark_payment_processing,
+        crate::infrastructure::web::handlers::payment_handlers::mark_payment_requires_action,
+        crate::infrastructure::web::handlers::payment_handlers::mark_payment_succeeded,
+        crate::infrastructure::web::handlers::payment_handlers::mark_payment_failed,
+        crate::infrastructure::web::handlers::payment_handlers::mark_payment_cancelled,
+        crate::infrastructure::web::handlers::payment_handlers::refund_payment,
+        crate::infrastructure::web::handlers::payment_handlers::delete_payment,
+        crate::infrastructure::web::handlers::payment_handlers::get_owner_payment_stats,
+        crate::infrastructure::web::handlers::payment_handlers::get_building_payment_stats,
+        crate::infrastructure::web::handlers::payment_handlers::get_expense_total_paid,
+        crate::infrastructure::web::handlers::payment_handlers::get_owner_total_paid,
+        crate::infrastructure::web::handlers::payment_handlers::get_building_total_paid,
+        // Tickets
+        crate::infrastructure::web::handlers::ticket_handlers::create_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::get_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::delete_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::list_my_tickets,
+        crate::infrastructure::web::handlers::ticket_handlers::list_assigned_tickets,
+        crate::infrastructure::web::handlers::ticket_handlers::list_building_tickets,
+        crate::infrastructure::web::handlers::ticket_handlers::list_organization_tickets,
+        crate::infrastructure::web::handlers::ticket_handlers::list_tickets_by_status,
+        crate::infrastructure::web::handlers::ticket_handlers::assign_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::start_work,
+        crate::infrastructure::web::handlers::ticket_handlers::resolve_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::close_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::cancel_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::reopen_ticket,
+        crate::infrastructure::web::handlers::ticket_handlers::get_ticket_statistics,
+        crate::infrastructure::web::handlers::ticket_handlers::get_ticket_statistics_org,
+        crate::infrastructure::web::handlers::ticket_handlers::get_overdue_tickets,
+        crate::infrastructure::web::handlers::ticket_handlers::get_overdue_tickets_org,
+        // Polls
+        crate::infrastructure::web::handlers::poll_handlers::create_poll,
+        crate::infrastructure::web::handlers::poll_handlers::get_poll,
+        crate::infrastructure::web::handlers::poll_handlers::update_poll,
+        crate::infrastructure::web::handlers::poll_handlers::list_polls,
+        crate::infrastructure::web::handlers::poll_handlers::find_active_polls,
+        crate::infrastructure::web::handlers::poll_handlers::publish_poll,
+        crate::infrastructure::web::handlers::poll_handlers::close_poll,
+        crate::infrastructure::web::handlers::poll_handlers::cancel_poll,
+        crate::infrastructure::web::handlers::poll_handlers::delete_poll,
+        crate::infrastructure::web::handlers::poll_handlers::cast_poll_vote,
+        crate::infrastructure::web::handlers::poll_handlers::get_poll_results,
+        crate::infrastructure::web::handlers::poll_handlers::get_poll_building_statistics,
+        // Resolutions
+        crate::infrastructure::web::handlers::resolution_handlers::create_resolution,
+        crate::infrastructure::web::handlers::resolution_handlers::get_resolution,
+        crate::infrastructure::web::handlers::resolution_handlers::list_meeting_resolutions,
+        crate::infrastructure::web::handlers::resolution_handlers::delete_resolution,
+        crate::infrastructure::web::handlers::resolution_handlers::cast_vote,
+        crate::infrastructure::web::handlers::resolution_handlers::list_resolution_votes,
+        crate::infrastructure::web::handlers::resolution_handlers::change_vote,
+        crate::infrastructure::web::handlers::resolution_handlers::close_voting,
+        crate::infrastructure::web::handlers::resolution_handlers::get_meeting_vote_summary,
+        // Notifications
+        crate::infrastructure::web::handlers::notification_handlers::create_notification,
+        crate::infrastructure::web::handlers::notification_handlers::get_notification,
+        crate::infrastructure::web::handlers::notification_handlers::list_my_notifications,
+        crate::infrastructure::web::handlers::notification_handlers::list_unread_notifications,
+        crate::infrastructure::web::handlers::notification_handlers::mark_notification_read,
+        crate::infrastructure::web::handlers::notification_handlers::mark_all_notifications_read,
+        crate::infrastructure::web::handlers::notification_handlers::delete_notification,
+        crate::infrastructure::web::handlers::notification_handlers::get_notification_stats,
+        crate::infrastructure::web::handlers::notification_handlers::get_user_preferences,
+        crate::infrastructure::web::handlers::notification_handlers::get_preference,
+        crate::infrastructure::web::handlers::notification_handlers::update_preference,
+        // GDPR
+        crate::infrastructure::web::handlers::gdpr_handlers::export_user_data,
+        crate::infrastructure::web::handlers::gdpr_handlers::erase_user_data,
+        crate::infrastructure::web::handlers::gdpr_handlers::can_erase_user,
+        crate::infrastructure::web::handlers::gdpr_handlers::rectify_user_data,
+        crate::infrastructure::web::handlers::gdpr_handlers::restrict_user_processing,
+        crate::infrastructure::web::handlers::gdpr_handlers::set_marketing_preference,
     ),
     modifiers(&SecurityAddon),
     tags(

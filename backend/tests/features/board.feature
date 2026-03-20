@@ -33,7 +33,7 @@ Feature: Board of Directors Management (Conseil de Copropriété)
     Then the mandate should be flagged as expiring soon
 
   Scenario: Renew an existing mandate
-    Given an active board member
+    Given a board member with mandate ending in 45 days
     And a new general assembly meeting
     When I renew the board member's mandate at the new meeting
     Then the mandate end date should be extended by approximately 1 year

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Notification Response DTO
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct NotificationResponse {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -49,7 +49,7 @@ impl From<Notification> for NotificationResponse {
 }
 
 /// Create Notification Request
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateNotificationRequest {
     pub user_id: Uuid,
     pub notification_type: NotificationType,
@@ -62,13 +62,13 @@ pub struct CreateNotificationRequest {
 }
 
 /// Mark Notification as Read Request (for in-app only)
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct MarkReadRequest {
     // Empty - just marks the notification as read
 }
 
 /// Update Notification Preference Request
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdatePreferenceRequest {
     pub email_enabled: Option<bool>,
     pub in_app_enabled: Option<bool>,
@@ -76,7 +76,7 @@ pub struct UpdatePreferenceRequest {
 }
 
 /// Notification Preference Response DTO
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct NotificationPreferenceResponse {
     pub id: Uuid,
     pub user_id: Uuid,
@@ -104,7 +104,7 @@ impl From<NotificationPreference> for NotificationPreferenceResponse {
 }
 
 /// Notification Statistics
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct NotificationStats {
     pub total: i64,
     pub unread: i64,

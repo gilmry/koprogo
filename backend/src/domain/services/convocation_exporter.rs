@@ -5,9 +5,9 @@ use std::io::BufWriter;
 /// Convocation Exporter - Generates PDF for Convocations d'Assemblée Générale
 ///
 /// Compliant with Belgian copropriété law requirements for meeting invitations:
-/// - Ordinary AG: 15 days minimum notice
-/// - Extraordinary AG: 8 days minimum notice
-/// - Second convocation: 8 days after quorum not reached
+/// - Ordinary AG: 15 days minimum notice (Art. 3.87 §3 CC)
+/// - Extraordinary AG: 15 days minimum notice (Art. 3.87 §3 CC)
+/// - Second convocation: 15 days minimum notice (Art. 3.87 §3 CC)
 pub struct ConvocationExporter;
 
 impl ConvocationExporter {

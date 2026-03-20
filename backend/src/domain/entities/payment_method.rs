@@ -8,7 +8,7 @@ use uuid::Uuid;
 /// - Store payment methods for recurring charges
 /// - Support cards (Stripe) and SEPA mandates (Belgian bank accounts)
 /// - PCI-DSS compliant: Never store raw card data, only Stripe tokens
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct PaymentMethod {
     pub id: Uuid,
     /// Organization (multi-tenant isolation)
@@ -36,7 +36,7 @@ pub struct PaymentMethod {
 }
 
 /// Payment method type (aligned with Payment entity)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PaymentMethodType {
     /// Credit/debit card via Stripe

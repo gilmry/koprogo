@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import { loginAsSyndicWithBuilding } from "./helpers/auth";
 
 /**
  * Tickets E2E Test Suite - Maintenance Request Management
@@ -10,77 +10,9 @@ import type { Page } from "@playwright/test";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function setupSyndicWithBuilding(page: Page): Promise<{
-  token: string;
-  buildingId: string;
-  orgId: string;
-}> {
-  const timestamp = Date.now();
-  const email = `ticket-test-${timestamp}@example.com`;
-
-  // Create organization first (required for syndic to create buildings/tickets)
-  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
-    data: { email: "admin@koprogo.com", password: "admin123" },
-  });
-  const adminData = await adminLoginResp.json();
-  const adminToken = adminData.token;
-
-  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
-    data: {
-      name: `Ticket Test Org ${timestamp}`,
-      slug: `ticket-test-${timestamp}`,
-      contact_email: email,
-      subscription_plan: "professional",
-    },
-    headers: { Authorization: `Bearer ${adminToken}` },
-  });
-  const org = await orgResp.json();
-  const orgId = org.id;
-
-  const regResponse = await page.request.post(`${API_BASE}/auth/register`, {
-    data: {
-      email,
-      password: "test123456",
-      first_name: "Ticket",
-      last_name: `Test${timestamp}`,
-      role: "syndic",
-      organization_id: orgId,
-    },
-  });
-  expect(regResponse.ok()).toBeTruthy();
-  const userData = await regResponse.json();
-  const token = userData.token;
-
-  // Create building (only SuperAdmin can create buildings)
-  const buildingResponse = await page.request.post(`${API_BASE}/buildings`, {
-    data: {
-      name: `Ticket Building ${timestamp}`,
-      address: `${timestamp} Rue Maintenance`,
-      city: "Antwerp",
-      postal_code: "2000",
-      country: "Belgium",
-      total_units: 8,
-      construction_year: 2015,
-      organization_id: orgId,
-    },
-    headers: { Authorization: `Bearer ${adminToken}` },
-  });
-  expect(buildingResponse.ok()).toBeTruthy();
-  const building = await buildingResponse.json();
-
-  // Login via UI
-  await page.goto("/login");
-  await page.getByTestId("login-email").fill(email);
-  await page.getByTestId("login-password").fill("test123456");
-  await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(syndic|admin|owner)/, { timeout: 15000 });
-
-  return { token, buildingId: building.id, orgId };
-}
-
 test.describe("Tickets - Maintenance Requests", () => {
   test("should display tickets list page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "ticket");
     await page.goto("/tickets");
 
     await expect(page.locator("body")).toBeVisible();
@@ -92,7 +24,10 @@ test.describe("Tickets - Maintenance Requests", () => {
   test("should create a ticket via API and see it in the list", async ({
     page,
   }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "ticket",
+    );
     const timestamp = Date.now();
 
     const ticketResponse = await page.request.post(`${API_BASE}/tickets`, {
@@ -115,7 +50,10 @@ test.describe("Tickets - Maintenance Requests", () => {
   });
 
   test("should navigate to ticket detail page", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "ticket",
+    );
     const timestamp = Date.now();
 
     const ticketResponse = await page.request.post(`${API_BASE}/tickets`, {
@@ -139,7 +77,10 @@ test.describe("Tickets - Maintenance Requests", () => {
   });
 
   test("should show ticket priority indicator", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await loginAsSyndicWithBuilding(
+      page,
+      "ticket",
+    );
     const timestamp = Date.now();
 
     // Create an urgent ticket
@@ -164,7 +105,7 @@ test.describe("Tickets - Maintenance Requests", () => {
   });
 
   test("should filter tickets by status", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "ticket");
     await page.goto("/tickets");
 
     // Look for status filter controls
@@ -181,7 +122,7 @@ test.describe("Tickets - Maintenance Requests", () => {
   });
 
   test("should display work reports page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithBuilding(page, "ticket");
     await page.goto("/work-reports");
 
     await expect(page.locator("body")).toBeVisible();

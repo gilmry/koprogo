@@ -2561,11 +2561,23 @@ async fn when_create_booking(
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
 
+    // If the parsed date is in the past, shift to 2 days from now keeping the same time-of-day
+    // (stays within the 30-day max-advance booking constraint)
+    let make_future = |dt: DateTime<Utc>| {
+        if dt <= Utc::now() {
+            let base = Utc::now() + chrono::Duration::days(2);
+            base.date_naive().and_time(dt.time()).and_utc()
+        } else {
+            dt
+        }
+    };
     let start_time = get_table_value(step, "start_time")
         .and_then(|s| s.parse::<DateTime<Utc>>().ok())
+        .map(make_future)
         .unwrap_or_else(|| Utc::now() + chrono::Duration::days(7));
     let end_time = get_table_value(step, "end_time")
         .and_then(|s| s.parse::<DateTime<Utc>>().ok())
+        .map(make_future)
         .unwrap_or_else(|| Utc::now() + chrono::Duration::days(7) + chrono::Duration::hours(2));
     let notes = get_table_value(step, "purpose");
 
@@ -2617,12 +2629,11 @@ async fn given_booked_on_date(
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
 
-    let start = format!("2026-03-{:02}T{:02}:{:02}:00Z", day, sh, sm)
-        .parse::<DateTime<Utc>>()
-        .unwrap();
-    let end = format!("2026-03-{:02}T{:02}:{:02}:00Z", day, eh, em)
-        .parse::<DateTime<Utc>>()
-        .unwrap();
+    // Use a date 7 days from now keeping the specified time (avoids "past" and "30-day" constraints)
+    let base_date = (Utc::now() + chrono::Duration::days(7)).date_naive();
+    let start = base_date.and_hms_opt(sh, sm, 0).unwrap().and_utc();
+    let end = base_date.and_hms_opt(eh, em, 0).unwrap().and_utc();
+    let _ = day; // day from feature file replaced by dynamic future date
 
     let dto = CreateResourceBookingDto {
         building_id,
@@ -2667,12 +2678,10 @@ async fn when_try_book_conflict(
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
 
-    let start = format!("2026-03-{:02}T{:02}:{:02}:00Z", day, sh, sm)
-        .parse::<DateTime<Utc>>()
-        .unwrap();
-    let end = format!("2026-03-{:02}T{:02}:{:02}:00Z", day, eh, em)
-        .parse::<DateTime<Utc>>()
-        .unwrap();
+    let base_date = (Utc::now() + chrono::Duration::days(7)).date_naive();
+    let start = base_date.and_hms_opt(sh, sm, 0).unwrap().and_utc();
+    let end = base_date.and_hms_opt(eh, em, 0).unwrap().and_utc();
+    let _ = day;
 
     let dto = CreateResourceBookingDto {
         building_id,
@@ -4352,7 +4361,7 @@ async fn then_see_exchange_by(_world: &mut CommunityWorld, _title: String, _prov
     // Verified by available list
 }
 
-#[then(regex = r#"^I should NOT see "([^"]*)"$"#)]
+#[then(regex = r#"^I should NOT see "([^"]*)"#)]
 async fn then_not_see_exchange(_world: &mut CommunityWorld, _title: String) {
     // Filtering is verified by the count check
 }
@@ -4568,7 +4577,7 @@ async fn when_complete_exchange(world: &mut CommunityWorld) {
     }
 }
 
-#[then(regex = r#"^Alice's balance should be (\d+) credits$"#)]
+#[then(regex = r#"^Alice's balance should be (\d+) credits"#)]
 async fn then_alice_balance(world: &mut CommunityWorld, _expected: i32) {
     // Balance verification - the system handles credit transfer automatically
     let uc = world.local_exchange_use_cases.as_ref().unwrap().clone();
@@ -4578,7 +4587,7 @@ async fn then_alice_balance(world: &mut CommunityWorld, _expected: i32) {
     assert!(balance.is_ok(), "Should get Alice's balance");
 }
 
-#[then(regex = r#"^Bob's balance should be (-?\d+) credits?$"#)]
+#[then(regex = r#"^Bob's balance should be (-?\d+) credits?"#)]
 async fn then_bob_balance(world: &mut CommunityWorld, _expected: i32) {
     let uc = world.local_exchange_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id.unwrap();
@@ -4744,6 +4753,8 @@ async fn given_completed_n_exchanges(world: &mut CommunityWorld, count: usize) {
     let owner_name = world.current_owner_name.as_ref().unwrap().clone();
     let (_, user_id) = world.create_test_owner(&owner_name).await;
     let (_, other_user) = world.create_test_owner("Helper Exchange").await;
+    // Restore current_owner_name since create_test_owner overwrites it
+    world.current_owner_name = Some(owner_name);
 
     for i in 0..count {
         let dto = CreateLocalExchangeDto {
@@ -4806,7 +4817,7 @@ async fn then_total_exchanges(world: &mut CommunityWorld, expected: i32) {
     );
 }
 
-#[then(regex = r#"^my participation level should be "([^"]*)"$"#)]
+#[then(regex = r#"^my participation level should be "([^"]*)"#)]
 async fn then_participation_level(world: &mut CommunityWorld, expected: String) {
     let balance = world.last_credit_balance.as_ref().expect("credit balance");
     let level = format!("{:?}", balance.participation_level);
@@ -4818,7 +4829,7 @@ async fn then_participation_level(world: &mut CommunityWorld, expected: String) 
     );
 }
 
-#[then(regex = r#"^my credit status should be "([^"]*)"$"#)]
+#[then(regex = r#"^my credit status should be "([^"]*)"#)]
 async fn then_credit_status(world: &mut CommunityWorld, expected: String) {
     let balance = world.last_credit_balance.as_ref().expect("credit balance");
     let status = format!("{:?}", balance.credit_status);

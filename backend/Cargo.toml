@@ -75,13 +75,16 @@ rust_xlsxwriter = "0.94.0"
 
 # Random data generation (for seed scripts)
 rand = "0.10"
-fake = { version = "4.4", features = ["derive", "chrono", "uuid", "http"] }
+fake = { version = "5.0", features = ["derive", "chrono", "uuid", "http"] }
 
 # Email
 lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-native-tls"] }
 
 # HTTP client
 reqwest = { version = "0.13", features = ["json", "form", "query"] }
+
+# MQTT client (Home Assistant integration - IoT Phase 1)
+rumqttc = { version = "0.24", features = ["use-rustls"] }
 
 # OpenAPI documentation
 utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }
@@ -96,7 +99,7 @@ testcontainers-modules = { version = "0.13", features = ["postgres", "minio"] }
 rust_decimal_macros = "1.36"
 
 # BDD tests
-cucumber = { version = "0.21", features = ["macros"] }
+cucumber = { version = "0.22", features = ["macros"] }
 
 # E2E tests
 reqwest = { version = "0.13", features = ["json"] }
@@ -106,7 +109,7 @@ criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }
 
 # Test utilities
 serial_test = "3.1"
-fake = { version = "4.4", features = ["derive", "chrono", "uuid"] }
+fake = { version = "5.0", features = ["derive", "chrono", "uuid"] }
 
 [[bench]]
 name = "load_tests"
@@ -130,6 +133,10 @@ harness = false
 
 [[test]]
 name = "bdd_community"
+harness = false
+
+[[test]]
+name = "bdd_iot"
 harness = false
 
 [profile.release]

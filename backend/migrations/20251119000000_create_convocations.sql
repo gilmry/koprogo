@@ -1,15 +1,15 @@
 -- Create convocations tables for automatic AG (General Assembly) invitations
 -- Issue #88: Automatic AG Convocations with Legal Deadline Verification
--- Belgian copropriété legal requirements:
+-- Belgian copropriété legal requirements (Art. 3.87 §3 Code Civil belge):
 --   - Ordinary AG: 15 days minimum notice
---   - Extraordinary AG: 8 days minimum notice
---   - Second convocation: 8 days minimum notice
+--   - Extraordinary AG: 15 days minimum notice
+--   - Second convocation: 15 days minimum notice
 
 -- Create convocation_type ENUM
 CREATE TYPE convocation_type AS ENUM (
     'ordinary',           -- Assemblée Générale Ordinaire (15 days notice)
-    'extraordinary',      -- Assemblée Générale Extraordinaire (8 days notice)
-    'second_convocation'  -- Second convocation after quorum not reached (8 days notice)
+    'extraordinary',      -- Assemblée Générale Extraordinaire (15 days notice)
+    'second_convocation'  -- Second convocation after quorum not reached (15 days notice)
 );
 
 -- Create convocation_status ENUM
@@ -153,7 +153,7 @@ CREATE INDEX idx_convocation_recipients_needs_reminder ON convocation_recipients
 COMMENT ON TABLE convocations IS 'Automatic AG (General Assembly) convocations with Belgian legal compliance';
 COMMENT ON TABLE convocation_recipients IS 'Individual recipients of convocations with email tracking and attendance status';
 
-COMMENT ON COLUMN convocations.minimum_send_date IS 'Latest date to send convocation (meeting_date - minimum_notice_days). Belgian law: 15d for ordinary AG, 8d for extraordinary/second convocation';
+COMMENT ON COLUMN convocations.minimum_send_date IS 'Latest date to send convocation (meeting_date - minimum_notice_days). Belgian law (Art. 3.87 §3 CC): 15d minimum for ALL assembly types';
 COMMENT ON COLUMN convocations.actual_send_date IS 'When convocation was actually sent. Must be <= minimum_send_date to respect legal deadline';
 COMMENT ON COLUMN convocations.scheduled_send_date IS 'When convocation is scheduled to be sent automatically';
 COMMENT ON COLUMN convocations.reminder_sent_at IS 'J-3 reminder sent to recipients who have not opened the convocation';
