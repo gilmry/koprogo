@@ -75,7 +75,7 @@ rust_xlsxwriter = "0.94.0"
 
 # Random data generation (for seed scripts)
 rand = "0.10"
-fake = { version = "5.0", features = ["derive", "chrono", "uuid", "http"] }
+fake = { version = "5.1", features = ["derive", "chrono", "uuid", "http"] }
 
 # Email
 lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-native-tls"] }
@@ -109,7 +109,7 @@ criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }
 
 # Test utilities
 serial_test = "3.1"
-fake = { version = "5.0", features = ["derive", "chrono", "uuid"] }
+fake = { version = "5.1", features = ["derive", "chrono", "uuid"] }
 # Security: explicit dep to ensure 0.6.0 is present (CVE-2026-32766); testcontainers still pulls 0.5.6 (dev-only, no prod exposure)
 astral-tokio-tar = "0.6"
 

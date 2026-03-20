@@ -26,15 +26,16 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.7",
-    "@astrojs/node": "^9.5.2",
-    "@astrojs/svelte": "^7.2.5",
+    "@astrojs/node": "^10.0.3",
+    "@astrojs/svelte": "^8.0.3",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.1.18",
-    "astro": "^5.16.15",
+    "astro": "^6.0.8",
     "svelte": "^5.53.12",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^7.0.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
@@ -54,6 +55,10 @@
     },
     "lodash": "4.17.23",
     "serialize-javascript": ">=7.0.3",
-    "devalue": ">=5.6.4"
+    "devalue": ">=5.6.4",
+    "vite": "^7.0.0",
+    "@vite-pwa/astro": {
+      "astro": "^6.0.0"
+    }
   }
 }
