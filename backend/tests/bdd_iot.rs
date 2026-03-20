@@ -7,8 +7,8 @@ use koprogo_api::application::ports::{
     iot_repository::IoTRepository,
 };
 use koprogo_api::application::use_cases::{BoincUseCases, SubmitOptimisationTaskDto};
-use koprogo_api::domain::entities::{DeviceType, MetricType};
 use koprogo_api::domain::entities::iot_reading::IoTReading;
+use koprogo_api::domain::entities::{DeviceType, MetricType};
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresBuildingRepository, PostgresIoTRepository,
 };
@@ -119,8 +119,10 @@ impl IotWorld {
             .get_host_port_ipv4(5432)
             .await
             .expect("Failed to get host port");
-        let connection_string =
-            format!("postgres://postgres:postgres@127.0.0.1:{}/postgres", host_port);
+        let connection_string = format!(
+            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
+            host_port
+        );
         let pool = create_pool(&connection_string)
             .await
             .expect("Failed to create pool");
@@ -172,8 +174,7 @@ impl IotWorld {
         .expect("insert owner");
 
         // Wire BOINC use cases
-        let iot_repo: Arc<dyn IoTRepository> =
-            Arc::new(PostgresIoTRepository::new(pool.clone()));
+        let iot_repo: Arc<dyn IoTRepository> = Arc::new(PostgresIoTRepository::new(pool.clone()));
         let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
         let boinc_use_cases = BoincUseCases::new(boinc_grid_adapter, iot_repo.clone());
 
@@ -215,7 +216,9 @@ async fn when_parse_topic(world: &mut IotWorld) {
 
 #[then(expr = "the copropriete_id is {string}")]
 async fn then_copropriete_id(world: &mut IotWorld, expected: String) {
-    let got = world.parsed_copropriete_id.expect("no copropriete_id parsed");
+    let got = world
+        .parsed_copropriete_id
+        .expect("no copropriete_id parsed");
     let expected_uuid = Uuid::parse_str(&expected).expect("invalid UUID in step");
     assert_eq!(got, expected_uuid, "copropriete_id mismatch");
 }
@@ -271,9 +274,7 @@ async fn when_mqtt_message_arrives_on_topic(world: &mut IotWorld, _topic_templat
     // Topic recorded; payload is provided by the subsequent "And the payload contains..." step
 }
 
-#[when(
-    expr = "the payload contains value {float} unit {string} metric {string} source {string}"
-)]
+#[when(expr = "the payload contains value {float} unit {string} metric {string} source {string}")]
 async fn when_payload_reading(
     world: &mut IotWorld,
     value: f64,
@@ -308,15 +309,8 @@ async fn when_payload_reading(
     }
 }
 
-#[when(
-    expr = "a MQTT message arrives with value {float} and unit {string} for metric {string}"
-)]
-async fn when_mqtt_negative_value(
-    world: &mut IotWorld,
-    value: f64,
-    unit: String,
-    _metric: String,
-) {
+#[when(expr = "a MQTT message arrives with value {float} and unit {string} for metric {string}")]
+async fn when_mqtt_negative_value(world: &mut IotWorld, value: f64, unit: String, _metric: String) {
     let building_id = world.building_id.unwrap();
     let ts = chrono::Utc::now();
     let result = IoTReading::new(
@@ -359,9 +353,7 @@ async fn when_future_timestamp(world: &mut IotWorld) {
     }
 }
 
-#[when(
-    expr = "a MQTT message arrives with value {float}, unit {string}, metric {string}"
-)]
+#[when(expr = "a MQTT message arrives with value {float}, unit {string}, metric {string}")]
 async fn when_invalid_unit(world: &mut IotWorld, value: f64, unit: String, _metric: String) {
     let building_id = world.building_id.unwrap();
     let ts = chrono::Utc::now();
@@ -403,11 +395,13 @@ async fn then_reading_source(_world: &mut IotWorld, _expected_source: String) {
 
 #[then(expr = "the reading is rejected with domain error {string}")]
 async fn then_reading_rejected(world: &mut IotWorld, expected_fragment: String) {
-    let err = world.reading_error.as_ref().expect(
-        "Expected reading to be rejected, but no error occurred",
-    );
+    let err = world
+        .reading_error
+        .as_ref()
+        .expect("Expected reading to be rejected, but no error occurred");
     assert!(
-        err.to_lowercase().contains(&expected_fragment.to_lowercase()),
+        err.to_lowercase()
+            .contains(&expected_fragment.to_lowercase()),
         "Expected error containing '{}', got: {}",
         expected_fragment,
         err
@@ -478,7 +472,10 @@ async fn then_consent_ip(world: &mut IotWorld, expected_ip: String) {
 #[then(expr = "consent_version is {string}")]
 async fn then_consent_version(world: &mut IotWorld, expected_version: String) {
     let consent = world.last_consent.as_ref().expect("no consent stored");
-    assert_eq!(consent.consent_version, expected_version, "consent_version mismatch");
+    assert_eq!(
+        consent.consent_version, expected_version,
+        "consent_version mismatch"
+    );
 }
 
 #[given("a building owner has previously granted BOINC consent")]
@@ -526,7 +523,9 @@ async fn then_revoked_at_set(world: &mut IotWorld) {
 async fn then_check_consent_returns(world: &mut IotWorld, expected: String) {
     let boinc = world.boinc_use_cases.as_ref().unwrap();
     let owner_id = world.owner_id.unwrap();
-    let consented = boinc.get_consent(owner_id).await
+    let consented = boinc
+        .get_consent(owner_id)
+        .await
         .expect("get_consent failed")
         .map(|c| c.granted)
         .unwrap_or(false);
@@ -559,7 +558,9 @@ async fn when_check_consent(world: &mut IotWorld) {
 async fn then_check_consent_false(world: &mut IotWorld) {
     let boinc = world.boinc_use_cases.as_ref().unwrap();
     let owner_id = world.owner_id.unwrap();
-    let consented = boinc.get_consent(owner_id).await
+    let consented = boinc
+        .get_consent(owner_id)
+        .await
         .expect("get_consent failed")
         .map(|c| c.granted)
         .unwrap_or(false);
@@ -574,7 +575,10 @@ async fn given_owner_revoked_consent(world: &mut IotWorld) {
     let boinc = world.boinc_use_cases.as_ref().unwrap().clone();
     let owner_id = world.owner_id.unwrap();
     let org_id = world.org_id.unwrap();
-    boinc.grant_consent(owner_id, org_id, None).await.expect("grant");
+    boinc
+        .grant_consent(owner_id, org_id, None)
+        .await
+        .expect("grant");
     boinc.revoke_consent(owner_id).await.expect("revoke");
 }
 
@@ -640,7 +644,10 @@ async fn given_iot_readings_exist(world: &mut IotWorld) {
         "test_seed".to_string(),
     )
     .expect("create test reading");
-    iot_repo.create_reading(&reading).await.expect("insert reading");
+    iot_repo
+        .create_reading(&reading)
+        .await
+        .expect("insert reading");
 }
 
 #[when(expr = "the owner submits an energy optimisation task for {int} months")]
@@ -728,7 +735,8 @@ async fn then_submission_fails(world: &mut IotWorld, expected_fragment: String) 
         .as_ref()
         .expect("expected task submission to fail");
     assert!(
-        err.to_lowercase().contains(&expected_fragment.to_lowercase()),
+        err.to_lowercase()
+            .contains(&expected_fragment.to_lowercase()),
         "Expected error containing '{}', got: {}",
         expected_fragment,
         err
@@ -737,7 +745,10 @@ async fn then_submission_fails(world: &mut IotWorld, expected_fragment: String) 
 
 #[then("no task is created")]
 async fn then_no_task_created(world: &mut IotWorld) {
-    assert!(world.task_error.is_some(), "expected task error (no task created)");
+    assert!(
+        world.task_error.is_some(),
+        "expected task error (no task created)"
+    );
 }
 
 #[given(expr = "a BOINC task exists with status {string}")]
@@ -750,11 +761,8 @@ async fn given_boinc_task_queued(world: &mut IotWorld, _status: String) {
     let owner_id = world.owner_id.unwrap();
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
-    boinc
-        .grant_consent(owner_id, org_id, None)
-        .await
-        .ok(); // may already exist
-    // Insert a reading so stats work
+    boinc.grant_consent(owner_id, org_id, None).await.ok(); // may already exist
+                                                            // Insert a reading so stats work
     let iot_repo = world.iot_repo.as_ref().unwrap();
     let ts = chrono::Utc::now() - chrono::Duration::minutes(10);
     let reading = IoTReading::new(
@@ -774,7 +782,10 @@ async fn given_boinc_task_queued(world: &mut IotWorld, _status: String) {
         organization_id: org_id,
         simulation_months: 3,
     };
-    let response = boinc.submit_optimisation_task(dto).await.expect("submit task");
+    let response = boinc
+        .submit_optimisation_task(dto)
+        .await
+        .expect("submit task");
     world.last_task_id = Some(response.task_id);
 }
 

@@ -24,8 +24,8 @@ pub mod iot_repository;
 pub mod journal_entry_repository;
 pub mod linky_api_client;
 pub mod local_exchange_repository;
-pub mod mqtt_energy_port;
 pub mod meeting_repository;
+pub mod mqtt_energy_port;
 pub mod notice_repository;
 pub mod notification_preference_repository;
 pub mod notification_repository;
@@ -82,13 +82,13 @@ pub use grid_participation_port::{
     GridTaskStatus,
 };
 pub use iot_repository::IoTRepository;
-pub use mqtt_energy_port::{MqttEnergyPort, MqttError, MqttIncomingReadingDto};
 pub use journal_entry_repository::JournalEntryRepository;
 pub use linky_api_client::{
     ConsumptionDataPoint, LinkyApiClient, LinkyApiError, OAuth2TokenResponse, PowerDataPoint,
 };
 pub use local_exchange_repository::LocalExchangeRepository;
 pub use meeting_repository::MeetingRepository;
+pub use mqtt_energy_port::{MqttEnergyPort, MqttError, MqttIncomingReadingDto};
 pub use notice_repository::NoticeRepository;
 pub use notification_preference_repository::NotificationPreferenceRepository;
 pub use notification_repository::NotificationRepository;

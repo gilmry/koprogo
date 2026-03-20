@@ -1,11 +1,11 @@
 pub mod account_use_cases;
-pub mod boinc_use_cases;
 pub mod ag_session_use_cases;
 pub mod age_request_use_cases;
 pub mod auth_use_cases;
 pub mod board_dashboard_use_cases;
 pub mod board_decision_use_cases;
 pub mod board_member_use_cases;
+pub mod boinc_use_cases;
 pub mod budget_use_cases;
 pub mod building_use_cases;
 pub mod call_for_funds_use_cases;
@@ -47,13 +47,13 @@ pub mod unit_use_cases;
 pub mod work_report_use_cases;
 
 pub use account_use_cases::AccountUseCases;
-pub use boinc_use_cases::{BoincUseCases, GridTaskResponseDto, SubmitOptimisationTaskDto};
 pub use ag_session_use_cases::AgSessionUseCases;
 pub use age_request_use_cases::AgeRequestUseCases;
 pub use auth_use_cases::AuthUseCases;
 pub use board_dashboard_use_cases::{BoardDashboardResponse, BoardDashboardUseCases};
 pub use board_decision_use_cases::BoardDecisionUseCases;
 pub use board_member_use_cases::BoardMemberUseCases;
+pub use boinc_use_cases::{BoincUseCases, GridTaskResponseDto, SubmitOptimisationTaskDto};
 pub use budget_use_cases::BudgetUseCases;
 pub use building_use_cases::BuildingUseCases;
 pub use call_for_funds_use_cases::CallForFundsUseCases;

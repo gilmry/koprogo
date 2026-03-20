@@ -2,11 +2,14 @@ use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
+use koprogo_api::application::ports::mqtt_energy_port::MqttEnergyPort;
 use koprogo_api::application::services::ExpenseAccountingService;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
 use koprogo_api::infrastructure::email::EmailService;
+use koprogo_api::infrastructure::grid::BoincGridAdapter;
+use koprogo_api::infrastructure::mqtt::{MqttConfig, MqttEnergyAdapter};
 use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
@@ -14,9 +17,6 @@ use koprogo_api::infrastructure::web::{
     configure_routes, AppState, GdprRateLimit, GdprRateLimitConfig, LoginRateLimiter,
     SecurityHeaders,
 };
-use koprogo_api::application::ports::mqtt_energy_port::MqttEnergyPort;
-use koprogo_api::infrastructure::grid::BoincGridAdapter;
-use koprogo_api::infrastructure::mqtt::{MqttConfig, MqttEnergyAdapter};
 use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::env;
 use std::sync::Arc;

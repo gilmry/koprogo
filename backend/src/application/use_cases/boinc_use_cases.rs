@@ -133,10 +133,7 @@ impl BoincUseCases {
     }
 
     /// Récupère le consentement courant d'un propriétaire.
-    pub async fn get_consent(
-        &self,
-        owner_id: Uuid,
-    ) -> Result<Option<BoincConsent>, String> {
+    pub async fn get_consent(&self, owner_id: Uuid) -> Result<Option<BoincConsent>, String> {
         self.grid_port
             .get_consent(owner_id)
             .await

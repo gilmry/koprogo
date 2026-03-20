@@ -183,11 +183,9 @@ pub async fn get_task_status(
 ) -> Result<HttpResponse> {
     match state.boinc_use_cases.poll_task(&path).await {
         Ok(status) => Ok(HttpResponse::Ok().json(status)),
-        Err(e) if e.contains("not found") => {
-            Ok(HttpResponse::NotFound().json(serde_json::json!({
-                "error": e
-            })))
-        }
+        Err(e) if e.contains("not found") => Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": e
+        }))),
         Err(e) => Ok(HttpResponse::InternalServerError().json(serde_json::json!({
             "error": e
         }))),
