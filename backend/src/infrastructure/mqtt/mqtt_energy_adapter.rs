@@ -1,7 +1,7 @@
+use crate::application::ports::iot_repository::IoTRepository;
 use crate::application::ports::mqtt_energy_port::{
     MqttEnergyPort, MqttError, MqttIncomingReadingDto,
 };
-use crate::application::ports::iot_repository::IoTRepository;
 use crate::domain::entities::iot_reading::IoTReading;
 use async_trait::async_trait;
 use rumqttc::{AsyncClient, Event, MqttOptions, Packet, QoS};
@@ -82,9 +82,8 @@ impl MqttEnergyAdapter {
         let copropriete_id = Uuid::parse_str(parts[1]).map_err(|_| {
             MqttError::InvalidTopic(format!("Invalid copropriete_id UUID: {}", parts[1]))
         })?;
-        let unit_id = Uuid::parse_str(parts[3]).map_err(|_| {
-            MqttError::InvalidTopic(format!("Invalid unit_id UUID: {}", parts[3]))
-        })?;
+        let unit_id = Uuid::parse_str(parts[3])
+            .map_err(|_| MqttError::InvalidTopic(format!("Invalid unit_id UUID: {}", parts[3])))?;
         Ok((copropriete_id, unit_id))
     }
 }
@@ -97,11 +96,8 @@ impl MqttEnergyPort for MqttEnergyAdapter {
             return Err(MqttError::AlreadyRunning);
         }
 
-        let mut opts = MqttOptions::new(
-            &self.config.client_id,
-            &self.config.host,
-            self.config.port,
-        );
+        let mut opts =
+            MqttOptions::new(&self.config.client_id, &self.config.host, self.config.port);
         if !self.config.username.is_empty() {
             opts.set_credentials(&self.config.username, &self.config.password);
         }
@@ -130,9 +126,8 @@ impl MqttEnergyPort for MqttEnergyAdapter {
                         let topic = msg.topic.clone();
                         match Self::parse_topic(&topic) {
                             Ok((copropriete_id, _unit_id)) => {
-                                match serde_json::from_slice::<MqttIncomingReadingDto>(
-                                    &msg.payload,
-                                ) {
+                                match serde_json::from_slice::<MqttIncomingReadingDto>(&msg.payload)
+                                {
                                     Ok(dto) => {
                                         match IoTReading::new(
                                             copropriete_id,
@@ -162,10 +157,7 @@ impl MqttEnergyPort for MqttEnergyAdapter {
                                         }
                                     }
                                     Err(e) => {
-                                        warn!(
-                                            "Failed to parse MQTT payload on {}: {}",
-                                            topic, e
-                                        );
+                                        warn!("Failed to parse MQTT payload on {}: {}", topic, e);
                                     }
                                 }
                             }

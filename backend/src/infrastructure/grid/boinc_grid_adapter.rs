@@ -29,8 +29,7 @@ impl BoincGridAdapter {
         Self {
             pool,
             boinc_rpc_password: std::env::var("BOINC_RPC_PASSWORD").unwrap_or_default(),
-            boinc_host: std::env::var("BOINC_HOST")
-                .unwrap_or_else(|_| "localhost".to_string()),
+            boinc_host: std::env::var("BOINC_HOST").unwrap_or_else(|_| "localhost".to_string()),
             boinc_port: std::env::var("BOINC_PORT")
                 .unwrap_or_else(|_| "31416".to_string())
                 .parse()
@@ -173,8 +172,8 @@ impl GridParticipationPort for BoincGridAdapter {
     }
 
     async fn submit_task(&self, task: GridTask) -> Result<GridTaskId, GridError> {
-        let kind_json = serde_json::to_value(&task.kind)
-            .map_err(|e| GridError::ProcessError(e.to_string()))?;
+        let kind_json =
+            serde_json::to_value(&task.kind).map_err(|e| GridError::ProcessError(e.to_string()))?;
 
         sqlx::query(
             r#"INSERT INTO grid_tasks
@@ -204,8 +203,8 @@ impl GridParticipationPort for BoincGridAdapter {
     }
 
     async fn poll_result(&self, task_id: &GridTaskId) -> Result<GridTaskStatus, GridError> {
-        let id = Uuid::parse_str(&task_id.0)
-            .map_err(|_| GridError::TaskNotFound(task_id.0.clone()))?;
+        let id =
+            Uuid::parse_str(&task_id.0).map_err(|_| GridError::TaskNotFound(task_id.0.clone()))?;
 
         let row: Option<(
             String,
@@ -224,8 +223,8 @@ impl GridParticipationPort for BoincGridAdapter {
         .await
         .map_err(|e| GridError::RpcFailed(e.to_string()))?;
 
-        let (status, result_json, started_at, completed_at, failed_at, failure_reason) = row
-            .ok_or_else(|| GridError::TaskNotFound(task_id.0.clone()))?;
+        let (status, result_json, started_at, completed_at, failed_at, failure_reason) =
+            row.ok_or_else(|| GridError::TaskNotFound(task_id.0.clone()))?;
 
         Ok(match status.as_str() {
             "running" => GridTaskStatus::Running {
@@ -245,16 +244,14 @@ impl GridParticipationPort for BoincGridAdapter {
     }
 
     async fn cancel_task(&self, task_id: &GridTaskId) -> Result<(), GridError> {
-        let id = Uuid::parse_str(&task_id.0)
-            .map_err(|_| GridError::TaskNotFound(task_id.0.clone()))?;
+        let id =
+            Uuid::parse_str(&task_id.0).map_err(|_| GridError::TaskNotFound(task_id.0.clone()))?;
 
-        sqlx::query(
-            "UPDATE grid_tasks SET status = 'cancelled', updated_at = NOW() WHERE id = $1",
-        )
-        .bind(id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| GridError::RpcFailed(e.to_string()))?;
+        sqlx::query("UPDATE grid_tasks SET status = 'cancelled', updated_at = NOW() WHERE id = $1")
+            .bind(id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| GridError::RpcFailed(e.to_string()))?;
 
         Ok(())
     }
