@@ -53,6 +53,7 @@
       "esbuild": "^0.25.0"
     },
     "lodash": "4.17.23",
-    "serialize-javascript": ">=7.0.3"
+    "serialize-javascript": ">=7.0.3",
+    "devalue": ">=5.6.4"
   }
 }
