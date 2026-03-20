@@ -29,6 +29,7 @@ RUN mkdir -p src tests benches && \
     echo "fn main() {}" > tests/bdd_financial.rs && \
     echo "fn main() {}" > tests/bdd_operations.rs && \
     echo "fn main() {}" > tests/bdd_community.rs && \
+    echo "fn main() {}" > tests/bdd_iot.rs && \
     echo "fn main() {}" > benches/load_tests.rs && \
     cargo build && \
     rm -rf src tests benches
