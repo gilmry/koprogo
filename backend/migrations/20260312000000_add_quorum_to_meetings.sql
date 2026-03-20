@@ -28,7 +28,7 @@ ALTER TABLE meetings
 -- Index pour retrouver les AG sans quorum validé (utile pour le reporting)
 CREATE INDEX IF NOT EXISTS idx_meetings_quorum_not_validated
     ON meetings (building_id, scheduled_date)
-    WHERE quorum_validated = FALSE AND status = 'Scheduled';
+    WHERE quorum_validated = FALSE AND status = 'scheduled';
 
 -- Commentaires de documentation
 COMMENT ON COLUMN meetings.quorum_validated IS
