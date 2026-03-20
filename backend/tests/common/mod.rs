@@ -1,6 +1,8 @@
 // Shared test setup for all E2E tests
 // Extracted from e2e.rs to avoid duplication
 
+use async_trait::async_trait;
+use koprogo_api::application::ports::{MqttEnergyPort, MqttError};
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::{
@@ -27,10 +29,32 @@ use koprogo_api::infrastructure::database::{
     PostgresWorkReportRepository,
 };
 use koprogo_api::infrastructure::email::EmailService;
+use koprogo_api::infrastructure::grid::BoincGridAdapter;
 use koprogo_api::infrastructure::storage::{FileStorage, StorageProvider};
 use koprogo_api::infrastructure::web::AppState;
 use koprogo_api::infrastructure::LinkyApiClientImpl;
 use std::sync::Arc;
+struct NoopMqttAdapter;
+#[async_trait]
+impl MqttEnergyPort for NoopMqttAdapter {
+    async fn start_listening(&self) -> Result<(), MqttError> {
+        Ok(())
+    }
+    async fn stop_listening(&self) -> Result<(), MqttError> {
+        Ok(())
+    }
+    async fn publish_alert(
+        &self,
+        _copropriete_id: Uuid,
+        _alert_type: &str,
+        _payload: &str,
+    ) -> Result<(), MqttError> {
+        Ok(())
+    }
+    async fn is_running(&self) -> bool {
+        false
+    }
+}
 use testcontainers_modules::postgres::Postgres;
 use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsync};
 use uuid::Uuid;
@@ -299,6 +323,11 @@ pub async fn setup_test_db() -> (
     let contractor_report_repo = Arc::new(PostgresContractorReportRepository::new(pool.clone()));
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo);
 
+    let mqtt_energy_adapter: Arc<dyn MqttEnergyPort> = Arc::new(NoopMqttAdapter);
+    let boinc_iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
+    let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
+    let boinc_use_cases = BoincUseCases::new(boinc_grid_adapter, boinc_iot_repo);
+
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
         auth_use_cases,
@@ -352,6 +381,8 @@ pub async fn setup_test_db() -> (
         audit_logger,
         EmailService::from_env().expect("email service"),
         pool.clone(),
+        mqtt_energy_adapter,
+        boinc_use_cases,
     ));
 
     (app_state, postgres_container, org_id)

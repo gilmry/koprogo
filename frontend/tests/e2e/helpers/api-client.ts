@@ -20,26 +20,22 @@ export type Schemas = components["schemas"];
 export type { paths, components };
 
 // Extract the JSON request body type for a given path + method
-type RequestBody<
-  P extends keyof paths,
-  M extends string,
-> = paths[P] extends Record<M, infer Op>
-  ? Op extends {
-      requestBody?: { content: { "application/json": infer Body } };
-    }
-    ? Body
-    : never
-  : never;
+type RequestBody<P extends keyof paths, M extends string> =
+  paths[P] extends Record<M, infer Op>
+    ? Op extends {
+        requestBody?: { content: { "application/json": infer Body } };
+      }
+      ? Body
+      : never
+    : never;
 
 // Extract path params type
-type PathParams<
-  P extends keyof paths,
-  M extends string,
-> = paths[P] extends Record<M, infer Op>
-  ? Op extends { parameters: { path: infer Params } }
-    ? Params
-    : Record<string, never>
-  : Record<string, never>;
+type PathParams<P extends keyof paths, M extends string> =
+  paths[P] extends Record<M, infer Op>
+    ? Op extends { parameters: { path: infer Params } }
+      ? Params
+      : Record<string, never>
+    : Record<string, never>;
 
 /**
  * Type-safe API client backed by Playwright's request context.

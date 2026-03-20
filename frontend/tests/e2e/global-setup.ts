@@ -161,13 +161,12 @@ export default async function globalSetup() {
   // 9. Create pre-seeded entities for detail page tests
   const syndicHeaders = { Authorization: `Bearer ${syndicData.token}` };
 
-  async function tryCreate(
-    name: string,
-    promise: Promise<any>,
-  ): Promise<any> {
+  async function tryCreate(name: string, promise: Promise<any>): Promise<any> {
     const resp = await promise;
     if (!resp.ok()) {
-      console.warn(`⚠️  ${name} creation failed (${resp.status()}): ${await resp.text()}`);
+      console.warn(
+        `⚠️  ${name} creation failed (${resp.status()}): ${await resp.text()}`,
+      );
       return null;
     }
     return resp.json();
@@ -176,85 +175,240 @@ export default async function globalSetup() {
   // Owner-authenticated headers for community features
   const ownerHeaders = { Authorization: `Bearer ${ownerData.token}` };
 
-  const ticket = await tryCreate("ticket", ctx.post(`${API_BASE}/tickets`, {
-    data: { building_id: building.id, title: `Fuite robinet ${ts}`, description: "Fuite 3ème étage", priority: "Medium", category: "Plumbing" },
-    headers: syndicHeaders,
-  }));
+  const ticket = await tryCreate(
+    "ticket",
+    ctx.post(`${API_BASE}/tickets`, {
+      data: {
+        building_id: building.id,
+        title: `Fuite robinet ${ts}`,
+        description: "Fuite 3ème étage",
+        priority: "Medium",
+        category: "Plumbing",
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
-  const expense = await tryCreate("expense", ctx.post(`${API_BASE}/expenses`, {
-    data: { building_id: building.id, category: "Maintenance", description: `Réparation ascenseur ${ts}`, amount: 1500.0, expense_date: new Date().toISOString() },
-    headers: syndicHeaders,
-  }));
+  const expense = await tryCreate(
+    "expense",
+    ctx.post(`${API_BASE}/expenses`, {
+      data: {
+        building_id: building.id,
+        category: "Maintenance",
+        description: `Réparation ascenseur ${ts}`,
+        amount: 1500.0,
+        expense_date: new Date().toISOString(),
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
-  const budget = await tryCreate("budget", ctx.post(`${API_BASE}/budgets`, {
-    data: { building_id: building.id, organization_id: org.id, fiscal_year: 2026, total_budget_amount: 75000.0, ordinary_budget: 50000.0, extraordinary_budget: 25000.0 },
-    headers: syndicHeaders,
-  }));
+  const budget = await tryCreate(
+    "budget",
+    ctx.post(`${API_BASE}/budgets`, {
+      data: {
+        building_id: building.id,
+        organization_id: org.id,
+        fiscal_year: 2026,
+        total_budget_amount: 75000.0,
+        ordinary_budget: 50000.0,
+        extraordinary_budget: 25000.0,
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
-  const notice = await tryCreate("notice", ctx.post(`${API_BASE}/notices`, {
-    data: { building_id: building.id, title: `Travaux parking ${ts}`, content: "Parking fermé pour travaux.", notice_type: "Announcement", category: "Maintenance" },
-    headers: syndicHeaders,
-  }));
+  const notice = await tryCreate(
+    "notice",
+    ctx.post(`${API_BASE}/notices`, {
+      data: {
+        building_id: building.id,
+        title: `Travaux parking ${ts}`,
+        content: "Parking fermé pour travaux.",
+        notice_type: "Announcement",
+        category: "Maintenance",
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
   // Exchange/Skill/SharedObject need an owner-linked user
 
-  const exchange = await tryCreate("exchange", ctx.post(`${API_BASE}/exchanges`, {
-    data: { building_id: building.id, provider_id: ownerRecord.id, exchange_type: "Service", title: `Cours cuisine ${ts}`, description: "Cours cuisine belge", credits: 2 },
-    headers: syndicHeaders,
-  }));
+  const exchange = await tryCreate(
+    "exchange",
+    ctx.post(`${API_BASE}/exchanges`, {
+      data: {
+        building_id: building.id,
+        provider_id: ownerRecord.id,
+        exchange_type: "Service",
+        title: `Cours cuisine ${ts}`,
+        description: "Cours cuisine belge",
+        credits: 2,
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
-  const skill = await tryCreate("skill", ctx.post(`${API_BASE}/skills`, {
-    data: { building_id: building.id, skill_category: "Technology", skill_name: `Dépannage PC ${ts}`, expertise_level: "Advanced", description: "Aide informatique", is_available_for_help: true },
-    headers: syndicHeaders,
-  }));
+  const skill = await tryCreate(
+    "skill",
+    ctx.post(`${API_BASE}/skills`, {
+      data: {
+        building_id: building.id,
+        skill_category: "Technology",
+        skill_name: `Dépannage PC ${ts}`,
+        expertise_level: "Advanced",
+        description: "Aide informatique",
+        is_available_for_help: true,
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
-  const sharedObject = await tryCreate("sharedObject", ctx.post(`${API_BASE}/shared-objects`, {
-    data: { building_id: building.id, object_category: "Tools", object_name: `Perceuse ${ts}`, description: "Perceuse avec coffret", condition: "Good", is_available: true },
-    headers: syndicHeaders,
-  }));
+  const sharedObject = await tryCreate(
+    "sharedObject",
+    ctx.post(`${API_BASE}/shared-objects`, {
+      data: {
+        building_id: building.id,
+        object_category: "Tools",
+        object_name: `Perceuse ${ts}`,
+        description: "Perceuse avec coffret",
+        condition: "Good",
+        is_available: true,
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
   const pollEndDate = new Date();
   pollEndDate.setDate(pollEndDate.getDate() + 14);
-  const poll = await tryCreate("poll", ctx.post(`${API_BASE}/polls`, {
-    data: { building_id: building.id, poll_type: "yes_no", title: `Repeindre hall ? ${ts}`, description: "Consultation avant AG", ends_at: pollEndDate.toISOString(), is_anonymous: false, allow_multiple_votes: false, require_all_owners: false, options: [{ option_text: "Oui", display_order: 1 }, { option_text: "Non", display_order: 2 }] },
-    headers: syndicHeaders,
-  }));
+  const poll = await tryCreate(
+    "poll",
+    ctx.post(`${API_BASE}/polls`, {
+      data: {
+        building_id: building.id,
+        poll_type: "yes_no",
+        title: `Repeindre hall ? ${ts}`,
+        description: "Consultation avant AG",
+        ends_at: pollEndDate.toISOString(),
+        is_anonymous: false,
+        allow_multiple_votes: false,
+        require_all_owners: false,
+        options: [
+          { option_text: "Oui", display_order: 1 },
+          { option_text: "Non", display_order: 2 },
+        ],
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
-  const quote = await tryCreate("quote", ctx.post(`${API_BASE}/quotes`, {
-    data: { building_id: building.id, contractor_id: "00000000-0000-0000-0000-000000000000", project_title: `Rénovation façade ${ts}`, project_description: "Ravalement façade", amount_excl_vat: 250.0, vat_rate: 21.0, estimated_duration_days: 30, warranty_years: 10, validity_date: new Date(Date.now() + 30 * 86400000).toISOString() },
-    headers: syndicHeaders,
-  }));
+  const quote = await tryCreate(
+    "quote",
+    ctx.post(`${API_BASE}/quotes`, {
+      data: {
+        building_id: building.id,
+        contractor_id: "00000000-0000-0000-0000-000000000000",
+        project_title: `Rénovation façade ${ts}`,
+        project_description: "Ravalement façade",
+        amount_excl_vat: 250.0,
+        vat_rate: 21.0,
+        estimated_duration_days: 30,
+        warranty_years: 10,
+        validity_date: new Date(Date.now() + 30 * 86400000).toISOString(),
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
-  const workReport = await tryCreate("workReport", ctx.post(`${API_BASE}/work-reports`, {
-    data: { building_id: building.id, organization_id: org.id, work_type: "repair", title: `Réparation toiture ${ts}`, description: "Tuiles cassées", contractor_name: "Toitures Dupont SPRL", work_date: new Date().toISOString(), start_date: new Date().toISOString(), cost: 3500.0, warranty_type: "decennial", warranty_years: 10 },
-    headers: syndicHeaders,
-  }));
+  const workReport = await tryCreate(
+    "workReport",
+    ctx.post(`${API_BASE}/work-reports`, {
+      data: {
+        building_id: building.id,
+        organization_id: org.id,
+        work_type: "repair",
+        title: `Réparation toiture ${ts}`,
+        description: "Tuiles cassées",
+        contractor_name: "Toitures Dupont SPRL",
+        work_date: new Date().toISOString(),
+        start_date: new Date().toISOString(),
+        cost: 3500.0,
+        warranty_type: "decennial",
+        warranty_years: 10,
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
   const nextInspDate = new Date();
   nextInspDate.setFullYear(nextInspDate.getFullYear() + 1);
-  const inspection = await tryCreate("inspection", ctx.post(`${API_BASE}/technical-inspections`, {
-    data: { building_id: building.id, organization_id: org.id, title: `Contrôle ascenseur ${ts}`, inspection_type: "elevator", inspector_name: "Bureau Véritas", inspection_date: new Date().toISOString(), next_inspection_date: nextInspDate.toISOString() },
-    headers: syndicHeaders,
-  }));
+  const inspection = await tryCreate(
+    "inspection",
+    ctx.post(`${API_BASE}/technical-inspections`, {
+      data: {
+        building_id: building.id,
+        organization_id: org.id,
+        title: `Contrôle ascenseur ${ts}`,
+        inspection_type: "elevator",
+        inspector_name: "Bureau Véritas",
+        inspection_date: new Date().toISOString(),
+        next_inspection_date: nextInspDate.toISOString(),
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
   const convocDate = new Date();
   convocDate.setDate(convocDate.getDate() + 30);
-  const convocation = await tryCreate("convocation", ctx.post(`${API_BASE}/convocations`, {
-    data: { meeting_id: meeting.id, building_id: building.id, organization_id: org.id, meeting_type: "Ordinary", meeting_date: convocDate.toISOString(), language: "fr" },
-    headers: syndicHeaders,
-  }));
+  const convocation = await tryCreate(
+    "convocation",
+    ctx.post(`${API_BASE}/convocations`, {
+      data: {
+        meeting_id: meeting.id,
+        building_id: building.id,
+        organization_id: org.id,
+        meeting_type: "Ordinary",
+        meeting_date: convocDate.toISOString(),
+        language: "fr",
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
-  const etatDate = await tryCreate("etatDate", ctx.post(`${API_BASE}/etats-dates`, {
-    data: { unit_id: units[0].id, building_id: building.id, organization_id: org.id, language: "fr", reference_date: new Date().toISOString(), notary_name: "Me Dupont", notary_email: "notaire@test.be" },
-    headers: syndicHeaders,
-  }));
+  const etatDate = await tryCreate(
+    "etatDate",
+    ctx.post(`${API_BASE}/etats-dates`, {
+      data: {
+        unit_id: units[0].id,
+        building_id: building.id,
+        organization_id: org.id,
+        language: "fr",
+        reference_date: new Date().toISOString(),
+        notary_name: "Me Dupont",
+        notary_email: "notaire@test.be",
+      },
+      headers: syndicHeaders,
+    }),
+  );
 
   let paymentReminder = null;
   if (expense) {
-    paymentReminder = await tryCreate("paymentReminder", ctx.post(`${API_BASE}/payment-reminders`, {
-      data: { expense_id: expense.id, owner_id: ownerRecord.id, organization_id: org.id, level: "FirstReminder", amount_due: 1500.0, amount_owed: 1500.0, due_date: new Date(Date.now() + 30 * 86400000).toISOString(), days_overdue: 15 },
-      headers: syndicHeaders,
-    }));
+    paymentReminder = await tryCreate(
+      "paymentReminder",
+      ctx.post(`${API_BASE}/payment-reminders`, {
+        data: {
+          expense_id: expense.id,
+          owner_id: ownerRecord.id,
+          organization_id: org.id,
+          level: "FirstReminder",
+          amount_due: 1500.0,
+          amount_owed: 1500.0,
+          due_date: new Date(Date.now() + 30 * 86400000).toISOString(),
+          days_overdue: 15,
+        },
+        headers: syndicHeaders,
+      }),
+    );
   }
 
   // Save world
@@ -298,12 +452,8 @@ export default async function globalSetup() {
       ? { id: budget.id, fiscalYear: budget.fiscal_year }
       : undefined,
     notice: notice ? { id: notice.id, title: notice.title } : undefined,
-    exchange: exchange
-      ? { id: exchange.id, title: exchange.title }
-      : undefined,
-    skill: skill
-      ? { id: skill.id, skillName: skill.skill_name }
-      : undefined,
+    exchange: exchange ? { id: exchange.id, title: exchange.title } : undefined,
+    skill: skill ? { id: skill.id, skillName: skill.skill_name } : undefined,
     sharedObject: sharedObject
       ? { id: sharedObject.id, objectName: sharedObject.object_name }
       : undefined,
@@ -319,9 +469,7 @@ export default async function globalSetup() {
       : undefined,
     convocation: convocation ? { id: convocation.id } : undefined,
     etatDate: etatDate ? { id: etatDate.id } : undefined,
-    paymentReminder: paymentReminder
-      ? { id: paymentReminder.id }
-      : undefined,
+    paymentReminder: paymentReminder ? { id: paymentReminder.id } : undefined,
     booking: undefined, // TODO: add when resource booking API is ready
     createdAt: new Date().toISOString(),
   };

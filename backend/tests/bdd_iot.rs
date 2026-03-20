@@ -270,7 +270,7 @@ async fn given_org_and_building(world: &mut IotWorld) {
 }
 
 #[when(expr = "a MQTT message arrives on topic {string}")]
-async fn when_mqtt_message_arrives_on_topic(world: &mut IotWorld, _topic_template: String) {
+async fn when_mqtt_message_arrives_on_topic(_world: &mut IotWorld, _topic_template: String) {
     // Topic recorded; payload is provided by the subsequent "And the payload contains..." step
 }
 
@@ -286,7 +286,7 @@ async fn when_payload_reading(
     let ts = chrono::Utc::now() - chrono::Duration::seconds(10);
     let result = IoTReading::new(
         building_id,
-        DeviceType::SmartMeter,
+        DeviceType::ElectricityMeter,
         MetricType::ElectricityConsumption,
         value,
         unit.clone(),
@@ -315,7 +315,7 @@ async fn when_mqtt_negative_value(world: &mut IotWorld, value: f64, unit: String
     let ts = chrono::Utc::now();
     let result = IoTReading::new(
         building_id,
-        DeviceType::SmartMeter,
+        DeviceType::ElectricityMeter,
         MetricType::ElectricityConsumption,
         value,
         unit,
@@ -340,7 +340,7 @@ async fn when_future_timestamp(world: &mut IotWorld) {
     let future_ts = chrono::Utc::now() + chrono::Duration::hours(1);
     let result = IoTReading::new(
         building_id,
-        DeviceType::SmartMeter,
+        DeviceType::ElectricityMeter,
         MetricType::ElectricityConsumption,
         10.0,
         "kWh".to_string(),
@@ -359,7 +359,7 @@ async fn when_invalid_unit(world: &mut IotWorld, value: f64, unit: String, _metr
     let ts = chrono::Utc::now();
     let result = IoTReading::new(
         building_id,
-        DeviceType::SmartMeter,
+        DeviceType::ElectricityMeter,
         MetricType::ElectricityConsumption,
         value,
         unit,
@@ -501,9 +501,8 @@ async fn when_revoke_consent(world: &mut IotWorld) {
             world.operation_success = true;
             world.operation_error = None;
             // Reload consent for assertions
-            match boinc.get_consent(owner_id).await {
-                Ok(Some(c)) => world.last_consent = Some(c),
-                _ => {}
+            if let Ok(Some(c)) = boinc.get_consent(owner_id).await {
+                world.last_consent = Some(c);
             }
         }
         Err(e) => {
@@ -636,7 +635,7 @@ async fn given_iot_readings_exist(world: &mut IotWorld) {
     let ts = chrono::Utc::now() - chrono::Duration::hours(1);
     let reading = IoTReading::new(
         building_id,
-        DeviceType::SmartMeter,
+        DeviceType::ElectricityMeter,
         MetricType::ElectricityConsumption,
         10.0,
         "kWh".to_string(),
@@ -767,7 +766,7 @@ async fn given_boinc_task_queued(world: &mut IotWorld, _status: String) {
     let ts = chrono::Utc::now() - chrono::Duration::minutes(10);
     let reading = IoTReading::new(
         building_id,
-        DeviceType::SmartMeter,
+        DeviceType::ElectricityMeter,
         MetricType::ElectricityConsumption,
         5.0,
         "kWh".to_string(),
@@ -932,7 +931,7 @@ async fn given_mqtt_stopped(_world: &mut IotWorld) {
     // MqttEnergyAdapter starts not running — this is the default state
 }
 
-#[when(expr = "I call GET /api/v1/iot/mqtt/status")]
+#[when(regex = r"^I call GET /api/v1/iot/mqtt/status$")]
 async fn when_get_mqtt_status(_world: &mut IotWorld) {
     // REST scenario — not_running is the default adapter state, verified by is_running()
 }
@@ -951,7 +950,7 @@ async fn then_running_false(_world: &mut IotWorld) {
 #[given("the MQTT listener is not running")]
 async fn given_mqtt_not_running(_world: &mut IotWorld) {}
 
-#[when(expr = "I call POST /api/v1/iot/mqtt/start")]
+#[when(regex = r"^I call POST /api/v1/iot/mqtt/start$")]
 async fn when_post_mqtt_start(_world: &mut IotWorld) {}
 
 #[then(expr = r#"the response contains "status": "started""#)]
@@ -960,7 +959,7 @@ async fn then_status_started(_world: &mut IotWorld) {}
 #[given("the MQTT listener is already running")]
 async fn given_mqtt_already_running(_world: &mut IotWorld) {}
 
-#[when(expr = "I call POST /api/v1/iot/mqtt/start again")]
+#[when(regex = r"^I call POST /api/v1/iot/mqtt/start again$")]
 async fn when_post_mqtt_start_again(_world: &mut IotWorld) {}
 
 #[then("the response is 400 Bad Request")]
@@ -976,7 +975,7 @@ async fn given_auth_user_with_owner(world: &mut IotWorld) {
     }
 }
 
-#[when(expr = "I POST /api/v1/iot/grid/consent with granted=true")]
+#[when(regex = r"^I POST /api/v1/iot/grid/consent with granted=true$")]
 async fn when_post_grid_consent(world: &mut IotWorld) {
     let boinc = world.boinc_use_cases.as_ref().unwrap().clone();
     let owner_id = world.owner_id.unwrap();
@@ -1001,7 +1000,7 @@ async fn given_owner_without_consent(world: &mut IotWorld) {
     }
 }
 
-#[when(expr = "I POST /api/v1/iot/grid/tasks")]
+#[when(regex = r"^I POST /api/v1/iot/grid/tasks$")]
 async fn when_post_grid_tasks_no_consent(world: &mut IotWorld) {
     let boinc = world.boinc_use_cases.as_ref().unwrap().clone();
     let owner_id = world.owner_id.unwrap();
