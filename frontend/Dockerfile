@@ -1,7 +1,7 @@
 # Multi-stage build for Astro
 
 # Stage 1: Build
-FROM node:20-alpine as builder
+FROM node:22-alpine as builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
