@@ -57,15 +57,22 @@ async function injectAuth(
   await page.evaluate(
     ({ token, user }) => {
       localStorage.setItem("koprogo_token", token);
+      const roleObj = {
+        id: "injected-role-1",
+        role: user.role,
+        organization_id: null,
+        is_primary: true,
+      };
       localStorage.setItem(
         "koprogo_user",
         JSON.stringify({
+          id: "injected-user",
           email: user.email,
           first_name: user.first_name,
           last_name: user.last_name,
           role: user.role,
-          roles: [user.role],
-          active_role: user.role,
+          roles: [roleObj],
+          active_role: roleObj,
         }),
       );
       localStorage.setItem("koprogo_refresh_token", token);
