@@ -19,6 +19,32 @@ ignore = [
     # Mitigation: Monitor for testcontainers updates
     # See: SECURITY.md for full assessment
     "RUSTSEC-2025-0111",
+
+    # RUSTSEC-2026-0049: rustls-webpki 0.101.7 - CRL Distribution Point matching
+    # Status: Accepted Risk (Upstream Blocker)
+    # Reason: rustls-webpki 0.101.7 is pulled by aws-smithy-http-client 1.1.12 (latest)
+    #         which unconditionally bundles hyper-rustls 0.24.2 / rustls 0.21.x as a
+    #         legacy transport layer regardless of feature flags. No newer 0.101.x fix
+    #         exists (fix requires >=0.103.10, incompatible semver). aws-smithy-http-client
+    #         1.1.12 is the latest release; cannot upgrade further.
+    # Impact: Low — AWS SDK TLS does not use CRL Distribution Points for certificate
+    #         revocation. AWS infrastructure relies on OCSP/stapling, not CRL-based
+    #         revocation, so the faulty matching logic is not exercised in practice.
+    # Mitigation: Monitor aws-smithy-http-client releases for a version that drops the
+    #             legacy rustls 0.21 dependency. Pin to fixed version once available.
+    # Tracked: See GitHub issue tracker for upstream fix.
+    "RUSTSEC-2026-0049",
+
+    # RUSTSEC-2026-0002: lru 0.12.5 - IterMut violates Stacked Borrows (unsound)
+    # Status: Accepted Risk (Transitive / No Direct Usage)
+    # Reason: lru 0.12.5 is a transitive dep of aws-sdk-s3 1.119.0 (latest). No newer
+    #         0.12.x version resolves this (cargo update confirms 0.12.5 is latest in range).
+    #         koprogo never calls lru directly; it is used internally by aws-sdk-s3 for
+    #         connection pooling where IterMut is not exercised.
+    # Impact: Theoretical soundness issue with Stacked Borrows model; no known practical
+    #         exploit path through aws-sdk-s3 usage patterns.
+    # Mitigation: Monitor aws-sdk-s3 for update to lru 0.13+ which resolves the issue.
+    "RUSTSEC-2026-0002",
 ]
 
 # Optionally set a threshold for advisory severity
