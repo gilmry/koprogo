@@ -28,13 +28,15 @@ test.describe("Convocations - AG Automatic Invitations", () => {
     const { token, buildingId, meetingId } = await setupSyndicWithMeeting(page);
     const timestamp = Date.now();
 
+    const meetingDate = new Date();
+    meetingDate.setDate(meetingDate.getDate() + 30);
     const convocResp = await page.request.post(`${API_BASE}/convocations`, {
       data: {
         meeting_id: meetingId,
         building_id: buildingId,
+        meeting_type: "Ordinary",
+        meeting_date: meetingDate.toISOString(),
         language: "FR",
-        subject: `Convocation AG ${timestamp}`,
-        body_text: "Vous êtes convoqués à l'assemblée générale ordinaire.",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -44,13 +46,15 @@ test.describe("Convocations - AG Automatic Invitations", () => {
   test("should navigate to convocation detail page", async ({ page }) => {
     const { token, buildingId, meetingId } = await setupSyndicWithMeeting(page);
 
+    const meetingDate2 = new Date();
+    meetingDate2.setDate(meetingDate2.getDate() + 30);
     const convocResp = await page.request.post(`${API_BASE}/convocations`, {
       data: {
         meeting_id: meetingId,
         building_id: buildingId,
+        meeting_type: "Ordinary",
+        meeting_date: meetingDate2.toISOString(),
         language: "FR",
-        subject: "Convocation detail test",
-        body_text: "Corps de la convocation.",
       },
       headers: { Authorization: `Bearer ${token}` },
     });

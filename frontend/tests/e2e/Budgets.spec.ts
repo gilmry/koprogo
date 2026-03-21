@@ -27,9 +27,8 @@ test.describe("Budgets - Annual Budget Management", () => {
         building_id: buildingId,
         organization_id: orgId,
         fiscal_year: 2026,
-        title: "Budget 2026",
-        total_budget_amount: 50000.0,
-        description: "Budget prévisionnel annuel",
+        ordinary_budget: 50000.0,
+        extraordinary_budget: 0.0,
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -58,8 +57,8 @@ test.describe("Budgets - Annual Budget Management", () => {
         building_id: buildingId,
         organization_id: orgId,
         fiscal_year: 2027,
-        title: "Budget 2027",
-        total_budget_amount: 60000.0,
+        ordinary_budget: 60000.0,
+        extraordinary_budget: 0.0,
       },
       headers: { Authorization: `Bearer ${token}` },
     });

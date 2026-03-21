@@ -4,10 +4,9 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-/** Accounts require superadmin/accountant — use adminToken as the API token. */
 async function setupAccountant(page: Page) {
   const ctx = await loginAsSyndicWithBuilding(page, "acct");
-  return { token: ctx.adminToken, orgId: ctx.orgId };
+  return { token: ctx.token, orgId: ctx.orgId };
 }
 
 test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {

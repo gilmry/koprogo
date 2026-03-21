@@ -54,10 +54,11 @@ test.describe("Sharing - Object Sharing Library", () => {
     const objectResp = await page.request.post(`${API_BASE}/shared-objects`, {
       data: {
         building_id: buildingId,
-        name: `Vélo ${timestamp}`,
+        object_name: `Vélo ${timestamp}`,
         description: "Vélo partagé",
-        category: "Transport",
+        object_category: "Transport",
         is_available: true,
+        condition: "Good",
       },
       headers: { Authorization: `Bearer ${token}` },
     });

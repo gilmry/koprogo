@@ -4,11 +4,10 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-/** Financial reports require superadmin/accountant — use adminToken as the API token. */
 async function setupAccountant(page: Page) {
   const ctx = await loginAsSyndicWithBuilding(page, "finreport");
   return {
-    token: ctx.adminToken,
+    token: ctx.token,
     buildingId: ctx.buildingId,
     orgId: ctx.orgId,
   };
