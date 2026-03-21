@@ -90,7 +90,7 @@ pub async fn update_grid_consent(
     let ip = req
         .connection_info()
         .realip_remote_addr()
-        .map(|s| s.to_string());
+        .map(|s| s.chars().take(45).collect::<String>());
 
     if body.granted {
         match state
