@@ -21,7 +21,7 @@
     "codegen:mobile": "playwright codegen --device='iPhone 13' http://localhost",
     "docs:videos": "bash ../.claude/scripts/copy-videos.sh",
     "test:docs": "npm run test:e2e && npm run docs:videos",
-    "types:generate": "openapi-typescript ../docs/api/openapi.yaml -o src/types/api.d.ts",
+    "types:generate": "openapi-typescript ../docs/api/openapi.yaml -o src/types/api.d.ts && prettier --write src/types/api.d.ts",
     "types:check": "npm run types:generate && git diff --exit-code src/types/api.d.ts"
   },
   "dependencies": {
