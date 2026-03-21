@@ -21,13 +21,18 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
   });
 
   test("should seed Belgian PCMN accounts via API", async ({ page }) => {
-    const { token, orgId } = await setupAccountant(page);
+    const { orgId } = await setupAccountant(page);
+    // Use admin (superadmin) token for seeding
+    const adminResp = await page.request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
+    });
+    const adminToken = (await adminResp.json()).token;
 
     const seedResp = await page.request.post(
       `${API_BASE}/accounts/seed/belgian-pcmn`,
       {
         data: { organization_id: orgId },
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${adminToken}` },
       },
     );
     // 201 if first seed, 200 or 409 if already seeded
@@ -47,15 +52,19 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
 
   test("should find account by code", async ({ page }) => {
     const { token, orgId } = await setupAccountant(page);
+    const adminResp = await page.request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
+    });
+    const adminToken = (await adminResp.json()).token;
 
-    // First seed
+    // Seed with admin token (superadmin required)
     await page.request.post(`${API_BASE}/accounts/seed/belgian-pcmn`, {
       data: { organization_id: orgId },
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${adminToken}` },
     });
 
-    // Find by code
-    const findResp = await page.request.get(`${API_BASE}/accounts/code/6120`, {
+    // Find by code with syndic token (has organization_id in JWT)
+    const findResp = await page.request.get(`${API_BASE}/accounts/code/612`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect([200, 404].includes(findResp.status())).toBeTruthy();

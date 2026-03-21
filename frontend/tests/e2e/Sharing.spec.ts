@@ -1,16 +1,22 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithBuilding } from "./helpers/auth";
+import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
-  const ctx = await loginAsSyndicWithBuilding(page, "sharing");
-  return { token: ctx.token, buildingId: ctx.buildingId, orgId: ctx.orgId };
+// Shared objects are created by owners (not syndics) — owners lend to other owners/tenants.
+// We need an owner with a linked user account so resolve_owner can find them by user_id.
+async function setupOwnerContext(page: import("@playwright/test").Page) {
+  const ctx = await loginAsSyndicWithLinkedOwner(page, "sharing");
+  return {
+    token: ctx.ownerToken,
+    buildingId: ctx.buildingId,
+    ownerId: ctx.ownerId,
+  };
 }
 
 test.describe("Sharing - Object Sharing Library", () => {
   test("should display sharing page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await loginAsSyndicWithLinkedOwner(page, "sharing");
     await page.goto("/sharing");
 
     await expect(page.locator("body")).toBeVisible();
@@ -20,7 +26,7 @@ test.describe("Sharing - Object Sharing Library", () => {
   });
 
   test("should create a shared object via API", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await setupOwnerContext(page);
     const timestamp = Date.now();
 
     const objectResp = await page.request.post(`${API_BASE}/shared-objects`, {
@@ -38,7 +44,7 @@ test.describe("Sharing - Object Sharing Library", () => {
   });
 
   test("should list shared objects for building", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await setupOwnerContext(page);
 
     const listResp = await page.request.get(
       `${API_BASE}/buildings/${buildingId}/shared-objects`,
@@ -48,7 +54,7 @@ test.describe("Sharing - Object Sharing Library", () => {
   });
 
   test("should navigate to sharing detail page", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await setupOwnerContext(page);
     const timestamp = Date.now();
 
     const objectResp = await page.request.post(`${API_BASE}/shared-objects`, {

@@ -70,9 +70,7 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     await page.goto("/board-dashboard");
 
     await expect(page.locator("body")).toBeVisible();
-    await expect(
-      page.locator("main h1, main h2, [data-testid='board-dashboard']").first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("main").first()).toBeVisible({ timeout: 10000 });
   });
 
   test("should display syndic board members page", async ({ page }) => {

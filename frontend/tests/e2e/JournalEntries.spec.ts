@@ -6,8 +6,31 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 async function setupAccountant(page: Page) {
   const ctx = await loginAsSyndicWithBuilding(page, "journal");
+
+  // Register an accountant user in the same organization
+  const timestamp = Date.now();
+  const regResp = await page.request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email: `accountant-${timestamp}@test.com`,
+      password: "test123456",
+      first_name: "Comptable",
+      last_name: `Test${timestamp}`,
+      role: "accountant",
+      organization_id: ctx.orgId,
+    },
+  });
+  const accountantData = await regResp.json();
+  const accountantToken = accountantData.token;
+
+  // Seed PCMN accounts (required for journal entry FK constraints)
+  await page.request.post(`${API_BASE}/accounts/seed/belgian-pcmn`, {
+    data: { organization_id: ctx.orgId },
+    headers: { Authorization: `Bearer ${accountantToken}` },
+  });
+
   return {
     token: ctx.token,
+    accountantToken,
     buildingId: ctx.buildingId,
     orgId: ctx.orgId,
   };
@@ -15,7 +38,7 @@ async function setupAccountant(page: Page) {
 
 test.describe("Journal Entries - Double-Entry Accounting", () => {
   test("should display journal entries page", async ({ page }) => {
-    await setupAccountant(page);
+    await loginAsSyndicWithBuilding(page, "journal");
     await page.goto("/journal-entries");
 
     await expect(page.locator("body")).toBeVisible();
@@ -25,7 +48,7 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
   });
 
   test("should create a balanced journal entry via API", async ({ page }) => {
-    const { token, buildingId, orgId } = await setupAccountant(page);
+    const { accountantToken, buildingId, orgId } = await setupAccountant(page);
     const timestamp = Date.now();
 
     const entryResp = await page.request.post(`${API_BASE}/journal-entries`, {
@@ -37,26 +60,26 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
         description: `Écriture test ${timestamp}`,
         lines: [
           {
-            account_code: "6120",
+            account_code: "612",
             debit: 100.0,
             credit: 0.0,
             description: "Débit frais entretien",
           },
           {
-            account_code: "5500",
+            account_code: "550",
             debit: 0.0,
             credit: 100.0,
             description: "Crédit caisse",
           },
         ],
       },
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${accountantToken}` },
     });
     expect([200, 201].includes(entryResp.status())).toBeTruthy();
   });
 
   test("should reject unbalanced journal entry", async ({ page }) => {
-    const { token, buildingId, orgId } = await setupAccountant(page);
+    const { accountantToken, buildingId, orgId } = await setupAccountant(page);
 
     const entryResp = await page.request.post(`${API_BASE}/journal-entries`, {
       data: {
@@ -66,11 +89,21 @@ test.describe("Journal Entries - Double-Entry Accounting", () => {
         entry_date: new Date().toISOString(),
         description: "Écriture déséquilibrée",
         lines: [
-          { account_code: "6120", debit: 100.0, credit: 0.0 },
-          { account_code: "5500", debit: 0.0, credit: 50.0 },
+          {
+            account_code: "612",
+            debit: 100.0,
+            credit: 0.0,
+            description: "Débit",
+          },
+          {
+            account_code: "550",
+            debit: 0.0,
+            credit: 50.0,
+            description: "Crédit insuffisant",
+          },
         ],
       },
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${accountantToken}` },
     });
     expect([400, 422].includes(entryResp.status())).toBeTruthy();
   });

@@ -29,7 +29,7 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
       data: {
         building_id: buildingId,
         organization_id: orgId,
-        work_type: "Repair",
+        work_type: "repair",
         title: `Remplacement robinetterie ${timestamp}`,
         description: "Remplacement robinets cuisine bâtiment A",
         contractor_name: "Plomberie Dupont",

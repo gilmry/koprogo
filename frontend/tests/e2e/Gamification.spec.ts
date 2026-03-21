@@ -27,7 +27,8 @@ test.describe("Gamification - Achievements & Challenges", () => {
       data: {
         organization_id: orgId,
         name: `Premier pas ${timestamp}`,
-        description: "Première action dans le système",
+        description:
+          "Première action réalisée dans le système de gamification communautaire",
         category: "Community",
         tier: "Bronze",
         points_value: 10,

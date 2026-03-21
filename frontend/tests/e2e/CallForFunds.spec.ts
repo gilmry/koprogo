@@ -31,7 +31,7 @@ test.describe("Call For Funds - Revenue Management", () => {
         building_id: buildingId,
         title: `Appel fonds T1 2026 ${timestamp}`,
         total_amount: 5000.0,
-        contribution_type: "Regular",
+        contribution_type: "regular",
         call_date: new Date().toISOString(),
         due_date: dueDate.toISOString(),
         description: "Provision charges courantes",

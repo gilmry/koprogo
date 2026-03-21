@@ -37,6 +37,11 @@ interface SyndicWithOwnerContext extends SyndicContext {
   ownerId: string;
 }
 
+interface OwnerContext extends SyndicContext {
+  ownerId: string;
+  ownerToken: string; // JWT for the owner user account
+}
+
 /**
  * Inject auth token into browser localStorage without UI login.
  * Navigates to a page first (needed for localStorage domain), then injects.
@@ -134,7 +139,7 @@ export async function loginAsSyndic(
     adminToken,
     orgId: org.id,
     email,
-    userId: userData.id || userData.user_id || "",
+    userId: userData.user?.id || userData.id || userData.user_id || "",
   };
 }
 
@@ -185,7 +190,7 @@ export async function loginAsSyndicWithUnit(
       unit_type: "Apartment",
       quota: 100.0,
     },
-    headers: { Authorization: `Bearer ${ctx.token}` },
+    headers: { Authorization: `Bearer ${ctx.adminToken}` },
   });
   const unit = await unitResp.json();
 
@@ -270,6 +275,55 @@ export async function loginAsSyndicWithOwner(
   const owner = await ownerResp.json();
 
   return { ...ctx, ownerId: owner.id };
+}
+
+/**
+ * Create a building + an owner user account (role=owner) linked to an Owner record.
+ * Returns both the syndic context and the owner's JWT token.
+ * Use this when the API requires an Owner record linked to a user (e.g. shared objects).
+ */
+export async function loginAsSyndicWithLinkedOwner(
+  page: Page,
+  prefix: string = "test",
+): Promise<OwnerContext> {
+  const ctx = await loginAsSyndicWithBuilding(page, prefix);
+  const timestamp = Date.now();
+  const ownerEmail = `owner-linked-${timestamp}@test.com`;
+
+  // Register an owner user account
+  const regResp = await page.request.post(`${API_BASE}/auth/register`, {
+    data: {
+      email: ownerEmail,
+      password: "test123456",
+      first_name: "Owner",
+      last_name: `Linked${timestamp}`,
+      role: "owner",
+      organization_id: ctx.orgId,
+    },
+  });
+  const ownerUserData = await regResp.json();
+  const ownerUserId =
+    ownerUserData.user?.id || ownerUserData.id || ownerUserData.user_id || "";
+  const ownerToken = ownerUserData.token;
+
+  // Create owner record linked to the user account
+  const ownerResp = await page.request.post(`${API_BASE}/owners`, {
+    data: {
+      organization_id: ctx.orgId,
+      first_name: "Owner",
+      last_name: `Linked${timestamp}`,
+      email: ownerEmail,
+      address: "1 Rue Test",
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+      user_id: ownerUserId,
+    },
+    headers: { Authorization: `Bearer ${ctx.token}` },
+  });
+  const owner = await ownerResp.json();
+
+  return { ...ctx, ownerId: owner.id, ownerToken };
 }
 
 /**

@@ -1,16 +1,21 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithBuilding } from "./helpers/auth";
+import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
-  const ctx = await loginAsSyndicWithBuilding(page, "skill");
-  return { token: ctx.token, buildingId: ctx.buildingId, orgId: ctx.orgId };
+async function setupOwnerWithBuilding(page: import("@playwright/test").Page) {
+  const ctx = await loginAsSyndicWithLinkedOwner(page, "skill");
+  return {
+    token: ctx.ownerToken,
+    syndicToken: ctx.token,
+    buildingId: ctx.buildingId,
+    orgId: ctx.orgId,
+  };
 }
 
 test.describe("Skills - Community Directory", () => {
   test("should display skills page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await setupOwnerWithBuilding(page);
     await page.goto("/skills");
 
     await expect(page.locator("body")).toBeVisible();
@@ -20,7 +25,7 @@ test.describe("Skills - Community Directory", () => {
   });
 
   test("should create a skill offer via API", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await setupOwnerWithBuilding(page);
     const timestamp = Date.now();
 
     const skillResp = await page.request.post(`${API_BASE}/skills`, {
@@ -38,7 +43,7 @@ test.describe("Skills - Community Directory", () => {
   });
 
   test("should list skills for building", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await setupOwnerWithBuilding(page);
 
     const listResp = await page.request.get(
       `${API_BASE}/buildings/${buildingId}/skills`,
@@ -48,7 +53,7 @@ test.describe("Skills - Community Directory", () => {
   });
 
   test("should navigate to skill detail page", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await setupOwnerWithBuilding(page);
     const timestamp = Date.now();
 
     const skillResp = await page.request.post(`${API_BASE}/skills`, {

@@ -31,7 +31,7 @@ test.describe("Owner Contributions - Payment Tracking", () => {
           owner_id: ownerId,
           description: `Provision T2 2026 ${timestamp}`,
           amount: 800.0,
-          contribution_type: "Regular",
+          contribution_type: "regular",
           contribution_date: new Date().toISOString(),
         },
         headers: { Authorization: `Bearer ${token}` },

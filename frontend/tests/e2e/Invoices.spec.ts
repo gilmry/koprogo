@@ -138,7 +138,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     const expenseResp = await page.request.post(`${API_BASE}/expenses`, {
       data: {
         building_id: buildingId,
-        category: "Security",
+        category: "Administration",
         description: `Sécurité ${timestamp}`,
         amount: 300.0,
         expense_date: new Date().toISOString(),
@@ -147,8 +147,8 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     });
     const expense = await expenseResp.json();
 
-    const submitResp = await page.request.post(
-      `${API_BASE}/expenses/${expense.id}/submit-for-approval`,
+    const submitResp = await page.request.put(
+      `${API_BASE}/invoices/${expense.id}/submit`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     expect([200, 400].includes(submitResp.status())).toBeTruthy();

@@ -1,16 +1,22 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithBuilding } from "./helpers/auth";
+import { loginAsSyndicWithLinkedOwner } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function setupSyndicWithBuilding(page: import("@playwright/test").Page) {
-  const ctx = await loginAsSyndicWithBuilding(page, "booking");
-  return { token: ctx.token, buildingId: ctx.buildingId, orgId: ctx.orgId };
+async function setupOwnerWithBuilding(page: import("@playwright/test").Page) {
+  const ctx = await loginAsSyndicWithLinkedOwner(page, "booking");
+  return {
+    token: ctx.ownerToken,
+    syndicToken: ctx.token,
+    buildingId: ctx.buildingId,
+    orgId: ctx.orgId,
+    ownerId: ctx.ownerId,
+  };
 }
 
 test.describe("Bookings - Resource Reservation Calendar", () => {
   test("should display bookings page", async ({ page }) => {
-    await setupSyndicWithBuilding(page);
+    await setupOwnerWithBuilding(page);
     await page.goto("/bookings");
 
     await expect(page.locator("body")).toBeVisible();
@@ -20,7 +26,7 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
   });
 
   test("should create a resource booking via API", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await setupOwnerWithBuilding(page);
     const start = new Date();
     start.setDate(start.getDate() + 1);
     start.setHours(10, 0, 0, 0);
@@ -44,7 +50,7 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
   });
 
   test("should list my resource bookings", async ({ page }) => {
-    const { token } = await setupSyndicWithBuilding(page);
+    const { token } = await setupOwnerWithBuilding(page);
 
     const listResp = await page.request.get(
       `${API_BASE}/resource-bookings/my`,
@@ -54,7 +60,7 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
   });
 
   test("should navigate to booking detail page", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithBuilding(page);
+    const { token, buildingId } = await setupOwnerWithBuilding(page);
     const start = new Date();
     start.setDate(start.getDate() + 2);
     start.setHours(10, 0, 0, 0);

@@ -32,6 +32,7 @@ test.describe("Resolutions - AG Voting System", () => {
       `${API_BASE}/meetings/${meetingId}/resolutions`,
       {
         data: {
+          meeting_id: meetingId,
           title: `Résolution ${timestamp}`,
           description: "Approbation du budget annuel 2026",
           resolution_type: "ordinary",
