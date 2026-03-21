@@ -51,6 +51,74 @@ The following security advisories are known and have been assessed for risk:
 - Test containers run in isolated Docker environments
 - Waiting for upstream fix in testcontainers
 
+### RUSTSEC-2026-0049: rustls-webpki 0.101.7 - Certificate Revocation Enforcement
+
+**Status**: Accepted Risk (Upstream Blocked)
+**Severity**: Medium
+**Date**: 2026-03-21
+**Affected**: `rustls-webpki 0.101.7` via `rustls@0.21` → `hyper-rustls@0.24` → `aws-smithy-http-client@1.1.12` → `aws-config@1.8.15`
+
+**Assessment**:
+- The fixed version (`rustls-webpki >= 0.103.10`) is already present in the dependency tree via `rustls@0.22`
+- The vulnerable `0.101.7` version is pulled in exclusively by the AWS SDK (`aws-config`, `aws-sdk-s3`) which has not yet migrated from `hyper-rustls@0.24` / `rustls@0.21` to the newer TLS stack
+- `aws-config@1.8.15` is the latest available version — no upstream fix exists yet
+- **Impact**: Limited to AWS S3 backup upload paths only (not user-facing API)
+
+**Why Accepted**:
+- Blocked by upstream AWS SDK Rust — cannot be resolved without an AWS SDK release
+- The attack surface is restricted to S3 backup operations, not the main API
+- Monitored via `cargo audit` in CI
+
+**Mitigation**:
+- Will be resolved automatically once AWS SDK migrates to `hyper-rustls@0.26` / `rustls@0.22`
+- Track upstream: https://github.com/awslabs/aws-sdk-rust
+
+---
+
+### CVE-2026-32766: astral-tokio-tar 0.5.6 - Insufficient PAX Extension Validation
+
+**Status**: Accepted Risk (Dev-Only, Mitigated)
+**Severity**: Low
+**Date**: 2026-03-21
+**Affected**: `astral-tokio-tar 0.5.6` via `testcontainers@0.27.1` (dev-dependency only)
+
+**Assessment**:
+- `testcontainers@0.27.1` is the latest available version and still depends on `astral-tokio-tar@0.5.6`
+- This crate is used **exclusively in test builds** — it is never compiled into production binaries
+- The fixed version (`astral-tokio-tar >= 0.6.0`) is explicitly declared as a direct dependency in `Cargo.toml` to ensure 0.6.0 is present alongside 0.5.6
+- **Impact**: None in production; test environment only, running in isolated Docker containers
+
+**Why Accepted**:
+- No fixed upgrade available for testcontainers
+- Zero production exposure (dev-dependency, `#[cfg(test)]`)
+- Mitigated by explicit `astral-tokio-tar = "0.6"` override
+
+**Mitigation**:
+- Will be resolved once `testcontainers` updates its dependency
+- Track upstream: https://github.com/testcontainers/testcontainers-rs
+
+---
+
+### GitHub Dependabot Alerts — h3 (npm) — SSE/Path Traversal
+
+**Status**: Accepted Risk (Transitive, No Production Exposure)
+**Severity**: Medium/High
+**Date**: 2026-03-21
+**Affected**: `h3` (transitive npm dependency in frontend build tooling)
+
+**Assessment**:
+- `npm audit` reports **0 vulnerabilities** in the frontend production dependency tree
+- The Dependabot alerts target `h3` versions in the lockfile that are pulled transitively by build/dev tooling (not runtime code shipped to users)
+- `h3` is a Node.js HTTP framework; KoproGo's frontend is a **static site** (Astro SSG) — no Node.js server runs in production
+- **Impact**: None in production; the frontend is served as static files
+
+**Why Accepted**:
+- `npm audit` confirms clean production tree
+- No server-side Node.js runtime in production frontend
+- Transitively fixed via package updates
+
+---
+
 ### Monitoring
 
 We actively monitor these advisories and will update dependencies as soon as fixes become available. You can check the current status:
@@ -321,6 +389,6 @@ We would like to thank the following researchers for responsibly disclosing secu
 
 ---
 
-**Last updated**: 2025-10-25
+**Last updated**: 2026-03-21
 
 For questions about this policy, contact abuse@koprogo.com.
