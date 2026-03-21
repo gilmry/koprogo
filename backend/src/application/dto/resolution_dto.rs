@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Response DTO for Resolution
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct ResolutionResponse {
     pub id: Uuid,
     pub meeting_id: Uuid,
@@ -56,7 +56,7 @@ impl From<Resolution> for ResolutionResponse {
 }
 
 /// Request DTO for creating a resolution
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateResolutionRequest {
     pub meeting_id: Uuid,
     pub title: String,
@@ -66,7 +66,7 @@ pub struct CreateResolutionRequest {
 }
 
 /// Request DTO for updating a resolution
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct UpdateResolutionRequest {
     pub title: Option<String>,
     pub description: Option<String>,
@@ -75,7 +75,7 @@ pub struct UpdateResolutionRequest {
 }
 
 /// Request DTO for closing voting on a resolution
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CloseVotingRequest {
     pub total_voting_power: f64,
 }

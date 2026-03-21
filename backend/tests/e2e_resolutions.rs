@@ -110,6 +110,7 @@ async fn create_test_fixtures(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
 
     let owner1 = app_state
@@ -130,6 +131,7 @@ async fn create_test_fixtures(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
 
     let owner2 = app_state

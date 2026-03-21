@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Page request parameters for pagination
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, utoipa::IntoParams, utoipa::ToSchema)]
 pub struct PageRequest {
     #[serde(default = "default_page")]
     pub page: i64,
@@ -73,7 +73,7 @@ impl Default for PageRequest {
 }
 
 /// Sort order for pagination
-#[derive(Debug, Deserialize, Serialize, Default, Clone)]
+#[derive(Debug, Deserialize, Serialize, Default, Clone, utoipa::ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum SortOrder {
     #[default]

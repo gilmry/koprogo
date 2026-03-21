@@ -24,7 +24,7 @@ Feature: État Daté Generation
     Then the État Daté should be created successfully
     And the status should be "Requested"
     And a reference number should be generated like "ED-2026-001"
-    And the due date should be "2026-03-02" # 15 days later
+    And the due date should be "2026-03-02"
 
   Scenario: Syndic marks État Daté as in progress
     Given an État Daté in status "Requested" exists
@@ -80,7 +80,7 @@ Feature: État Daté Generation
 
   Scenario: État Daté expires after 3 months if not used
     Given an État Daté delivered on "2025-11-01"
-    And the current date is "2026-02-10" # 3 months + 10 days later
+    And the current date is "2026-02-10"
     When I request expired États Datés
     Then I should see the État Daté in the list
     And the status should be "Expired"

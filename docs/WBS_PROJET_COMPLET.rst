@@ -2,12 +2,20 @@
 KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
 =========================================================
 
-:Version: 1.0
-:Date: 26 fevrier 2026
+:Version: 2.0
+:Date: 15 mars 2026
 :Methode: Domain-Driven Design + Behavior-Driven Development + Test-Driven Development + SOLID
 :Auteur: Claude Code (Audit automatise)
 :Statut: Document de reference technique
 :Couverture: Jalon 0 (complete) -> Jalon 7 (vision long terme)
+
+.. note::
+
+   **Mise a jour 2026-03-15** : Reorganisation des jalons et releases.
+   Schema de releases simplifie : v0.5.0/v0.6.0/v0.7.0 remplace par **v0.1.0 / v0.2.0**.
+   MCP Tools (#252-265) et itsme (#48) repousses de Jalon 3 vers Jalon 4.
+   K3s infra (#266-268) deplace vers Jalon 5.
+   WBS obsoletes supprimes (WBS_RELEASE_0_5_0.rst, WBS_RELEASE_0_6_0.rst, WBS_2026_02_18.rst).
 
 .. contents:: Table des matieres
    :depth: 4
@@ -242,17 +250,17 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
      - %
      - Statut
    * - J0 Fondations Techniques
-     - 5
-     - 5
+     - 3
+     - 3
      - 0
      - 100%
      - COMPLETE
    * - J1 Securite & GDPR
-     - 11
-     - 8
+     - 18
+     - 15
      - 3
-     - 73%
-     - Tests E2E (#66,#69) + itsme (#48)
+     - 83%
+     - Bugs legal (#271,#272,#273)
    * - J2 Conformite Legale Belge
      - 17
      - 17
@@ -260,23 +268,23 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
      - 100%
      - COMPLETE
    * - J3 Features Differenciantes
-     - 8
+     - 16
+     - 9
      - 7
-     - 1
-     - 88%
-     - PDF generation (#47)
+     - 56%
+     - BC14-17 (#274-280) — scope release 0.1.0
    * - J4 Automation & Integrations
+     - 28
      - 14
-     - 10
-     - 4
-     - 71%
-     - WCAG (#93), RBAC (#71,#72), GDPR docs (#67)
+     - 14
+     - 50%
+     - MCP Tools (#252-265), itsme (#48) — scope release 0.2.0
    * - J5 Mobile & API Publique
-     - 4
-     - 1
-     - 3
-     - 25%
-     - PWA (#87), BI (#97), Mobile (#98)
+     - 7
+     - 2
+     - 5
+     - 29%
+     - PWA (#87), BI (#97), Mobile (#98), K3s infra (#266-268)
    * - J6 Intelligence & Expansion
      - 5
      - 1
@@ -290,31 +298,31 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
      - 0%
      - API v2 + SDK (#111)
    * -
-     - **65**
-     - **49**
-     - **16**
-     - **75%**
+     - **95**
+     - **61**
+     - **34**
+     - **64%**
      -
 
-**+ 2 issues sans jalon** : #158 (E2E compilation), #206 (Frontend UI wiring)
+**Issues sans jalon** : 17 R&D (#220-237), #197 (Frontend UI), #158 (E2E compilation, FERME)
 
 6. Metriques Code
 -------------------
 
 .. code-block:: text
 
-   Backend Rust   : ~87,000 LOC (domain+application+infrastructure+tests)
-   Frontend Svelte: ~15,000 LOC (pages+components+lib)
-   Migrations SQL : ~7,200 LOC (58 migrations)
-   Documentation  : ~24,600 LOC (45 RST/MD files)
+   Backend Rust   : ~110,000 LOC (domain+application+infrastructure+tests)
+   Frontend Svelte: ~18,000 LOC (pages+components+lib)
+   Migrations SQL : ~8,500 LOC (64 migrations)
+   Documentation  : ~28,000 LOC (50+ RST/MD files)
    Infrastructure : ~5,000 LOC (Ansible, Docker, CI)
-   TOTAL          : ~138,800 LOC
+   TOTAL          : ~169,500 LOC
 
-   -- Post-release 0.5.0 (Mars 2026) : ajouts prevus en 0.6.0 --
-   Bounded Contexts : 13 -> 17 (+BC14 Marketplace, +BC15 AG Visio, +BC16 Contractor PWA, +BC17 AGE Agile)
-   Nouvelles entites prevues : +AgSession, +ServiceProvider, +ContractEvaluation, +ContractorReport, +AgeRequest
-   Nouveaux endpoints prevus : +~45 endpoints (560+ -> 605+)
-   Nouvelles migrations prevues : +7 (58 -> 65+)
+   Bounded Contexts   : 17 (BC1-BC17)
+   Entites domaine    : 57
+   Endpoints API REST : 511+
+   Tests unitaires    : 777+
+   Tests BDD          : 454+ scenarios (5 fichiers bdd_*.rs, 0 failures, 0 skips)
 
 7. Dette Technique Identifiee
 -------------------------------
@@ -329,55 +337,40 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
      - Effort
      - Release cible
    * - DT-1
-     - 24 features BDD sans step definitions (279 scenarios skipped)
-     - HAUT
-     - 81h
-     - v0.5.0
+     - BDD step definitions : RESOLU (0 failures, 0 skips sur 454 scenarios)
+     - ~~HAUT~~
+     - ~~81h~~
+     - ✅ v0.1.0
    * - DT-2
-     - 19/23 E2E backend ne compilent pas (#158)
+     - E2E backend : 27/46 use cases sans test HTTP dedie
      - HAUT
-     - 8h
-     - v0.5.0
+     - 40h
+     - v0.1.0
    * - DT-3
-     - Documentation features : 8/30 couvertes (27%)
+     - Documentation features : partiellement couverte
      - MOYEN
      - 20h
-     - v0.5.0
+     - v0.1.0
    * - DT-4
-     - CHANGELOG non structure (blob [Unreleased])
-     - MOYEN
-     - 3h
-     - v0.5.0
+     - Playwright couvre 26% des pages (11/43 specs actifs)
+     - HAUT
+     - 32h
+     - v0.1.0
    * - DT-5
-     - Playwright couvre <5% des pages (3/80 specs)
+     - Contract Tests DTO : 0% (aucun mecanisme backend<->frontend)
      - MOYEN
-     - 15h
-     - v0.5.0
+     - 8h
+     - v0.1.0
    * - DT-6
-     - frontend/README.md et backend/README.md manquants
-     - FAIBLE
-     - 4h
-     - v0.5.0
-   * - DT-7
      - Use case unit tests faibles (17/45 fichiers ont des tests)
      - FAIBLE
      - 20h
-     - v1.0.0
-   * - DT-8
-     - OpenAPI spec potentiellement desynchronisee
-     - FAIBLE
-     - 2h
-     - v0.5.0
-   * - DT-9
-     - Frontend UI wiring incomplet (#206)
-     - HAUT
-     - 15h
-     - v0.5.0
-   * - DT-10
+     - v0.2.0
+   * - DT-7
      - Hardcoded total_eligible_voters=10 dans poll_use_cases
      - FAIBLE
      - 1h
-     - v0.5.0
+     - v0.1.0
 
 
 =========================================================
@@ -404,16 +397,21 @@ Aucun travail restant. Toutes les issues fermees.
 load tests (287 req/s), documentation Sphinx.
 
 =========================================================
-9. Jalon 1 : Securite & GDPR [73% -> 100%]
+9. Jalon 1 : Securite & GDPR [83% -> 100%]
 =========================================================
 
 **Debloque** : 50-100 coproprietes (beta publique)
 
-**Release cible** : v0.5.0
+**Release cible** : v0.1.0 (bugs legal) / v0.2.0 (#48 itsme)
 
-**Issues ouvertes** : #69, #66, #48
+**Issues ouvertes** : #271, #272, #273
 
-9.1 WP-FEAT-J1 : Features restantes
+.. note::
+
+   #48 (itsme/eID) deplace en **Jalon 4** (mars 2026). Les issues #66, #69
+   ont ete fermees. Il reste 3 bugs de conformite legale belge.
+
+9.1 WP-FEAT-J1 : Bugs legal restants
 --------------------------------------
 
 .. list-table::
@@ -427,83 +425,28 @@ load tests (287 req/s), documentation Sphinx.
      - BC
      - Cycle TDD
    * - WP-FEAT-J1.1
-     - Finaliser 2FA TOTP : verifier que setup/enable/verify/disable
-       fonctionnent de bout en bout avec des vrais TOTP codes
-     - #78
-     - 4h
-     - BC9
-     - BDD: two_factor.feature deja ecrit
-   * - WP-FEAT-J1.2
-     - Fix E2E admin login timeout apres GDPR user logout (#66)
-     - #66
+     - Quorum 50%+ validation AG (Art. 3.87 §5 CC).
+       Migration existe, verifier wiring + tests.
+     - #271
      - 2h
-     - BC7
-     - TDD: fix e2e_gdpr.rs test sequence
+     - BC3
+     - BDD: meetings.feature, E2E: e2e_meetings
+   * - WP-FEAT-J1.2
+     - 2e convocation si quorum non atteint (Art. 3.87 §5 CC).
+       Workflow convocation_use_cases + domain validation.
+     - #272
+     - 2h
+     - BC3
+     - BDD: convocations.feature
    * - WP-FEAT-J1.3
-     - Playwright E2E pour units + documents (#69)
-     - #69
-     - 4h
-     - BC1
-     - BDD: features existants; PW: 2 nouveaux specs
-   * - WP-FEAT-J1.4
-     - Authentification forte itsme/eID (etude + prototype)
-     - #48
-     - 8h
-     - BC9
-     - TDD: integration test avec mock itsme
+     - Reduction vote mandataire (Art. 3.87 §7 CC).
+       Titre dit "done" — a verifier et fermer.
+     - #273
+     - 2h
+     - BC3
+     - BDD: resolutions.feature
 
-9.2 WP-BDD-J1 : Step Definitions
-----------------------------------
-
-.. list-table::
-   :header-rows: 1
-   :widths: 10 40 10 10
-
-   * - WP
-     - Feature -> Step Definitions
-     - Scenarios
-     - Heures
-   * - WP-BDD-J1.1
-     - ``two_factor.feature`` -> ``bdd_governance.rs``
-     - 12
-     - 4h
-   * - WP-BDD-J1.2
-     - ``organizations.feature`` -> ``bdd_governance.rs``
-     - 8
-     - 3h
-
-9.3 WP-E2E-J1 : Fix E2E
---------------------------
-
-.. list-table::
-   :header-rows: 1
-   :widths: 10 40 10
-
-   * - WP
-     - Tache
-     - Heures
-   * - WP-E2E-J1.1
-     - Fix ``e2e_auth.rs`` compilation
-     - 1h
-   * - WP-E2E-J1.2
-     - Fix ``e2e_gdpr.rs`` + ``e2e_gdpr_audit.rs`` compilation
-     - 1h
-
-9.4 WP-DOC-J1 : Documentation
---------------------------------
-
-.. list-table::
-   :header-rows: 1
-   :widths: 10 40 10
-
-   * - WP
-     - Tache
-     - Heures
-   * - WP-DOC-J1.1
-     - Mettre a jour ``docs/SECURITY.md`` avec 2FA section
-     - 1h
-
-**Total Jalon 1 restant** : ~28h
+**Total Jalon 1 restant** : ~6h
 
 =========================================================
 10. Jalon 2 : Conformite Legale Belge [COMPLETE]
@@ -553,17 +496,26 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
 **Total Jalon 2 dette** : 25h (inclus dans budget v0.5.0)
 
 =========================================================
-11. Jalon 3 : Features Differenciantes [88% -> 100%]
+11. Jalon 3 : Features Differenciantes [56% -> 100%]
 =========================================================
 
 **Debloque** : 500-1,000 coproprietes (differenciation marche)
 
-**Release cible** : v0.5.0 (dette) + v0.6.0 (PDF)
+**Release cible** : v0.1.0
 
-**Issue ouverte** : #47
+**Issues ouvertes** : #274, #275, #276, #277, #278, #279, #280
 
-11.1 WP-FEAT-J3 : Features restantes
---------------------------------------
+.. note::
+
+   **Mise a jour mars 2026** : Les 13 issues MCP (#252-265), l'issue #48 (itsme)
+   et les 3 issues K3s infra (#266-268) ont ete deplacees hors du Jalon 3.
+   Les 9 issues fermees couvrent : votes AG (#46), paiements (#84), SEL 6 phases (#49/#99),
+   IoT (#133), work reports (#134), devis (#52/#91), convocations (#88),
+   notifications (#86), tickets (#85), syndic public (#92), energy campaigns (#96).
+   BDD couvre ag_sessions, age_requests, contractor_reports (Phase 2 WBS 0.1.0 terminee).
+
+11.1 WP-FEAT-J3 : Features restantes (7 issues ouvertes)
+----------------------------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -574,149 +526,83 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - Issue
      - Heures
      - BC
-     - Approche DDD
+     - Etat actuel
    * - WP-FEAT-J3.1
-     - **PDF Generation etendue** : PV assemblee generale
-       (domain service ``MeetingMinutesExporter`` existe deja,
-       connecter a endpoint + template LaTeX/Typst)
-     - #47
+     - **BC15 AG Visioconference** : AgSession + quorum combine.
+       Backend et BDD faits, manque E2E + frontend.
+     - #274
      - 8h
-     - BC3
-     - Domain service -> Use case -> Handler avec file download
+     - BC15
+     - Backend ✅, BDD ✅, E2E ❌, Frontend ❌
    * - WP-FEAT-J3.2
-     - **PDF** : Releve de charges annuel
-       (domain service ``AnnualReportExporter`` existe deja)
-     - #47
-     - 5h
-     - BC10
-     - Idem + aggregation cross-BC2
+     - **BC17 AGE Agile** : Demande 1/5 quotites + concertation.
+       Backend et BDD faits, manque E2E + frontend.
+     - #279
+     - 8h
+     - BC17
+     - Backend ✅, BDD ✅, E2E ❌, Frontend ❌
    * - WP-FEAT-J3.3
-     - **PDF** : Contrat proprietaire (attestation)
-       (domain service ``OwnershipContractExporter`` existe deja)
-     - #47
-     - 4h
-     - BC1
-     - Idem
+     - **BC16 Backoffice prestataires** : ContractorReport PWA.
+       Backend, BDD et frontend (page) faits, manque E2E.
+     - #275
+     - 6h
+     - BC16
+     - Backend ✅, BDD ✅, Frontend ✅, E2E ❌
    * - WP-FEAT-J3.4
-     - **PDF** : Devis travaux formatted
-       (domain service ``WorkQuoteExporter`` existe deja)
-     - #47
-     - 4h
-     - BC4
-     - Idem
+     - **BC14 Marketplace** : Corps de metier + satisfaction.
+       Feature complete a implementer (domain -> frontend).
+     - #276
+     - 20h
+     - BC14
+     - Non implemente
    * - WP-FEAT-J3.5
-     - **Contractor Backoffice frontend** : Dashboard contractor
-       avec work reports, photos, payment status
-     - #52
-     - 12h
-     - BC4
-     - Pages Astro + composants Svelte + API calls
+     - **Guide legal contextuel UI** : LegalHelper.svelte, AG Wizard.
+     - #277
+     - 10h
+     - BC3
+     - Non implemente
+   * - WP-FEAT-J3.6
+     - **Orchestrateur energie neutre** : CER, maisons indiv., CREG.
+     - #280
+     - 16h
+     - BC8
+     - Non implemente
+   * - WP-FEAT-J3.7
+     - **Blog 18 articles RST** : 5 series thematiques.
+     - #278
+     - 22h
+     - Docs
+     - Documentation only
 
-11.2 WP-BDD-J3 : Step Definitions (dette)
---------------------------------------------
+11.2 WP-E2E-J3 : Tests E2E backend (dette)
+---------------------------------------------
 
-.. list-table::
-   :header-rows: 1
-   :widths: 10 40 10 10
+Voir WBS_RELEASE_0_1_0.md Phase 3 pour la liste complete des 27 tests E2E manquants.
 
-   * - WP
-     - Feature -> Step Definitions
-     - Scenarios
-     - Heures
-   * - WP-BDD-J3.1
-     - ``resolutions.feature`` -> ``bdd_governance.rs``
-     - 14
-     - 5h
-   * - WP-BDD-J3.2
-     - ``convocations.feature`` -> ``bdd_governance.rs``
-     - 13
-     - 5h
-   * - WP-BDD-J3.3
-     - ``quotes.feature`` -> ``bdd_governance.rs``
-     - 13
-     - 5h
-   * - WP-BDD-J3.4
-     - ``gamification.feature`` -> ``bdd_community.rs``
-     - 13
-     - 4h
+11.3 WP-PW-J3 : Tests Playwright (dette)
+-------------------------------------------
 
-11.3 WP-E2E-J3 : Fix E2E (dette)
-----------------------------------
+Voir WBS_RELEASE_0_1_0.md Phase 5 pour la liste complete des 32 specs manquants.
 
-.. list-table::
-   :header-rows: 1
-   :widths: 10 40 10
-
-   * - WP
-     - Tache
-     - Heures
-   * - WP-E2E-J3.1
-     - Fix ``e2e_resolutions.rs`` (1,161 LOC)
-     - 1h
-   * - WP-E2E-J3.2
-     - Fix ``e2e_convocations.rs`` (1,501 LOC)
-     - 1h
-   * - WP-E2E-J3.3
-     - Fix ``e2e_quotes.rs`` (1,381 LOC)
-     - 1h
-   * - WP-E2E-J3.4
-     - Fix ``e2e_local_exchange.rs`` (580 LOC)
-     - 0.5h
-
-11.4 WP-BDD-J3 NEW : BDD pour nouvelles features
----------------------------------------------------
-
-.. list-table::
-   :header-rows: 1
-   :widths: 10 40 10 10
-
-   * - WP
-     - Feature
-     - Scenarios
-     - Heures
-   * - WP-BDD-J3.5
-     - ``pdf_generation.feature`` (NOUVEAU a ecrire)
-     - ~8
-     - 4h
-   * - WP-BDD-J3.6
-     - ``contractor_backoffice.feature`` (NOUVEAU a ecrire)
-     - ~6
-     - 3h
-
-11.5 WP-DOC-J3
-----------------
-
-.. list-table::
-   :header-rows: 1
-   :widths: 10 40 10
-
-   * - WP
-     - Tache
-     - Heures
-   * - WP-DOC-J3.1
-     - Creer ``docs/CONTRACTOR_QUOTES.rst``
-     - 2h
-   * - WP-DOC-J3.2
-     - Creer ``docs/CONVOCATIONS_AG.rst``
-     - 2h
-   * - WP-DOC-J3.3
-     - Creer ``docs/MEETINGS_RESOLUTIONS_VOTING.rst``
-     - 2h
-   * - WP-DOC-J3.4
-     - Creer ``docs/COMMUNITY_FEATURES.rst`` (6 phases)
-     - 3h
-
-**Total Jalon 3** : ~90h (33h features + 42h dette test + 15h docs)
+**Total Jalon 3 restant** : ~90h features + tests E2E/Playwright (voir WBS 0.1.0)
 
 =========================================================
-12. Jalon 4 : Automation & Integrations [71% -> 100%]
+12. Jalon 4 : Automation & Integrations [50% -> 100%]
 =========================================================
 
 **Debloque** : 1,000-2,000 coproprietes (scalabilite)
 
-**Release cible** : v0.7.0
+**Release cible** : v0.2.0
 
-**Issues ouvertes** : #67, #71, #72, #93
+**Issues ouvertes** : 14 (dont 13 MCP #252-265, #48 itsme)
+
+.. note::
+
+   **Mise a jour mars 2026** : Le Jalon 4 absorbe les MCP Tools (#252-265)
+   et l'authentification itsme (#48) repousses de J1/J3. Les 14 issues deja
+   fermees couvrent : convocations (#88), GDPR Art.16/18/21 (#90), carnet
+   entretien (#89), WCAG (#93), devis (#91), syndic public (#92), tickets (#85),
+   notifications (#86), RBAC etude (#71,#72), GDPR docs (#67), GDPR Art.21 (#64,#65).
 
 12.1 WP-FEAT-J4 : Features restantes
 --------------------------------------
@@ -1212,8 +1098,8 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
 PARTIE IV : RELEASES & PLANNING
 =========================================================
 
-16. Matrice Releases
----------------------
+16. Matrice Releases (mise a jour mars 2026)
+----------------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -1223,43 +1109,38 @@ PARTIE IV : RELEASES & PLANNING
      - Jalons
      - Contenu principal
      - Tests cible
-     - Effort
+     - Effort restant
      - Prerequis equipe
-   * - **v0.5.0**
-     - J1+J2 dette
-     - Fix tests, docs, changelog, 279 BDD step defs
-     - 1,307 tests
-     - 134h
-     - Solo
-   * - **v0.6.0**
-     - J3 complet
-     - PDF generation, contractor backoffice
+   * - **v0.1.0**
+     - J0-J3
+     - Premiere release. Bugs legal J1, features J3 (BC14-17),
+       E2E backend (27), Playwright (32), docs, blog
      - 1,400 tests
-     - 90h
+     - ~96h
      - Solo
-   * - **v0.7.0**
-     - J4 complet
-     - WCAG AA, RBAC granulaire, nouveaux roles
-     - 1,500 tests
-     - 170h
-     - Solo + 1 contributeur
+   * - **v0.2.0**
+     - J4 (partiel)
+     - MCP Tools AI Syndic (14 tools), auth itsme/eID
+     - 1,600 tests
+     - ~120h
+     - Solo
    * - **v1.0.0**
-     - J5 complet
-     - PWA offline, analytics, mobile (etude)
-     - 1,700 tests
-     - 230h
-     - 2 ETP
+     - J4 complet + J5
+     - WCAG AA, RBAC, PWA offline, analytics, K3s infra
+     - 1,800 tests
+     - ~300h
+     - Solo + 1 contributeur
    * - **v2.0.0**
      - J6 complet
      - IoT platform, AI, marketplace, sustainability
      - 2,000 tests
-     - 766h
+     - ~766h
      - 3-4 ETP
    * - **v3.0.0**
      - J7 complet
      - API v2, SDK, plugins, blockchain (opt.)
      - 2,200 tests
-     - 750h
+     - ~750h
      - 10-15 ETP
 
 17. Timeline Realiste (Solo Dev 10-15h/sem)
@@ -1268,22 +1149,20 @@ PARTIE IV : RELEASES & PLANNING
 .. code-block:: text
 
    2026
-   |-- Mars-Mai      : v0.5.0 (dette test + docs)      ~134h  10-12 sem
-   |-- Juin-Juillet  : v0.6.0 (PDF + contractor)        ~90h   6-8 sem
-   |-- Aout-Novembre : v0.7.0 (WCAG + RBAC)            ~170h  12-15 sem
+   |-- Mars-Juin     : v0.1.0 (J0-J3 complet)           ~96h   8-10 sem
+   |-- Juillet-Oct   : v0.2.0 (MCP + itsme)            ~120h   8-12 sem
+   |-- Nov-2027 Q1   : v1.0.0 (J4+J5, WCAG, PWA)      ~300h   (solo + contributeur)
    |
    2027
-   |-- Q1-Q2         : v1.0.0 (PWA + analytics)         ~230h  (besoin 2 ETP)
-   |-- Q3-Q4         : v2.0.0 start (IoT + AI)          ~766h  (besoin 3-4 ETP)
+   |-- Q2-Q4         : v2.0.0 (IoT + AI)               ~766h   (besoin 3-4 ETP)
    |
    2028
-   |-- Q1-Q4         : v3.0.0 (API v2 + ecosystem)      ~750h  (besoin 10-15 ETP)
+   |-- Q1-Q4         : v3.0.0 (API v2 + ecosystem)     ~750h   (besoin 10-15 ETP)
 
 .. note::
 
    Cette timeline est un **scenario conservateur solo**.
-   Avec communaute active (5+ contributeurs), les jalons 1-4
-   peuvent etre livres en 6-9 mois au lieu de 12-15 mois.
+   La v0.1.0 est la priorite absolue (branche ``release/0.1.0`` active).
 
 18. Budget Test par Release
 -----------------------------
@@ -1299,48 +1178,41 @@ PARTIE IV : RELEASES & PLANNING
      - PW
      - Bench
      - Total
-   * - v0.5.0
-     - 550
-     - 473
-     - 215
-     - 64
+   * - v0.1.0
+     - 777
+     - 454
+     - 200
+     - 45
      - 5
-     - 1,307
-   * - v0.6.0
-     - 570
-     - 495
-     - 230
+     - 1,481
+   * - v0.2.0
+     - 800
+     - 500
+     - 250
      - 70
      - 5
-     - 1,370
-   * - v0.7.0
-     - 600
-     - 525
-     - 260
-     - 85
-     - 10
-     - 1,480
+     - 1,625
    * - v1.0.0
-     - 650
+     - 850
      - 560
-     - 290
+     - 300
      - 120
      - 15
-     - 1,635
+     - 1,845
    * - v2.0.0
-     - 800
+     - 900
      - 620
      - 350
      - 160
      - 20
-     - 1,950
+     - 2,050
    * - v3.0.0
-     - 900
+     - 1000
      - 680
      - 400
      - 200
      - 25
-     - 2,205
+     - 2,305
 
 
 =========================================================
@@ -1365,73 +1237,73 @@ A. Inventaire Complet des Work Packages
      - Finaliser 2FA TOTP end-to-end
      - 4
      - FEAT
-     - v0.5.0
+     - v0.1.0
    * - J1
      - WP-FEAT-J1.2
      - Fix E2E admin login timeout (#66)
      - 2
      - FEAT
-     - v0.5.0
+     - v0.1.0
    * - J1
      - WP-FEAT-J1.3
      - Playwright E2E units + documents (#69)
      - 4
      - PW
-     - v0.5.0
+     - v0.1.0
    * - J1
      - WP-FEAT-J1.4
      - Authentification itsme/eID (#48)
      - 8
      - FEAT
-     - v0.7.0
+     - v0.2.0
    * - J1
      - WP-BDD-J1.1
      - two_factor.feature step defs
      - 4
      - BDD
-     - v0.5.0
+     - v0.1.0
    * - J1
      - WP-BDD-J1.2
      - organizations.feature step defs
      - 3
      - BDD
-     - v0.5.0
+     - v0.1.0
    * - J3
      - WP-FEAT-J3.1-4
      - PDF Generation (4 types documents)
      - 21
      - FEAT
-     - v0.6.0
+     - v0.1.0
    * - J3
      - WP-FEAT-J3.5
      - Contractor Backoffice frontend
      - 12
      - FEAT
-     - v0.6.0
+     - v0.1.0
    * - J4
      - WP-FEAT-J4.1
      - WCAG 2.1 AA Accessibility (#93)
      - 40
      - FEAT
-     - v0.7.0
+     - v0.2.0
    * - J4
      - WP-FEAT-J4.2
      - RBAC granulaire (#72)
      - 30
      - FEAT
-     - v0.7.0
+     - v0.2.0
    * - J4
      - WP-FEAT-J4.3
      - Roles OrgAdmin/BuildingManager (#71)
      - 15
      - FEAT
-     - v0.7.0
+     - v0.2.0
    * - J4
      - WP-FEAT-J4.4
      - Documentation GDPR formelle (#67)
      - 12
      - DOC
-     - v0.7.0
+     - v0.2.0
    * - J5
      - WP-FEAT-J5.1
      - PWA Offline Mode (#87)
@@ -1485,89 +1357,69 @@ A. Inventaire Complet des Work Packages
      - Infrastructure BDD (4 fichiers + CI + Makefile)
      - 6.25
      - INFRA
-     - v0.5.0
+     - v0.1.0
    * - TRANS
      - WP-E2E-C*
      - Fix E2E commun (common/mod.rs + board)
      - 3
      - E2E
-     - v0.5.0
+     - v0.1.0
    * - TRANS
      - WP-CI-*
      - Pipeline CI/CD updates
      - 2.75
      - CI
-     - v0.5.0
+     - v0.1.0
    * - TRANS
      - WP-REL-*
      - Release mechanics (tags, notes, version bump)
      - 4.25
      - REL
-     - v0.5.0
+     - v0.1.0
 
-B. Effort Total par Type
---------------------------
+B. Effort Total par Type (mise a jour mars 2026)
+---------------------------------------------------
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 15 15 15 15 15 15
+   :widths: 20 15 15 15 15 15
 
    * - Type
-     - v0.5.0
-     - v0.6.0
-     - v0.7.0
+     - v0.1.0
+     - v0.2.0
      - v1.0.0
-     - v2.0.0
+     - v2.0.0+
      - **Total**
    * - FEAT (features)
-     - 10h
-     - 33h
-     - 97h
-     - 190h
+     - 90h
+     - 120h
+     - 200h
      - 700h
-     - **1,030h**
-   * - BDD (step defs)
-     - 81h
-     - 7h
-     - 32h
-     - 12h
-     - 35h
-     - **167h**
-   * - E2E (backend)
-     - 11h
-     - 2h
-     - 4h
-     - 5h
-     - 10h
-     - **32h**
-   * - PW (Playwright)
-     - 15h
-     - 2h
-     - 7h
-     - 7h
-     - 15h
-     - **46h**
+     - **1,110h**
+   * - BDD/E2E/PW (tests)
+     - 40h
+     - 30h
+     - 50h
+     - 60h
+     - **180h**
    * - DOC (docs)
      - 20h
-     - 9h
-     - 12h
-     - 11h
+     - 10h
+     - 15h
      - 16h
-     - **68h**
+     - **61h**
    * - INFRA/CI/REL
-     - 16h
-     - 3h
+     - 6h
      - 5h
-     - 5h
-     - 5h
-     - **34h**
-   * - **Total**
-     - **153h**
+     - 35h
+     - 10h
      - **56h**
-     - **157h**
-     - **230h**
-     - **781h**
-     - **1,377h**
+   * - **Total**
+     - **156h**
+     - **165h**
+     - **300h**
+     - **786h**
+     - **1,407h**
 
 .. note::
 

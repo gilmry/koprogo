@@ -22,7 +22,7 @@ impl OwnerUseCases {
             return Err("Email already exists".to_string());
         }
 
-        let owner = Owner::new(
+        let mut owner = Owner::new(
             organization_id,
             dto.first_name,
             dto.last_name,
@@ -33,6 +33,16 @@ impl OwnerUseCases {
             dto.postal_code,
             dto.country,
         )?;
+
+        // Link to user account if provided
+        if let Some(user_id_str) = dto.user_id {
+            if !user_id_str.is_empty() {
+                owner.user_id = Some(
+                    Uuid::parse_str(&user_id_str)
+                        .map_err(|_| "Invalid user_id format".to_string())?,
+                );
+            }
+        }
 
         let created = self.repository.create(&owner).await?;
         Ok(self.to_response_dto(&created))

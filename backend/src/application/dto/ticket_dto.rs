@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct TicketResponse {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -46,7 +46,7 @@ impl From<Ticket> for TicketResponse {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CreateTicketRequest {
     pub building_id: Uuid,
     pub unit_id: Option<Uuid>,
@@ -56,22 +56,22 @@ pub struct CreateTicketRequest {
     pub priority: TicketPriority,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct AssignTicketRequest {
     pub assigned_to: Uuid,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ResolveTicketRequest {
     pub resolution_notes: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CancelTicketRequest {
     pub reason: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ReopenTicketRequest {
     pub reason: String,
 }

@@ -363,6 +363,90 @@ sudo tail -f /var/log/koprogo/security-audits/audit_*.log
 
 ---
 
+### 9. Rust Dependency Security (cargo audit)
+
+**Status:** ✅ Implemented — CI enforced via `.cargo/audit.toml`
+
+Automated vulnerability scanning of all Rust crate dependencies using `cargo audit` on every CI run.
+
+**Run locally:**
+
+```bash
+cd backend
+cargo audit
+```
+
+**Configuration:** `backend/.cargo/audit.toml`
+
+#### Accepted Risks (documented suppressions)
+
+The following advisories are suppressed with documented justification. They must be reviewed on every new `aws-smithy-http-client` or `aws-sdk-s3` release.
+
+---
+
+##### RUSTSEC-2026-0049 — `rustls-webpki 0.101.7` — CRL Distribution Point matching
+
+| Field | Value |
+|-------|-------|
+| **Advisory** | [RUSTSEC-2026-0049](https://rustsec.org/advisories/RUSTSEC-2026-0049) |
+| **Crate** | `rustls-webpki 0.101.7` |
+| **Title** | CRLs not considered authoritative by Distribution Point due to faulty matching logic |
+| **Fix available** | ≥ 0.103.10 (incompatible semver with 0.101.x) |
+| **Status** | **Accepted risk — upstream blocker** |
+
+**Root cause:** `aws-smithy-http-client 1.1.12` (latest as of 2026-03-21) unconditionally bundles `hyper-rustls 0.24.2` / `rustls 0.21.x` as a legacy transport layer regardless of feature flags. The 0.101.x series has no patch — the only fix is migrating to ≥ 0.103.10 which requires `rustls 0.23.x`.
+
+**Why low impact:** AWS SDK TLS does not use CRL Distribution Points for certificate revocation. AWS infrastructure relies on OCSP/stapling rather than CRL-based revocation, so the faulty matching logic is not exercised in practice. The 0.103.x instance was fixed (`0.103.9 → 0.103.10`, commit updating Cargo.lock).
+
+**Mitigation:** Monitor `aws-smithy-http-client` releases. Remove suppression once a release drops the `hyper-rustls 0.24.x` / `rustls 0.21.x` legacy dependency.
+
+---
+
+##### RUSTSEC-2026-0002 — `lru 0.12.5` — IterMut violates Stacked Borrows (unsound)
+
+| Field | Value |
+|-------|-------|
+| **Advisory** | [RUSTSEC-2026-0002](https://rustsec.org/advisories/RUSTSEC-2026-0002) |
+| **Crate** | `lru 0.12.5` |
+| **Title** | `IterMut` violates Stacked Borrows by invalidating internal pointer |
+| **Fix available** | Upgrade to `lru ≥ 0.13` (no 0.12.x patch) |
+| **Status** | **Accepted risk — transitive / no direct usage** |
+
+**Root cause:** `lru 0.12.5` is a transitive dependency of `aws-sdk-s3 1.119.0` (latest). No 0.12.x patch exists; `cargo update` confirms 0.12.5 is the latest compatible version. koprogo never calls `lru` directly.
+
+**Why low impact:** Theoretical soundness violation under the Stacked Borrows memory model. No known practical exploit path through `aws-sdk-s3` usage patterns (connection pooling). The issue requires exercising `IterMut` in a specific aliasing pattern that is not present in aws-sdk-s3 usage.
+
+**Mitigation:** Monitor `aws-sdk-s3` for a release that upgrades to `lru ≥ 0.13`.
+
+---
+
+##### RUSTSEC-2023-0071 — `rsa 0.9.8` — Marvin Attack
+
+| Field | Value |
+|-------|-------|
+| **Advisory** | [RUSTSEC-2023-0071](https://rustsec.org/advisories/RUSTSEC-2023-0071) |
+| **Crate** | `rsa 0.9.8` |
+| **Title** | Marvin Attack: timing side-channel in RSA decryption |
+| **Status** | **Accepted risk — unreachable code path** |
+
+**Root cause:** Pulled by `sqlx-mysql` (transitive). koprogo uses PostgreSQL only — the `sqlx-mysql` feature is never enabled, making this code path dead in production.
+
+**Mitigation:** If MySQL support is ever added, re-evaluate.
+
+---
+
+#### Advisory History
+
+| Date | Advisory | Action |
+|------|----------|--------|
+| 2026-03-21 | RUSTSEC-2026-0049 (`rustls-webpki 0.103.9`) | **Fixed** — updated to 0.103.10 via `cargo update` |
+| 2026-03-21 | RUSTSEC-2026-0049 (`rustls-webpki 0.101.7`) | Accepted risk — AWS SDK upstream blocker |
+| 2026-03-21 | RUSTSEC-2026-0002 (`lru 0.12.5`) | Accepted risk — transitive dep, no direct usage |
+| 2025-11-xx | RUSTSEC-2025-0111 (`tokio-tar 0.3.1`) | Accepted risk — test environment only |
+| 2023-xx-xx | RUSTSEC-2023-0071 (`rsa 0.9.8`) | Accepted risk — sqlx-mysql not enabled |
+
+---
+
 ## 📊 Monitoring Stack - Issue #41
 
 **Status:** ✅ Implemented

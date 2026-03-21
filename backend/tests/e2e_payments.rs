@@ -54,6 +54,7 @@ async fn create_test_fixtures(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
 
     let owner = app_state
@@ -562,8 +563,8 @@ async fn test_refund_payment() {
     assert_eq!(refund_resp.status(), 200);
 
     let refunded: serde_json::Value = test::read_body_json(refund_resp).await;
-    // Partial refund keeps status as "succeeded" (only full refund changes to "refunded")
-    assert_eq!(refunded["status"], "succeeded");
+    // Any refund (partial or full) sets status to "refunded"
+    assert_eq!(refunded["status"], "refunded");
     assert_eq!(refunded["refunded_amount_cents"], 30000);
 }
 
@@ -1189,8 +1190,8 @@ async fn test_complete_payment_lifecycle() {
 
     let refund_resp = test::call_service(&app, refund_req).await;
     let refunded: serde_json::Value = test::read_body_json(refund_resp).await;
-    // Partial refund keeps status as "succeeded"
-    assert_eq!(refunded["status"], "succeeded");
+    // Any refund (partial or full) sets status to "refunded"
+    assert_eq!(refunded["status"], "refunded");
     assert_eq!(refunded["refunded_amount_cents"], 50000);
 
     // 6. Verify payment in lists

@@ -73,6 +73,7 @@ async fn create_test_fixtures(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
 
     let owner = app_state
@@ -165,6 +166,7 @@ async fn test_add_owner_to_unit_exceeds_100_percent() {
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
 
     let owner2 = app_state
@@ -506,6 +508,7 @@ async fn test_transfer_ownership_success() {
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
 
     let owner2 = app_state

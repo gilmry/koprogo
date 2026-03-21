@@ -75,13 +75,16 @@ rust_xlsxwriter = "0.94.0"
 
 # Random data generation (for seed scripts)
 rand = "0.10"
-fake = { version = "4.4", features = ["derive", "chrono", "uuid", "http"] }
+fake = { version = "5.1", features = ["derive", "chrono", "uuid", "http"] }
 
 # Email
 lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-native-tls"] }
 
 # HTTP client
 reqwest = { version = "0.13", features = ["json", "form", "query"] }
+
+# MQTT client (Home Assistant integration - IoT Phase 1)
+rumqttc = { version = "0.25", default-features = false }
 
 # OpenAPI documentation
 utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }
@@ -91,12 +94,12 @@ utoipa-swagger-ui = { version = "9.0", features = ["actix-web"] }
 # Unit & Integration tests
 mockall = "0.14"
 tokio-test = "0.4"
-testcontainers = "0.26"
-testcontainers-modules = { version = "0.13", features = ["postgres", "minio"] }
+testcontainers = "0.27"
+testcontainers-modules = { version = "0.15", features = ["postgres", "minio"] }
 rust_decimal_macros = "1.36"
 
 # BDD tests
-cucumber = { version = "0.21", features = ["macros"] }
+cucumber = { version = "0.22", features = ["macros"] }
 
 # E2E tests
 reqwest = { version = "0.13", features = ["json"] }
@@ -106,7 +109,9 @@ criterion = { version = "0.8", features = ["async_tokio", "html_reports"] }
 
 # Test utilities
 serial_test = "3.1"
-fake = { version = "4.4", features = ["derive", "chrono", "uuid"] }
+fake = { version = "5.1", features = ["derive", "chrono", "uuid"] }
+# Security: explicit dep to ensure 0.6.0 is present (CVE-2026-32766); testcontainers still pulls 0.5.6 (dev-only, no prod exposure)
+astral-tokio-tar = "0.6"
 
 [[bench]]
 name = "load_tests"
@@ -130,6 +135,10 @@ harness = false
 
 [[test]]
 name = "bdd_community"
+harness = false
+
+[[test]]
+name = "bdd_iot"
 harness = false
 
 [profile.release]

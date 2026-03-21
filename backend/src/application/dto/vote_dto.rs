@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Response DTO for Vote
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct VoteResponse {
     pub id: Uuid,
     pub resolution_id: Uuid,
@@ -34,7 +34,7 @@ impl From<Vote> for VoteResponse {
 }
 
 /// Request DTO for casting a vote
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct CastVoteRequest {
     pub owner_id: Uuid,
     pub unit_id: Uuid,
@@ -44,7 +44,7 @@ pub struct CastVoteRequest {
 }
 
 /// Request DTO for changing a vote
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct ChangeVoteRequest {
     pub vote_choice: VoteChoice,
 }

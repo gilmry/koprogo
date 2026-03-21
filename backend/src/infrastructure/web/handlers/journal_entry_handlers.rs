@@ -202,9 +202,20 @@ pub async fn create_journal_entry(
             .with_error(err.clone())
             .log();
 
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": err
-            }))
+            // Return 400 for business rule violations, 500 for unexpected errors
+            if err.contains("unbalanced")
+                || err.contains("foreign key")
+                || err.contains("violates")
+                || err.contains("not found")
+            {
+                HttpResponse::BadRequest().json(serde_json::json!({
+                    "error": err
+                }))
+            } else {
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": err
+                }))
+            }
         }
     }
 }

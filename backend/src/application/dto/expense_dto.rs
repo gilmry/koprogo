@@ -48,6 +48,7 @@ pub struct ExpenseResponseDto {
 /// Créer une facture brouillon avec gestion TVA
 #[derive(Debug, Deserialize, Validate, Clone)]
 pub struct CreateInvoiceDraftDto {
+    #[serde(default)]
     pub organization_id: String,
     pub building_id: String,
     pub category: ExpenseCategory,
@@ -129,7 +130,7 @@ pub struct CreateInvoiceLineItemDto {
 // ========== Response DTOs ==========
 
 /// Response enrichie avec tous les champs invoice/workflow
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct InvoiceResponseDto {
     pub id: String,
     pub organization_id: String,

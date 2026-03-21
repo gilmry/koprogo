@@ -90,12 +90,12 @@ Feature: Maintenance Ticket Management
   Scenario: Reopen a resolved ticket
     Given a resolved ticket "Recurring issue" exists
     When I reopen the ticket with reason "Problem reappeared after 2 days"
-    Then the ticket status should be "Open"
+    Then the ticket status should be "InProgress"
 
   Scenario: Reopen a closed ticket
     Given a closed ticket "Old issue" exists
     When I reopen the ticket with reason "Issue was not properly fixed"
-    Then the ticket status should be "Open"
+    Then the ticket status should be "InProgress"
 
   # === INVALID STATE TRANSITIONS ===
 

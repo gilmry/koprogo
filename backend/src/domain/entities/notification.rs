@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Notification Type - Different categories of notifications
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum NotificationType {
     ExpenseCreated,     // Nouvel appel de fonds
     MeetingConvocation, // Convocation AG
@@ -18,7 +18,7 @@ pub enum NotificationType {
 }
 
 /// Notification Channel - Delivery method
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum NotificationChannel {
     Email, // Email notification
     InApp, // In-app notification (dashboard)
@@ -26,7 +26,7 @@ pub enum NotificationChannel {
 }
 
 /// Notification Status
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum NotificationStatus {
     Pending, // Waiting to be sent
     Sent,    // Successfully sent
@@ -35,7 +35,7 @@ pub enum NotificationStatus {
 }
 
 /// Notification Priority
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, utoipa::ToSchema)]
 pub enum NotificationPriority {
     Low,      // Basse
     Medium,   // Moyenne
@@ -47,7 +47,7 @@ pub enum NotificationPriority {
 ///
 /// Represents a notification sent to a user via one or more channels.
 /// Supports email, in-app, and web push notifications.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Notification {
     pub id: Uuid,
     pub organization_id: Uuid,
@@ -182,7 +182,7 @@ impl Notification {
 /// User Notification Preferences
 ///
 /// Allows users to opt-in/opt-out of specific notification types per channel
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct NotificationPreference {
     pub id: Uuid,
     pub user_id: Uuid,

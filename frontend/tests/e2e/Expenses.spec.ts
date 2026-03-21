@@ -86,7 +86,7 @@ test.describe("Expenses - Invoice Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='expenses-list']").first(),
+      page.locator("main h1, main h2, [data-testid='expenses-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -96,7 +96,9 @@ test.describe("Expenses - Invoice Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='invoice-workflow']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='invoice-workflow']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -187,7 +189,9 @@ test.describe("Expenses - Invoice Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='payment-reminders']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='payment-reminders']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });

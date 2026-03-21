@@ -2,11 +2,14 @@ use actix_cors::Cors;
 use actix_governor::{Governor, GovernorConfigBuilder};
 use actix_web::{middleware, web, App, HttpServer};
 use dotenvy::dotenv;
+use koprogo_api::application::ports::mqtt_energy_port::MqttEnergyPort;
 use koprogo_api::application::services::ExpenseAccountingService;
 use koprogo_api::application::use_cases::*;
 use koprogo_api::infrastructure::audit_logger::AuditLogger;
 use koprogo_api::infrastructure::database::*;
 use koprogo_api::infrastructure::email::EmailService;
+use koprogo_api::infrastructure::grid::BoincGridAdapter;
+use koprogo_api::infrastructure::mqtt::{MqttConfig, MqttEnergyAdapter};
 use koprogo_api::infrastructure::storage::{
     FileStorage, S3Storage, S3StorageConfig, StorageProvider,
 };
@@ -251,6 +254,14 @@ async fn main() -> std::io::Result<()> {
     let two_factor_use_cases =
         TwoFactorUseCases::new(two_factor_repo, user_repo.clone(), encryption_key);
     let iot_use_cases = IoTUseCases::new(iot_repo.clone());
+
+    // IoT Phase 1: MQTT Home Assistant adapter + BOINC Grid
+    let mqtt_config = MqttConfig::from_env();
+    let mqtt_energy_adapter: Arc<dyn MqttEnergyPort> =
+        Arc::new(MqttEnergyAdapter::new(mqtt_config, iot_repo.clone()));
+    let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
+    let boinc_use_cases = BoincUseCases::new(boinc_grid_adapter, iot_repo.clone());
+
     let oauth_redirect_uri = env::var("OAUTH_REDIRECT_URI").unwrap_or_else(|_| {
         format!(
             "http://{}:{}/api/v1/iot/linky/callback",
@@ -268,7 +279,7 @@ async fn main() -> std::io::Result<()> {
         owner_credit_balance_repo.clone(),
         owner_repo.clone(),
     );
-    let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
+    let notice_use_cases = NoticeUseCases::new(notice_repo, user_repo.clone());
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases = SharedObjectUseCases::new(
@@ -415,6 +426,8 @@ async fn main() -> std::io::Result<()> {
         audit_logger,
         email_service,
         pool.clone(),
+        mqtt_energy_adapter,
+        boinc_use_cases,
     ));
 
     log::info!(

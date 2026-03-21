@@ -28,7 +28,7 @@ pub struct SyndicResponseDto {
 }
 
 /// DTO cosignataire dans la réponse
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct AgeRequestCosignatoryDto {
     pub id: Uuid,
     pub owner_id: Uuid,
@@ -48,7 +48,7 @@ impl From<&AgeRequestCosignatory> for AgeRequestCosignatoryDto {
 }
 
 /// Réponse complète d'une demande d'AGE
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct AgeRequestResponseDto {
     pub id: Uuid,
     pub organization_id: Uuid,

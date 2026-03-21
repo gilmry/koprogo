@@ -2,17 +2,19 @@
 KoproGo - Roadmap par Capacités
 =========================================================
 
-:Version: 5.1
+:Version: 6.0
 :Modèle: Progression par jalons et métriques
 :Auteur: Gilles Maury - Fondateur KoproGo ASBL
 :Statut: Document de référence stratégique
-:Dernière mise à jour: 18 février 2026
+:Dernière mise à jour: 15 mars 2026
 
 .. note::
 
-   **WBS synchronisé le 2026-02-18** : Audit croisé code↔issues a corrigé les écarts.
-   3 issues fermées, 5 commentées, 6 créées rétroactivement.
-   Voir `WBS_2026_02_18.rst <WBS_2026_02_18.rst>`_ pour le détail complet.
+   **Mise à jour 2026-03-15** : Réorganisation des jalons et releases.
+   MCP Tools (#252-265) et itsme (#48) repoussés de J3 vers J4.
+   K3s infra (#266-268) déplacé vers J5.
+   Schéma releases simplifié : v0.1.0 (J0-J3) / v0.2.0 (J4 partiel).
+   WBS obsolètes supprimés. Voir `WBS_PROJET_COMPLET.rst <WBS_PROJET_COMPLET.rst>`_ pour le détail technique.
 
 .. contents:: Table des matières
    :depth: 3
@@ -478,23 +480,25 @@ Jalon 0: Fondations Techniques ✅
 * Identifier les besoins réels
 * Construire une base solide pour la suite
 
-Jalon 1: Sécurité & GDPR ⏳ (~75%)
+Jalon 1: Sécurité & GDPR ⏳ (~83%)
 ------------------------------------
 
 **Débloque**: 50-100 copropriétés (beta publique possible)
 
-**État**: En cours - 75% complété (Février 2026)
+**État**: En cours - 83% complété (Mars 2026) — 15 fermées, 3 ouvertes
 
-**Issues critiques**:
+**Issues**:
 
-* ✅ #39 : LUKS Encryption at-rest (COMPLÉTÉ)
-* ✅ #40 : Backups automatisés GPG + S3 (COMPLÉTÉ)
-* ✅ #41 : Monitoring Prometheus + Grafana + Loki (COMPLÉTÉ)
-* ✅ #42 : GDPR basique - export + effacement Articles 15 & 17 (COMPLÉTÉ)
-* ✅ #43 : Security hardening avancé - fail2ban, WAF/CrowdSec, IDS Suricata (COMPLÉTÉ)
-* ✅ #90 : GDPR complémentaire - Articles 16 (rectification), 18 (restriction), 21 (opposition marketing) (COMPLÉTÉ)
-* ⏳ #78 : Security Hardening Production - Rate limiting, JWT refresh tokens, 2FA TOTP (EN COURS)
-* ⏳ #48 : Authentification forte itsme® (EN ATTENTE)
+* ✅ #39 : LUKS Encryption at-rest
+* ✅ #40 : Backups automatisés GPG + S3
+* ✅ #41 : Monitoring Prometheus + Grafana + Loki
+* ✅ #42 : GDPR basique - export + effacement Articles 15 & 17
+* ✅ #43 : Security hardening avancé - fail2ban, WAF/CrowdSec, IDS Suricata
+* ✅ #78 : 2FA TOTP + rate limiting + JWT refresh tokens
+* ✅ #90 : GDPR complémentaire - Articles 16, 18, 21
+* ⏳ #271 : **CRITIQUE** — Quorum 50%+ validation AG (Art. 3.87 §5 CC)
+* ⏳ #272 : **CRITIQUE** — 2e convocation si quorum non atteint (Art. 3.87 §5 CC)
+* ⏳ #273 : Réduction vote mandataire (Art. 3.87 §7 CC) — ✅ done, à fermer
 
 **Livrables complétés**:
 
@@ -505,24 +509,22 @@ Jalon 1: Sécurité & GDPR ⏳ (~75%)
 * ✅ Conformité GDPR Articles 15, 16, 17, 18, 21 & 30
 * ✅ SSH hardening, kernel hardening, HSTS, CSP
 * ✅ Login rate limiting (5 tentatives/15min)
+* ✅ 2FA TOTP optionnel avec backup codes
+* ✅ JWT refresh token rotation
 
 **Livrables restants**:
 
-* ⏳ Rate limiting global par IP et utilisateur (Redis)
-* ⏳ JWT refresh token rotation (15min access / 7j refresh)
-* ⏳ 2FA optionnel TOTP
-* ⏳ Intégration itsme® (inscription en attente)
+* ⏳ Validation quorum 50%+ AG (wiring migration existante)
+* ⏳ Workflow 2e convocation automatique
+* ⏳ Vérification procurations (#273 — marqué done)
+
+.. note::
+
+   #48 (itsme/eID) déplacé en **Jalon 4** (mars 2026). Pas réaliste pour la 0.1.0.
 
 **Conformité légale**: 40%
 
-**Ce que ça débloques**:
-
-* **Confiance juridique**: Données protégées légalement
-* **Beta publique**: On peut ouvrir sans risque GDPR
-* **Premiers revenus**: Cloud géré devient possible
-* **Réputation**: "Sécurité d'abord" attire utilisateurs exigeants
-
-**Effort restant estimé**: 2-4 semaines (solo)
+**Effort restant estimé**: ~6h (3 bugs legal)
 
 Jalon 2: Conformité Légale Belge ✅
 -------------------------------------
@@ -565,139 +567,156 @@ Jalon 2: Conformité Légale Belge ✅
 * ✅ **Conseil copropriété**: Copros >20 lots accessibles (60% du marché belge)
 * ✅ **Comptabilité conforme**: Crédibilité auprès syndics professionnels
 
-Jalon 3: Features Différenciantes ⏳ (~70%)
+Jalon 3: Features Différenciantes ⏳ (~56%)
 ---------------------------------------------
 
 **Débloque**: 500-1.000 copropriétés (différenciation marché)
 
-**État**: En cours - 70% complété (Mars 2026)
+**État**: En cours - 56% (Mars 2026) — 9 fermées, 7 ouvertes
 
-**Issues**:
+**Release cible**: v0.1.0
 
-* ✅ #46 : Voting Digital AG (3 types majorité, tantièmes/millièmes, procuration, audit GDPR)
-* ✅ #49 : Community Features complet - 6 phases (SEL, Notice Board, Skills Directory, Object Sharing, Resource Booking, Gamification) - ~21,100 LOC
-* ✅ #84 : Paiements en ligne (Stripe Payment Intents + SEPA Direct Debit, remboursements, 38 endpoints)
-* ✅ #51 : Sondages Board (YesNo/MultipleChoice/Rating/OpenEnded, vote anonyme, résultats)
-* ✅ #99 : Community modules SEL, Swap Shop, Skills, Object Lending (toutes 6 phases complètes)
-* ✅ #133 : IoT Linky integration (Smart Electricity Monitoring)
-* ✅ #134 : Work Reports & Technical Inspections REST API (COMPLÉTÉ)
-* ⏳ #47 : PDF Generation étendue (PV AG, états financiers, contrats) (EN COURS)
-* ⏳ #52 : Contractor Backoffice (Work reports, photos, payment validation) (EN COURS)
-* ⏳ #237 : AG Visioconférence → remplacé par #274 (implémentation BC15)
-* ⏳ #235 : Backoffice prestataires PWA → remplacé par #275 (implémentation BC16)
-* ⏳ #271 : Correction légale CRITIQUE — Quorum 50%+ (Art. 3.87 §5) [WP-LEGAL P0]
-* ⏳ #272 : Correction légale CRITIQUE — 2e convocation si quorum KO (Art. 3.87 §5) [WP-LEGAL P0]
-* ⏳ #273 : Correction légale CRITIQUE — Procurations max 3 (Art. 3.87 §7) [WP-LEGAL P0]
-* ⏳ #274 : BC15 — AG Visioconférence (AgSession, quorum combiné, Art. 3.87 §1) [P0]
-* ⏳ #275 : BC16 — Backoffice corps de métier PWA (ContractorReport, magic link) [P1]
-* ⏳ #276 : BC14 — Marketplace + enquêtes satisfaction (ancre L13 Art. 3.89 §5 12°) [P1]
-* ⏳ #277 : Guide légal contextuel UI (LegalHelper.svelte, AG Wizard) [P1]
-* ⏳ #278 : Blog série Bâtiment & Copropriété (18 articles RST) [P2]
-* ⏳ #279 : BC17 — AGE Agile 1/5 quotités + concertation officielle (Art. 3.87 §2 al.2) [P0]
-* ⏳ #280 : Orchestrateur neutre achat groupé énergie + CER (CREG-compliant) [P1]
-* ⏳ #252-265 : MCP Tools AI Syndic (14 tools dont legal_search, travaux_qualifier) [P1]
+**Issues fermées**:
+
+* ✅ #46 : Voting Digital AG (3 types majorité, tantièmes/millièmes, procuration)
+* ✅ #49 : Community Features 6 phases (SEL, Notice, Skills, Sharing, Booking, Gamification) — ~21,100 LOC
+* ✅ #84 : Paiements en ligne (Stripe + SEPA, 38 endpoints)
+* ✅ #51 : Sondages Board (4 types, anonymat, résultats)
+* ✅ #99 : Community modules complets
+* ✅ #133 : IoT Linky integration
+* ✅ #134 : Work Reports & Technical Inspections
+* ✅ #52/#91 : Devis entrepreneurs avec comparaison multi-entrepreneurs
+* ✅ #96 : Energy campaigns (achat groupé)
+
+**Issues ouvertes** (scope release 0.1.0):
+
+* ⏳ #274 : BC15 — AG Visioconférence (backend ✅, BDD ✅, manque E2E + frontend)
+* ⏳ #275 : BC16 — Backoffice prestataires PWA (backend ✅, BDD ✅, frontend ✅, manque E2E)
+* ⏳ #276 : BC14 — Marketplace corps de métier + satisfaction (non implémenté)
+* ⏳ #277 : Guide légal contextuel UI (LegalHelper, AG Wizard) (non implémenté)
+* ⏳ #278 : Blog 18 articles RST (documentation)
+* ⏳ #279 : BC17 — AGE Agile 1/5 quotités + concertation (backend ✅, BDD ✅, manque E2E + frontend)
+* ⏳ #280 : Orchestrateur énergie neutre + CER (non implémenté)
+
+.. note::
+
+   **Mars 2026** : 13 issues MCP (#252-265) et #48 (itsme) déplacées vers **Jalon 4**.
+   3 issues K3s infra (#266-268) déplacées vers **Jalon 5**.
+   3 bugs legal (#271-273) restent dans **Jalon 1**.
 
 **Livrables complétés**:
 
-* ✅ Votes AG avec 3 types de majorité (Simple/Absolute/Qualified) + tantièmes
-* ✅ Sondages consultations rapides (4 types, anonymat, résultats)
-* ✅ Monnaie locale SEL (time-based: 1h = 1 crédit, leaderboard, statistiques)
-* ✅ Bibliothèque objets partagés + Réservation ressources + Skills Directory
-* ✅ Gamification complète (achievements 8 catégories, challenges, leaderboard)
-* ✅ Paiements Stripe + SEPA avec méthodes de paiement stockées
-* ✅ Work Reports & Technical Inspections REST API (Issue #134)
-* ✅ IoT Linky integration (Issue #133)
-* ✅ Frontend UI complet pour toutes les features
+* ✅ Votes AG avec 3 types de majorité + tantièmes
+* ✅ Sondages consultations rapides (4 types, anonymat)
+* ✅ SEL monnaie locale (1h = 1 crédit, leaderboard)
+* ✅ Bibliothèque objets + Réservation ressources + Skills
+* ✅ Gamification (achievements, challenges, leaderboard)
+* ✅ Paiements Stripe + SEPA avec méthodes stockées
+* ✅ Work Reports & Technical Inspections
+* ✅ IoT Linky + Energy Campaigns
+* ✅ Frontend UI pour toutes les features fermées
 
-**Livrables restants (Jalon 3+)**:
+**Livrables restants**:
 
-* ⏳ **WP-LEGAL (P0, ~6h)** — Corrections critiques légales (quorum, 2e convoc, procurations)
-* ⏳ **BC15 (P0, ~12h)** — AG Visioconférence avec quorum combiné (présentiel + distanciel)
-* ⏳ **BC17 (P0, ~14h)** — AGE Agile : pétition 1/5 quotités + auto-convocation distance
-* ⏳ **BC16 (P1, ~16h)** — Backoffice corps de métier PWA + magic link + validation CdC
-* ⏳ **BC14 (P1, ~20h)** — Marketplace prestataires + rapport L13 automatique
-* ⏳ **WP-GUIDE (P1, ~10h)** — Guide légal contextuel (LegalHelper + AG Wizard)
-* ⏳ **WP-ENERGY (P1, ~16h)** — Orchestrateur énergie neutre (CER, maisons individuelles, CREG)
-* ⏳ **WP-MCP (P1, ~30h)** — 14 MCP tools AI Syndic (#252-265)
-* ⏳ **WP-BLOG (P2, ~22h)** — 18 articles blog (bâtiment + énergie)
-* ⏳ Templates PDF documents légaux (PV AG, relevé charges, contrats)
-* ⏳ Contractor Backoffice frontend
+* ⏳ **BC15 (P0, ~8h)** — AG Visioconférence + quorum combiné
+* ⏳ **BC17 (P0, ~8h)** — AGE Agile : pétition 1/5 + auto-convocation
+* ⏳ **BC16 (P1, ~6h)** — Backoffice prestataires (E2E manquant)
+* ⏳ **BC14 (P1, ~20h)** — Marketplace prestataires + satisfaction
+* ⏳ **WP-GUIDE (P1, ~10h)** — Guide légal contextuel UI
+* ⏳ **WP-ENERGY (P1, ~16h)** — Orchestrateur énergie neutre
+* ⏳ **WP-BLOG (P2, ~22h)** — 18 articles blog
 
-**Nouveaux Bounded Contexts (Jalon 3+)**:
+**Conformité légale**: 80%
 
-* **BC14 Marketplace & Evaluations** — ServiceProvider, ContractEvaluation (ancre L13 Art. 3.89 §5 12°)
-* **BC15 AG Visioconférence** — AgSession, quorum combiné, convocation enrichie (Art. 3.87 §1)
-* **BC16 Contractor Backoffice PWA** — ContractorReport, magic link JWT, CdC validation → paiement
-* **BC17 AGE Agile & Concertation** — AgeRequest, pétition 1/5 quotités, auto-convocation (Art. 3.87 §2 al.2)
+**Effort restant estimé**: ~90h (voir `WBS_RELEASE_0_1_0.md <WBS_RELEASE_0_1_0.md>`_)
 
-**Conformité légale**: 65% (3 lacunes critiques identifiées → WP-LEGAL)
-
-**Avantage compétitif**: Features communautaires uniques + achat groupé énergie transparent (0 commission)
-
-**Effort restant estimé**: ~150h (WBS_RELEASE_0_6_0.rst)
-
-Jalon 4: Automation & Intégrations ⏳ (~71%)
+Jalon 4: Automation & Intégrations ⏳ (~50%)
 ----------------------------------------------
 
 **Débloque**: 1.000-2.000 copropriétés (scalabilité)
 
-**État**: En cours - 71% (Février 2026)
+**État**: En cours - 50% (Mars 2026) — 14 fermées, 14 ouvertes
 
-**Issues**:
+**Release cible**: v0.2.0
 
-* ✅ #88 : Convocations AG automatiques (délais légaux 15j/8j, tracking email, procuration, rappels J-3)
+**Issues fermées**:
+
+* ✅ #88 : Convocations AG automatiques (délais légaux 15j/8j, tracking email, rappels J-3)
 * ✅ #89 : Carnet d'Entretien Digital
-* ✅ #90 : GDPR complet Articles 16, 18, 21 (rectification, restriction, opposition marketing)
-* ✅ #85 : Ticketing maintenance (workflow 6 états, 5 priorités, 7 catégories, SLA auto)
-* ✅ #86 : Notifications multi-canal (Email, SMS, Push, In-App, 22 types, préférences granulaires)
-* ✅ #91 : Devis travaux avec comparaison multi-entrepreneurs (scoring automatique: prix 40%, délai 30%, garantie 20%, réputation 10%)
-* ✅ #92 : Page publique syndic (SEO, slug URL, aucune auth requise)
-* ✅ #110 : Groupements d'achat énergie (Energy Buying Groups)
-* ✅ #133 : Intégration API Linky/Ores (Smart Electricity Monitoring)
-* ⏳ #67 : Documentation GDPR & revue qualité (EN ATTENTE)
-* ⏳ #71 : Rôles Organization Admin / Building Manager (EN ATTENTE)
-* ⏳ #72 : RBAC granulaire - matrice droits dynamique (EN ATTENTE)
-* ⏳ #93 : Accessibilité WCAG 2.1 AA (EN ATTENTE)
+* ✅ #90 : GDPR complet Articles 16, 18, 21
+* ✅ #85 : Ticketing maintenance (6 états, 5 priorités, SLA auto)
+* ✅ #86 : Notifications multi-canal (Email, SMS, Push, In-App, 22 types)
+* ✅ #91 : Devis travaux + comparaison multi-entrepreneurs (scoring belge)
+* ✅ #92 : Page publique syndic SEO-friendly
+* ✅ #110 : Groupements d'achat énergie
+* ✅ #64, #65 : GDPR Articles 21, 16/18 (implémentation K3s)
+* ✅ #67 : Documentation GDPR
+* ✅ #71, #72 : Rôles étendus + RBAC (étude)
+* ✅ #93 : Accessibilité WCAG 2.1 AA
 
-**Livrables complétés**:
+**Issues ouvertes** (scope release 0.2.0):
 
-* ✅ Workflow AG 100% automatisé (convocations, tracking, rappels)
-* ✅ Carnet maintenance digital avec alertes
-* ✅ GDPR compliance totale (Articles 15, 16, 17, 18, 21, 30)
-* ✅ Comparaison devis multi-entrepreneurs avec scoring belge
-* ✅ Page publique syndic SEO-friendly
-* ✅ Ticketing maintenance complet avec SLA
-* ✅ Notifications multi-canal avec préférences
-* ✅ Groupements d'achat énergie + Smart monitoring
-* ✅ Frontend UI complet pour toutes les features
+* ⏳ #252 : MCP — Serveur SSE + JSON-RPC handler
+* ⏳ #253 : MCP — Auth JWT + matrice rôle/outil
+* ⏳ #254 : MCP — legal_search + majority_calculator
+* ⏳ #255 : MCP — copropriete_info + list_coproprietaires
+* ⏳ #256 : MCP — ag_create + ag_quorum_check + ag_vote + ag_generate_pv
+* ⏳ #257 : MCP — comptabilite_situation + appel_de_fonds
+* ⏳ #258 : MCP — travaux_qualifier
+* ⏳ #259 : MCP — transmission_lot_dossier
+* ⏳ #260 : MCP — alertes_list
+* ⏳ #261 : MCP — documents_list + document_generate
+* ⏳ #262 : MCP — Indexation base légale docs/legal/
+* ⏳ #263 : MCP — Prompt système + intégration Claude
+* ⏳ #265 : MCP — énergie (campagne_list, offre, comparer_tarif)
+* ⏳ #48 : Authentification forte itsme/eID pour votes AG
+
+**Livrables complétés**: voir issues fermées ci-dessus
 
 **Livrables restants**:
 
-* ⏳ Documentation GDPR & revue qualité (Issue #67)
-* ⏳ Rôles Organization Admin / Building Manager (Issue #71)
-* ⏳ RBAC granulaire (matrice droits dynamique) (Issue #72)
-* ⏳ Accessibilité WCAG 2.1 AA (European Accessibility Act) (Issue #93)
+* ⏳ **MCP AI Syndic** (13 issues, ~100h) — Serveur SSE, auth JWT, 10+ tools métier
+* ⏳ **Auth itsme/eID** (#48, ~20h) — Intégration pour votes AG sécurisés
 
 **Conformité légale**: 95%
 
-**Effort restant estimé**: 4-6 semaines (solo) - GDPR docs + RBAC + WCAG accessibility
+**Effort restant estimé**: ~120h (MCP + itsme)
 
-Jalon 5: Mobile & API Publique
--------------------------------
+Jalon 5: Mobile & API Publique ⏳ (~29%)
+------------------------------------------
 
 **Débloque**: 2.000-5.000 copropriétés (expansion)
 
+**État**: 29% (Mars 2026) — 2 fermées, 10 ouvertes
+
+**Issues ouvertes**: #87 (PWA), #97 (BI), #98 (Mobile), #266-268 (K3s infra), #295 (Tauri Desktop), #296 (Tauri Mobile), #297 (SQLite Adapters), #298 (Sync offline/online), #299 (Workspace Cargo)
+
+**Technologie cible**: `Tauri v2 <https://tauri.app/>`_ (Rust + Webview natif)
+
+* Architecture hexagonale → même Domain/Application, nouveaux adapters (SQLite, Tauri commands)
+* Desktop : Windows, macOS, Linux (binaire ~10 MB vs ~150 MB Electron)
+* Mobile : iOS, Android (même codebase Rust + Svelte)
+* Mode offline : SQLite local + sync bidirectionnelle avec PostgreSQL serveur
+
 **Features**:
 
-* PWA mobile responsive
+* 🖥️ Application desktop Tauri (Windows/macOS/Linux) — #295
+* 📱 Application mobile Tauri (iOS/Android) — #296
+* 💾 Adapters SQLite pour mode local/offline — #297
+* 🔄 Sync bidirectionnelle SQLite ↔ PostgreSQL — #298
+* 📦 Workspace Cargo (crate partagé koprogo-core) — #299
+* PWA mobile responsive — #87
 * API publique v1 documentée (OpenAPI)
 * Multi-langue NL/FR/DE/EN complet
 * Intégrations comptables (Winbooks, Exact)
-* Notifications intelligentes
-* Analytics & Dashboards
+* K3s infrastructure (Terraform + Ansible + ArgoCD) — #266-268
+* Analytics & Dashboards — #97
 
 **Livrables**:
 
+* Application desktop installable (MSI, DMG, AppImage)
+* Application mobile (App Store, Google Play)
+* Mode offline avec sync automatique
 * Progressive Web App installable
 * SDK Python/JS/PHP
 * Webhooks pour événements
@@ -709,9 +728,11 @@ Jalon 5: Mobile & API Publique
 
 **Ce que ça débloques**:
 
+* **Desktop/Mobile natif**: Tauri → expérience native sur tous les OS
+* **Mode offline**: SQLite local → utilisable sans connexion, sync au retour
 * **Écosystème**: API publique → développeurs tiers
 * **Intégrations**: Winbooks/Exact → syndics professionnels
-* **Mobile**: PWA → adoption copropriétaires
+* **Mobile**: PWA + Tauri → adoption copropriétaires
 * **International**: Multi-langue → expansion EU
 
 **Effort estimé selon force de travail**:

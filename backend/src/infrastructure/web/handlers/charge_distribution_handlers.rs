@@ -38,6 +38,7 @@ pub async fn calculate_and_save_distribution(
 #[get("/invoices/{expense_id}/distribution")]
 pub async fn get_distribution_by_expense(
     state: web::Data<AppState>,
+    _user: AuthenticatedUser,
     expense_id: web::Path<Uuid>,
 ) -> impl Responder {
     match state

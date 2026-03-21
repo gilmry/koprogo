@@ -14,9 +14,27 @@ async function registerAndLoginAsOwner(page: Page): Promise<{
   token: string;
   userId: string;
   email: string;
+  orgId: string;
 }> {
   const timestamp = Date.now();
   const email = `owner-test-${timestamp}@example.com`;
+
+  // Admin login to create org
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminToken = (await adminLoginResp.json()).token;
+
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `Owner Test Org ${timestamp}`,
+      slug: `owner-test-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
 
   const response = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
@@ -25,6 +43,7 @@ async function registerAndLoginAsOwner(page: Page): Promise<{
       first_name: "Owner",
       last_name: `Test${timestamp}`,
       role: "owner",
+      organization_id: org.id,
     },
   });
   expect(response.ok()).toBeTruthy();
@@ -37,7 +56,12 @@ async function registerAndLoginAsOwner(page: Page): Promise<{
   await page.getByTestId("login-submit").click();
   await page.waitForURL(/\/(owner|syndic|admin)/, { timeout: 15000 });
 
-  return { token: data.token, userId: data.user.id, email };
+  return {
+    token: data.token,
+    userId: data.user?.id || data.id || "",
+    email,
+    orgId: org.id,
+  };
 }
 
 test.describe("Owner Dashboard - Main Portal", () => {
@@ -47,7 +71,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-dashboard']").first(),
+      page.locator("main h1, main h2, [data-testid='owner-dashboard']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -57,7 +81,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-profile']").first(),
+      page.locator("main h1, main h2, [data-testid='owner-profile']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -67,7 +91,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-documents']").first(),
+      page.locator("main h1, main h2, [data-testid='owner-documents']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -77,7 +101,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-expenses']").first(),
+      page.locator("main h1, main h2, [data-testid='owner-expenses']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -87,7 +111,7 @@ test.describe("Owner Dashboard - Main Portal", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-tickets']").first(),
+      page.locator("main h1, main h2, [data-testid='owner-tickets']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });
@@ -99,7 +123,7 @@ test.describe("Owner Dashboard - Payments", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-payments']").first(),
+      page.locator("main h1, main h2, [data-testid='owner-payments']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -109,7 +133,9 @@ test.describe("Owner Dashboard - Payments", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-payment-methods']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='owner-payment-methods']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });
@@ -135,7 +161,7 @@ test.describe("Owner Dashboard - Navigation", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-units']").first(),
+      page.locator("main h1, main h2, [data-testid='owner-units']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -145,7 +171,7 @@ test.describe("Owner Dashboard - Navigation", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='owner-contact']").first(),
+      page.locator("main h1, main h2, [data-testid='owner-contact']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });

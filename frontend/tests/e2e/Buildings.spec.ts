@@ -70,7 +70,7 @@ test.describe("Buildings - List and Detail", () => {
     await expect(page.locator("body")).toBeVisible();
     // Look for buildings heading or table
     await expect(
-      page.locator("h1, h2, [data-testid='buildings-list']").first(),
+      page.locator("main h1, main h2, [data-testid='buildings-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

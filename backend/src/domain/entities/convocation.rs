@@ -21,8 +21,10 @@ impl ConvocationType {
     /// This 15-day minimum applies to ALL assembly types (ordinary, extraordinary,
     /// and second convocation after quorum failure).
     pub fn minimum_notice_days(&self) -> i64 {
-        // Belgian law does not distinguish between assembly types for notice period.
-        // All require minimum 15 days (Art. 3.87 §3 CC).
+        // Belgian law notice periods per Art. 3.87 §3 Code Civil:
+        // "Sauf dans les cas d'urgence, la convocation est communiquée quinze jours
+        // au moins avant la date de l'assemblée."
+        // 15 days minimum for ALL assembly types (ordinary, extraordinary, second convocation).
         match self {
             ConvocationType::Ordinary
             | ConvocationType::Extraordinary

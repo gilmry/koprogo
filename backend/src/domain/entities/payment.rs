@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 /// Payment transaction status following Stripe webhook lifecycle
 /// Note: This is different from expense::PaymentStatus which tracks expense payment state
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum TransactionStatus {
     /// Payment intent created but not yet processed
@@ -24,7 +24,7 @@ pub enum TransactionStatus {
 }
 
 /// Payment method type (extensible for future methods)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PaymentMethodType {
     /// Credit/debit card via Stripe
@@ -44,7 +44,7 @@ pub enum PaymentMethodType {
 /// - Linked to Expense entity (charge to co-owners)
 /// - Supports Stripe (cards) and SEPA (bank transfers)
 /// - Includes idempotency key for safe retries
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct Payment {
     pub id: Uuid,
     /// Organization (multi-tenant isolation)

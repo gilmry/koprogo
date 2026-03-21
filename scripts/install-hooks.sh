@@ -61,6 +61,12 @@ echo "🚀 Running pre-push checks..."
 # Change to project root
 cd "$(git rev-parse --show-toplevel)"
 
+# Load nvm and use the version declared in .nvmrc (Node >=22 required by Astro)
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+# shellcheck source=/dev/null
+[ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+[ -f ".nvmrc" ] && nvm use --silent 2>/dev/null || true
+
 # Run full CI checks (lint + check-frontend + test + audit)
 make ci || {
     echo "❌ CI checks failed. Please fix issues before pushing."

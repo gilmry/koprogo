@@ -7,6 +7,20 @@ use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
 
+#[utoipa::path(
+    post,
+    path = "/buildings",
+    tag = "Buildings",
+    summary = "Create a building",
+    request_body = CreateBuildingDto,
+    responses(
+        (status = 201, description = "Building created successfully"),
+        (status = 400, description = "Bad Request"),
+        (status = 403, description = "Forbidden - SuperAdmin only"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[post("/buildings")]
 pub async fn create_building(
     state: web::Data<AppState>,
@@ -95,6 +109,18 @@ pub async fn create_building(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/buildings",
+    tag = "Buildings",
+    summary = "List buildings (paginated)",
+    params(PageRequest),
+    responses(
+        (status = 200, description = "Paginated list of buildings"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/buildings")]
 pub async fn list_buildings(
     state: web::Data<AppState>,
@@ -120,6 +146,21 @@ pub async fn list_buildings(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/buildings/{id}",
+    tag = "Buildings",
+    summary = "Get a building by ID",
+    params(
+        ("id" = Uuid, Path, description = "Building UUID")
+    ),
+    responses(
+        (status = 200, description = "Building found"),
+        (status = 404, description = "Building not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/buildings/{id}")]
 pub async fn get_building(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
     match state.building_use_cases.get_building(*id).await {
@@ -133,6 +174,24 @@ pub async fn get_building(state: web::Data<AppState>, id: web::Path<Uuid>) -> im
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/buildings/{id}",
+    tag = "Buildings",
+    summary = "Update a building",
+    params(
+        ("id" = Uuid, Path, description = "Building UUID")
+    ),
+    request_body = UpdateBuildingDto,
+    responses(
+        (status = 200, description = "Building updated successfully"),
+        (status = 400, description = "Bad Request"),
+        (status = 403, description = "Forbidden - SuperAdmin only"),
+        (status = 404, description = "Building not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[put("/buildings/{id}")]
 pub async fn update_building(
     state: web::Data<AppState>,
@@ -237,6 +296,22 @@ pub async fn update_building(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/buildings/{id}",
+    tag = "Buildings",
+    summary = "Delete a building",
+    params(
+        ("id" = Uuid, Path, description = "Building UUID")
+    ),
+    responses(
+        (status = 204, description = "Building deleted successfully"),
+        (status = 403, description = "Forbidden - SuperAdmin only"),
+        (status = 404, description = "Building not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[delete("/buildings/{id}")]
 pub async fn delete_building(
     state: web::Data<AppState>,
@@ -289,7 +364,7 @@ pub async fn delete_building(
 /// GET /buildings/{building_id}/export-annual-report-pdf?year={2025}&reserve_fund={10000.00}&total_income={50000.00}
 ///
 /// Generates a "Rapport Financier Annuel" PDF for a building's annual financial summary.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::IntoParams)]
 pub struct ExportAnnualReportQuery {
     pub year: i32,
     #[serde(default)]
@@ -298,6 +373,23 @@ pub struct ExportAnnualReportQuery {
     pub total_income: Option<f64>, // Optional total income (calculated if not provided)
 }
 
+#[utoipa::path(
+    get,
+    path = "/buildings/{id}/export-annual-report-pdf",
+    tag = "Buildings",
+    summary = "Export annual financial report as PDF",
+    params(
+        ("id" = Uuid, Path, description = "Building UUID"),
+        ExportAnnualReportQuery
+    ),
+    responses(
+        (status = 200, description = "PDF generated successfully", content_type = "application/pdf"),
+        (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Building not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearer_auth" = []))
+)]
 #[get("/buildings/{id}/export-annual-report-pdf")]
 pub async fn export_annual_report_pdf(
     state: web::Data<AppState>,

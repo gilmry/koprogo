@@ -79,6 +79,7 @@ async fn create_test_owner(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
     let owner = app_state
         .owner_use_cases
@@ -190,9 +191,9 @@ async fn test_create_convocation_all_meeting_types() {
     .await;
 
     let meeting_types = vec![
-        ("Ordinary", 30),          // 15-day requirement
-        ("Extraordinary", 20),     // 8-day requirement
-        ("SecondConvocation", 20), // 8-day requirement
+        ("Ordinary", 30),          // 15-day requirement (Art. 3.87 §3 CC)
+        ("Extraordinary", 20),     // 15-day requirement (Art. 3.87 §3 CC)
+        ("SecondConvocation", 20), // 15-day requirement (Art. 3.87 §3 CC)
     ];
 
     for (meeting_type, days_ahead) in meeting_types {
@@ -1420,9 +1421,9 @@ async fn test_legal_deadline_extraordinary_ag() {
     let token = common::register_and_login(&app_state, org_id).await;
     let building_id = create_test_building(&app_state, org_id).await;
 
-    // Extraordinary AG requires 8 days minimum notice
-    // Meeting 10 days from now = respects deadline
-    let meeting_date = Utc::now() + Duration::days(10);
+    // Extraordinary AG requires 15 days minimum notice (Art. 3.87 §3 CC)
+    // Meeting 20 days from now = respects deadline
+    let meeting_date = Utc::now() + Duration::days(20);
     let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
@@ -1447,16 +1448,16 @@ async fn test_legal_deadline_extraordinary_ag() {
     let create_resp = test::call_service(&app, create_req).await;
     let convocation: ConvocationResponse = test::read_body_json(create_resp).await;
 
-    // minimum_send_date should be meeting_date - 8 days
-    let expected_minimum_send = meeting_date - Duration::days(8);
+    // minimum_send_date should be meeting_date - 15 days
+    let expected_minimum_send = meeting_date - Duration::days(15);
     assert!(
         convocation.minimum_send_date <= expected_minimum_send + Duration::seconds(5),
-        "Minimum send date should be at least 8 days before meeting"
+        "Minimum send date should be at least 15 days before meeting"
     );
 
     assert!(
         convocation.respects_legal_deadline,
-        "Extraordinary AG with 10 days notice should respect legal deadline"
+        "Extraordinary AG with 20 days notice should respect legal deadline"
     );
 }
 
@@ -1467,9 +1468,9 @@ async fn test_legal_deadline_second_convocation() {
     let token = common::register_and_login(&app_state, org_id).await;
     let building_id = create_test_building(&app_state, org_id).await;
 
-    // Second convocation requires 8 days minimum notice (after quorum not reached)
-    // Meeting 9 days from now = respects deadline
-    let meeting_date = Utc::now() + Duration::days(9);
+    // Second convocation requires 15 days minimum notice (Art. 3.87 §3 CC)
+    // Meeting 20 days from now = respects deadline
+    let meeting_date = Utc::now() + Duration::days(20);
     let meeting_id = create_test_meeting(&app_state, org_id, building_id, meeting_date).await;
 
     let app = test::init_service(
@@ -1496,6 +1497,6 @@ async fn test_legal_deadline_second_convocation() {
 
     assert!(
         convocation.respects_legal_deadline,
-        "Second convocation with 9 days notice should respect legal deadline"
+        "Second convocation with 20 days notice should respect legal deadline"
     );
 }

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct CreateBuildingDto {
     pub organization_id: String,
 
@@ -29,7 +29,7 @@ pub struct CreateBuildingDto {
     pub construction_year: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Validate, Clone)]
+#[derive(Debug, Serialize, Deserialize, Validate, Clone, utoipa::ToSchema)]
 pub struct UpdateBuildingDto {
     pub organization_id: Option<String>, // SuperAdmin can change organization
 
@@ -57,7 +57,7 @@ pub struct UpdateBuildingDto {
     pub construction_year: Option<i32>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct BuildingResponseDto {
     pub id: String,
     pub organization_id: String,

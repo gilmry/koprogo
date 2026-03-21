@@ -1,3 +1,5 @@
+use crate::application::ports::mqtt_energy_port::MqttEnergyPort;
+use crate::application::use_cases::boinc_use_cases::BoincUseCases;
 use crate::application::use_cases::{
     AccountUseCases, AchievementUseCases, AgSessionUseCases, AgeRequestUseCases, AuthUseCases,
     BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases, BudgetUseCases,
@@ -70,6 +72,9 @@ pub struct AppState {
     pub audit_logger: Arc<AuditLogger>,
     pub email_service: Arc<EmailService>,
     pub pool: DbPool, // For seeding operations
+    // IoT Phase 1: MQTT Home Assistant + BOINC Grid
+    pub mqtt_energy_adapter: Arc<dyn MqttEnergyPort>,
+    pub boinc_use_cases: Arc<BoincUseCases>,
 }
 
 impl AppState {
@@ -127,6 +132,8 @@ impl AppState {
         audit_logger: AuditLogger,
         email_service: EmailService,
         pool: DbPool,
+        mqtt_energy_adapter: Arc<dyn MqttEnergyPort>,
+        boinc_use_cases: BoincUseCases,
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
@@ -181,6 +188,8 @@ impl AppState {
             audit_logger: Arc::new(audit_logger),
             email_service: Arc::new(email_service),
             pool,
+            mqtt_energy_adapter,
+            boinc_use_cases: Arc::new(boinc_use_cases),
         }
     }
 }

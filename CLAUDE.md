@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **📅 For the complete development roadmap, see [ROADMAP_PAR_CAPACITES.rst](docs/ROADMAP_PAR_CAPACITES.rst)**
 
 The roadmap follows a **capacity-based progression** (not fixed dates):
-- **Jalon 0 ✅**: Fondations Techniques (COMPLÉTÉ - Architecture, 73 endpoints API, tests)
+- **Jalon 0 ✅**: Fondations Techniques (COMPLÉTÉ - Architecture, 511 endpoints API, 57 entités domaine, 64 migrations, 110k+ LOC Rust)
 - **Jalon 1 🔒**: Sécurité & GDPR → Débloque 50-100 copros (beta publique)
 - **Jalon 2 📋**: Conformité Légale Belge → Débloque 200-500 copros (production)
 - **Jalon 3 🎯**: Features Différenciantes (Voting, SEL, Contractor) → Débloque 500-1,000 copros
@@ -625,6 +625,43 @@ Base URL: `http://localhost:8080/api/v1`
 **✅ NOUVEAU: Dashboard** (Accountant Dashboard):
    - `GET /dashboard/accountant/stats` - Get accountant dashboard statistics
    - `GET /dashboard/accountant/transactions` - Get recent transactions for dashboard (query: limit=10)
+**✅ NOUVEAU: AG Sessions Visioconférence** (BC15 - Art. 3.87 §1 CC):
+   - `POST /meetings/:meeting_id/ag-session` - Create video session for a meeting
+   - `GET /meetings/:meeting_id/ag-session` - Get session for a meeting
+   - `GET /ag-sessions` - List all sessions
+   - `GET /ag-sessions/:id` - Get session by ID
+   - `PUT /ag-sessions/:id/start` - Start session (Scheduled → Live)
+   - `PUT /ag-sessions/:id/end` - End session (Live → Ended)
+   - `PUT /ag-sessions/:id/cancel` - Cancel session (Scheduled → Cancelled)
+   - `PUT /ag-sessions/:id/record-join` - Record remote participant joining (updates quorum)
+   - `DELETE /ag-sessions/:id` - Delete session
+   - `GET /ag-sessions/:id/combined-quorum` - Calculate combined quorum (physical + remote)
+**✅ NOUVEAU: AGE Requests** (BC17 - Art. 3.87 §2 CC - Demandes d'AGE par copropriétaires):
+   - `POST /buildings/:building_id/age-requests` - Create AGE request
+   - `GET /buildings/:building_id/age-requests` - List building AGE requests
+   - `GET /age-requests/:id` - Get AGE request details
+   - `PUT /age-requests/:id/open` - Open for signatures (Draft → Open)
+   - `POST /age-requests/:id/cosign` - Add cosignatory (auto-threshold check at 1/5)
+   - `DELETE /age-requests/:id/cosignatories/:owner_id` - Remove cosignatory
+   - `POST /age-requests/:id/submit` - Submit to syndic (Reached → Submitted, starts 15-day deadline)
+   - `POST /age-requests/:id/accept` - Syndic accepts (Submitted → Accepted)
+   - `POST /age-requests/:id/reject` - Syndic rejects with reason (Submitted → Rejected)
+   - `POST /age-requests/:id/withdraw` - Initiator withdraws request
+   - `DELETE /age-requests/:id` - Delete request
+**✅ NOUVEAU: Contractor Reports** (BC16 - Backoffice Prestataires PWA):
+   - `POST /contractor-reports` - Create contractor report
+   - `GET /contractor-reports/:id` - Get report by ID
+   - `GET /buildings/:building_id/contractor-reports` - List reports by building
+   - `GET /tickets/:ticket_id/contractor-reports` - List reports by ticket
+   - `POST /contractor-reports/:id/submit` - Contractor submits report (Draft → Submitted)
+   - `PUT /contractor-reports/:id/review` - Start review (Submitted → UnderReview)
+   - `PUT /contractor-reports/:id/validate` - Board validates (→ Validated, triggers payment)
+   - `PUT /contractor-reports/:id/request-corrections` - Request corrections (→ RequiresCorrection)
+   - `PUT /contractor-reports/:id/reject` - Board rejects report
+   - `PUT /contractor-reports/:id` - Update report
+   - `DELETE /contractor-reports/:id` - Delete report
+   - `POST /contractor-reports/:id/generate-magic-link` - Generate 72h magic link JWT for contractor
+   - `GET /contractor-reports/magic/:token` - Access report via magic link (no auth required)
 
 ## Domain Entities
 
@@ -639,7 +676,7 @@ The system models property management with these aggregates:
 - **✅ NOUVEAU: Account**: Plan Comptable Normalisé Belge (PCMN AR 12/07/2012) - Issue #79
 - **✅ NOUVEAU: InvoiceLineItem**: Lignes de facturation avec TVA (6%, 12%, 21%) - Issue #73
 - **✅ NOUVEAU: PaymentReminder**: Relances automatisées (4 niveaux: Gentle → Formal → FinalNotice → LegalAction) - Issue #83
-- **Meeting**: General assemblies (date, agenda, minutes)
+- **Meeting**: General assemblies (date, agenda, minutes, quorum_validated, quorum_percentage, total_quotas, present_quotas — Art. 3.87 §5 CC)
 - **✅ NOUVEAU: Convocation**: Automatic AG invitations with legal compliance (meeting_type, meeting_date, minimum_send_date, status, pdf_file_path, language, total_recipients, opened_count, will_attend_count, respects_legal_deadline) - Issue #88
 - **✅ NOUVEAU: ConvocationRecipient**: Email tracking per owner (email_sent_at, email_opened_at, email_failed, reminder_sent_at, attendance_status, proxy_owner_id, needs_reminder) - Issue #88
 - **✅ NOUVEAU: Resolution**: Meeting resolutions with voting (title, description, type, majority_required, vote_counts, status) - Issue #46
@@ -679,6 +716,10 @@ The system models property management with these aggregates:
 - **✅ NOUVEAU: TwoFactorSecret**: TOTP 2FA configuration per user (user_id, organization_id, secret, is_enabled, backup_codes, verified_at, last_used_at)
 - **✅ NOUVEAU: OwnerContribution**: Individual owner payment contributions (organization_id, owner_id, unit_id, call_for_funds_id, description, amount, contribution_type, payment_status, payment_date, account_code)
 - **✅ NOUVEAU: CallForFunds**: Collective payment requests to all unit owners (organization_id, building_id, title, total_amount, contribution_type, status, call_date, due_date, account_code)
+- **✅ NOUVEAU: AgSession**: Video conference session for AG (Art. 3.87 §1 CC) — meeting_id, platform (Zoom/Teams/Meet/Jitsi/Whereby), video_url, host_url, status (Scheduled/Live/Ended/Cancelled), remote_attendees_count, remote_voting_power, quorum_remote_contribution, access_password, waiting_room_enabled, recording_enabled
+- **✅ NOUVEAU: AgeRequest**: Demande d'AGE par copropriétaires (Art. 3.87 §2 CC) — building_id, title, description, status (Draft/Open/Reached/Submitted/Accepted/Expired/Rejected/Withdrawn), cosignatories[], total_shares_pct, threshold_pct (0.20), submitted_to_syndic_at, syndic_deadline_at (15j), auto_convocation_triggered, concertation_poll_id
+- **✅ NOUVEAU: AgeRequestCosignatory**: Cosignataire d'une demande d'AGE — owner_id, shares_pct, signed_at
+- **✅ NOUVEAU: ContractorReport**: Rapport de travaux par prestataire via magic link PWA (BC16) — ticket_id, quote_id, contractor_name, work_date, compte_rendu, photos_before[], photos_after[], parts_replaced[], status (Draft/Submitted/UnderReview/Validated/Rejected/RequiresCorrection), magic_token_hash, magic_token_expires_at
 
 All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 
@@ -792,7 +833,7 @@ All entities use UUID for IDs and include `created_at`/`updated_at` timestamps.
 ### ✅ NOUVEAU: Automatic AG Convocations System - Issue #88 (Phase 2)
 
 - Système de convocations automatiques pour assemblées générales avec conformité légale belge
-- **Délais légaux obligatoires**: Ordinary AG (15 jours minimum avant réunion), Extraordinary AG (8 jours), Second Convocation (8 jours après quorum non atteint)
+- **Délais légaux obligatoires**: Ordinary AG (15 jours minimum), Extraordinary AG (15 jours minimum), Second Convocation (15 jours minimum) — Art. 3.87 §3 Code Civil belge
 - **Validation multi-niveaux**: Domain entity validation, repository checks, database constraints (minimum_send_date calculation)
 - **Workflow complet**: Draft → Scheduled → Sent → Cancelled
 - **Email tracking**: email_sent_at, email_opened_at (tracking pixel/link click), email_failed (bounce handling)

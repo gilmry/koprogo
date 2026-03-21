@@ -162,6 +162,11 @@ impl ContractorReport {
                 self.status
             ));
         }
+        if self.compte_rendu.as_deref().unwrap_or("").trim().is_empty() {
+            return Err(
+                "Le champ compte_rendu est obligatoire pour soumettre le rapport".to_string(),
+            );
+        }
         self.status = ContractorReportStatus::Submitted;
         self.submitted_at = Some(Utc::now());
         self.updated_at = Utc::now();
@@ -246,7 +251,7 @@ mod tests {
     use super::*;
 
     fn make_report() -> ContractorReport {
-        ContractorReport::new(
+        let mut r = ContractorReport::new(
             Uuid::new_v4(),
             Uuid::new_v4(),
             "Martin Plomberie SPRL".to_string(),
@@ -254,7 +259,9 @@ mod tests {
             None,
             None,
         )
-        .unwrap()
+        .unwrap();
+        r.compte_rendu = Some("Travaux effectués conformément au devis".to_string());
+        r
     }
 
     #[test]

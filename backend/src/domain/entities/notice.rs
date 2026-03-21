@@ -64,7 +64,7 @@ pub enum NoticeStatus {
 pub struct Notice {
     pub id: Uuid,
     pub building_id: Uuid,
-    pub author_id: Uuid, // Owner who created the notice
+    pub author_id: Uuid, // User (syndic, owner, admin) who created the notice
     pub notice_type: NoticeType,
     pub category: NoticeCategory,
     pub title: String,
