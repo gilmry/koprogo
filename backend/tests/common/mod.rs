@@ -246,7 +246,7 @@ pub async fn setup_test_db() -> (
         owner_credit_balance_repo.clone(),
         owner_repo.clone(),
     );
-    let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
+    let notice_use_cases = NoticeUseCases::new(notice_repo, user_repo.clone());
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases = SharedObjectUseCases::new(

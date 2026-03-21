@@ -43,18 +43,16 @@ impl SharedObjectUseCases {
     /// Create a new shared object
     ///
     /// # Authorization
-    /// - Owner must exist in the system
+    /// - Must be an owner in the organization (owners lend to other owners/tenants)
     pub async fn create_shared_object(
         &self,
         user_id: Uuid,
         organization_id: Uuid,
         dto: CreateSharedObjectDto,
     ) -> Result<SharedObjectResponseDto, String> {
-        // Resolve user_id to owner
         let owner = self.resolve_owner(user_id, organization_id).await?;
         let owner_id = owner.id;
 
-        // Create shared object entity (validates business rules)
         let object = SharedObject::new(
             owner_id,
             dto.building_id,
@@ -71,10 +69,8 @@ impl SharedObjectUseCases {
             dto.usage_instructions,
         )?;
 
-        // Persist object
         let created = self.shared_object_repo.create(&object).await?;
 
-        // Return enriched response
         let owner_name = format!("{} {}", owner.first_name, owner.last_name);
         Ok(SharedObjectResponseDto::from_shared_object(
             created, owner_name, None,
@@ -92,7 +88,6 @@ impl SharedObjectUseCases {
             .await?
             .ok_or("Shared object not found".to_string())?;
 
-        // Enrich with owner name
         let owner = self
             .owner_repo
             .find_by_id(object.owner_id)

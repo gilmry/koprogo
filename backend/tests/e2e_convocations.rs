@@ -79,6 +79,7 @@ async fn create_test_owner(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
     let owner = app_state
         .owner_use_cases

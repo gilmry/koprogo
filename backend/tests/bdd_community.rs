@@ -243,7 +243,7 @@ impl CommunityWorld {
             Arc::new(PostgresChallengeProgressRepository::new(pool.clone()));
         let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
 
-        let notice_use_cases = NoticeUseCases::new(notice_repo, owner_repo.clone());
+        let notice_use_cases = NoticeUseCases::new(notice_repo, user_repo.clone());
         let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
         let shared_object_use_cases =
             SharedObjectUseCases::new(shared_object_repo, owner_repo.clone(), credit_balance_repo);

@@ -1,24 +1,21 @@
 use crate::application::dto::{
     CreateNoticeDto, NoticeResponseDto, NoticeSummaryDto, SetExpirationDto, UpdateNoticeDto,
 };
-use crate::application::ports::{NoticeRepository, OwnerRepository};
+use crate::application::ports::{NoticeRepository, UserRepository};
 use crate::domain::entities::{Notice, NoticeCategory, NoticeStatus, NoticeType};
 use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct NoticeUseCases {
     notice_repo: Arc<dyn NoticeRepository>,
-    owner_repo: Arc<dyn OwnerRepository>,
+    user_repo: Arc<dyn UserRepository>,
 }
 
 impl NoticeUseCases {
-    pub fn new(
-        notice_repo: Arc<dyn NoticeRepository>,
-        owner_repo: Arc<dyn OwnerRepository>,
-    ) -> Self {
+    pub fn new(notice_repo: Arc<dyn NoticeRepository>, user_repo: Arc<dyn UserRepository>) -> Self {
         Self {
             notice_repo,
-            owner_repo,
+            user_repo,
         }
     }
 
@@ -27,36 +24,29 @@ impl NoticeUseCases {
         role == "admin" || role == "superadmin" || role == "syndic"
     }
 
-    /// Resolve user_id to owner_id via organization lookup
-    async fn resolve_owner(
-        &self,
-        user_id: Uuid,
-        organization_id: Uuid,
-    ) -> Result<crate::domain::entities::Owner, String> {
-        self.owner_repo
-            .find_by_user_id_and_organization(user_id, organization_id)
-            .await?
-            .ok_or_else(|| "Owner not found for this user in the organization".to_string())
+    /// Resolve user_id to display name via user lookup
+    async fn resolve_author_name(&self, user_id: Uuid) -> String {
+        match self.user_repo.find_by_id(user_id).await {
+            Ok(Some(user)) => format!("{} {}", user.first_name, user.last_name),
+            _ => "Unknown Author".to_string(),
+        }
     }
 
     /// Create a new notice (Draft status)
     ///
     /// # Authorization
-    /// - Author must be a member of the building (validated by owner_repo)
+    /// - Any authenticated user in the organization can post a notice
+    ///   (syndic, admin, owner — all are valid authors)
     pub async fn create_notice(
         &self,
         user_id: Uuid,
-        organization_id: Uuid,
+        _organization_id: Uuid,
         dto: CreateNoticeDto,
     ) -> Result<NoticeResponseDto, String> {
-        // Resolve user_id to owner
-        let author = self.resolve_owner(user_id, organization_id).await?;
-        let author_id = author.id;
-
-        // Create notice entity (validates business rules)
+        // author_id is the user's own ID (notices.author_id now references users.id)
         let notice = Notice::new(
             dto.building_id,
-            author_id,
+            user_id,
             dto.notice_type,
             dto.category,
             dto.title,
@@ -75,8 +65,7 @@ impl NoticeUseCases {
         // Persist notice
         let created = self.notice_repo.create(&notice).await?;
 
-        // Return enriched response
-        let author_name = format!("{} {}", author.first_name, author.last_name);
+        let author_name = self.resolve_author_name(user_id).await;
         Ok(NoticeResponseDto::from_notice(created, author_name))
     }
 
@@ -88,14 +77,7 @@ impl NoticeUseCases {
             .await?
             .ok_or("Notice not found".to_string())?;
 
-        // Enrich with author name
-        let author = self
-            .owner_repo
-            .find_by_id(notice.author_id)
-            .await?
-            .ok_or("Author not found".to_string())?;
-
-        let author_name = format!("{} {}", author.first_name, author.last_name);
+        let author_name = self.resolve_author_name(notice.author_id).await;
         Ok(NoticeResponseDto::from_notice(notice, author_name))
     }
 
@@ -192,10 +174,9 @@ impl NoticeUseCases {
         &self,
         notice_id: Uuid,
         user_id: Uuid,
-        organization_id: Uuid,
+        _organization_id: Uuid,
         dto: UpdateNoticeDto,
     ) -> Result<NoticeResponseDto, String> {
-        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut notice = self
             .notice_repo
             .find_by_id(notice_id)
@@ -203,7 +184,7 @@ impl NoticeUseCases {
             .ok_or("Notice not found".to_string())?;
 
         // Authorization: only author can update
-        if notice.author_id != owner.id {
+        if notice.author_id != user_id {
             return Err("Unauthorized: only author can update notice".to_string());
         }
 
@@ -233,9 +214,8 @@ impl NoticeUseCases {
         &self,
         notice_id: Uuid,
         user_id: Uuid,
-        organization_id: Uuid,
+        _organization_id: Uuid,
     ) -> Result<NoticeResponseDto, String> {
-        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut notice = self
             .notice_repo
             .find_by_id(notice_id)
@@ -243,7 +223,7 @@ impl NoticeUseCases {
             .ok_or("Notice not found".to_string())?;
 
         // Authorization: only author can publish
-        if notice.author_id != owner.id {
+        if notice.author_id != user_id {
             return Err("Unauthorized: only author can publish notice".to_string());
         }
 
@@ -265,10 +245,9 @@ impl NoticeUseCases {
         &self,
         notice_id: Uuid,
         user_id: Uuid,
-        organization_id: Uuid,
+        _organization_id: Uuid,
         actor_role: &str,
     ) -> Result<NoticeResponseDto, String> {
-        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut notice = self
             .notice_repo
             .find_by_id(notice_id)
@@ -276,7 +255,7 @@ impl NoticeUseCases {
             .ok_or("Notice not found".to_string())?;
 
         // Authorization: only author or building admin can archive
-        let is_author = notice.author_id == owner.id;
+        let is_author = notice.author_id == user_id;
         let is_admin = Self::is_building_admin(actor_role);
 
         if !is_author && !is_admin {
@@ -366,10 +345,9 @@ impl NoticeUseCases {
         &self,
         notice_id: Uuid,
         user_id: Uuid,
-        organization_id: Uuid,
+        _organization_id: Uuid,
         dto: SetExpirationDto,
     ) -> Result<NoticeResponseDto, String> {
-        let owner = self.resolve_owner(user_id, organization_id).await?;
         let mut notice = self
             .notice_repo
             .find_by_id(notice_id)
@@ -377,7 +355,7 @@ impl NoticeUseCases {
             .ok_or("Notice not found".to_string())?;
 
         // Authorization: only author can set expiration
-        if notice.author_id != owner.id {
+        if notice.author_id != user_id {
             return Err("Unauthorized: only author can set expiration".to_string());
         }
 
@@ -400,9 +378,8 @@ impl NoticeUseCases {
         &self,
         notice_id: Uuid,
         user_id: Uuid,
-        organization_id: Uuid,
+        _organization_id: Uuid,
     ) -> Result<(), String> {
-        let owner = self.resolve_owner(user_id, organization_id).await?;
         let notice = self
             .notice_repo
             .find_by_id(notice_id)
@@ -410,7 +387,7 @@ impl NoticeUseCases {
             .ok_or("Notice not found".to_string())?;
 
         // Authorization: only author can delete
-        if notice.author_id != owner.id {
+        if notice.author_id != user_id {
             return Err("Unauthorized: only author can delete notice".to_string());
         }
 
@@ -491,14 +468,7 @@ impl NoticeUseCases {
         let mut enriched = Vec::new();
 
         for notice in notices {
-            // Get author name
-            let author = self.owner_repo.find_by_id(notice.author_id).await?;
-            let author_name = if let Some(owner) = author {
-                format!("{} {}", owner.first_name, owner.last_name)
-            } else {
-                "Unknown Author".to_string()
-            };
-
+            let author_name = self.resolve_author_name(notice.author_id).await;
             enriched.push(NoticeSummaryDto::from_notice(notice, author_name));
         }
 

@@ -66,6 +66,7 @@ async fn create_call_for_funds_fixtures(
         city: "Brussels".to_string(),
         postal_code: "1000".to_string(),
         country: "Belgium".to_string(),
+        user_id: None,
     };
     let owner = app_state
         .owner_use_cases

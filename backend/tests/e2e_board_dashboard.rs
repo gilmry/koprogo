@@ -561,6 +561,7 @@ async fn test_regular_board_member_cannot_access_other_building() {
             city: "Brussels".to_string(),
             postal_code: "1000".to_string(),
             country: "Belgium".to_string(),
+            user_id: None,
         };
         let created_owner = state
             .owner_use_cases

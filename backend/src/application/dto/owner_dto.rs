@@ -28,6 +28,8 @@ pub struct CreateOwnerDto {
 
     #[validate(length(min = 1))]
     pub country: String,
+
+    pub user_id: Option<String>, // Optional link to user account (for portal access)
 }
 
 #[derive(Debug, Serialize)]
