@@ -687,21 +687,36 @@ Jalon 5: Mobile & API Publique ⏳ (~29%)
 
 **Débloque**: 2.000-5.000 copropriétés (expansion)
 
-**État**: 29% (Mars 2026) — 2 fermées, 5 ouvertes
+**État**: 29% (Mars 2026) — 2 fermées, 10 ouvertes
 
-**Issues ouvertes**: #87 (PWA), #97 (BI), #98 (Mobile), #266-268 (K3s infra)
+**Issues ouvertes**: #87 (PWA), #97 (BI), #98 (Mobile), #266-268 (K3s infra), #295 (Tauri Desktop), #296 (Tauri Mobile), #297 (SQLite Adapters), #298 (Sync offline/online), #299 (Workspace Cargo)
+
+**Technologie cible**: `Tauri v2 <https://tauri.app/>`_ (Rust + Webview natif)
+
+* Architecture hexagonale → même Domain/Application, nouveaux adapters (SQLite, Tauri commands)
+* Desktop : Windows, macOS, Linux (binaire ~10 MB vs ~150 MB Electron)
+* Mobile : iOS, Android (même codebase Rust + Svelte)
+* Mode offline : SQLite local + sync bidirectionnelle avec PostgreSQL serveur
 
 **Features**:
 
-* PWA mobile responsive
+* 🖥️ Application desktop Tauri (Windows/macOS/Linux) — #295
+* 📱 Application mobile Tauri (iOS/Android) — #296
+* 💾 Adapters SQLite pour mode local/offline — #297
+* 🔄 Sync bidirectionnelle SQLite ↔ PostgreSQL — #298
+* 📦 Workspace Cargo (crate partagé koprogo-core) — #299
+* PWA mobile responsive — #87
 * API publique v1 documentée (OpenAPI)
 * Multi-langue NL/FR/DE/EN complet
 * Intégrations comptables (Winbooks, Exact)
-* K3s infrastructure (Terraform + Ansible + ArgoCD)
-* Analytics & Dashboards
+* K3s infrastructure (Terraform + Ansible + ArgoCD) — #266-268
+* Analytics & Dashboards — #97
 
 **Livrables**:
 
+* Application desktop installable (MSI, DMG, AppImage)
+* Application mobile (App Store, Google Play)
+* Mode offline avec sync automatique
 * Progressive Web App installable
 * SDK Python/JS/PHP
 * Webhooks pour événements
@@ -713,9 +728,11 @@ Jalon 5: Mobile & API Publique ⏳ (~29%)
 
 **Ce que ça débloques**:
 
+* **Desktop/Mobile natif**: Tauri → expérience native sur tous les OS
+* **Mode offline**: SQLite local → utilisable sans connexion, sync au retour
 * **Écosystème**: API publique → développeurs tiers
 * **Intégrations**: Winbooks/Exact → syndics professionnels
-* **Mobile**: PWA → adoption copropriétaires
+* **Mobile**: PWA + Tauri → adoption copropriétaires
 * **International**: Multi-langue → expansion EU
 
 **Effort estimé selon force de travail**:

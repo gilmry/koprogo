@@ -388,7 +388,9 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       // Wait until there's more than just the placeholder option
       await page.waitForFunction(
         (testId) => {
-          const sel = document.querySelector(`[data-testid="${testId}"]`) as HTMLSelectElement;
+          const sel = document.querySelector(
+            `[data-testid="${testId}"]`,
+          ) as HTMLSelectElement;
           return sel && sel.options.length > 1;
         },
         "building-organization-select",

@@ -28,9 +28,9 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #28 | Multi-rôles utilisateur | auth_use_cases | ✅ auth | ✅ e2e_auth | ✅ login | ✅ (api.ts) | ✅ Login |
 | #30 | Seed comptes test | seed (bin) | ✅ building | n/a | ✅ admin/seed | n/a | ⚠️ Admin |
 | #33 | Multi-owner docs + hooks | unit_owner_use_cases | ✅ building | ✅ e2e_unit_owner | ✅ units | ✅ (api.ts) | ❌ |
-| — | Buildings CRUD | building_use_cases | ✅ building | ❌ | ✅ buildings | ✅ (api.ts) | ✅ Buildings |
-| — | Units CRUD | unit_use_cases | ✅ building | ❌ | ✅ units | ✅ (api.ts) | ❌ |
-| — | Owners CRUD | owner_use_cases | ⚠️ (dans building) | ❌ | ✅ owners | ✅ (api.ts) | ⚠️ OwnerDash |
+| — | Buildings CRUD | building_use_cases | ✅ building | ✅ e2e_buildings | ✅ buildings | ✅ (api.ts) | ✅ Buildings |
+| — | Units CRUD | unit_use_cases | ✅ building | ✅ e2e_units | ✅ units | ✅ (api.ts) | ❌ |
+| — | Owners CRUD | owner_use_cases | ⚠️ (dans building) | ✅ e2e_owners | ✅ owners | ✅ (api.ts) | ⚠️ OwnerDash |
 | — | Meetings CRUD | meeting_use_cases | ✅ meetings | ✅ e2e_meetings | ✅ meetings | ✅ (api.ts) | ✅ Meetings |
 
 ### JALON 1 — Sécurité & GDPR 🔒 (Milestone #6)
@@ -42,20 +42,20 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #41 | Monitoring Prometheus/Grafana | n/a (infra) | n/a | n/a | ✅ admin/monitoring | n/a | n/a |
 | #42 | GDPR export + erasure (Art 15,17) | gdpr_use_cases | ✅ gdpr | ✅ e2e_gdpr | ✅ settings/gdpr | ✅ (api.ts) | ✅ Gdpr |
 | #43 | Security hardening (fail2ban, WAF, IDS) | n/a (infra) | n/a | n/a | n/a | n/a | n/a |
-| #78 | 2FA TOTP + rate limiting | two_factor_use_cases | ✅ two_factor | ❌ | ✅ settings | ✅ (api.ts) | ❌ |
+| #78 | 2FA TOTP + rate limiting | two_factor_use_cases | ✅ two_factor | ✅ e2e_two_factor | ✅ settings | ✅ (api.ts) | ❌ |
 | #90 | GDPR Art 16,18,21 (rectify, restrict, marketing) | gdpr_use_cases | ✅ gdpr | ✅ e2e_gdpr | ✅ settings/gdpr | ✅ (api.ts) | ⚠️ Gdpr (partiel) |
 | #271 | Quorum 50%+ AG (Art 3.87§5) | meeting_use_cases | ⚠️ meetings | ✅ e2e_meetings | ✅ meetings | ✅ | ❌ |
 | #272 | 2e convocation si quorum non atteint | convocation_use_cases | ✅ convocations | ✅ e2e_convocations | ✅ convocations | ✅ | ❌ |
-| #273 | Réduction vote mandataire (Art 3.87§7) | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
+| #273 ✅ FERMÉE | ~~Réduction vote mandataire (Art 3.87§7)~~ | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
 
 ### JALON 2 — Conformité Légale Belge 📋 (Milestone #7) — Tout fermé
 
 | Issue | Promesse métier | Use Case | BDD | E2E Backend | Frontend Page | API Client | Playwright |
 |-------|----------------|----------|-----|-------------|---------------|------------|------------|
-| #79 | PCMN comptabilité belge | account_use_cases | ⚠️ expenses_pcn | ❌ | ✅ accountant | ✅ mcp | ❌ |
-| #73 | Factures + workflow approbation | expense_use_cases | ✅ invoices | ❌ | ✅ invoice-workflow | ✅ (api.ts) | ✅ Expenses |
+| #79 | PCMN comptabilité belge | account_use_cases | ⚠️ expenses_pcn | ✅ e2e_accounts | ✅ accountant | ✅ mcp | ❌ |
+| #73 | Factures + workflow approbation | expense_use_cases | ✅ invoices | ✅ e2e_invoices | ✅ invoice-workflow | ✅ (api.ts) | ✅ Expenses |
 | #83 | Relances impayés 4 niveaux | payment_reminder_use_cases | ✅ payment_recovery | ✅ e2e_payment_recovery | ✅ payment-reminders | ✅ payment-reminders | ⚠️ Expenses |
-| #77 | Rapports financiers (bilan, résultats) | financial_report_use_cases | ⚠️ expenses_pcn | ❌ | ✅ reports | ✅ mcp | ❌ |
+| #77 | Rapports financiers (bilan, résultats) | financial_report_use_cases | ⚠️ expenses_pcn | ✅ e2e_financial_reports | ✅ reports | ✅ mcp | ❌ |
 | #80 | État daté (vente immobilière) | etat_date_use_cases | ✅ etat_date | ✅ e2e_etat_date | ✅ etats-dates | ✅ etats-dates | ❌ |
 | #81 | Budget annuel + variance | budget_use_cases | ✅ budget | ✅ e2e_budget | ✅ budgets | ✅ budgets | ❌ |
 | #82 | Conseil copropriété (obligatoire >20 lots) | board_member_use_cases + board_decision_use_cases | ✅ board_members + board_decisions | ✅ e2e_board | ✅ board-dashboard | ✅ (api.ts) | ✅ BoardOfDirectors |
@@ -64,11 +64,11 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #75 | AG assemblées générales complètes | meeting_use_cases | ✅ meetings* | ✅ e2e_meetings | ✅ meetings | ✅ (api.ts) | ✅ Meetings |
 | #44 | Stratégie stockage documents | document_use_cases | ✅ documents | ✅ e2e_documents | ✅ documents | ✅ (api.ts) | ❌ |
 | #45 | Upload drag-and-drop | document_use_cases | ✅ documents | ✅ e2e_documents | ✅ documents | ✅ (api.ts) | ❌ |
-| #51 | Sondages conseil (polls) | poll_use_cases | ✅ polls | ❌ | ✅ polls | ✅ polls | ❌ |
-| #200 | Journal entries (double-entry) | journal_entry_use_cases | ✅ journal_entries | ❌ | ✅ journal-entries | ✅ (api.ts) | ❌ |
-| #201 | Appels de fonds | call_for_funds_use_cases | ✅ call_for_funds | ❌ | ✅ call-for-funds | ✅ (api.ts) | ❌ |
-| #202 | Suivi versements propriétaires | owner_contribution_use_cases | ✅ owner_contributions | ❌ | ✅ owner-contributions | ✅ (api.ts) | ❌ |
-| #205 | Répartition charges | charge_distribution_use_cases | ✅ charge_distribution | ❌ | ⚠️ (API only) | ✅ charge-dist | ❌ |
+| #51 | Sondages conseil (polls) | poll_use_cases | ✅ polls | ✅ e2e_polls | ✅ polls | ✅ polls | ❌ |
+| #200 | Journal entries (double-entry) | journal_entry_use_cases | ✅ journal_entries | ✅ e2e_journal_entries | ✅ journal-entries | ✅ (api.ts) | ❌ |
+| #201 | Appels de fonds | call_for_funds_use_cases | ✅ call_for_funds | ✅ e2e_call_for_funds | ✅ call-for-funds | ✅ (api.ts) | ❌ |
+| #202 | Suivi versements propriétaires | owner_contribution_use_cases | ✅ owner_contributions | ✅ e2e_owner_contributions | ✅ owner-contributions | ✅ (api.ts) | ❌ |
+| #205 | Répartition charges | charge_distribution_use_cases | ✅ charge_distribution | ✅ e2e_charge_distribution | ⚠️ (API only) | ✅ charge-dist | ❌ |
 
 ### JALON 3 — Features Différenciantes 🎯 (Milestone #8)
 
@@ -77,23 +77,24 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #46 | Votes AG (3 majorités, tantièmes) | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
 | #84 | Paiements Stripe + SEPA | payment_use_cases + payment_method_use_cases | ✅ payments + payment_methods | ✅ e2e_payments | ✅ owner/payments | ✅ payments | ❌ |
 | #49 Ph1 | SEL (échange local temps) | local_exchange_use_cases | ✅ local_exchange | ✅ e2e_local_exchange | ✅ exchanges | ✅ local-exchanges | ❌ |
-| #49 Ph2 | Notices communautaires | notice_use_cases | ✅ notices | ❌ | ✅ notices | ✅ notices | ❌ |
-| #49 Ph3 | Annuaire compétences | skill_use_cases | ✅ skills | ❌ | ✅ skills | ✅ skills | ❌ |
-| #49 Ph4 | Bibliothèque objets partagés | shared_object_use_cases | ✅ shared_objects | ❌ | ✅ sharing | ✅ sharing | ❌ |
-| #49 Ph5 | Réservation ressources | resource_booking_use_cases | ✅ resource_bookings | ❌ | ✅ bookings | ✅ bookings | ❌ |
-| #49 Ph6 | Gamification (achievements, challenges) | achievement + challenge + gamification_stats | ✅ gamification | ❌ | ✅ gamification | ✅ gamification | ❌ |
-| #133 | IoT Linky smart meters | iot_use_cases + linky_use_cases | ✅ iot | ❌ | ❌ | ❌ | ❌ |
-| #134 | Work reports | work_report_use_cases | ✅ work_reports | ❌ | ✅ work-reports | ✅ work-reports | ❌ |
-| #134 | Technical inspections | technical_inspection_use_cases | ✅ technical_inspections | ❌ | ✅ inspections | ✅ inspections | ❌ |
+| #49 Ph2 | Notices communautaires | notice_use_cases | ✅ notices | ✅ e2e_notices | ✅ notices | ✅ notices | ❌ |
+| #49 Ph3 | Annuaire compétences | skill_use_cases | ✅ skills | ✅ e2e_skills | ✅ skills | ✅ skills | ❌ |
+| #49 Ph4 | Bibliothèque objets partagés | shared_object_use_cases | ✅ shared_objects | ✅ e2e_shared_objects | ✅ sharing | ✅ sharing | ❌ |
+| #49 Ph5 | Réservation ressources | resource_booking_use_cases | ✅ resource_bookings | ✅ e2e_resource_bookings | ✅ bookings | ✅ bookings | ❌ |
+| #49 Ph6 | Gamification (achievements, challenges) | achievement + challenge + gamification_stats | ✅ gamification | ✅ e2e_gamification | ✅ gamification | ✅ gamification | ❌ |
+| #133 | IoT Linky smart meters | iot_use_cases + linky_use_cases | ✅ iot | ✅ e2e_iot | ❌ | ❌ | ❌ |
+| #300 | IoT MQTT + BOINC Grid | boinc_use_cases + mqtt_adapter | ✅ iot_mqtt_boinc | ❌ | ❌ | ❌ | ❌ |
+| #134 | Work reports | work_report_use_cases | ✅ work_reports | ✅ e2e_work_reports | ✅ work-reports | ✅ work-reports | ❌ |
+| #134 | Technical inspections | technical_inspection_use_cases | ✅ technical_inspections | ✅ e2e_technical_inspections | ✅ inspections | ✅ inspections | ❌ |
 | #52/#91 | Devis entrepreneurs | quote_use_cases | ✅ quotes | ✅ e2e_quotes | ✅ quotes | ✅ quotes | ❌ |
 | #88 | Convocations AG auto | convocation_use_cases | ✅ convocations | ✅ e2e_convocations | ✅ convocations | ✅ convocations | ❌ |
 | #86 | Notifications multi-canal | notification_use_cases | ✅ notifications | ✅ e2e_notifications | ✅ notifications | ✅ notifications | ✅ Notifications |
 | #85 | Tickets maintenance | ticket_use_cases | ✅ tickets | ✅ e2e_tickets | ✅ tickets | ✅ tickets | ✅ Tickets |
-| #92 | Syndic info publique | building_use_cases | ✅ public_syndic | ❌ | ✅ (public endpoint) | ✅ (api.ts) | ❌ |
-| #96 | Energy campaigns (achat groupé) | energy_campaign + energy_bill_upload | ✅ energy_campaigns | ❌ | ✅ energy-campaigns | ✅ energy-campaigns | ❌ |
-| #274 | BC15: AG Visioconférence | ag_session_use_cases | ✅ ag_sessions | ❌ | ❌ | ❌ | ❌ |
-| #279 | BC17: AGE agile (demande 1/5) | age_request_use_cases | ✅ age_requests | ❌ | ❌ | ❌ | ❌ |
-| #275 | BC16: Backoffice prestataires PWA | contractor_report_use_cases | ✅ contractor_reports | ❌ | ✅ contractor/[token] | ⚠️ (direct fetch) | ❌ |
+| #92 | Syndic info publique | building_use_cases | ✅ public_syndic | ✅ e2e_public_syndic | ✅ (public endpoint) | ✅ (api.ts) | ❌ |
+| #96 | Energy campaigns (achat groupé) | energy_campaign + energy_bill_upload | ✅ energy_campaigns | ✅ e2e_energy_campaigns | ✅ energy-campaigns | ✅ energy-campaigns | ❌ |
+| #274 | BC15: AG Visioconférence | ag_session_use_cases | ✅ ag_sessions | ✅ e2e_ag_sessions | ❌ | ❌ | ❌ |
+| #279 | BC17: AGE agile (demande 1/5) | age_request_use_cases | ✅ age_requests | ✅ e2e_age_requests | ❌ | ❌ | ❌ |
+| #275 | BC16: Backoffice prestataires PWA | contractor_report_use_cases | ✅ contractor_reports | ✅ e2e_contractor_reports | ✅ contractor/[token] | ⚠️ (direct fetch) | ❌ |
 | #276 | BC14: Marketplace + satisfaction | — | ❌ | ❌ | ❌ | ❌ | ❌ |
 | #277 | Guide légal contextuel UI | — | ❌ | ❌ | ❌ | ❌ | ❌ |
 | #280 | Orchestrateur énergie neutre | — | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -104,29 +105,41 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 
 ### Par couche — nombre de promesses métier avec trous :
 
+> **Mise à jour 2026-03-21** : Audit de cohérence WBS ↔ Issues ↔ Code (branche `integration`).
+> E2E Backend passé de 41% à 96%. Milestones GitHub corrigés. #273 fermée. #300 créée (IoT MQTT/BOINC).
+
 | Couche | Jalons 0-3 total | ✅ OK | ❌ Manquant | Taux couverture |
 |--------|-----------------|-------|-----------|-----------------|
-| Use Case (backend impl) | 49 | 46 | 3 (BC14, #277, #280) | 94% |
-| BDD feature | 46 impl | 44 | 2 (accounts dédié, expenses dédié) | 96% |
-| E2E Backend | 46 impl | 19 | 27 | 41% |
-| Frontend page | 46 impl | 43 | 3 (AG Sessions, AGE Requests, IoT) | 93% |
+| Use Case (backend impl) | 50 | 47 | 3 (BC14, #277, #280) | 94% |
+| BDD feature | 47 impl | 46 | 1 (#300 IoT MQTT E2E) | 98% |
+| E2E Backend | 47 impl | 45 | 2 (#300 IoT MQTT, #271 quorum) | **96%** |
+| Frontend page | 47 impl | 43 | 4 (AG Sessions, AGE Requests, IoT, MQTT) | 91% |
 | API Client TS | 43 pages | 41 | 2 (AG Sessions, IoT) | 95% |
-| Playwright | 43 pages | 11 | 32 | 26% |
+| Playwright | 43 pages | 11 | 32 (fichiers créés mais non validés) | 26% |
 | Contract DTO | — | 0 | tout | 0% |
 
 ### TOP 3 des lacunes critiques :
 
-1. **Playwright** : 26% de couverture — 32 features sans test E2E frontend
-2. **E2E Backend** : 41% — 27 use cases sans test HTTP dédié
-3. **Contract Tests DTO** : 0% — aucun mécanisme de cohérence backend↔frontend
+1. **Playwright** : 26% — 32 spec files existent mais ne sont pas validés comme passants
+2. **Contract Tests DTO** : 0% — aucun mécanisme de cohérence backend↔frontend
+3. **Frontend pages** : 4 features sans page dédiée (AG Sessions, AGE Requests, IoT, MQTT)
 
-### Features Jalon 3 NON complètes (issues ouvertes) :
-- #274 BC15 AG Visioconférence — backend ✅, BDD ✅ → manque E2E + frontend
-- #279 BC17 AGE agile — backend ✅, BDD ✅ → manque E2E + frontend
-- #275 BC16 Contractor PWA — backend ✅, BDD ✅, frontend ✅ (page) → manque E2E
+### Features Jalon 3 NON complètes (issues ouvertes)
+
+- #274 BC15 AG Visioconférence — backend ✅, BDD ✅, E2E ✅ → manque frontend
+- #279 BC17 AGE agile — backend ✅, BDD ✅, E2E ✅ → manque frontend
+- #275 BC16 Contractor PWA — backend ✅, BDD ✅, E2E ✅, frontend ✅ → **à fermer ?**
 - #276 BC14 Marketplace — non implémenté
 - #277 Guide légal UI — non implémenté
 - #280 Orchestrateur énergie — non implémenté
+- #300 IoT MQTT + BOINC — backend ✅, BDD ✅ → manque E2E + frontend
+
+### Corrections GitHub effectuées (2026-03-21)
+
+- ✅ #273 fermée (done)
+- ✅ #85, #86, #88, #89, #91, #92 déplacées J4 → J3
+- ✅ #90 déplacée J4 → J1
+- ✅ #300 créée pour IoT MQTT/BOINC (code existait sans issue)
 
 > **Hors scope 0.1.0** (repoussé) :
 > - #252-265 MCP Tools AI Syndic (14 issues) → `release:0.2.0`, Jalon 4
@@ -356,37 +369,41 @@ Les tests Playwright enregistrent des vidéos (déjà configuré : 1280x720). Ce
 
 ### Issues encore ouvertes (à compléter)
 
-#### Jalon 1 — Bugs legal (3 issues)
+#### Jalon 1 — Bugs legal (2 issues)
 
 | Issue | Titre | Effort estimé | État |
 |-------|-------|---------------|------|
 | #271 | Quorum 50%+ validation AG (Art 3.87§5) | ~2h | migration existe, vérifier wiring |
 | #272 | 2e convocation si quorum non atteint (Art 3.87§5) | ~2h | migration existe, vérifier wiring |
-| #273 | Réduction vote mandataire (Art 3.87§7) | ~2h | ✅ done (à fermer) |
+| ~~#273~~ | ~~Réduction vote mandataire (Art 3.87§7)~~ | — | ✅ FERMÉE 2026-03-21 |
 
-#### Jalon 3 — Features (7 issues)
+#### Jalon 3 — Features (8 issues)
 
 | Issue | Titre | Effort estimé | État |
 |-------|-------|---------------|------|
-| #274 | BC15: AG Visioconférence (AgSession, quorum combiné) | ~8h | backend ✅, BDD ✅, manque E2E + frontend |
-| #275 | BC16: Backoffice prestataires PWA (ContractorReport) | ~6h | backend ✅, BDD ✅, frontend ✅, manque E2E |
+| #274 | BC15: AG Visioconférence (AgSession, quorum combiné) | ~4h | backend ✅, BDD ✅, E2E ✅ → manque frontend |
+| #275 | BC16: Backoffice prestataires PWA (ContractorReport) | ~2h | backend ✅, BDD ✅, E2E ✅, frontend ✅ → **à fermer ?** |
 | #276 | BC14: Marketplace corps de métier + satisfaction | ~20h | non implémenté |
 | #277 | Guide légal contextuel UI (LegalHelper, AG Wizard) | ~10h | non implémenté |
 | #278 | Blog 18 articles RST | ~22h | docs only |
-| #279 | BC17: AGE agile (demande 1/5, concertation) | ~8h | backend ✅, BDD ✅, manque E2E + frontend |
+| #279 | BC17: AGE agile (demande 1/5, concertation) | ~4h | backend ✅, BDD ✅, E2E ✅ → manque frontend |
 | #280 | Orchestrateur énergie neutre (CER, CREG) | ~16h | non implémenté |
+| #300 | IoT MQTT + BOINC Grid Computing | ~4h | backend ✅, BDD ✅ → manque E2E + frontend |
 
-**Effort total restant estimé : ~96h** (features ~90h + bugs legal ~6h)
+**Effort total restant estimé : ~84h** (features ~80h + bugs legal ~4h)
 
 ### Ordre de priorité
 
-1. **P0 Legal** (#271, #272, #273) — bugs conformité, ~6h
-2. **P0 BC** (#274, #279) — AG visio + AGE agile, ~16h (backend + BDD faits, manque E2E + frontend)
-3. **P1 BC** (#275, #276) — prestataires + marketplace, ~26h
-4. **P1 Tools** (#277) — guide légal UI, ~10h
-5. **P1 Energy** (#280) — orchestrateur, ~16h
-6. **P2 Content** (#278) — blog, ~22h
+1. **P0 Legal** (#271, #272) — bugs conformité, ~4h
+2. **P0 BC** (#274, #279) — AG visio + AGE agile, ~8h (manque uniquement frontend)
+3. **P0 BC** (#275) — prestataires, ~2h (tout fait, vérifier et fermer)
+4. **P1 BC** (#276) — marketplace, ~20h (non implémenté)
+5. **P1 Tools** (#277) — guide légal UI, ~10h
+6. **P1 Energy** (#280) — orchestrateur, ~16h
+7. **P1 IoT** (#300) — MQTT/BOINC E2E + frontend, ~4h
+8. **P2 Content** (#278) — blog, ~22h
 
 Après l'implémentation de chaque feature, elle passe dans la matrice de traçabilité (BDD → E2E backend → frontend → Playwright → contract test DTO).
 
 > **Mise à jour** : 15 mars 2026 — MCP (#252-265) et itsme (#48) repoussés hors 0.1.0. Effort réduit de ~145h à ~96h.
+> **Mise à jour** : 21 mars 2026 — Audit cohérence WBS ↔ Issues ↔ Code. E2E Backend 41%→96%. #273 fermée. 7 issues re-milestoned. #300 créée. Effort réduit de ~96h à ~84h.
