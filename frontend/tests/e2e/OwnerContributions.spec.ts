@@ -10,7 +10,9 @@ test.describe("Owner Contributions - Payment Tracking", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='contributions-list']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='contributions-list']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -30,7 +32,7 @@ test.describe("Owner Contributions - Payment Tracking", () => {
           description: `Provision T2 2026 ${timestamp}`,
           amount: 800.0,
           contribution_type: "Regular",
-          due_date: new Date().toISOString(),
+          contribution_date: new Date().toISOString(),
         },
         headers: { Authorization: `Bearer ${token}` },
       },

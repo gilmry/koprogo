@@ -10,7 +10,7 @@ test.describe("Dashboard - Admin & Syndic Views", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='admin-dashboard']").first(),
+      page.locator("main h1, main h2, [data-testid='admin-dashboard']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

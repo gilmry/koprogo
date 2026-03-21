@@ -15,7 +15,7 @@ test.describe("Notices - Community Board", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='notices-list']").first(),
+      page.locator("main h1, main h2, [data-testid='notices-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -28,8 +28,8 @@ test.describe("Notices - Community Board", () => {
         building_id: buildingId,
         title: `Travaux ascenseur ${timestamp}`,
         content: "L'ascenseur sera en maintenance le 20 mars de 8h à 12h.",
-        notice_type: "Maintenance",
-        priority: "Normal",
+        notice_type: "Announcement",
+        category: "Maintenance",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -47,8 +47,8 @@ test.describe("Notices - Community Board", () => {
         building_id: buildingId,
         title: `Notice detail ${timestamp}`,
         content: "Contenu de l'annonce.",
-        notice_type: "General",
-        priority: "Low",
+        notice_type: "Announcement",
+        category: "General",
       },
       headers: { Authorization: `Bearer ${token}` },
     });

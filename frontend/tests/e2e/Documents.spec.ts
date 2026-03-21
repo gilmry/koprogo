@@ -10,7 +10,7 @@ test.describe("Documents - File Storage", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='documents-list']").first(),
+      page.locator("main h1, main h2, [data-testid='documents-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

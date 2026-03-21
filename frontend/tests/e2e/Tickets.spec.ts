@@ -17,7 +17,7 @@ test.describe("Tickets - Maintenance Requests", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='tickets-list']").first(),
+      page.locator("main h1, main h2, [data-testid='tickets-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -127,7 +127,9 @@ test.describe("Tickets - Maintenance Requests", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='work-reports-list']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='work-reports-list']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 });

@@ -177,11 +177,13 @@ export async function loginAsSyndicWithUnit(
 
   const unitResp = await page.request.post(`${API_BASE}/units`, {
     data: {
+      organization_id: ctx.orgId,
       building_id: ctx.buildingId,
       unit_number: "1A",
       floor: 1,
-      area: 85.0,
+      surface_area: 85.0,
       unit_type: "Apartment",
+      quota: 100.0,
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
@@ -207,9 +209,9 @@ export async function loginAsSyndicWithMeeting(
       building_id: ctx.buildingId,
       organization_id: ctx.orgId,
       title: `AG ${Date.now()}`,
-      meeting_date: meetingDate.toISOString(),
+      scheduled_date: meetingDate.toISOString(),
       meeting_type: "Ordinary",
-      agenda: "Ordre du jour test",
+      location: "Salle communale",
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });

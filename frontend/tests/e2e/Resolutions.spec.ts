@@ -20,7 +20,7 @@ test.describe("Resolutions - AG Voting System", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='meetings-list']").first(),
+      page.locator("main h1, main h2, [data-testid='meetings-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

@@ -21,7 +21,9 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='etats-dates-list']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='etats-dates-list']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

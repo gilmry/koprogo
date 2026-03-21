@@ -77,7 +77,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='invoices-list']").first(),
+      page.locator("main h1, main h2, [data-testid='invoices-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

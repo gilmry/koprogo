@@ -84,7 +84,7 @@ lettre = { version = "0.11", features = ["smtp-transport", "builder", "tokio1-na
 reqwest = { version = "0.13", features = ["json", "form", "query"] }
 
 # MQTT client (Home Assistant integration - IoT Phase 1)
-rumqttc = { version = "0.24", features = ["use-rustls"] }
+rumqttc = { version = "0.25", default-features = false }
 
 # OpenAPI documentation
 utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }

@@ -10,7 +10,9 @@ test.describe("Call For Funds - Revenue Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='call-for-funds-list']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='call-for-funds-list']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

@@ -10,7 +10,7 @@ test.describe("Two-Factor Authentication (2FA)", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='settings']").first(),
+      page.locator("main h1, main h2, [data-testid='settings']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

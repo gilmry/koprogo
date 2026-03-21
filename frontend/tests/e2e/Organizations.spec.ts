@@ -10,7 +10,9 @@ test.describe("Organizations - SuperAdmin Management", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='organizations-list']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='organizations-list']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

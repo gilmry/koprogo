@@ -15,7 +15,9 @@ test.describe("Technical Inspections - Mandatory Compliance", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='inspections-list']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='inspections-list']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

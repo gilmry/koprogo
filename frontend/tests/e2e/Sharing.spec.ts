@@ -15,7 +15,7 @@ test.describe("Sharing - Object Sharing Library", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='sharing-list']").first(),
+      page.locator("main h1, main h2, [data-testid='sharing-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -56,7 +56,7 @@ test.describe("Sharing - Object Sharing Library", () => {
         building_id: buildingId,
         object_name: `Vélo ${timestamp}`,
         description: "Vélo partagé",
-        object_category: "Transport",
+        object_category: "Sports",
         is_available: true,
         condition: "Good",
       },

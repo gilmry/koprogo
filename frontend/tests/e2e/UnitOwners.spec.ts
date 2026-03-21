@@ -10,7 +10,7 @@ test.describe("Unit Owners - Multi-Owner Support", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='units-list']").first(),
+      page.locator("main h1, main h2, [data-testid='units-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

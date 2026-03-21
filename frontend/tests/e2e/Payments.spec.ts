@@ -10,7 +10,7 @@ test.describe("Payments - Stripe & SEPA", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='payments-list']").first(),
+      page.locator("main h1, main h2, [data-testid='payments-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

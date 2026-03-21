@@ -10,7 +10,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='reminders-list']").first(),
+      page.locator("main h1, main h2, [data-testid='reminders-list']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -64,11 +64,13 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
       `${API_BASE}/payment-reminders`,
       {
         data: {
+          organization_id: orgId,
           expense_id: expense.id,
           owner_id: owner.id,
-          reminder_level: "Gentle",
+          level: "FirstReminder",
           due_date: new Date().toISOString(),
-          amount_due: 250.0,
+          amount_owed: 250.0,
+          days_overdue: 0,
         },
         headers: { Authorization: `Bearer ${token}` },
       },

@@ -15,7 +15,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='gamification']").first(),
+      page.locator("main h1, main h2, [data-testid='gamification']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -31,7 +31,9 @@ test.describe("Gamification - Achievements & Challenges", () => {
         category: "Community",
         tier: "Bronze",
         points_value: 10,
-        requirements: { action: "login", count: 1 },
+        requirements: JSON.stringify({ action: "login", count: 1 }),
+        icon: "trophy",
+        display_order: 1,
         is_secret: false,
         is_repeatable: false,
       },

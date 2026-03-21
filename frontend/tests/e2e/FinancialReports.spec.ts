@@ -20,7 +20,7 @@ test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='reports']").first(),
+      page.locator("main h1, main h2, [data-testid='reports']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

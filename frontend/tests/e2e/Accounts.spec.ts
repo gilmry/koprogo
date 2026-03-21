@@ -16,7 +16,7 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='accountant']").first(),
+      page.locator("main h1, main h2, [data-testid='accountant']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 

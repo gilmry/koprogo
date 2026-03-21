@@ -15,7 +15,9 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='work-reports-list']").first(),
+      page
+        .locator("main h1, main h2, [data-testid='work-reports-list']")
+        .first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
@@ -27,14 +29,14 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
       data: {
         building_id: buildingId,
         organization_id: orgId,
-        work_type: "Plumbing",
+        work_type: "Repair",
         title: `Remplacement robinetterie ${timestamp}`,
         description: "Remplacement robinets cuisine bâtiment A",
         contractor_name: "Plomberie Dupont",
-        start_date: new Date().toISOString(),
-        end_date: new Date().toISOString(),
-        warranty_years: 2,
-        warranty_type: "Parts",
+        work_date: new Date().toISOString(),
+        completion_date: new Date().toISOString(),
+        cost: 0.0,
+        warranty_type: "standard",
       },
       headers: { Authorization: `Bearer ${token}` },
     });

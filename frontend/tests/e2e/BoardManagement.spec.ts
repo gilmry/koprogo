@@ -71,7 +71,7 @@ test.describe("Board Management - Conseil de Copropriété", () => {
 
     await expect(page.locator("body")).toBeVisible();
     await expect(
-      page.locator("h1, h2, [data-testid='board-dashboard']").first(),
+      page.locator("main h1, main h2, [data-testid='board-dashboard']").first(),
     ).toBeVisible({ timeout: 10000 });
   });
 
