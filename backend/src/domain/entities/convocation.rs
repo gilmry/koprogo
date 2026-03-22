@@ -105,6 +105,10 @@ pub struct Convocation {
     // Lien vers la 1ère AG si 2e convocation (quorum non atteint — Art. 3.87 §5 CC)
     pub first_meeting_id: Option<Uuid>,
 
+    // For second convocation: quorum is NOT required (Art. 3.87 §5 CC)
+    // "La deuxième assemblée délibère valablement quel que soit le nombre de présents."
+    pub no_quorum_required: bool,
+
     // Legal deadline tracking
     pub minimum_send_date: DateTime<Utc>, // Latest date to send (meeting_date - minimum_notice_days)
     pub actual_send_date: Option<DateTime<Utc>>, // When actually sent
@@ -188,6 +192,7 @@ impl Convocation {
             meeting_date,
             status: ConvocationStatus::Draft,
             first_meeting_id: None,
+            no_quorum_required: false, // Only set to true for second convocations
             minimum_send_date,
             actual_send_date: None,
             scheduled_send_date: None,
@@ -244,6 +249,8 @@ impl Convocation {
         )?;
 
         convocation.first_meeting_id = Some(first_meeting_id);
+        // Art. 3.87 §5 CC: "La deuxième assemblée délibère valablement quel que soit le nombre de présents."
+        convocation.no_quorum_required = true;
         Ok(convocation)
     }
 
