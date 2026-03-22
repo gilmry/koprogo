@@ -45,9 +45,44 @@ pub async fn create_work_report(
 
 /// Get work report by ID
 #[get("/work-reports/{id}")]
-pub async fn get_work_report(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_work_report(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.work_report_use_cases.get_work_report(*id).await {
-        Ok(Some(work_report)) => HttpResponse::Ok().json(work_report),
+        Ok(Some(work_report)) => {
+            // Parse building_id (it's a String in the DTO) and fetch building to get organization_id
+            let building_id = match uuid::Uuid::parse_str(&work_report.building_id) {
+                Ok(bid) => bid,
+                Err(_) => {
+                    return HttpResponse::InternalServerError()
+                        .json(serde_json::json!({"error": "Invalid building_id format"}))
+                }
+            };
+
+            match state.building_use_cases.get_building(building_id).await {
+                Ok(Some(building)) => {
+                    // Verify organization access
+                    let org_id = match uuid::Uuid::parse_str(&building.organization_id) {
+                        Ok(oid) => oid,
+                        Err(_) => {
+                            return HttpResponse::InternalServerError()
+                                .json(serde_json::json!({"error": "Invalid organization_id format"}))
+                        }
+                    };
+
+                    if let Err(err) = user.verify_org_access(org_id) {
+                        return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
+                    }
+                    HttpResponse::Ok().json(work_report)
+                }
+                Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
+                    "error": "Building not found"
+                })),
+                Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
+            }
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Work report not found"
         })),

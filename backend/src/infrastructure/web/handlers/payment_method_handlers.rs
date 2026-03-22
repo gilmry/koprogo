@@ -51,9 +51,19 @@ pub async fn create_payment_method(
 }
 
 #[get("/payment-methods/{id}")]
-pub async fn get_payment_method(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_payment_method(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.payment_method_use_cases.get_payment_method(*id).await {
-        Ok(Some(method)) => HttpResponse::Ok().json(method),
+        Ok(Some(method)) => {
+            // Verify organization access
+            if let Err(err) = user.verify_org_access(method.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
+            }
+            HttpResponse::Ok().json(method)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment method not found"
         })),

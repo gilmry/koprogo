@@ -55,9 +55,19 @@ pub async fn create_convocation(
 }
 
 #[get("/convocations/{id}")]
-pub async fn get_convocation(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_convocation(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.convocation_use_cases.get_convocation(*id).await {
-        Ok(convocation) => HttpResponse::Ok().json(convocation),
+        Ok(convocation) => {
+            // Verify organization access
+            if let Err(err) = user.verify_org_access(convocation.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
+            }
+            HttpResponse::Ok().json(convocation)
+        }
         Err(err) => HttpResponse::NotFound().json(serde_json::json!({"error": err})),
     }
 }

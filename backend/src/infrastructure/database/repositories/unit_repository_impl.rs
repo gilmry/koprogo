@@ -188,6 +188,12 @@ impl UnitRepository for PostgresUnitRepository {
         let mut where_clauses = Vec::new();
         let mut param_count = 0;
 
+        // Multi-tenant isolation: ALWAYS filter by organization_id when provided
+        if filters.organization_id.is_some() {
+            param_count += 1;
+            where_clauses.push(format!("organization_id = ${}", param_count));
+        }
+
         if filters.building_id.is_some() {
             param_count += 1;
             where_clauses.push(format!("building_id = ${}", param_count));
@@ -234,6 +240,10 @@ impl UnitRepository for PostgresUnitRepository {
         let count_query = format!("SELECT COUNT(*) FROM units {}", where_clause);
         let mut count_query = sqlx::query_scalar::<_, i64>(&count_query);
 
+        // Bind organization_id FIRST (matches WHERE clause order)
+        if let Some(org_id) = filters.organization_id {
+            count_query = count_query.bind(org_id);
+        }
         if let Some(building_id) = filters.building_id {
             count_query = count_query.bind(building_id);
         }
@@ -270,6 +280,10 @@ impl UnitRepository for PostgresUnitRepository {
 
         let mut data_query = sqlx::query(&data_query);
 
+        // Bind organization_id FIRST (matches WHERE clause order)
+        if let Some(org_id) = filters.organization_id {
+            data_query = data_query.bind(org_id);
+        }
         if let Some(building_id) = filters.building_id {
             data_query = data_query.bind(building_id);
         }

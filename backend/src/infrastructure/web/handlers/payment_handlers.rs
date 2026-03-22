@@ -77,9 +77,19 @@ pub async fn create_payment(
     security(("bearer_auth" = []))
 )]
 #[get("/payments/{id}")]
-pub async fn get_payment(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_payment(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.payment_use_cases.get_payment(*id).await {
-        Ok(Some(payment)) => HttpResponse::Ok().json(payment),
+        Ok(Some(payment)) => {
+            // Multi-tenant isolation: verify payment belongs to user's organization
+            if let Err(e) = user.verify_org_access(payment.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+            HttpResponse::Ok().json(payment)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Payment not found"
         })),

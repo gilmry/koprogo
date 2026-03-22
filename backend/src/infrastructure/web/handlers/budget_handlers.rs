@@ -59,9 +59,19 @@ pub async fn create_budget(
 
 /// Get budget by ID
 #[get("/budgets/{id}")]
-pub async fn get_budget(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_budget(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.budget_use_cases.get_budget(*id).await {
-        Ok(Some(budget)) => HttpResponse::Ok().json(budget),
+        Ok(Some(budget)) => {
+            // Multi-tenant isolation: verify budget belongs to user's organization
+            if let Err(e) = user.verify_org_access(budget.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+            HttpResponse::Ok().json(budget)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Budget not found"
         })),
@@ -75,9 +85,31 @@ pub async fn get_budget(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl
 #[get("/buildings/{building_id}/budgets/fiscal-year/{fiscal_year}")]
 pub async fn get_budget_by_building_and_fiscal_year(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     params: web::Path<(Uuid, i32)>,
 ) -> impl Responder {
     let (building_id, fiscal_year) = params.into_inner();
+
+    // Multi-tenant isolation: verify building belongs to user's organization
+    match state.building_use_cases.get_building(building_id).await {
+        Ok(Some(building)) => {
+            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                if let Err(e) = user.verify_org_access(building_org) {
+                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                }
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }));
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }));
+        }
+    }
 
     match state
         .budget_use_cases
@@ -98,8 +130,30 @@ pub async fn get_budget_by_building_and_fiscal_year(
 #[get("/buildings/{building_id}/budgets/active")]
 pub async fn get_active_budget(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Multi-tenant isolation: verify building belongs to user's organization
+    match state.building_use_cases.get_building(*building_id).await {
+        Ok(Some(building)) => {
+            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                if let Err(e) = user.verify_org_access(building_org) {
+                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                }
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }));
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }));
+        }
+    }
+
     match state.budget_use_cases.get_active_budget(*building_id).await {
         Ok(Some(budget)) => HttpResponse::Ok().json(budget),
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
@@ -115,8 +169,30 @@ pub async fn get_active_budget(
 #[get("/buildings/{building_id}/budgets")]
 pub async fn list_budgets_by_building(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Multi-tenant isolation: verify building belongs to user's organization
+    match state.building_use_cases.get_building(*building_id).await {
+        Ok(Some(building)) => {
+            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                if let Err(e) = user.verify_org_access(building_org) {
+                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                }
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }));
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }));
+        }
+    }
+
     match state.budget_use_cases.list_by_building(*building_id).await {
         Ok(budgets) => HttpResponse::Ok().json(budgets),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
@@ -419,8 +495,28 @@ pub async fn get_budget_stats(
 #[get("/budgets/{id}/variance")]
 pub async fn get_budget_variance(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Multi-tenant isolation: first check the budget belongs to user's org
+    match state.budget_use_cases.get_budget(*id).await {
+        Ok(Some(budget)) => {
+            if let Err(e) = user.verify_org_access(budget.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Budget not found"
+            }));
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }));
+        }
+    }
+
     match state.budget_use_cases.get_variance(*id).await {
         Ok(Some(variance)) => HttpResponse::Ok().json(variance),
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({

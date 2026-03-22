@@ -60,9 +60,23 @@ pub async fn create_meeting(
 }
 
 #[get("/meetings/{id}")]
-pub async fn get_meeting(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_meeting(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.meeting_use_cases.get_meeting(*id).await {
-        Ok(Some(meeting)) => HttpResponse::Ok().json(meeting),
+        Ok(Some(meeting)) => {
+            // Multi-tenant isolation: verify meeting's building belongs to user's organization
+            if let Ok(Some(building)) = state.building_use_cases.get_building(meeting.building_id).await {
+                if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                    if let Err(e) = user.verify_org_access(building_org) {
+                        return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                    }
+                }
+            }
+            HttpResponse::Ok().json(meeting)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Meeting not found"
         })),
@@ -99,8 +113,30 @@ pub async fn list_meetings(
 #[get("/buildings/{building_id}/meetings")]
 pub async fn list_meetings_by_building(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Multi-tenant isolation: verify building belongs to user's organization
+    match state.building_use_cases.get_building(*building_id).await {
+        Ok(Some(building)) => {
+            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                if let Err(e) = user.verify_org_access(building_org) {
+                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                }
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }));
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }));
+        }
+    }
+
     match state
         .meeting_use_cases
         .list_meetings_by_building(*building_id)

@@ -43,6 +43,36 @@ impl AuthenticatedUser {
         self.organization_id
             .ok_or_else(|| ErrorUnauthorized("User does not belong to an organization"))
     }
+
+    /// Check if user is superadmin (can access all organizations)
+    pub fn is_superadmin(&self) -> bool {
+        self.role == "superadmin"
+    }
+
+    /// Get effective organization_id for filtering:
+    /// - SuperAdmin: None (sees everything)
+    /// - Others: Some(org_id)
+    pub fn effective_org_filter(&self) -> Option<Uuid> {
+        if self.is_superadmin() {
+            None
+        } else {
+            self.organization_id
+        }
+    }
+
+    /// Verify that a resource's organization matches the user's organization.
+    /// SuperAdmin bypasses this check.
+    /// Returns Ok(()) if access is allowed, Err(message) if denied.
+    pub fn verify_org_access(&self, resource_org_id: Uuid) -> Result<(), String> {
+        if self.is_superadmin() {
+            return Ok(());
+        }
+        match self.organization_id {
+            Some(user_org_id) if user_org_id == resource_org_id => Ok(()),
+            Some(_) => Err("Access denied: resource belongs to another organization".to_string()),
+            None => Err("User does not belong to an organization".to_string()),
+        }
+    }
 }
 
 impl FromRequest for AuthenticatedUser {

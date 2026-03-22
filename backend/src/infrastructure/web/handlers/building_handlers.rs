@@ -162,9 +162,21 @@ pub async fn list_buildings(
     security(("bearer_auth" = []))
 )]
 #[get("/buildings/{id}")]
-pub async fn get_building(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_building(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.building_use_cases.get_building(*id).await {
-        Ok(Some(building)) => HttpResponse::Ok().json(building),
+        Ok(Some(building)) => {
+            // Multi-tenant isolation: verify building belongs to user's organization
+            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                if let Err(e) = user.verify_org_access(building_org) {
+                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                }
+            }
+            HttpResponse::Ok().json(building)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Building not found"
         })),

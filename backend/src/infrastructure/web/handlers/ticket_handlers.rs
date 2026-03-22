@@ -86,9 +86,19 @@ pub async fn create_ticket(
     security(("bearer_auth" = []))
 )]
 #[get("/tickets/{id}")]
-pub async fn get_ticket(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_ticket(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.ticket_use_cases.get_ticket(*id).await {
-        Ok(Some(ticket)) => HttpResponse::Ok().json(ticket),
+        Ok(Some(ticket)) => {
+            // Multi-tenant isolation: verify ticket belongs to user's organization
+            if let Err(e) = user.verify_org_access(ticket.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+            }
+            HttpResponse::Ok().json(ticket)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Ticket not found"
         })),

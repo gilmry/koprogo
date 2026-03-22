@@ -108,9 +108,25 @@ pub async fn create_expense(
 }
 
 #[get("/expenses/{id}")]
-pub async fn get_expense(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_expense(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.expense_use_cases.get_expense(*id).await {
-        Ok(Some(expense)) => HttpResponse::Ok().json(expense),
+        Ok(Some(expense)) => {
+            // Multi-tenant isolation: verify expense's building belongs to user's organization
+            if let Ok(building_id) = Uuid::parse_str(&expense.building_id) {
+                if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await {
+                    if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                        if let Err(e) = user.verify_org_access(building_org) {
+                            return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                        }
+                    }
+                }
+            }
+            HttpResponse::Ok().json(expense)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Expense not found"
         })),
@@ -147,8 +163,30 @@ pub async fn list_expenses(
 #[get("/buildings/{building_id}/expenses")]
 pub async fn list_expenses_by_building(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     building_id: web::Path<Uuid>,
 ) -> impl Responder {
+    // Multi-tenant isolation: verify building belongs to user's organization
+    match state.building_use_cases.get_building(*building_id).await {
+        Ok(Some(building)) => {
+            if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                if let Err(e) = user.verify_org_access(building_org) {
+                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                }
+            }
+        }
+        Ok(None) => {
+            return HttpResponse::NotFound().json(serde_json::json!({
+                "error": "Building not found"
+            }));
+        }
+        Err(err) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": err
+            }));
+        }
+    }
+
     match state
         .expense_use_cases
         .list_expenses_by_building(*building_id)
@@ -548,9 +586,25 @@ pub async fn get_pending_invoices(
 
 /// GET /invoices/{id} - Get full invoice details (enriched with all fields)
 #[get("/invoices/{id}")]
-pub async fn get_invoice(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_invoice(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.expense_use_cases.get_invoice(*id).await {
-        Ok(Some(invoice)) => HttpResponse::Ok().json(invoice),
+        Ok(Some(invoice)) => {
+            // Multi-tenant isolation: verify invoice's building belongs to user's organization
+            if let Ok(building_id) = Uuid::parse_str(&invoice.building_id) {
+                if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await {
+                    if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
+                        if let Err(e) = user.verify_org_access(building_org) {
+                            return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                        }
+                    }
+                }
+            }
+            HttpResponse::Ok().json(invoice)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Invoice not found"
         })),

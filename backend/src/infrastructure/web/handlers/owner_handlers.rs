@@ -163,9 +163,21 @@ pub async fn get_my_owner(state: web::Data<AppState>, user: AuthenticatedUser) -
 }
 
 #[get("/owners/{id}")]
-pub async fn get_owner(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_owner(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.owner_use_cases.get_owner(*id).await {
-        Ok(Some(owner)) => HttpResponse::Ok().json(owner),
+        Ok(Some(owner)) => {
+            // Multi-tenant isolation: verify owner belongs to user's organization
+            if let Ok(owner_org) = Uuid::parse_str(&owner.organization_id) {
+                if let Err(e) = user.verify_org_access(owner_org) {
+                    return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                }
+            }
+            HttpResponse::Ok().json(owner)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Owner not found"
         })),

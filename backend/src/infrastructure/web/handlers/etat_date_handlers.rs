@@ -77,9 +77,19 @@ pub async fn create_etat_date(
 
 /// Get état daté by ID
 #[get("/etats-dates/{id}")]
-pub async fn get_etat_date(state: web::Data<AppState>, id: web::Path<Uuid>) -> impl Responder {
+pub async fn get_etat_date(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
     match state.etat_date_use_cases.get_etat_date(*id).await {
-        Ok(Some(etat_date)) => HttpResponse::Ok().json(etat_date),
+        Ok(Some(etat_date)) => {
+            // Verify organization access
+            if let Err(err) = user.verify_org_access(etat_date.organization_id) {
+                return HttpResponse::Forbidden().json(serde_json::json!({"error": err}));
+            }
+            HttpResponse::Ok().json(etat_date)
+        }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "État daté not found"
         })),
