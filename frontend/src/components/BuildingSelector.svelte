@@ -13,6 +13,8 @@
     id: string;
     name: string;
     address: string;
+    city?: string;
+    postal_code?: string;
     organization_id?: string;
   }
 
@@ -28,20 +30,37 @@
     try {
       loading = true;
       error = "";
-      const response = await api.get("/buildings");
-      const list = Array.isArray(response)
-        ? response
-        : response.data ?? response.buildings ?? [];
+      const response = await api.get("/buildings?per_page=100");
+
+      // Le backend retourne { data: [...], pagination: {...} }
+      // Gérer tous les formats possibles de manière robuste
+      let list: Building[];
+      if (Array.isArray(response)) {
+        list = response;
+      } else if (response && Array.isArray(response.data)) {
+        list = response.data;
+      } else if (response && Array.isArray(response.buildings)) {
+        list = response.buildings;
+      } else {
+        list = [];
+      }
       buildings = list;
 
+      // Auto-sélection si un seul immeuble
       if (buildings.length === 1 && !selectedBuildingId) {
         selectedBuildingId = buildings[0].id;
-        if (onSelect) onSelect(selectedBuildingId);
-        if (onSelectBuilding) onSelectBuilding(buildings[0]);
+        // Utiliser tick() pour laisser Svelte mettre à jour avant d'appeler le callback
+        setTimeout(() => {
+          if (onSelect) onSelect(selectedBuildingId);
+          if (onSelectBuilding) onSelectBuilding(buildings[0]);
+        }, 0);
       } else if (buildings.length > 1 && selectedBuildingId) {
+        // Si un ID était déjà sélectionné, notifier le parent
         const selected = buildings.find(b => b.id === selectedBuildingId);
-        if (onSelect) onSelect(selectedBuildingId);
-        if (selected && onSelectBuilding) onSelectBuilding(selected);
+        setTimeout(() => {
+          if (onSelect) onSelect(selectedBuildingId);
+          if (selected && onSelectBuilding) onSelectBuilding(selected);
+        }, 0);
       }
     } catch (err: any) {
       error = "Erreur lors du chargement des immeubles";
@@ -53,9 +72,17 @@
 </script>
 
 {#if loading}
-  <div class="text-sm text-gray-500">Chargement des immeubles...</div>
+  <div class="text-sm text-gray-500 py-2">Chargement des immeubles...</div>
 {:else if error}
-  <div class="text-sm text-red-600">{error}</div>
+  <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+    <p class="text-sm text-red-800">{error}</p>
+    <button
+      on:click={loadBuildings}
+      class="mt-2 text-sm text-red-700 underline hover:text-red-900"
+    >
+      Réessayer
+    </button>
+  </div>
 {:else if buildings.length === 0}
   <div class="p-3 bg-red-50 border border-red-200 rounded-md">
     <p class="text-sm text-red-800">
@@ -66,7 +93,7 @@
   <div>
     <label class="block text-sm font-medium text-gray-700">{label}</label>
     <div class="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
-      {buildings[0].name} — {buildings[0].address}
+      {buildings[0].name} — {buildings[0].address}{#if buildings[0].city}, {buildings[0].postal_code} {buildings[0].city}{/if}
     </div>
   </div>
 {:else}
@@ -90,7 +117,9 @@
     >
       <option value="">-- Sélectionner un immeuble --</option>
       {#each buildings as building}
-        <option value={building.id}>{building.name} — {building.address}</option>
+        <option value={building.id}>
+          {building.name} — {building.address}{#if building.city}, {building.postal_code} {building.city}{/if}
+        </option>
       {/each}
     </select>
   </div>
