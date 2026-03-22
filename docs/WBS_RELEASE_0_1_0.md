@@ -407,3 +407,10 @@ Après l'implémentation de chaque feature, elle passe dans la matrice de traça
 
 > **Mise à jour** : 15 mars 2026 — MCP (#252-265) et itsme (#48) repoussés hors 0.1.0. Effort réduit de ~145h à ~96h.
 > **Mise à jour** : 21 mars 2026 — Audit cohérence WBS ↔ Issues ↔ Code. E2E Backend 41%→96%. #273 fermée. 7 issues re-milestoned. #300 créée. Effort réduit de ~96h à ~84h.
+> **Mise à jour** : 22 mars 2026 — Tests E2E manuels (rapport-tests-e2e-koprogo.docx). 17 issues créées :
+>   - 8 bugs (#301-#308) : 2 CRITIQUES (multi-tenant #302, tantièmes #306), 4 MAJEURS, 2 cosmétiques
+>   - 1 GAP architectural (#309) : chaîne approbation dépenses non connectée
+>   - 5 conformité légale (#310-#314) : AG agenda-résolutions, quorum 2e convocation, procurations max 3, PV 30j, mandat syndic 3 ans
+>   - 3 RGPD (#315-#317) : politique confidentialité Art.13-14, DPA Art.28, notification violation Art.33
+>   - Matrice conformité : 67% (25/37 conforme) → objectif 90% pour v0.1.0
+>   - RGPD : 60% (6/10 articles) → objectif 80% pour v0.1.0
