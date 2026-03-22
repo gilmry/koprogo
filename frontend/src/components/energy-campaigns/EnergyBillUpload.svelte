@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { createEventDispatcher } from "svelte";
   import {
     energyBillsApi,
@@ -43,25 +44,19 @@
     try {
       // Validate
       if (!gdprConsent) {
-        throw new Error(
-          "Vous devez accepter les conditions GDPR pour continuer",
-        );
+        throw new Error($_("energy.upload.gdprRequired"));
       }
       if (!formData.energy_type) {
-        throw new Error("Sélectionnez le type d'énergie");
+        throw new Error($_("energy.upload.typeRequired"));
       }
       if (!formData.total_kwh || formData.total_kwh <= 0) {
-        throw new Error(
-          "La consommation doit être supérieure à 0 kWh",
-        );
+        throw new Error($_("energy.upload.consumptionRequired"));
       }
       if (!formData.billing_period_start || !formData.billing_period_end) {
-        throw new Error("Les dates de facturation sont obligatoires");
+        throw new Error($_("energy.upload.datesRequired"));
       }
       if (formData.billing_period_end! <= formData.billing_period_start!) {
-        throw new Error(
-          "La date de fin doit être postérieure à la date de début",
-        );
+        throw new Error($_("energy.upload.dateInvalid"));
       }
 
       // Generate GDPR consent signature
@@ -88,7 +83,7 @@
         success = false;
       }, 2000);
     } catch (err: any) {
-      error = err.message || "Erreur lors de l'upload de la facture";
+      error = err.message || $_("energy.upload.uploadError");
       console.error("Failed to upload energy bill:", err);
     } finally {
       loading = false;
@@ -98,20 +93,17 @@
 
 <div class="bg-white shadow-md rounded-lg p-6">
   <h3 class="text-lg font-medium text-gray-900 mb-4">
-    📄 Uploader votre facture d'énergie
+    📄 {$_("energy.upload.title")}
   </h3>
 
   <p class="text-sm text-gray-600 mb-6">
-    Votre consommation sera <strong>chiffrée (AES-256-GCM)</strong> et
-    agrégée de manière anonyme. Les données détaillées ne seront jamais
-    partagées avec les fournisseurs.
+    {$_("energy.upload.description")}
   </p>
 
   {#if success}
     <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
       <p class="text-sm text-green-800">
-        ✅ Facture uploadée et chiffrée avec succès ! Merci pour votre
-        participation.
+        ✅ {$_("energy.upload.successMessage")}
       </p>
     </div>
   {/if}
@@ -126,7 +118,7 @@
     <!-- Energy Type -->
     <div>
       <label for="energy_type" class="block text-sm font-medium text-gray-700">
-        Type d'énergie <span class="text-red-500">*</span>
+        {$_("energy.upload.energyType")} <span class="text-red-500">*</span>
       </label>
       <select
         id="energy_type"
@@ -134,17 +126,17 @@
         required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       >
-        <option value="">-- Sélectionnez --</option>
-        <option value={EnergyType.Electricity}>⚡ Électricité</option>
-        <option value={EnergyType.Gas}>🔥 Gaz</option>
-        <option value={EnergyType.Heating}>🌡️ Chauffage</option>
+        <option value="">-- {$_("common.select")} --</option>
+        <option value={EnergyType.Electricity}>⚡ {$_("energy.electricity")}</option>
+        <option value={EnergyType.Gas}>🔥 {$_("energy.gas")}</option>
+        <option value={EnergyType.Heating}>🌡️ {$_("energy.heating")}</option>
       </select>
     </div>
 
     <!-- Total kWh -->
     <div>
       <label for="total_kwh" class="block text-sm font-medium text-gray-700">
-        Consommation totale (kWh) <span class="text-red-500">*</span>
+        {$_("energy.upload.totalConsumption")} <span class="text-red-500">*</span>
       </label>
       <input
         type="number"
@@ -153,11 +145,11 @@
         required
         min="1"
         step="0.01"
-        placeholder="Ex: 2500"
+        placeholder={$_("energy.upload.consumptionExample")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
       <p class="mt-1 text-xs text-gray-500">
-        Trouvez cette valeur sur votre facture d'électricité/gaz sous "Consommation".
+        {$_("energy.upload.consumptionHelp")}
       </p>
     </div>
 
@@ -168,7 +160,7 @@
           for="period_start"
           class="block text-sm font-medium text-gray-700"
         >
-          Début de période <span class="text-red-500">*</span>
+          {$_("energy.upload.periodStart")} <span class="text-red-500">*</span>
         </label>
         <input
           type="date"
@@ -183,7 +175,7 @@
           for="period_end"
           class="block text-sm font-medium text-gray-700"
         >
-          Fin de période <span class="text-red-500">*</span>
+          {$_("energy.upload.periodEnd")} <span class="text-red-500">*</span>
         </label>
         <input
           type="date"
@@ -195,44 +187,40 @@
       </div>
     </div>
     <p class="text-xs text-gray-500">
-      La période couverte par votre facture (généralement 1-3 mois).
+      {$_("energy.upload.periodHelp")}
     </p>
 
     <!-- GDPR Consent -->
     <div class="p-4 bg-blue-50 border-2 border-blue-300 rounded-md">
       <h4 class="text-sm font-medium text-blue-900 mb-3">
-        🔒 Consentement GDPR (Obligatoire)
+        🔒 {$_("energy.upload.gdprTitle")}
       </h4>
       <div class="space-y-2 text-xs text-blue-800 mb-4">
         <p>
-          <strong>Vos droits:</strong>
+          <strong>{$_("energy.upload.yourRights")}:</strong>
         </p>
         <ul class="list-disc list-inside space-y-1">
           <li>
-            ✅ <strong>Chiffrement total:</strong> Vos données sont chiffrées avec
-            AES-256-GCM
+            ✅ <strong>{$_("energy.upload.gdprPoint1Title")}:</strong> {$_("energy.upload.gdprPoint1")}
           </li>
           <li>
-            ✅ <strong>K-anonymité:</strong> Minimum 5 participants avant toute publication
+            ✅ <strong>{$_("energy.upload.gdprPoint2Title")}:</strong> {$_("energy.upload.gdprPoint2")}
           </li>
           <li>
-            ✅ <strong>Données anonymisées:</strong> Seules les statistiques agrégées
-            sont partagées
+            ✅ <strong>{$_("energy.upload.gdprPoint3Title")}:</strong> {$_("energy.upload.gdprPoint3")}
           </li>
           <li>
-            ✅ <strong>Droit à l'oubli (Art. 17):</strong> Suppression à tout moment
+            ✅ <strong>{$_("energy.upload.gdprPoint4Title")}:</strong> {$_("energy.upload.gdprPoint4")}
           </li>
           <li>
-            ✅ <strong>Retrait du consentement (Art. 7.3):</strong> Annulez votre
-            participation immédiatement
+            ✅ <strong>{$_("energy.upload.gdprPoint5Title")}:</strong> {$_("energy.upload.gdprPoint5")}
           </li>
           <li>
-            ✅ <strong>Rétention limitée:</strong> Données supprimées après 90 jours
+            ✅ <strong>{$_("energy.upload.gdprPoint6Title")}:</strong> {$_("energy.upload.gdprPoint6")}
           </li>
         </ul>
         <p class="mt-2">
-          <strong>Usage des données:</strong> Calculer la consommation totale de
-          la copropriété pour négocier avec les fournisseurs d'énergie.
+          <strong>{$_("energy.upload.dataUsage")}:</strong> {$_("energy.upload.dataUsageDetails")}
         </p>
       </div>
       <label class="flex items-start">
@@ -243,9 +231,7 @@
           class="mt-0.5 rounded border-blue-300 text-indigo-600 focus:ring-indigo-500"
         />
         <span class="ml-2 text-sm text-blue-900">
-          Je consens au traitement de mes données de consommation d'énergie
-          selon les conditions GDPR ci-dessus. Je comprends que je peux retirer
-          mon consentement à tout moment.
+          {$_("energy.upload.gdprConsent")}
           <span class="text-red-500">*</span>
         </span>
       </label>
@@ -254,9 +240,7 @@
     <!-- Security Info -->
     <div class="p-3 bg-green-50 border border-green-200 rounded-md">
       <p class="text-xs text-green-800">
-        🔐 <strong>Sécurité maximale:</strong> Votre consommation exacte ne sera
-        jamais visible par les autres participants ni par les fournisseurs. Seul
-        un total agrégé anonymisé sera utilisé pour la négociation.
+        🔐 {$_("energy.upload.securityTitle")} {$_("energy.upload.securityDetails")}
       </p>
     </div>
 
@@ -267,7 +251,7 @@
         on:click={() => dispatch("cancel")}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
-        Annuler
+        {$_("common.cancel")}
       </button>
       <button
         type="submit"
@@ -276,9 +260,9 @@
       >
         {#if loading}
           <span class="inline-block animate-spin mr-2">⏳</span>
-          Chiffrement et upload...
+          {$_("energy.upload.uploading")}
         {:else}
-          🔒 Chiffrer et uploader
+          🔒 {$_("energy.upload.encryptAndUpload")}
         {/if}
       </button>
     </div>

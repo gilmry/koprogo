@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { etatsDatesApi, type EtatDate } from '../../lib/api/etats-dates';
   import EtatDateStatusBadge from './EtatDateStatusBadge.svelte';
   import { toast } from '../../stores/toast';
@@ -22,7 +23,7 @@
       error = '';
       etatDate = await etatsDatesApi.getById(etatDateId);
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement';
+      error = err.message || $_('common.loadingError');
     } finally {
       loading = false;
     }
@@ -44,49 +45,49 @@
   }
 
   async function markInProgress() {
-    if (!confirm('Commencer le traitement de cet etat date ?')) return;
+    if (!confirm($_('etatsDate.confirms.startProcessing'))) return;
     try {
       actionLoading = true;
       etatDate = await etatsDatesApi.markInProgress(etatDateId);
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de mettre en cours'));
+      toast.error($_('etatsDate.errors.markingInProgress') + ': ' + (err.message || $_('common.error')));
     } finally {
       actionLoading = false;
     }
   }
 
   async function markGenerated() {
-    const pdfPath = prompt('Chemin du fichier PDF genere:');
+    const pdfPath = prompt($_('etatsDate.prompts.pdfPath'));
     if (!pdfPath) return;
     try {
       actionLoading = true;
       etatDate = await etatsDatesApi.markGenerated(etatDateId, pdfPath);
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de marquer comme généré'));
+      toast.error($_('etatsDate.errors.markingGenerated') + ': ' + (err.message || $_('common.error')));
     } finally {
       actionLoading = false;
     }
   }
 
   async function markDelivered() {
-    if (!confirm('Confirmer la livraison au notaire ?')) return;
+    if (!confirm($_('etatsDate.confirms.confirmDelivery'))) return;
     try {
       actionLoading = true;
       etatDate = await etatsDatesApi.markDelivered(etatDateId);
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de marquer comme délivré'));
+      toast.error($_('etatsDate.errors.markingDelivered') + ': ' + (err.message || $_('common.error')));
     } finally {
       actionLoading = false;
     }
   }
 
   async function deleteEtatDate() {
-    if (!confirm('Supprimer cet etat date ? Cette action est irreversible.')) return;
+    if (!confirm($_('etatsDate.confirms.deleteEtatDate'))) return;
     try {
       await etatsDatesApi.delete(etatDateId);
       window.location.href = '/etats-dates';
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de supprimer'));
+      toast.error($_('etatsDate.errors.deletion') + ': ' + (err.message || $_('common.error')));
     }
   }
 </script>
@@ -98,7 +99,7 @@
 {:else if error}
   <div class="bg-red-50 border border-red-200 rounded-lg p-4">
     <p class="text-red-700">{error}</p>
-    <button on:click={loadEtatDate} class="mt-2 text-sm text-red-600 underline">Reessayer</button>
+    <button on:click={loadEtatDate} class="mt-2 text-sm text-red-600 underline">{$_('common.retry')}</button>
   </div>
 {:else if etatDate}
   <div class="space-y-6">
@@ -107,13 +108,13 @@
       <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-2xl font-bold text-white">Etat Date</h1>
+            <h1 class="text-2xl font-bold text-white">{$_('etatsDate.title')}</h1>
             <p class="text-indigo-100 font-mono">{etatDate.reference_number}</p>
           </div>
           <div class="flex items-center gap-2">
             <EtatDateStatusBadge status={etatDate.status} />
             {#if etatDate.is_overdue}
-              <span class="px-2 py-1 bg-red-500 text-white text-xs rounded-full font-bold">EN RETARD</span>
+              <span class="px-2 py-1 bg-red-500 text-white text-xs rounded-full font-bold">{$_('etatsDate.overdue')}</span>
             {/if}
           </div>
         </div>
@@ -122,18 +123,18 @@
 
     <!-- Property Info -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Bien Immobilier</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{$_('etatsDate.propertyInfo')}</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <p class="text-sm text-gray-600">Immeuble</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.building')}</p>
           <p class="font-medium text-gray-900">{etatDate.building_name}</p>
           <p class="text-sm text-gray-500">{etatDate.building_address}</p>
         </div>
         <div>
-          <p class="text-sm text-gray-600">Lot</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.unit')}</p>
           <p class="font-medium text-gray-900">N. {etatDate.unit_number}</p>
           {#if etatDate.unit_floor}
-            <p class="text-sm text-gray-500">Etage {etatDate.unit_floor}</p>
+            <p class="text-sm text-gray-500">{$_('etatsDate.floor')} {etatDate.unit_floor}</p>
           {/if}
           {#if etatDate.unit_area}
             <p class="text-sm text-gray-500">{etatDate.unit_area} m2</p>
@@ -142,11 +143,11 @@
       </div>
       <div class="mt-4 grid grid-cols-2 gap-4">
         <div class="bg-gray-50 rounded-lg p-3">
-          <p class="text-sm text-gray-600">Quote-part charges ordinaires</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.ordinaryChargesQuota')}</p>
           <p class="text-lg font-bold text-gray-900">{formatPercent(etatDate.ordinary_charges_quota)}</p>
         </div>
         <div class="bg-gray-50 rounded-lg p-3">
-          <p class="text-sm text-gray-600">Quote-part charges extraordinaires</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.extraordinaryChargesQuota')}</p>
           <p class="text-lg font-bold text-gray-900">{formatPercent(etatDate.extraordinary_charges_quota)}</p>
         </div>
       </div>
@@ -154,32 +155,32 @@
 
     <!-- Financial Data -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Donnees Financieres</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{$_('etatsDate.financialData')}</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p class="text-sm text-gray-600">Solde proprietaire</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.ownerBalance')}</p>
           <p class="text-2xl font-bold {etatDate.owner_balance >= 0 ? 'text-green-600' : 'text-red-600'}">
             {formatCurrency(etatDate.owner_balance)}
           </p>
         </div>
         <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <p class="text-sm text-gray-600">Arrieres</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.arrears')}</p>
           <p class="text-2xl font-bold text-orange-600">{formatCurrency(etatDate.arrears_amount)}</p>
         </div>
         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p class="text-sm text-gray-600">Provision mensuelle</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.monthlyProvision')}</p>
           <p class="text-2xl font-bold text-green-600">{formatCurrency(etatDate.monthly_provision_amount)}</p>
         </div>
       </div>
       <div class="mt-4 grid grid-cols-2 gap-4">
         <div class="p-3 border rounded-lg">
-          <p class="text-sm text-gray-600">Solde total</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.totalBalance')}</p>
           <p class="text-xl font-bold {etatDate.total_balance >= 0 ? 'text-green-600' : 'text-red-600'}">
             {formatCurrency(etatDate.total_balance)}
           </p>
         </div>
         <div class="p-3 border rounded-lg">
-          <p class="text-sm text-gray-600">Travaux votes non payes</p>
+          <p class="text-sm text-gray-600">{$_('etatsDate.approvedWorksUnpaid')}</p>
           <p class="text-xl font-bold text-gray-900">{formatCurrency(etatDate.approved_works_unpaid)}</p>
         </div>
       </div>
@@ -187,47 +188,47 @@
 
     <!-- Notary Info -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Notaire Demandeur</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{$_('etatsDate.notaryInfo')}</h2>
       <div class="space-y-2">
-        <p><span class="text-gray-600">Nom:</span> <span class="font-medium">{etatDate.notary_name}</span></p>
-        <p><span class="text-gray-600">Email:</span> <span class="font-medium">{etatDate.notary_email}</span></p>
+        <p><span class="text-gray-600">{$_('common.name')}:</span> <span class="font-medium">{etatDate.notary_name}</span></p>
+        <p><span class="text-gray-600">{$_('common.email')}:</span> <span class="font-medium">{etatDate.notary_email}</span></p>
         {#if etatDate.notary_phone}
-          <p><span class="text-gray-600">Telephone:</span> <span class="font-medium">{etatDate.notary_phone}</span></p>
+          <p><span class="text-gray-600">{$_('common.phone')}:</span> <span class="font-medium">{etatDate.notary_phone}</span></p>
         {/if}
-        <p><span class="text-gray-600">Langue:</span> <span class="font-medium">
-          {etatDate.language === 'fr' ? 'Francais' : etatDate.language === 'nl' ? 'Neerlandais' : 'Allemand'}
+        <p><span class="text-gray-600">{$_('common.language')}:</span> <span class="font-medium">
+          {etatDate.language === 'fr' ? $_('languages.fr') : etatDate.language === 'nl' ? $_('languages.nl') : $_('languages.de')}
         </span></p>
       </div>
     </div>
 
     <!-- Timeline -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Chronologie</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{$_('etatsDate.timeline')}</h2>
       <div class="space-y-3">
         <div class="flex justify-between py-2 border-b">
-          <span class="text-gray-600">Date de reference</span>
+          <span class="text-gray-600">{$_('etatsDate.referenceDate')}</span>
           <span class="font-medium">{formatDate(etatDate.reference_date)}</span>
         </div>
         <div class="flex justify-between py-2 border-b">
-          <span class="text-gray-600">Demande le</span>
+          <span class="text-gray-600">{$_('etatsDate.requestedOn')}</span>
           <span class="font-medium">{formatDate(etatDate.requested_date)}</span>
         </div>
         {#if etatDate.generated_date}
           <div class="flex justify-between py-2 border-b">
-            <span class="text-gray-600">Genere le</span>
+            <span class="text-gray-600">{$_('etatsDate.generatedOn')}</span>
             <span class="font-medium text-green-600">{formatDate(etatDate.generated_date)}</span>
           </div>
         {/if}
         {#if etatDate.delivered_date}
           <div class="flex justify-between py-2 border-b">
-            <span class="text-gray-600">Delivre le</span>
+            <span class="text-gray-600">{$_('etatsDate.deliveredOn')}</span>
             <span class="font-medium text-purple-600">{formatDate(etatDate.delivered_date)}</span>
           </div>
         {/if}
         <div class="flex justify-between py-2">
-          <span class="text-gray-600">Jours depuis la demande</span>
+          <span class="text-gray-600">{$_('etatsDate.daysSinceRequest')}</span>
           <span class="font-bold {etatDate.days_since_request > 10 ? 'text-red-600' : 'text-gray-900'}">
-            {etatDate.days_since_request} jours
+            {etatDate.days_since_request} {$_('common.days')}
           </span>
         </div>
       </div>
@@ -236,16 +237,16 @@
     <!-- PDF -->
     {#if etatDate.pdf_file_path}
       <div class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-lg font-semibold text-gray-900 mb-3">Document PDF</h2>
+        <h2 class="text-lg font-semibold text-gray-900 mb-3">{$_('etatsDate.pdfDocument')}</h2>
         <a href={etatDate.pdf_file_path} class="text-primary-600 hover:text-primary-700 font-medium">
-          Telecharger le PDF
+          {$_('etatsDate.downloadPdf')}
         </a>
       </div>
     {/if}
 
     <!-- Actions -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{$_('common.actions')}</h2>
       <div class="flex flex-wrap gap-3">
         {#if etatDate.status === 'requested'}
           <button
@@ -253,7 +254,7 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition disabled:opacity-50"
           >
-            Commencer le traitement
+            {$_('etatsDate.actions.startProcessing')}
           </button>
         {/if}
 
@@ -263,7 +264,7 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
           >
-            Marquer comme genere
+            {$_('etatsDate.actions.markAsGenerated')}
           </button>
         {/if}
 
@@ -273,7 +274,7 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
           >
-            Confirmer la livraison
+            {$_('etatsDate.actions.confirmDelivery')}
           </button>
         {/if}
 
@@ -282,12 +283,12 @@
             on:click={deleteEtatDate}
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
           >
-            Supprimer
+            {$_('common.delete')}
           </button>
         {/if}
 
         <a href="/etats-dates" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-          Retour a la liste
+          {$_('common.backToList')}
         </a>
       </div>
     </div>

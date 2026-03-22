@@ -1,13 +1,15 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
+
   export let status: string;
 
   function getBadge(s: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'requested': { class: 'bg-blue-100 text-blue-800', label: 'Demande' },
-      'in_progress': { class: 'bg-yellow-100 text-yellow-800', label: 'En cours' },
-      'generated': { class: 'bg-green-100 text-green-800', label: 'Genere' },
-      'delivered': { class: 'bg-purple-100 text-purple-800', label: 'Delivre' },
-      'expired': { class: 'bg-red-100 text-red-800', label: 'Expire' },
+      'requested': { class: 'bg-blue-100 text-blue-800', label: $_('etatsDate.status.requested') },
+      'in_progress': { class: 'bg-yellow-100 text-yellow-800', label: $_('etatsDate.status.inProgress') },
+      'generated': { class: 'bg-green-100 text-green-800', label: $_('etatsDate.status.generated') },
+      'delivered': { class: 'bg-purple-100 text-purple-800', label: $_('etatsDate.status.delivered') },
+      'expired': { class: 'bg-red-100 text-red-800', label: $_('etatsDate.status.expired') },
     };
     return badges[s] || { class: 'bg-gray-100 text-gray-800', label: s };
   }

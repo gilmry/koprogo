@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { authStore } from '../stores/auth';
   import { toast } from '../stores/toast';
   import { api } from '../lib/api';
@@ -158,9 +159,9 @@
 
 <div class="bg-white shadow rounded-lg p-6" data-testid="gdpr-data-panel">
   <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-bold text-gray-900" data-testid="gdpr-panel-title">My Personal Data</h2>
+    <h2 class="text-2xl font-bold text-gray-900" data-testid="gdpr-panel-title">{$_('gdpr.myPersonalData')}</h2>
     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800" data-testid="gdpr-rights-badge">
-      GDPR Rights
+      {$_('gdpr.rights')}
     </span>
   </div>
 
@@ -174,7 +175,7 @@
           </svg>
         </div>
         <div class="ml-3 flex-1">
-          <h3 class="text-lg font-medium text-blue-900">Right to Access (Article 15)</h3>
+          <h3 class="text-lg font-medium text-blue-900">{$_('gdpr.article15.title')}</h3>
           <p class="mt-2 text-sm text-blue-700">
             Export all your personal data in a machine-readable format. This includes your account information,
             owner records, unit ownerships, expenses, documents, and meeting participation.

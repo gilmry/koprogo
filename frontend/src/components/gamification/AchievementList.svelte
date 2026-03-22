@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
   import { onMount } from 'svelte';
   import {
     gamificationApi,
@@ -51,7 +52,7 @@
       achievements = achList;
       userAchievements = userAchList;
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement des achievements';
+      error = err.message || $_('gamification.load_error');
     } finally {
       loading = false;
     }
@@ -70,14 +71,14 @@
 
   function getCategoryLabel(cat: AchievementCategory): string {
     const labels: Record<AchievementCategory, string> = {
-      [AchievementCategory.Community]: 'Communauté',
-      [AchievementCategory.Sel]: 'SEL',
-      [AchievementCategory.Booking]: 'Réservations',
-      [AchievementCategory.Sharing]: 'Partage',
-      [AchievementCategory.Skills]: 'Compétences',
-      [AchievementCategory.Notice]: 'Annonces',
-      [AchievementCategory.Governance]: 'Gouvernance',
-      [AchievementCategory.Milestone]: 'Jalons',
+      [AchievementCategory.Community]: $_('gamification.cat_community'),
+      [AchievementCategory.Sel]: $_('gamification.cat_sel'),
+      [AchievementCategory.Booking]: $_('gamification.cat_booking'),
+      [AchievementCategory.Sharing]: $_('gamification.cat_sharing'),
+      [AchievementCategory.Skills]: $_('gamification.cat_skills'),
+      [AchievementCategory.Notice]: $_('gamification.cat_notice'),
+      [AchievementCategory.Governance]: $_('gamification.cat_governance'),
+      [AchievementCategory.Milestone]: $_('gamification.cat_milestone'),
     };
     return labels[cat] || cat;
   }
@@ -91,9 +92,9 @@
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Achievements</h3>
+        <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.achievements_title')}</h3>
         <p class="mt-1 text-sm text-gray-500">
-          {earnedCount}/{achievements.length} obtenus - {totalPoints} points
+          {$_('gamification.earned_stats', { earned: earnedCount, total: achievements.length, points: totalPoints })}
         </p>
       </div>
     </div>
@@ -105,7 +106,7 @@
       <button on:click={() => categoryFilter = 'all'}
         class="px-2 py-1 rounded text-xs font-medium transition-colors
           {categoryFilter === 'all' ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
-        Tous
+        {$_('common.all')}
       </button>
       {#each Object.values(AchievementCategory) as cat}
         <button on:click={() => categoryFilter = cat}
@@ -120,16 +121,16 @@
   {#if loading}
     <div class="p-8 text-center">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
+      <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">Réessayer</button>
+      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if filteredAchievements.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">Aucun achievement dans cette catégorie</p>
+      <p class="text-gray-500">{$_('gamification.no_achievements')}</p>
     </div>
   {:else}
     <div class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -158,7 +159,7 @@
                 <span>{achievement.points_value} pts</span>
                 <span>{getCategoryLabel(achievement.category)}</span>
                 {#if achievement.is_repeatable}
-                  <span class="text-purple-600">Répétable</span>
+                  <span class="text-purple-600">{$_('gamification.repeatable')}</span>
                 {/if}
                 {#if userAch && userAch.times_earned > 1}
                   <span class="text-amber-600 font-medium">x{userAch.times_earned}</span>

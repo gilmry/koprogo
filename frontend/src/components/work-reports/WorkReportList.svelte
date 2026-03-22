@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { onMount } from "svelte";
   import { workReportsApi, workTypeLabels, warrantyTypeLabels } from "../../lib/api/work-reports";
   import type { WorkReport, CreateWorkReportDto } from "../../lib/api/work-reports";
@@ -41,7 +42,7 @@
     try {
       reports = await workReportsApi.listByBuilding(buildingId);
     } catch (e: any) {
-      error = e.message || "Erreur lors du chargement des rapports";
+      error = e.message || $_("workReports.loadError");
     } finally {
       loading = false;
     }
@@ -49,7 +50,7 @@
 
   async function createReport() {
     if (!form.title || !form.contractor_name) {
-      toast.error("Le titre et le nom de l'entrepreneur sont requis");
+      toast.error($_("workReports.titleAndContractorRequired"));
       return;
     }
     try {
@@ -68,23 +69,23 @@
         warranty_type: form.warranty_type || WarrantyType.Standard,
       };
       await workReportsApi.create(data);
-      toast.success("Rapport de travaux créé");
+      toast.success($_("workReports.createSuccess"));
       form = resetForm();
       showCreateForm = false;
       await loadReports();
     } catch (e: any) {
-      toast.error(e.message || "Erreur lors de la création");
+      toast.error(e.message || $_("common.createError"));
     }
   }
 
   async function deleteReport(id: string) {
-    if (!confirm("Supprimer ce rapport de travaux ?")) return;
+    if (!confirm($_("workReports.deleteConfirm"))) return;
     try {
       await workReportsApi.delete(id);
-      toast.success("Rapport supprimé");
+      toast.success($_("workReports.deleteSuccess"));
       await loadReports();
     } catch (e: any) {
-      toast.error(e.message || "Erreur lors de la suppression");
+      toast.error(e.message || $_("workReports.deleteError"));
     }
   }
 
@@ -130,30 +131,30 @@
 <div class="space-y-4">
   <!-- Header -->
   <div class="flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-800">Rapports de travaux</h2>
+    <h2 class="text-lg font-semibold text-gray-800">{$_("workReports.title")}</h2>
     <button
       on:click={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
     >
-      {showCreateForm ? "Annuler" : "+ Nouveau rapport"}
+      {showCreateForm ? $_("common.cancel") : "+ " + $_("workReports.newReport")}
     </button>
   </div>
 
   <!-- Create Form -->
   {#if showCreateForm}
     <div class="bg-white shadow rounded-lg p-4 border border-blue-200">
-      <h3 class="font-medium text-gray-800 mb-3">Nouveau rapport de travaux</h3>
+      <h3 class="font-medium text-gray-800 mb-3">{$_("workReports.newReport")}</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
-          <label for="wr-new-title" class="block text-sm text-gray-600 mb-1">Titre *</label>
-          <input id="wr-new-title" bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Ex: Réparation ascenseur" />
+          <label for="wr-new-title" class="block text-sm text-gray-600 mb-1">{$_("common.title")} *</label>
+          <input id="wr-new-title" bind:value={form.title} class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("workReports.titlePlaceholder")} />
         </div>
         <div>
-          <label for="wr-new-contractor" class="block text-sm text-gray-600 mb-1">Entrepreneur *</label>
-          <input id="wr-new-contractor" bind:value={form.contractor_name} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Nom de l'entreprise" />
+          <label for="wr-new-contractor" class="block text-sm text-gray-600 mb-1">{$_("workReports.contractor")} *</label>
+          <input id="wr-new-contractor" bind:value={form.contractor_name} class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("workReports.contractorPlaceholder")} />
         </div>
         <div>
-          <label for="wr-new-type" class="block text-sm text-gray-600 mb-1">Type de travaux</label>
+          <label for="wr-new-type" class="block text-sm text-gray-600 mb-1">{$_("workReports.workType")}</label>
           <select id="wr-new-type" bind:value={form.work_type} class="w-full border rounded px-3 py-1.5 text-sm">
             {#each Object.entries(workTypeLabels) as [val, label]}
               <option value={val}>{label}</option>
@@ -161,15 +162,15 @@
           </select>
         </div>
         <div>
-          <label for="wr-new-date" class="block text-sm text-gray-600 mb-1">Date des travaux</label>
+          <label for="wr-new-date" class="block text-sm text-gray-600 mb-1">{$_("workReports.workDate")}</label>
           <input id="wr-new-date" type="date" bind:value={form.work_date} class="w-full border rounded px-3 py-1.5 text-sm" />
         </div>
         <div>
-          <label for="wr-new-cost" class="block text-sm text-gray-600 mb-1">Coût (EUR)</label>
+          <label for="wr-new-cost" class="block text-sm text-gray-600 mb-1">{$_("workReports.cost")}</label>
           <input id="wr-new-cost" type="number" bind:value={form.cost} min="0" step="0.01" class="w-full border rounded px-3 py-1.5 text-sm" />
         </div>
         <div>
-          <label for="wr-new-warranty" class="block text-sm text-gray-600 mb-1">Garantie</label>
+          <label for="wr-new-warranty" class="block text-sm text-gray-600 mb-1">{$_("workReports.warranty")}</label>
           <select id="wr-new-warranty" bind:value={form.warranty_type} class="w-full border rounded px-3 py-1.5 text-sm">
             {#each Object.entries(warrantyTypeLabels) as [val, label]}
               <option value={val}>{label}</option>
@@ -177,25 +178,25 @@
           </select>
         </div>
         <div>
-          <label for="wr-new-invoice" class="block text-sm text-gray-600 mb-1">N° Facture</label>
-          <input id="wr-new-invoice" bind:value={form.invoice_number} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Optionnel" />
+          <label for="wr-new-invoice" class="block text-sm text-gray-600 mb-1">{$_("workReports.invoiceNumber")}</label>
+          <input id="wr-new-invoice" bind:value={form.invoice_number} class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("common.optional")} />
         </div>
         <div>
-          <label for="wr-new-contact" class="block text-sm text-gray-600 mb-1">Contact entrepreneur</label>
-          <input id="wr-new-contact" bind:value={form.contractor_contact} class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Téléphone ou email" />
+          <label for="wr-new-contact" class="block text-sm text-gray-600 mb-1">{$_("workReports.contactContractor")}</label>
+          <input id="wr-new-contact" bind:value={form.contractor_contact} class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("workReports.phoneOrEmail")} />
         </div>
         <div class="md:col-span-2">
-          <label for="wr-new-desc" class="block text-sm text-gray-600 mb-1">Description</label>
-          <textarea id="wr-new-desc" bind:value={form.description} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Détails des travaux effectués"></textarea>
+          <label for="wr-new-desc" class="block text-sm text-gray-600 mb-1">{$_("common.description")}</label>
+          <textarea id="wr-new-desc" bind:value={form.description} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("workReports.descriptionPlaceholder")}></textarea>
         </div>
         <div class="md:col-span-2">
-          <label for="wr-new-notes" class="block text-sm text-gray-600 mb-1">Notes</label>
-          <textarea id="wr-new-notes" bind:value={form.notes} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder="Notes additionnelles"></textarea>
+          <label for="wr-new-notes" class="block text-sm text-gray-600 mb-1">{$_("common.notes")}</label>
+          <textarea id="wr-new-notes" bind:value={form.notes} rows="2" class="w-full border rounded px-3 py-1.5 text-sm" placeholder={$_("workReports.notesPlaceholder")}></textarea>
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button on:click={createReport} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">Créer</button>
-        <button on:click={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">Annuler</button>
+        <button on:click={createReport} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">{$_("common.create")}</button>
+        <button on:click={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
       </div>
     </div>
   {/if}
@@ -203,7 +204,7 @@
   <!-- Filters -->
   <div class="flex flex-wrap gap-2">
     <button on:click={() => (filterType = "all")} class="px-3 py-1 text-xs rounded-full {filterType === 'all' ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
-      Tous ({reports.length})
+      {$_("common.all")} ({reports.length})
     </button>
     {#each Object.entries(workTypeLabels) as [val, label]}
       {#if typeCounts[val]}
@@ -218,15 +219,15 @@
   {#if loading}
     <div class="text-center py-8 text-gray-500">
       <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-      <p class="mt-2 text-sm">Chargement...</p>
+      <p class="mt-2 text-sm">{$_("common.loading")}</p>
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
       {error}
-      <button on:click={loadReports} class="ml-2 underline">Réessayer</button>
+      <button on:click={loadReports} class="ml-2 underline">{$_("common.retry")}</button>
     </div>
   {:else if filteredReports.length === 0}
-    <div class="text-center py-8 text-gray-400 text-sm">Aucun rapport de travaux</div>
+    <div class="text-center py-8 text-gray-400 text-sm">{$_("workReports.none")}</div>
   {:else}
     <!-- Reports list -->
     <div class="space-y-3">
@@ -256,25 +257,25 @@
                 <p class="text-sm text-gray-500 mt-1 line-clamp-2">{report.description}</p>
               {/if}
               <div class="flex flex-wrap items-center gap-4 mt-2 text-xs text-gray-500">
-                <span>Date: {formatDate(report.work_date)}</span>
-                <span>Coût: {formatCurrency(report.cost)}</span>
+                <span>{$_("workReports.workDate")}: {formatDate(report.work_date)}</span>
+                <span>{$_("workReports.cost")}: {formatCurrency(report.cost)}</span>
                 {#if report.invoice_number}
-                  <span>Facture: {report.invoice_number}</span>
+                  <span>{$_("workReports.invoiceNumber")}: {report.invoice_number}</span>
                 {/if}
                 {#if report.warranty_type !== "none"}
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full {report.is_warranty_valid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    {report.is_warranty_valid ? `Garantie: ${report.warranty_days_remaining}j restants` : "Garantie expirée"}
+                    {report.is_warranty_valid ? $_("workReports.warrantyActive", { values: { days: report.warranty_days_remaining } }) : $_("workReports.warrantyExpired")}
                   </span>
                 {/if}
                 {#if report.photos.length > 0}
-                  <span>{report.photos.length} photo(s)</span>
+                  <span>{report.photos.length} {$_("common.photos")}</span>
                 {/if}
               </div>
             </div>
             <button
               on:click|stopPropagation={() => deleteReport(report.id)}
               class="text-red-400 hover:text-red-600 p-1"
-              title="Supprimer"
+              title={$_("common.delete")}
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { budgetsApi, type Budget, type BudgetVariance } from '../../lib/api/budgets';
   import BudgetStatusBadge from './BudgetStatusBadge.svelte';
   import { toast } from '../../stores/toast';
@@ -57,12 +58,12 @@
   }
 
   async function submitBudget() {
-    if (!confirm('Soumettre ce budget pour approbation en AG ?')) return;
+    if (!confirm($_('budgets.confirms.submitForApproval'))) return;
     try {
       actionLoading = true;
       budget = await budgetsApi.submit(budgetId);
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de soumettre'));
+      toast.error($_('budgets.errors.submit') + ': ' + (err.message || $_('common.error')));
     } finally {
       actionLoading = false;
     }
@@ -70,7 +71,7 @@
 
   async function approveBudget() {
     if (!meetingId.trim()) {
-      toast.error('Veuillez entrer l\'ID de l\'assemblée générale');
+      toast.error($_('budgets.errors.meetingIdRequired'));
       return;
     }
     try {
@@ -78,7 +79,7 @@
       budget = await budgetsApi.approve(budgetId, meetingId);
       showApproveModal = false;
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible d\'approuver'));
+      toast.error($_('budgets.errors.approve') + ': ' + (err.message || $_('common.error')));
     } finally {
       actionLoading = false;
     }
@@ -90,31 +91,31 @@
       budget = await budgetsApi.reject(budgetId, rejectReason || undefined);
       showRejectModal = false;
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de rejeter'));
+      toast.error($_('budgets.errors.reject') + ': ' + (err.message || $_('common.error')));
     } finally {
       actionLoading = false;
     }
   }
 
   async function archiveBudget() {
-    if (!confirm('Archiver ce budget ?')) return;
+    if (!confirm($_('budgets.confirms.archiveBudget'))) return;
     try {
       actionLoading = true;
       budget = await budgetsApi.archive(budgetId);
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible d\'archiver'));
+      toast.error($_('budgets.errors.archive') + ': ' + (err.message || $_('common.error')));
     } finally {
       actionLoading = false;
     }
   }
 
   async function deleteBudget() {
-    if (!confirm('Supprimer ce budget ? Cette action est irreversible.')) return;
+    if (!confirm($_('budgets.confirms.deleteBudget'))) return;
     try {
       await budgetsApi.delete(budgetId);
       window.location.href = '/budgets';
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de supprimer'));
+      toast.error($_('budgets.errors.delete') + ': ' + (err.message || $_('common.error')));
     }
   }
 </script>
@@ -126,7 +127,7 @@
 {:else if error}
   <div class="bg-red-50 border border-red-200 rounded-lg p-4">
     <p class="text-red-700">{error}</p>
-    <button on:click={loadBudget} class="mt-2 text-sm text-red-600 underline">Reessayer</button>
+    <button on:click={loadBudget} class="mt-2 text-sm text-red-600 underline">{$_('common.retry')}</button>
   </div>
 {:else if budget}
   <div class="space-y-6">
@@ -135,8 +136,8 @@
       <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-2xl font-bold text-white">Budget {budget.fiscal_year}</h1>
-            <p class="text-primary-100 mt-1">Immeuble: {budget.building_id.substring(0, 8)}...</p>
+            <h1 class="text-2xl font-bold text-white">{$_('budgets.budget')} {budget.fiscal_year}</h1>
+            <p class="text-primary-100 mt-1">{$_('budgets.building')}: {budget.building_id.substring(0, 8)}...</p>
           </div>
           <BudgetStatusBadge status={budget.status} />
         </div>
@@ -146,21 +147,21 @@
     <!-- Amounts -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="bg-white rounded-lg shadow p-6">
-        <p class="text-sm text-gray-600 mb-1">Budget Ordinaire</p>
+        <p class="text-sm text-gray-600 mb-1">{$_('budgets.ordinaryBudget')}</p>
         <p class="text-2xl font-bold text-gray-900">{formatCurrency(budget.ordinary_budget)}</p>
-        <p class="text-xs text-gray-500 mt-1">Charges courantes</p>
+        <p class="text-xs text-gray-500 mt-1">{$_('budgets.ordinaryBudgetHint')}</p>
       </div>
       <div class="bg-white rounded-lg shadow p-6">
-        <p class="text-sm text-gray-600 mb-1">Budget Extraordinaire</p>
+        <p class="text-sm text-gray-600 mb-1">{$_('budgets.extraordinaryBudget')}</p>
         <p class="text-2xl font-bold text-gray-900">{formatCurrency(budget.extraordinary_budget)}</p>
-        <p class="text-xs text-gray-500 mt-1">Gros travaux</p>
+        <p class="text-xs text-gray-500 mt-1">{$_('budgets.extraordinaryBudgetHint')}</p>
       </div>
       <div class="bg-white rounded-lg shadow p-6">
-        <p class="text-sm text-gray-600 mb-1">Budget Total</p>
+        <p class="text-sm text-gray-600 mb-1">{$_('budgets.totalBudget')}</p>
         <p class="text-2xl font-bold text-primary-600">{formatCurrency(budget.total_budget)}</p>
       </div>
       <div class="bg-white rounded-lg shadow p-6">
-        <p class="text-sm text-gray-600 mb-1">Provision Mensuelle</p>
+        <p class="text-sm text-gray-600 mb-1">{$_('budgets.monthlyProvision')}</p>
         <p class="text-2xl font-bold text-green-600">{formatCurrency(budget.monthly_provision_amount)}</p>
         <p class="text-xs text-gray-500 mt-1">{formatCurrency(budget.total_budget)} / 12</p>
       </div>
@@ -168,27 +169,27 @@
 
     <!-- Timeline -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Chronologie</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{$_('budgets.timeline')}</h2>
       <div class="space-y-3">
         <div class="flex justify-between py-2 border-b">
-          <span class="text-gray-600">Cree le</span>
+          <span class="text-gray-600">{$_('budgets.createdOn')}</span>
           <span class="font-medium">{formatDate(budget.created_at)}</span>
         </div>
         {#if budget.submitted_date}
           <div class="flex justify-between py-2 border-b">
-            <span class="text-gray-600">Soumis le</span>
+            <span class="text-gray-600">{$_('budgets.submittedOn')}</span>
             <span class="font-medium">{formatDate(budget.submitted_date)}</span>
           </div>
         {/if}
         {#if budget.approved_date}
           <div class="flex justify-between py-2 border-b">
-            <span class="text-gray-600">Approuve le</span>
+            <span class="text-gray-600">{$_('budgets.approvedOn')}</span>
             <span class="font-medium text-green-600">{formatDate(budget.approved_date)}</span>
           </div>
         {/if}
         {#if budget.notes}
           <div class="flex justify-between py-2">
-            <span class="text-gray-600">Notes</span>
+            <span class="text-gray-600">{$_('budgets.notes')}</span>
             <span class="font-medium text-right max-w-md">{budget.notes}</span>
           </div>
         {/if}
@@ -199,28 +200,28 @@
     {#if variance}
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">
-          Analyse des Ecarts
+          {$_('budgets.varianceAnalysis')}
           {#if variance.has_overruns}
-            <span class="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">Depassement</span>
+            <span class="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">{$_('budgets.overrun')}</span>
           {/if}
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
-            <p class="text-sm text-gray-600">Ordinaire</p>
+            <p class="text-sm text-gray-600">{$_('budgets.ordinary')}</p>
             <p class="text-lg font-bold {variance.variance_ordinary >= 0 ? 'text-green-600' : 'text-red-600'}">
               {variance.variance_ordinary >= 0 ? '+' : ''}{formatCurrency(variance.variance_ordinary)}
               <span class="text-sm font-normal">({variance.variance_ordinary_pct.toFixed(1)}%)</span>
             </p>
           </div>
           <div>
-            <p class="text-sm text-gray-600">Extraordinaire</p>
+            <p class="text-sm text-gray-600">{$_('budgets.extraordinary')}</p>
             <p class="text-lg font-bold {variance.variance_extraordinary >= 0 ? 'text-green-600' : 'text-red-600'}">
               {variance.variance_extraordinary >= 0 ? '+' : ''}{formatCurrency(variance.variance_extraordinary)}
               <span class="text-sm font-normal">({variance.variance_extraordinary_pct.toFixed(1)}%)</span>
             </p>
           </div>
           <div>
-            <p class="text-sm text-gray-600">Total</p>
+            <p class="text-sm text-gray-600">{$_('budgets.total')}</p>
             <p class="text-lg font-bold {variance.variance_total >= 0 ? 'text-green-600' : 'text-red-600'}">
               {variance.variance_total >= 0 ? '+' : ''}{formatCurrency(variance.variance_total)}
               <span class="text-sm font-normal">({variance.variance_total_pct.toFixed(1)}%)</span>
@@ -232,7 +233,7 @@
         <div class="space-y-3">
           <div>
             <div class="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Ordinaire: {formatCurrency(variance.actual_ordinary)} / {formatCurrency(variance.budgeted_ordinary)}</span>
+              <span>{$_('budgets.ordinary')}: {formatCurrency(variance.actual_ordinary)} / {formatCurrency(variance.budgeted_ordinary)}</span>
               <span>{Math.round((variance.actual_ordinary / variance.budgeted_ordinary) * 100)}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
@@ -241,7 +242,7 @@
           </div>
           <div>
             <div class="flex justify-between text-sm text-gray-600 mb-1">
-              <span>Extraordinaire: {formatCurrency(variance.actual_extraordinary)} / {formatCurrency(variance.budgeted_extraordinary)}</span>
+              <span>{$_('budgets.extraordinary')}: {formatCurrency(variance.actual_extraordinary)} / {formatCurrency(variance.budgeted_extraordinary)}</span>
               <span>{Math.round((variance.actual_extraordinary / variance.budgeted_extraordinary) * 100)}%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2">
@@ -251,14 +252,14 @@
         </div>
 
         <div class="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-          <p>Mois ecoules: {variance.months_elapsed}/12 | Projection fin d'annee: {formatCurrency(variance.projected_year_end_total)}</p>
+          <p>{$_('budgets.monthsElapsed', { values: { months: variance.months_elapsed } })} | {$_('budgets.yearEndProjection')}: {formatCurrency(variance.projected_year_end_total)}</p>
         </div>
       </div>
     {/if}
 
     <!-- Actions -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">{$_('common.actions')}</h2>
       <div class="flex flex-wrap gap-3">
         {#if budget.status === 'draft' || budget.status === 'rejected'}
           <button
@@ -266,7 +267,7 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
           >
-            Soumettre pour approbation AG
+            {$_('budgets.actions.submitForApproval')}
           </button>
         {/if}
 
@@ -276,14 +277,14 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
           >
-            Approuver
+            {$_('budgets.actions.approve')}
           </button>
           <button
             on:click={() => showRejectModal = true}
             disabled={actionLoading}
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
           >
-            Rejeter
+            {$_('budgets.actions.reject')}
           </button>
         {/if}
 
@@ -293,7 +294,7 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition disabled:opacity-50"
           >
-            Archiver
+            {$_('budgets.actions.archive')}
           </button>
         {/if}
 
@@ -302,12 +303,12 @@
             on:click={deleteBudget}
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
           >
-            Supprimer
+            {$_('common.delete')}
           </button>
         {/if}
 
         <a href="/budgets" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-          Retour a la liste
+          {$_('common.backToList')}
         </a>
       </div>
     </div>
@@ -317,28 +318,28 @@
   {#if showApproveModal}
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Approuver le Budget</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('budgets.approveBudget')}</h3>
         <p class="text-sm text-gray-600 mb-4">
-          Indiquez l'assemblee generale qui a approuve ce budget.
+          {$_('budgets.approveBudgetDescription')}
         </p>
         <div class="mb-4">
           <label for="meeting-id" class="block text-sm font-medium text-gray-700 mb-1">
-            ID de l'Assemblee Generale
+            {$_('budgets.meetingId')}
           </label>
           <input
             id="meeting-id"
             type="text"
             bind:value={meetingId}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            placeholder="UUID de l'AG"
+            placeholder="UUID AG"
           />
         </div>
         <div class="flex justify-end space-x-3">
           <button on:click={() => showApproveModal = false} class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            Annuler
+            {$_('common.cancel')}
           </button>
           <button on:click={approveBudget} disabled={actionLoading} class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
-            Approuver
+            {$_('budgets.actions.approve')}
           </button>
         </div>
       </div>
@@ -349,25 +350,25 @@
   {#if showRejectModal}
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Rejeter le Budget</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('budgets.rejectBudget')}</h3>
         <div class="mb-4">
           <label for="reject-reason" class="block text-sm font-medium text-gray-700 mb-1">
-            Raison du rejet (optionnel)
+            {$_('budgets.rejectionReason')}
           </label>
           <textarea
             id="reject-reason"
             bind:value={rejectReason}
             rows="3"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            placeholder="Expliquez la raison du rejet..."
+            placeholder={$_('budgets.rejectionReasonPlaceholder')}
           ></textarea>
         </div>
         <div class="flex justify-end space-x-3">
           <button on:click={() => showRejectModal = false} class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            Annuler
+            {$_('common.cancel')}
           </button>
           <button on:click={rejectBudget} disabled={actionLoading} class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
-            Rejeter
+            {$_('budgets.actions.reject')}
           </button>
         </div>
       </div>

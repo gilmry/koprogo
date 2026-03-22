@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import Pagination from './Pagination.svelte';
   import DocumentUploadModal from './DocumentUploadModal.svelte';
@@ -101,7 +102,7 @@
       }
     } catch (e) {
       error =
-        e instanceof Error ? e.message : 'Erreur lors du chargement des documents';
+        e instanceof Error ? e.message : $_('documents.loadError');
       console.error('Error loading documents:', e);
     } finally {
       loading = false;
@@ -158,7 +159,7 @@
       await api.download(`/documents/${doc.id}/download`, getDownloadFilename(doc));
     } catch (err) {
       downloadError =
-        err instanceof Error ? err.message : 'Erreur lors du téléchargement';
+        err instanceof Error ? err.message : $_('documents.downloadError');
       console.error('Download failed', err);
     }
   }
@@ -166,7 +167,7 @@
   async function handleDelete(doc: Document) {
     if (!computedAllowDelete) return;
     const confirmed = window.confirm(
-      `Supprimer définitivement le document « ${doc.title} » ?`,
+      $_('documents.deleteConfirm', { values: { title: doc.title } }),
     );
     if (!confirmed) return;
 
@@ -176,11 +177,11 @@
 
     try {
       await api.deleteDocument(doc.id);
-      infoMessage = 'Document supprimé avec succès.';
+      infoMessage = $_('documents.deleteSuccess');
       await loadDocuments();
     } catch (err) {
       deleteError =
-        err instanceof Error ? err.message : 'Erreur lors de la suppression du document';
+        err instanceof Error ? err.message : $_('documents.deleteError');
       console.error('Delete failed', err);
     } finally {
       deletingId = null;
@@ -189,7 +190,7 @@
 
   function handleUploadSuccess() {
     showUploadModal = false;
-    infoMessage = 'Document téléversé avec succès.';
+    infoMessage = $_('documents.uploadSuccess');
     loadDocuments();
   }
 
@@ -207,7 +208,7 @@
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
       <p class="text-gray-600">
-        {totalItems} document{totalItems !== 1 ? 's' : ''}
+        {$_('documents.count', { values: { count: totalItems } })}
       </p>
       {#if buildingsError}
         <p class="text-sm text-red-500">{buildingsError}</p>
@@ -219,7 +220,7 @@
         on:click={handleOpenUpload}
       >
         <span>📤</span>
-        <span>Téléverser un document</span>
+        <span>{$_('documents.upload')}</span>
       </button>
     {/if}
   </div>
@@ -249,22 +250,22 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8">Chargement…</p>
+    <p class="text-center text-gray-600 py-8">{$_('common.loading')}</p>
   {:else if documents.length === 0}
     <p class="text-center text-gray-600 py-8">
-      Aucun document enregistré pour le moment.
+      {$_('documents.empty')}
     </p>
   {:else}
     <div class="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm">
       <table class="min-w-full divide-y divide-gray-100 text-sm">
         <thead class="bg-gray-50">
           <tr class="text-left text-gray-500 uppercase text-xs tracking-wider">
-            <th scope="col" class="px-5 py-3">Titre</th>
-            <th scope="col" class="px-5 py-3">Bâtiment</th>
-            <th scope="col" class="px-5 py-3">Type</th>
-            <th scope="col" class="px-5 py-3">Taille</th>
-            <th scope="col" class="px-5 py-3">Ajouté le</th>
-            <th scope="col" class="px-5 py-3 text-right">Actions</th>
+            <th scope="col" class="px-5 py-3">{$_('documents.title')}</th>
+            <th scope="col" class="px-5 py-3">{$_('documents.building')}</th>
+            <th scope="col" class="px-5 py-3">{$_('documents.type')}</th>
+            <th scope="col" class="px-5 py-3">{$_('documents.size')}</th>
+            <th scope="col" class="px-5 py-3">{$_('documents.createdAt')}</th>
+            <th scope="col" class="px-5 py-3 text-right">{$_('common.actions')}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -292,7 +293,7 @@
                     on:click={() => handleDownload(doc)}
                   >
                     <span>⬇️</span>
-                    <span>Télécharger</span>
+                    <span>{$_('common.download')}</span>
                   </button>
                   {#if computedAllowDelete}
                     <button
@@ -301,7 +302,7 @@
                       disabled={deletingId === doc.id}
                     >
                       <span>🗑️</span>
-                      <span>{deletingId === doc.id ? 'Suppression…' : 'Supprimer'}</span>
+                      <span>{deletingId === doc.id ? $_('common.deleting') : $_('common.delete')}</span>
                     </button>
                   {/if}
                 </div>

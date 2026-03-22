@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     skillsApi,
     type SkillOffer,
@@ -23,7 +24,7 @@
       loading = true;
       offer = await skillsApi.getOfferById(offerId);
     } catch (err: any) {
-      toast.error(err.message || "Failed to load skill offer");
+      toast.error(err.message || $_("skills.detail.loadingError"));
     } finally {
       loading = false;
     }
@@ -34,7 +35,7 @@
 
 <div class="bg-white shadow rounded-lg overflow-hidden">
   {#if loading}
-    <div class="text-center py-12 text-gray-500">Loading...</div>
+    <div class="text-center py-12 text-gray-500">{$_("common.loading")}</div>
   {:else if offer}
     <div class="p-6">
       <!-- Header -->
@@ -46,18 +47,18 @@
           </div>
           <h1 class="text-2xl font-bold text-gray-900">{offer.skill_name}</h1>
           {#if offer.owner_name}
-            <p class="text-gray-600 mt-1">Offered by {offer.owner_name}</p>
+            <p class="text-gray-600 mt-1">{$_("skills.detail.offeredBy")} {offer.owner_name}</p>
           {/if}
         </div>
 
         {#if offer.is_free}
           <div class="bg-blue-50 px-4 py-2 rounded-lg">
-            <p class="text-sm font-semibold text-blue-700">FREE</p>
+            <p class="text-sm font-semibold text-blue-700">{$_("skills.detail.free")}</p>
           </div>
         {:else if offer.hourly_rate_credits}
           <div class="bg-green-50 px-4 py-2 rounded-lg">
             <p class="text-lg font-bold text-green-700">
-              {offer.hourly_rate_credits} credits/hr
+              {offer.hourly_rate_credits} {$_("skills.detail.creditsPerHour")}
             </p>
           </div>
         {/if}
@@ -67,21 +68,21 @@
       <div class="grid grid-cols-2 gap-4 mb-6 bg-gray-50 rounded-lg p-4">
         <div class="text-center">
           <p class="text-sm font-medium text-gray-900">
-            {offer.is_available_for_help ? "Available" : "Unavailable"}
+            {offer.is_available_for_help ? $_("skills.detail.available") : $_("skills.detail.unavailable")}
           </p>
-          <p class="text-sm text-gray-600">Status</p>
+          <p class="text-sm text-gray-600">{$_("common.status")}</p>
         </div>
         <div class="text-center">
           <p class="text-sm font-medium text-gray-900">
-            {offer.is_professional ? "Professional" : "Community"}
+            {offer.is_professional ? $_("skills.detail.professional") : $_("skills.detail.community")}
           </p>
-          <p class="text-sm text-gray-600">Type</p>
+          <p class="text-sm text-gray-600">{$_("common.type")}</p>
         </div>
       </div>
 
       <!-- Description -->
       <div class="mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">{$_("common.description")}</h3>
         <p class="text-gray-700 whitespace-pre-wrap">{offer.description}</p>
       </div>
 
@@ -89,14 +90,14 @@
       <div class="grid md:grid-cols-2 gap-6 mb-6">
         {#if offer.years_of_experience}
           <div>
-            <h3 class="text-sm font-semibold text-gray-900 mb-2">Experience</h3>
-            <p class="text-gray-700">{offer.years_of_experience} years</p>
+            <h3 class="text-sm font-semibold text-gray-900 mb-2">{$_("skills.detail.experience")}</h3>
+            <p class="text-gray-700">{offer.years_of_experience} {$_("skills.detail.years")}</p>
           </div>
         {/if}
 
         {#if offer.certifications}
           <div>
-            <h3 class="text-sm font-semibold text-gray-900 mb-2">Certifications</h3>
+            <h3 class="text-sm font-semibold text-gray-900 mb-2">{$_("skills.detail.certifications")}</h3>
             <p class="text-gray-700">{offer.certifications}</p>
           </div>
         {/if}
@@ -110,20 +111,20 @@
               on:click={async () => { if (offer) { await skillsApi.markUnavailable(offer.id); await loadOfferDetails(); } }}
               class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 text-sm"
             >
-              Mark Unavailable
+              {$_("skills.detail.markUnavailable")}
             </button>
           {:else}
             <button
               on:click={async () => { if (offer) { await skillsApi.markAvailable(offer.id); await loadOfferDetails(); } }}
               class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
             >
-              Mark Available
+              {$_("skills.detail.markAvailable")}
             </button>
           {/if}
         </div>
       {/if}
     </div>
   {:else}
-    <div class="text-center py-12 text-gray-500">Skill offer not found</div>
+    <div class="text-center py-12 text-gray-500">{$_("skills.detail.notFound")}</div>
   {/if}
 </div>

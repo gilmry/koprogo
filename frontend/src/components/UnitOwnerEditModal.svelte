@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { UnitOwner, Owner } from '../lib/types';
   import Button from './ui/Button.svelte';
@@ -36,17 +37,17 @@
     error = '';
 
     if (ownershipPercentage <= 0 || ownershipPercentage > 100) {
-      error = 'Le pourcentage doit être entre 0.01% et 100%';
+      error = $_('units.percentage_must_be_valid');
       return;
     }
 
     if (ownershipPercentage > availablePercentage + 0.01) {
-      error = `Le total des quotes-parts dépasserait 100% (disponible: ${availablePercentage.toFixed(2)}%)`;
+      error = $_('units.quota_would_exceed', { values: { available: availablePercentage.toFixed(2) } });
       return;
     }
 
     if (!unitOwner) {
-      error = 'Aucune relation sélectionnée';
+      error = $_('units.no_relationship_selected');
       return;
     }
 
@@ -64,7 +65,7 @@
       dispatch('updated');
       open = false;
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors de la modification';
+      error = e instanceof Error ? e.message : $_('common.error_updating');
       console.error('Error updating unit owner:', e);
     } finally {
       loading = false;
@@ -84,7 +85,7 @@
       <!-- Modal -->
       <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-gray-900">Modifier la quote-part</h2>
+          <h2 class="text-xl font-bold text-gray-900">{$_('units.edit_ownership')}</h2>
           <button
             on:click={handleClose}
             class="text-gray-400 hover:text-gray-500"
@@ -112,7 +113,7 @@
           <!-- Ownership Percentage -->
           <div>
             <label for="ownershipPercentage" class="block text-sm font-medium text-gray-700 mb-1">
-              Quote-part de propriété (%) *
+              {$_('units.ownership_percentage')} *
             </label>
             <input
               id="ownershipPercentage"
@@ -129,15 +130,15 @@
             />
             <div class="flex justify-between items-center mt-1">
               <p class="text-xs text-gray-500">
-                La somme de tous les copropriétaires doit faire 100%
+                {$_('units.quota_sum_100')}
               </p>
               <p class="text-xs font-semibold" class:text-green-600={availablePercentage > 0} class:text-red-600={availablePercentage <= 0}>
-                Maximum: {availablePercentage.toFixed(2)}%
+                {$_('units.maximum', { values: { pct: availablePercentage.toFixed(2) } })}
               </p>
             </div>
             {#if wouldExceed}
               <p class="text-xs text-red-600 mt-1 font-medium">
-                Le total des quotes-parts dépasserait 100%
+                {$_('units.quota_would_exceed_100')}
               </p>
             {/if}
           </div>
@@ -151,20 +152,20 @@
               class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
             <label for="isPrimaryContact" class="ml-2 block text-sm text-gray-700">
-              Contact principal pour ce lot
+              {$_('units.primary_contact')}
             </label>
           </div>
           <p class="text-xs text-gray-500 -mt-2 ml-6">
-            Le contact principal reçoit toutes les communications concernant ce lot
+            {$_('units.primary_contact_help')}
           </p>
 
           <!-- Actions -->
           <div class="flex gap-2 pt-4">
             <Button type="submit" variant="primary" disabled={loading || wouldExceed}>
-              {loading ? 'Enregistrement...' : 'Enregistrer'}
+              {loading ? $_('common.saving') : $_('common.save')}
             </Button>
             <Button type="button" variant="outline" on:click={handleClose}>
-              Annuler
+              {$_('common.cancel')}
             </Button>
           </div>
         </form>

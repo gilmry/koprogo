@@ -1,51 +1,55 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { CampaignStatus } from "../../lib/api/energy-campaigns";
 
   export let status: CampaignStatus;
 
-  const statusConfig: Record<
-    CampaignStatus,
-    { bg: string; text: string; label: string; icon: string }
-  > = {
-    [CampaignStatus.Draft]: {
-      bg: "bg-gray-100",
-      text: "text-gray-800",
-      label: "Brouillon",
-      icon: "📝",
-    },
-    [CampaignStatus.CollectingData]: {
-      bg: "bg-blue-100",
-      text: "text-blue-800",
-      label: "Collecte de données",
-      icon: "📊",
-    },
-    [CampaignStatus.Negotiating]: {
-      bg: "bg-purple-100",
-      text: "text-purple-800",
-      label: "Négociation",
-      icon: "🤝",
-    },
-    [CampaignStatus.AwaitingFinalVote]: {
-      bg: "bg-yellow-100",
-      text: "text-yellow-800",
-      label: "Vote final",
-      icon: "🗳️",
-    },
-    [CampaignStatus.Finalized]: {
-      bg: "bg-green-100",
-      text: "text-green-800",
-      label: "Finalisée",
-      icon: "✅",
-    },
-    [CampaignStatus.Completed]: {
-      bg: "bg-emerald-100",
-      text: "text-emerald-800",
-      label: "Terminée",
-      icon: "🎉",
-    },
-  };
+  function getStatusConfig() {
+    const statusConfig: Record<
+      CampaignStatus,
+      { bg: string; text: string; label: string; icon: string }
+    > = {
+      [CampaignStatus.Draft]: {
+        bg: "bg-gray-100",
+        text: "text-gray-800",
+        label: $_("energy.campaign.status.draft"),
+        icon: "📝",
+      },
+      [CampaignStatus.CollectingData]: {
+        bg: "bg-blue-100",
+        text: "text-blue-800",
+        label: $_("energy.campaign.status.collectingData"),
+        icon: "📊",
+      },
+      [CampaignStatus.Negotiating]: {
+        bg: "bg-purple-100",
+        text: "text-purple-800",
+        label: $_("energy.campaign.status.negotiating"),
+        icon: "🤝",
+      },
+      [CampaignStatus.AwaitingFinalVote]: {
+        bg: "bg-yellow-100",
+        text: "text-yellow-800",
+        label: $_("energy.campaign.status.awaitingFinalVote"),
+        icon: "🗳️",
+      },
+      [CampaignStatus.Finalized]: {
+        bg: "bg-green-100",
+        text: "text-green-800",
+        label: $_("energy.campaign.status.finalized"),
+        icon: "✅",
+      },
+      [CampaignStatus.Completed]: {
+        bg: "bg-emerald-100",
+        text: "text-emerald-800",
+        label: $_("energy.campaign.status.completed"),
+        icon: "🎉",
+      },
+    };
+    return statusConfig[status] || statusConfig[CampaignStatus.Draft];
+  }
 
-  $: config = statusConfig[status] || statusConfig[CampaignStatus.Draft];
+  $: config = getStatusConfig();
 </script>
 
 <span

@@ -20,14 +20,16 @@
   <button
     type="button"
     onclick={() => (isOpen = !isOpen)}
-    class="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+    class="inline-flex items-center gap-1.5 rounded-md bg-white px-2.5 py-1.5 text-sm font-medium text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors"
     aria-expanded={isOpen}
     aria-haspopup="true"
+    aria-label="Changer de langue"
   >
-    <span class="text-xl">{currentLang.flag}</span>
-    <span>{currentLang.code.toUpperCase()}</span>
+    <span class="text-base leading-none">{currentLang.flag}</span>
+    <span class="text-xs font-semibold">{currentLang.code.toUpperCase()}</span>
     <svg
-      class="-mr-1 h-5 w-5 text-gray-400"
+      class="h-4 w-4 text-gray-400 transition-transform"
+      class:rotate-180={isOpen}
       viewBox="0 0 20 20"
       fill="currentColor"
       aria-hidden="true"
@@ -40,7 +42,7 @@
     </svg>
   </button>
 
-  <!-- Dropdown Menu -->
+  <!-- Dropdown Menu (opens UPWARD since selector is in footer) -->
   {#if isOpen}
     <!-- Overlay to close when clicking outside -->
     <button
@@ -51,7 +53,7 @@
     ></button>
 
     <div
-      class="absolute right-0 z-20 mt-2 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+      class="absolute left-0 bottom-full z-20 mb-2 w-48 origin-bottom-left rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
       role="menu"
       aria-orientation="vertical"
       tabindex="-1"
@@ -61,18 +63,18 @@
           <button
             type="button"
             onclick={() => selectLanguage(lang.code)}
-            class="flex w-full items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 {$locale ===
+            class="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-primary-50 hover:text-primary-700 transition-colors {$locale ===
             lang.code
-              ? 'bg-gray-50 font-semibold'
+              ? 'bg-primary-50 font-semibold text-primary-700'
               : ''}"
             role="menuitem"
             tabindex="-1"
           >
-            <span class="text-xl">{lang.flag}</span>
+            <span class="text-base leading-none">{lang.flag}</span>
             <span class="flex-1 text-left">{lang.name}</span>
             {#if $locale === lang.code}
               <svg
-                class="h-5 w-5 text-green-600"
+                class="h-4 w-4 text-primary-600"
                 viewBox="0 0 20 20"
                 fill="currentColor"
                 aria-hidden="true"

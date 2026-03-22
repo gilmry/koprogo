@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     pollsApi,
     type Poll,
@@ -49,7 +50,7 @@
         }
       }
     } catch (err: any) {
-      error = err.message || "Erreur lors du chargement du sondage";
+      error = err.message || $_("polls.detail.loadingError");
       console.error("Failed to load poll:", err);
     } finally {
       loading = false;
@@ -70,23 +71,23 @@
       if (poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice) {
         if (poll.allow_multiple_votes) {
           if (selectedOptions.size === 0) {
-            throw new Error("Sélectionnez au moins une option");
+            throw new Error($_("polls.detail.selectAtLeastOne"));
           }
           voteData.selected_option_ids = Array.from(selectedOptions);
         } else {
           if (!selectedOptionId) {
-            throw new Error("Sélectionnez une option");
+            throw new Error($_("polls.detail.selectOption"));
           }
           voteData.selected_option_ids = [selectedOptionId];
         }
       } else if (poll.poll_type === PollType.Rating) {
         if (ratingValue === null) {
-          throw new Error("Donnez une note");
+          throw new Error($_("polls.detail.giveRating"));
         }
         voteData.rating_value = ratingValue;
       } else if (poll.poll_type === PollType.OpenEnded) {
         if (!openEndedText.trim()) {
-          throw new Error("Écrivez votre réponse");
+          throw new Error($_("polls.detail.writeAnswer"));
         }
         voteData.open_text = openEndedText.trim();
       }
@@ -106,9 +107,9 @@
       const msg = err.message || "";
       if (msg.includes("already voted") || msg.includes("déjà voté") || msg.includes("duplicate")) {
         hasVoted = true;
-        votingError = "Vous avez déjà voté sur ce sondage.";
+        votingError = $_("polls.detail.alreadyVoted");
       } else {
-        votingError = msg || "Erreur lors de l'enregistrement du vote";
+        votingError = msg || $_("polls.detail.votingError");
       }
       console.error("Failed to vote:", err);
     } finally {
@@ -117,7 +118,7 @@
   }
 
   async function handlePublish() {
-    if (!poll || !confirm("Êtes-vous sûr de vouloir publier ce sondage ? Il deviendra visible pour tous les copropriétaires.")) {
+    if (!poll || !confirm($_("polls.detail.publishConfirm"))) {
       return;
     }
 
@@ -126,36 +127,36 @@
         starts_at: poll.starts_at,
         ends_at: poll.ends_at,
       });
-      toast.success("Sondage publié avec succès !");
+      toast.success($_("polls.detail.publishSuccess"));
     } catch (err: any) {
-      toast.error("Erreur lors de la publication: " + err.message);
+      toast.error($_("polls.detail.publishError") + ": " + err.message);
     }
   }
 
   async function handleClose() {
-    if (!poll || !confirm("Êtes-vous sûr de vouloir clôturer ce sondage ? Les votes ne seront plus acceptés.")) {
+    if (!poll || !confirm($_("polls.detail.closeConfirm"))) {
       return;
     }
 
     try {
       poll = await pollsApi.close(poll.id);
       await loadPoll(); // Reload to get results
-      toast.success("Sondage clôturé avec succès ! Les résultats sont maintenant disponibles.");
+      toast.success($_("polls.detail.closeSuccess"));
     } catch (err: any) {
-      toast.error("Erreur lors de la clôture: " + err.message);
+      toast.error($_("polls.detail.closeError") + ": " + err.message);
     }
   }
 
   async function handleCancel() {
-    if (!poll || !confirm("Êtes-vous sûr de vouloir annuler ce sondage ?")) {
+    if (!poll || !confirm($_("polls.detail.cancelConfirm"))) {
       return;
     }
 
     try {
       poll = await pollsApi.cancel(poll.id);
-      toast.success("Sondage annulé.");
+      toast.success($_("polls.detail.cancelSuccess"));
     } catch (err: any) {
-      toast.error("Erreur lors de l'annulation: " + err.message);
+      toast.error($_("polls.detail.cancelError") + ": " + err.message);
     }
   }
 
@@ -193,7 +194,7 @@
     <div
       class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"
     ></div>
-    <p class="mt-4 text-gray-500">Chargement du sondage...</p>
+    <p class="mt-4 text-gray-500">{$_("polls.detail.loading")}</p>
   </div>
 {:else if error}
   <div class="p-4 bg-red-50 border border-red-200 rounded-md">
@@ -202,7 +203,7 @@
       on:click={loadPoll}
       class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
     >
-      Réessayer
+      {$_("common.retry")}
     </button>
   </div>
 {:else if poll}
@@ -232,24 +233,24 @@
           <!-- Metadata -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
             <div class="p-3 bg-blue-50 rounded-lg">
-              <div class="text-xs text-blue-600 font-medium">Période</div>
+              <div class="text-xs text-blue-600 font-medium">{$_("polls.detail.period")}</div>
               <div class="text-sm text-blue-900">
                 {#if poll.starts_at && poll.ends_at}
                   {formatDate(poll.starts_at)} → {formatDate(poll.ends_at)}
                 {:else}
-                  Non définie
+                  {$_("polls.detail.notDefined")}
                 {/if}
               </div>
             </div>
             <div class="p-3 bg-green-50 rounded-lg">
-              <div class="text-xs text-green-600 font-medium">Participation</div>
+              <div class="text-xs text-green-600 font-medium">{$_("polls.detail.participation")}</div>
               <div class="text-sm text-green-900">
-                {poll.total_votes_cast}/{poll.total_eligible_voters} votes
+                {poll.total_votes_cast}/{poll.total_eligible_voters} {$_("polls.detail.votes")}
                 ({calculateParticipationRate(poll).toFixed(1)}%)
               </div>
             </div>
             <div class="p-3 bg-purple-50 rounded-lg">
-              <div class="text-xs text-purple-600 font-medium">Créé</div>
+              <div class="text-xs text-purple-600 font-medium">{$_("common.created")}</div>
               <div class="text-sm text-purple-900">
                 {formatDate(poll.created_at)}
               </div>
@@ -260,7 +261,7 @@
           href="/polls"
           class="text-sm text-gray-600 hover:text-gray-800 underline ml-4"
         >
-          ← Retour
+          ← {$_("common.back")}
         </a>
       </div>
 
@@ -272,7 +273,7 @@
               on:click={handlePublish}
               class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700"
             >
-              🚀 Publier
+              🚀 {$_("polls.detail.publish")}
             </button>
           {/if}
           {#if poll.status === PollStatus.Active}
@@ -280,7 +281,7 @@
               on:click={handleClose}
               class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
             >
-              ✅ Clôturer
+              ✅ {$_("polls.detail.close")}
             </button>
           {/if}
           {#if poll.status === PollStatus.Draft || poll.status === PollStatus.Active}
@@ -288,7 +289,7 @@
               on:click={handleCancel}
               class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700"
             >
-              ❌ Annuler
+              ❌ {$_("common.cancel")}
             </button>
           {/if}
         </div>
@@ -298,12 +299,12 @@
     <!-- Voting Section -->
     {#if canVote()}
       <div class="bg-white shadow-md rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">🗳️ Votre vote</h3>
+        <h3 class="text-lg font-medium text-gray-900 mb-4">🗳️ {$_("polls.detail.yourVote")}</h3>
 
         {#if votingSuccess}
           <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
             <p class="text-sm text-green-800">
-              ✅ Votre vote a été enregistré avec succès !
+              ✅ {$_("polls.detail.voteSuccess")}
             </p>
           </div>
         {/if}
@@ -380,9 +381,9 @@
         >
           {#if votingInProgress}
             <span class="inline-block animate-spin mr-2">⏳</span>
-            Enregistrement en cours...
+            {$_("polls.detail.submitting")}
           {:else}
-            ✅ Voter
+            ✅ {$_("polls.detail.vote")}
           {/if}
         </button>
       </div>
@@ -390,10 +391,10 @@
       <div class="bg-white shadow-md rounded-lg p-6">
         <div class="text-center py-4">
           <p class="text-lg text-green-600 font-medium">
-            ✅ Vous avez déjà voté sur ce sondage
+            ✅ {$_("polls.detail.alreadyVoted")}
           </p>
           <p class="text-sm text-gray-500 mt-2">
-            Merci pour votre participation !
+            {$_("polls.detail.thankYou")}
           </p>
         </div>
       </div>
@@ -401,10 +402,10 @@
       <div class="bg-white shadow-md rounded-lg p-6">
         <div class="text-center py-4">
           <p class="text-lg text-yellow-600 font-medium">
-            📝 Ce sondage est en brouillon
+            📝 {$_("polls.detail.draftStatus")}
           </p>
           <p class="text-sm text-gray-500 mt-2">
-            Il doit être publié par le syndic avant que vous puissiez voter.
+            {$_("polls.detail.draftMessage")}
           </p>
         </div>
       </div>
@@ -412,7 +413,7 @@
       <div class="bg-white shadow-md rounded-lg p-6">
         <div class="text-center py-4">
           <p class="text-lg text-red-600 font-medium">
-            ❌ Ce sondage a été annulé
+            ❌ {$_("polls.detail.cancelledStatus")}
           </p>
         </div>
       </div>

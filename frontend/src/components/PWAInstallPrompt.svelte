@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { showInstallPrompt, canInstall, isPWA } from '../lib/pwa';
 
   let showPrompt = false;
@@ -66,23 +67,23 @@
         </div>
         <div class="flex-1">
           <h3 class="text-lg font-semibold text-gray-900 mb-1">
-            Installer KoproGo
+            {$_('pwa.installTitle')}
           </h3>
           <p class="text-sm text-gray-600 mb-4">
-            Installez l'application sur votre appareil pour un accès rapide et un mode hors ligne.
+            {$_('pwa.installDescription')}
           </p>
           <div class="flex gap-2">
             <button
               on:click={handleInstall}
               class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
             >
-              Installer
+              {$_('pwa.install')}
             </button>
             <button
               on:click={dismissPrompt}
               class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
-              Plus tard
+              {$_('pwa.later')}
             </button>
           </div>
         </div>
@@ -111,23 +112,23 @@
         </div>
         <div class="flex-1">
           <h3 class="font-semibold mb-1">
-            Mise à jour disponible
+            {$_('pwa.updateAvailable')}
           </h3>
           <p class="text-sm text-blue-100 mb-3">
-            Une nouvelle version de KoproGo est disponible.
+            {$_('pwa.updateDescription')}
           </p>
           <div class="flex gap-2">
             <button
               on:click={reloadForUpdate}
               class="flex-1 bg-white text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg font-medium transition-colors"
             >
-              Actualiser
+              {$_('pwa.refresh')}
             </button>
             <button
               on:click={dismissUpdate}
               class="px-4 py-2 text-blue-100 hover:text-white transition-colors"
             >
-              Plus tard
+              {$_('pwa.later')}
             </button>
           </div>
         </div>

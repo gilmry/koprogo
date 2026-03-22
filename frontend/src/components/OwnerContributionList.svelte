@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { onMount } from 'svelte';
 
@@ -59,20 +60,20 @@
 
   function getStatusLabel(status: string): string {
     const labels = {
-      pending: 'En attente',
-      paid: 'Payé',
-      partial: 'Partiel',
-      cancelled: 'Annulé'
+      pending: $_('contributions.pending'),
+      paid: $_('contributions.paid'),
+      partial: $_('contributions.partial'),
+      cancelled: $_('contributions.cancelled')
     };
     return labels[status] || status;
   }
 
   function getTypeLabel(type: string): string {
     const labels = {
-      regular: 'Charges courantes',
-      extraordinary: 'Charges extraordinaires',
-      advance: 'Avance',
-      adjustment: 'Régularisation'
+      regular: $_('contributions.typeRegular'),
+      extraordinary: $_('contributions.typeExtraordinary'),
+      advance: $_('contributions.typeAdvance'),
+      adjustment: $_('contributions.typeAdjustment')
     };
     return labels[type] || type;
   }
@@ -120,13 +121,13 @@
 <div class="bg-white shadow-md rounded-lg">
   <div class="px-6 py-4 border-b border-gray-200">
     <h3 class="text-lg font-semibold text-gray-900">
-      Appels de fonds
+      {$_('contributions.title')}
     </h3>
   </div>
 
   {#if loading}
     <div class="p-8 text-center text-gray-500">
-      Chargement...
+      {$_('common.loading')}
     </div>
   {:else if error}
     <div class="p-4 bg-red-50 border border-red-200 text-red-700">
@@ -134,7 +135,7 @@
     </div>
   {:else if contributions.length === 0}
     <div class="p-8 text-center text-gray-500">
-      Aucun appel de fonds trouvé
+      {$_('contributions.empty')}
     </div>
   {:else}
     <div class="overflow-x-auto">
@@ -142,22 +143,22 @@
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date
+              {$_('contributions.date')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Description
+              {$_('common.description')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Type
+              {$_('contributions.type')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Montant
+              {$_('contributions.amount')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Statut
+              {$_('contributions.status')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
+              {$_('common.actions')}
             </th>
           </tr>
         </thead>
@@ -187,11 +188,11 @@
                     on:click={() => openPaymentModal(contribution)}
                     class="text-blue-600 hover:text-blue-900 font-medium"
                   >
-                    Enregistrer paiement
+                    {$_('contributions.recordPayment')}
                   </button>
                 {:else if contribution.payment_date}
                   <span class="text-green-600 text-xs">
-                    Payé le {formatDate(contribution.payment_date)}
+                    {$_('contributions.paidOn')} {formatDate(contribution.payment_date)}
                   </span>
                 {/if}
               </td>
@@ -209,7 +210,7 @@
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
       <div class="mt-3">
         <h3 class="text-lg font-medium text-gray-900 mb-4">
-          Enregistrer le paiement
+          {$_('contributions.recordPaymentTitle')}
         </h3>
 
         <div class="mb-4 p-3 bg-gray-50 rounded">
@@ -223,7 +224,7 @@
           <!-- Payment Date -->
           <div>
             <label for="payment_date" class="block text-sm font-medium text-gray-700 mb-1">
-              Date de paiement
+              {$_('contributions.paymentDate')}
             </label>
             <input
               type="date"
@@ -237,7 +238,7 @@
           <!-- Payment Method -->
           <div>
             <label for="payment_method" class="block text-sm font-medium text-gray-700 mb-1">
-              Méthode de paiement
+              {$_('contributions.paymentMethod')}
             </label>
             <select
               id="payment_method"
@@ -245,17 +246,17 @@
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="bank_transfer">Virement bancaire</option>
-              <option value="cash">Espèces</option>
-              <option value="check">Chèque</option>
-              <option value="domiciliation">Domiciliation</option>
+              <option value="bank_transfer">{$_('contributions.methodBank')}</option>
+              <option value="cash">{$_('contributions.methodCash')}</option>
+              <option value="check">{$_('contributions.methodCheck')}</option>
+              <option value="domiciliation">{$_('contributions.methodDomicile')}</option>
             </select>
           </div>
 
           <!-- Payment Reference -->
           <div>
             <label for="payment_reference" class="block text-sm font-medium text-gray-700 mb-1">
-              Référence (optionnel)
+              {$_('contributions.reference')}
             </label>
             <input
               type="text"
@@ -273,13 +274,13 @@
               on:click={closePaymentModal}
               class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300"
             >
-              Annuler
+              {$_('common.cancel')}
             </button>
             <button
               type="submit"
               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              Enregistrer
+              {$_('contributions.recordButton')}
             </button>
           </div>
         </form>

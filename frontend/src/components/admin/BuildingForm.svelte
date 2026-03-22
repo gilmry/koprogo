@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
   import { authStore } from '../../stores/auth';
@@ -101,37 +102,37 @@
 
     // Name validation
     if (!formData.name || formData.name.trim().length < 2) {
-      errors.name = 'Le nom doit contenir au moins 2 caractères';
+      errors.name = $_('admin.building.nameError');
       isValid = false;
     }
 
     // Address validation
     if (!formData.address || formData.address.trim().length < 3) {
-      errors.address = 'L\'adresse doit contenir au moins 3 caractères';
+      errors.address = $_('admin.building.addressError');
       isValid = false;
     }
 
     // City validation
     if (!formData.city || formData.city.trim().length < 2) {
-      errors.city = 'La ville doit contenir au moins 2 caractères';
+      errors.city = $_('admin.building.cityError');
       isValid = false;
     }
 
     // Postal code validation
     if (!formData.postal_code || formData.postal_code.trim().length < 2) {
-      errors.postal_code = 'Le code postal est requis';
+      errors.postal_code = $_('admin.building.postalCodeError');
       isValid = false;
     }
 
     // Total units validation
     if (formData.total_units < 1) {
-      errors.total_units = 'Le nombre de lots doit être au moins 1';
+      errors.total_units = $_('admin.building.totalUnitsError');
       isValid = false;
     }
 
     // Total tantièmes validation
     if (formData.total_tantiemes < 1) {
-      errors.total_tantiemes = 'Le total des tantièmes doit être au moins 1';
+      errors.total_tantiemes = $_('admin.building.totalTantgemesError');
       isValid = false;
     }
 
@@ -139,14 +140,14 @@
     if (formData.construction_year !== null) {
       const currentYear = new Date().getFullYear();
       if (formData.construction_year < 1800 || formData.construction_year > currentYear + 5) {
-        errors.construction_year = `L'année doit être entre 1800 et ${currentYear + 5}`;
+        errors.construction_year = $_('admin.building.constructionYearError', { values: { min: 1800, max: currentYear + 5 } });
         isValid = false;
       }
     }
 
     // Organization validation (only for SuperAdmin in create mode)
     if (isSuperAdmin && mode === 'create' && !formData.organization_id) {
-      errors.organization_id = 'L\'organisation est requise';
+      errors.organization_id = $_('admin.building.organizationRequired');
       isValid = false;
     }
 
@@ -188,10 +189,10 @@
 
       if (mode === 'create') {
         await api.post('/buildings', payload);
-        toast.show('Immeuble créé avec succès', 'success');
+        toast.show($_('admin.building.createdSuccessfully'), 'success');
       } else if (building) {
         await api.put(`/buildings/${building.id}`, payload);
-        toast.show('Immeuble mis à jour avec succès', 'success');
+        toast.show($_('admin.building.updatedSuccessfully'), 'success');
       }
 
       // Set loading to false before closing modal
@@ -203,7 +204,7 @@
       // Then dispatch success to reload data
       dispatch('success');
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
+      const errorMessage = e instanceof Error ? e.message : $_('common.errorOccurred');
       toast.show(errorMessage, 'error');
       loading = false;
     }
@@ -241,7 +242,7 @@
 
 <Modal
   {isOpen}
-  title={mode === 'create' ? 'Nouvel Immeuble' : 'Modifier l\'Immeuble'}
+  title={mode === 'create' ? $_('admin.building.newBuilding') : $_('admin.building.editBuilding')}
   size="lg"
   on:close={handleClose}
 >
@@ -253,12 +254,12 @@
     {#if isSuperAdmin}
       <FormSelect
         id="building-organization"
-        label="Organisation"
+        label={$_('common.organization')}
         bind:value={formData.organization_id}
         options={organizationOptions}
         error={errors.organization_id}
         required={mode === 'create'}
-        placeholder={loadingOrgs ? 'Chargement...' : 'Sélectionner une organisation'}
+        placeholder={loadingOrgs ? $_('common.loading') : $_('admin.building.selectOrganization')}
         disabled={loadingOrgs}
         data-testid="building-organization-select"
       />
@@ -266,7 +267,7 @@
 
     <FormInput
       id="building-name"
-      label="Nom de l'immeuble"
+      label={$_('admin.building.name')}
       type="text"
       bind:value={formData.name}
       error={errors.name}
@@ -277,7 +278,7 @@
 
     <FormInput
       id="building-address"
-      label="Adresse"
+      label={$_('common.address')}
       type="text"
       bind:value={formData.address}
       error={errors.address}
@@ -289,7 +290,7 @@
     <div class="grid grid-cols-2 gap-4">
       <FormInput
         id="building-postal-code"
-        label="Code postal"
+        label={$_('common.postalCode')}
         type="text"
         bind:value={formData.postal_code}
         error={errors.postal_code}
@@ -300,7 +301,7 @@
 
       <FormInput
         id="building-city"
-        label="Ville"
+        label={$_('common.city')}
         type="text"
         bind:value={formData.city}
         error={errors.city}
@@ -312,7 +313,7 @@
 
     <FormInput
       id="building-country"
-      label="Pays"
+      label={$_('common.country')}
       type="text"
       bind:value={formData.country}
       placeholder="Belgique"
@@ -322,7 +323,7 @@
     <div class="grid grid-cols-2 gap-4">
       <FormInput
         id="building-total-units"
-        label="Nombre de lots"
+        label={$_('admin.building.totalUnits')}
         type="number"
         bind:value={formData.total_units}
         error={errors.total_units}
@@ -333,25 +334,25 @@
 
       <FormInput
         id="building-total-tantiemes"
-        label="Total tantièmes (millièmes)"
+        label={$_('admin.building.totalTantiemes')}
         type="number"
         bind:value={formData.total_tantiemes}
         error={errors.total_tantiemes}
         required
         placeholder="1000"
-        hint="Généralement 1000 en Belgique"
+        hint={$_('admin.building.tantgemesHint')}
         data-testid="building-totaltantiemes-input"
       />
     </div>
 
     <FormInput
       id="building-construction-year"
-      label="Année de construction"
+      label={$_('admin.building.constructionYear')}
       type="number"
       bind:value={formData.construction_year}
       error={errors.construction_year}
       placeholder="2000"
-      hint="Optionnel"
+      hint={$_('common.optional')}
       on:input={(e) => {
         const val = e.target.value;
         formData.construction_year = val === '' ? null : parseInt(val);
@@ -368,7 +369,7 @@
         disabled={loading}
         data-testid="building-cancel-button"
       >
-        Annuler
+        {$_('common.cancel')}
       </Button>
       <Button
         variant="primary"
@@ -376,7 +377,7 @@
         {loading}
         data-testid="building-submit-button"
       >
-        {mode === 'create' ? 'Créer l\'immeuble' : 'Enregistrer les modifications'}
+        {mode === 'create' ? $_('admin.building.createBuilding') : $_('common.saveChanges')}
       </Button>
     </div>
   </svelte:fragment>

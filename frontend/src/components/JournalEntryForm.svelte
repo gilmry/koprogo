@@ -15,6 +15,7 @@
   // - Quick account code entry
 
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
 
   const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
@@ -23,11 +24,11 @@
   export let onSuccess: (() => void) | null = null;
 
   // Journal types (Noalyss-inspired)
-  const journalTypes = [
-    { code: 'ACH', label: 'ACH - Achats (Purchases)', description: 'Factures fournisseurs' },
-    { code: 'VEN', label: 'VEN - Ventes (Sales)', description: 'Factures clients' },
-    { code: 'FIN', label: 'FIN - Financier (Financial)', description: 'Opérations bancaires' },
-    { code: 'ODS', label: 'ODS - Opérations Diverses (Miscellaneous)', description: 'Autres opérations' },
+  $: journalTypes = [
+    { code: 'ACH', label: $_('journal.types.ach'), description: $_('journal.types.achDesc') },
+    { code: 'VEN', label: $_('journal.types.ven'), description: $_('journal.types.venDesc') },
+    { code: 'FIN', label: $_('journal.types.fin'), description: $_('journal.types.finDesc') },
+    { code: 'ODS', label: $_('journal.types.ods'), description: $_('journal.types.odsDesc') },
   ];
 
   // Form state
@@ -71,7 +72,7 @@
 
     // Validation
     if (!description.trim()) {
-      error = 'La description est requise';
+      error = $_('journal.error.descriptionRequired');
       return;
     }
 
@@ -80,12 +81,12 @@
     );
 
     if (validLines.length < 2) {
-      error = 'Au moins 2 lignes avec montants sont requises';
+      error = $_('journal.error.minLinesRequired');
       return;
     }
 
     if (!isBalanced) {
-      error = `Écriture déséquilibrée: débits=${totalDebits.toFixed(2)}€, crédits=${totalCredits.toFixed(2)}€`;
+      error = $_('journal.error.unbalanced', { values: { debits: totalDebits.toFixed(2), credits: totalCredits.toFixed(2) } });
       return;
     }
 
@@ -116,7 +117,7 @@
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Échec de la création de l\'écriture comptable');
+        throw new Error(errorData.error || $_('journal.error.creationFailed'));
       }
 
       success = true;
@@ -155,8 +156,8 @@
 
 <div class="journal-entry-form">
   <div class="form-header">
-    <h3>🧾 Nouvelle Écriture Comptable</h3>
-    <p class="text-sm text-gray-600">Interface inspirée de Noalyss - Saisie en partie double</p>
+    <h3>🧾 {$_('journal.title')}</h3>
+    <p class="text-sm text-gray-600">{$_('journal.subtitle')}</p>
   </div>
 
   {#if error}
@@ -167,7 +168,7 @@
 
   {#if success}
     <div class="alert alert-success">
-      ✅ Écriture comptable créée avec succès!
+      ✅ {$_('journal.success.created')}!
     </div>
   {/if}
 
@@ -176,7 +177,7 @@
     <div class="form-section">
       <div class="grid grid-cols-2 gap-4">
         <div class="form-group">
-          <label for="journal-type">Type de Journal *</label>
+          <label for="journal-type">{$_('journal.journalType')} *</label>
           <select id="journal-type" bind:value={journalType} class="form-control" required>
             {#each journalTypes as type}
               <option value={type.code}>
@@ -190,7 +191,7 @@
         </div>
 
         <div class="form-group">
-          <label for="entry-date">Date d'Opération *</label>
+          <label for="entry-date">{$_('journal.operationDate')} *</label>
           <input
             type="date"
             id="entry-date"
@@ -202,7 +203,7 @@
       </div>
 
       <div class="form-group">
-        <label for="description">Description *</label>
+        <label for="description">{$_('journal.description')} *</label>
         <input
           type="text"
           id="description"
@@ -214,7 +215,7 @@
       </div>
 
       <div class="form-group">
-        <label for="document-ref">Référence Document</label>
+        <label for="document-ref">{$_('journal.documentRef')}</label>
         <input
           type="text"
           id="document-ref"
@@ -228,9 +229,9 @@
     <!-- Lines section (Noalyss-inspired layout) -->
     <div class="form-section">
       <div class="flex justify-between items-center mb-3">
-        <h4 class="text-lg font-semibold">Lignes Comptables</h4>
+        <h4 class="text-lg font-semibold">{$_('journal.accountingLines')}</h4>
         <button type="button" class="btn btn-secondary btn-sm" on:click={addLine}>
-          ➕ Ajouter une ligne
+          ➕ {$_('journal.addLine')}
         </button>
       </div>
 
@@ -238,10 +239,10 @@
         <table class="journal-lines-table">
           <thead>
             <tr>
-              <th scope="col" class="w-32">Compte</th>
-              <th scope="col" class="flex-1">Libellé</th>
-              <th scope="col" class="w-32 text-right">Débit (€)</th>
-              <th scope="col" class="w-32 text-right">Crédit (€)</th>
+              <th scope="col" class="w-32">{$_('journal.account')}</th>
+              <th scope="col" class="flex-1">{$_('journal.description')}</th>
+              <th scope="col" class="w-32 text-right">{$_('journal.debit')} (€)</th>
+              <th scope="col" class="w-32 text-right">{$_('journal.credit')} (€)</th>
               <th scope="col" class="w-20"></th>
             </tr>
           </thead>
@@ -304,7 +305,7 @@
           </tbody>
           <tfoot>
             <tr class="totals-row">
-              <td colspan="2" class="text-right font-bold">Totaux:</td>
+              <td colspan="2" class="text-right font-bold">{$_('journal.totals')}:</td>
               <td class="text-right font-bold text-blue-600">
                 {totalDebits.toFixed(2)} €
               </td>
@@ -316,11 +317,11 @@
             <tr class="balance-row">
               <td colspan="2" class="text-right font-bold">
                 {#if isBalanced}
-                  ✅ Équilibrée
+                  ✅ {$_('journal.balanced')}
                 {:else if difference > 0}
-                  ⚠️ Différence:
+                  ⚠️ {$_('journal.difference')}:
                 {:else}
-                  ℹ️ En attente
+                  ℹ️ {$_('journal.pending')}
                 {/if}
               </td>
               <td colspan="2" class="text-right font-bold" class:text-red-600={!isBalanced && totalDebits > 0}>
@@ -338,13 +339,13 @@
     <!-- Actions -->
     <div class="form-actions">
       <button type="button" class="btn btn-secondary" on:click={resetForm} disabled={loading}>
-        🔄 Réinitialiser
+        🔄 {$_('journal.reset')}
       </button>
       <button type="submit" class="btn btn-primary" disabled={loading || !isBalanced}>
         {#if loading}
-          ⏳ Création en cours...
+          ⏳ {$_('journal.creating')}...
         {:else}
-          💾 Créer l'Écriture
+          💾 {$_('journal.create')}
         {/if}
       </button>
     </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
   import { UserRole } from '../lib/types';
@@ -152,11 +153,11 @@
 
   function getRoleLabel(role: UserRole | undefined): string {
     switch (role) {
-      case UserRole.SUPERADMIN: return 'Administrateur plateforme';
-      case UserRole.SYNDIC: return 'Syndic';
-      case UserRole.ACCOUNTANT: return 'Comptable';
-      case UserRole.OWNER: return 'Copropriétaire';
-      default: return 'Utilisateur';
+      case UserRole.SUPERADMIN: return $_('roles.superadmin');
+      case UserRole.SYNDIC: return $_('roles.syndic');
+      case UserRole.ACCOUNTANT: return $_('roles.accountant');
+      case UserRole.OWNER: return $_('roles.owner');
+      default: return $_('roles.user');
     }
   }
 

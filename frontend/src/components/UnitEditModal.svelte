@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { Unit } from '../lib/types';
   import Button from './ui/Button.svelte';
@@ -36,27 +37,27 @@
     error = '';
 
     if (!unitNumber.trim()) {
-      error = 'Le numéro de lot est obligatoire';
+      error = $_('units.unit_number_required');
       return;
     }
 
     if (surfaceArea <= 0) {
-      error = 'La surface doit être supérieure à 0';
+      error = $_('units.surface_must_be_positive');
       return;
     }
 
     if (quota <= 0) {
-      error = 'La quote-part doit être supérieure à 0';
+      error = $_('units.quota_must_be_positive');
       return;
     }
 
     if (quota > totalTantiemes) {
-      error = `La quote-part ne peut pas dépasser ${totalTantiemes} millièmes`;
+      error = $_('units.quota_exceeds_max', { values: { max: totalTantiemes } });
       return;
     }
 
     if (!unit) {
-      error = 'Aucun lot sélectionné';
+      error = $_('units.no_unit_selected');
       return;
     }
 
@@ -74,7 +75,7 @@
       dispatch('updated');
       open = false;
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors de la modification du lot';
+      error = e instanceof Error ? e.message : $_('units.error_updating_unit');
       console.error('Error updating unit:', e);
     } finally {
       loading = false;
@@ -94,7 +95,7 @@
       <!-- Modal -->
       <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full p-6 z-10">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-bold text-gray-900">Modifier le lot</h2>
+          <h2 class="text-xl font-bold text-gray-900">{$_('units.edit_unit')}</h2>
           <button
             on:click={handleClose}
             class="text-gray-400 hover:text-gray-500"
@@ -113,13 +114,13 @@
           <!-- Unit Number -->
           <div>
             <label for="unitNumber" class="block text-sm font-medium text-gray-700 mb-1">
-              Numéro de lot *
+              {$_('units.unit_number')} *
             </label>
             <input
               id="unitNumber"
               type="text"
               bind:value={unitNumber}
-              placeholder="Ex: 101, A, B3, etc."
+              placeholder={$_('units.unit_number_example')}
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
@@ -128,7 +129,7 @@
           <!-- Unit Type -->
           <div>
             <label for="unitType" class="block text-sm font-medium text-gray-700 mb-1">
-              Type de lot *
+              {$_('units.unit_type')} *
             </label>
             <select
               id="unitType"
@@ -136,22 +137,22 @@
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="Apartment">Appartement</option>
-              <option value="Parking">Parking</option>
-              <option value="Cellar">Cave</option>
+              <option value="Apartment">{$_('units.apartment')}</option>
+              <option value="Parking">{$_('units.parking')}</option>
+              <option value="Cellar">{$_('units.cellar')}</option>
             </select>
           </div>
 
           <!-- Floor -->
           <div>
             <label for="floor" class="block text-sm font-medium text-gray-700 mb-1">
-              Étage *
+              {$_('units.floor')} *
             </label>
             <input
               id="floor"
               type="number"
               bind:value={floor}
-              placeholder="Ex: 0 (RDC), 1, 2, -1 (sous-sol)"
+              placeholder={$_('units.floor_example')}
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
@@ -160,7 +161,7 @@
           <!-- Surface Area -->
           <div>
             <label for="surfaceArea" class="block text-sm font-medium text-gray-700 mb-1">
-              Surface (m²) *
+              {$_('units.surface_area')} *
             </label>
             <input
               id="surfaceArea"
@@ -168,7 +169,7 @@
               step="0.01"
               min="0.01"
               bind:value={surfaceArea}
-              placeholder="Ex: 75.50"
+              placeholder={$_('units.surface_area_example')}
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
@@ -177,7 +178,7 @@
           <!-- Quota (Tantièmes) -->
           <div>
             <label for="quota" class="block text-sm font-medium text-gray-700 mb-1">
-              Quote-part (millièmes) * <span class="text-sm text-gray-500">/ {totalTantiemes}</span>
+              {$_('units.quota')} * <span class="text-sm text-gray-500">/ {totalTantiemes}</span>
             </label>
             <input
               id="quota"
@@ -185,22 +186,22 @@
               min="1"
               max={totalTantiemes}
               bind:value={quota}
-              placeholder="Ex: 350"
+              placeholder={$_('units.quota_example')}
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
             <p class="text-xs text-gray-500 mt-1">
-              Quote-part du lot dans l'immeuble (en millièmes)
+              {$_('units.quota_description')}
             </p>
           </div>
 
           <!-- Actions -->
           <div class="flex gap-2 pt-4">
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? 'Modification...' : 'Enregistrer'}
+              {loading ? $_('common.updating') : $_('common.save')}
             </Button>
             <Button type="button" variant="outline" on:click={handleClose}>
-              Annuler
+              {$_('common.cancel')}
             </Button>
           </div>
         </form>

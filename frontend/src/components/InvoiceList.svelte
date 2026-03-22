@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
 
   export let buildingId: string | null = null;
@@ -62,7 +63,7 @@
       invoices = await api.get(url);
       applyFilters();
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement des factures';
+      error = err.message || $_('invoices.load_error');
     } finally {
       loading = false;
     }
@@ -133,10 +134,10 @@
 
   function getStatusLabel(status: string): string {
     const s = status.toLowerCase();
-    if (s.includes('draft')) return 'Brouillon';
-    if (s.includes('pending')) return 'En attente';
-    if (s.includes('approved')) return 'Approuvée';
-    if (s.includes('rejected')) return 'Rejetée';
+    if (s.includes('draft')) return $_('invoices.status_draft');
+    if (s.includes('pending')) return $_('invoices.status_pending');
+    if (s.includes('approved')) return $_('invoices.status_approved');
+    if (s.includes('rejected')) return $_('invoices.status_rejected');
     return status;
   }
 
@@ -161,13 +162,13 @@
   <div class="list-header">
     <h2>
       {#if showPendingOnly}
-        Factures en attente de validation
+        {$_('invoices.pending_approval_title')}
       {:else}
-        Liste des factures
+        {$_('invoices.list_title')}
       {/if}
     </h2>
     <button class="btn btn-primary" on:click={loadInvoices} disabled={loading}>
-      🔄 Actualiser
+      🔄 {$_('common.refresh')}
     </button>
   </div>
 
@@ -175,34 +176,34 @@
   {#if !showPendingOnly}
     <div class="filters">
       <div class="filter-group">
-        <label for="status-filter">Statut:</label>
+        <label for="status-filter">{$_('common.status')}:</label>
         <select
           id="status-filter"
           bind:value={statusFilter}
           on:change={handleStatusFilterChange}
           disabled={loading}
         >
-          <option value="">Tous</option>
-          <option value="draft">Brouillon</option>
-          <option value="pending_approval">En attente</option>
-          <option value="approved">Approuvée</option>
-          <option value="rejected">Rejetée</option>
+          <option value="">{$_('invoices.all')}</option>
+          <option value="draft">{$_('invoices.status_draft')}</option>
+          <option value="pending_approval">{$_('invoices.status_pending')}</option>
+          <option value="approved">{$_('invoices.status_approved')}</option>
+          <option value="rejected">{$_('invoices.status_rejected')}</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label for="search">Recherche:</label>
+        <label for="search">{$_('common.search')}:</label>
         <input
           id="search"
           type="text"
           bind:value={searchQuery}
-          placeholder="Description, fournisseur, n° facture..."
+          placeholder={$_('invoices.search_placeholder')}
           disabled={loading}
         />
       </div>
 
       <div class="filter-group">
-        <label for="date-from">Du:</label>
+        <label for="date-from">{$_('invoices.from')}:</label>
         <input
           id="date-from"
           type="date"
@@ -213,7 +214,7 @@
       </div>
 
       <div class="filter-group">
-        <label for="date-to">Au:</label>
+        <label for="date-to">{$_('invoices.to')}:</label>
         <input
           id="date-to"
           type="date"
@@ -227,12 +228,12 @@
 
   <!-- Loading/Error States -->
   {#if loading}
-    <p class="loading">Chargement...</p>
+    <p class="loading">{$_('common.loading')}</p>
   {:else if error}
     <div class="alert alert-error">{error}</div>
   {:else if paginatedInvoices.length === 0}
     <div class="empty-state">
-      <p>Aucune facture trouvée.</p>
+      <p>{$_('invoices.no_invoices')}</p>
     </div>
   {:else}
     <!-- Invoice Table -->
@@ -240,16 +241,16 @@
       <table class="invoice-table">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th>Fournisseur</th>
-            <th>N° Facture</th>
-            <th>Montant HT</th>
-            <th>TVA</th>
-            <th>Montant TTC</th>
-            <th>Statut</th>
-            <th>Échéance</th>
-            <th>Actions</th>
+            <th>{$_('common.date')}</th>
+            <th>{$_('common.description')}</th>
+            <th>{$_('invoices.supplier')}</th>
+            <th>{$_('invoices.invoice_number')}</th>
+            <th>{$_('invoices.amount_excl_vat')}</th>
+            <th>{$_('invoices.vat')}</th>
+            <th>{$_('invoices.amount_incl_vat')}</th>
+            <th>{$_('common.status')}</th>
+            <th>{$_('invoices.due_date')}</th>
+            <th>{$_('common.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -275,7 +276,7 @@
                   class="btn btn-sm btn-secondary"
                   on:click|stopPropagation={() => selectInvoice(invoice)}
                 >
-                  Voir
+                  {$_('common.view')}
                 </button>
               </td>
             </tr>
@@ -292,11 +293,11 @@
           on:click={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          ← Précédent
+          ← {$_('common.previous')}
         </button>
 
         <span class="page-info">
-          Page {currentPage} sur {totalPages} ({filteredInvoices.length} facture{filteredInvoices.length > 1 ? 's' : ''})
+          {$_('invoices.page_info', { values: { current: currentPage, total: totalPages, count: filteredInvoices.length } })}
         </span>
 
         <button
@@ -304,7 +305,7 @@
           on:click={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >
-          Suivant →
+          {$_('common.next')} →
         </button>
       </div>
     {/if}
@@ -312,8 +313,8 @@
     <!-- Summary -->
     <div class="summary">
       <p>
-        <strong>Total affiché:</strong>
-        {filteredInvoices.length} facture{filteredInvoices.length > 1 ? 's' : ''}
+        <strong>{$_('invoices.total_displayed')}:</strong>
+        {filteredInvoices.length} {$_('invoices.invoice_count', { values: { count: filteredInvoices.length } })}
       </p>
     </div>
   {/if}

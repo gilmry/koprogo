@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from 'svelte-i18n';
   import { api } from "../lib/api";
 
   export let selectedBuildingId = "";
@@ -63,7 +64,7 @@
         }, 0);
       }
     } catch (err: any) {
-      error = "Erreur lors du chargement des immeubles";
+      error = $_('buildings.loadError');
       console.error("Failed to load buildings:", err);
     } finally {
       loading = false;
@@ -72,7 +73,7 @@
 </script>
 
 {#if loading}
-  <div class="text-sm text-gray-500 py-2">Chargement des immeubles...</div>
+  <div class="text-sm text-gray-500 py-2">{$_('buildings.loading')}</div>
 {:else if error}
   <div class="p-3 bg-red-50 border border-red-200 rounded-md">
     <p class="text-sm text-red-800">{error}</p>
@@ -80,13 +81,13 @@
       on:click={loadBuildings}
       class="mt-2 text-sm text-red-700 underline hover:text-red-900"
     >
-      Réessayer
+      {$_('common.retry')}
     </button>
   </div>
 {:else if buildings.length === 0}
   <div class="p-3 bg-red-50 border border-red-200 rounded-md">
     <p class="text-sm text-red-800">
-      Aucun immeuble trouvé. Veuillez d'abord créer un immeuble.
+      {$_('buildings.noBuildings')}
     </p>
   </div>
 {:else if buildings.length === 1}
@@ -115,7 +116,7 @@
       {disabled}
       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
     >
-      <option value="">-- Sélectionner un immeuble --</option>
+      <option value="">{$_('buildings.selectBuilding')}</option>
       {#each buildings as building}
         <option value={building.id}>
           {building.name} — {building.address}{#if building.city}, {building.postal_code} {building.city}{/if}

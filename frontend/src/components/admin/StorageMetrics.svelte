@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { getMetricsUrl } from '../../lib/api';
 
   interface OperationMetrics {
@@ -187,8 +188,8 @@
 <section class="bg-white border border-gray-200 rounded-xl shadow-sm">
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 border-b border-gray-100">
     <div>
-      <h2 class="text-2xl font-semibold text-gray-900">Storage Monitoring</h2>
-      <p class="text-sm text-gray-500">Prometheus metrics for document storage providers</p>
+      <h2 class="text-2xl font-semibold text-gray-900">{$_('admin.storage.title')}</h2>
+      <p class="text-sm text-gray-500">{$_('admin.storage.description')}</p>
     </div>
     <div class="flex items-center gap-3">
       <span class="text-sm text-gray-500">Dernière mise à jour : {formatTimestamp(lastUpdated)}</span>
@@ -197,7 +198,7 @@
         on:click={fetchMetrics}
         disabled={loading}
       >
-        {loading ? 'Actualisation…' : 'Rafraîchir'}
+        {loading ? $_('common.refreshing') : $_('common.refresh')}
       </button>
     </div>
   </div>
@@ -210,9 +211,9 @@
 
   <div class="p-6">
     {#if loading && !lastUpdated}
-      <p class="text-gray-500">Chargement des métriques…</p>
+      <p class="text-gray-500">{$_('admin.storage.loadingMetrics')}</p>
     {:else if metrics.length === 0}
-      <p class="text-gray-500">Aucune métrique disponible pour le moment.</p>
+      <p class="text-gray-500">{$_('admin.storage.noMetrics')}</p>
     {:else}
       <div class="overflow-x-auto">
         <table class="min-w-full text-sm">

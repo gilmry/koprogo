@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { _ } from "svelte-i18n";
   import { notificationStore } from "../../stores/notifications";
   import type { Notification, NotificationType } from "../../lib/api/notifications";
 
@@ -45,10 +46,10 @@
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return "Just now";
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    if (days < 7) return `${days}d ago`;
+    if (minutes < 1) return $_("notifications.just_now");
+    if (minutes < 60) return `${minutes}${$_("notifications.m_ago")}`;
+    if (hours < 24) return `${hours}${$_("notifications.h_ago")}`;
+    if (days < 7) return `${days}${$_("notifications.d_ago")}`;
     return date.toLocaleDateString("nl-BE", {
       month: "short",
       day: "numeric",
@@ -119,7 +120,7 @@
         <button
           on:click={handleDelete}
           class="ml-2 text-gray-400 hover:text-red-600 transition-colors"
-          aria-label="Delete notification"
+          aria-label={$_("notifications.delete_notification")}
         >
           <svg
             class="h-4 w-4"

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { _ } from 'svelte-i18n';
 
   export let lineItems: LineItem[] = [];
   export let disabled = false;
@@ -18,10 +19,10 @@
   }
 
   const vatRates = [
-    { value: 0, label: '0% (Exonéré)' },
-    { value: 6, label: '6% (Taux réduit)' },
-    { value: 12, label: '12% (Taux parking)' },
-    { value: 21, label: '21% (Taux normal)' }
+    { value: 0, label: $_('invoices.vat_0') },
+    { value: 6, label: $_('invoices.vat_6') },
+    { value: 12, label: $_('invoices.vat_12') },
+    { value: 21, label: $_('invoices.vat_21') }
   ];
 
   function createEmptyLine(): LineItem {
@@ -80,14 +81,14 @@
 
 <div class="line-items-container">
   <div class="header">
-    <h3>Lignes de Facturation</h3>
+    <h3>{$_('invoices.line_items_title')}</h3>
     <button
       type="button"
       class="btn-add"
       on:click={addLine}
       disabled={disabled}
     >
-      + Ajouter une ligne
+      {$_('invoices.add_line')}
     </button>
   </div>
 
@@ -99,13 +100,13 @@
         <div class="line-content">
           <!-- Description -->
           <div class="form-group full-width">
-            <label for="desc-{index}">Description *</label>
+            <label for="desc-{index}">{$_('common.description')} *</label>
             <input
               type="text"
               id="desc-{index}"
               bind:value={line.description}
               on:input={() => handleLineChange(index)}
-              placeholder="Ex: Intervention technicien"
+              placeholder={$_('invoices.line_description_placeholder')}
               disabled={disabled}
               required
             />
@@ -114,7 +115,7 @@
           <div class="form-row">
             <!-- Quantity -->
             <div class="form-group">
-              <label for="qty-{index}">Quantité *</label>
+              <label for="qty-{index}">{$_('invoices.quantity')} *</label>
               <input
                 type="number"
                 id="qty-{index}"
@@ -129,7 +130,7 @@
 
             <!-- Unit Price -->
             <div class="form-group">
-              <label for="price-{index}">Prix unitaire HT (€) *</label>
+              <label for="price-{index}">{$_('invoices.unit_price')} *</label>
               <input
                 type="number"
                 id="price-{index}"
@@ -144,7 +145,7 @@
 
             <!-- VAT Rate -->
             <div class="form-group">
-              <label for="vat-{index}">TVA</label>
+              <label for="vat-{index}">{$_('invoices.vat')}</label>
               <select
                 id="vat-{index}"
                 bind:value={line.vat_rate}
@@ -159,17 +160,17 @@
 
             <!-- Calculated Amounts -->
             <div class="form-group calculated">
-              <label>Total HT</label>
+              <label>{$_('invoices.total_excl')}</label>
               <div class="amount">{formatCurrency(line.amount_excl_vat)} €</div>
             </div>
 
             <div class="form-group calculated">
-              <label>TVA</label>
+              <label>{$_('invoices.vat')}</label>
               <div class="amount">{formatCurrency(line.vat_amount)} €</div>
             </div>
 
             <div class="form-group calculated total">
-              <label>Total TTC</label>
+              <label>{$_('invoices.total_incl')}</label>
               <div class="amount">{formatCurrency(line.amount_incl_vat)} €</div>
             </div>
           </div>
@@ -181,7 +182,7 @@
             type="button"
             class="btn-remove"
             on:click={() => removeLine(index)}
-            title="Supprimer cette ligne"
+            title={$_('invoices.remove_line')}
           >
             ✕
           </button>
@@ -194,15 +195,15 @@
   {#if lineItems.length > 0}
     <div class="grand-total">
       <div class="total-row">
-        <span>Total HT:</span>
+        <span>{$_('invoices.total_excl')}:</span>
         <strong>{formatCurrency(totalExclVat)} €</strong>
       </div>
       <div class="total-row">
-        <span>Total TVA:</span>
+        <span>{$_('invoices.total_vat')}:</span>
         <strong>{formatCurrency(totalVat)} €</strong>
       </div>
       <div class="total-row grand">
-        <span>Total TTC:</span>
+        <span>{$_('invoices.total_incl')}:</span>
         <strong>{formatCurrency(totalInclVat)} €</strong>
       </div>
     </div>

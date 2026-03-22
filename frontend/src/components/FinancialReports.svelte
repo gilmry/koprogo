@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
 
@@ -32,7 +33,7 @@
       error = '';
       balanceSheet = await api.get('/reports/balance-sheet');
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement du bilan';
+      error = err.message || $_('reports.balance_sheet_error');
       console.error('Error loading balance sheet:', err);
     } finally {
       loading = false;
@@ -41,7 +42,7 @@
 
   async function loadIncomeStatement() {
     if (!periodStart || !periodEnd) {
-      error = 'Veuillez sélectionner une période';
+      error = $_('reports.select_period');
       return;
     }
 
@@ -55,7 +56,7 @@
         `/reports/income-statement?period_start=${startISO}&period_end=${endISO}`
       );
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement du compte de résultats';
+      error = err.message || $_('reports.income_statement_error');
       console.error('Error loading income statement:', err);
     } finally {
       loading = false;
@@ -88,7 +89,7 @@
   function exportToPDF() {
     const data = reportType === 'balance-sheet' ? balanceSheet : incomeStatement;
     if (!data) {
-      toast.error('Veuillez d\'abord charger un rapport');
+      toast.error($_('reports.load_report_first'));
       return;
     }
     window.print();
@@ -97,40 +98,40 @@
   function exportToExcel() {
     const data = reportType === 'balance-sheet' ? balanceSheet : incomeStatement;
     if (!data) {
-      toast.error('Veuillez d\'abord charger un rapport');
+      toast.error($_('reports.load_report_first'));
       return;
     }
 
     let csv = '';
-    const title = reportType === 'balance-sheet' ? 'Bilan_Comptable' : 'Compte_de_Resultats';
-    csv += `${title.replace(/_/g, ' ')}\n`;
-    csv += `Date export;${new Date().toLocaleDateString('fr-BE')}\n\n`;
+    const title = reportType === 'balance-sheet' ? $_('reports.balance_sheet') : $_('reports.income_statement');
+    csv += `${title}\n`;
+    csv += `${$_('reports.export_date')};${new Date().toLocaleDateString('fr-BE')}\n\n`;
 
     if (reportType === 'balance-sheet' && balanceSheet) {
-      csv += 'Section;Code;Compte;Montant EUR\n';
+      csv += `${$_('reports.section')};${$_('common.code')};${$_('common.account')};${$_('reports.amount_eur')}\n`;
       for (const account of balanceSheet.assets?.accounts || []) {
-        csv += `Actif;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_('reports.assets')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;Total Actif;${balanceSheet.total_assets.toFixed(2)}\n`;
+      csv += `;;${$_('reports.total_assets')};${balanceSheet.total_assets.toFixed(2)}\n`;
       for (const account of balanceSheet.liabilities?.accounts || []) {
-        csv += `Passif;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_('reports.liabilities')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;Total Passif;${balanceSheet.total_liabilities.toFixed(2)}\n`;
+      csv += `;;${$_('reports.total_liabilities')};${balanceSheet.total_liabilities.toFixed(2)}\n`;
       for (const account of balanceSheet.equity?.accounts || []) {
-        csv += `Capitaux Propres;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_('reports.equity')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;Total Capitaux Propres;${balanceSheet.total_equity.toFixed(2)}\n`;
+      csv += `;;${$_('reports.total_equity')};${balanceSheet.total_equity.toFixed(2)}\n`;
     } else if (incomeStatement) {
-      csv += 'Section;Code;Compte;Montant EUR\n';
+      csv += `${$_('reports.section')};${$_('common.code')};${$_('common.account')};${$_('reports.amount_eur')}\n`;
       for (const account of incomeStatement.expenses?.accounts || []) {
-        csv += `Charges;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_('reports.expenses')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;Total Charges;${incomeStatement.total_expenses.toFixed(2)}\n`;
+      csv += `;;${$_('reports.total_expenses')};${incomeStatement.total_expenses.toFixed(2)}\n`;
       for (const account of incomeStatement.revenue?.accounts || []) {
-        csv += `Produits;${account.code};${account.label};${account.amount.toFixed(2)}\n`;
+        csv += `${$_('reports.revenue')};${account.code};${account.label};${account.amount.toFixed(2)}\n`;
       }
-      csv += `;;Total Produits;${incomeStatement.total_revenue.toFixed(2)}\n`;
-      csv += `;;Resultat Net;${incomeStatement.net_result.toFixed(2)}\n`;
+      csv += `;;${$_('reports.total_revenue')};${incomeStatement.total_revenue.toFixed(2)}\n`;
+      csv += `;;${$_('reports.net_result')};${incomeStatement.net_result.toFixed(2)}\n`;
     }
 
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -140,13 +141,14 @@
     a.download = `${title}_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    toast.success($_('reports.export_success'));
   }
 </script>
 
 <div class="space-y-6">
   <!-- Report Type Selection -->
   <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-xl font-semibold text-gray-900 mb-4">Type de Rapport</h2>
+    <h2 class="text-xl font-semibold text-gray-900 mb-4">{$_('reports.report_type')}</h2>
     <div class="flex space-x-4">
       <button
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType === 'balance-sheet'
@@ -154,7 +156,7 @@
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
         on:click={() => { reportType = 'balance-sheet'; handleReportTypeChange(); }}
       >
-        📊 Bilan Comptable
+        📊 {$_('reports.balance_sheet')}
       </button>
       <button
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType === 'income-statement'
@@ -162,7 +164,7 @@
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
         on:click={() => { reportType = 'income-statement'; handleReportTypeChange(); }}
       >
-        📈 Compte de Résultats
+        📈 {$_('reports.income_statement')}
       </button>
     </div>
   </div>
@@ -170,11 +172,11 @@
   <!-- Period Selection for Income Statement -->
   {#if reportType === 'income-statement'}
     <div class="bg-white rounded-lg shadow p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Période</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('reports.period')}</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label for="period-start" class="block text-sm font-medium text-gray-700 mb-2">
-            Date de début
+            {$_('reports.start_date')}
           </label>
           <input
             id="period-start"
@@ -185,7 +187,7 @@
         </div>
         <div>
           <label for="period-end" class="block text-sm font-medium text-gray-700 mb-2">
-            Date de fin
+            {$_('reports.end_date')}
           </label>
           <input
             id="period-end"
@@ -211,10 +213,10 @@
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          Chargement...
+          {$_('common.loading')}
         </span>
       {:else}
-        Générer le Rapport
+        {$_('reports.generate_report')}
       {/if}
     </button>
   </div>
@@ -240,20 +242,20 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <!-- Report Header -->
       <div class="bg-primary-600 text-white p-6">
-        <h2 class="text-2xl font-bold">Bilan Comptable</h2>
-        <p class="text-primary-100 mt-1">Date: {formatDate(balanceSheet.report_date)}</p>
+        <h2 class="text-2xl font-bold">{$_('reports.balance_sheet')}</h2>
+        <p class="text-primary-100 mt-1">{$_('common.date')}: {formatDate(balanceSheet.report_date)}</p>
         <div class="mt-4 flex space-x-4">
           <button
             on:click={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📄 Export PDF
+            📄 {$_('reports.export_pdf')}
           </button>
           <button
             on:click={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📊 Export CSV
+            📊 {$_('reports.export_csv')}
           </button>
         </div>
       </div>
@@ -263,7 +265,7 @@
           <!-- Left Column: Assets -->
           <div>
             <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-primary-600 pb-2">
-              ACTIF (Classes 2, 3, 4 & 5)
+              {$_('reports.assets')} (Classes 2, 3, 4 & 5)
             </h3>
             <div class="space-y-2">
               {#each balanceSheet.assets.accounts as account}
@@ -279,7 +281,7 @@
               {/each}
             </div>
             <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-green-50 p-3 rounded-lg">
-              <span class="font-bold text-gray-900">Total Actif</span>
+              <span class="font-bold text-gray-900">{$_('reports.total_assets')}</span>
               <span class="text-xl font-bold text-green-600 font-mono">
                 {formatCurrency(balanceSheet.total_assets)}
               </span>
@@ -291,7 +293,7 @@
             <!-- Liabilities Section -->
             <div>
               <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-primary-600 pb-2">
-                PASSIF (Classes 1 & 4)
+                {$_('reports.liabilities')} (Classes 1 & 4)
               </h3>
               <div class="space-y-2">
                 {#each balanceSheet.liabilities.accounts as account}
@@ -307,7 +309,7 @@
                 {/each}
               </div>
               <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-blue-50 p-3 rounded-lg">
-                <span class="font-bold text-gray-900">Total Passif</span>
+                <span class="font-bold text-gray-900">{$_('reports.total_liabilities')}</span>
                 <span class="text-xl font-bold text-blue-600 font-mono">
                   {formatCurrency(balanceSheet.total_liabilities)}
                 </span>
@@ -317,7 +319,7 @@
             <!-- Equity Section -->
             <div>
               <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-purple-600 pb-2">
-                CAPITAUX PROPRES
+                {$_('reports.equity')}
               </h3>
               <div class="space-y-2">
                 {#each balanceSheet.equity.accounts as account}
@@ -333,7 +335,7 @@
                 {/each}
               </div>
               <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-purple-50 p-3 rounded-lg">
-                <span class="font-bold text-gray-900">Total Capitaux Propres</span>
+                <span class="font-bold text-gray-900">{$_('reports.total_equity')}</span>
                 <span class="text-xl font-bold {balanceSheet.total_equity >= 0 ? 'text-green-600' : 'text-red-600'} font-mono">
                   {formatCurrency(balanceSheet.total_equity)}
                 </span>
@@ -345,21 +347,21 @@
         <!-- Balance Check (Actif = Passif + Capitaux Propres) -->
         <div class="mt-8 p-4 rounded-lg {Math.abs(balanceSheet.balance) < 0.01 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border-2">
           <div class="flex justify-between items-center">
-            <span class="font-bold text-gray-900">Équilibre (Actif - [Passif + Capitaux Propres])</span>
+            <span class="font-bold text-gray-900">{$_('reports.balance_check')}</span>
             <span class="text-xl font-bold {Math.abs(balanceSheet.balance) < 0.01 ? 'text-green-600' : 'text-red-600'} font-mono">
               {formatCurrency(balanceSheet.balance)}
             </span>
           </div>
           {#if Math.abs(balanceSheet.balance) < 0.01}
-            <p class="text-sm text-green-700 mt-2">✓ Le bilan est équilibré (Actif = Passif + Capitaux Propres)</p>
+            <p class="text-sm text-green-700 mt-2">✓ {$_('reports.balance_balanced')}</p>
           {:else}
-            <p class="text-sm text-red-700 mt-2">⚠ Le bilan n'est pas équilibré</p>
+            <p class="text-sm text-red-700 mt-2">⚠ {$_('reports.balance_not_balanced')}</p>
           {/if}
           <div class="mt-3 text-sm text-gray-700 font-mono">
-            <div>Actif: {formatCurrency(balanceSheet.total_assets)}</div>
-            <div>Passif: {formatCurrency(balanceSheet.total_liabilities)}</div>
-            <div>Capitaux Propres: {formatCurrency(balanceSheet.total_equity)}</div>
-            <div class="font-bold mt-2">Passif + Cap. Propres: {formatCurrency(balanceSheet.total_liabilities + balanceSheet.total_equity)}</div>
+            <div>{$_('reports.assets')}: {formatCurrency(balanceSheet.total_assets)}</div>
+            <div>{$_('reports.liabilities')}: {formatCurrency(balanceSheet.total_liabilities)}</div>
+            <div>{$_('reports.equity')}: {formatCurrency(balanceSheet.total_equity)}</div>
+            <div class="font-bold mt-2">{$_('reports.liabilities_equity')}: {formatCurrency(balanceSheet.total_liabilities + balanceSheet.total_equity)}</div>
           </div>
         </div>
       </div>
@@ -371,22 +373,22 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <!-- Report Header -->
       <div class="bg-primary-600 text-white p-6">
-        <h2 class="text-2xl font-bold">Compte de Résultats</h2>
+        <h2 class="text-2xl font-bold">{$_('reports.income_statement')}</h2>
         <p class="text-primary-100 mt-1">
-          Période: {formatDate(incomeStatement.period_start)} - {formatDate(incomeStatement.period_end)}
+          {$_('reports.period')}: {formatDate(incomeStatement.period_start)} - {formatDate(incomeStatement.period_end)}
         </p>
         <div class="mt-4 flex space-x-4">
           <button
             on:click={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📄 Export PDF
+            📄 {$_('reports.export_pdf')}
           </button>
           <button
             on:click={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
-            📊 Export CSV
+            📊 {$_('reports.export_csv')}
           </button>
         </div>
       </div>
@@ -396,7 +398,7 @@
           <!-- Expenses Section -->
           <div>
             <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-red-600 pb-2">
-              CHARGES (Classe 6)
+              {$_('reports.expenses')} (Classe 6)
             </h3>
             <div class="space-y-2">
               {#each incomeStatement.expenses.accounts as account}
@@ -412,7 +414,7 @@
               {/each}
             </div>
             <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-red-50 p-3 rounded-lg">
-              <span class="font-bold text-gray-900">Total Charges</span>
+              <span class="font-bold text-gray-900">{$_('reports.total_expenses')}</span>
               <span class="text-xl font-bold text-red-600 font-mono">
                 {formatCurrency(incomeStatement.total_expenses)}
               </span>
@@ -422,7 +424,7 @@
           <!-- Revenue Section -->
           <div>
             <h3 class="text-lg font-semibold text-gray-900 mb-4 border-b-2 border-green-600 pb-2">
-              PRODUITS (Classe 7)
+              {$_('reports.revenue')} (Classe 7)
             </h3>
             <div class="space-y-2">
               {#each incomeStatement.revenue.accounts as account}
@@ -438,7 +440,7 @@
               {/each}
             </div>
             <div class="mt-4 pt-4 border-t-2 border-gray-300 flex justify-between items-center bg-green-50 p-3 rounded-lg">
-              <span class="font-bold text-gray-900">Total Produits</span>
+              <span class="font-bold text-gray-900">{$_('reports.total_revenue')}</span>
               <span class="text-xl font-bold text-green-600 font-mono">
                 {formatCurrency(incomeStatement.total_revenue)}
               </span>
@@ -449,15 +451,15 @@
         <!-- Net Result -->
         <div class="mt-8 p-4 rounded-lg {incomeStatement.net_result >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border-2">
           <div class="flex justify-between items-center">
-            <span class="font-bold text-gray-900">Résultat Net (Produits - Charges)</span>
+            <span class="font-bold text-gray-900">{$_('reports.net_result')}</span>
             <span class="text-2xl font-bold {incomeStatement.net_result >= 0 ? 'text-green-600' : 'text-red-600'} font-mono">
               {formatCurrency(incomeStatement.net_result)}
             </span>
           </div>
           {#if incomeStatement.net_result >= 0}
-            <p class="text-sm text-green-700 mt-2">✓ Résultat excédentaire (bénéfice)</p>
+            <p class="text-sm text-green-700 mt-2">✓ {$_('reports.surplus_result')}</p>
           {:else}
-            <p class="text-sm text-red-700 mt-2">⚠ Résultat déficitaire (perte)</p>
+            <p class="text-sm text-red-700 mt-2">⚠ {$_('reports.deficit_result')}</p>
           {/if}
         </div>
       </div>

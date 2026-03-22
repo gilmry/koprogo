@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
   import { onMount } from 'svelte';
   import {
     gamificationApi,
@@ -34,7 +35,7 @@
         limit,
       );
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement du classement';
+      error = err.message || $_('gamification.leaderboard_error');
     } finally {
       loading = false;
     }
@@ -52,23 +53,23 @@
 
 <div class="bg-white shadow-md rounded-lg">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-    <h3 class="text-lg leading-6 font-medium text-gray-900">Classement</h3>
-    <p class="mt-1 text-sm text-gray-500">Top contributeurs par points de gamification.</p>
+    <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.leaderboard')}</h3>
+    <p class="mt-1 text-sm text-gray-500">{$_('gamification.leaderboard_description')}</p>
   </div>
 
   {#if loading}
     <div class="p-8 text-center">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
+      <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadLeaderboard} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">Réessayer</button>
+      <button on:click={loadLeaderboard} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if leaderboard.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">Aucun participant pour le moment</p>
+      <p class="text-gray-500">{$_('gamification.no_participants')}</p>
     </div>
   {:else}
     <div class="divide-y divide-gray-100">
@@ -86,19 +87,19 @@
             <p class="text-sm font-medium text-gray-900 truncate">
               {entry.user_name}
               {#if isMe}
-                <span class="text-xs text-amber-600 font-medium">(vous)</span>
+                <span class="text-xs text-amber-600 font-medium">({$_('common.you')})</span>
               {/if}
             </p>
             <div class="flex items-center gap-3 text-xs text-gray-500">
-              <span>{entry.achievements_count} achievement{entry.achievements_count > 1 ? 's' : ''}</span>
-              <span>{entry.challenges_completed} challenge{entry.challenges_completed > 1 ? 's' : ''}</span>
+              <span>{$_('gamification.achievement_count', { count: entry.achievements_count })}</span>
+              <span>{$_('gamification.challenge_count_completed', { count: entry.challenges_completed })}</span>
             </div>
           </div>
 
           <!-- Points -->
           <div class="flex-shrink-0 text-right">
             <p class="text-lg font-bold text-amber-600">{entry.total_points}</p>
-            <p class="text-xs text-gray-500">points</p>
+            <p class="text-xs text-gray-500">{$_('gamification.points')}</p>
           </div>
         </div>
       {/each}

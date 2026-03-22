@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { _ } from 'svelte-i18n';
 	import { api } from '../../lib/api';
 
 	interface SeedStats {
@@ -136,7 +137,7 @@
 <div class="max-w-6xl mx-auto">
 	<div class="bg-white rounded-lg shadow-lg p-6">
 		<h1 class="text-3xl font-bold mb-6 text-gray-800">
-			🌱 Gestion des données Seed
+			🌱 {$_('admin.seed.title')}
 		</h1>
 
 		<div class="mb-8">

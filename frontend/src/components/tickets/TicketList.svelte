@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     ticketsApi,
     TicketStatus,
@@ -44,7 +45,7 @@
         tickets = [];
       }
     } catch (err: any) {
-      error = err.message || "Failed to load tickets";
+      error = err.message || $_("tickets.load_failed");
       toast.error(error);
     } finally {
       loading = false;
@@ -95,11 +96,11 @@
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-xl font-semibold text-gray-900">
         {#if view === "my"}
-          My Tickets
+          {$_("tickets.my_tickets")}
         {:else if view === "assigned"}
-          Assigned Tickets
+          {$_("tickets.assigned_tickets")}
         {:else}
-          All Tickets
+          {$_("tickets.all_tickets")}
         {/if}
         <span class="ml-2 text-sm text-gray-500">
           ({filteredTickets.length})
@@ -109,7 +110,7 @@
         on:click={loadTickets}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
-        Refresh
+        {$_("common.refresh")}
       </button>
     </div>
 
@@ -117,12 +118,12 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <!-- Search -->
       <div>
-        <label for="ticket-search" class="sr-only">Search tickets</label>
+        <label for="ticket-search" class="sr-only">{$_("tickets.search_tickets")}</label>
         <input
           id="ticket-search"
           type="text"
           bind:value={searchQuery}
-          placeholder="Search tickets..."
+          placeholder={$_("tickets.search_tickets")}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
@@ -133,12 +134,12 @@
           bind:value={statusFilter}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
-          <option value="all">All Statuses</option>
-          <option value={TicketStatus.Open}>Open</option>
-          <option value={TicketStatus.Assigned}>Assigned</option>
-          <option value={TicketStatus.InProgress}>In Progress</option>
-          <option value={TicketStatus.Resolved}>Resolved</option>
-          <option value={TicketStatus.Closed}>Closed</option>
+          <option value="all">{$_("tickets.all_statuses")}</option>
+          <option value={TicketStatus.Open}>{$_("tickets.status_open")}</option>
+          <option value={TicketStatus.Assigned}>{$_("tickets.status_assigned")}</option>
+          <option value={TicketStatus.InProgress}>{$_("tickets.status_in_progress")}</option>
+          <option value={TicketStatus.Resolved}>{$_("tickets.status_resolved")}</option>
+          <option value={TicketStatus.Closed}>{$_("tickets.status_closed")}</option>
         </select>
       </div>
 
@@ -148,12 +149,12 @@
           bind:value={priorityFilter}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
-          <option value="all">All Priorities</option>
-          <option value={TicketPriority.Critical}>Critical</option>
-          <option value={TicketPriority.Urgent}>Urgent</option>
-          <option value={TicketPriority.High}>High</option>
-          <option value={TicketPriority.Medium}>Medium</option>
-          <option value={TicketPriority.Low}>Low</option>
+          <option value="all">{$_("tickets.all_priorities")}</option>
+          <option value={TicketPriority.Critical}>{$_("tickets.priority_critical")}</option>
+          <option value={TicketPriority.Urgent}>{$_("tickets.priority_urgent")}</option>
+          <option value={TicketPriority.High}>{$_("tickets.priority_high")}</option>
+          <option value={TicketPriority.Medium}>{$_("tickets.priority_medium")}</option>
+          <option value={TicketPriority.Low}>{$_("tickets.priority_low")}</option>
         </select>
       </div>
 
@@ -163,14 +164,14 @@
           bind:value={categoryFilter}
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
-          <option value="all">All Categories</option>
-          <option value={TicketCategory.Plumbing}>Plumbing</option>
-          <option value={TicketCategory.Electrical}>Electrical</option>
-          <option value={TicketCategory.Heating}>Heating</option>
-          <option value={TicketCategory.Cleaning}>Cleaning</option>
-          <option value={TicketCategory.Security}>Security</option>
-          <option value={TicketCategory.General}>General</option>
-          <option value={TicketCategory.Emergency}>Emergency</option>
+          <option value="all">{$_("tickets.all_categories")}</option>
+          <option value={TicketCategory.Plumbing}>{$_("tickets.category_plumbing")}</option>
+          <option value={TicketCategory.Electrical}>{$_("tickets.category_electrical")}</option>
+          <option value={TicketCategory.Heating}>{$_("tickets.category_heating")}</option>
+          <option value={TicketCategory.Cleaning}>{$_("tickets.category_cleaning")}</option>
+          <option value={TicketCategory.Security}>{$_("tickets.category_security")}</option>
+          <option value={TicketCategory.General}>{$_("tickets.category_general")}</option>
+          <option value={TicketCategory.Emergency}>{$_("tickets.category_emergency")}</option>
         </select>
       </div>
     </div>
@@ -179,12 +180,12 @@
   <!-- Tickets list -->
   <div class="divide-y divide-gray-200">
     {#if loading}
-      <div class="px-6 py-12 text-center text-gray-500">Loading tickets...</div>
+      <div class="px-6 py-12 text-center text-gray-500">{$_("tickets.loading")}</div>
     {:else if error}
       <div class="px-6 py-12 text-center text-red-600">{error}</div>
     {:else if filteredTickets.length === 0}
       <div class="px-6 py-12 text-center text-gray-500">
-        No tickets found matching your filters.
+        {$_("tickets.no_tickets_found")}
       </div>
     {:else}
       {#each filteredTickets as ticket (ticket.id)}
@@ -202,7 +203,7 @@
                   <span
                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800"
                   >
-                    ⚠️ Overdue
+                    ⚠️ {$_("tickets.overdue")}
                   </span>
                 {/if}
               </div>
@@ -213,18 +214,18 @@
 
               <div class="flex items-center space-x-4 text-sm text-gray-500">
                 <span>#{ticket.id.slice(0, 8)}</span>
-                <span>Requester: {ticket.requester_name || "Unknown"}</span>
+                <span>{$_("tickets.requester")}: {ticket.requester_name || $_("common.unknown")}</span>
                 {#if ticket.assigned_contractor_name}
                   <span>
-                    Assigned to: {ticket.assigned_contractor_name}
+                    {$_("tickets.assigned_to")}: {ticket.assigned_contractor_name}
                   </span>
                 {/if}
                 {#if ticket.unit_number}
-                  <span>Unit: {ticket.unit_number}</span>
+                  <span>{$_("tickets.unit")}: {ticket.unit_number}</span>
                 {/if}
-                <span>Category: {ticket.category}</span>
+                <span>{$_("tickets.category")}: {ticket.category}</span>
                 {#if ticket.due_date}
-                  <span>Due: {formatDate(ticket.due_date)}</span>
+                  <span>{$_("tickets.due")}: {formatDate(ticket.due_date)}</span>
                 {/if}
               </div>
             </div>

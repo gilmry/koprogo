@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { authStore } from '../stores/auth';
   import { api } from '../lib/api';
   import type { Organization } from '../lib/types';
@@ -71,7 +72,7 @@
       dispatch('save');
       closeModal();
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors de la création';
+      error = e instanceof Error ? e.message : $_('owners.error.creation');
       console.error('Error creating owner:', e);
     } finally {
       loading = false;
@@ -97,7 +98,7 @@
     <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
       <div class="p-6 border-b border-gray-200">
         <h2 class="text-xl font-bold text-gray-900">
-          Nouveau copropriétaire
+          {$_('owners.create.title')}
         </h2>
       </div>
 
@@ -111,7 +112,7 @@
         {#if isSuperAdmin}
           <div>
             <label for="organization_id" class="block text-sm font-medium text-gray-700 mb-1">
-              Organisation *
+              {$_('common.organization')} *
             </label>
             <select
               id="organization_id"
@@ -119,7 +120,7 @@
               required
               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
-              <option value="">Sélectionnez une organisation</option>
+              <option value="">{$_('common.action.select_organization')}</option>
               {#each organizations as org}
                 <option value={org.id}>{org.name}</option>
               {/each}
@@ -130,7 +131,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">
-              Prénom *
+              {$_('common.first_name')} *
             </label>
             <input
               type="text"
@@ -143,7 +144,7 @@
 
           <div>
             <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">
-              Nom *
+              {$_('common.last_name')} *
             </label>
             <input
               type="text"
@@ -157,7 +158,7 @@
 
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-            Email *
+            {$_('common.email')} *
           </label>
           <input
             type="email"
@@ -170,7 +171,7 @@
 
         <div>
           <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
-            Téléphone
+            {$_('common.phone')}
           </label>
           <input
             type="tel"
@@ -182,7 +183,7 @@
 
         <div>
           <label for="address" class="block text-sm font-medium text-gray-700 mb-1">
-            Adresse
+            {$_('common.address')}
           </label>
           <input
             type="text"
@@ -195,7 +196,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label for="postal_code" class="block text-sm font-medium text-gray-700 mb-1">
-              Code postal
+              {$_('common.postal_code')}
             </label>
             <input
               type="text"
@@ -207,7 +208,7 @@
 
           <div>
             <label for="city" class="block text-sm font-medium text-gray-700 mb-1">
-              Ville
+              {$_('common.city')}
             </label>
             <input
               type="text"
@@ -219,7 +220,7 @@
 
           <div>
             <label for="country" class="block text-sm font-medium text-gray-700 mb-1">
-              Pays
+              {$_('common.country')}
             </label>
             <input
               type="text"
@@ -237,14 +238,14 @@
             disabled={loading}
             class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
           >
-            Annuler
+            {$_('common.action.cancel')}
           </button>
           <button
             type="submit"
             disabled={loading}
             class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {loading ? 'Création...' : 'Créer'}
+            {loading ? $_('common.action.creating') : $_('owners.create.action')}
           </button>
         </div>
       </form>

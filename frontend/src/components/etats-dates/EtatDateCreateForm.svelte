@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, createEventDispatcher } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { etatsDatesApi, EtatDateLanguage, type CreateEtatDateDto } from '../../lib/api/etats-dates';
   import { api } from '../../lib/api';
   import type { Building } from '../../lib/types';
@@ -47,11 +48,11 @@
 
   async function handleSubmit() {
     if (!buildingId || !unitId) {
-      error = 'Veuillez selectionner un immeuble et un lot';
+      error = $_('etatsDate.errors.selectBuildingAndUnit');
       return;
     }
     if (!notaryName || !notaryEmail) {
-      error = 'Le nom et l\'email du notaire sont obligatoires';
+      error = $_('etatsDate.errors.notaryInfoRequired');
       return;
     }
 
@@ -70,7 +71,7 @@
       const etatDate = await etatsDatesApi.create(data);
       dispatch('created', etatDate);
     } catch (err: any) {
-      error = err.message || 'Erreur lors de la creation';
+      error = err.message || $_('etatsDate.errors.creationFailed');
     } finally {
       loading = false;
     }
@@ -86,14 +87,14 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label for="building" class="block text-sm font-medium text-gray-700 mb-1">Immeuble</label>
+      <label for="building" class="block text-sm font-medium text-gray-700 mb-1">{$_('etatsDate.building')}</label>
       <select
         id="building"
         bind:value={buildingId}
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
         required
       >
-        <option value="">-- Selectionner --</option>
+        <option value="">-- {$_('common.select')} --</option>
         {#each buildings as building}
           <option value={building.id}>{building.name} - {building.address}</option>
         {/each}
@@ -101,7 +102,7 @@
     </div>
 
     <div>
-      <label for="unit" class="block text-sm font-medium text-gray-700 mb-1">Lot</label>
+      <label for="unit" class="block text-sm font-medium text-gray-700 mb-1">{$_('etatsDate.unit')}</label>
       <select
         id="unit"
         bind:value={unitId}
@@ -109,9 +110,9 @@
         required
         disabled={!buildingId}
       >
-        <option value="">-- Selectionner un lot --</option>
+        <option value="">-- {$_('etatsDate.selectUnit')} --</option>
         {#each units as unit}
-          <option value={unit.id}>Lot {unit.unit_number} {unit.floor ? `- Etage ${unit.floor}` : ''}</option>
+          <option value={unit.id}>{$_('etatsDate.unitLabel', { values: { number: unit.unit_number, floor: unit.floor ? `- ${$_('etatsDate.floor')} ${unit.floor}` : '' } })}</option>
         {/each}
       </select>
     </div>
@@ -119,7 +120,7 @@
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label for="reference-date" class="block text-sm font-medium text-gray-700 mb-1">Date de reference</label>
+      <label for="reference-date" class="block text-sm font-medium text-gray-700 mb-1">{$_('etatsDate.referenceDate')}</label>
       <input
         id="reference-date"
         type="date"
@@ -130,24 +131,24 @@
     </div>
 
     <div>
-      <label for="language" class="block text-sm font-medium text-gray-700 mb-1">Langue du document</label>
+      <label for="language" class="block text-sm font-medium text-gray-700 mb-1">{$_('etatsDate.documentLanguage')}</label>
       <select
         id="language"
         bind:value={language}
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
       >
-        <option value="fr">Francais</option>
-        <option value="nl">Neerlandais</option>
-        <option value="de">Allemand</option>
+        <option value="fr">{$_('languages.fr')}</option>
+        <option value="nl">{$_('languages.nl')}</option>
+        <option value="de">{$_('languages.de')}</option>
       </select>
     </div>
   </div>
 
   <div class="border-t pt-4">
-    <h4 class="text-sm font-semibold text-gray-900 mb-3">Informations du Notaire</h4>
+    <h4 class="text-sm font-semibold text-gray-900 mb-3">{$_('etatsDate.notaryInfo')}</h4>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
-        <label for="notary-name" class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+        <label for="notary-name" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.name')}</label>
         <input
           id="notary-name"
           type="text"
@@ -158,7 +159,7 @@
         />
       </div>
       <div>
-        <label for="notary-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <label for="notary-email" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.email')}</label>
         <input
           id="notary-email"
           type="email"
@@ -169,7 +170,7 @@
         />
       </div>
       <div>
-        <label for="notary-phone" class="block text-sm font-medium text-gray-700 mb-1">Telephone (optionnel)</label>
+        <label for="notary-phone" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.phone')}</label>
         <input
           id="notary-phone"
           type="tel"
@@ -187,14 +188,14 @@
       on:click={() => dispatch('cancel')}
       class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
     >
-      Annuler
+      {$_('common.cancel')}
     </button>
     <button
       type="submit"
       disabled={loading}
       class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
     >
-      {loading ? 'Creation...' : 'Creer l\'etat date'}
+      {loading ? $_('common.creating') : $_('etatsDate.createEtatDate')}
     </button>
   </div>
 </form>

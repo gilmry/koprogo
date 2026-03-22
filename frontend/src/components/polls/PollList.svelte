@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     pollsApi,
     type Poll,
@@ -33,7 +34,7 @@
       }
       applyFilters();
     } catch (err: any) {
-      error = err.message || "Erreur lors du chargement des sondages";
+      error = err.message || $_("polls.list.loadingError");
       console.error("Failed to load polls:", err);
     } finally {
       loading = false;
@@ -73,19 +74,18 @@
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <h3 class="text-lg leading-6 font-medium text-gray-900">
-        🗳️ Sondages (Consultations)
+        🗳️ {$_("polls.list.title")}
       </h3>
       <a
         href="/polls/new?building={buildingId}"
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
       >
         <span class="mr-2">➕</span>
-        Nouveau sondage
+        {$_("polls.list.newPoll")}
       </a>
     </div>
     <p class="mt-1 text-sm text-gray-500">
-      Consultez les copropriétaires entre les assemblées générales (Art.
-      577-8/4 §4 Code Civil Belge).
+      {$_("polls.list.description")}
     </p>
   </div>
 
@@ -93,16 +93,16 @@
   {#if !showOnlyActive}
     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
       <div class="flex items-center space-x-4">
-        <label class="text-sm font-medium text-gray-700">Statut:</label>
+        <label class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
         <select
           bind:value={statusFilter}
           class="text-sm rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
         >
-          <option value="all">Tous</option>
-          <option value={PollStatus.Draft}>Brouillon</option>
-          <option value={PollStatus.Active}>En cours</option>
-          <option value={PollStatus.Closed}>Clôturé</option>
-          <option value={PollStatus.Cancelled}>Annulé</option>
+          <option value="all">{$_("common.all")}</option>
+          <option value={PollStatus.Draft}>{$_("polls.list.draft")}</option>
+          <option value={PollStatus.Active}>{$_("polls.list.active")}</option>
+          <option value={PollStatus.Closed}>{$_("polls.list.closed")}</option>
+          <option value={PollStatus.Cancelled}>{$_("polls.list.cancelled")}</option>
         </select>
       </div>
     </div>
@@ -113,7 +113,7 @@
       <div
         class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"
       ></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement des sondages...</p>
+      <p class="mt-2 text-sm text-gray-500">{$_("polls.list.loading")}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
@@ -122,15 +122,14 @@
         on:click={loadPolls}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
-        Réessayer
+        {$_("common.retry")}
       </button>
     </div>
   {:else if filteredPolls.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">Aucun sondage trouvé</p>
+      <p class="text-gray-500">{$_("polls.list.notFound")}</p>
       <p class="mt-2 text-sm text-gray-400">
-        Créez un sondage pour consulter les copropriétaires sur une décision
-        entre les assemblées générales.
+        {$_("polls.list.emptyMessage")}
       </p>
     </div>
   {:else}
@@ -151,9 +150,9 @@
                   {#if poll.is_anonymous}
                     <span
                       class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700"
-                      title="Vote anonyme"
+                      title={$_("polls.list.anonymous")}
                     >
-                      🔒 Anonyme
+                      🔒 {$_("polls.list.anonymous")}
                     </span>
                   {/if}
                 </div>
@@ -172,7 +171,7 @@
                     )}"
                   >
                     📊 {poll.total_votes_cast}/{poll.total_eligible_voters}
-                    votes ({calculateParticipationRate(poll).toFixed(1)}%)
+                    {$_("polls.list.votes")} ({calculateParticipationRate(poll).toFixed(1)}%)
                   </span>
 
                   <!-- Dates -->
@@ -188,14 +187,14 @@
                   <!-- Created by -->
                   <span class="mx-2">•</span>
                   <span class="text-xs text-gray-400">
-                    Créé le {formatDate(poll.created_at)}
+                    {$_("polls.list.createdOn")} {formatDate(poll.created_at)}
                   </span>
                 </div>
 
                 <!-- Options preview (for multiple choice) -->
                 {#if poll.poll_type === PollType.MultipleChoice && poll.options.length > 0}
                   <div class="mt-2 flex items-center space-x-2">
-                    <span class="text-xs text-gray-500">Options:</span>
+                    <span class="text-xs text-gray-500">{$_("polls.list.options")}:</span>
                     {#each poll.options.slice(0, 3) as option}
                       <span
                         class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
@@ -205,7 +204,7 @@
                     {/each}
                     {#if poll.options.length > 3}
                       <span class="text-xs text-gray-400">
-                        +{poll.options.length - 3} autres
+                        +{poll.options.length - 3} {$_("polls.list.others")}
                       </span>
                     {/if}
                   </div>

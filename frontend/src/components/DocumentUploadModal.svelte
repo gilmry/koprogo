@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import type { Building, DocumentType, DocumentUploadPayload, User } from '../lib/types';
   import { DOCUMENT_TYPE_OPTIONS as DOCUMENT_TYPES } from '../lib/types';
   import { api } from '../lib/api';
@@ -61,22 +62,22 @@
     error = null;
 
     if (!user) {
-      error = "Utilisateur non authentifié";
+      error = $_('documents.userNotAuthenticated');
       return;
     }
 
     if (!file) {
-      error = "Veuillez sélectionner un fichier";
+      error = $_('documents.selectFile');
       return;
     }
 
     if (!buildingId) {
-      error = "Veuillez sélectionner un bâtiment";
+      error = $_('documents.selectBuilding');
       return;
     }
 
     if (!title.trim()) {
-      error = "Le titre est obligatoire";
+      error = $_('documents.titleRequired');
       return;
     }
 
@@ -97,7 +98,7 @@
       handleClose();
     } catch (err) {
       console.error('Upload failed', err);
-      error = err instanceof Error ? err.message : "Échec de l'upload";
+      error = err instanceof Error ? err.message : $_('documents.uploadFailed');
     } finally {
       submitting = false;
     }
@@ -111,14 +112,14 @@
         <div class="px-6 py-4 border-b border-gray-200">
           <div class="flex items-start justify-between">
             <div>
-              <h2 class="text-xl font-semibold text-gray-900">Nouveau document</h2>
-              <p class="text-sm text-gray-500">Téléversez un document pour la copropriété sélectionnée.</p>
+              <h2 class="text-xl font-semibold text-gray-900">{$_('documents.newDocument')}</h2>
+              <p class="text-sm text-gray-500">{$_('documents.uploadDescription')}</p>
             </div>
             <button
               type="button"
               class="text-gray-400 hover:text-gray-600"
               on:click={handleClose}
-              aria-label="Fermer le modal"
+              aria-label={$_('common.close')}
             >
               ✕
             </button>
@@ -127,11 +128,11 @@
 
         <div class="px-6 py-4 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Bâtiment</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.building')}</label>
             {#if loadingBuildings}
-              <p class="text-sm text-gray-500">Chargement des bâtiments…</p>
+              <p class="text-sm text-gray-500">{$_('documents.loadingBuildings')}</p>
             {:else if buildings.length === 0}
-              <p class="text-sm text-red-500">Aucun bâtiment disponible. Contactez un administrateur.</p>
+              <p class="text-sm text-red-500">{$_('documents.noBuildings')}</p>
             {:else}
               <select
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -145,7 +146,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Type de document</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.documentType')}</label>
             <select
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               bind:value={documentType}
@@ -157,7 +158,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Titre</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.title')}</label>
             <input
               type="text"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -168,7 +169,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Description (optionnel)</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.description')}</label>
             <textarea
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={3}
@@ -178,7 +179,7 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Fichier</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.file')}</label>
             <div class="flex items-center gap-3">
               <input
                 type="file"
@@ -193,13 +194,13 @@
                 on:click={() => fileInput?.click()}
                 disabled={submitting}
               >
-                Sélectionner un fichier
+                {$_('documents.selectFile')}
               </button>
               <span class="text-sm text-gray-600">
-                {file ? file.name : 'Aucun fichier sélectionné'}
+                {file ? file.name : $_('documents.noFileSelected')}
               </span>
             </div>
-            <p class="text-xs text-gray-500 mt-1">Taille maximale 50 Mo.</p>
+            <p class="text-xs text-gray-500 mt-1">{$_('documents.maxFileSize')}</p>
           </div>
 
           {#if error}
@@ -216,14 +217,14 @@
             on:click={handleClose}
             disabled={submitting}
           >
-            Annuler
+            {$_('common.cancel')}
           </button>
           <button
             type="submit"
             class="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition disabled:opacity-60"
             disabled={submitting || loadingBuildings || buildings.length === 0}
           >
-            {submitting ? 'Téléversement…' : 'Téléverser'}
+            {submitting ? $_('documents.uploading') : $_('documents.upload')}
           </button>
         </div>
       </form>

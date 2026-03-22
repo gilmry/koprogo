@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     localExchangesApi,
     type CreateLocalExchangeDto,
@@ -32,21 +33,21 @@
 
     // Validation
     if (!formData.building_id) {
-      error = "Veuillez sélectionner un immeuble";
+      error = $_("exchanges.selectBuilding");
       return;
     }
     if (!formData.title.trim()) {
-      error = "Le titre est obligatoire";
+      error = $_("exchanges.titleRequired");
       return;
     }
 
     if (!formData.description.trim()) {
-      error = "La description est obligatoire";
+      error = $_("exchanges.descriptionRequired");
       return;
     }
 
     if (formData.credits < 1 || formData.credits > 100) {
-      error = "Les crédits doivent être entre 1 et 100 heures";
+      error = $_("exchanges.creditsRange");
       return;
     }
 
@@ -64,7 +65,7 @@
         window.location.href = `/exchange-detail?id=${exchange.id}`;
       }, 1500);
     } catch (err: any) {
-      error = err.message || "Impossible de créer l'échange";
+      error = err.message || $_("exchanges.createError");
       console.error("Error creating exchange:", err);
     } finally {
       loading = false;
@@ -90,7 +91,7 @@
         />
       </svg>
       <p class="text-green-800">
-        ✅ Échange créé avec succès ! Redirection...
+        ✅ {$_("exchanges.successCreate")}
       </p>
     </div>
   {/if}
@@ -103,12 +104,12 @@
   {/if}
 
   <!-- Building Selector -->
-  <BuildingSelector bind:selectedBuildingId label="Immeuble concerné" />
+  <BuildingSelector bind:selectedBuildingId label={$_("exchanges.building")} />
 
   <!-- Exchange Type -->
   <div>
     <label for="exchange-type" class="block text-sm font-medium text-gray-700 mb-2">
-      Type d'échange <span class="text-red-500">*</span>
+      {$_("exchanges.exchangeType")} <span class="text-red-500">*</span>
     </label>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
       {#each Object.values(ExchangeType) as type}
@@ -127,11 +128,11 @@
             <p class="font-medium text-gray-900">{exchangeTypeLabels[type]}</p>
             <p class="text-xs text-gray-500">
               {#if type === ExchangeType.Service}
-                Compétences, aide, conseil
+                {$_("exchanges.serviceDescription")}
               {:else if type === ExchangeType.ObjectLoan}
-                Outils, livres, équipements
+                {$_("exchanges.loanDescription")}
               {:else if type === ExchangeType.SharedPurchase}
-                Achat en gros, location partagée
+                {$_("exchanges.purchaseDescription")}
               {/if}
             </p>
           </div>
@@ -143,19 +144,19 @@
   <!-- Title -->
   <div>
     <label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-      Titre de l'offre <span class="text-red-500">*</span>
+      {$_("exchanges.title")} <span class="text-red-500">*</span>
     </label>
     <input
       id="title"
       type="text"
       bind:value={formData.title}
-      placeholder="Ex: Aide au jardinage, Prêt perceuse, Achat groupé légumes bio"
+      placeholder={$_("exchanges.titlePlaceholder")}
       maxlength="100"
       required
       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
     />
     <p class="mt-1 text-xs text-gray-500">
-      {formData.title.length}/100 caractères
+      {formData.title.length}/100 {$_("exchanges.characters")}
     </p>
   </div>
 
@@ -165,26 +166,26 @@
       for="description"
       class="block text-sm font-medium text-gray-700 mb-1"
     >
-      Description détaillée <span class="text-red-500">*</span>
+      {$_("exchanges.description")} <span class="text-red-500">*</span>
     </label>
     <textarea
       id="description"
       bind:value={formData.description}
-      placeholder="Décrivez votre offre en détail: ce que vous proposez, conditions, disponibilité, etc."
+      placeholder={$_("exchanges.descriptionPlaceholder")}
       rows="5"
       maxlength="1000"
       required
       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
     ></textarea>
     <p class="mt-1 text-xs text-gray-500">
-      {formData.description.length}/1000 caractères
+      {formData.description.length}/1000 {$_("exchanges.characters")}
     </p>
   </div>
 
   <!-- Credits (Time) -->
   <div>
     <label for="credits" class="block text-sm font-medium text-gray-700 mb-1">
-      Crédits demandés (heures) <span class="text-red-500">*</span>
+      {$_("exchanges.credits")} <span class="text-red-500">*</span>
     </label>
     <div class="flex items-center gap-4">
       <input
@@ -203,23 +204,18 @@
       </div>
     </div>
     <p class="mt-2 text-sm text-gray-600">
-      ⏱️ Temps estimé: <strong>{formData.credits} heure{formData.credits > 1
-        ? "s"
-        : ""}</strong>
-      (1 heure = 1 crédit)
+      ⏱️ {$_("exchanges.estimatedTime")} <strong>{formData.credits} {formData.credits > 1 ? $_("exchanges.hours") : $_("exchanges.hour")}</strong>
+      ({$_("exchanges.creditHour")})
     </p>
     <p class="text-xs text-gray-500 mt-1">
-      Monnaie temps: échangez des services basés sur le temps, pas l'argent.
+      {$_("exchanges.timeCurrency")}
     </p>
   </div>
 
   <!-- Legal Notice (Belgian Context) -->
   <div class="p-4 bg-blue-50 border-l-4 border-blue-400 text-sm text-blue-800">
     <p>
-      <strong>⚖️ Cadre légal belge:</strong> Les SEL sont légaux et non-taxables
-      si non-commerciaux (troc). Ne remplacez pas les services professionnels
-      (assurance). Conditions générales d'utilisation: disclaimer de
-      responsabilité.
+      {$_("exchanges.legalNotice")}
     </p>
   </div>
 
@@ -230,14 +226,14 @@
       on:click={() => dispatch("cancel")}
       class="px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
-      Annuler
+      {$_("common.cancel")}
     </button>
     <button
       type="submit"
       disabled={loading}
       class="px-6 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      {loading ? "Création..." : "Créer l'offre"}
+      {loading ? $_("common.creating") : $_("exchanges.createOffer")}
     </button>
   </div>
 </form>

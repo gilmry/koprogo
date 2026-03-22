@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { chat, listModels, saveChatToLocal, loadChatHistory, type Message, type ModelInfo, type ChatResponse } from '../lib/api/mcp';
 
   let messages: Message[] = [];
@@ -24,7 +25,7 @@
       models = await listModels();
     } catch (e) {
       console.error('Failed to load models:', e);
-      error = 'Impossible de charger les modèles. Vérifiez que le serveur MCP est démarré.';
+      error = $_('mcp.error.modelLoadFailed');
     }
 
     // Load chat history from IndexedDB
@@ -71,7 +72,7 @@
       // Save to IndexedDB
       await saveChatToLocal(messages, response, 'copro:demo');
     } catch (e: any) {
-      error = e.message || 'Erreur lors de l\'envoi du message';
+      error = e.message || $_('mcp.error.sendMessage');
       console.error('Chat error:', e);
     } finally {
       isLoading = false;
@@ -98,7 +99,7 @@
 
 <div class="mcp-chatbot">
   <div class="chatbot-header">
-    <h2>🤖 Assistant IA KoproGo</h2>
+    <h2>🤖 {$_('mcp.title')}</h2>
     <div class="header-controls">
       <select bind:value={selectedModel} class="model-select">
         {#each models as model}
@@ -107,7 +108,7 @@
           </option>
         {/each}
       </select>
-      <button on:click={clearChat} class="btn-clear">🗑️ Effacer</button>
+      <button on:click={clearChat} class="btn-clear">🗑️ {$_('common.clear')}</button>
     </div>
   </div>
 
@@ -132,8 +133,8 @@
   <div class="messages-container">
     {#if messages.length === 0}
       <div class="empty-state">
-        <p>💬 Posez une question à l'assistant IA</p>
-        <p class="text-muted">Modèle local (0g CO₂) ou cloud selon vos besoins</p>
+        <p>💬 {$_('mcp.askQuestion')}</p>
+        <p class="text-muted">{$_('mcp.localOrCloud')}</p>
       </div>
     {/if}
 
@@ -182,7 +183,7 @@
     <textarea
       bind:value={inputMessage}
       on:keydown={handleKeydown}
-      placeholder="Tapez votre message... (Entrée pour envoyer, Shift+Entrée pour nouvelle ligne)"
+      placeholder={$_('mcp.inputPlaceholder')}
       rows="3"
       disabled={isLoading}
       class="message-input"
@@ -192,7 +193,7 @@
       disabled={isLoading || !inputMessage.trim()}
       class="btn-send"
     >
-      {isLoading ? '⏳' : '📤'} Envoyer
+      {isLoading ? '⏳' : '📤'} {$_('mcp.send')}
     </button>
   </div>
 </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     energyCampaignsApi,
     energyBillsApi,
@@ -52,7 +53,7 @@
       }
     } catch (err: any) {
       error =
-        err.message || "Erreur lors du chargement des détails de la campagne";
+        err.message || $_("energy.campaign.loadError");
       console.error("Failed to load campaign details:", err);
     } finally {
       loading = false;
@@ -81,17 +82,17 @@
     if (!campaign) return "";
     switch (campaign.status) {
       case CampaignStatus.Draft:
-        return "La campagne est en cours de préparation.";
+        return $_("energy.campaign.statusDraft");
       case CampaignStatus.CollectingData:
-        return "Collecte des factures d'énergie en cours. Uploadez votre facture pour participer !";
+        return $_("energy.campaign.statusCollectingData");
       case CampaignStatus.Negotiating:
-        return "Négociation avec les fournisseurs d'énergie en cours.";
+        return $_("energy.campaign.statusNegotiating");
       case CampaignStatus.AwaitingFinalVote:
-        return "Votez pour sélectionner l'offre finale !";
+        return $_("energy.campaign.statusAwaitingFinalVote");
       case CampaignStatus.Finalized:
-        return "L'offre a été finalisée. Signature des contrats en cours.";
+        return $_("energy.campaign.statusFinalized");
       case CampaignStatus.Completed:
-        return "Campagne terminée avec succès !";
+        return $_("energy.campaign.statusCompleted");
       default:
         return "";
     }
@@ -113,9 +114,7 @@
 
   async function withdrawConsent(uploadId: string) {
     if (
-      !confirm(
-        "Êtes-vous sûr de vouloir retirer votre consentement GDPR ? Vos données seront supprimées immédiatement.",
-      )
+      !confirm($_("energy.withdrawConsentConfirm"))
     ) {
       return;
     }
@@ -123,9 +122,9 @@
     try {
       await energyBillsApi.withdrawConsent(uploadId);
       await loadData();
-      toast.success("Consentement retiré et données supprimées avec succès.");
+      toast.success($_("energy.withdrawConsentSuccess"));
     } catch (err: any) {
-      toast.error("Erreur lors du retrait du consentement: " + err.message);
+      toast.error($_("energy.withdrawConsentError") + ": " + err.message);
     }
   }
 </script>
@@ -135,7 +134,7 @@
     <div
       class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"
     ></div>
-    <p class="mt-4 text-gray-500">Chargement de la campagne...</p>
+    <p class="mt-4 text-gray-500">{$_("common.loading")}</p>
   </div>
 {:else if error}
   <div class="p-4 bg-red-50 border border-red-200 rounded-md">
@@ -144,7 +143,7 @@
       on:click={loadData}
       class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
     >
-      Réessayer
+      {$_("common.retry")}
     </button>
   </div>
 {:else if campaign}
@@ -162,7 +161,7 @@
           href="/energy-campaigns"
           class="text-sm text-gray-600 hover:text-gray-800 underline"
         >
-          ← Retour à la liste
+          ← {$_("common.backToList")}
         </a>
       </div>
 
@@ -183,29 +182,29 @@
       <!-- Campaign Info -->
       <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="p-4 bg-blue-50 rounded-lg">
-          <div class="text-sm text-blue-600 font-medium">Date limite participation</div>
+          <div class="text-sm text-blue-600 font-medium">{$_("energy.campaign.deadlineParticipation")}</div>
           <div class="text-lg text-blue-900">
             {formatDate(campaign.deadline_participation)}
           </div>
           {#if campaign.deadline_vote}
             <div class="text-xs text-blue-600 mt-1">
-              Vote jusqu'au {formatDate(campaign.deadline_vote)}
+              {$_("energy.campaign.voteUntil")} {formatDate(campaign.deadline_vote)}
             </div>
           {/if}
         </div>
         <div class="p-4 bg-green-50 rounded-lg">
-          <div class="text-sm text-green-600 font-medium">Participants</div>
+          <div class="text-sm text-green-600 font-medium">{$_("energy.campaign.participants")}</div>
           <div class="text-lg text-green-900">
             👥 {campaign.total_participants}
             {#if stats && !stats.k_anonymity_compliant}
               <span class="text-xs text-yellow-600">
-                (min. {stats.min_participants_required} requis)
+                (min. {stats.min_participants_required} {$_("common.required")})
               </span>
             {/if}
           </div>
         </div>
         <div class="p-4 bg-purple-50 rounded-lg">
-          <div class="text-sm text-purple-600 font-medium">Offres reçues</div>
+          <div class="text-sm text-purple-600 font-medium">{$_("energy.campaign.offersReceived")}</div>
           <div class="text-lg text-purple-900">
             💼 {campaign.offers_received.length}
           </div>
@@ -222,16 +221,13 @@
           </div>
           <div class="ml-3">
             <h3 class="text-sm font-medium text-yellow-800">
-              K-anonymité non respectée
+              {$_("energy.campaign.kAnonymityNotMet")}
             </h3>
             <p class="mt-1 text-sm text-yellow-700">
-              Minimum <strong>{stats.min_participants_required}</strong>
-              participants requis avant de publier les statistiques agrégées. Actuellement:
-              <strong>{campaign.total_participants}</strong> participants.
+              {$_("energy.campaign.kAnonymityMessage", { values: { min: stats.min_participants_required, current: campaign.total_participants } })}
             </p>
             <p class="mt-1 text-xs text-yellow-600">
-              Protection GDPR: Les données ne seront jamais exposées tant que le
-              seuil n'est pas atteint.
+              {$_("energy.campaign.gdprProtection")}
             </p>
           </div>
         </div>
@@ -243,14 +239,14 @@
       <div class="bg-white shadow-md rounded-lg p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-medium text-gray-900">
-            📄 Mes factures uploadées
+            📄 {$_("energy.myUploads")}
           </h3>
           {#if canUpload()}
             <button
               on:click={() => (showUploadForm = !showUploadForm)}
               class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
             >
-              {showUploadForm ? "Annuler" : "➕ Uploader une facture"}
+              {showUploadForm ? $_("common.cancel") : "➕ " + $_("energy.uploadBill")}
             </button>
           {/if}
         </div>
@@ -264,7 +260,7 @@
           />
         {:else if myUploads.length === 0}
           <p class="text-sm text-gray-500">
-            Vous n'avez pas encore uploadé de facture pour cette campagne.
+            {$_("energy.noUploadsYet")}
           </p>
         {:else}
           <div class="space-y-3">
@@ -286,16 +282,16 @@
                   </div>
                   <div class="text-xs text-gray-500">
                     {upload.verified
-                      ? "✅ Vérifié"
-                      : "⏳ En attente de vérification"}
+                      ? "✅ " + $_("energy.verified")
+                      : "⏳ " + $_("energy.verificationPending")}
                   </div>
                 </div>
                 <button
                   on:click={() => withdrawConsent(upload.id)}
                   class="text-xs text-red-600 hover:text-red-800 underline"
-                  title="Retirer mon consentement GDPR"
+                  title={$_("energy.withdrawConsentTitle")}
                 >
-                  🗑️ Retirer
+                  🗑️ {$_("energy.withdraw")}
                 </button>
               </div>
             {/each}
@@ -318,12 +314,12 @@
     {#if stats && stats.k_anonymity_compliant}
       <div class="bg-white shadow-md rounded-lg p-6">
         <h3 class="text-lg font-medium text-gray-900 mb-4">
-          📊 Statistiques agrégées
+          📊 {$_("energy.campaign.aggregatedStatistics")}
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="p-4 bg-indigo-50 rounded-lg">
             <div class="text-sm text-indigo-600 font-medium">
-              Consommation totale
+              {$_("energy.campaign.totalConsumption")}
             </div>
             <div class="text-2xl font-bold text-indigo-900">
               {stats.total_kwh_aggregated?.toLocaleString() || "N/A"} kWh
@@ -331,7 +327,7 @@
           </div>
           <div class="p-4 bg-green-50 rounded-lg">
             <div class="text-sm text-green-600 font-medium">
-              Moyenne par unité
+              {$_("energy.campaign.averagePerUnit")}
             </div>
             <div class="text-2xl font-bold text-green-900">
               {stats.average_kwh_per_unit?.toLocaleString() || "N/A"} kWh
@@ -339,7 +335,7 @@
           </div>
           <div class="p-4 bg-purple-50 rounded-lg">
             <div class="text-sm text-purple-600 font-medium">
-              Économies estimées
+              {$_("energy.campaign.estimatedSavings")}
             </div>
             <div class="text-2xl font-bold text-purple-900">
               {stats.best_offer_savings_percentage?.toFixed(1) || "N/A"}%

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { PageResponse } from '../lib/types';
   import Pagination from './Pagination.svelte';
@@ -78,7 +79,7 @@
 
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des assemblées';
+      error = e instanceof Error ? e.message : $_('meetings.error_loading_meetings');
       console.error('Error loading meetings:', e);
     } finally {
       loading = false;
@@ -102,19 +103,19 @@
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Scheduled': { class: 'bg-blue-100 text-blue-800', label: 'Planifiée' },
-      'Completed': { class: 'bg-green-100 text-green-800', label: 'Terminée' },
-      'Cancelled': { class: 'bg-red-100 text-red-800', label: 'Annulée' }
+      'Scheduled': { class: 'bg-blue-100 text-blue-800', label: $_('meetings.status_scheduled') },
+      'Completed': { class: 'bg-green-100 text-green-800', label: $_('meetings.status_completed') },
+      'Cancelled': { class: 'bg-red-100 text-red-800', label: $_('meetings.status_cancelled') }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
 
   function getMeetingTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'Ordinary': 'Assemblée Générale Ordinaire',
-      'Extraordinary': 'Assemblée Générale Extraordinaire',
-      'ordinary': 'Assemblée Générale Ordinaire',
-      'extraordinary': 'Assemblée Générale Extraordinaire'
+      'Ordinary': $_('meetings.type_ordinary'),
+      'Extraordinary': $_('meetings.type_extraordinary'),
+      'ordinary': $_('meetings.type_ordinary'),
+      'extraordinary': $_('meetings.type_extraordinary')
     };
     return labels[type] || type;
   }
@@ -123,7 +124,7 @@
 <div class="space-y-4">
   <div class="flex justify-between items-center">
     <p class="text-gray-600">
-      {totalItems} assemblée{totalItems !== 1 ? 's' : ''}
+      {$_('meetings.count', { values: { count: totalItems } })}
     </p>
   </div>
 
@@ -134,10 +135,10 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8">Chargement...</p>
+    <p class="text-center text-gray-600 py-8">{$_('common.loading')}</p>
   {:else if meetings.length === 0}
     <p class="text-center text-gray-600 py-8">
-      Aucune assemblée enregistrée.
+      {$_('meetings.no_meetings')}
     </p>
   {:else}
     <div class="grid gap-4">
@@ -161,12 +162,12 @@
               </p>
               {#if meeting.attendees_count}
                 <p class="text-gray-500 text-sm">
-                  👥 {meeting.attendees_count} participant{meeting.attendees_count > 1 ? 's' : ''}
+                  👥 {$_('meetings.participants_count', { values: { count: meeting.attendees_count } })}
                 </p>
               {/if}
             </div>
             <a href="/meeting-detail?id={meeting.id}" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
-              Détails →
+              {$_('common.details')} →
             </a>
           </div>
         </div>

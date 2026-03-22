@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { Owner, PageResponse } from '../lib/types';
   import Button from './ui/Button.svelte';
@@ -36,7 +37,7 @@
       owners = response.data;
     } catch (e) {
       console.error('Error loading owners:', e);
-      error = 'Erreur lors du chargement des copropriétaires';
+      error = $_('common.error_loading');
     } finally {
       loadingOwners = false;
     }
@@ -70,17 +71,17 @@
     error = '';
 
     if (!selectedOwnerId) {
-      error = 'Veuillez sélectionner un copropriétaire';
+      error = $_('units.select_owner');
       return;
     }
 
     if (ownershipPercentage <= 0 || ownershipPercentage > 100) {
-      error = 'Le pourcentage doit être entre 0.01% et 100%';
+      error = $_('units.percentage_must_be_valid');
       return;
     }
 
     if (ownershipPercentage > availablePercentage + 0.01) {
-      error = `Le total des quotes-parts dépasserait 100% (disponible: ${availablePercentage.toFixed(2)}%)`;
+      error = $_('units.quota_would_exceed', { values: { available: availablePercentage.toFixed(2) } });
       return;
     }
 
@@ -100,7 +101,7 @@
       resetForm();
       open = false;
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors de l\'ajout du copropriétaire';
+      error = e instanceof Error ? e.message : $_('units.error_adding_owner');
       console.error('Error adding owner to unit:', e);
     } finally {
       loading = false;
@@ -121,11 +122,11 @@
       <!-- Modal -->
       <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10" role="dialog" aria-modal="true" aria-labelledby="add-owner-title">
         <div class="flex justify-between items-center mb-4">
-          <h2 id="add-owner-title" class="text-xl font-bold text-gray-900">Ajouter un copropriétaire</h2>
+          <h2 id="add-owner-title" class="text-xl font-bold text-gray-900">{$_('units.add_owner')}</h2>
           <button
             on:click={handleClose}
             class="text-gray-400 hover:text-gray-500"
-            aria-label="Fermer"
+            aria-label={$_('common.close')}
           >
             <span class="text-2xl" aria-hidden="true">&times;</span>
           </button>
@@ -141,18 +142,18 @@
           <!-- Owner Selection -->
           <div>
             <label for="ownerId" class="block text-sm font-medium text-gray-700 mb-1">
-              Copropriétaire *
+              {$_('units.owner')} *
             </label>
             {#if loadingOwners}
-              <p class="text-sm text-gray-500">Chargement...</p>
+              <p class="text-sm text-gray-500">{$_('common.loading')}</p>
             {:else}
               <!-- Search field -->
-              <label for="owner-search" class="sr-only">Rechercher par nom ou email</label>
+              <label for="owner-search" class="sr-only">{$_('units.search_owner')}</label>
               <input
                 id="owner-search"
                 type="text"
                 bind:value={searchQuery}
-                placeholder="Rechercher par nom ou email..."
+                placeholder={$_('units.search_owner_placeholder')}
                 class="w-full px-3 py-2 mb-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
 
@@ -163,7 +164,7 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 size="5"
               >
-                <option value="">-- Sélectionner un copropriétaire --</option>
+                <option value="">{$_('units.select_owner_option')}</option>
                 {#each filteredOwners as owner (owner.id)}
                   <option value={owner.id}>
                     {owner.first_name} {owner.last_name} ({owner.email})
@@ -172,23 +173,23 @@
               </select>
               {#if filteredOwners.length === 0 && searchQuery}
                 <p class="text-xs text-gray-500 mt-1">
-                  Aucun copropriétaire trouvé pour "{searchQuery}"
+                  {$_('units.no_owner_found', { values: { query: searchQuery } })}
                 </p>
               {:else}
                 <p class="text-xs text-gray-500 mt-1">
-                  {filteredOwners.length} copropriétaire{filteredOwners.length !== 1 ? 's' : ''} trouvé{filteredOwners.length !== 1 ? 's' : ''}
+                  {$_('units.owners_found', { values: { count: filteredOwners.length } })}
                 </p>
               {/if}
             {/if}
             <p class="text-xs text-gray-500 mt-1">
-              Choisissez un copropriétaire existant ou créez-en un nouveau depuis la page des copropriétaires
+              {$_('units.owner_selection_help')}
             </p>
           </div>
 
           <!-- Ownership Percentage -->
           <div>
             <label for="ownershipPercentage" class="block text-sm font-medium text-gray-700 mb-1">
-              Quote-part de propriété (%) *
+              {$_('units.ownership_percentage')} *
             </label>
             <input
               id="ownershipPercentage"
@@ -205,15 +206,15 @@
             />
             <div class="flex justify-between items-center mt-1">
               <p class="text-xs text-gray-500">
-                La somme de tous les copropriétaires doit faire 100%
+                {$_('units.quota_sum_100')}
               </p>
               <p class="text-xs font-semibold" class:text-green-600={availablePercentage > 0} class:text-red-600={availablePercentage <= 0}>
-                Disponible: {availablePercentage.toFixed(2)}%
+                {$_('units.available', { values: { pct: availablePercentage.toFixed(2) } })}
               </p>
             </div>
             {#if wouldExceed}
               <p class="text-xs text-red-600 mt-1 font-medium">
-                Le total des quotes-parts dépasserait 100% (actuel: {(currentTotalPercentage * 100).toFixed(2)}% + {ownershipPercentage.toFixed(2)}% = {((currentTotalPercentage * 100) + ownershipPercentage).toFixed(2)}%)
+                {$_('units.quota_would_exceed_detail', { values: { current: (currentTotalPercentage * 100).toFixed(2), added: ownershipPercentage.toFixed(2), total: ((currentTotalPercentage * 100) + ownershipPercentage).toFixed(2) } })}
               </p>
             {/if}
           </div>
@@ -227,20 +228,20 @@
               class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
             />
             <label for="isPrimaryContact" class="ml-2 block text-sm text-gray-700">
-              Contact principal pour ce lot
+              {$_('units.primary_contact')}
             </label>
           </div>
           <p class="text-xs text-gray-500 -mt-2 ml-6">
-            Le contact principal reçoit toutes les communications concernant ce lot
+            {$_('units.primary_contact_help')}
           </p>
 
           <!-- Actions -->
           <div class="flex gap-2 pt-4">
             <Button type="submit" variant="primary" disabled={isSubmitDisabled}>
-              {loading ? 'Ajout...' : 'Ajouter'}
+              {loading ? $_('common.adding') : $_('common.add')}
             </Button>
             <Button type="button" variant="outline" on:click={handleClose}>
-              Annuler
+              {$_('common.cancel')}
             </Button>
           </div>
         </form>

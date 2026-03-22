@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { createEventDispatcher } from "svelte";
   import {
     energyCampaignsApi,
@@ -39,22 +40,22 @@
     try {
       // Validate
       if (!formData.provider_name.trim()) {
-        throw new Error("Le nom du fournisseur est obligatoire");
+        throw new Error($_("energy.offer.providerNameRequired"));
       }
       if (!formData.price_kwh_electricity && !formData.price_kwh_gas) {
-        throw new Error("Au moins un prix par kWh (electricite ou gaz) est obligatoire");
+        throw new Error($_("energy.offer.priceRequired"));
       }
       if (formData.contract_duration_months <= 0) {
-        throw new Error("La duree du contrat doit etre superieure a 0");
+        throw new Error($_("energy.offer.durationRequired"));
       }
       if (!formData.offer_valid_until) {
-        throw new Error("La date de validite est obligatoire");
+        throw new Error($_("energy.offer.validityRequired"));
       }
       if (formData.green_energy_pct < 0 || formData.green_energy_pct > 100) {
-        throw new Error("Le pourcentage d'energie verte doit etre entre 0 et 100");
+        throw new Error($_("energy.offer.greenPercentageInvalid"));
       }
       if (formData.estimated_savings_pct < 0 || formData.estimated_savings_pct > 100) {
-        throw new Error("Le pourcentage d'economies doit etre entre 0 et 100");
+        throw new Error($_("energy.offer.savingsPercentageInvalid"));
       }
 
       // Send date as ISO datetime for backend DateTime<Utc>
@@ -82,7 +83,7 @@
         success = false;
       }, 2000);
     } catch (err: any) {
-      error = err.message || "Erreur lors de l'ajout de l'offre";
+      error = err.message || $_("energy.offer.createError");
       console.error("Failed to create provider offer:", err);
     } finally {
       loading = false;
@@ -95,17 +96,16 @@
 
 <div class="bg-white shadow-md rounded-lg p-6">
   <h3 class="text-lg font-medium text-gray-900 mb-4">
-    💼 Ajouter une offre de fournisseur
+    💼 {$_("energy.offer.add")}
   </h3>
 
   <p class="text-sm text-gray-600 mb-6">
-    Enregistrez une offre reçue d'un fournisseur d'énergie pour permettre aux
-    copropriétaires de la comparer.
+    {$_("energy.offer.description")}
   </p>
 
   {#if success}
     <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
-      <p class="text-sm text-green-800">✅ Offre ajoutée avec succès !</p>
+      <p class="text-sm text-green-800">✅ {$_("energy.offer.successAdd")}</p>
     </div>
   {/if}
 
@@ -122,14 +122,14 @@
         for="provider_name"
         class="block text-sm font-medium text-gray-700"
       >
-        Nom du fournisseur <span class="text-red-500">*</span>
+        {$_("energy.offer.providerName")} <span class="text-red-500">*</span>
       </label>
       <input
         type="text"
         id="provider_name"
         bind:value={formData.provider_name}
         required
-        placeholder="Ex: Engie, Luminus, TotalEnergies"
+        placeholder={$_("energy.offer.providerExample")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
     </div>
@@ -141,7 +141,7 @@
           for="price_kwh_electricity"
           class="block text-sm font-medium text-gray-700"
         >
-          Prix electricite (€/kWh)
+          {$_("energy.offer.priceElectricity")}
         </label>
         <input
           type="number"
@@ -153,7 +153,7 @@
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
         <p class="mt-1 text-xs text-gray-500">
-          Ex: 0.1234 €/kWh. Laisser vide si non concerne.
+          {$_("energy.offer.priceHelp")}
         </p>
       </div>
       <div>
@@ -161,7 +161,7 @@
           for="price_kwh_gas"
           class="block text-sm font-medium text-gray-700"
         >
-          Prix gaz (€/kWh)
+          {$_("energy.offer.priceGas")}
         </label>
         <input
           type="number"
@@ -173,7 +173,7 @@
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         />
         <p class="mt-1 text-xs text-gray-500">
-          Ex: 0.0567 €/kWh. Laisser vide si non concerne.
+          {$_("energy.offer.priceHelp")}
         </p>
       </div>
     </div>
@@ -184,7 +184,7 @@
         for="fixed_fee"
         class="block text-sm font-medium text-gray-700"
       >
-        Abonnement mensuel (€) <span class="text-red-500">*</span>
+        {$_("energy.offer.fixedFee")} <span class="text-red-500">*</span>
       </label>
       <input
         type="number"
@@ -204,7 +204,7 @@
         for="contract_duration"
         class="block text-sm font-medium text-gray-700"
       >
-        Durée du contrat (mois) <span class="text-red-500">*</span>
+        {$_("energy.offer.contractDuration")} <span class="text-red-500">*</span>
       </label>
       <input
         type="number"
@@ -216,7 +216,7 @@
         placeholder="12"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
-      <p class="mt-1 text-xs text-gray-500">Généralement 12 ou 24 mois</p>
+      <p class="mt-1 text-xs text-gray-500">{$_("energy.offer.contractDurationHelp")}</p>
     </div>
 
     <!-- Green Energy Percentage -->
@@ -225,7 +225,7 @@
         for="green_percentage"
         class="block text-sm font-medium text-gray-700"
       >
-        Pourcentage d'energie verte (%) <span class="text-red-500">*</span>
+        {$_("energy.offer.greenPercentage")} <span class="text-red-500">*</span>
       </label>
       <div class="flex items-center space-x-4">
         <input
@@ -242,14 +242,14 @@
         </span>
       </div>
       <p class="mt-1 text-xs text-gray-500">
-        100% = Entierement renouvelable (eolien, solaire, hydraulique)
+        {$_("energy.offer.greenPercentageHelp")}
       </p>
     </div>
 
     <!-- Estimated Savings -->
     <div>
       <label for="savings" class="block text-sm font-medium text-gray-700">
-        Economies estimees (%) <span class="text-red-500">*</span>
+        {$_("energy.offer.estimatedSavings")} <span class="text-red-500">*</span>
       </label>
       <input
         type="number"
@@ -263,7 +263,7 @@
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
       <p class="mt-1 text-xs text-gray-500">
-        Pourcentage d'economies par rapport au tarif actuel moyen
+        {$_("energy.offer.estimatedSavingsHelp")}
       </p>
     </div>
 
@@ -273,7 +273,7 @@
         for="valid_until"
         class="block text-sm font-medium text-gray-700"
       >
-        Valide jusqu'au <span class="text-red-500">*</span>
+        {$_("energy.offer.validityDate")} <span class="text-red-500">*</span>
       </label>
       <input
         type="date"
@@ -291,7 +291,7 @@
         on:click={() => dispatch("cancel")}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
-        Annuler
+        {$_("common.cancel")}
       </button>
       <button
         type="submit"
@@ -300,9 +300,9 @@
       >
         {#if loading}
           <span class="inline-block animate-spin mr-2">⏳</span>
-          Ajout en cours...
+          {$_("energy.offer.adding")}
         {:else}
-          ✅ Ajouter l'offre
+          ✅ {$_("energy.offer.add")}
         {/if}
       </button>
     </div>

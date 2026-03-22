@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
 
   export let organizationId: string;
@@ -77,7 +78,7 @@
 
       onSuccess();
     } catch (err: any) {
-      error = err.message || 'Erreur lors de la création de l\'appel de fonds';
+      error = err.message || $_('contributions.createError');
     } finally {
       loading = false;
     }
@@ -86,7 +87,7 @@
 
 <div class="bg-white shadow-md rounded-lg p-6">
   <h3 class="text-lg font-semibold text-gray-900 mb-4">
-    Nouvel Appel de Fonds
+    {$_('contributions.newContribution')}
   </h3>
 
   {#if error}
@@ -99,7 +100,7 @@
     <!-- Owner Selection -->
     <div>
       <label for="owner_id" class="block text-sm font-medium text-gray-700 mb-1">
-        Copropriétaire *
+        {$_('contributions.owner')} *
       </label>
       <select
         id="owner_id"
@@ -107,7 +108,7 @@
         required
         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="">Sélectionner un copropriétaire</option>
+        <option value="">{$_('contributions.selectOwner')}</option>
         {#each owners as owner}
           <option value={owner.id}>
             {owner.first_name} {owner.last_name}
@@ -119,14 +120,14 @@
     <!-- Unit Selection (optional) -->
     <div>
       <label for="unit_id" class="block text-sm font-medium text-gray-700 mb-1">
-        Lot (optionnel)
+        {$_('contributions.unit')}
       </label>
       <select
         id="unit_id"
         bind:value={formData.unit_id}
         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="">Aucun lot spécifique</option>
+        <option value="">{$_('contributions.noSpecificUnit')}</option>
         {#each units as unit}
           <option value={unit.id}>
             Lot {unit.unit_number} - {unit.floor}
@@ -138,7 +139,7 @@
     <!-- Contribution Type -->
     <div>
       <label for="contribution_type" class="block text-sm font-medium text-gray-700 mb-1">
-        Type d'appel de fonds *
+        {$_('contributions.type')} *
       </label>
       <select
         id="contribution_type"
@@ -146,17 +147,17 @@
         required
         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        <option value="regular">Charges courantes (7000)</option>
-        <option value="extraordinary">Charges extraordinaires (7100)</option>
-        <option value="advance">Avance</option>
-        <option value="adjustment">Régularisation</option>
+        <option value="regular">{$_('contributions.typeRegular')}</option>
+        <option value="extraordinary">{$_('contributions.typeExtraordinary')}</option>
+        <option value="advance">{$_('contributions.typeAdvance')}</option>
+        <option value="adjustment">{$_('contributions.typeAdjustment')}</option>
       </select>
     </div>
 
     <!-- Description -->
     <div>
       <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-        Description *
+        {$_('common.description')} *
       </label>
       <textarea
         id="description"
@@ -171,7 +172,7 @@
     <!-- Amount -->
     <div>
       <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">
-        Montant (€) *
+        {$_('contributions.amount')} *
       </label>
       <input
         type="number"
@@ -188,7 +189,7 @@
     <!-- Contribution Date -->
     <div>
       <label for="contribution_date" class="block text-sm font-medium text-gray-700 mb-1">
-        Date de l'appel *
+        {$_('contributions.date')} *
       </label>
       <input
         type="date"
@@ -202,7 +203,7 @@
     <!-- Account Code (read-only, auto-filled) -->
     <div>
       <label for="account_code" class="block text-sm font-medium text-gray-700 mb-1">
-        Code comptable PCMN
+        {$_('contributions.accountCode')}
       </label>
       <input
         type="text"
@@ -220,7 +221,7 @@
         disabled={loading}
         class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? 'Création...' : 'Créer l\'appel de fonds'}
+        {loading ? $_('common.creating') : $_('contributions.create')}
       </button>
     </div>
   </form>

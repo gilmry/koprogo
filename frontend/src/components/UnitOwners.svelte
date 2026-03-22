@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
   import type { UnitOwner, Owner } from '../lib/types';
@@ -51,7 +52,7 @@
 
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des copropriétaires';
+      error = e instanceof Error ? e.message : $_('common.error_loading');
       console.error('Error loading unit owners:', e);
     } finally {
       loading = false;
@@ -94,7 +95,7 @@
       unitOwnerToDelete = null;
       await loadUnitOwners();
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors de la suppression de la relation';
+      error = e instanceof Error ? e.message : $_('units.error_deleting_owner');
       console.error('Error deleting unit owner:', e);
       showDeleteConfirm = false;
     }
@@ -114,21 +115,21 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-4">Chargement...</p>
+    <p class="text-center text-gray-600 py-4">{$_('common.loading')}</p>
   {:else}
     <!-- Active Owners -->
     {#if activeOwners.length > 0}
       <div class="space-y-2">
         <div class="flex justify-between items-center">
           <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-            Copropriétaires actuels
+            {$_('units.current_owners')}
           </h4>
           {#if canModifyOwnership}
             <button
               on:click={() => showAddModal = true}
               class="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
             >
-              + Ajouter
+              + {$_('common.add')}
             </button>
           {/if}
         </div>
@@ -144,7 +145,7 @@
                     </h5>
                     {#if unitOwner.is_primary_contact}
                       <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
-                        Contact principal
+                        {$_('units.primary_contact_label')}
                       </span>
                     {/if}
                   </div>
@@ -157,10 +158,10 @@
                     </p>
                   {/if}
                 {:else}
-                  <p class="text-gray-500 italic">Chargement des détails...</p>
+                  <p class="text-gray-500 italic">{$_('common.loading_details')}</p>
                 {/if}
                 <p class="text-xs text-gray-500 mt-1">
-                  Depuis le {formatDate(unitOwner.start_date)}
+                  {$_('units.since', { values: { date: formatDate(unitOwner.start_date) } })}
                 </p>
               </div>
 
@@ -169,20 +170,20 @@
                   <p class="text-lg sm:text-xl font-bold text-primary-600">
                     {formatPercentage(unitOwner.ownership_percentage)}
                   </p>
-                  <p class="text-xs text-gray-500 hidden sm:block">Quote-part</p>
+                  <p class="text-xs text-gray-500 hidden sm:block">{$_('units.quota_label')}</p>
                 </div>
                 {#if canModifyOwnership}
                   <button
                     on:click={() => handleEditUnitOwner(unitOwner)}
                     class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition"
-                    title="Modifier la quote-part"
+                    title={$_('units.edit_quota')}
                   >
                     ✏️
                   </button>
                   <button
                     on:click={() => handleDeleteClick(unitOwner)}
                     class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition"
-                    title="Retirer le copropriétaire"
+                    title={$_('units.remove_owner')}
                   >
                     🗑️
                   </button>
@@ -202,7 +203,7 @@
           </div>
           {#if totalPercentage !== 1}
             <p class="text-xs text-red-600 mt-1">
-              ⚠️ La somme des quotes-parts devrait être 100%
+              ⚠️ {$_('units.quota_should_be_100')}
             </p>
           {/if}
         </div>
@@ -210,14 +211,14 @@
     {:else}
       <div class="text-center py-4">
         <p class="text-gray-600 mb-3">
-          Aucun copropriétaire actif
+          {$_('units.no_active_owners')}
         </p>
         {#if canModifyOwnership}
           <button
             on:click={() => showAddModal = true}
             class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
           >
-            + Ajouter un copropriétaire
+            + {$_('units.add_owner')}
           </button>
         {/if}
       </div>
@@ -227,7 +228,7 @@
     {#if showHistory && inactiveOwners.length > 0}
       <div class="space-y-2 mt-6">
         <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Historique
+          {$_('units.history')}
         </h4>
 
         {#each inactiveOwners as unitOwner (unitOwner.id)}
@@ -242,10 +243,10 @@
                     📧 {unitOwner.owner.email}
                   </p>
                 {:else}
-                  <p class="text-gray-500 italic">Chargement des détails...</p>
+                  <p class="text-gray-500 italic">{$_('common.loading_details')}</p>
                 {/if}
                 <p class="text-xs text-gray-500 mt-1">
-                  {formatDate(unitOwner.start_date)} → {unitOwner.end_date ? formatDate(unitOwner.end_date) : 'En cours'}
+                  {formatDate(unitOwner.start_date)} → {unitOwner.end_date ? formatDate(unitOwner.end_date) : $_('units.ongoing')}
                 </p>
               </div>
 
@@ -296,29 +297,27 @@
       <!-- Modal -->
       <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
         <div class="mb-4">
-          <h3 class="text-xl font-bold text-gray-900 mb-2">Retirer le copropriétaire</h3>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">{$_('units.remove_owner_title')}</h3>
           {#if unitOwnerToDelete.owner}
             <p class="text-gray-600">
-              Êtes-vous sûr de vouloir retirer
-              <strong>{unitOwnerToDelete.owner.first_name} {unitOwnerToDelete.owner.last_name}</strong>
-              de ce lot ?
+              {$_('units.remove_owner_confirm', { values: { name: `${unitOwnerToDelete.owner.first_name} ${unitOwnerToDelete.owner.last_name}` } })}
             </p>
           {:else}
             <p class="text-gray-600">
-              Êtes-vous sûr de vouloir retirer ce copropriétaire du lot ?
+              {$_('units.remove_owner_confirm_generic')}
             </p>
           {/if}
           <p class="text-sm text-gray-500 mt-2">
-            Cette action marquera la relation comme inactive et enregistrera la date de fin.
+            {$_('units.remove_owner_help')}
           </p>
         </div>
 
         <div class="flex gap-2">
           <Button variant="danger" on:click={confirmDelete}>
-            Retirer
+            {$_('units.remove')}
           </Button>
           <Button variant="outline" on:click={cancelDelete}>
-            Annuler
+            {$_('common.cancel')}
           </Button>
         </div>
       </div>

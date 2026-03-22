@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { Owner } from '../lib/types';
 
@@ -39,7 +40,7 @@
       dispatch('save');
       closeModal();
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors de la modification';
+      error = e instanceof Error ? e.message : $_('owners.error.update');
       console.error('Error updating owner:', e);
     } finally {
       loading = false;
@@ -65,7 +66,7 @@
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
       <div class="p-6 border-b border-gray-200">
         <h2 class="text-xl font-bold text-gray-900">
-          Modifier le copropriétaire
+          {$_('owners.edit.title')}
         </h2>
       </div>
 
@@ -78,7 +79,7 @@
 
         <div>
           <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">
-            Prénom *
+            {$_('common.first_name')} *
           </label>
           <input
             type="text"
@@ -91,7 +92,7 @@
 
         <div>
           <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">
-            Nom *
+            {$_('common.last_name')} *
           </label>
           <input
             type="text"
@@ -104,7 +105,7 @@
 
         <div>
           <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
-            Email *
+            {$_('common.email')} *
           </label>
           <input
             type="email"
@@ -117,7 +118,7 @@
 
         <div>
           <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
-            Téléphone
+            {$_('common.phone')}
           </label>
           <input
             type="tel"
@@ -134,14 +135,14 @@
             disabled={loading}
             class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
           >
-            Annuler
+            {$_('common.action.cancel')}
           </button>
           <button
             type="submit"
             disabled={loading}
             class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
           >
-            {loading ? 'Enregistrement...' : 'Enregistrer'}
+            {loading ? $_('common.action.saving') : $_('common.action.save')}
           </button>
         </div>
       </form>

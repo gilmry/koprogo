@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import type { BoardDashboardResponse, DeadlineUrgency } from '../lib/types';
@@ -18,7 +19,7 @@
     }
 
     if (!buildingId) {
-      error = 'ID de l\'immeuble manquant';
+      error = $_('board.error.buildingIdMissing');
       loading = false;
       return;
     }
@@ -33,7 +34,7 @@
         `/board-members/dashboard?building_id=${buildingId}`
       );
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement du tableau de bord';
+      error = e instanceof Error ? e.message : $_('board.error.loadDashboard');
       console.error('Error loading board dashboard:', e);
       toast.error(error);
     } finally {
@@ -68,10 +69,10 @@
   }
 
   function formatDaysRemaining(days: number): string {
-    if (days === 0) return 'Aujourd\'hui';
-    if (days === 1) return 'Demain';
-    if (days < 0) return `Il y a ${Math.abs(days)} jour${Math.abs(days) > 1 ? 's' : ''}`;
-    return `Dans ${days} jour${days > 1 ? 's' : ''}`;
+    if (days === 0) return $_('common.today');
+    if (days === 1) return $_('common.tomorrow');
+    if (days < 0) return `${$_('common.daysAgo', { values: { count: Math.abs(days) } })}`;
+    return `${$_('common.daysLeft', { values: { count: days } })}`;
   }
 </script>
 
@@ -91,25 +92,25 @@
   {:else if dashboard}
     <!-- Header -->
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900">Tableau de Bord du Conseil</h1>
-      <p class="mt-2 text-gray-600">Vue d'ensemble de vos mandats et décisions en cours</p>
+      <h1 class="text-3xl font-bold text-gray-900">{$_('board.title')}</h1>
+      <p class="mt-2 text-gray-600">{$_('board.subtitle')}</p>
     </div>
 
     <!-- My Mandate Section -->
     {#if dashboard.my_mandate}
       <div class="bg-white shadow rounded-lg p-6 mb-6">
-        <h2 class="text-xl font-semibold text-gray-900 mb-4">Mon Mandat</h2>
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">{$_('board.myMandate')}</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <p class="text-sm text-gray-500">Position</p>
+            <p class="text-sm text-gray-500">{$_('board.mandate.position')}</p>
             <p class="text-lg font-medium text-gray-900 capitalize">{dashboard.my_mandate.position}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Début du mandat</p>
+            <p class="text-sm text-gray-500">{$_('board.mandate.startDate')}</p>
             <p class="text-lg font-medium text-gray-900">{formatDate(dashboard.my_mandate.mandate_start)}</p>
           </div>
           <div>
-            <p class="text-sm text-gray-500">Fin du mandat</p>
+            <p class="text-sm text-gray-500">{$_('board.mandate.endDate')}</p>
             <p class="text-lg font-medium text-gray-900">{formatDate(dashboard.my_mandate.mandate_end)}</p>
           </div>
         </div>
@@ -121,10 +122,9 @@
                 <span class="text-2xl">⚠️</span>
               </div>
               <div class="ml-3">
-                <h3 class="text-sm font-medium text-orange-800">Mandat expirant bientôt</h3>
+                <h3 class="text-sm font-medium text-orange-800">{$_('board.mandate.expiringWarning')}</h3>
                 <p class="mt-1 text-sm text-orange-700">
-                  Votre mandat expire dans <strong>{dashboard.my_mandate.days_remaining} jours</strong>.
-                  Pensez à organiser une nouvelle élection.
+                  {$_('board.mandate.expiresSoon', { values: { days: dashboard.my_mandate.days_remaining } })}
                 </p>
               </div>
             </div>
@@ -132,7 +132,7 @@
         {:else}
           <div class="mt-4 flex items-center text-sm text-gray-600">
             <span class="text-green-500 mr-2">✓</span>
-            Mandat actif pour encore {dashboard.my_mandate.days_remaining} jours
+            {$_('board.mandate.active', { values: { days: dashboard.my_mandate.days_remaining } })}
           </div>
         {/if}
       </div>
@@ -140,31 +140,31 @@
 
     <!-- Decision Statistics -->
     <div class="bg-white shadow rounded-lg p-6 mb-6">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">Statistiques des Décisions</h2>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">{$_('board.decisionStats')}</h2>
       <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div class="text-center">
           <p class="text-3xl font-bold text-gray-900">{dashboard.decisions_stats.total_decisions}</p>
-          <p class="text-sm text-gray-500">Total</p>
+          <p class="text-sm text-gray-500">{$_('board.stats.total')}</p>
         </div>
         <div class="text-center">
           <p class="text-3xl font-bold text-blue-600">{dashboard.decisions_stats.pending}</p>
-          <p class="text-sm text-gray-500">En attente</p>
+          <p class="text-sm text-gray-500">{$_('board.stats.pending')}</p>
         </div>
         <div class="text-center">
           <p class="text-3xl font-bold text-yellow-600">{dashboard.decisions_stats.in_progress}</p>
-          <p class="text-sm text-gray-500">En cours</p>
+          <p class="text-sm text-gray-500">{$_('board.stats.inProgress')}</p>
         </div>
         <div class="text-center">
           <p class="text-3xl font-bold text-green-600">{dashboard.decisions_stats.completed}</p>
-          <p class="text-sm text-gray-500">Terminées</p>
+          <p class="text-sm text-gray-500">{$_('board.stats.completed')}</p>
         </div>
         <div class="text-center">
           <p class="text-3xl font-bold text-red-600">{dashboard.decisions_stats.overdue}</p>
-          <p class="text-sm text-gray-500">En retard</p>
+          <p class="text-sm text-gray-500">{$_('board.stats.overdue')}</p>
         </div>
         <div class="text-center">
           <p class="text-3xl font-bold text-gray-400">{dashboard.decisions_stats.cancelled}</p>
-          <p class="text-sm text-gray-500">Annulées</p>
+          <p class="text-sm text-gray-500">{$_('board.stats.cancelled')}</p>
         </div>
       </div>
     </div>
@@ -173,7 +173,7 @@
     {#if dashboard.overdue_decisions.length > 0}
       <div class="bg-red-50 border border-red-200 shadow rounded-lg p-6 mb-6">
         <h2 class="text-xl font-semibold text-red-900 mb-4">
-          🚨 Décisions en Retard ({dashboard.overdue_decisions.length})
+          🚨 {$_('board.overdueDecisions', { values: { count: dashboard.overdue_decisions.length } })}
         </h2>
         <div class="space-y-3">
           {#each dashboard.overdue_decisions as decision}
@@ -182,7 +182,7 @@
               <p class="text-sm text-gray-600 mt-1">{decision.decision_text}</p>
               {#if decision.deadline}
                 <p class="text-sm text-red-600 mt-2">
-                  <strong>Deadline dépassée :</strong> {formatDate(decision.deadline)}
+                  <strong>{$_('board.overdueDeadline')}:</strong> {formatDate(decision.deadline)}
                 </p>
               {/if}
               <div class="mt-2">
@@ -199,8 +199,8 @@
         <div class="flex items-center">
           <span class="text-2xl mr-3">✅</span>
           <div>
-            <h2 class="text-xl font-semibold text-green-900">Aucune décision en retard</h2>
-            <p class="text-sm text-green-700">Toutes les décisions sont à jour. Excellent travail !</p>
+            <h2 class="text-xl font-semibold text-green-900">{$_('board.noOverdueDecisions')}</h2>
+            <p class="text-sm text-green-700">{$_('board.excellentWork')}</p>
           </div>
         </div>
       </div>
@@ -210,7 +210,7 @@
     {#if dashboard.upcoming_deadlines.length > 0}
       <div class="bg-white shadow rounded-lg p-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">
-          📅 Deadlines Approchant ({dashboard.upcoming_deadlines.length})
+          📅 {$_('board.upcomingDeadlines', { values: { count: dashboard.upcoming_deadlines.length } })}
         </h2>
         <div class="space-y-3">
           {#each dashboard.upcoming_deadlines as alert}
@@ -220,7 +220,7 @@
                 <div class="flex-1">
                   <h3 class="font-medium text-gray-900">{alert.subject}</h3>
                   <p class="text-sm mt-1">
-                    <strong>Deadline :</strong> {formatDate(alert.deadline)}
+                    <strong>{$_('board.deadline')}:</strong> {formatDate(alert.deadline)}
                   </p>
                   <p class="text-sm mt-1">
                     <strong>{formatDaysRemaining(alert.days_remaining)}</strong>
@@ -241,8 +241,8 @@
         <div class="flex items-center">
           <span class="text-2xl mr-3">✨</span>
           <div>
-            <h2 class="text-xl font-semibold text-gray-900">Aucune deadline proche</h2>
-            <p class="text-sm text-gray-600">Pas de décisions urgentes dans les 30 prochains jours.</p>
+            <h2 class="text-xl font-semibold text-gray-900">{$_('board.noUpcomingDeadlines')}</h2>
+            <p class="text-sm text-gray-600">{$_('board.noUrgentDecisions')}</p>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { _ } from 'svelte-i18n';
   import { bookingsApi, type BookableResource } from "../../lib/api/bookings";
   import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
@@ -39,19 +40,19 @@
     const now = new Date();
 
     if (!startTime) {
-      errors.startTime = "L'heure de début est requise";
+      errors.startTime = $_('bookings.error.startTimeRequired');
     } else if (start < now) {
-      errors.startTime = "L'heure de début doit être dans le futur";
+      errors.startTime = $_('bookings.error.startTimeInFuture');
     }
 
     if (!endTime) {
-      errors.endTime = "L'heure de fin est requise";
+      errors.endTime = $_('bookings.error.endTimeRequired');
     } else if (end <= start) {
-      errors.endTime = "L'heure de fin doit être après l'heure de début";
+      errors.endTime = $_('bookings.error.endTimeAfterStart');
     } else if (resource?.max_booking_duration_hours) {
       const durationHours = (end.getTime() - start.getTime()) / (1000 * 3600);
       if (durationHours > resource.max_booking_duration_hours) {
-        errors.endTime = `Durée maximum : ${resource.max_booking_duration_hours}h`;
+        errors.endTime = $_('bookings.error.maxDuration', { values: { hours: resource.max_booking_duration_hours } });
       }
     }
 
@@ -72,11 +73,11 @@
         attendees_count: attendeesCount || undefined,
         special_requests: specialRequests || undefined,
       });
-      toast.success("Réservation créée avec succès !");
+      toast.success($_('bookings.success.created'));
       dispatch("created", booking);
       handleClose();
     } catch (err: any) {
-      toast.error(err.message || "Erreur lors de la création de la réservation");
+      toast.error(err.message || $_('bookings.error.creationFailed'));
     } finally {
       submitting = false;
     }
@@ -89,13 +90,13 @@
   }
 </script>
 
-<Modal {isOpen} title="Réserver : {resource?.resource_name ?? ''}" on:close={handleClose}>
+<Modal {isOpen} title={$_('bookings.bookResource', { values: { name: resource?.resource_name ?? '' } })} on:close={handleClose}>
   <form on:submit|preventDefault={handleSubmit} class="space-y-4">
     <!-- Dates -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <label for="booking-start" class="block text-sm font-medium text-gray-700 mb-1">
-          Début <span class="text-red-500">*</span>
+          {$_('bookings.startTime')} <span class="text-red-500">*</span>
         </label>
         <input
           id="booking-start"

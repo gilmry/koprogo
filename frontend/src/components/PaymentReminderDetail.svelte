@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
 
@@ -35,7 +36,7 @@
   }
 
   async function markAsSent() {
-    if (!confirm('Marquer cette relance comme envoyée ?')) return;
+    if (!confirm($_('paymentReminders.markSentConfirm'))) return;
 
     try {
       loading = true;
@@ -44,32 +45,32 @@
       });
       reminder = updated;
       if (onUpdated) onUpdated(updated);
-      toast.success('Relance marquée comme envoyée');
+      toast.success($_('paymentReminders.markSentSuccess'));
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de marquer comme envoyée'));
+      toast.error('Erreur: ' + (err.message || $_('paymentReminders.markSentError')));
     } finally {
       loading = false;
     }
   }
 
   async function markAsPaid() {
-    if (!confirm('Marquer cette relance comme payée ?')) return;
+    if (!confirm($_('paymentReminders.markPaidConfirm'))) return;
 
     try {
       loading = true;
       const updated = await api.put(`/payment-reminders/${reminderId}/mark-paid`, {});
       reminder = updated;
       if (onUpdated) onUpdated(updated);
-      toast.success('Relance marquée comme payée');
+      toast.success($_('paymentReminders.markPaidSuccess'));
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de marquer comme payée'));
+      toast.error('Erreur: ' + (err.message || $_('paymentReminders.markPaidError')));
     } finally {
       loading = false;
     }
   }
 
   async function escalate() {
-    if (!confirm('Escalader vers le niveau supérieur de relance ?')) return;
+    if (!confirm($_('paymentReminders.escalateConfirm'))) return;
 
     try {
       loading = true;
@@ -78,9 +79,9 @@
       });
       reminder = await api.get(`/payment-reminders/${reminderId}`);
       if (onUpdated) onUpdated(reminder);
-      toast.success('Relance escaladée avec succès');
+      toast.success($_('paymentReminders.escalateSuccess'));
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible d\'escalader'));
+      toast.error('Erreur: ' + (err.message || $_('paymentReminders.escalateError')));
     } finally {
       loading = false;
     }
@@ -93,7 +94,7 @@
 
   async function confirmCancel() {
     if (!cancelReason.trim()) {
-      toast.error('Veuillez fournir une raison d\'annulation');
+      toast.error($_('paymentReminders.cancelReasonRequired'));
       return;
     }
 
@@ -105,9 +106,9 @@
       reminder = updated;
       showCancelModal = false;
       if (onUpdated) onUpdated(updated);
-      toast.success('Relance annulée');
+      toast.success($_('paymentReminders.cancelled'));
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible d\'annuler'));
+      toast.error('Erreur: ' + (err.message || $_('paymentReminders.cancelError')));
     } finally {
       loading = false;
     }
@@ -120,7 +121,7 @@
 
   async function confirmAddTracking() {
     if (!trackingNumber.trim()) {
-      toast.error('Veuillez fournir un numéro de suivi');
+      toast.error($_('paymentReminders.trackingNumberRequired'));
       return;
     }
 
@@ -132,9 +133,9 @@
       reminder = updated;
       showTrackingModal = false;
       if (onUpdated) onUpdated(updated);
-      toast.success('Numéro de suivi ajouté');
+      toast.success($_('paymentReminders.trackingAdded'));
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible d\'ajouter le numéro'));
+      toast.error('Erreur: ' + (err.message || $_('paymentReminders.trackingError')));
     } finally {
       loading = false;
     }
@@ -144,26 +145,26 @@
     const levels: Record<string, { emoji: string; label: string; description: string; class: string }> = {
       'FirstReminder': {
         emoji: '📧',
-        label: 'Rappel Aimable',
-        description: 'Premier rappel courtois (J+15)',
+        label: $_('paymentReminders.kindReminder'),
+        description: $_('paymentReminders.kindReminderDesc'),
         class: 'bg-yellow-100 text-yellow-800 border-yellow-200'
       },
       'SecondReminder': {
         emoji: '⚠️',
-        label: 'Relance Ferme',
-        description: 'Deuxième relance avec ton plus ferme (J+30)',
+        label: $_('paymentReminders.firmReminder'),
+        description: $_('paymentReminders.firmReminderDesc'),
         class: 'bg-orange-100 text-orange-800 border-orange-200'
       },
       'FormalNotice': {
         emoji: '🚨',
-        label: 'Mise en Demeure',
-        description: 'Lettre recommandée avec AR - ton juridique (J+60)',
+        label: $_('paymentReminders.formalNotice'),
+        description: $_('paymentReminders.formalNoticeDesc'),
         class: 'bg-red-100 text-red-800 border-red-200'
       },
       'LegalAction': {
         emoji: '⚖️',
-        label: 'Procédure Huissier',
-        description: 'Procédure de recouvrement judiciaire',
+        label: $_('paymentReminders.legalAction'),
+        description: $_('paymentReminders.legalActionDesc'),
         class: 'bg-purple-100 text-purple-800 border-purple-200'
       }
     };
@@ -172,12 +173,12 @@
 
   function getStatusBadge(status: string) {
     const badges: Record<string, { class: string; label: string }> = {
-      'Pending': { class: 'bg-blue-100 text-blue-800', label: 'En attente d\'envoi' },
-      'Sent': { class: 'bg-indigo-100 text-indigo-800', label: 'Envoyée' },
-      'Opened': { class: 'bg-purple-100 text-purple-800', label: 'Ouverte par destinataire' },
-      'Paid': { class: 'bg-green-100 text-green-800', label: 'Payée' },
-      'Escalated': { class: 'bg-orange-100 text-orange-800', label: 'Escaladée' },
-      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: 'Annulée' }
+      'Pending': { class: 'bg-blue-100 text-blue-800', label: $_('paymentReminders.pendingStatus') },
+      'Sent': { class: 'bg-indigo-100 text-indigo-800', label: $_('paymentReminders.sentStatus') },
+      'Opened': { class: 'bg-purple-100 text-purple-800', label: $_('paymentReminders.openedStatus') },
+      'Paid': { class: 'bg-green-100 text-green-800', label: $_('paymentReminders.paidStatus') },
+      'Escalated': { class: 'bg-orange-100 text-orange-800', label: $_('paymentReminders.escalatedStatus') },
+      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('paymentReminders.cancelledStatus') }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
@@ -205,7 +206,7 @@
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
-      <p class="text-gray-600">Chargement...</p>
+      <p class="text-gray-600">{$_('common.loading')}</p>
     </div>
   </div>
 {:else if error}
@@ -239,18 +240,18 @@
 
     <!-- Amount Details -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Montants</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('paymentReminders.amounts')}</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p class="text-sm text-gray-600 mb-1">Montant Dû</p>
+          <p class="text-sm text-gray-600 mb-1">{$_('paymentReminders.amountOwed')}</p>
           <p class="text-2xl font-bold text-blue-600">{formatCurrency(reminder.amount_owed)}</p>
         </div>
         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p class="text-sm text-gray-600 mb-1">Pénalités (8% annuel)</p>
+          <p class="text-sm text-gray-600 mb-1">{$_('paymentReminders.penaltiesAnnual')}</p>
           <p class="text-2xl font-bold text-red-600">+{formatCurrency(reminder.penalty_amount)}</p>
         </div>
         <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <p class="text-sm text-gray-600 mb-1">Total à Payer</p>
+          <p class="text-sm text-gray-600 mb-1">{$_('paymentReminders.totalToPay')}</p>
           <p class="text-2xl font-bold text-purple-600">{formatCurrency(reminder.total_amount)}</p>
         </div>
       </div>
@@ -258,28 +259,28 @@
 
     <!-- Timing Information -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Chronologie</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('paymentReminders.timeline')}</h3>
       <div class="space-y-3">
         <div class="flex items-center justify-between py-2 border-b">
-          <span class="text-gray-600">Date d'échéance originale</span>
+          <span class="text-gray-600">{$_('paymentReminders.originalDueDate')}</span>
           <span class="font-medium text-gray-900">{formatDate(reminder.due_date)}</span>
         </div>
         <div class="flex items-center justify-between py-2 border-b">
-          <span class="text-gray-600">Jours de retard</span>
-          <span class="font-bold text-red-600 text-xl">{reminder.days_overdue} jours</span>
+          <span class="text-gray-600">{$_('paymentReminders.daysOverdue')}</span>
+          <span class="font-bold text-red-600 text-xl">{reminder.days_overdue} {$_('paymentReminders.days')}</span>
         </div>
         <div class="flex items-center justify-between py-2 border-b">
-          <span class="text-gray-600">Date d'envoi</span>
+          <span class="text-gray-600">{$_('paymentReminders.sentDate')}</span>
           <span class="font-medium text-gray-900">{formatDate(reminder.sent_date)}</span>
         </div>
         {#if reminder.opened_date}
           <div class="flex items-center justify-between py-2 border-b">
-            <span class="text-gray-600">Date d'ouverture</span>
+            <span class="text-gray-600">{$_('paymentReminders.openDate')}</span>
             <span class="font-medium text-gray-900">{formatDate(reminder.opened_date)}</span>
           </div>
         {/if}
         <div class="flex items-center justify-between py-2">
-          <span class="text-gray-600">Créée le</span>
+          <span class="text-gray-600">{$_('paymentReminders.createdAt')}</span>
           <span class="font-medium text-gray-900">{formatDate(reminder.created_at)}</span>
         </div>
       </div>
@@ -287,17 +288,17 @@
 
     <!-- Delivery Method & Tracking -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Méthode d'Envoi</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('paymentReminders.deliveryMethod')}</h3>
       <div class="space-y-3">
         <div class="flex items-center justify-between py-2">
-          <span class="text-gray-600">Méthode</span>
+          <span class="text-gray-600">{$_('paymentReminders.method')}</span>
           <span class="font-medium text-gray-900">
             {#if reminder.delivery_method === 'Email'}
-              📧 Email
+              📧 {$_('paymentReminders.methodEmail')}
             {:else if reminder.delivery_method === 'RegisteredLetter'}
-              📮 Lettre Recommandée avec AR
+              📮 {$_('paymentReminders.methodRegistered')}
             {:else if reminder.delivery_method === 'Bailiff'}
-              ⚖️ Huissier de Justice
+              ⚖️ {$_('paymentReminders.methodBailiff')}
             {:else}
               {reminder.delivery_method}
             {/if}
@@ -305,7 +306,7 @@
         </div>
         {#if reminder.tracking_number}
           <div class="flex items-center justify-between py-2 bg-yellow-50 px-3 rounded">
-            <span class="text-gray-600">Numéro de suivi</span>
+            <span class="text-gray-600">{$_('paymentReminders.trackingNumber')}</span>
             <span class="font-mono font-bold text-gray-900">{reminder.tracking_number}</span>
           </div>
         {:else if reminder.delivery_method === 'RegisteredLetter'}
@@ -313,14 +314,14 @@
             on:click={openTrackingModal}
             class="text-sm text-primary-600 hover:text-primary-700"
           >
-            + Ajouter un numéro de suivi
+            + {$_('paymentReminders.addTracking')}
           </button>
         {/if}
         {#if reminder.pdf_path}
           <div class="flex items-center justify-between py-2">
-            <span class="text-gray-600">Lettre PDF</span>
+            <span class="text-gray-600">{$_('paymentReminders.letterPDF')}</span>
             <a href={reminder.pdf_path} class="text-primary-600 hover:text-primary-700">
-              📄 Télécharger
+              📄 {$_('common.download')}
             </a>
           </div>
         {/if}
@@ -330,14 +331,14 @@
     <!-- Notes -->
     {#if reminder.notes}
       <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">{$_('common.notes')}</h3>
         <p class="text-gray-700 whitespace-pre-wrap">{reminder.notes}</p>
       </div>
     {/if}
 
     <!-- Actions -->
     <div class="bg-white rounded-lg shadow p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('common.actions')}</h3>
       <div class="flex flex-wrap gap-3">
         {#if reminder.status === 'Pending'}
           <button
@@ -345,7 +346,7 @@
             disabled={loading}
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            📧 Marquer comme Envoyée
+            📧 {$_('paymentReminders.markAsSent')}
           </button>
         {/if}
 
@@ -355,7 +356,7 @@
             disabled={loading}
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
           >
-            ✅ Marquer comme Payée
+            ✅ {$_('paymentReminders.markAsPaid')}
           </button>
 
           <button
@@ -363,7 +364,7 @@
             disabled={loading}
             class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
           >
-            ⬆️ Escalader
+            ⬆️ {$_('paymentReminders.escalate')}
           </button>
         {/if}
 
@@ -373,7 +374,7 @@
             disabled={loading}
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
-            ❌ Annuler
+            ❌ {$_('paymentReminders.cancel')}
           </button>
         {/if}
 
@@ -381,14 +382,14 @@
           href="/expenses/{reminder.expense_id}"
           class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
         >
-          📄 Voir la Facture
+          📄 {$_('paymentReminders.viewInvoice')}
         </a>
 
         <a
           href="/owners/{reminder.owner_id}"
           class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
         >
-          👤 Voir le Propriétaire
+          👤 {$_('paymentReminders.viewOwner')}
         </a>
       </div>
     </div>
@@ -398,17 +399,17 @@
   {#if showCancelModal}
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Annuler la Relance</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('paymentReminders.cancelTitle')}</h3>
         <div class="mb-4">
           <label for="cancel-reason" class="block text-sm font-medium text-gray-700 mb-2">
-            Raison de l'annulation
+            {$_('paymentReminders.cancelReason')}
           </label>
           <textarea
             id="cancel-reason"
             bind:value={cancelReason}
             rows="4"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-            placeholder="Expliquez pourquoi cette relance est annulée..."
+            placeholder={$_('paymentReminders.cancelReasonPlaceholder')}
           ></textarea>
         </div>
         <div class="flex justify-end space-x-3">
@@ -416,13 +417,13 @@
             on:click={() => showCancelModal = false}
             class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
           >
-            Annuler
+            {$_('common.cancel')}
           </button>
           <button
             on:click={confirmCancel}
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
           >
-            Confirmer l'Annulation
+            {$_('paymentReminders.confirmCancel')}
           </button>
         </div>
       </div>
@@ -433,10 +434,10 @@
   {#if showTrackingModal}
     <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Ajouter un Numéro de Suivi</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('paymentReminders.addTrackingTitle')}</h3>
         <div class="mb-4">
           <label for="tracking-number" class="block text-sm font-medium text-gray-700 mb-2">
-            Numéro de suivi (Lettre Recommandée)
+            {$_('paymentReminders.trackingNumberLabel')}
           </label>
           <input
             id="tracking-number"
@@ -451,13 +452,13 @@
             on:click={() => showTrackingModal = false}
             class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
           >
-            Annuler
+            {$_('common.cancel')}
           </button>
           <button
             on:click={confirmAddTracking}
             class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
           >
-            Ajouter
+            {$_('paymentReminders.addButton')}
           </button>
         </div>
       </div>

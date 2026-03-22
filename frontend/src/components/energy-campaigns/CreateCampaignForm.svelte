@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import {
     energyCampaignsApi,
     type CreateCampaignDto,
@@ -45,21 +46,17 @@
 
     try {
       if (!formData.campaign_name.trim()) {
-        throw new Error("Le nom de la campagne est obligatoire.");
+        throw new Error($_("energy.campaign.nameRequired"));
       }
       if (formData.energy_types.length === 0) {
-        throw new Error(
-          "Selectionnez au moins un type d'energie (electricite, gaz ou chauffage).",
-        );
+        throw new Error($_("energy.campaign.typeRequired"));
       }
       if (!formData.deadline_participation) {
-        throw new Error("La date limite de participation est obligatoire.");
+        throw new Error($_("energy.campaign.deadlineRequired"));
       }
       const today = new Date().toISOString().split("T")[0];
       if (formData.deadline_participation <= today) {
-        throw new Error(
-          "La date limite doit etre dans le futur.",
-        );
+        throw new Error($_("energy.campaign.deadlineMustBeFuture"));
       }
 
       // Send as ISO datetime for backend DateTime<Utc>
@@ -82,7 +79,7 @@
         success = false;
       }, 2000);
     } catch (err: any) {
-      error = err.message || "Erreur lors de la creation de la campagne";
+      error = err.message || $_("energy.campaign.createError");
       console.error("Failed to create campaign:", err);
     } finally {
       loading = false;
@@ -92,19 +89,18 @@
 
 <div class="bg-white shadow-md rounded-lg p-6">
   <h3 class="text-lg font-medium text-gray-900 mb-4">
-    ➕ Créer une campagne d'achat groupé d'énergie
+    ➕ {$_("energy.campaign.create")}
   </h3>
 
   <p class="text-sm text-gray-600 mb-6">
-    Négociez collectivement vos contrats d'énergie avec d'autres copropriétés.
-    <strong>Économies attendues: 15-25%</strong> sur vos factures d'électricité
-    et de gaz.
+    {$_("energy.campaign.description")}
+    <strong>{$_("energy.campaign.savingsExpected")}</strong>
   </p>
 
   {#if success}
     <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
       <p class="text-sm text-green-800">
-        ✅ Campagne créée avec succès ! Vous allez être redirigé...
+        ✅ {$_("energy.campaign.successRedirect")}
       </p>
     </div>
   {/if}
@@ -117,7 +113,7 @@
 
   <form on:submit={handleSubmit} class="space-y-6">
     <!-- Building Selector -->
-    <BuildingSelector bind:selectedBuildingId label="Immeuble concerné" required={false} />
+    <BuildingSelector bind:selectedBuildingId label={$_("energy.campaign.building")} required={false} />
 
     <!-- Campaign Name -->
     <div>
@@ -125,25 +121,25 @@
         for="campaign_name"
         class="block text-sm font-medium text-gray-700"
       >
-        Nom de la campagne <span class="text-red-500">*</span>
+        {$_("energy.campaign.name")} <span class="text-red-500">*</span>
       </label>
       <input
         type="text"
         id="campaign_name"
         bind:value={formData.campaign_name}
         required
-        placeholder="Ex: Achat groupé électricité 2025"
+        placeholder={$_("energy.campaign.nameExample")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
       <p class="mt-1 text-xs text-gray-500">
-        Un nom clair qui identifie votre campagne d'achat groupé.
+        {$_("energy.campaign.nameHelp")}
       </p>
     </div>
 
     <!-- Energy Types -->
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-2">
-        Types d'énergie <span class="text-red-500">*</span>
+        {$_("energy.campaign.energyTypes")} <span class="text-red-500">*</span>
       </label>
       <div class="space-y-2">
         <label class="flex items-center">
@@ -154,7 +150,7 @@
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">
-            ⚡ Électricité (recommandé - économies jusqu'à 25%)
+            ⚡ {$_("energy.campaign.electricity")}
           </span>
         </label>
         <label class="flex items-center">
@@ -165,7 +161,7 @@
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">
-            🔥 Gaz (recommandé - économies jusqu'à 20%)
+            🔥 {$_("energy.campaign.gas")}
           </span>
         </label>
         <label class="flex items-center">
@@ -176,12 +172,12 @@
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">
-            🌡️ Chauffage (mazout, pellets, etc.)
+            🌡️ {$_("energy.campaign.heating")}
           </span>
         </label>
       </div>
       <p class="mt-2 text-xs text-gray-500">
-        Sélectionnez tous les types d'énergie que vous souhaitez négocier.
+        {$_("energy.campaign.energyTypesHelp")}
       </p>
     </div>
 
@@ -191,7 +187,7 @@
         for="deadline_participation"
         class="block text-sm font-medium text-gray-700"
       >
-        Date limite de participation <span class="text-red-500">*</span>
+        {$_("energy.campaign.deadline")} <span class="text-red-500">*</span>
       </label>
       <input
         type="date"
@@ -201,29 +197,28 @@
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
       <p class="mt-1 text-xs text-gray-500">
-        Date limite pour que les coproprietaires rejoignent la campagne. Recommandation : 3 a 6 mois.
+        {$_("energy.campaign.deadlineHelp")}
       </p>
     </div>
 
     <!-- GDPR Notice -->
     <div class="p-4 bg-blue-50 border border-blue-200 rounded-md">
       <h4 class="text-sm font-medium text-blue-900 mb-2">
-        🔒 Protection des données GDPR
+        🔒 {$_("energy.campaign.gdprTitle")}
       </h4>
       <ul class="text-xs text-blue-800 space-y-1">
         <li>
-          ✅ Toutes les factures sont chiffrées avec AES-256-GCM
+          ✅ {$_("energy.campaign.gdprPoint1")}
         </li>
         <li>
-          ✅ K-anonymité garantie: minimum 5 participants avant publication
+          ✅ {$_("energy.campaign.gdprPoint2")}
         </li>
         <li>
-          ✅ Consentement explicite requis pour chaque upload
+          ✅ {$_("energy.campaign.gdprPoint3")}
         </li>
-        <li>✅ Droit à l'oubli: suppression à tout moment</li>
+        <li>✅ {$_("energy.campaign.gdprPoint4")}}</li>
         <li>
-          ✅ Conforme CREG (Commission de Régulation de l'Électricité et du
-          Gaz)
+          ✅ {$_("energy.campaign.gdprPoint5")}
         </li>
       </ul>
     </div>
@@ -235,7 +230,7 @@
         on:click={() => onCancel && onCancel()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
-        Annuler
+        {$_("common.cancel")}
       </button>
       <button
         type="submit"
@@ -244,9 +239,9 @@
       >
         {#if loading}
           <span class="inline-block animate-spin mr-2">⏳</span>
-          Création en cours...
+          {$_("energy.campaign.creating")}
         {:else}
-          ✅ Créer la campagne
+          ✅ {$_("energy.campaign.create")}
         {/if}
       </button>
     </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
   import type { Unit, PageResponse, Building } from '../lib/types';
@@ -74,7 +75,7 @@
 
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des lots';
+      error = e instanceof Error ? e.message : $_('units.loadError');
       console.error('Error loading units:', e);
     } finally {
       loading = false;
@@ -97,9 +98,9 @@
 
   function getUnitTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'Apartment': 'Appartement',
-      'Parking': 'Parking',
-      'Cellar': 'Cave'
+      'Apartment': $_('units.types.apartment'),
+      'Parking': $_('units.types.parking'),
+      'Cellar': $_('units.types.cellar')
     };
     return labels[type] || type;
   }
@@ -132,7 +133,7 @@
       unitToDelete = null;
       await loadUnits();
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors de la suppression du lot';
+      error = e instanceof Error ? e.message : $_('units.deleteError');
       console.error('Error deleting unit:', e);
       showDeleteConfirm = false;
     }
@@ -156,7 +157,7 @@
     </p>
     {#if buildingId && isSuperAdmin}
       <Button variant="primary" on:click={() => showCreateModal = true}>
-        + Ajouter un lot
+        + {$_('units.addUnit')}
       </Button>
     {/if}
   </div>
@@ -168,10 +169,10 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8">Chargement...</p>
+    <p class="text-center text-gray-600 py-8">{$_('common.loading')}</p>
   {:else if units.length === 0}
     <p class="text-center text-gray-600 py-8">
-      Aucun lot enregistré.
+      {$_('units.noUnits')}
     </p>
   {:else}
     <div class="grid gap-4">
@@ -183,10 +184,10 @@
                 <span class="text-3xl">{getUnitTypeIcon(unit.unit_type)}</span>
                 <div class="flex-1">
                   <h3 class="text-lg font-semibold text-gray-900">
-                    Lot {unit.unit_number}
+                    {$_('units.lot')} {unit.unit_number}
                   </h3>
                   <p class="text-gray-600 text-sm mt-1">
-                    {getUnitTypeLabel(unit.unit_type)} - Étage {unit.floor}
+                    {getUnitTypeLabel(unit.unit_type)} - {$_('units.floor')} {unit.floor}
                   </p>
                   <div class="flex gap-4 mt-2 text-sm text-gray-500">
                     <span>📐 {unit.surface_area} m²</span>
@@ -199,14 +200,14 @@
                   <button
                     on:click={() => handleEditUnit(unit)}
                     class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
-                    title="Modifier le lot"
+                    title={$_('units.editUnit')}
                   >
                     ✏️
                   </button>
                   <button
                     on:click={() => handleDeleteClick(unit)}
                     class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
-                    title="Supprimer le lot"
+                    title={$_('units.deleteUnit')}
                   >
                     🗑️
                   </button>
@@ -214,9 +215,9 @@
                 <button
                   on:click={() => toggleUnitExpanded(unit.id)}
                   class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                  title={expandedUnits.has(unit.id) ? 'Masquer les copropriétaires' : 'Voir les copropriétaires'}
+                  title={expandedUnits.has(unit.id) ? $_('units.hideOwners') : $_('units.showOwners')}
                 >
-                  {expandedUnits.has(unit.id) ? '▼' : '▶'} Copropriétaires
+                  {expandedUnits.has(unit.id) ? '▼' : '▶'} {$_('units.owners')}
                 </button>
               </div>
             </div>
@@ -236,7 +237,7 @@
     {#if building && units.length > 0}
       <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
         <div class="flex justify-between items-center">
-          <span class="font-semibold text-gray-700">Total tantièmes</span>
+          <span class="font-semibold text-gray-700">{$_('units.totalQuotas')}</span>
           <div class="text-right">
             <span class="text-xl font-bold" class:text-green-600={!quotasMismatch} class:text-red-600={quotasMismatch}>
               {Math.round(totalQuotas)}/{expectedTotal}èmes
@@ -245,11 +246,11 @@
         </div>
         {#if quotasMismatch}
           <p class="text-xs text-red-600 mt-1">
-            La somme des tantièmes des lots ({Math.round(totalQuotas)}) ne correspond pas au total de l'immeuble ({expectedTotal}). Différence: {Math.round(totalQuotas - expectedTotal)} tantièmes.
+            {$_('units.quotasMismatch', { values: { current: Math.round(totalQuotas), expected: expectedTotal, diff: Math.round(totalQuotas - expectedTotal) } })}
           </p>
         {:else}
           <p class="text-xs text-green-600 mt-1">
-            La répartition des tantièmes est correcte.
+            {$_('units.quotasCorrect')}
           </p>
         {/if}
       </div>
@@ -301,21 +302,21 @@
         <!-- Modal -->
         <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
           <div class="mb-4">
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Confirmer la suppression</h3>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">{$_('common.confirmDelete')}</h3>
             <p class="text-gray-600">
-              Êtes-vous sûr de vouloir supprimer le lot <strong>{unitToDelete.unit_number}</strong> ?
+              {$_('units.confirmDeleteMessage')} <strong>{unitToDelete.unit_number}</strong> ?
             </p>
             <p class="text-sm text-red-600 mt-2">
-              Cette action est irréversible et supprimera également toutes les relations avec les copropriétaires.
+              {$_('units.deleteWarning')}
             </p>
           </div>
 
           <div class="flex gap-2">
             <Button variant="danger" on:click={confirmDelete}>
-              Supprimer
+              {$_('common.delete')}
             </Button>
             <Button variant="outline" on:click={cancelDelete}>
-              Annuler
+              {$_('common.cancel')}
             </Button>
           </div>
         </div>

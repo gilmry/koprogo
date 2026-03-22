@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { Document } from '../lib/types';
   import Button from './ui/Button.svelte';
@@ -30,7 +31,7 @@
       error = '';
       documents = await api.get<Document[]>(`/meetings/${meetingId}/documents`);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des documents';
+      error = e instanceof Error ? e.message : $_('common.error_loading');
       console.error('Error loading documents:', e);
     } finally {
       loading = false;
@@ -46,7 +47,7 @@
 
   async function handleUpload() {
     if (!uploadFile || !uploadTitle) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      toast.error($_('meetings.fill_required_fields'));
       return;
     }
 
@@ -83,9 +84,9 @@
 
       // Reload documents
       await loadDocuments();
-      toast.success('Document ajouté avec succès');
+      toast.success($_('meetings.document_added'));
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors de l\'upload';
+      error = e instanceof Error ? e.message : $_('meetings.error_uploading');
       console.error('Error uploading document:', e);
       toast.error(`Erreur: ${error}`);
     } finally {
@@ -102,7 +103,7 @@
       });
 
       if (!response.ok) {
-        throw new Error('Erreur lors du téléchargement');
+        throw new Error($_('meetings.error_downloading'));
       }
 
       const blob = await response.blob();
@@ -115,7 +116,7 @@
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (e) {
-      toast.error('Erreur lors du téléchargement du document');
+      toast.error($_('meetings.error_downloading_document'));
       console.error('Error downloading document:', e);
     }
   }
@@ -130,13 +131,13 @@
 
   function getDocumentTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'MeetingMinutes': 'Procès-verbal',
-      'FinancialStatement': 'Bilan financier',
-      'Invoice': 'Facture',
-      'Contract': 'Contrat',
-      'Regulation': 'Règlement',
-      'WorksQuote': 'Devis travaux',
-      'Other': 'Autre'
+      'MeetingMinutes': $_('meetings.doc_type_minutes'),
+      'FinancialStatement': $_('meetings.doc_type_financial'),
+      'Invoice': $_('meetings.doc_type_invoice'),
+      'Contract': $_('meetings.doc_type_contract'),
+      'Regulation': $_('meetings.doc_type_regulation'),
+      'WorksQuote': $_('meetings.doc_type_quote'),
+      'Other': $_('meetings.doc_type_other')
     };
     return labels[type] || type;
   }
@@ -150,10 +151,10 @@
 
 <div class="bg-white rounded-lg shadow p-6">
   <div class="flex justify-between items-center mb-4">
-    <h3 class="text-lg font-semibold text-gray-900">Documents liés</h3>
+    <h3 class="text-lg font-semibold text-gray-900">{$_('meetings.linked_documents')}</h3>
     {#if meetingStatus !== 'Cancelled'}
       <Button variant="primary" on:click={() => showUploadForm = !showUploadForm}>
-        {showUploadForm ? 'Annuler' : '+ Ajouter un document'}
+        {showUploadForm ? $_('common.cancel') : `+ ${$_('meetings.add_document')}`}
       </Button>
     {/if}
   </div>
@@ -167,53 +168,53 @@
   <!-- Upload Form -->
   {#if showUploadForm}
     <div class="bg-gray-50 rounded-lg p-4 mb-6">
-      <h4 class="font-medium text-gray-900 mb-4">Ajouter un document</h4>
+      <h4 class="font-medium text-gray-900 mb-4">{$_('meetings.add_document')}</h4>
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
-            Type de document *
+            {$_('meetings.document_type')} *
           </label>
           <select
             bind:value={uploadDocumentType}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
-            <option value="MeetingMinutes">Procès-verbal</option>
-            <option value="FinancialStatement">Bilan financier</option>
-            <option value="Invoice">Facture</option>
-            <option value="Contract">Contrat</option>
-            <option value="Regulation">Règlement</option>
-            <option value="WorksQuote">Devis travaux</option>
-            <option value="Other">Autre</option>
+            <option value="MeetingMinutes">{$_('meetings.doc_type_minutes')}</option>
+            <option value="FinancialStatement">{$_('meetings.doc_type_financial')}</option>
+            <option value="Invoice">{$_('meetings.doc_type_invoice')}</option>
+            <option value="Contract">{$_('meetings.doc_type_contract')}</option>
+            <option value="Regulation">{$_('meetings.doc_type_regulation')}</option>
+            <option value="WorksQuote">{$_('meetings.doc_type_quote')}</option>
+            <option value="Other">{$_('meetings.doc_type_other')}</option>
           </select>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
-            Titre *
+            {$_('meetings.title')} *
           </label>
           <input
             type="text"
             bind:value={uploadTitle}
-            placeholder="Ex: Procès-verbal AG 2029"
+            placeholder={$_('meetings.title_example')}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
-            Description
+            {$_('common.description')}
           </label>
           <textarea
             bind:value={uploadDescription}
             rows="3"
-            placeholder="Description du document..."
+            placeholder={$_('meetings.document_description')}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
-            Fichier *
+            {$_('meetings.file')} *
           </label>
           <input
             type="file"
@@ -223,17 +224,17 @@
           />
           {#if uploadFile}
             <p class="text-sm text-gray-500 mt-1">
-              Fichier sélectionné: {uploadFile.name} ({formatFileSize(uploadFile.size)})
+              {$_('meetings.file_selected', { values: { name: uploadFile.name, size: formatFileSize(uploadFile.size) } })}
             </p>
           {/if}
         </div>
 
         <div class="flex gap-2">
           <Button variant="primary" on:click={handleUpload} disabled={uploading}>
-            {uploading ? 'Upload en cours...' : 'Ajouter le document'}
+            {uploading ? $_('common.uploading') : $_('meetings.add_document')}
           </Button>
           <Button variant="outline" on:click={() => showUploadForm = false}>
-            Annuler
+            {$_('common.cancel')}
           </Button>
         </div>
       </div>
@@ -243,12 +244,12 @@
   <!-- Documents List -->
   {#if loading}
     <div class="text-center text-gray-500 py-8">
-      <p>Chargement des documents...</p>
+      <p>{$_('meetings.loading_documents')}</p>
     </div>
   {:else if documents.length === 0}
     <div class="text-center text-gray-500 py-8">
-      <p>Aucun document lié pour le moment</p>
-      <p class="text-sm mt-2">Ajoutez des documents pour cette assemblée</p>
+      <p>{$_('meetings.no_documents')}</p>
+      <p class="text-sm mt-2">{$_('meetings.add_documents_help')}</p>
     </div>
   {:else}
     <div class="space-y-3">
@@ -272,7 +273,7 @@
               </div>
             </div>
             <Button variant="outline" on:click={() => handleDownload(doc.id, doc.title)}>
-              Télécharger
+              {$_('common.download')}
             </Button>
           </div>
         </div>

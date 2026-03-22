@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { authStore } from '../../stores/auth';
   import { api } from '../../lib/api';
   import type { Building, Unit, Expense } from '../../lib/types';
@@ -93,7 +94,7 @@
 
       loading = false;
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Erreur lors du chargement des données';
+      error = err instanceof Error ? err.message : $_('common.error.loadData');
       loading = false;
       console.error('Error fetching owner dashboard data:', err);
     }
@@ -121,18 +122,18 @@
 
   function getUnitTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'Apartment': 'Appartement',
-      'Parking': 'Parking',
-      'Storage': 'Cave'
+      'Apartment': $_('common.unitTypes.apartment'),
+      'Parking': $_('common.unitTypes.parking'),
+      'Storage': $_('common.unitTypes.storage')
     };
     return labels[type] || type;
   }
 
   function getPositionLabel(position: string): string {
     const labels: Record<string, string> = {
-      'president': 'Président',
-      'treasurer': 'Trésorier',
-      'secretary': 'Secrétaire'
+      'president': $_('common.boardPositions.president'),
+      'treasurer': $_('common.boardPositions.treasurer'),
+      'secretary': $_('common.boardPositions.secretary')
     };
     return labels[position] || position;
   }
@@ -159,10 +160,10 @@
 <div>
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
-      Bienvenue, {user?.first_name} 👋
+      {$_('common.welcome')}, {user?.first_name} 👋
     </h1>
     <p class="text-gray-600">
-      Mon Espace Copropriétaire
+      {$_('dashboards.owner.title')}
     </p>
   </div>
 
@@ -172,7 +173,7 @@
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-      <p class="text-red-800 font-medium">Erreur</p>
+      <p class="text-red-800 font-medium">{$_('common.error.title')}</p>
       <p class="text-red-600 text-sm">{error}</p>
     </div>
   {:else if stats}
@@ -180,32 +181,32 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Immeubles</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.owner.stats.buildings')}</span>
           <span class="text-2xl">🏢</span>
         </div>
         <p class="text-3xl font-bold text-gray-900">{stats.total_buildings}</p>
-        <p class="text-sm text-gray-500 mt-1">{stats.total_units} lots au total</p>
+        <p class="text-sm text-gray-500 mt-1">{stats.total_units} {$_('dashboards.owner.stats.unitsTotal')}</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Charges à payer</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.owner.stats.expensesToPay')}</span>
           <span class="text-2xl">💰</span>
         </div>
         <p class="text-3xl font-bold text-orange-600">{formatAmount(stats.pending_expenses_amount)}</p>
-        <p class="text-sm text-gray-500 mt-1">{stats.pending_expenses_count} charges en attente</p>
+        <p class="text-sm text-gray-500 mt-1">{stats.pending_expenses_count} {$_('dashboards.owner.stats.expensesPending')}</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Prochaine AG</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.owner.stats.nextMeeting')}</span>
           <span class="text-2xl">📅</span>
         </div>
         {#if stats.next_meeting}
           <p class="text-xl font-bold text-gray-900">{formatDate(stats.next_meeting.date)}</p>
           <p class="text-sm text-gray-500 mt-1">{stats.next_meeting.building_name}</p>
         {:else}
-          <p class="text-lg font-medium text-gray-500">Aucune AG prévue</p>
+          <p class="text-lg font-medium text-gray-500">{$_('dashboards.owner.stats.noMeetingsPlanned')}</p>
         {/if}
       </div>
     </div>
@@ -218,8 +219,8 @@
             <div class="flex items-center gap-3">
               <span class="text-4xl">🎖️</span>
               <div>
-                <h2 class="text-2xl font-bold text-gray-900">Membre du Conseil</h2>
-                <p class="text-sm text-gray-600">Vous faites partie du conseil de copropriété</p>
+                <h2 class="text-2xl font-bold text-gray-900">{$_('dashboards.owner.boardMember.title')}</h2>
+                <p class="text-sm text-gray-600">{$_('dashboards.owner.boardMember.subtitle')}</p>
               </div>
             </div>
           </div>
@@ -237,7 +238,7 @@
                   </div>
                   {#if mandate.expires_soon}
                     <span class="px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded">
-                      ⚠️ Expire bientôt
+                      ⚠️ {$_('dashboards.owner.mandate.expiresSoon')}
                     </span>
                   {/if}
                 </div>
@@ -245,16 +246,16 @@
                 <p class="text-xs text-gray-500 mb-3">{mandate.building_address}</p>
 
                 <div class="flex items-center justify-between text-sm mb-3">
-                  <span class="text-gray-600">Mandat:</span>
+                  <span class="text-gray-600">{$_('dashboards.owner.mandate.mandate')}:</span>
                   <span class="font-medium text-gray-900">
                     {formatFullDate(mandate.mandate_start)} - {formatFullDate(mandate.mandate_end)}
                   </span>
                 </div>
 
                 <div class="flex items-center justify-between text-sm mb-4">
-                  <span class="text-gray-600">Reste:</span>
+                  <span class="text-gray-600">{$_('dashboards.owner.mandate.remaining')}:</span>
                   <span class="font-medium {mandate.expires_soon ? 'text-orange-600' : 'text-green-600'}">
-                    {mandate.days_remaining} jours
+                    {mandate.days_remaining} {$_('dashboards.owner.mandate.days')}
                   </span>
                 </div>
 
@@ -262,7 +263,7 @@
                   href="/board-dashboard?building_id={mandate.building_id}"
                   class="block w-full text-center bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded transition"
                 >
-                  📊 Tableau de Bord du Conseil
+                  📊 {$_('dashboards.owner.mandate.boardDashboard')}
                 </a>
               </div>
             {/each}
@@ -276,9 +277,9 @@
       <!-- Buildings -->
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 class="text-lg font-semibold text-gray-900">Mes immeubles</h2>
+          <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.owner.myBuildings')}</h2>
           <a href="/buildings" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
-            Voir tout →
+            {$_('common.seeAll')} →
           </a>
         </div>
         <div class="p-6">
@@ -298,7 +299,7 @@
             </div>
           {:else}
             <div class="text-center py-8">
-              <p class="text-gray-500">Aucun immeuble</p>
+              <p class="text-gray-500">{$_('dashboards.owner.noBuildings')}</p>
             </div>
           {/if}
         </div>
@@ -307,9 +308,9 @@
       <!-- Recent Units -->
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 class="text-lg font-semibold text-gray-900">Lots récents</h2>
+          <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.owner.recentUnits')}</h2>
           <a href="/units" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
-            Voir tout →
+            {$_('common.seeAll')} →
           </a>
         </div>
         <div class="p-6">
@@ -328,7 +329,7 @@
             </div>
           {:else}
             <div class="text-center py-8">
-              <p class="text-gray-500">Aucun lot</p>
+              <p class="text-gray-500">{$_('dashboards.owner.noUnits')}</p>
             </div>
           {/if}
         </div>
@@ -341,13 +342,13 @@
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200 flex justify-between items-center">
           <div class="flex items-center gap-2">
-            <h2 class="text-lg font-semibold text-gray-900">Mes tickets</h2>
+            <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.owner.myTickets')}</h2>
             {#if openTicketsCount > 0}
-              <span class="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">{openTicketsCount} ouvert{openTicketsCount > 1 ? 's' : ''}</span>
+              <span class="px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">{openTicketsCount} {openTicketsCount > 1 ? $_('common.plural.open') : $_('common.singular.open')}</span>
             {/if}
           </div>
           <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
-            Voir tout →
+            {$_('common.seeAll')} →
           </a>
         </div>
         <div class="p-6">
@@ -374,8 +375,8 @@
             </div>
           {:else}
             <div class="text-center py-6">
-              <p class="text-gray-500 text-sm">Aucun ticket de maintenance</p>
-              <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 mt-1 inline-block">Créer un ticket</a>
+              <p class="text-gray-500 text-sm">{$_('dashboards.owner.noMaintenanceTickets')}</p>
+              <a href="/owner/tickets" class="text-sm text-primary-600 hover:text-primary-700 mt-1 inline-block">{$_('dashboards.owner.createTicket')}</a>
             </div>
           {/if}
         </div>
@@ -385,13 +386,13 @@
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200 flex justify-between items-center">
           <div class="flex items-center gap-2">
-            <h2 class="text-lg font-semibold text-gray-900">Notifications</h2>
+            <h2 class="text-lg font-semibold text-gray-900">{$_('common.notifications')}</h2>
             {#if unreadNotifications.length > 0}
-              <span class="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full">{unreadNotifications.length} non lu{unreadNotifications.length > 1 ? 'es' : 'e'}</span>
+              <span class="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full">{unreadNotifications.length} {unreadNotifications.length > 1 ? $_('common.plural.unread') : $_('common.singular.unread')}</span>
             {/if}
           </div>
           <a href="/notifications" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
-            Voir tout →
+            {$_('common.seeAll')} →
           </a>
         </div>
         <div class="p-6">
@@ -407,7 +408,7 @@
             </div>
           {:else}
             <div class="text-center py-6">
-              <p class="text-gray-500 text-sm">Aucune notification non lue</p>
+              <p class="text-gray-500 text-sm">{$_('dashboards.owner.noUnreadNotifications')}</p>
             </div>
           {/if}
         </div>
@@ -418,33 +419,33 @@
     <div class="mt-8">
       <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200">
-          <h2 class="text-lg font-semibold text-gray-900">Actions rapides</h2>
+          <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.owner.quickActions')}</h2>
         </div>
         <div class="p-6">
           <div class="grid grid-cols-2 md:grid-cols-{boardMandates.length > 0 ? '5' : '4'} gap-4">
             <a href="/buildings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">🏢</span>
-              <span class="text-sm font-medium text-gray-700">Immeubles</span>
+              <span class="text-sm font-medium text-gray-700">{$_('navigation.buildings')}</span>
             </a>
             <a href="/units" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">🚪</span>
-              <span class="text-sm font-medium text-gray-700">Lots</span>
+              <span class="text-sm font-medium text-gray-700">{$_('navigation.units')}</span>
             </a>
             <a href="/expenses" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">💰</span>
-              <span class="text-sm font-medium text-gray-700">Charges</span>
+              <span class="text-sm font-medium text-gray-700">{$_('navigation.expenses')}</span>
             </a>
             <a href="/meetings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">📅</span>
-              <span class="text-sm font-medium text-gray-700">Assemblées</span>
+              <span class="text-sm font-medium text-gray-700">{$_('navigation.meetings')}</span>
             </a>
             <a href="/owner/tickets" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">🎫</span>
-              <span class="text-sm font-medium text-gray-700">Tickets</span>
+              <span class="text-sm font-medium text-gray-700">{$_('navigation.tickets')}</span>
             </a>
             <a href="/owner/payments" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
               <span class="text-4xl mb-2 group-hover:scale-110 transition">💳</span>
-              <span class="text-sm font-medium text-gray-700">Paiements</span>
+              <span class="text-sm font-medium text-gray-700">{$_('navigation.payments')}</span>
             </a>
             {#if boardMandates.length > 0}
               <a
@@ -452,7 +453,7 @@
                 class="flex flex-col items-center justify-center p-6 border-2 border-primary-300 bg-primary-50 rounded-lg hover:border-primary-500 hover:bg-primary-100 transition group"
               >
                 <span class="text-4xl mb-2 group-hover:scale-110 transition">🎖️</span>
-                <span class="text-sm font-medium text-primary-700">Conseil</span>
+                <span class="text-sm font-medium text-primary-700">{$_('navigation.council')}</span>
               </a>
             {/if}
           </div>

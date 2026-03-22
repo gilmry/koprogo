@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { type Poll, type PollResults, PollType } from "../../lib/api/polls";
 
   export let poll: Poll;
@@ -30,10 +31,10 @@
 
 <div class="bg-white shadow-md rounded-lg p-6">
   <div class="flex items-center justify-between mb-4">
-    <h3 class="text-lg font-medium text-gray-900">📊 Résultats</h3>
+    <h3 class="text-lg font-medium text-gray-900">📊 {$_("polls.results.title")}</h3>
     {#if results.winning_option}
       <span class="text-sm text-green-600 font-medium">
-        🏆 Gagnant: {results.winning_option.option_text}
+        🏆 {$_("polls.results.winner")}: {results.winning_option.option_text}
       </span>
     {/if}
   </div>
@@ -42,13 +43,13 @@
   <div class="mb-6 p-4 bg-gray-50 rounded-lg">
     <div class="grid grid-cols-2 gap-4">
       <div>
-        <div class="text-xs text-gray-500">Total des votes</div>
+        <div class="text-xs text-gray-500">{$_("polls.results.totalVotes")}</div>
         <div class="text-2xl font-bold text-gray-900">
           {results.total_votes_cast}
         </div>
       </div>
       <div>
-        <div class="text-xs text-gray-500">Taux de participation</div>
+        <div class="text-xs text-gray-500">{$_("polls.results.participationRate")}</div>
         <div
           class="text-2xl font-bold {results.participation_rate >= 50 ? 'text-green-600' : results.participation_rate >= 30 ? 'text-yellow-600' : 'text-red-600'}"
         >
@@ -90,7 +91,7 @@
     <div class="space-y-4">
       <!-- Average Rating -->
       <div class="text-center p-6 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg">
-        <div class="text-sm text-gray-600 mb-2">Note moyenne</div>
+        <div class="text-sm text-gray-600 mb-2">{$_("polls.results.averageRating")}</div>
         <div class="text-5xl mb-2">
           {getRatingStars(0, 5)}
         </div>
@@ -103,7 +104,7 @@
       {#if results.options && results.options.length > 0}
         <div>
           <h4 class="text-sm font-medium text-gray-700 mb-3">
-            Distribution des notes
+            {$_("polls.results.ratingDistribution")}
           </h4>
           <div class="space-y-2">
             {#each results.options as optionResult}
@@ -131,7 +132,7 @@
   {:else if poll.poll_type === PollType.OpenEnded}
     <div>
       <p class="text-sm text-gray-500 italic">
-        Les réponses textuelles sont disponibles dans les résultats détaillés.
+        {$_("polls.results.openEndedMessage")}
       </p>
     </div>
   {/if}
@@ -139,9 +140,7 @@
   <!-- Legal Notice -->
   <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
     <p class="text-xs text-yellow-800">
-      ⚖️ <strong>Cadre légal:</strong> Ces résultats doivent être documentés dans
-      le procès-verbal de la prochaine assemblée générale conformément à l'Article
-      577-8/4 §4 du Code Civil Belge.
+      ⚖️ <strong>{$_("polls.results.legalFramework")}:</strong> {$_("polls.results.legalText")}
     </p>
   </div>
 </div>

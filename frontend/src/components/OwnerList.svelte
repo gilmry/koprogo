@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
   import type { Owner, PageResponse } from '../lib/types';
@@ -56,7 +57,7 @@
       perPage = response.pagination.per_page;
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des copropriétaires';
+      error = e instanceof Error ? e.message : $_('common.error.loading');
       console.error('Error loading owners:', e);
     } finally {
       loading = false;
@@ -94,14 +95,14 @@
 <div class="space-y-4">
   <div class="flex justify-between items-center">
     <p class="text-gray-600">
-      {totalItems} copropriétaire{totalItems !== 1 ? 's' : ''}
+      {$_('owners.count', { values: { count: totalItems } })}
     </p>
     {#if canManageOwners}
       <button
         on:click={openCreateModal}
         class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition font-medium"
       >
-        + Ajouter un copropriétaire
+        {$_('owners.action.add')}
       </button>
     {/if}
   </div>
@@ -113,10 +114,10 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8">Chargement...</p>
+    <p class="text-center text-gray-600 py-8">{$_('common.loading')}</p>
   {:else if owners.length === 0}
     <p class="text-center text-gray-600 py-8">
-      Aucun copropriétaire enregistré.
+      {$_('owners.empty')}
     </p>
   {:else}
     <div class="grid gap-4">
@@ -141,16 +142,16 @@
                 <button
                   on:click={() => toggleOwnerExpanded(owner.id)}
                   class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                  title={expandedOwners.has(owner.id) ? 'Masquer les lots' : 'Voir les lots'}
+                  title={expandedOwners.has(owner.id) ? $_('owners.action.hide_units') : $_('owners.action.show_units')}
                 >
-                  {expandedOwners.has(owner.id) ? '▼' : '▶'} Lots
+                  {expandedOwners.has(owner.id) ? '▼' : '▶'} {$_('owners.units')}
                 </button>
                 {#if canManageOwners}
                   <button
                     on:click={() => openEditModal(owner)}
                     class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                   >
-                    Modifier
+                    {$_('common.action.edit')}
                   </button>
                 {/if}
               </div>

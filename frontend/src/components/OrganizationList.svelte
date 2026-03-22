@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import { authStore } from '../stores/auth';
@@ -33,7 +34,7 @@
       const response = await api.get<{data: Organization[]}>('/organizations?per_page=1000');
       organizations = response.data;
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des organisations';
+      error = e instanceof Error ? e.message : $_('admin.organization.loadError');
       console.error('Error loading organizations:', e);
     } finally {
       loading = false;
@@ -86,7 +87,7 @@
       await api.put(endpoint, {});
 
       toast.show(
-        `Organisation ${org.is_active ? 'désactivée' : 'activée'} avec succès`,
+        org.is_active ? $_('admin.organization.deactivatedSuccessfully') : $_('admin.organization.activatedSuccessfully'),
         'success'
       );
 
@@ -110,7 +111,7 @@
     actionLoading = true;
     try {
       await api.delete(`/organizations/${selectedOrganization.id}`);
-      toast.show('Organisation supprimée avec succès', 'success');
+      toast.show($_('admin.organization.deletedSuccessfully'), 'success');
       showConfirmDialog = false;
       selectedOrganization = null;
       await loadOrganizations();
@@ -131,13 +132,13 @@
   <!-- Header -->
   <div class="flex justify-between items-center">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Organisations</h1>
+      <h1 class="text-3xl font-bold text-gray-900">{$_('admin.organization.organizations')}</h1>
       <p class="mt-1 text-sm text-gray-600">
-        Gérer toutes les organisations de la plateforme
+        {$_('admin.organization.manageOrganizations')}
       </p>
     </div>
     <Button variant="primary" on:click={handleCreate} data-testid="create-organization-button">
-      ➕ Nouvelle organisation
+      ➕ {$_('admin.organization.newOrganization')}
     </Button>
   </div>
 
@@ -149,7 +150,7 @@
         id="org-search"
         type="text"
         bind:value={searchTerm}
-        placeholder="Rechercher par nom, email ou slug..."
+        placeholder={$_('admin.organization.searchPlaceholder')}
         data-testid="organization-search-input"
         class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
@@ -169,7 +170,7 @@
     {#if loading}
       <div class="p-12 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        <p class="mt-2 text-gray-600">Chargement...</p>
+        <p class="mt-2 text-gray-600">{$_('common.loading')}</p>
       </div>
     {:else}
       <div class="overflow-x-auto">
@@ -203,7 +204,7 @@
             {#if filteredOrganizations.length === 0}
               <tr data-testid="organizations-empty-row">
                 <td colspan="7" class="p-12 text-center text-gray-500">
-                  {searchTerm ? 'Aucune organisation trouvée pour cette recherche.' : 'Aucune organisation enregistrée.'}
+                  {searchTerm ? $_('admin.organization.noOrganizationsFound') : $_('admin.organization.noOrganizationsRegistered')}
                 </td>
               </tr>
             {:else}

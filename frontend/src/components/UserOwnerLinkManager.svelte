@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { Owner, User } from '../lib/types';
 
@@ -75,7 +76,7 @@
 
       loading = false;
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Erreur lors du chargement des données';
+      error = err instanceof Error ? err.message : $_('common.error.loadData');
       loading = false;
     }
   }
@@ -92,8 +93,8 @@
       });
 
       successMessage = userId
-        ? 'Owner lié au user avec succès !'
-        : 'Owner délié du user avec succès !';
+        ? $_('profile.linkedSuccess')
+        : $_('profile.unlinkedSuccess');
 
       // Force reload with a small delay to ensure DB transaction is committed
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -105,7 +106,7 @@
       }, 3000);
     } catch (err) {
       console.error('Link error:', err);
-      error = err instanceof Error ? err.message : 'Erreur lors de la liaison';
+      error = err instanceof Error ? err.message : $_('profile.error.linkFailed');
     }
   }
 

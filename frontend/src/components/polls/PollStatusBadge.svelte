@@ -1,34 +1,35 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { PollStatus } from "../../lib/api/polls";
 
   export let status: PollStatus;
 
   const statusConfig: Record<
     PollStatus,
-    { bg: string; text: string; label: string; icon: string }
+    { bg: string; text: string; labelKey: string; icon: string }
   > = {
     [PollStatus.Draft]: {
       bg: "bg-gray-100",
       text: "text-gray-800",
-      label: "Brouillon",
+      labelKey: "polls.status.draft",
       icon: "📝",
     },
     [PollStatus.Active]: {
       bg: "bg-green-100",
       text: "text-green-800",
-      label: "En cours",
+      labelKey: "polls.status.active",
       icon: "🗳️",
     },
     [PollStatus.Closed]: {
       bg: "bg-blue-100",
       text: "text-blue-800",
-      label: "Clôturé",
+      labelKey: "polls.status.closed",
       icon: "✅",
     },
     [PollStatus.Cancelled]: {
       bg: "bg-red-100",
       text: "text-red-800",
-      label: "Annulé",
+      labelKey: "polls.status.cancelled",
       icon: "❌",
     },
   };
@@ -40,5 +41,5 @@
   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.bg} {config.text}"
 >
   <span class="mr-1">{config.icon}</span>
-  {config.label}
+  {$_(config.labelKey)}
 </span>

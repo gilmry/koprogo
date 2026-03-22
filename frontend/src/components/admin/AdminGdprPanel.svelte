@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { authStore } from '../../stores/auth';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
@@ -52,7 +53,7 @@
       filteredUsers = users;
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : 'Failed to load users',
+        error instanceof Error ? error.message : $_('admin.errors.failedToLoadUsers'),
       );
     } finally {
       loading = false;
@@ -155,10 +156,10 @@
     <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-2xl font-bold text-gray-900" data-testid="admin-gdpr-title">
-          GDPR Administration
+          {$_('admin.gdpr.title')}
         </h2>
         <p class="mt-1 text-sm text-gray-500">
-          Manage user data exports and erasure requests (SuperAdmin only)
+          {$_('admin.gdpr.description')}
         </p>
       </div>
       <button
@@ -169,19 +170,19 @@
         data-testid="admin-gdpr-audit-toggle"
         class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       >
-        {showAuditLogs ? 'Hide' : 'Show'} Audit Logs
+        {showAuditLogs ? $_('common.hide') : $_('common.show')} {$_('admin.gdpr.auditLogs')}
       </button>
     </div>
 
     <!-- Search Bar -->
     <div class="mt-4">
-      <label for="user-search" class="sr-only">Search users</label>
+      <label for="user-search" class="sr-only">{$_('common.searchUsers')}</label>
       <input
         type="text"
         id="user-search"
         bind:value={searchQuery}
         data-testid="admin-gdpr-search"
-        placeholder="Search by email, first name, or last name..."
+        placeholder={$_('admin.gdpr.searchPlaceholder')}
         class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
       />
     </div>
@@ -191,7 +192,7 @@
   <div class="bg-white shadow rounded-lg overflow-hidden" data-testid="admin-gdpr-users-table">
     <div class="px-6 py-4 border-b border-gray-200">
       <h3 class="text-lg font-medium text-gray-900">
-        Users ({filteredUsers.length})
+        {$_('common.users')} ({filteredUsers.length})
       </h3>
     </div>
 
@@ -216,12 +217,12 @@
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
           ></path>
         </svg>
-        <p class="mt-2 text-sm text-gray-500">Loading users...</p>
+        <p class="mt-2 text-sm text-gray-500">{$_('common.loadingUsers')}</p>
       </div>
     {:else if filteredUsers.length === 0}
       <div class="p-6 text-center">
         <p class="text-sm text-gray-500">
-          {searchQuery ? 'No users found matching your search' : 'No users available'}
+          {searchQuery ? $_('admin.gdpr.noUsersFound') : $_('admin.gdpr.noUsersAvailable')}
         </p>
       </div>
     {:else}
@@ -233,31 +234,31 @@
                 scope="col"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                User
+                {$_('common.user')}
               </th>
               <th
                 scope="col"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Role
+                {$_('common.role')}
               </th>
               <th
                 scope="col"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Organization
+                {$_('common.organization')}
               </th>
               <th
                 scope="col"
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Status
+                {$_('common.status')}
               </th>
               <th
                 scope="col"
                 class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Actions
+                {$_('common.actions')}
               </th>
             </tr>
           </thead>
@@ -298,7 +299,7 @@
                       ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800'}"
                   >
-                    {user.is_active ? 'Active' : 'Inactive'}
+                    {user.is_active ? $_('common.active') : $_('common.inactive')}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -308,7 +309,7 @@
                     data-testid="admin-gdpr-export-user"
                     class="text-blue-600 hover:text-blue-900 mr-4 disabled:opacity-50"
                   >
-                    Export
+                    {$_('admin.gdpr.export')}
                   </button>
                   <button
                     on:click={() => {
@@ -320,7 +321,7 @@
                     data-testid="admin-gdpr-erase-user"
                     class="text-red-600 hover:text-red-900 disabled:opacity-50"
                   >
-                    Erase
+                    {$_('admin.gdpr.erase')}
                   </button>
                 </td>
               </tr>
@@ -339,7 +340,7 @@
     >
       <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
         <h3 class="text-lg font-medium text-gray-900">
-          GDPR Audit Logs (7-year retention)
+          {$_('admin.gdpr.auditLogsTitle')}
         </h3>
         <button
           on:click={() => loadAuditLogs(auditLogsPage)}
@@ -347,17 +348,17 @@
           data-testid="admin-gdpr-refresh-logs"
           class="text-sm text-indigo-600 hover:text-indigo-900 disabled:opacity-50"
         >
-          Refresh
+          {$_('common.refresh')}
         </button>
       </div>
 
       {#if loading && auditLogs.length === 0}
         <div class="p-6 text-center">
-          <p class="text-sm text-gray-500">Loading audit logs...</p>
+          <p class="text-sm text-gray-500">{$_('admin.gdpr.loadingAuditLogs')}</p>
         </div>
       {:else if auditLogs.length === 0}
         <div class="p-6 text-center">
-          <p class="text-sm text-gray-500">No audit logs found</p>
+          <p class="text-sm text-gray-500">{$_('admin.gdpr.noAuditLogs')}</p>
         </div>
       {:else}
         <div class="overflow-x-auto">
@@ -368,31 +369,31 @@
                   scope="col"
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Timestamp
+                  {$_('common.timestamp')}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Event Type
+                  {$_('common.eventType')}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  User ID
+                  {$_('common.userId')}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  IP Address
+                  {$_('common.ipAddress')}
                 </th>
                 <th
                   scope="col"
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Admin Initiated
+                  {$_('admin.gdpr.adminInitiated')}
                 </th>
               </tr>
             </thead>
@@ -418,10 +419,10 @@
                       <span
                         class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800"
                       >
-                        Admin
+                        {$_('admin.gdpr.admin')}
                       </span>
                     {:else}
-                      <span class="text-sm text-gray-500">Self-service</span>
+                      <span class="text-sm text-gray-500">{$_('admin.gdpr.selfService')}</span>
                     {/if}
                   </td>
                 </tr>
@@ -439,20 +440,20 @@
                 disabled={auditLogsPage === 1 || loading}
                 class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
-                Previous
+                {$_('common.previous')}
               </button>
               <button
                 on:click={() => loadAuditLogs(auditLogsPage + 1)}
                 disabled={auditLogsPage === auditLogsTotalPages || loading}
                 class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
               >
-                Next
+                {$_('common.next')}
               </button>
             </div>
             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p class="text-sm text-gray-700">
-                  Page <span class="font-medium">{auditLogsPage}</span> of
+                  {$_('common.page')} <span class="font-medium">{auditLogsPage}</span> {$_('common.of')}
                   <span class="font-medium">{auditLogsTotalPages}</span>
                 </p>
               </div>
@@ -463,14 +464,14 @@
                     disabled={auditLogsPage === 1 || loading}
                     class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                   >
-                    ← Previous
+                    ← {$_('common.previous')}
                   </button>
                   <button
                     on:click={() => loadAuditLogs(auditLogsPage + 1)}
                     disabled={auditLogsPage === auditLogsTotalPages || loading}
                     class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                   >
-                    Next →
+                    {$_('common.next')} →
                   </button>
                 </nav>
               </div>
@@ -503,18 +504,18 @@
         </div>
         <div class="ml-3">
           <h3 class="text-sm font-medium text-green-800">
-            Data Anonymized Successfully
+            {$_('admin.gdpr.anonymizedSuccessfully')}
           </h3>
           <div class="mt-2 text-sm text-green-700">
-            <p>User: {erasureResult.user_email}</p>
-            <p>Owners anonymized: {erasureResult.owners_anonymized}</p>
-            <p>Timestamp: {new Date(erasureResult.anonymized_at).toLocaleString()}</p>
+            <p>{$_('admin.gdpr.user')}: {erasureResult.user_email}</p>
+            <p>{$_('admin.gdpr.ownersAnonymized')}: {erasureResult.owners_anonymized}</p>
+            <p>{$_('common.timestamp')}: {new Date(erasureResult.anonymized_at).toLocaleString()}</p>
           </div>
           <button
             on:click={() => (erasureResult = null)}
             class="mt-2 text-sm font-medium text-green-800 hover:text-green-900"
           >
-            Dismiss
+            {$_('common.dismiss')}
           </button>
         </div>
       </div>
@@ -537,33 +538,33 @@
           <div class="sm:flex sm:items-start">
             <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
               <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Admin Data Export: {selectedUserEmail}
+                {$_('admin.gdpr.adminDataExport')}: {selectedUserEmail}
               </h3>
               <div class="mt-2 space-y-4 max-h-96 overflow-y-auto">
                 <div>
-                  <h4 class="font-semibold text-gray-700">Export Date:</h4>
+                  <h4 class="font-semibold text-gray-700">{$_('admin.gdpr.exportDate')}:</h4>
                   <p class="text-sm text-gray-600">
                     {new Date(exportData.export_date).toLocaleString()}
                   </p>
                 </div>
 
                 <div>
-                  <h4 class="font-semibold text-gray-700">User Information:</h4>
+                  <h4 class="font-semibold text-gray-700">{$_('admin.gdpr.userInformation')}:</h4>
                   <pre
                     class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{JSON.stringify(exportData.user, null, 2)}</pre>
                 </div>
 
                 <div>
                   <h4 class="font-semibold text-gray-700">
-                    Summary:
+                    {$_('admin.gdpr.summary')}:
                   </h4>
                   <ul class="text-sm text-gray-600 list-disc list-inside">
-                    <li>Owners: {exportData.owners.length}</li>
-                    <li>Units: {exportData.units.length}</li>
-                    <li>Expenses: {exportData.expenses.length}</li>
-                    <li>Documents: {exportData.documents.length}</li>
-                    <li>Meetings: {exportData.meetings.length}</li>
-                    <li>Total Items: {exportData.total_items}</li>
+                    <li>{$_('admin.gdpr.owners')}: {exportData.owners.length}</li>
+                    <li>{$_('admin.gdpr.units')}: {exportData.units.length}</li>
+                    <li>{$_('admin.gdpr.expenses')}: {exportData.expenses.length}</li>
+                    <li>{$_('admin.gdpr.documents')}: {exportData.documents.length}</li>
+                    <li>{$_('admin.gdpr.meetings')}: {exportData.meetings.length}</li>
+                    <li>{$_('admin.gdpr.totalItems')}: {exportData.total_items}</li>
                   </ul>
                 </div>
               </div>
@@ -577,7 +578,7 @@
             data-testid="admin-gdpr-download-button"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
           >
-            Download JSON
+            {$_('admin.gdpr.downloadJson')}
           </button>
           <button
             type="button"
@@ -585,7 +586,7 @@
             data-testid="admin-gdpr-modal-close"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
-            Close
+            {$_('common.close')}
           </button>
         </div>
       </div>
@@ -625,23 +626,23 @@
             </div>
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
               <h3 class="text-lg leading-6 font-medium text-gray-900">
-                Admin Erase User Data
+                {$_('admin.gdpr.eraseUserData')}
               </h3>
               <div class="mt-2">
                 <p class="text-sm text-gray-500">
-                  You are about to <strong class="text-red-600">permanently anonymize</strong> data for:
+                  {$_('admin.gdpr.aboutToAnonymize')}
                 </p>
                 <p class="mt-2 text-sm font-semibold text-gray-900">
                   {selectedUserEmail}
                 </p>
                 <ul class="mt-3 text-sm text-gray-500 list-disc list-inside">
-                  <li>User account will be anonymized</li>
-                  <li>All owner records will be anonymized</li>
-                  <li>User will be notified via email</li>
-                  <li>Operation will be logged in audit trail</li>
+                  <li>{$_('admin.gdpr.userAccountAnonymized')}</li>
+                  <li>{$_('admin.gdpr.ownerRecordsAnonymized')}</li>
+                  <li>{$_('admin.gdpr.userNotifiedViaEmail')}</li>
+                  <li>{$_('admin.gdpr.operationLoggedInAuditTrail')}</li>
                 </ul>
                 <p class="mt-3 text-sm font-semibold text-red-600">
-                  This action cannot be undone!
+                  {$_('admin.gdpr.cannotBeUndone')}
                 </p>
               </div>
             </div>
@@ -657,9 +658,9 @@
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
           >
             {#if loading}
-              Erasing...
+              {$_('admin.gdpr.erasing')}...
             {:else}
-              Yes, Erase User Data
+              {$_('admin.gdpr.yesEraseUserData')}
             {/if}
           </button>
           <button
@@ -669,7 +670,7 @@
             data-testid="admin-gdpr-erase-cancel"
             class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50"
           >
-            Cancel
+            {$_('common.cancel')}
           </button>
         </div>
       </div>

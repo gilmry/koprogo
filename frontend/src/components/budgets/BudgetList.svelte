@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { budgetsApi, type Budget, type BudgetStats, BudgetStatus } from '../../lib/api/budgets';
   import { api } from '../../lib/api';
   import type { Building } from '../../lib/types';
@@ -40,7 +41,7 @@
       budgets = response.data;
       totalPages = Math.ceil(response.total / response.per_page);
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement des budgets';
+      error = err.message || $_('budgets.errors.loadingFailed');
     } finally {
       loading = false;
     }
@@ -79,19 +80,19 @@
   {#if stats}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-sm text-gray-600">Total budgets</p>
+        <p class="text-sm text-gray-600">{$_('budgets.totalBudgets')}</p>
         <p class="text-2xl font-bold text-gray-900">{stats.total_budgets}</p>
       </div>
       <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-sm text-gray-600">Approuves</p>
+        <p class="text-sm text-gray-600">{$_('budgets.approved')}</p>
         <p class="text-2xl font-bold text-green-600">{stats.approved_count}</p>
       </div>
       <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-sm text-gray-600">En attente</p>
+        <p class="text-sm text-gray-600">{$_('budgets.pending')}</p>
         <p class="text-2xl font-bold text-blue-600">{stats.submitted_count}</p>
       </div>
       <div class="bg-white rounded-lg shadow p-4">
-        <p class="text-sm text-gray-600">Budget moyen</p>
+        <p class="text-sm text-gray-600">{$_('budgets.averageBudget')}</p>
         <p class="text-2xl font-bold text-gray-900">{formatCurrency(stats.average_total_budget)}</p>
       </div>
     </div>
@@ -101,14 +102,14 @@
   <div class="bg-white rounded-lg shadow p-4">
     <div class="flex flex-wrap items-end gap-4">
       <div>
-        <label for="filter-building" class="block text-sm font-medium text-gray-700 mb-1">Immeuble</label>
+        <label for="filter-building" class="block text-sm font-medium text-gray-700 mb-1">{$_('budgets.building')}</label>
         <select
           id="filter-building"
           bind:value={filterBuildingId}
           on:change={() => { currentPage = 1; loadBudgets(); }}
           class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
         >
-          <option value="">Tous</option>
+          <option value="">{$_('common.all')}</option>
           {#each buildings as building}
             <option value={building.id}>{building.name}</option>
           {/each}
@@ -116,19 +117,19 @@
       </div>
 
       <div>
-        <label for="filter-status" class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+        <label for="filter-status" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.status')}</label>
         <select
           id="filter-status"
           bind:value={filterStatus}
           on:change={() => { currentPage = 1; loadBudgets(); }}
           class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
         >
-          <option value="">Tous</option>
-          <option value="draft">Brouillon</option>
-          <option value="submitted">Soumis</option>
-          <option value="approved">Approuve</option>
-          <option value="rejected">Rejete</option>
-          <option value="archived">Archive</option>
+          <option value="">{$_('common.all')}</option>
+          <option value="draft">{$_('budgets.status.draft')}</option>
+          <option value="submitted">{$_('budgets.status.submitted')}</option>
+          <option value="approved">{$_('budgets.status.approved')}</option>
+          <option value="rejected">{$_('budgets.status.rejected')}</option>
+          <option value="archived">{$_('budgets.status.archived')}</option>
         </select>
       </div>
 
@@ -137,7 +138,7 @@
           on:click={() => showCreateForm = !showCreateForm}
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
         >
-          {showCreateForm ? 'Fermer' : '+ Nouveau Budget'}
+          {showCreateForm ? $_('common.close') : '+ ' + $_('budgets.newBudget')}
         </button>
       </div>
     </div>
@@ -146,7 +147,7 @@
   <!-- Create Form -->
   {#if showCreateForm}
     <div class="bg-white rounded-lg shadow p-6">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4">Nouveau Budget</h3>
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('budgets.newBudget')}</h3>
       <BudgetCreateForm on:created={handleCreated} on:cancel={() => showCreateForm = false} />
     </div>
   {/if}
@@ -155,7 +156,7 @@
   {#if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4">
       <p class="text-red-700">{error}</p>
-      <button on:click={loadBudgets} class="mt-2 text-sm text-red-600 underline">Reessayer</button>
+      <button on:click={loadBudgets} class="mt-2 text-sm text-red-600 underline">{$_('common.retry')}</button>
     </div>
   {/if}
 
@@ -167,22 +168,22 @@
   {:else if budgets.length === 0}
     <div class="bg-white rounded-lg shadow p-12 text-center">
       <p class="text-4xl mb-4">📊</p>
-      <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun budget</h3>
-      <p class="text-gray-600">Creez votre premier budget pour commencer.</p>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">{$_('budgets.noBudgets')}</h3>
+      <p class="text-gray-600">{$_('budgets.nobudgetsHint')}</p>
     </div>
   {:else}
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annee</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Immeuble</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ordinaire</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Extraordinaire</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provision/mois</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Statut</th>
-            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('budgets.year')}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('budgets.building')}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('budgets.ordinary')}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('budgets.extraordinary')}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('budgets.total')}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('budgets.monthlyProvision')}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('common.status')}</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('common.actions')}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
@@ -203,7 +204,7 @@
                   href="/budget-detail?id={budget.id}"
                   class="text-sm text-primary-600 hover:text-primary-700 font-medium"
                 >
-                  Details
+                  {$_('common.details')}
                 </a>
               </td>
             </tr>

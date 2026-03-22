@@ -1,13 +1,14 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import Modal from './Modal.svelte';
   import Button from './Button.svelte';
 
   export let isOpen = false;
-  export let title = 'Confirmer l\'action';
-  export let message = 'Êtes-vous sûr de vouloir continuer?';
-  export let confirmText = 'Confirmer';
-  export let cancelText = 'Annuler';
+  export let title = $_('common.confirm');
+  export let message = $_('common.sure');
+  export let confirmText = $_('common.confirm');
+  export let cancelText = $_('common.cancel');
   export let variant: 'danger' | 'primary' = 'primary';
   export let loading = false;
 

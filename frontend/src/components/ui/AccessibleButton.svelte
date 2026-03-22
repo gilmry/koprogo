@@ -4,6 +4,8 @@
    * Provides proper ARIA attributes, keyboard support, and visual feedback
    */
 
+  import { _ } from 'svelte-i18n';
+
   export let type: 'button' | 'submit' | 'reset' = 'button';
   export let variant: 'primary' | 'secondary' | 'danger' | 'success' = 'primary';
   export let disabled: boolean = false;
@@ -69,7 +71,7 @@
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         ></path>
       </svg>
-      <span class="sr-only">Chargement...</span>
+      <span class="sr-only">{$_('common.loading')}</span>
       <slot />
     </span>
   {:else}

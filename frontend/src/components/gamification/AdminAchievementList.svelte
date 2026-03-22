@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
   import { onMount } from 'svelte';
   import {
     gamificationApi,
@@ -37,7 +38,7 @@
       error = '';
       achievements = await gamificationApi.listAchievements(organizationId);
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement';
+      error = err.message || $_('common.load_error');
     } finally {
       loading = false;
     }
@@ -54,13 +55,13 @@
   }
 
   async function handleDelete(achievement: Achievement) {
-    if (!confirm(`Supprimer l'achievement "${achievement.name}" ?`)) return;
+    if (!confirm($_('gamification.confirm_delete', { name: achievement.name }))) return;
     try {
       await gamificationApi.deleteAchievement(achievement.id);
-      toast.success('Achievement supprime');
+      toast.success($_('gamification.delete_success'));
       await loadData();
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la suppression');
+      toast.error(err.message || $_('gamification.delete_error'));
     }
   }
 
@@ -87,14 +88,14 @@
   }
 
   const categoryLabels: Record<AchievementCategory, string> = {
-    [AchievementCategory.Community]: 'Communaute',
-    [AchievementCategory.Sel]: 'SEL',
-    [AchievementCategory.Booking]: 'Reservations',
-    [AchievementCategory.Sharing]: 'Partage',
-    [AchievementCategory.Skills]: 'Competences',
-    [AchievementCategory.Notice]: 'Annonces',
-    [AchievementCategory.Governance]: 'Gouvernance',
-    [AchievementCategory.Milestone]: 'Jalons',
+    [AchievementCategory.Community]: $_('gamification.cat_community'),
+    [AchievementCategory.Sel]: $_('gamification.cat_sel'),
+    [AchievementCategory.Booking]: $_('gamification.cat_booking'),
+    [AchievementCategory.Sharing]: $_('gamification.cat_sharing'),
+    [AchievementCategory.Skills]: $_('gamification.cat_skills'),
+    [AchievementCategory.Notice]: $_('gamification.cat_notice'),
+    [AchievementCategory.Governance]: $_('gamification.cat_governance'),
+    [AchievementCategory.Milestone]: $_('gamification.cat_milestone'),
   };
 </script>
 
@@ -102,12 +103,12 @@
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Gestion des Achievements</h3>
-        <p class="mt-1 text-sm text-gray-500">{achievements.length} achievement{achievements.length > 1 ? 's' : ''}</p>
+        <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.management_title')}</h3>
+        <p class="mt-1 text-sm text-gray-500">{$_('gamification.achievement_count', { count: achievements.length })}</p>
       </div>
       <button on:click={handleCreate}
         class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700">
-        + Nouveau
+        + {$_('common.new')}
       </button>
     </div>
   </div>
@@ -115,7 +116,7 @@
   {#if showForm}
     <div class="p-4 bg-amber-50 border-b border-amber-200">
       <h4 class="text-sm font-medium text-amber-800 mb-3">
-        {editingAchievement ? 'Modifier' : 'Creer'} un achievement
+        {editingAchievement ? $_('common.edit') : $_('common.create')} {$_('gamification.achievement_singular')}
       </h4>
       <AchievementForm
         {organizationId}
@@ -132,7 +133,7 @@
       <button on:click={() => categoryFilter = 'all'}
         class="px-2 py-1 rounded text-xs font-medium transition-colors
           {categoryFilter === 'all' ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
-        Tous ({achievements.length})
+        {$_('common.all')} ({achievements.length})
       </button>
       {#each Object.values(AchievementCategory) as cat}
         {@const count = achievements.filter(a => a.category === cat).length}
@@ -150,18 +151,18 @@
   {#if loading}
     <div class="p-8 text-center">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
+      <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">Reessayer</button>
+      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if filteredAchievements.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">Aucun achievement</p>
+      <p class="text-gray-500">{$_('gamification.no_achievements')}</p>
       <button on:click={handleCreate} class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline">
-        Creer le premier
+        {$_('gamification.create_first')}
       </button>
     </div>
   {:else}
@@ -169,12 +170,12 @@
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Achievement</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categorie</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Niveau</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Points</th>
-            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flags</th>
-            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.achievement_singular')}</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.category')}</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.tier')}</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.points')}</th>
+            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('gamification.flags')}</th>
+            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">{$_('common.actions')}</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -203,10 +204,10 @@
               <td class="px-4 py-3">
                 <div class="flex gap-1">
                   {#if achievement.is_secret}
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-800 text-white">Secret</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-800 text-white">{$_('gamification.secret')}</span>
                   {/if}
                   {#if achievement.is_repeatable}
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-100 text-purple-800">Repetable</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-purple-100 text-purple-800">{$_('gamification.repeatable')}</span>
                   {/if}
                 </div>
               </td>
@@ -214,11 +215,11 @@
                 <div class="flex justify-end gap-1">
                   <button on:click={() => handleEdit(achievement)}
                     class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">
-                    Modifier
+                    {$_('common.edit')}
                   </button>
                   <button on:click={() => handleDelete(achievement)}
                     class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">
-                    Supprimer
+                    {$_('common.delete')}
                   </button>
                 </div>
               </td>

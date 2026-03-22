@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
   import { UserRole, type User, type Organization } from '../../lib/types';
@@ -63,10 +64,10 @@
   let currentUserId: string | null = null;
 
   const roleOptions = [
-    { value: UserRole.OWNER, label: 'Copropriétaire' },
-    { value: UserRole.ACCOUNTANT, label: 'Comptable' },
-    { value: UserRole.SYNDIC, label: 'Syndic (Gestionnaire)' },
-    { value: UserRole.SUPERADMIN, label: 'Super Administrateur' },
+    { value: UserRole.OWNER, label: $_('admin.user.roleOwner') },
+    { value: UserRole.ACCOUNTANT, label: $_('admin.user.roleAccountant') },
+    { value: UserRole.SYNDIC, label: $_('admin.user.roleSyndic') },
+    { value: UserRole.SUPERADMIN, label: $_('admin.user.roleSuperAdmin') },
   ];
 
   onMount(async () => {
@@ -243,44 +244,44 @@
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email) {
-      errors.email = "L'email est requis";
+      errors.email = $_('admin.user.emailRequired');
       isValid = false;
     } else if (!emailRegex.test(formData.email)) {
-      errors.email = "Format d'email invalide";
+      errors.email = $_('admin.user.emailFormatError');
       isValid = false;
     }
 
     // Password validation
     if (mode === 'create' || formData.password) {
       if (!formData.password) {
-        errors.password = 'Le mot de passe est requis';
+        errors.password = $_('admin.user.passwordRequired');
         isValid = false;
       } else if (formData.password.length < 6) {
-        errors.password = 'Le mot de passe doit contenir au moins 6 caractères';
+        errors.password = $_('admin.user.passwordMinError');
         isValid = false;
       }
 
       if (formData.password !== formData.confirmPassword) {
-        errors.confirmPassword = 'Les mots de passe ne correspondent pas';
+        errors.confirmPassword = $_('admin.user.passwordMismatch');
         isValid = false;
       }
     }
 
     // First name validation
     if (!formData.first_name || formData.first_name.trim().length < 2) {
-      errors.first_name = 'Le prénom doit contenir au moins 2 caractères';
+      errors.first_name = $_('admin.user.firstNameError');
       isValid = false;
     }
 
     // Last name validation
     if (!formData.last_name || formData.last_name.trim().length < 2) {
-      errors.last_name = 'Le nom doit contenir au moins 2 caractères';
+      errors.last_name = $_('admin.user.lastNameError');
       isValid = false;
     }
 
     // Roles validation
     if (formRoles.length === 0) {
-      errors.roles = 'Au moins un rôle doit être attribué';
+      errors.roles = $_('admin.user.roleRequired');
       isValid = false;
     } else {
       const seen = new Set<string>();
@@ -288,7 +289,7 @@
       for (const entry of formRoles) {
         if (entry.role !== UserRole.SUPERADMIN && !entry.organizationId) {
           errors.roles =
-            'Choisissez une organisation pour chaque rôle (sauf SuperAdmin)';
+            $_('admin.user.organizationRequired');
           isValid = false;
           break;
         }
@@ -297,7 +298,7 @@
         }
         const key = `${entry.role}-${entry.organizationId || 'none'}`;
         if (seen.has(key)) {
-          errors.roles = 'Doublon de rôle détecté';
+          errors.roles = $_('admin.user.duplicateRoleError');
           isValid = false;
           break;
         }
@@ -305,10 +306,10 @@
       }
       if (isValid) {
         if (primaryCount == 0) {
-          errors.roles = 'Sélectionnez un rôle principal';
+          errors.roles = $_('admin.user.primaryRoleRequired');
           isValid = false;
         } else if (primaryCount > 1) {
-          errors.roles = 'Un seul rôle peut être défini comme principal';
+          errors.roles = $_('admin.user.onlyOnePrimaryRole');
           isValid = false;
         }
       }
@@ -352,13 +353,13 @@
       if (mode === 'create') {
         payload.password = formData.password;
         await api.post('/users', payload);
-        toast.show('Utilisateur créé avec succès', 'success');
+        toast.show($_('admin.user.createdSuccessfully'), 'success');
       } else if (user) {
         if (formData.password) {
           payload.password = formData.password;
         }
         await api.put(`/users/${user.id}`, payload);
-        toast.show('Utilisateur mis à jour avec succès', 'success');
+        toast.show($_('admin.user.updatedSuccessfully'), 'success');
       }
 
       loading = false;
@@ -368,7 +369,7 @@
       const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
 
       if (errorMessage.includes('email')) {
-        errors.email = 'Cet email est déjà utilisé';
+        errors.email = $_('admin.user.emailAlreadyUsed');
       } else {
         toast.show(errorMessage, 'error');
       }
@@ -384,7 +385,7 @@
   };
 </script>
 
-<Modal bind:isOpen onClose={handleClose} size="lg" title={mode === 'create' ? 'Créer un utilisateur' : 'Modifier un utilisateur'}>
+<Modal bind:isOpen onClose={handleClose} size="lg" title={mode === 'create' ? $_('admin.user.createUser') : $_('admin.user.editUser')}>
   <form
     class="space-y-6"
     data-testid="user-form"
@@ -402,7 +403,7 @@
       />
       <FormInput
         id="first_name"
-        label="Prénom"
+        label={$_('common.firstName')}
         required
         bind:value={formData.first_name}
         error={errors.first_name}
@@ -410,7 +411,7 @@
       />
       <FormInput
         id="last_name"
-        label="Nom"
+        label={$_('common.lastName')}
         required
         bind:value={formData.last_name}
         error={errors.last_name}

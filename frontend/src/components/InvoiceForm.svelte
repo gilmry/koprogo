@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
   import InvoiceLineItems from './InvoiceLineItems.svelte';
@@ -44,21 +45,21 @@
   let isEditMode = false;
 
   const categories = [
-    { value: 'Maintenance', label: 'Entretien' },
-    { value: 'Repairs', label: 'Réparations' },
-    { value: 'Insurance', label: 'Assurance' },
-    { value: 'Utilities', label: 'Charges courantes' },
-    { value: 'Cleaning', label: 'Nettoyage' },
-    { value: 'Administration', label: 'Administration' },
-    { value: 'Works', label: 'Travaux' },
-    { value: 'Other', label: 'Autre' }
+    { value: 'Maintenance', label: $_('invoices.category_maintenance') },
+    { value: 'Repairs', label: $_('invoices.category_repairs') },
+    { value: 'Insurance', label: $_('invoices.category_insurance') },
+    { value: 'Utilities', label: $_('invoices.category_utilities') },
+    { value: 'Cleaning', label: $_('invoices.category_cleaning') },
+    { value: 'Administration', label: $_('invoices.category_admin') },
+    { value: 'Works', label: $_('invoices.category_works') },
+    { value: 'Other', label: $_('invoices.category_other') }
   ];
 
   const vatRates = [
-    { value: '0.00', label: '0% (Exonéré)' },
-    { value: '6.00', label: '6% (Taux réduit)' },
-    { value: '12.00', label: '12% (Taux parking)' },
-    { value: '21.00', label: '21% (Taux normal)' }
+    { value: '0.00', label: $_('invoices.vat_0') },
+    { value: '6.00', label: $_('invoices.vat_6') },
+    { value: '12.00', label: $_('invoices.vat_12') },
+    { value: '21.00', label: $_('invoices.vat_21') }
   ];
 
   onMount(async () => {
@@ -131,7 +132,7 @@
 
       calculateVAT();
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement de la facture';
+      error = err.message || $_('invoices.load_error');
     } finally {
       loading = false;
     }
@@ -173,21 +174,21 @@
       // Validation
       if (mode === 'simple') {
         if (!description.trim()) {
-          error = 'La description est requise';
+          error = $_('invoices.description_required');
           return;
         }
         if (parseFloat(amountExclVat) <= 0) {
-          error = 'Le montant doit être supérieur à 0';
+          error = $_('invoices.amount_required');
           return;
         }
       } else {
         if (lineItems.length === 0) {
-          error = 'Veuillez ajouter au moins une ligne';
+          error = $_('invoices.add_line_item');
           return;
         }
         for (const item of lineItems) {
           if (!item.description.trim()) {
-            error = 'Toutes les lignes doivent avoir une description';
+            error = $_('invoices.line_description_required');
             return;
           }
         }
@@ -197,7 +198,7 @@
       const orgId = organizationId || $authStore.user?.activeRole?.organizationId || '';
 
       if (!orgId) {
-        error = 'Organization ID manquant';
+        error = $_('common.org_id_missing');
         return;
       }
 
@@ -243,7 +244,7 @@
         if (onSaved) onSaved(created);
       }
     } catch (err: any) {
-      error = err.message || 'Erreur lors de l\'enregistrement';
+      error = err.message || $_('invoices.save_error');
     } finally {
       loading = false;
     }
@@ -252,10 +253,10 @@
 
 <div class="invoice-form">
   <div class="form-header">
-    <h2>{isEditMode ? 'Modifier' : 'Créer'} une facture</h2>
+    <h2>{isEditMode ? $_('invoices.edit') : $_('invoices.create')} {$_('invoices.invoice')}</h2>
     {#if !isEditMode}
       <button type="button" class="btn-mode-toggle" on:click={toggleMode} disabled={loading}>
-        {mode === 'simple' ? '📝 Mode Détaillé' : '⚡ Mode Simple'}
+        {mode === 'simple' ? $_('invoices.detailed_mode') : $_('invoices.simple_mode')}
       </button>
     {/if}
   </div>
@@ -270,9 +271,9 @@
       <!-- Building Selector (if no buildingId provided) -->
       {#if (!buildingId || buildingId === '') && buildings.length > 0}
       <div class="form-group">
-        <label for="buildingSelect">Bâtiment *</label>
+        <label for="buildingSelect">{$_('common.building')} *</label>
         <select id="buildingSelect" bind:value={selectedBuildingId} disabled={loading} required>
-          <option value="">-- Sélectionner un bâtiment --</option>
+          <option value="">{$_('invoices.select_building')}</option>
           {#each buildings as building}
             <option value={building.id}>{building.name} - {building.address}</option>
           {/each}
@@ -282,12 +283,12 @@
 
       <!-- Description -->
       <div class="form-group">
-        <label for="description">Description *</label>
+        <label for="description">{$_('common.description')} *</label>
         <input
           type="text"
           id="description"
           bind:value={description}
-          placeholder="Ex: Réparation ascenseur"
+          placeholder={$_('invoices.description_placeholder')}
           required
           disabled={loading}
         />
@@ -295,7 +296,7 @@
 
       <!-- Category -->
       <div class="form-group">
-        <label for="category">Catégorie</label>
+        <label for="category">{$_('common.category')}</label>
         <select id="category" bind:value={category} disabled={loading}>
           {#each categories as cat}
             <option value={cat.value}>{cat.label}</option>
@@ -305,22 +306,22 @@
 
       <!-- Account Code (PCMN) -->
       <div class="form-group">
-        <label for="accountCode">Compte comptable (PCMN)</label>
+        <label for="accountCode">{$_('invoices.account_code')}</label>
         <select id="accountCode" bind:value={accountCode} disabled={loading}>
-          <option value="">-- Sélectionner un compte --</option>
+          <option value="">{$_('invoices.select_account')}</option>
           {#each accounts as account}
             <option value={account.code}>
               {account.code} - {account.label}
             </option>
           {/each}
         </select>
-        <small class="form-help">Utilisé pour la génération automatique d'écritures comptables</small>
+        <small class="form-help">{$_('invoices.account_help')}</small>
       </div>
 
       <!-- Amount HT and VAT -->
       <div class="form-row">
         <div class="form-group">
-          <label for="amountExclVat">Montant HT (€) *</label>
+          <label for="amountExclVat">{$_('invoices.amount_excl_vat')} *</label>
           <input
             type="number"
             id="amountExclVat"
@@ -334,7 +335,7 @@
         </div>
 
         <div class="form-group">
-          <label for="vatRate">Taux TVA</label>
+          <label for="vatRate">{$_('invoices.vat_rate')}</label>
           <select id="vatRate" bind:value={vatRate} disabled={loading}>
             {#each vatRates as rate}
               <option value={rate.value}>{rate.label}</option>
@@ -346,15 +347,15 @@
       <!-- Calculated VAT -->
       <div class="calculated-amounts">
         <div class="amount-row">
-          <span>Montant HT:</span>
+          <span>{$_('invoices.amount_excl_vat')}:</span>
           <strong>{parseFloat(amountExclVat || '0').toFixed(2)} €</strong>
         </div>
         <div class="amount-row">
-          <span>TVA ({vatRate}%):</span>
+          <span>{$_('invoices.vat')} ({vatRate}%):</span>
           <strong>{vatAmount.toFixed(2)} €</strong>
         </div>
         <div class="amount-row total">
-          <span>Montant TTC:</span>
+          <span>{$_('invoices.amount_incl_vat')}:</span>
           <strong>{amountInclVat.toFixed(2)} €</strong>
         </div>
       </div>
@@ -362,7 +363,7 @@
       <!-- Detailed Mode: Line Items -->
       <!-- Category -->
       <div class="form-group">
-        <label for="category">Catégorie</label>
+        <label for="category">{$_('common.category')}</label>
         <select id="category" bind:value={category} disabled={loading}>
           {#each categories as cat}
             <option value={cat.value}>{cat.label}</option>
@@ -372,16 +373,16 @@
 
       <!-- Account Code (PCMN) -->
       <div class="form-group">
-        <label for="accountCode">Compte comptable (PCMN)</label>
+        <label for="accountCode">{$_('invoices.account_code')}</label>
         <select id="accountCode" bind:value={accountCode} disabled={loading}>
-          <option value="">-- Sélectionner un compte --</option>
+          <option value="">{$_('invoices.select_account')}</option>
           {#each accounts as account}
             <option value={account.code}>
               {account.code} - {account.label}
             </option>
           {/each}
         </select>
-        <small class="form-help">Utilisé pour la génération automatique d'écritures comptables</small>
+        <small class="form-help">{$_('invoices.account_help')}</small>
       </div>
 
       <InvoiceLineItems
@@ -394,7 +395,7 @@
     <!-- Dates -->
     <div class="form-row">
       <div class="form-group">
-        <label for="invoiceDate">Date facture *</label>
+        <label for="invoiceDate">{$_('invoices.invoice_date')} *</label>
         <input
           type="date"
           id="invoiceDate"
@@ -405,7 +406,7 @@
       </div>
 
       <div class="form-group">
-        <label for="dueDate">Date d'échéance</label>
+        <label for="dueDate">{$_('invoices.due_date')}</label>
         <input
           type="date"
           id="dueDate"
@@ -418,23 +419,23 @@
     <!-- Supplier and Invoice Number -->
     <div class="form-row">
       <div class="form-group">
-        <label for="supplier">Fournisseur</label>
+        <label for="supplier">{$_('invoices.supplier')}</label>
         <input
           type="text"
           id="supplier"
           bind:value={supplier}
-          placeholder="ACME Elevators SPRL"
+          placeholder={$_('invoices.supplier_placeholder')}
           disabled={loading}
         />
       </div>
 
       <div class="form-group">
-        <label for="invoiceNumber">N° facture</label>
+        <label for="invoiceNumber">{$_('invoices.invoice_number')}</label>
         <input
           type="text"
           id="invoiceNumber"
           bind:value={invoiceNumber}
-          placeholder="INV-2025-042"
+          placeholder={$_('invoices.invoice_number_placeholder')}
           disabled={loading}
         />
       </div>
@@ -444,14 +445,14 @@
     <div class="form-actions">
       {#if onCancel}
         <button type="button" class="btn btn-secondary" on:click={onCancel} disabled={loading}>
-          Annuler
+          {$_('common.cancel')}
         </button>
       {/if}
       <button type="submit" class="btn btn-primary" disabled={loading}>
         {#if loading}
-          Enregistrement...
+          {$_('invoices.saving')}
         {:else}
-          {isEditMode ? 'Mettre à jour' : 'Créer brouillon'}
+          {isEditMode ? $_('invoices.update') : $_('invoices.create_draft')}
         {/if}
       </button>
     </div>

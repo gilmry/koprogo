@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { callForFundsApi } from '../lib/api';
   import { toast } from '../stores/toast';
 
@@ -32,51 +33,51 @@
       loading = true;
       calls = await callForFundsApi.list(buildingId);
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors du chargement des appels de fonds');
+      toast.error(error.message || $_('callForFunds.loadError'));
     } finally {
       loading = false;
     }
   }
 
   async function handleSend(id: string) {
-    if (!confirm('Êtes-vous sûr de vouloir envoyer cet appel de fonds ? Cela générera automatiquement les contributions individuelles pour tous les copropriétaires.')) {
+    if (!confirm($_('callForFunds.sendConfirm'))) {
       return;
     }
 
     try {
       const result = await callForFundsApi.send(id);
-      toast.success(`Appel de fonds envoyé avec succès. ${result.contributions_generated} contributions générées.`);
+      toast.success($_('callForFunds.sendSuccess', { values: { count: result.contributions_generated } }));
       await loadCalls();
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de l\'envoi');
+      toast.error(error.message || $_('callForFunds.sendError'));
     }
   }
 
   async function handleCancel(id: string) {
-    if (!confirm('Êtes-vous sûr de vouloir annuler cet appel de fonds ?')) {
+    if (!confirm($_('callForFunds.cancelConfirm'))) {
       return;
     }
 
     try {
       await callForFundsApi.cancel(id);
-      toast.success('Appel de fonds annulé');
+      toast.success($_('callForFunds.cancelled'));
       await loadCalls();
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de l\'annulation');
+      toast.error(error.message || $_('callForFunds.cancelError'));
     }
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce brouillon ?')) {
+    if (!confirm($_('callForFunds.deleteConfirm'))) {
       return;
     }
 
     try {
       await callForFundsApi.delete(id);
-      toast.success('Appel de fonds supprimé');
+      toast.success($_('callForFunds.deleted'));
       await loadCalls();
     } catch (error: any) {
-      toast.error(error.message || 'Erreur lors de la suppression');
+      toast.error(error.message || $_('callForFunds.deleteError'));
     }
   }
 
@@ -126,19 +127,19 @@
 
 <div class="space-y-4">
   <div class="flex justify-between items-center">
-    <h2 class="text-2xl font-bold text-gray-900">Appels de Fonds</h2>
+    <h2 class="text-2xl font-bold text-gray-900">{$_('callForFunds.title')}</h2>
     <button
       on:click={onCreate}
       class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
     >
-      + Nouvel Appel de Fonds
+      + {$_('callForFunds.new')}
     </button>
   </div>
 
   {#if loading}
     <div class="text-center py-8">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      <p class="mt-2 text-gray-600">Chargement...</p>
+      <p class="mt-2 text-gray-600">{$_('common.loading')}</p>
     </div>
   {:else if filteredCalls.length === 0}
     <div class="text-center py-12 bg-gray-50 rounded-lg">
@@ -155,12 +156,12 @@
           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
         />
       </svg>
-      <p class="mt-2 text-gray-600">Aucun appel de fonds</p>
+      <p class="mt-2 text-gray-600">{$_('callForFunds.none')}</p>
       <button
         on:click={onCreate}
         class="mt-4 text-blue-600 hover:text-blue-800"
       >
-        Créer le premier appel de fonds
+        {$_('callForFunds.createFirst')}
       </button>
     </div>
   {:else}
@@ -169,25 +170,25 @@
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Titre
+              {$_('callForFunds.title')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Type
+              {$_('callForFunds.type')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Montant
+              {$_('callForFunds.amount')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date d'appel
+              {$_('callForFunds.callDate')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date d'échéance
+              {$_('callForFunds.dueDate')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Statut
+              {$_('callForFunds.status')}
             </th>
             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
+              {$_('common.actions')}
             </th>
           </tr>
         </thead>
@@ -211,7 +212,7 @@
                 {formatDate(call.due_date)}
                 {#if call.is_overdue}
                   <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                    En retard
+                    {$_('callForFunds.overdue')}
                   </span>
                 {/if}
               </td>
@@ -225,31 +226,31 @@
                   <button
                     on:click={() => handleSend(call.id)}
                     class="text-blue-600 hover:text-blue-900"
-                    title="Envoyer l'appel de fonds"
+                    title={$_('callForFunds.sendTitle')}
                   >
-                    Envoyer
+                    {$_('callForFunds.send')}
                   </button>
                   <button
                     on:click={() => handleDelete(call.id)}
                     class="text-red-600 hover:text-red-900"
-                    title="Supprimer le brouillon"
+                    title={$_('callForFunds.deleteTitle')}
                   >
-                    Supprimer
+                    {$_('common.delete')}
                   </button>
                 {:else if call.status === 'sent' || call.status === 'partial'}
                   <button
                     on:click={() => handleCancel(call.id)}
                     class="text-orange-600 hover:text-orange-900"
-                    title="Annuler l'appel de fonds"
+                    title={$_('callForFunds.cancelTitle')}
                   >
-                    Annuler
+                    {$_('common.cancel')}
                   </button>
                   <a
                     href="/owner-contributions?call_for_funds_id={call.id}"
                     class="text-green-600 hover:text-green-900"
-                    title="Voir les contributions"
+                    title={$_('callForFunds.viewContributions')}
                   >
-                    Contributions
+                    {$_('callForFunds.contributions')}
                   </a>
                 {/if}
               </td>

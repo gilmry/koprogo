@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { Expense, PageResponse } from '../lib/types';
   import Pagination from './Pagination.svelte';
@@ -73,7 +74,7 @@
 
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des dépenses';
+      error = e instanceof Error ? e.message : $_('expenses.loadError');
       console.error('Error loading expenses:', e);
     } finally {
       loading = false;
@@ -87,20 +88,20 @@
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Paid': { class: 'bg-green-100 text-green-800', label: 'Payée' },
-      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: 'En attente' },
-      'Overdue': { class: 'bg-red-100 text-red-800', label: 'En retard' },
-      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: 'Annulée' }
+      'Paid': { class: 'bg-green-100 text-green-800', label: $_('expenses.statuses.paid') },
+      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.statuses.pending') },
+      'Overdue': { class: 'bg-red-100 text-red-800', label: $_('expenses.statuses.overdue') },
+      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.statuses.cancelled') }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
 
   function getApprovalBadge(approvalStatus: string): { class: string; label: string; emoji: string } {
     const badges: Record<string, { class: string; label: string; emoji: string }> = {
-      'draft': { class: 'bg-gray-100 text-gray-700', label: 'Brouillon', emoji: '📝' },
-      'pending_approval': { class: 'bg-blue-100 text-blue-800', label: 'En attente validation', emoji: '⏳' },
-      'approved': { class: 'bg-green-100 text-green-800', label: 'Approuvée', emoji: '✅' },
-      'rejected': { class: 'bg-red-100 text-red-800', label: 'Rejetée', emoji: '❌' }
+      'draft': { class: 'bg-gray-100 text-gray-700', label: $_('expenses.approval.draft'), emoji: '📝' },
+      'pending_approval': { class: 'bg-blue-100 text-blue-800', label: $_('expenses.approval.pendingApproval'), emoji: '⏳' },
+      'approved': { class: 'bg-green-100 text-green-800', label: $_('expenses.approval.approved'), emoji: '✅' },
+      'rejected': { class: 'bg-red-100 text-red-800', label: $_('expenses.approval.rejected'), emoji: '❌' }
     };
     return badges[approvalStatus] || badges['draft'];
   }
@@ -139,7 +140,7 @@
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
-      Créer une facture
+      {$_('expenses.createInvoice')}
     </button>
   </div>
 
@@ -150,10 +151,10 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8">Chargement...</p>
+    <p class="text-center text-gray-600 py-8">{$_('common.loading')}</p>
   {:else if expenses.length === 0}
     <p class="text-center text-gray-600 py-8">
-      Aucune dépense enregistrée.
+      {$_('expenses.noExpenses')}
     </p>
   {:else}
     <div class="grid gap-4">
@@ -192,7 +193,7 @@
                 {formatCurrency(expense.amount)}
               </p>
               <a href="/expense-detail?id={expense.id}" class="text-primary-600 hover:text-primary-700 text-sm font-medium mt-2 inline-block">
-                Détails →
+                {$_('common.details')} →
               </a>
             </div>
           </div>
@@ -217,7 +218,7 @@
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" on:click={handleCancel}>
     <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" on:click|stopPropagation>
       <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-        <h2 class="text-2xl font-bold text-gray-900">Créer une facture</h2>
+        <h2 class="text-2xl font-bold text-gray-900">{$_('expenses.createInvoice')}</h2>
         <button
           on:click={handleCancel}
           class="text-gray-400 hover:text-gray-600 transition"

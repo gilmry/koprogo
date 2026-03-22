@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import { quotesApi, type QuoteComparison } from "../../lib/api/quotes";
   import { toast } from "../../stores/toast";
   import QuoteStatusBadge from "./QuoteStatusBadge.svelte";
@@ -18,7 +19,7 @@
       loading = true;
       comparison = await quotesApi.compare(quoteIds);
     } catch (err: any) {
-      toast.error(err.message || "Failed to load quote comparison");
+      toast.error(err.message || $_("quotes.comparison.loadError"));
     } finally {
       loading = false;
     }
@@ -52,10 +53,10 @@
 <div class="bg-white shadow rounded-lg">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-xl font-semibold text-gray-900">
-      Quote Comparison - Belgian 3-Quote Algorithm
+      {$_("quotes.comparison.title")}
     </h2>
     <p class="mt-1 text-sm text-gray-600">
-      Automatic scoring: Price 40% • Delay 30% • Warranty 20% • Reputation 10%
+      {$_("quotes.comparison.scoring")}
     </p>
   </div>
 
@@ -65,11 +66,11 @@
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
         ></div>
-        <p class="mt-4">Analyzing quotes...</p>
+        <p class="mt-4">{$_("quotes.comparison.loading")}</p>
       </div>
     {:else if !comparison}
       <div class="text-center py-12 text-red-600">
-        Failed to load comparison
+        {$_("quotes.comparison.loadError")}
       </div>
     {:else}
       <!-- Belgian Law Compliance -->
@@ -105,9 +106,9 @@
           <div class="ml-3">
             <h3 class="text-sm font-medium {comparison.complies_with_belgian_law ? 'text-green-800' : 'text-red-800'}">
               {#if comparison.complies_with_belgian_law}
-                ✅ Complies with Belgian Law
+                ✅ {$_("quotes.comparison.compliant")}
               {:else}
-                ⚠️ Best Practice: 3 quotes recommended for works >5000€
+                ⚠️ {$_("quotes.comparison.recommendation")}
               {/if}
             </h3>
             <p class="mt-1 text-sm {comparison.complies_with_belgian_law ? 'text-green-700' : 'text-red-700'}">
@@ -125,32 +126,32 @@
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Contractor
+                {$_("quotes.comparison.contractor")}
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Price (Incl. VAT)
+                {$_("quotes.comparison.price")}
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Duration
+                {$_("quotes.comparison.duration")}
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Warranty
+                {$_("quotes.comparison.warranty")}
               </th>
               <th
                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Status
+                {$_("common.status")}
               </th>
               <th
                 class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
               >
-                Total Score
+                {$_("quotes.comparison.totalScore")}
               </th>
             </tr>
           </thead>
@@ -200,7 +201,7 @@
                   <QuoteStatusBadge status={item.quote.status} />
                   {#if item.quote.validity_date}
                     <div class="text-xs text-gray-500 mt-1">
-                      Valid until: {formatDate(item.quote.validity_date)}
+                      {$_("quotes.comparison.validUntil")}: {formatDate(item.quote.validity_date)}
                     </div>
                   {/if}
                 </td>
@@ -220,29 +221,29 @@
 
       <!-- Legend -->
       <div class="mt-6 pt-6 border-t border-gray-200">
-        <h3 class="text-sm font-medium text-gray-900 mb-2">Scoring Methodology</h3>
+        <h3 class="text-sm font-medium text-gray-900 mb-2">{$_("quotes.comparison.methodology")}</h3>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <span class="font-medium text-blue-600">Price (40%)</span>
+            <span class="font-medium text-blue-600">{$_("quotes.comparison.priceWeight")}</span>
             <p class="text-gray-600 text-xs mt-1">
-              Lower price = higher score (inverted)
+              {$_("quotes.comparison.priceDesc")}
             </p>
           </div>
           <div>
-            <span class="font-medium text-yellow-600">Delay (30%)</span>
+            <span class="font-medium text-yellow-600">{$_("quotes.comparison.delayWeight")}</span>
             <p class="text-gray-600 text-xs mt-1">
-              Shorter duration = higher score
+              {$_("quotes.comparison.delayDesc")}
             </p>
           </div>
           <div>
-            <span class="font-medium text-green-600">Warranty (20%)</span>
+            <span class="font-medium text-green-600">{$_("quotes.comparison.warrantyWeight")}</span>
             <p class="text-gray-600 text-xs mt-1">
-              Longer warranty = higher score
+              {$_("quotes.comparison.warrantyDesc")}
             </p>
           </div>
           <div>
-            <span class="font-medium text-purple-600">Reputation (10%)</span>
-            <p class="text-gray-600 text-xs mt-1">Contractor rating 0-100</p>
+            <span class="font-medium text-purple-600">{$_("quotes.comparison.reputationWeight")}</span>
+            <p class="text-gray-600 text-xs mt-1">{$_("quotes.comparison.reputationDesc")}</p>
           </div>
         </div>
       </div>

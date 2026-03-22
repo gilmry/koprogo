@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { authStore, mapUserFromBackend } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import type { User } from '../lib/types';
@@ -48,11 +49,11 @@
         window.location.href = redirectMap[mappedUser.role] || '/';
       } else {
         const errorData = await response.json();
-        error = errorData.error || 'Email ou mot de passe incorrect';
+        error = errorData.error || $_('auth.loginError');
       }
     } catch (e) {
       console.error('Login error:', e);
-      error = 'Une erreur est survenue lors de la connexion. Vérifiez que le serveur est démarré.';
+      error = $_('auth.connectionError');
     } finally {
       loading = false;
     }
@@ -72,7 +73,7 @@
 
   <div>
     <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-      Email
+      {$_('auth.email')}
     </label>
     <input
       id="email"
@@ -80,7 +81,7 @@
       bind:value={email}
       required
       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-      placeholder="votre@email.com"
+      placeholder={$_('auth.emailPlaceholder')}
       autocomplete="email"
       data-testid="login-email"
     />
@@ -88,7 +89,7 @@
 
   <div>
     <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-      Mot de passe
+      {$_('auth.password')}
     </label>
     <input
       id="password"
@@ -109,14 +110,14 @@
         class="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
         data-testid="login-remember"
       />
-      <span class="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
+      <span class="ml-2 text-sm text-gray-600">{$_('auth.rememberMe')}</span>
     </label>
     <a
       href="/forgot-password"
       class="text-sm text-primary-600 hover:text-primary-700"
       data-testid="login-forgot-password"
     >
-      Mot de passe oublié?
+      {$_('auth.forgotPassword')}
     </a>
   </div>
 
@@ -126,6 +127,6 @@
     class="w-full bg-primary-600 text-white py-3 rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
     data-testid="login-submit"
   >
-    {loading ? 'Connexion...' : 'Se connecter'}
+    {loading ? $_('auth.loggingIn') : $_('auth.login')}
   </button>
 </form>

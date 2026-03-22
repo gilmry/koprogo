@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     pollsApi,
     type CreatePollDto,
@@ -89,16 +90,16 @@
     try {
       // Validate
       if (!formData.building_id) {
-        throw new Error("Veuillez sélectionner un immeuble");
+        throw new Error($_("polls.create.errors.selectBuilding"));
       }
       if (!formData.title.trim()) {
-        throw new Error("La question est obligatoire");
+        throw new Error($_("polls.create.errors.titleRequired"));
       }
       if (!endsAtDate) {
-        throw new Error("La date de fin est obligatoire");
+        throw new Error($_("polls.create.errors.endDateRequired"));
       }
       if (endsAtDate <= startsAt) {
-        throw new Error("La date de fin doit être postérieure à la date de début");
+        throw new Error($_("polls.create.errors.endDateAfterStart"));
       }
       // Convert date to ISO 8601 for backend
       formData.ends_at = new Date(endsAtDate + "T23:59:59Z").toISOString();
@@ -107,7 +108,7 @@
           formData.poll_type === PollType.MultipleChoice) &&
         formData.options.length === 0
       ) {
-        throw new Error("Au moins une option est requise");
+        throw new Error($_("polls.create.errors.optionRequired"));
       }
 
       const poll = await pollsApi.create(formData);
@@ -119,7 +120,7 @@
         window.location.href = `/polls/detail?id=${poll.id}`;
       }, 1500);
     } catch (err: any) {
-      error = err.message || "Erreur lors de la création du sondage";
+      error = err.message || $_("polls.create.errors.creationFailed");
       console.error("Failed to create poll:", err);
     } finally {
       loading = false;
@@ -132,18 +133,18 @@
 
 <div class="bg-white shadow-md rounded-lg p-6">
   <h3 class="text-lg font-medium text-gray-900 mb-4">
-    ➕ Créer un sondage (consultation)
+    ➕ {$_("polls.create.title")}
   </h3>
 
   <p class="text-sm text-gray-600 mb-6">
-    Consultez les copropriétaires entre les assemblées générales sur une
-    décision ponctuelle. Conforme à l'<strong>Article 577-8/4 §4 du Code Civil Belge</strong>.
+    {$_("polls.create.description")}
+    <strong>{$_("polls.create.legalReference")}</strong>.
   </p>
 
   {#if success}
     <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
       <p class="text-sm text-green-800">
-        ✅ Sondage créé avec succès ! Redirection...
+        ✅ {$_("polls.create.successMessage")}
       </p>
     </div>
   {/if}
@@ -156,12 +157,12 @@
 
   <form on:submit={handleSubmit} class="space-y-6">
     <!-- Building Selector -->
-    <BuildingSelector bind:selectedBuildingId label="Immeuble concerné" />
+    <BuildingSelector bind:selectedBuildingId label={$_("polls.create.buildingLabel")} />
 
     <!-- Poll Type -->
     <div>
       <label for="poll_type" class="block text-sm font-medium text-gray-700">
-        Type de sondage <span class="text-red-500">*</span>
+        {$_("polls.create.pollType")} <span class="text-red-500">*</span>
       </label>
       <select
         id="poll_type"
@@ -170,24 +171,24 @@
         required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       >
-        <option value={PollType.YesNo}>👍👎 Oui/Non (décision binaire)</option>
-        <option value={PollType.MultipleChoice}>☑️ Choix multiple (plusieurs options)</option>
-        <option value={PollType.Rating}>⭐ Notation (1-5 étoiles)</option>
-        <option value={PollType.OpenEnded}>💬 Texte libre (avis/suggestions)</option>
+        <option value={PollType.YesNo}>👍👎 {$_("polls.create.typeYesNo")}</option>
+        <option value={PollType.MultipleChoice}>☑️ {$_("polls.create.typeMultiple")}</option>
+        <option value={PollType.Rating}>⭐ {$_("polls.create.typeRating")}</option>
+        <option value={PollType.OpenEnded}>💬 {$_("polls.create.typeOpenEnded")}</option>
       </select>
     </div>
 
     <!-- Question -->
     <div>
       <label for="question" class="block text-sm font-medium text-gray-700">
-        Question <span class="text-red-500">*</span>
+        {$_("polls.create.question")} <span class="text-red-500">*</span>
       </label>
       <input
         type="text"
         id="question"
         bind:value={formData.title}
         required
-        placeholder="Ex: Êtes-vous favorable à la rénovation de la façade ?"
+        placeholder={$_("polls.create.questionPlaceholder")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
     </div>
@@ -195,13 +196,13 @@
     <!-- Description -->
     <div>
       <label for="description" class="block text-sm font-medium text-gray-700">
-        Description (optionnelle)
+        {$_("polls.create.description")} ({$_("common.optional")})
       </label>
       <textarea
         id="description"
         bind:value={formData.description}
         rows="3"
-        placeholder="Contexte, détails supplémentaires..."
+        placeholder={$_("polls.create.descriptionPlaceholder")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       ></textarea>
     </div>
@@ -210,14 +211,13 @@
     {#if formData.poll_type === PollType.YesNo}
       <div class="p-4 bg-blue-50 border border-blue-200 rounded-md">
         <p class="text-sm text-blue-800">
-          ℹ️ Les options "Oui" et "Non" sont créées automatiquement pour un
-          sondage Oui/Non.
+          ℹ️ {$_("polls.create.yesNoInfo")}
         </p>
       </div>
     {:else if formData.poll_type === PollType.MultipleChoice}
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">
-          Options de choix <span class="text-red-500">*</span>
+          {$_("polls.create.options")} <span class="text-red-500">*</span>
         </label>
         <div class="space-y-2 mb-3">
           {#each formData.options as option, index}
@@ -233,7 +233,7 @@
                 type="button"
                 on:click={() => removeOption(index)}
                 class="text-red-600 hover:text-red-800"
-                title="Supprimer"
+                title={$_("common.delete")}
               >
                 🗑️
               </button>
@@ -244,7 +244,7 @@
           <input
             type="text"
             bind:value={newOptionText}
-            placeholder="Nouvelle option..."
+            placeholder={$_("polls.create.newOptionPlaceholder")}
             class="flex-1 rounded-md border-gray-300"
             on:keypress={(e) => {
               if (e.key === "Enter") {
@@ -258,21 +258,21 @@
             on:click={addOption}
             class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
           >
-            ➕ Ajouter
+            ➕ {$_("common.add")}
           </button>
         </div>
         <p class="mt-1 text-xs text-gray-500">
-          Ajoutez au moins 2 options. Appuyez sur Entrée pour ajouter rapidement.
+          {$_("polls.create.optionsHint")}
         </p>
       </div>
     {:else if formData.poll_type === PollType.Rating}
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2">
-          Échelle de notation
+          {$_("polls.create.ratingScale")}
         </label>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="text-xs text-gray-500">Note minimale</label>
+            <label class="text-xs text-gray-500">{$_("polls.create.minRating")}</label>
             <input
               type="number"
               value="1"
@@ -283,7 +283,7 @@
             />
           </div>
           <div>
-            <label class="text-xs text-gray-500">Note maximale</label>
+            <label class="text-xs text-gray-500">{$_("polls.create.maxRating")}</label>
             <input
               type="number"
               value="5"
@@ -295,7 +295,7 @@
           </div>
         </div>
         <p class="mt-1 text-xs text-gray-500">
-          Ex: 1-5 étoiles (classique) ou 1-10 (notation détaillée)
+          {$_("polls.create.ratingExample")}
         </p>
       </div>
     {/if}
@@ -304,7 +304,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label for="starts_at" class="block text-sm font-medium text-gray-700">
-          Date de début <span class="text-red-500">*</span>
+          {$_("polls.create.startDate")} <span class="text-red-500">*</span>
         </label>
         <input
           type="date"
@@ -317,7 +317,7 @@
       </div>
       <div>
         <label for="ends_at" class="block text-sm font-medium text-gray-700">
-          Date de fin <span class="text-red-500">*</span>
+          {$_("polls.create.endDate")} <span class="text-red-500">*</span>
         </label>
         <input
           type="date"
@@ -329,7 +329,7 @@
       </div>
     </div>
     <p class="text-xs text-gray-500">
-      Recommandation: 7-14 jours pour laisser le temps aux copropriétaires de répondre.
+      {$_("polls.create.durationRecommendation")}
     </p>
 
     <!-- Options -->
@@ -341,7 +341,7 @@
           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
         />
         <span class="ml-2 text-sm text-gray-700">
-          🔒 Vote anonyme (l'identité des votants est masquée)
+          🔒 {$_("polls.create.anonymousVote")}
         </span>
       </label>
 
@@ -353,7 +353,7 @@
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">
-            ☑️ Autoriser la sélection multiple (plusieurs options à la fois)
+            ☑️ {$_("polls.create.multipleSelection")}
           </span>
         </label>
       {/if}
@@ -362,13 +362,10 @@
     <!-- Legal Notice -->
     <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
       <h4 class="text-sm font-medium text-yellow-900 mb-2">
-        ⚖️ Cadre légal belge
+        ⚖️ {$_("polls.create.legalFramework")}
       </h4>
       <p class="text-xs text-yellow-800">
-        <strong>Article 577-8/4 §4 du Code Civil:</strong> Le syndic peut consulter
-        les copropriétaires entre les assemblées générales sur toute décision ne
-        nécessitant pas de vote formel en AG. Les résultats doivent être documentés
-        dans le procès-verbal de la prochaine assemblée générale.
+        <strong>{$_("polls.create.legalReference")}:</strong> {$_("polls.create.legalText")}
       </p>
     </div>
 
@@ -379,7 +376,7 @@
         on:click={() => dispatch("cancel")}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
-        Annuler
+        {$_("common.cancel")}
       </button>
       <button
         type="submit"
@@ -388,9 +385,9 @@
       >
         {#if loading}
           <span class="inline-block animate-spin mr-2">⏳</span>
-          Création en cours...
+          {$_("polls.create.creatingButton")}
         {:else}
-          ✅ Créer le sondage (brouillon)
+          ✅ {$_("polls.create.submitButton")}
         {/if}
       </button>
     </div>

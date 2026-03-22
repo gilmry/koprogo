@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     notificationsApi,
     NotificationType,
@@ -14,28 +15,28 @@
   let saving = false;
 
   const notificationTypeLabels: Record<NotificationType, string> = {
-    [NotificationType.MeetingReminder]: "Meeting Reminders",
-    [NotificationType.PaymentDue]: "Payment Due Notices",
-    [NotificationType.DocumentShared]: "Document Sharing",
-    [NotificationType.TicketUpdate]: "Ticket Updates",
-    [NotificationType.TicketAssigned]: "Ticket Assignments",
-    [NotificationType.TicketResolved]: "Ticket Resolutions",
-    [NotificationType.SystemAlert]: "System Alerts",
-    [NotificationType.AccountUpdate]: "Account Updates",
-    [NotificationType.NewMessage]: "New Messages",
-    [NotificationType.ConvocationSent]: "AG Convocations",
-    [NotificationType.ResolutionVoting]: "Resolution Voting",
-    [NotificationType.QuoteReceived]: "Quote Received",
-    [NotificationType.QuoteAccepted]: "Quote Accepted",
-    [NotificationType.PaymentSuccess]: "Payment Success",
-    [NotificationType.PaymentFailed]: "Payment Failed",
-    [NotificationType.BudgetApproved]: "Budget Approved",
-    [NotificationType.EtatDateReady]: "État Daté Ready",
-    [NotificationType.ExchangeRequested]: "SEL Exchange Requested",
-    [NotificationType.ExchangeCompleted]: "SEL Exchange Completed",
-    [NotificationType.AchievementEarned]: "Achievement Earned",
-    [NotificationType.ChallengeStarted]: "Challenge Started",
-    [NotificationType.ChallengeCompleted]: "Challenge Completed",
+    [NotificationType.MeetingReminder]: $_("notifications.type_meeting_reminders"),
+    [NotificationType.PaymentDue]: $_("notifications.type_payment_due"),
+    [NotificationType.DocumentShared]: $_("notifications.type_document_sharing"),
+    [NotificationType.TicketUpdate]: $_("notifications.type_ticket_updates"),
+    [NotificationType.TicketAssigned]: $_("notifications.type_ticket_assigned"),
+    [NotificationType.TicketResolved]: $_("notifications.type_ticket_resolved"),
+    [NotificationType.SystemAlert]: $_("notifications.type_system_alerts"),
+    [NotificationType.AccountUpdate]: $_("notifications.type_account_updates"),
+    [NotificationType.NewMessage]: $_("notifications.type_new_messages"),
+    [NotificationType.ConvocationSent]: $_("notifications.type_convocation_sent"),
+    [NotificationType.ResolutionVoting]: $_("notifications.type_resolution_voting"),
+    [NotificationType.QuoteReceived]: $_("notifications.type_quote_received"),
+    [NotificationType.QuoteAccepted]: $_("notifications.type_quote_accepted"),
+    [NotificationType.PaymentSuccess]: $_("notifications.type_payment_success"),
+    [NotificationType.PaymentFailed]: $_("notifications.type_payment_failed"),
+    [NotificationType.BudgetApproved]: $_("notifications.type_budget_approved"),
+    [NotificationType.EtatDateReady]: $_("notifications.type_etat_date_ready"),
+    [NotificationType.ExchangeRequested]: $_("notifications.type_exchange_requested"),
+    [NotificationType.ExchangeCompleted]: $_("notifications.type_exchange_completed"),
+    [NotificationType.AchievementEarned]: $_("notifications.type_achievement_earned"),
+    [NotificationType.ChallengeStarted]: $_("notifications.type_challenge_started"),
+    [NotificationType.ChallengeCompleted]: $_("notifications.type_challenge_completed"),
   };
 
   onMount(async () => {
@@ -47,7 +48,7 @@
       loading = true;
       preferences = await notificationsApi.getPreferences(userId);
     } catch (err: any) {
-      toast.error(err.message || "Failed to load preferences");
+      toast.error(err.message || $_("notifications.load_preferences_failed"));
     } finally {
       loading = false;
     }
@@ -70,9 +71,9 @@
         p.id === preference.id ? updated : p,
       );
 
-      toast.success("Preference updated successfully");
+      toast.success($_("notifications.preference_updated"));
     } catch (err: any) {
-      toast.error(err.message || "Failed to update preference");
+      toast.error(err.message || $_("notifications.update_preference_failed"));
     } finally {
       saving = false;
     }
@@ -82,10 +83,10 @@
 <div class="bg-white shadow rounded-lg">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-xl font-semibold text-gray-900">
-      Notification Preferences
+      {$_("notifications.preferences")}
     </h2>
     <p class="mt-1 text-sm text-gray-600">
-      Choose how you want to receive notifications for each type of event.
+      {$_("notifications.preferences_description")}
     </p>
   </div>
 
@@ -95,27 +96,27 @@
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
         ></div>
-        <p class="mt-4">Loading preferences...</p>
+        <p class="mt-4">{$_("notifications.loading_preferences")}</p>
       </div>
     {:else if preferences.length === 0}
       <div class="text-center py-12 text-gray-500">
-        No notification preferences found.
+        {$_("notifications.no_preferences_found")}
       </div>
     {:else}
       <div class="space-y-4">
         <!-- Table Header -->
         <div class="grid grid-cols-6 gap-4 pb-2 border-b border-gray-200">
           <div class="col-span-2 text-sm font-medium text-gray-700">
-            Notification Type
+            {$_("notifications.notification_type")}
           </div>
           <div class="text-sm font-medium text-gray-700 text-center">
-            Enabled
+            {$_("notifications.enabled")}
           </div>
           <div class="text-sm font-medium text-gray-700 text-center">
-            Email
+            {$_("notifications.email")}
           </div>
-          <div class="text-sm font-medium text-gray-700 text-center">SMS</div>
-          <div class="text-sm font-medium text-gray-700 text-center">Push</div>
+          <div class="text-sm font-medium text-gray-700 text-center">{$_("notifications.sms")}</div>
+          <div class="text-sm font-medium text-gray-700 text-center">{$_("notifications.push")}</div>
         </div>
 
         <!-- Preference Rows -->
@@ -211,9 +212,7 @@
             />
           </svg>
           <p>
-            Toggle "Enabled" to turn off all notifications for that type.
-            Individual channel toggles (Email, SMS, Push) only work when the
-            main toggle is enabled.
+            {$_("notifications.legend_text")}
           </p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import {
     convocationsApi,
     type ConvocationRecipient,
@@ -26,7 +27,7 @@
       recipients = await convocationsApi.getRecipients(convocationId);
       applyFilter();
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement des destinataires';
+      error = err.message || $_('convocations.errors.loadingRecipientsFailed');
     } finally {
       loading = false;
     }
@@ -61,20 +62,20 @@
   async function updateAttendance(recipientId: string, status: AttendanceStatus) {
     try {
       await convocationsApi.updateAttendance(recipientId, status);
-      toast.success('Présence mise à jour');
+      toast.success($_('convocations.messages.attendanceUpdated'));
       await loadRecipients();
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la mise à jour');
+      toast.error(err.message || $_('common.updateFailed'));
     }
   }
 
   function getAttendanceConfig(status: AttendanceStatus): { bg: string; text: string; label: string } {
     const config: Record<AttendanceStatus, { bg: string; text: string; label: string }> = {
-      [AttendanceStatus.Pending]: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'En attente' },
-      [AttendanceStatus.WillAttend]: { bg: 'bg-green-100', text: 'text-green-700', label: 'Présent' },
-      [AttendanceStatus.WillNotAttend]: { bg: 'bg-red-100', text: 'text-red-700', label: 'Absent' },
-      [AttendanceStatus.Attended]: { bg: 'bg-green-200', text: 'text-green-800', label: 'A participé' },
-      [AttendanceStatus.DidNotAttend]: { bg: 'bg-red-200', text: 'text-red-800', label: 'N\'a pas participé' },
+      [AttendanceStatus.Pending]: { bg: 'bg-gray-100', text: 'text-gray-700', label: $_('common.pending') },
+      [AttendanceStatus.WillAttend]: { bg: 'bg-green-100', text: 'text-green-700', label: $_('convocations.attendance.willAttend') },
+      [AttendanceStatus.WillNotAttend]: { bg: 'bg-red-100', text: 'text-red-700', label: $_('convocations.attendance.willNotAttend') },
+      [AttendanceStatus.Attended]: { bg: 'bg-green-200', text: 'text-green-800', label: $_('convocations.attendance.attended') },
+      [AttendanceStatus.DidNotAttend]: { bg: 'bg-red-200', text: 'text-red-800', label: $_('convocations.attendance.didNotAttend') },
     };
     return config[status] || config[AttendanceStatus.Pending];
   }
@@ -95,14 +96,14 @@
   <div class="px-4 py-3 border-b border-gray-200">
     <div class="flex items-center justify-between">
       <h4 class="text-sm font-semibold text-gray-900">
-        Destinataires ({recipients.length})
+        {$_('convocations.recipients')} ({recipients.length})
       </h4>
       <div class="flex gap-1">
         {#each [
-          { value: 'all', label: 'Tous' },
-          { value: 'confirmed', label: 'Présents' },
-          { value: 'pending', label: 'En attente' },
-          { value: 'absent', label: 'Absents' },
+          { value: 'all', label: $_('common.all') },
+          { value: 'confirmed', label: $_('convocations.filters.present') },
+          { value: 'pending', label: $_('common.pending') },
+          { value: 'absent', label: $_('convocations.filters.absent') },
         ] as f}
           <button
             on:click={() => filter = f.value}
@@ -128,20 +129,20 @@
     </div>
   {:else if filteredRecipients.length === 0}
     <div class="p-6 text-center text-sm text-gray-500">
-      Aucun destinataire dans cette catégorie.
+      {$_('convocations.noRecipientsInCategory')}
     </div>
   {:else}
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
           <tr class="text-left text-xs text-gray-500 uppercase border-b border-gray-200">
-            <th scope="col" class="px-4 py-2">Propriétaire</th>
-            <th scope="col" class="px-4 py-2">Email</th>
-            <th scope="col" class="px-4 py-2">Envoyé</th>
-            <th scope="col" class="px-4 py-2">Ouvert</th>
-            <th scope="col" class="px-4 py-2">Présence</th>
-            <th scope="col" class="px-4 py-2">Procuration</th>
-            <th scope="col" class="px-4 py-2">Actions</th>
+            <th scope="col" class="px-4 py-2">{$_('common.owner')}</th>
+            <th scope="col" class="px-4 py-2">{$_('common.email')}</th>
+            <th scope="col" class="px-4 py-2">{$_('convocations.sent')}</th>
+            <th scope="col" class="px-4 py-2">{$_('convocations.opened')}</th>
+            <th scope="col" class="px-4 py-2">{$_('convocations.attendance.title')}</th>
+            <th scope="col" class="px-4 py-2">{$_('convocations.proxy')}</th>
+            <th scope="col" class="px-4 py-2">{$_('common.actions')}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -154,7 +155,7 @@
               <td class="px-4 py-2 text-gray-600">{recipient.owner_email}</td>
               <td class="px-4 py-2">
                 {#if recipient.email_failed}
-                  <span class="text-red-600 text-xs">❌ Échec</span>
+                  <span class="text-red-600 text-xs">❌ {$_('common.failed')}</span>
                 {:else if recipient.email_sent_at}
                   <span class="text-green-600 text-xs">✅ {formatDate(recipient.email_sent_at)}</span>
                 {:else}
@@ -188,14 +189,14 @@
                     <button
                       on:click={() => updateAttendance(recipient.id, AttendanceStatus.WillAttend)}
                       class="text-xs text-green-600 hover:text-green-800 underline"
-                      title="Marquer comme présent"
+                      title={$_('convocations.markAsPresent')}
                     >
                       ✅
                     </button>
                     <button
                       on:click={() => updateAttendance(recipient.id, AttendanceStatus.WillNotAttend)}
                       class="text-xs text-red-600 hover:text-red-800 underline"
-                      title="Marquer comme absent"
+                      title={$_('convocations.markAsAbsent')}
                     >
                       ❌
                     </button>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { onMount } from "svelte";
   import {
     energyCampaignsApi,
@@ -33,7 +34,7 @@
         });
       }
     } catch (err: any) {
-      error = err.message || "Erreur lors du chargement des offres";
+      error = err.message || $_("energy.offer.loadError");
       console.error("Failed to load offers:", err);
     } finally {
       loading = false;
@@ -56,38 +57,38 @@
     if (percentage >= 80) {
       return {
         color: "bg-green-100 text-green-800",
-        label: `${percentage}% vert`,
+        label: `${percentage}% ${$_("energy.offer.green").toLowerCase()}`,
         icon: "🌱",
       };
     } else if (percentage >= 50) {
       return {
         color: "bg-yellow-100 text-yellow-800",
-        label: `${percentage}% vert`,
+        label: `${percentage}% ${$_("energy.offer.green").toLowerCase()}`,
         icon: "🌿",
       };
     } else {
       return {
         color: "bg-gray-100 text-gray-800",
-        label: `${percentage}% vert`,
+        label: `${percentage}% ${$_("energy.offer.green").toLowerCase()}`,
         icon: "⚡",
       };
     }
   }
 
   function getGreenScoreLabel(score: number): string {
-    if (score >= 10) return "Vert";
-    if (score >= 5) return "Mixte";
-    return "Classique";
+    if (score >= 10) return $_("energy.offer.green");
+    if (score >= 5) return $_("energy.offer.mixed");
+    return $_("energy.offer.classic");
   }
 </script>
 
 <div class="bg-white shadow-md rounded-lg">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <h3 class="text-lg leading-6 font-medium text-gray-900">
-      💼 Offres des fournisseurs d'énergie
+      💼 {$_("energy.offer.providerOffers")}
     </h3>
     <p class="mt-1 text-sm text-gray-500">
-      Comparez les offres reçues pour sélectionner la meilleure option.
+      {$_("energy.offer.listDescription")}
     </p>
   </div>
 
@@ -96,7 +97,7 @@
       <div
         class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"
       ></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement des offres...</p>
+      <p class="mt-2 text-sm text-gray-500">{$_("common.loading")}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
@@ -105,15 +106,14 @@
         on:click={loadOffers}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
-        Réessayer
+        {$_("common.retry")}
       </button>
     </div>
   {:else if offers.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">Aucune offre reçue pour le moment</p>
+      <p class="text-gray-500">{$_("energy.offer.noOffers")}</p>
       <p class="mt-2 text-sm text-gray-400">
-        Les fournisseurs soumettront leurs offres pendant la phase de
-        négociation.
+        {$_("energy.offer.emptyStateMessage")}
       </p>
     </div>
   {:else}
@@ -137,13 +137,13 @@
               </p>
             </div>
             {#if offer.id === selectedOfferId}
-              <span class="text-green-600 text-xl" title="Offre sélectionnée">
+              <span class="text-green-600 text-xl" title={$_("energy.offer.selected")}>
                 ✅
               </span>
             {:else if offer.id === bestOffer?.id}
               <span
                 class="text-indigo-600 text-xl"
-                title="Meilleure offre (economies)"
+                title={$_("energy.offer.bestOffer")}
               >
                 ⭐
               </span>
@@ -181,24 +181,24 @@
               <span
                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
               >
-                ⚡ Énergie classique
+                ⚡ {$_("energy.offer.classicEnergy")}
               </span>
             {/if}
           </div>
 
           <!-- Contract Duration -->
           <div class="text-sm text-gray-700 mb-2">
-            📅 Durée: {offer.contract_duration_months} mois
+            📅 {$_("energy.offer.duration")} {offer.contract_duration_months} {$_("common.months")}
           </div>
 
           <!-- Estimated Savings -->
           <div class="text-sm font-medium text-green-600 mb-2">
-            💸 Économies estimées: {offer.estimated_savings_pct.toFixed(1)}%
+            💸 {$_("energy.offer.estimatedSavings")} {offer.estimated_savings_pct.toFixed(1)}%
           </div>
 
           <!-- Valid Until -->
           <div class="text-xs text-gray-500 mb-3">
-            Valide jusqu'au {formatDate(offer.offer_valid_until)}
+            {$_("energy.offer.validUntil")} {formatDate(offer.offer_valid_until)}
           </div>
 
           <!-- Selection Button (Admin only) -->
@@ -209,7 +209,7 @@
               }}
               class="mt-3 w-full px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
             >
-              Sélectionner cette offre
+              {$_("energy.offer.selectOffer")}
             </button>
           {/if}
         </div>
@@ -220,7 +220,7 @@
     {#if offers.length >= 2}
       <div class="p-4 bg-gray-50 border-t border-gray-200">
         <h4 class="text-sm font-medium text-gray-900 mb-3">
-          📊 Tableau comparatif
+          📊 {$_("energy.offer.comparisonTable")}
         </h4>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
@@ -229,32 +229,32 @@
                 <th
                   class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"
                 >
-                  Fournisseur
+                  {$_("energy.offer.provider")}
                 </th>
                 <th
                   class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"
                 >
-                  Prix/kWh
+                  {$_("energy.offer.priceKwh")}
                 </th>
                 <th
                   class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"
                 >
-                  Coût fixe
+                  {$_("energy.offer.fixedCost")}
                 </th>
                 <th
                   class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"
                 >
-                  Durée
+                  {$_("energy.offer.duration")}
                 </th>
                 <th
                   class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"
                 >
-                  Vert
+                  {$_("energy.offer.green")}
                 </th>
                 <th
                   class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"
                 >
-                  Économies
+                  {$_("energy.offer.savings")}
                 </th>
               </tr>
             </thead>
@@ -278,7 +278,7 @@
                     {offer.fixed_monthly_fee.toFixed(2)} €/mois
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
-                    {offer.contract_duration_months} mois
+                    {offer.contract_duration_months} {$_("common.months")}
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-900">
                     {offer.green_energy_pct}%

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { _ } from 'svelte-i18n';
   import { sharingApi, type SharedObject } from "../../lib/api/sharing";
   import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
@@ -36,15 +37,15 @@
     today.setHours(0, 0, 0, 0);
 
     if (!loanStartDate) {
-      errors.startDate = "La date de début est requise";
+      errors.startDate = $_('sharing.error.startDateRequired');
     } else if (start < today) {
-      errors.startDate = "La date de début ne peut pas être dans le passé";
+      errors.startDate = $_('sharing.error.startDateInPast');
     }
 
     if (!loanEndDate) {
-      errors.endDate = "La date de retour est requise";
+      errors.endDate = $_('sharing.error.endDateRequired');
     } else if (end <= start) {
-      errors.endDate = "La date de retour doit être après la date de début";
+      errors.endDate = $_('sharing.error.endDateAfterStart');
     }
 
     return Object.keys(errors).length === 0;
@@ -62,11 +63,11 @@
         loan_end_date: loanEndDate,
         notes: notes || undefined,
       });
-      toast.success("Demande d'emprunt envoyée !");
+      toast.success($_('sharing.success.loanRequestSent'));
       dispatch("created", loan);
       handleClose();
     } catch (err: any) {
-      toast.error(err.message || "Erreur lors de la demande d'emprunt");
+      toast.error(err.message || $_('sharing.error.loanRequestFailed'));
     } finally {
       submitting = false;
     }
@@ -79,7 +80,7 @@
   }
 </script>
 
-<Modal {isOpen} title="Emprunter : {object?.object_name ?? ''}" on:close={handleClose}>
+<Modal {isOpen} title={$_('sharing.borrowObject', { values: { name: object?.object_name ?? '' } })} on:close={handleClose}>
   <div class="space-y-4">
     <!-- Object summary -->
     <div class="bg-gray-50 rounded-lg p-3 text-sm space-y-1">

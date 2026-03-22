@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { _ } from "svelte-i18n";
   import {
     quotesApi,
     type Quote,
@@ -43,7 +44,7 @@
 
   async function handleSubmitQuote() {
     if (!amountExclVat || !validityDate || !estimatedDays) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      toast.error($_("quotes.detail.fillRequired"));
       return;
     }
 
@@ -57,11 +58,11 @@
         warranty_years: parseInt(warrantyYears),
       };
       const updated = await quotesApi.submit(quote.id, data);
-      toast.success('Devis soumis');
+      toast.success($_("quotes.detail.submitSuccess"));
       showSubmitForm = false;
       dispatch('updated', updated);
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la soumission');
+      toast.error(err.message || $_("quotes.detail.submitError"));
     } finally {
       actionLoading = false;
     }
@@ -71,34 +72,34 @@
     try {
       actionLoading = true;
       const updated = await quotesApi.startReview(quote.id);
-      toast.success('Devis en cours de revue');
+      toast.success($_("quotes.detail.reviewSuccess"));
       dispatch('updated', updated);
     } catch (err: any) {
-      toast.error(err.message || 'Erreur');
+      toast.error(err.message || $_("common.error"));
     } finally {
       actionLoading = false;
     }
   }
 
   async function handleAccept() {
-    const notes = prompt('Notes de décision (optionnel) :') || '';
+    const notes = prompt($_("quotes.detail.decisionNotesPrompt")) || '';
     try {
       actionLoading = true;
       const updated = await quotesApi.accept(quote.id, {
         decision_by: $authStore.user?.id || '',
         decision_notes: notes || undefined,
       });
-      toast.success('Devis accepté');
+      toast.success($_("quotes.detail.acceptSuccess"));
       dispatch('updated', updated);
     } catch (err: any) {
-      toast.error(err.message || 'Erreur');
+      toast.error(err.message || $_("common.error"));
     } finally {
       actionLoading = false;
     }
   }
 
   async function handleReject() {
-    const notes = prompt('Raison du refus :');
+    const notes = prompt($_("quotes.detail.rejectReasonPrompt"));
     if (!notes) return;
     try {
       actionLoading = true;
@@ -106,38 +107,38 @@
         decision_by: $authStore.user?.id || '',
         decision_notes: notes,
       });
-      toast.success('Devis refusé');
+      toast.success($_("quotes.detail.rejectSuccess"));
       dispatch('updated', updated);
     } catch (err: any) {
-      toast.error(err.message || 'Erreur');
+      toast.error(err.message || $_("common.error"));
     } finally {
       actionLoading = false;
     }
   }
 
   async function handleWithdraw() {
-    if (!confirm('Retirer ce devis ?')) return;
+    if (!confirm($_("quotes.detail.withdrawConfirm"))) return;
     try {
       actionLoading = true;
       const updated = await quotesApi.withdraw(quote.id);
-      toast.success('Devis retiré');
+      toast.success($_("quotes.detail.withdrawSuccess"));
       dispatch('updated', updated);
     } catch (err: any) {
-      toast.error(err.message || 'Erreur');
+      toast.error(err.message || $_("common.error"));
     } finally {
       actionLoading = false;
     }
   }
 
   async function handleDelete() {
-    if (!confirm('Supprimer ce devis ? Cette action est irréversible.')) return;
+    if (!confirm($_("quotes.detail.deleteConfirm"))) return;
     try {
       actionLoading = true;
       await quotesApi.delete(quote.id);
-      toast.success('Devis supprimé');
+      toast.success($_("quotes.detail.deleteSuccess"));
       dispatch('deleted');
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la suppression');
+      toast.error(err.message || $_("quotes.detail.deleteError"));
     } finally {
       actionLoading = false;
     }
@@ -166,26 +167,26 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       {#if quote.amount_excl_vat_cents}
         <div>
-          <p class="text-xs text-gray-500">Montant HTVA</p>
+          <p class="text-xs text-gray-500">{$_("quotes.detail.amountExclVat")}</p>
           <p class="text-sm font-medium text-gray-900">{formatAmount(quote.amount_excl_vat_cents)}</p>
         </div>
       {/if}
       {#if quote.amount_incl_vat_cents}
         <div>
-          <p class="text-xs text-gray-500">Montant TVAC ({quote.vat_rate}%)</p>
+          <p class="text-xs text-gray-500">{$_("quotes.detail.amountInclVat")} ({quote.vat_rate}%)</p>
           <p class="text-sm font-medium text-gray-900">{formatAmount(quote.amount_incl_vat_cents)}</p>
         </div>
       {/if}
       {#if quote.estimated_duration_days}
         <div>
-          <p class="text-xs text-gray-500">Durée estimée</p>
-          <p class="text-sm font-medium text-gray-900">{quote.estimated_duration_days} jours</p>
+          <p class="text-xs text-gray-500">{$_("quotes.detail.estimatedDuration")}</p>
+          <p class="text-sm font-medium text-gray-900">{quote.estimated_duration_days} {$_("quotes.detail.days")}</p>
         </div>
       {/if}
       {#if quote.warranty_years}
         <div>
-          <p class="text-xs text-gray-500">Garantie</p>
-          <p class="text-sm font-medium text-gray-900">{quote.warranty_years} ans</p>
+          <p class="text-xs text-gray-500">{$_("quotes.detail.warranty")}</p>
+          <p class="text-sm font-medium text-gray-900">{quote.warranty_years} {$_("quotes.detail.years")}</p>
         </div>
       {/if}
     </div>
@@ -193,75 +194,75 @@
 
   <!-- Dates -->
   <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-    <span>Créé le {formatDate(quote.created_at)}</span>
+    <span>{$_("quotes.detail.createdOn")} {formatDate(quote.created_at)}</span>
     {#if quote.validity_date}
-      <span>Valide jusqu'au {formatDate(quote.validity_date)}</span>
+      <span>{$_("quotes.detail.validUntil")} {formatDate(quote.validity_date)}</span>
     {/if}
     {#if quote.submitted_at}
-      <span>Soumis le {formatDate(quote.submitted_at)}</span>
+      <span>{$_("quotes.detail.submittedOn")} {formatDate(quote.submitted_at)}</span>
     {/if}
     {#if quote.decision_at}
-      <span>Décision le {formatDate(quote.decision_at)}</span>
+      <span>{$_("quotes.detail.decisionOn")} {formatDate(quote.decision_at)}</span>
     {/if}
     {#if quote.contractor_rating !== undefined && quote.contractor_rating !== null}
-      <span>Note entrepreneur : {quote.contractor_rating}/100</span>
+      <span>{$_("quotes.detail.contractorRating")}: {quote.contractor_rating}/100</span>
     {/if}
   </div>
 
   {#if quote.decision_notes}
     <div class="p-2 bg-white border border-gray-100 rounded text-sm text-gray-700">
-      <span class="font-medium">Notes de décision :</span> {quote.decision_notes}
+      <span class="font-medium">{$_("quotes.detail.decisionNotes")}:</span> {quote.decision_notes}
     </div>
   {/if}
 
   <!-- Submit Form (contractor) -->
   {#if showSubmitForm}
     <div class="p-4 bg-white border border-amber-200 rounded-lg space-y-3">
-      <h5 class="text-sm font-medium text-gray-900">Soumettre le devis</h5>
+      <h5 class="text-sm font-medium text-gray-900">{$_("quotes.detail.submitFormTitle")}</h5>
       <div class="grid grid-cols-2 gap-3">
         <div>
-          <label for="amount" class="block text-xs text-gray-600 mb-1">Montant HTVA (EUR) *</label>
+          <label for="amount" class="block text-xs text-gray-600 mb-1">{$_("quotes.detail.amountExclVat")} (EUR) *</label>
           <input id="amount" type="number" step="0.01" min="0" bind:value={amountExclVat}
             class="w-full text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
         </div>
         <div>
-          <label for="vat" class="block text-xs text-gray-600 mb-1">Taux TVA (%)</label>
+          <label for="vat" class="block text-xs text-gray-600 mb-1">{$_("quotes.detail.vatRate")}</label>
           <select id="vat" bind:value={vatRate}
             class="w-full text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500">
-            <option value="6">6% (rénovation)</option>
+            <option value="6">6% ({$_("quotes.detail.renovation")})</option>
             <option value="12">12%</option>
-            <option value="21">21% (standard)</option>
+            <option value="21">21% ({$_("quotes.detail.standard")})</option>
           </select>
         </div>
         <div>
-          <label for="validity" class="block text-xs text-gray-600 mb-1">Date de validité *</label>
+          <label for="validity" class="block text-xs text-gray-600 mb-1">{$_("quotes.detail.validityDate")} *</label>
           <input id="validity" type="date" bind:value={validityDate}
             class="w-full text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
         </div>
         <div>
-          <label for="duration" class="block text-xs text-gray-600 mb-1">Durée estimée (jours) *</label>
+          <label for="duration" class="block text-xs text-gray-600 mb-1">{$_("quotes.detail.estimatedDurationDays")} *</label>
           <input id="duration" type="number" min="1" bind:value={estimatedDays}
             class="w-full text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500" />
         </div>
         <div>
-          <label for="warranty" class="block text-xs text-gray-600 mb-1">Garantie (années)</label>
+          <label for="warranty" class="block text-xs text-gray-600 mb-1">{$_("quotes.detail.warrantyYears")}</label>
           <select id="warranty" bind:value={warrantyYears}
             class="w-full text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500">
-            <option value="1">1 an</option>
-            <option value="2">2 ans (défauts apparents)</option>
-            <option value="5">5 ans</option>
-            <option value="10">10 ans (décennale)</option>
+            <option value="1">1 {$_("quotes.detail.year")}</option>
+            <option value="2">2 {$_("quotes.detail.years")} ({$_("quotes.detail.apparentDefects")})</option>
+            <option value="5">5 {$_("quotes.detail.years")}</option>
+            <option value="10">10 {$_("quotes.detail.years")} ({$_("quotes.detail.decennial")})</option>
           </select>
         </div>
       </div>
       <div class="flex gap-2">
         <button on:click={handleSubmitQuote} disabled={actionLoading}
           class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors">
-          {actionLoading ? 'Envoi...' : 'Soumettre'}
+          {actionLoading ? $_("quotes.detail.submitting") : $_("quotes.detail.submit")}
         </button>
         <button on:click={() => showSubmitForm = false}
           class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-          Annuler
+          {$_("common.cancel")}
         </button>
       </div>
     </div>
@@ -272,34 +273,34 @@
     {#if quote.status === QuoteStatus.Requested}
       <button on:click={() => showSubmitForm = !showSubmitForm} disabled={actionLoading}
         class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors">
-        Soumettre le devis
+        {$_("quotes.detail.submitQuote")}
       </button>
       <button on:click={handleDelete} disabled={actionLoading}
         class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 disabled:opacity-50 transition-colors">
-        Supprimer
+        {$_("common.delete")}
       </button>
     {:else if quote.status === QuoteStatus.Received && isAdmin}
       <button on:click={handleStartReview} disabled={actionLoading}
         class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-        Passer en revue
+        {$_("quotes.detail.review")}
       </button>
       <button on:click={handleWithdraw} disabled={actionLoading}
         class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors">
-        Retirer
+        {$_("quotes.detail.withdraw")}
       </button>
     {:else if quote.status === QuoteStatus.UnderReview && isAdmin}
       <button on:click={handleAccept} disabled={actionLoading}
         class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
-        Accepter
+        {$_("quotes.detail.accept")}
       </button>
       <button on:click={handleReject} disabled={actionLoading}
         class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
-        Refuser
+        {$_("quotes.detail.reject")}
       </button>
     {:else if quote.status === QuoteStatus.Received || quote.status === QuoteStatus.Requested}
       <button on:click={handleWithdraw} disabled={actionLoading}
         class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors">
-        Retirer
+        {$_("quotes.detail.withdraw")}
       </button>
     {/if}
   </div>

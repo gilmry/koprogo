@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { authStore } from '../../stores/auth';
   import { api } from '../../lib/api';
 
@@ -26,7 +27,7 @@
       stats = statsData;
       transactions = transactionsData;
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement des données';
+      error = err.message || $_('common.error.loadData');
       console.error('Dashboard loading error:', err);
     } finally {
       loading = false;
@@ -59,7 +60,7 @@
   }
 
   function getTransactionLabel(type: string): string {
-    return type === 'paymentreceived' ? 'Paiement reçu' : 'Paiement effectué';
+    return type === 'paymentreceived' ? $_('dashboards.accountant.transaction.received') : $_('dashboards.accountant.transaction.made');
   }
 
   function getTransactionColor(type: string): string {
@@ -70,10 +71,10 @@
 <div>
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
-      Bienvenue, {user?.first_name} 👋
+      {$_('common.welcome')}, {user?.first_name} 👋
     </h1>
     <p class="text-gray-600">
-      Dashboard Comptable - Gestion financière
+      {$_('dashboards.accountant.title')} - {$_('dashboards.accountant.subtitle')}
     </p>
   </div>
 
@@ -81,7 +82,7 @@
   {#if loading}
     <div class="flex justify-center items-center py-12">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      <span class="ml-3 text-gray-600">Chargement des données...</span>
+      <span class="ml-3 text-gray-600">{$_('common.loading')}</span>
     </div>
   {:else if error}
     <!-- Error State -->
@@ -95,7 +96,7 @@
         <div class="ml-3">
           <p class="text-sm text-red-700">{error}</p>
           <button on:click={loadDashboardData} class="mt-2 text-sm font-medium text-red-700 hover:text-red-600">
-            Réessayer
+            {$_('common.retry')}
           </button>
         </div>
       </div>
@@ -105,38 +106,38 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Charges totales</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.accountant.stats.totalExpenses')}</span>
           <span class="text-2xl">💰</span>
         </div>
         <p class="text-3xl font-bold text-gray-900">{formatCurrency(stats.total_expenses_current_month)}</p>
-        <p class="text-sm text-gray-500 mt-1">Ce mois</p>
+        <p class="text-sm text-gray-500 mt-1">{$_('dashboards.accountant.stats.thisMonth')}</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Payé</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.accountant.stats.paid')}</span>
           <span class="text-2xl">✅</span>
         </div>
         <p class="text-3xl font-bold text-green-600">{formatCurrency(stats.total_paid)}</p>
-        <p class="text-sm text-gray-500 mt-1">{stats.paid_percentage.toFixed(0)}% collecté</p>
+        <p class="text-sm text-gray-500 mt-1">{stats.paid_percentage.toFixed(0)}% {$_('dashboards.accountant.stats.collected')}</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">En attente</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.accountant.stats.pending')}</span>
           <span class="text-2xl">⏳</span>
         </div>
         <p class="text-3xl font-bold text-orange-600">{formatCurrency(stats.total_pending)}</p>
-        <p class="text-sm text-gray-500 mt-1">{stats.pending_percentage.toFixed(0)}% restant</p>
+        <p class="text-sm text-gray-500 mt-1">{stats.pending_percentage.toFixed(0)}% {$_('dashboards.accountant.stats.remaining')}</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">En retard</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('dashboards.accountant.stats.overdue')}</span>
           <span class="text-2xl">🚨</span>
         </div>
         <p class="text-3xl font-bold text-red-600">{stats.owners_with_overdue}</p>
-        <p class="text-sm text-gray-500 mt-1">Copropriétaires</p>
+        <p class="text-sm text-gray-500 mt-1">{$_('dashboards.accountant.stats.owners')}</p>
       </div>
     </div>
   {/if}
@@ -146,7 +147,7 @@
     <!-- Recent Transactions -->
     <div class="bg-white rounded-lg shadow">
       <div class="p-6 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900">Dernières transactions</h2>
+        <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.accountant.recentTransactions')}</h2>
       </div>
       <div class="p-6">
         {#if loading}
@@ -175,7 +176,7 @@
             {/each}
           </div>
         {:else}
-          <p class="text-center text-gray-500 py-4">Aucune transaction récente</p>
+          <p class="text-center text-gray-500 py-4">{$_('dashboards.accountant.noRecentTransactions')}</p>
         {/if}
       </div>
     </div>
@@ -183,25 +184,25 @@
     <!-- Quick Actions -->
     <div class="bg-white rounded-lg shadow">
       <div class="p-6 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-900">Actions rapides</h2>
+        <h2 class="text-lg font-semibold text-gray-900">{$_('dashboards.accountant.quickActions')}</h2>
       </div>
       <div class="p-6">
         <div class="grid grid-cols-2 gap-4">
           <a href="/expenses" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
             <span class="text-4xl mb-2 group-hover:scale-110 transition">💰</span>
-            <span class="text-sm font-medium text-gray-700">Charges</span>
+            <span class="text-sm font-medium text-gray-700">{$_('navigation.expenses')}</span>
           </a>
           <a href="/reports" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
             <span class="text-4xl mb-2 group-hover:scale-110 transition">📈</span>
-            <span class="text-sm font-medium text-gray-700">Rapports</span>
+            <span class="text-sm font-medium text-gray-700">{$_('navigation.reports')}</span>
           </a>
           <a href="/invoices" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
             <span class="text-4xl mb-2 group-hover:scale-110 transition">📄</span>
-            <span class="text-sm font-medium text-gray-700">Factures</span>
+            <span class="text-sm font-medium text-gray-700">{$_('navigation.invoices')}</span>
           </a>
           <a href="/buildings" class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50 transition group">
             <span class="text-4xl mb-2 group-hover:scale-110 transition">🏢</span>
-            <span class="text-sm font-medium text-gray-700">Immeubles</span>
+            <span class="text-sm font-medium text-gray-700">{$_('navigation.buildings')}</span>
           </a>
         </div>
       </div>

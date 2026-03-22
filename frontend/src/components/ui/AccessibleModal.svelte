@@ -5,6 +5,7 @@
    */
 
   import { onMount, onDestroy } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { trapFocus, FocusManager, announce } from '../../lib/accessibility';
 
   export let isOpen: boolean = false;
@@ -45,12 +46,12 @@
   $: if (isOpen && dialogEl) {
     focusManager.save();
     cleanupFocusTrap = trapFocus(dialogEl);
-    announce(`Fenêtre modale ouverte: ${title}`, 'polite');
+    announce($_('common.modalOpened', { values: { title } }), 'polite');
     document.body.style.overflow = 'hidden';
   } else if (!isOpen && cleanupFocusTrap) {
     cleanupFocusTrap();
     focusManager.restore();
-    announce('Fenêtre modale fermée', 'polite');
+    announce($_('common.modalClosed'), 'polite');
     document.body.style.overflow = '';
   }
 
@@ -100,7 +101,7 @@
               type="button"
               class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
               on:click={handleClose}
-              aria-label="Fermer la fenêtre modale"
+              aria-label={$_('common.closeModal')}
             >
               <svg
                 class="h-6 w-6"

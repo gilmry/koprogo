@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import { authStore } from '../stores/auth';
@@ -46,7 +47,7 @@
       currentPage = response.pagination.current_page;
       perPage = response.pagination.per_page;
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des immeubles';
+      error = e instanceof Error ? e.message : $_('buildings.errorLoading');
       console.error('Error loading buildings:', e);
     } finally {
       loading = false;
@@ -81,12 +82,12 @@
     actionLoading = true;
     try {
       await api.delete(`/buildings/${selectedBuilding.id}`);
-      toast.show('Immeuble supprimé avec succès', 'success');
+      toast.show($_('buildings.deletedSuccess'), 'success');
       showConfirmDialog = false;
       selectedBuilding = null;
       await loadBuildings();
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
+      const errorMessage = e instanceof Error ? e.message : $_('common.error');
       toast.show(errorMessage, 'error');
     } finally {
       actionLoading = false;
@@ -113,14 +114,14 @@
   <!-- Header -->
   <div class="flex justify-between items-center">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Immeubles</h1>
+      <h1 class="text-3xl font-bold text-gray-900">{$_('buildings.title')}</h1>
       <p class="mt-1 text-sm text-gray-600">
-        Gérer les immeubles de votre copropriété
+        {$_('buildings.subtitle')}
       </p>
     </div>
     {#if isSuperAdmin}
       <Button variant="primary" on:click={handleCreate} data-testid="create-building-button">
-        ➕ Nouvel immeuble
+        ➕ {$_('buildings.new')}
       </Button>
     {/if}
   </div>
@@ -128,12 +129,12 @@
   <!-- Search -->
   <div class="bg-white rounded-lg shadow p-4">
     <div class="relative">
-      <label for="building-search" class="sr-only">Rechercher par nom, adresse, ville</label>
+      <label for="building-search" class="sr-only">{$_('buildings.searchLabel')}</label>
       <input
         id="building-search"
         type="text"
         bind:value={searchTerm}
-        placeholder="Rechercher par nom, adresse, ville..."
+        placeholder={$_('buildings.searchPlaceholder')}
         data-testid="building-search-input"
         class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
@@ -153,11 +154,11 @@
     {#if loading}
       <div class="p-12 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-        <p class="mt-2 text-gray-600">Chargement...</p>
+        <p class="mt-2 text-gray-600">{$_('common.loading')}</p>
       </div>
     {:else if filteredBuildings.length === 0}
       <div class="p-12 text-center text-gray-500">
-        {searchTerm ? 'Aucun immeuble trouvé pour cette recherche.' : 'Aucun immeuble enregistré. Créez-en un pour commencer !'}
+        {searchTerm ? $_('buildings.noResults') : $_('buildings.noBuildings')}
       </div>
     {:else}
       <div class="divide-y divide-gray-200" data-testid="buildings-list">
@@ -178,9 +179,9 @@
                     📍 {building.address}, {building.postal_code} {building.city}
                   </p>
                   <p class="text-sm text-gray-500">
-                    🏢 {building.total_units} lots
+                    🏢 {building.total_units} {$_('buildings.units')}
                     {#if building.construction_year}
-                      · 🏗️ Construit en {building.construction_year}
+                      · 🏗️ {$_('buildings.builtIn')} {building.construction_year}
                     {/if}
                   </p>
                 </div>
@@ -190,7 +191,7 @@
                   <button
                     on:click={() => handleEdit(building)}
                     class="text-primary-600 hover:text-primary-900"
-                    title="Modifier"
+                    title={$_('common.edit')}
                     disabled={actionLoading}
                     data-testid="edit-building-button"
                   >
@@ -199,7 +200,7 @@
                   <button
                     on:click={() => handleDeleteClick(building)}
                     class="text-red-600 hover:text-red-900"
-                    title="Supprimer"
+                    title={$_('common.delete')}
                     disabled={actionLoading}
                     data-testid="delete-building-button"
                   >
@@ -210,7 +211,7 @@
                   href={`/building-detail?id=${building.id}`}
                   class="text-primary-600 hover:text-primary-900 text-sm font-medium"
                 >
-                  Détails →
+                  {$_('buildings.details')} →
                 </a>
               </div>
             </div>
@@ -222,8 +223,8 @@
       <div class="bg-gray-50 px-6 py-3 border-t border-gray-200">
         <p class="text-sm text-gray-700">
           <span class="font-medium">{filteredBuildings.length}</span>
-          {filteredBuildings.length === 1 ? 'immeuble' : 'immeubles'}
-          {searchTerm ? ' (filtrés)' : ''}
+          {filteredBuildings.length === 1 ? $_('buildings.buildingSingular') : $_('buildings.buildingPlural')}
+          {searchTerm ? ` (${$_('common.filtered')})` : ''}
         </p>
       </div>
     {/if}
@@ -256,10 +257,10 @@
 <!-- Delete Confirmation Dialog -->
 <ConfirmDialog
   bind:isOpen={showConfirmDialog}
-  title="Confirmer la suppression"
-  message="Êtes-vous sûr de vouloir supprimer l'immeuble '{selectedBuilding?.name}' ? Cette action est irréversible et supprimera également tous les lots, dépenses et données associées."
-  confirmText="Supprimer"
-  cancelText="Annuler"
+  title={$_('buildings.confirmDeleteTitle')}
+  message={`${$_('buildings.confirmDeleteMessage', { values: { name: selectedBuilding?.name || '' } })}`}
+  confirmText={$_('common.delete')}
+  cancelText={$_('common.cancel')}
   variant="danger"
   loading={actionLoading}
   on:confirm={handleDeleteConfirm}

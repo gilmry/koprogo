@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import {
     localExchangesApi,
     type OwnerCreditBalance,
@@ -24,7 +25,7 @@
       error = null;
       balance = await localExchangesApi.getCreditBalance(ownerId, buildingId);
     } catch (err: any) {
-      error = err.message || "Impossible de charger le solde";
+      error = err.message || $_("exchanges.loadBalanceError");
       console.error("Error loading credit balance:", err);
     } finally {
       loading = false;
@@ -60,7 +61,7 @@
       <!-- Header -->
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-900">
-          Mon Solde de Crédits
+          {$_("exchanges.myBalance")}
         </h3>
         <span
           class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {participationConfig?.bg} {participationConfig?.text}"
@@ -71,12 +72,12 @@
 
       <!-- Balance Display -->
       <div class="text-center py-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
-        <p class="text-sm font-medium text-gray-600 mb-1">Solde actuel</p>
+        <p class="text-sm font-medium text-gray-600 mb-1">{$_("exchanges.currentBalance")}</p>
         <p class="text-4xl font-bold {balanceColor}">
           {balance.balance > 0 ? "+" : ""}{balance.balance}
         </p>
         <p class="text-sm text-gray-500 mt-1">
-          {balance.balance === 1 ? "heure" : "heures"}
+          {balance.balance === 1 ? $_("exchanges.hour") : $_("exchanges.hours")}
         </p>
       </div>
 
@@ -84,42 +85,42 @@
       <div class="grid grid-cols-2 gap-4">
         <!-- Credits Earned -->
         <div class="bg-green-50 p-4 rounded-lg">
-          <p class="text-xs font-medium text-green-700 mb-1">Crédits gagnés</p>
+          <p class="text-xs font-medium text-green-700 mb-1">{$_("exchanges.creditsEarned")}</p>
           <p class="text-2xl font-bold text-green-900">
             {balance.credits_earned}
           </p>
-          <p class="text-xs text-green-600 mt-1">Services fournis</p>
+          <p class="text-xs text-green-600 mt-1">{$_("exchanges.servicesProvided")}</p>
         </div>
 
         <!-- Credits Spent -->
         <div class="bg-orange-50 p-4 rounded-lg">
           <p class="text-xs font-medium text-orange-700 mb-1">
-            Crédits dépensés
+            {$_("exchanges.creditsSpent")}
           </p>
           <p class="text-2xl font-bold text-orange-900">
             {balance.credits_spent}
           </p>
-          <p class="text-xs text-orange-600 mt-1">Services reçus</p>
+          <p class="text-xs text-orange-600 mt-1">{$_("exchanges.servicesReceived")}</p>
         </div>
 
         <!-- Total Exchanges -->
         <div class="bg-blue-50 p-4 rounded-lg">
-          <p class="text-xs font-medium text-blue-700 mb-1">Échanges totaux</p>
+          <p class="text-xs font-medium text-blue-700 mb-1">{$_("exchanges.totalExchanges")}</p>
           <p class="text-2xl font-bold text-blue-900">
             {balance.total_exchanges}
           </p>
-          <p class="text-xs text-blue-600 mt-1">Transactions complétées</p>
+          <p class="text-xs text-blue-600 mt-1">{$_("exchanges.completedTransactions")}</p>
         </div>
 
         <!-- Average Rating -->
         <div class="bg-yellow-50 p-4 rounded-lg">
-          <p class="text-xs font-medium text-yellow-700 mb-1">Note moyenne</p>
+          <p class="text-xs font-medium text-yellow-700 mb-1">{$_("exchanges.averageRating")}</p>
           <p class="text-lg font-bold text-yellow-900">
             {balance.average_rating
               ? `${balance.average_rating.toFixed(1)} ⭐`
-              : "Pas encore noté"}
+              : $_("exchanges.notRatedYet")}
           </p>
-          <p class="text-xs text-yellow-600 mt-1">Réputation</p>
+          <p class="text-xs text-yellow-600 mt-1">{$_("exchanges.reputation")}</p>
         </div>
       </div>
 
@@ -127,20 +128,15 @@
       <div class="mt-4 p-3 bg-gray-50 rounded-md text-sm text-gray-700">
         {#if balance.credit_status === CreditStatus.Positive}
           <p>
-            💚 <strong>Contributeur net</strong> - Vous avez fourni plus de
-            services que vous en avez reçus. Bravo pour votre contribution à la
-            communauté !
+            {$_("exchanges.statusPositive")}
           </p>
         {:else if balance.credit_status === CreditStatus.Balanced}
           <p>
-            ⚖️ <strong>Équilibre parfait</strong> - Vous avez échangé autant de
-            services que vous en avez reçus.
+            {$_("exchanges.statusBalanced")}
           </p>
         {:else if balance.credit_status === CreditStatus.Negative}
           <p>
-            🟠 <strong>Solde négatif</strong> - Vous avez reçu plus de services
-            que vous en avez fournis. Pensez à offrir des services pour
-            rééquilibrer.
+            {$_("exchanges.statusNegative")}
           </p>
         {/if}
       </div>
@@ -148,10 +144,7 @@
       <!-- Legal Notice (Belgian SEL Context) -->
       <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 text-xs text-blue-800">
         <p>
-          <strong>ℹ️ Contexte légal belge:</strong> Les SEL sont légaux en
-          Belgique et non taxables si non-commerciaux (troc). Monnaie temps: 1
-          heure = 1 crédit. Solde négatif autorisé (modèle de confiance
-          communautaire).
+          {$_("exchanges.legalNoticeBelgian")}
         </p>
       </div>
     </div>

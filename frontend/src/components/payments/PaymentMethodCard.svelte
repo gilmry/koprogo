@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { _ } from 'svelte-i18n';
   import {
     paymentMethodsApi,
     PaymentMethodType,
@@ -39,10 +40,10 @@
     try {
       actionLoading = true;
       await paymentMethodsApi.setAsDefault(paymentMethod.id);
-      toast.success("Payment method set as default");
+      toast.success($_('payments.setDefault'));
       dispatch("updated");
     } catch (err: any) {
-      toast.error(err.message || "Failed to set as default");
+      toast.error(err.message || $_('payments.failedSetDefault'));
     } finally {
       actionLoading = false;
     }
@@ -53,14 +54,14 @@
       actionLoading = true;
       if (paymentMethod.is_active) {
         await paymentMethodsApi.deactivate(paymentMethod.id);
-        toast.success("Payment method deactivated");
+        toast.success($_('payments.deactivated'));
       } else {
         await paymentMethodsApi.reactivate(paymentMethod.id);
-        toast.success("Payment method reactivated");
+        toast.success($_('payments.reactivated'));
       }
       dispatch("updated");
     } catch (err: any) {
-      toast.error(err.message || "Failed to update payment method");
+      toast.error(err.message || $_('payments.failedUpdate'));
     } finally {
       actionLoading = false;
     }
@@ -70,10 +71,10 @@
     try {
       actionLoading = true;
       await paymentMethodsApi.delete(paymentMethod.id);
-      toast.success("Payment method deleted");
+      toast.success($_('payments.deleted'));
       dispatch("deleted");
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete payment method");
+      toast.error(err.message || $_('payments.failedDelete'));
     } finally {
       actionLoading = false;
       showDeleteConfirm = false;
@@ -92,7 +93,7 @@
       <span
         class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
       >
-        ⭐ Default
+        ⭐ {$_('payments.default')}
       </span>
     </div>
   {/if}
@@ -109,23 +110,23 @@
       <div class="mt-1 space-y-1">
         {#if paymentMethod.method_type === PaymentMethodType.Card}
           <p class="text-sm text-gray-600">
-            {paymentMethod.brand || "Card"} •••• {paymentMethod.last4 || "****"}
+            {paymentMethod.brand || $_('payments.card')} •••• {paymentMethod.last4 || "****"}
           </p>
           {#if paymentMethod.expires_at}
             <p class="text-sm text-gray-500">
-              Expires: {formatExpiryDate(paymentMethod.expires_at)}
+              {$_('payments.expires')}: {formatExpiryDate(paymentMethod.expires_at)}
             </p>
           {/if}
         {:else if paymentMethod.method_type === PaymentMethodType.SepaDebit}
           <p class="text-sm text-gray-600">
-            IBAN •••• {paymentMethod.last4 || "****"}
+            {$_('payments.iban')} •••• {paymentMethod.last4 || "****"}
           </p>
         {:else}
           <p class="text-sm text-gray-600">{paymentMethod.method_type}</p>
         {/if}
 
         <p class="text-xs text-gray-500">
-          Added: {new Date(paymentMethod.created_at).toLocaleDateString("nl-BE")}
+          {$_('payments.added')}: {new Date(paymentMethod.created_at).toLocaleDateString("nl-BE")}
         </p>
       </div>
 
@@ -138,7 +139,7 @@
               disabled={actionLoading}
               class="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
             >
-              Set as Default
+              {$_('payments.setDefault')}
             </button>
           {/if}
 
@@ -147,7 +148,7 @@
             disabled={actionLoading}
             class="text-sm text-gray-600 hover:text-gray-700 font-medium disabled:opacity-50"
           >
-            {paymentMethod.is_active ? "Deactivate" : "Reactivate"}
+            {paymentMethod.is_active ? $_('payments.deactivate') : $_('payments.reactivate')}
           </button>
 
           {#if !paymentMethod.is_default}
@@ -156,7 +157,7 @@
               disabled={actionLoading}
               class="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
             >
-              Delete
+              {$_('common.delete')}
             </button>
           {/if}
         </div>
@@ -168,9 +169,9 @@
 <!-- Delete Confirmation -->
 <ConfirmDialog
   open={showDeleteConfirm}
-  title="Delete Payment Method"
-  message="Are you sure you want to delete this payment method? This action cannot be undone."
-  confirmText="Delete"
+  title={$_('payments.deleteTitle')}
+  message={$_('payments.deleteConfirm')}
+  confirmText={$_('common.delete')}
   confirmVariant="danger"
   on:confirm={handleDelete}
   on:cancel={() => (showDeleteConfirm = false)}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../../lib/api';
   import { toast } from '../../stores/toast';
   import type { Building, Owner, BoardMemberResponse } from '../../lib/types';
@@ -47,7 +48,7 @@
       loading = false;
     } catch (err) {
       console.error('Error loading buildings:', err);
-      toast.error('Erreur lors du chargement des immeubles');
+      toast.error($_('admin.errors.failedToLoadBuildings'));
       loading = false;
     }
   }
@@ -63,7 +64,7 @@
       loadingMembers = false;
     } catch (err) {
       console.error('Error loading board members:', err);
-      toast.error('Erreur lors du chargement des membres du conseil');
+      toast.error($_('admin.errors.failedToLoadBoardMembers'));
       loadingMembers = false;
     }
   }
@@ -74,7 +75,7 @@
       owners = response.data;
     } catch (err) {
       console.error('Error loading owners:', err);
-      toast.error('Erreur lors du chargement des copropriétaires');
+      toast.error($_('admin.errors.failedToLoadOwners'));
     }
   }
 
@@ -96,7 +97,7 @@
       meetings.sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime());
     } catch (err) {
       console.error('Error loading meetings:', err);
-      toast.error('Erreur lors du chargement des réunions');
+      toast.error($_('admin.errors.failedToLoadMeetings'));
       meetings = [];
     }
   }
@@ -136,25 +137,25 @@
         mandate_end: `${electForm.mandate_end}T23:59:59Z`,
       };
       await api.post('/board-members', payload);
-      toast.success('Membre du conseil élu avec succès');
+      toast.success($_('admin.board.memberElectedSuccessfully'));
       closeElectModal();
       await loadBoardMembers();
     } catch (err) {
       console.error('Error electing board member:', err);
-      toast.error(err instanceof Error ? err.message : 'Erreur lors de l\'élection');
+      toast.error(err instanceof Error ? err.message : $_('admin.board.electionError'));
     }
   }
 
   async function handleRemove(memberId: string) {
-    if (!confirm('Êtes-vous sûr de vouloir retirer ce membre du conseil ?')) return;
+    if (!confirm($_('admin.board.confirmRemove'))) return;
 
     try {
       await api.delete(`/board-members/${memberId}`);
-      toast.success('Membre retiré avec succès');
+      toast.success($_('admin.board.memberRemovedSuccessfully'));
       await loadBoardMembers();
     } catch (err) {
       console.error('Error removing board member:', err);
-      toast.error('Erreur lors du retrait du membre');
+      toast.error($_('admin.board.removalError'));
     }
   }
 
@@ -183,15 +184,15 @@
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900">Gestion du Conseil d'Administration</h1>
-    <p class="mt-2 text-gray-600">Gérez les membres du conseil de copropriété</p>
+    <h1 class="text-3xl font-bold text-gray-900">{$_('admin.board.title')}</h1>
+    <p class="mt-2 text-gray-600">{$_('admin.board.description')}</p>
   </div>
 
   {#if loading}
     <div class="flex items-center justify-center min-h-screen">
       <div class="text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p class="mt-4 text-gray-600">Chargement...</p>
+        <p class="mt-4 text-gray-600">{$_('common.loading')}</p>
       </div>
     </div>
   {:else}
@@ -200,7 +201,7 @@
       <div class="flex items-center justify-between">
         <div class="flex-1 max-w-md">
           <label for="building-select" class="block text-sm font-medium text-gray-700 mb-2">
-            Sélectionner un immeuble
+            {$_('admin.board.selectBuilding')}
           </label>
           <select
             id="building-select"
@@ -217,7 +218,7 @@
           on:click={openElectModal}
           class="ml-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
         >
-          ➕ Élire un membre
+          ➕ {$_('admin.board.electMember')}
         </button>
       </div>
     </div>
@@ -229,12 +230,12 @@
       </div>
     {:else if boardMembers.length === 0}
       <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-        <p class="text-gray-500 text-lg">Aucun membre du conseil pour cet immeuble</p>
+        <p class="text-gray-500 text-lg">{$_('admin.board.noMembers')}</p>
         <button
           on:click={openElectModal}
           class="mt-4 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
         >
-          Élire le premier membre
+          {$_('admin.board.electFirstMember')}
         </button>
       </div>
     {:else}
@@ -248,7 +249,7 @@
                   <h3 class="text-lg font-bold text-gray-900">{getPositionLabel(member.position)}</h3>
                   {#if member.expires_soon}
                     <span class="inline-block mt-1 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded">
-                      ⚠️ Expire dans {member.days_remaining} jours
+                      ⚠️ {$_('admin.board.expiresIn')} {member.days_remaining} {$_('common.days')}
                     </span>
                   {/if}
                 </div>
@@ -257,19 +258,19 @@
 
             <div class="space-y-2 text-sm">
               <div class="flex justify-between">
-                <span class="text-gray-600">Owner ID:</span>
+                <span class="text-gray-600">{$_('admin.board.ownerId')}:</span>
                 <span class="font-medium text-gray-900 text-xs">{member.owner_id}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">Début:</span>
+                <span class="text-gray-600">{$_('admin.board.start')}:</span>
                 <span class="font-medium text-gray-900">{formatDate(member.mandate_start)}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">Fin:</span>
+                <span class="text-gray-600">{$_('admin.board.end')}:</span>
                 <span class="font-medium text-gray-900">{formatDate(member.mandate_end)}</span>
               </div>
               <div class="flex justify-between">
-                <span class="text-gray-600">Jours restants:</span>
+                <span class="text-gray-600">{$_('admin.board.daysRemaining')}:</span>
                 <span class="font-medium {member.expires_soon ? 'text-orange-600' : 'text-green-600'}">
                   {member.days_remaining}
                 </span>
@@ -281,7 +282,7 @@
                 on:click={() => handleRemove(member.id)}
                 class="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded hover:bg-red-100 transition text-sm font-medium"
               >
-                🗑️ Retirer
+                🗑️ {$_('admin.board.remove')}
               </button>
               <a
                 href="/board-dashboard?building_id={member.building_id}"
@@ -301,17 +302,17 @@
 {#if showElectModal}
   <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-4">Élire un membre du conseil</h2>
+      <h2 class="text-2xl font-bold text-gray-900 mb-4">{$_('admin.board.electMemberTitle')}</h2>
 
       <form on:submit|preventDefault={handleElect} class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Copropriétaire</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.owner')}</label>
           <select
             bind:value={electForm.owner_id}
             required
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
-            <option value="">-- Sélectionner un copropriétaire --</option>
+            <option value="">-- {$_('admin.board.selectOwner')} --</option>
             {#each owners as owner}
               <option value={owner.id}>{owner.first_name} {owner.last_name} ({owner.email})</option>
             {/each}
@@ -319,25 +320,25 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Position</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.position')}</label>
           <select
             bind:value={electForm.position}
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
-            <option value="president">👑 Président</option>
-            <option value="treasurer">💰 Trésorier</option>
-            <option value="secretary">📝 Secrétaire</option>
+            <option value="president">👑 {$_('admin.board.president')}</option>
+            <option value="treasurer">💰 {$_('admin.board.treasurer')}</option>
+            <option value="secretary">📝 {$_('admin.board.secretary')}</option>
           </select>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Assemblée générale (PV)</label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.meeting')}</label>
           <select
             bind:value={electForm.meeting_id}
             required
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
           >
-            <option value="">-- Sélectionner une assemblée générale --</option>
+            <option value="">-- {$_('admin.board.selectMeeting')} --</option>
             {#each meetings as meeting}
               <option value={meeting.id}>
                 {#if meeting.status.toLowerCase() === 'completed'}✓{:else}📅{/if}
@@ -349,16 +350,16 @@
           </select>
           <p class="mt-1 text-xs text-gray-500">
             {#if meetings && meetings.length === 0}
-              ⚠️ Aucune assemblée trouvée pour cet immeuble. Créez d'abord une AG.
+              ⚠️ {$_('admin.board.noMeetings')}
             {:else}
-              L'élection doit être actée dans un PV d'assemblée générale
+              {$_('admin.board.meetingRequired')}
             {/if}
           </p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Début du mandat</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.mandateStart')}</label>
             <input
               type="date"
               bind:value={electForm.mandate_start}
@@ -367,7 +368,7 @@
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Fin du mandat</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('admin.board.mandateEnd')}</label>
             <input
               type="date"
               bind:value={electForm.mandate_end}
@@ -383,13 +384,13 @@
             on:click={closeElectModal}
             class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition"
           >
-            Annuler
+            {$_('common.cancel')}
           </button>
           <button
             type="submit"
             class="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition"
           >
-            Élire
+            {$_('admin.board.elect')}
           </button>
         </div>
       </form>

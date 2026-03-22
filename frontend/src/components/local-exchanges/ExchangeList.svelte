@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
   import { onMount } from "svelte";
   import {
     localExchangesApi,
@@ -40,7 +41,7 @@
 
       applyFilters();
     } catch (err: any) {
-      error = err.message || "Impossible de charger les échanges";
+      error = err.message || $_('exchanges.load_error');
       console.error("Error loading exchanges:", err);
     } finally {
       loading = false;
@@ -94,7 +95,7 @@
       await localExchangesApi.request(exchangeId);
       await loadExchanges(); // Reload list
     } catch (err: any) {
-      toast.error(`Erreur: ${err.message}`);
+      toast.error($_('common.error', { message: err.message }));
     }
   }
 
@@ -114,14 +115,14 @@
             for="search"
             class="block text-sm font-medium text-gray-700 mb-1"
           >
-            Rechercher
+            {$_('common.search')}
           </label>
           <input
             id="search"
             type="text"
             bind:value={searchQuery}
             on:input={handleFilterChange}
-            placeholder="Titre ou description..."
+            placeholder={$_('exchanges.search_placeholder')}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -132,7 +133,7 @@
             for="filter-type"
             class="block text-sm font-medium text-gray-700 mb-1"
           >
-            Type
+            {$_('exchanges.type')}
           </label>
           <select
             id="filter-type"
@@ -140,11 +141,11 @@
             on:change={handleFilterChange}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">Tous les types</option>
-            <option value={ExchangeType.Service}>🛠️ Service</option>
-            <option value={ExchangeType.ObjectLoan}>📦 Prêt d'objet</option>
+            <option value="all">{$_('exchanges.all_types')}</option>
+            <option value={ExchangeType.Service}>🛠️ {$_('exchanges.type_service')}</option>
+            <option value={ExchangeType.ObjectLoan}>📦 {$_('exchanges.type_loan')}</option>
             <option value={ExchangeType.SharedPurchase}
-              >🛒 Achat groupé</option
+              >🛒 {$_('exchanges.type_purchase')}</option
             >
           </select>
         </div>
@@ -155,7 +156,7 @@
             for="filter-status"
             class="block text-sm font-medium text-gray-700 mb-1"
           >
-            Statut
+            {$_('common.status')}
           </label>
           <select
             id="filter-status"
@@ -163,12 +164,12 @@
             on:change={handleFilterChange}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="all">Tous les statuts</option>
-            <option value={ExchangeStatus.Offered}>Disponible</option>
-            <option value={ExchangeStatus.Requested}>Demandé</option>
-            <option value={ExchangeStatus.InProgress}>En cours</option>
-            <option value={ExchangeStatus.Completed}>Terminé</option>
-            <option value={ExchangeStatus.Cancelled}>Annulé</option>
+            <option value="all">{$_('exchanges.all_statuses')}</option>
+            <option value={ExchangeStatus.Offered}>{$_('exchanges.status_offered')}</option>
+            <option value={ExchangeStatus.Requested}>{$_('exchanges.status_requested')}</option>
+            <option value={ExchangeStatus.InProgress}>{$_('exchanges.status_in_progress')}</option>
+            <option value={ExchangeStatus.Completed}>{$_('exchanges.status_completed')}</option>
+            <option value={ExchangeStatus.Cancelled}>{$_('exchanges.status_cancelled')}</option>
           </select>
         </div>
       </div>
@@ -181,7 +182,7 @@
       <div
         class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"
       ></div>
-      <p class="mt-2 text-gray-600">Chargement des échanges...</p>
+      <p class="mt-2 text-gray-600">{$_('common.loading')}</p>
     </div>
   {/if}
 
@@ -209,10 +210,10 @@
         />
       </svg>
       <h3 class="mt-2 text-sm font-medium text-gray-900">
-        Aucun échange trouvé
+        {$_('exchanges.no_found')}
       </h3>
       <p class="mt-1 text-sm text-gray-500">
-        Commencez par créer une nouvelle offre d'échange.
+        {$_('exchanges.create_new')}
       </p>
     </div>
   {/if}
@@ -236,7 +237,7 @@
                     <span
                       class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
                     >
-                      Mon offre
+                      {$_('exchanges.my_offer')}
                     </span>
                   {/if}
                 </div>
@@ -270,7 +271,7 @@
                   href={`/exchange-detail?id=${exchange.id}`}
                   class="block w-full text-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  Voir détails
+                  {$_('common.view_details')}
                 </a>
 
                 {#if canRequest(exchange)}
@@ -279,7 +280,7 @@
                     on:click={() => handleRequest(exchange.id)}
                     class="w-full px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    Demander cet échange
+                    {$_('exchanges.request_exchange')}
                   </button>
                 {/if}
               </div>
@@ -291,9 +292,7 @@
 
     <!-- Results Count -->
     <p class="text-sm text-gray-600 text-center">
-      {filteredExchanges.length} échange{filteredExchanges.length > 1
-        ? "s"
-        : ""} trouvé{filteredExchanges.length > 1 ? "s" : ""}
+      {$_('exchanges.results_count', { count: filteredExchanges.length })}
     </p>
   {/if}
 </div>

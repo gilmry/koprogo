@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from 'svelte-i18n';
   import { api } from "../lib/api";
 
   export let buildingIds: string[] = [];
@@ -47,13 +48,13 @@
 <div class="space-y-4">
   {#if buildingIds.length === 0}
     <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-500">
-      Aucun immeuble associé à votre compte.
+      {$_('profile.noBuildings')}
     </div>
   {:else}
     {#if buildingIds.length > 1}
       <div>
         <label for="building-select" class="block text-sm font-medium text-gray-700 mb-1">
-          Sélectionner un immeuble
+          {$_('profile.selectBuilding')}
         </label>
         <select
           id="building-select"
@@ -70,7 +71,7 @@
     {#if loading}
       <div class="flex items-center gap-2 text-gray-500 py-6">
         <div class="animate-spin w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full"></div>
-        <span class="text-sm">Chargement des coordonnées...</span>
+        <span class="text-sm">{$_('common.loading')}</span>
       </div>
     {:else if error}
       <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
@@ -84,10 +85,10 @@
         <div class="bg-gray-50 border border-gray-200 rounded-lg p-5">
           <p class="font-medium text-gray-700 mb-1">{building.name}</p>
           <p class="text-sm text-gray-500">
-            Aucune coordonnée syndic configurée pour cet immeuble.
+            {$_('profile.noSyndicInfo')}
           </p>
           <p class="text-xs text-gray-400 mt-1">
-            Contactez votre administrateur pour mettre à jour ces informations.
+            {$_('profile.contactAdmin')}
           </p>
         </div>
       {:else}

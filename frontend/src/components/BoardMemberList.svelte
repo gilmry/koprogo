@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import type { BoardMemberResponse } from '../lib/types';
@@ -13,7 +14,7 @@
 
   onMount(() => {
     if (!buildingId) {
-      error = 'ID de l\'immeuble manquant';
+      error = $_('board.error.buildingIdMissing');
       loading = false;
       return;
     }
@@ -31,7 +32,7 @@
 
       members = await api.get<BoardMemberResponse[]>(endpoint);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des membres';
+      error = e instanceof Error ? e.message : $_('board.error.loadMembers');
       console.error('Error loading board members:', e);
       toast.error(error);
     } finally {
@@ -41,10 +42,10 @@
 
   function getPositionLabel(position: string): string {
     const labels: Record<string, string> = {
-      'president': 'Président',
-      'treasurer': 'Trésorier',
-      'secretary': 'Secrétaire',
-      'member': 'Membre'
+      'president': $_('board.position.president'),
+      'treasurer': $_('board.position.treasurer'),
+      'secretary': $_('board.position.secretary'),
+      'member': $_('board.position.member')
     };
     return labels[position] || position;
   }
@@ -74,19 +75,19 @@
   }
 
   function getMandateStatusText(member: BoardMemberResponse): string {
-    if (!member.is_active) return 'Inactif';
-    if (member.expires_soon) return `Expire dans ${member.days_remaining} jours`;
-    return 'Actif';
+    if (!member.is_active) return $_('board.status.inactive');
+    if (member.expires_soon) return $_('board.status.expiresSoon', { values: { days: member.days_remaining } });
+    return $_('board.status.active');
   }
 </script>
 
 <div class="bg-white shadow rounded-lg overflow-hidden">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-xl font-semibold text-gray-900">
-      Membres du Conseil de Copropriété
+      {$_('board.membersTitle')}
     </h2>
     <p class="mt-1 text-sm text-gray-600">
-      {members.length} membre{members.length > 1 ? 's' : ''} {showInactive ? 'au total' : 'actif(s)'}
+      {$_('board.memberCount', { values: { count: members.length, status: showInactive ? 'total' : 'active' } })}
     </p>
   </div>
 
@@ -94,7 +95,7 @@
     <div class="flex items-center justify-center py-12">
       <div class="text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p class="mt-4 text-gray-600">Chargement des membres...</p>
+        <p class="mt-4 text-gray-600">{$_('common.loading')}</p>
       </div>
     </div>
   {:else if error}
@@ -107,12 +108,12 @@
   {:else if members.length === 0}
     <div class="p-12 text-center">
       <span class="text-6xl">🏛️</span>
-      <h3 class="mt-4 text-lg font-medium text-gray-900">Aucun membre du conseil</h3>
+      <h3 class="mt-4 text-lg font-medium text-gray-900">{$_('board.noMembers')}</h3>
       <p class="mt-2 text-sm text-gray-600">
-        Le conseil de copropriété n'a pas encore été élu.
+        {$_('board.notYetElected')}
         {#if !showInactive}
         <br />
-        Les immeubles de plus de 20 lots doivent obligatoirement avoir un conseil.
+        {$_('board.mandatoryNote')}
         {/if}
       </p>
     </div>
@@ -134,11 +135,11 @@
                 </div>
                 <div class="mt-2 text-sm text-gray-600 space-y-1">
                   <p>
-                    <strong>Mandat :</strong>
+                    <strong>{$_('board.mandate.period')}:</strong>
                     {formatDate(member.mandate_start)} → {formatDate(member.mandate_end)}
                   </p>
                   <p>
-                    <strong>Élu lors de :</strong> AG du {formatDate(member.elected_at)}
+                    <strong>{$_('board.electedAt')}:</strong> AG du {formatDate(member.elected_at)}
                   </p>
                 </div>
               </div>
@@ -155,7 +156,7 @@
               <div class="flex">
                 <span class="text-lg mr-2">⚠️</span>
                 <p class="text-sm text-orange-800">
-                  Le mandat expire bientôt. Pensez à organiser une nouvelle élection lors de la prochaine AG.
+                  {$_('board.expiresSoonWarning')}
                 </p>
               </div>
             </div>
@@ -168,13 +169,13 @@
   <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
     <div class="flex items-center justify-between">
       <p class="text-sm text-gray-600">
-        <strong>Note légale :</strong> Le conseil de copropriété est obligatoire pour les immeubles de plus de 20 lots (Article 577-8/4 Code Civil belge).
+        <strong>{$_('board.legalNote')}:</strong> {$_('board.legalRequirement')}
       </p>
       <button
         on:click={() => { showInactive = !showInactive; loadMembers(); }}
         class="text-sm text-primary-600 hover:text-primary-800 font-medium"
       >
-        {showInactive ? 'Masquer' : 'Afficher'} les anciens membres
+        {showInactive ? $_('board.hideMembers') : $_('board.showMembers')}
       </button>
     </div>
   </div>

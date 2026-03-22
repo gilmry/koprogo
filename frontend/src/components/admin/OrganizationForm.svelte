@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
   import type { Organization, SubscriptionPlan } from '../../lib/types';
@@ -32,10 +33,10 @@
   let loading = false;
 
   const subscriptionOptions = [
-    { value: 'free', label: 'Gratuit (1 immeuble, 3 utilisateurs)' },
-    { value: 'starter', label: 'Starter (5 immeubles, 10 utilisateurs)' },
-    { value: 'professional', label: 'Professionnel (20 immeubles, 50 utilisateurs)' },
-    { value: 'enterprise', label: 'Enterprise (Illimité)' },
+    { value: 'free', label: $_('admin.organization.planFree') },
+    { value: 'starter', label: $_('admin.organization.planStarter') },
+    { value: 'professional', label: $_('admin.organization.planProfessional') },
+    { value: 'enterprise', label: $_('admin.organization.planEnterprise') },
   ];
 
   // Initialize form with organization data if editing
@@ -72,26 +73,26 @@
 
     // Name validation
     if (!formData.name || formData.name.trim().length < 2) {
-      errors.name = 'Le nom doit contenir au moins 2 caractères';
+      errors.name = $_('admin.organization.nameError');
       isValid = false;
     }
 
     // Slug validation
     if (!formData.slug || formData.slug.trim().length < 2) {
-      errors.slug = 'Le slug doit contenir au moins 2 caractères';
+      errors.slug = $_('admin.organization.slugMinError');
       isValid = false;
     } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
-      errors.slug = 'Le slug ne peut contenir que des lettres minuscules, chiffres et tirets';
+      errors.slug = $_('admin.organization.slugFormatError');
       isValid = false;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.contact_email) {
-      errors.contact_email = 'L\'email de contact est requis';
+      errors.contact_email = $_('admin.organization.emailRequired');
       isValid = false;
     } else if (!emailRegex.test(formData.contact_email)) {
-      errors.contact_email = 'Format d\'email invalide';
+      errors.contact_email = $_('admin.organization.emailFormatError');
       isValid = false;
     }
 
@@ -99,7 +100,7 @@
     if (formData.contact_phone) {
       const phoneRegex = /^\+?[0-9\s\-()]{8,}$/;
       if (!phoneRegex.test(formData.contact_phone)) {
-        errors.contact_phone = 'Format de téléphone invalide';
+        errors.contact_phone = $_('admin.organization.phoneFormatError');
         isValid = false;
       }
     }
@@ -128,10 +129,10 @@
 
       if (mode === 'create') {
         await api.post('/organizations', payload);
-        toast.show('Organisation créée avec succès', 'success');
+        toast.show($_('admin.organization.createdSuccessfully'), 'success');
       } else if (organization) {
         await api.put(`/organizations/${organization.id}`, payload);
-        toast.show('Organisation mise à jour avec succès', 'success');
+        toast.show($_('admin.organization.updatedSuccessfully'), 'success');
       }
 
       loading = false;
@@ -141,9 +142,9 @@
       const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
 
       if (errorMessage.includes('slug')) {
-        errors.slug = 'Ce slug est déjà utilisé';
+        errors.slug = $_('admin.organization.slugAlreadyUsed');
       } else if (errorMessage.includes('email')) {
-        errors.contact_email = 'Cet email est déjà utilisé';
+        errors.contact_email = $_('admin.organization.emailAlreadyUsed');
       } else {
         toast.show(errorMessage, 'error');
       }
@@ -175,14 +176,14 @@
 
 <Modal
   {isOpen}
-  title={mode === 'create' ? 'Nouvelle Organisation' : 'Modifier l\'Organisation'}
+  title={mode === 'create' ? $_('admin.organization.newOrganization') : $_('admin.organization.editOrganization')}
   size="md"
   on:close={handleClose}
 >
   <form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="organization-form">
     <FormInput
       id="org-name"
-      label="Nom de l'organisation"
+      label={$_('admin.organization.name')}
       type="text"
       bind:value={formData.name}
       on:blur={generateSlug}
@@ -200,13 +201,13 @@
       error={errors.slug}
       required
       placeholder="residence-grand-place"
-      hint="Utilisé dans les URLs, généré automatiquement depuis le nom"
+      hint={$_('admin.organization.slugHint')}
       data-testid="organization-slug-input"
     />
 
     <FormInput
       id="org-email"
-      label="Email de contact"
+      label={$_('admin.organization.contactEmail')}
       type="email"
       bind:value={formData.contact_email}
       error={errors.contact_email}
@@ -217,7 +218,7 @@
 
     <FormInput
       id="org-phone"
-      label="Téléphone de contact"
+      label={$_('admin.organization.contactPhone')}
       type="tel"
       bind:value={formData.contact_phone}
       error={errors.contact_phone}
@@ -227,27 +228,27 @@
 
     <FormSelect
       id="org-plan"
-      label="Plan d'abonnement"
+      label={$_('admin.organization.subscriptionPlan')}
       bind:value={formData.subscription_plan}
       options={subscriptionOptions}
       required
     />
 
     <div class="bg-gray-50 p-4 rounded-lg text-sm">
-      <p class="font-medium text-gray-700 mb-2">Limites du plan sélectionné :</p>
+      <p class="font-medium text-gray-700 mb-2">{$_('admin.organization.planLimits')}:</p>
       <ul class="text-gray-600 space-y-1">
         {#if formData.subscription_plan === 'free'}
-          <li>• Maximum 1 immeuble</li>
-          <li>• Maximum 3 utilisateurs</li>
+          <li>• {$_('admin.organization.limitBuildings1')}</li>
+          <li>• {$_('admin.organization.limitUsers3')}</li>
         {:else if formData.subscription_plan === 'starter'}
-          <li>• Maximum 5 immeubles</li>
-          <li>• Maximum 10 utilisateurs</li>
+          <li>• {$_('admin.organization.limitBuildings5')}</li>
+          <li>• {$_('admin.organization.limitUsers10')}</li>
         {:else if formData.subscription_plan === 'professional'}
-          <li>• Maximum 20 immeubles</li>
-          <li>• Maximum 50 utilisateurs</li>
+          <li>• {$_('admin.organization.limitBuildings20')}</li>
+          <li>• {$_('admin.organization.limitUsers50')}</li>
         {:else if formData.subscription_plan === 'enterprise'}
-          <li>• Immeubles illimités</li>
-          <li>• Utilisateurs illimités</li>
+          <li>• {$_('admin.organization.limitBuildingsUnlimited')}</li>
+          <li>• {$_('admin.organization.limitUsersUnlimited')}</li>
         {/if}
       </ul>
     </div>
@@ -256,10 +257,10 @@
   <svelte:fragment slot="footer">
     <div class="flex justify-end space-x-3">
       <Button variant="outline" on:click={handleClose} disabled={loading} data-testid="organization-cancel-button">
-        Annuler
+        {$_('common.cancel')}
       </Button>
       <Button variant="primary" on:click={handleSubmit} {loading} data-testid="organization-submit-button">
-        {mode === 'create' ? 'Créer l\'organisation' : 'Enregistrer les modifications'}
+        {mode === 'create' ? $_('admin.organization.createOrganization') : $_('common.saveChanges')}
       </Button>
     </div>
   </svelte:fragment>

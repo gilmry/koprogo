@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { Expense, Building } from '../lib/types';
   import Button from './ui/Button.svelte';
@@ -22,7 +23,7 @@
     expenseId = urlParams.get('id') || '';
 
     if (!expenseId) {
-      error = 'ID de la dépense manquant';
+      error = $_('expenses.missing_id');
       loading = false;
       return;
     }
@@ -69,7 +70,7 @@
         await Promise.all(promises);
       }
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement de la dépense';
+      error = e instanceof Error ? e.message : $_('expenses.load_error');
       console.error('Error loading expense:', e);
     } finally {
       loading = false;
@@ -86,10 +87,10 @@
     try {
       await api.put(`/expenses/${expense.id}/mark-paid`, {});
       await loadExpense();
-      toast.success('Dépense marquée comme payée avec succès');
+      toast.success($_('expenses.marked_paid'));
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la mise à jour';
-      toast.error(`Erreur: ${errorMsg}`);
+      const errorMsg = e instanceof Error ? e.message : $_('common.update_error');
+      toast.error(`${$_('common.error')}: ${errorMsg}`);
       console.error('Error marking as paid:', e);
     }
   };
@@ -100,10 +101,10 @@
     try {
       await api.post(`/expenses/${expense.id}/mark-overdue`, {});
       await loadExpense();
-      toast.success('Dépense marquée comme en retard');
+      toast.success($_('expenses.marked_overdue'));
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la mise à jour';
-      toast.error(`Erreur: ${errorMsg}`);
+      const errorMsg = e instanceof Error ? e.message : $_('common.update_error');
+      toast.error(`${$_('common.error')}: ${errorMsg}`);
       console.error('Error marking as overdue:', e);
     }
   };
@@ -111,17 +112,17 @@
   const handleCancel = async () => {
     if (!expense) return;
 
-    if (!confirm('Êtes-vous sûr de vouloir annuler cette dépense ?')) {
+    if (!confirm($_('expenses.confirm_cancel'))) {
       return;
     }
 
     try {
       await api.post(`/expenses/${expense.id}/cancel`, {});
       await loadExpense();
-      toast.success('Dépense annulée avec succès');
+      toast.success($_('expenses.cancelled'));
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'Erreur lors de l\'annulation';
-      toast.error(`Erreur: ${errorMsg}`);
+      const errorMsg = e instanceof Error ? e.message : $_('expenses.cancel_error');
+      toast.error(`${$_('common.error')}: ${errorMsg}`);
       console.error('Error cancelling expense:', e);
     }
   };
@@ -132,10 +133,10 @@
     try {
       await api.post(`/expenses/${expense.id}/reactivate`, {});
       await loadExpense();
-      toast.success('Dépense réactivée avec succès');
+      toast.success($_('expenses.reactivated'));
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'Erreur lors de la réactivation';
-      toast.error(`Erreur: ${errorMsg}`);
+      const errorMsg = e instanceof Error ? e.message : $_('expenses.reactivate_error');
+      toast.error(`${$_('common.error')}: ${errorMsg}`);
       console.error('Error reactivating expense:', e);
     }
   };
@@ -143,17 +144,17 @@
   const handleUnpay = async () => {
     if (!expense) return;
 
-    if (!confirm('Êtes-vous sûr de vouloir annuler le paiement de cette dépense ?')) {
+    if (!confirm($_('expenses.confirm_unpay'))) {
       return;
     }
 
     try {
       await api.post(`/expenses/${expense.id}/unpay`, {});
       await loadExpense();
-      toast.success('Paiement annulé avec succès - dépense remise en attente');
+      toast.success($_('expenses.unpaid'));
     } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'Erreur lors de l\'annulation du paiement';
-      toast.error(`Erreur: ${errorMsg}`);
+      const errorMsg = e instanceof Error ? e.message : $_('expenses.unpay_error');
+      toast.error(`${$_('common.error')}: ${errorMsg}`);
       console.error('Error unpaying expense:', e);
     }
   };
@@ -172,10 +173,10 @@
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Paid': { class: 'bg-green-100 text-green-800', label: 'Payée' },
-      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: 'En attente' },
-      'Overdue': { class: 'bg-red-100 text-red-800', label: 'En retard' },
-      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: 'Annulée' }
+      'Paid': { class: 'bg-green-100 text-green-800', label: $_('expenses.status_paid') },
+      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.status_pending') },
+      'Overdue': { class: 'bg-red-100 text-red-800', label: $_('expenses.status_overdue') },
+      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.status_cancelled') }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
@@ -186,35 +187,35 @@
 
   function getPaymentStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: 'En attente' },
-      'Processing': { class: 'bg-blue-100 text-blue-800', label: 'En cours' },
-      'RequiresAction': { class: 'bg-orange-100 text-orange-800', label: 'Action requise' },
-      'Succeeded': { class: 'bg-green-100 text-green-800', label: 'Réussi' },
-      'Failed': { class: 'bg-red-100 text-red-800', label: 'Échoué' },
-      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: 'Annulé' },
-      'Refunded': { class: 'bg-purple-100 text-purple-800', label: 'Remboursé' },
+      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.payment_pending') },
+      'Processing': { class: 'bg-blue-100 text-blue-800', label: $_('expenses.payment_processing') },
+      'RequiresAction': { class: 'bg-orange-100 text-orange-800', label: $_('expenses.payment_action_required') },
+      'Succeeded': { class: 'bg-green-100 text-green-800', label: $_('expenses.payment_succeeded') },
+      'Failed': { class: 'bg-red-100 text-red-800', label: $_('expenses.payment_failed') },
+      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.payment_cancelled') },
+      'Refunded': { class: 'bg-purple-100 text-purple-800', label: $_('expenses.payment_refunded') },
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
 
   function getPaymentMethodLabel(type: string): string {
     const labels: Record<string, string> = {
-      'Card': 'Carte bancaire',
-      'SepaDebit': 'SEPA',
-      'BankTransfer': 'Virement',
-      'Cash': 'Espèces',
+      'Card': $_('expenses.method_card'),
+      'SepaDebit': $_('expenses.method_sepa'),
+      'BankTransfer': $_('expenses.method_transfer'),
+      'Cash': $_('expenses.method_cash'),
     };
     return labels[type] || type;
   }
 
   function getCategoryLabel(category: string): string {
     const labels: Record<string, string> = {
-      'Maintenance': 'Entretien',
-      'Repair': 'Réparation',
-      'Insurance': 'Assurance',
-      'Utilities': 'Charges',
-      'Management': 'Gestion',
-      'Other': 'Autre'
+      'Maintenance': $_('expenses.category_maintenance'),
+      'Repair': $_('expenses.category_repair'),
+      'Insurance': $_('expenses.category_insurance'),
+      'Utilities': $_('expenses.category_utilities'),
+      'Management': $_('expenses.category_management'),
+      'Other': $_('expenses.category_other')
     };
     return labels[category] || category;
   }
@@ -225,7 +226,7 @@
     <div class="flex items-center justify-center min-h-screen">
       <div class="text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p class="mt-4 text-gray-600">Chargement...</p>
+        <p class="mt-4 text-gray-600">{$_('common.loading')}</p>
       </div>
     </div>
   {:else if error}
@@ -246,35 +247,35 @@
             on:click={handleGoBack}
             class="text-gray-600 hover:text-gray-900"
           >
-            Retour
+            {$_('common.back')}
           </button>
-          <h1 class="text-3xl font-bold text-gray-900">Détail de la dépense</h1>
+          <h1 class="text-3xl font-bold text-gray-900">{$_('expenses.detail_title')}</h1>
         </div>
         <div class="flex gap-2">
           {#if expense.payment_status === 'Pending'}
             <Button variant="primary" on:click={handleMarkPaid}>
-              Marquer comme payée
+              {$_('expenses.mark_paid')}
             </Button>
             <Button variant="outline" on:click={handleMarkOverdue}>
-              Marquer en retard
+              {$_('expenses.mark_overdue')}
             </Button>
             <Button variant="outline" on:click={handleCancel}>
-              Annuler
+              {$_('common.cancel')}
             </Button>
           {:else if expense.payment_status === 'Overdue'}
             <Button variant="primary" on:click={handleMarkPaid}>
-              Marquer comme payée
+              {$_('expenses.mark_paid')}
             </Button>
             <Button variant="outline" on:click={handleCancel}>
-              Annuler
+              {$_('common.cancel')}
             </Button>
           {:else if expense.payment_status === 'Paid'}
             <Button variant="outline" on:click={handleUnpay}>
-              Annuler le paiement
+              {$_('expenses.cancel_payment')}
             </Button>
           {:else if expense.payment_status === 'Cancelled'}
             <Button variant="primary" on:click={handleReactivate}>
-              Réactiver
+              {$_('expenses.reactivate')}
             </Button>
           {/if}
         </div>
@@ -285,7 +286,7 @@
     <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
       <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
         <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold text-white">Informations générales</h2>
+          <h2 class="text-xl font-semibold text-white">{$_('expenses.general_info')}</h2>
           <span class="px-3 py-1 rounded-full text-sm font-medium {getStatusBadge(expense.payment_status).class}">
             {getStatusBadge(expense.payment_status).label}
           </span>
@@ -295,37 +296,37 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Description -->
           <div class="md:col-span-2">
-            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Description</h3>
+            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('common.description')}</h3>
             <p class="text-lg text-gray-900">{expense.description}</p>
           </div>
 
           <!-- Amount -->
           <div>
-            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Montant</h3>
+            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('common.amount')}</h3>
             <p class="text-2xl font-bold text-gray-900">{formatCurrency(expense.amount)}</p>
           </div>
 
           <!-- Category -->
           <div>
-            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Catégorie</h3>
+            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('common.category')}</h3>
             <p class="text-lg text-gray-900">{getCategoryLabel(expense.category)}</p>
           </div>
 
           <!-- Expense Date -->
           <div>
-            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Date de la dépense</h3>
+            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('expenses.date')}</h3>
             <p class="text-lg text-gray-900">{formatDate(expense.expense_date)}</p>
           </div>
 
           <!-- Due Date -->
           <div>
-            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Date d'échéance</h3>
+            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('expenses.due_date')}</h3>
             <p class="text-lg text-gray-900">{formatDate(expense.due_date)}</p>
           </div>
 
           {#if expense.paid_date}
             <div>
-              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Date de paiement</h3>
+              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('expenses.paid_date')}</h3>
               <p class="text-lg text-gray-900">{formatDate(expense.paid_date)}</p>
             </div>
           {/if}
@@ -333,7 +334,7 @@
           <!-- Building -->
           {#if building}
             <div>
-              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Immeuble</h3>
+              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('common.building')}</h3>
               <a href="/building-detail?id={building.id}" class="text-lg text-primary-600 hover:text-primary-700 hover:underline">
                 {building.name}
               </a>
@@ -343,14 +344,14 @@
 
           {#if expense.supplier}
             <div>
-              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Fournisseur</h3>
+              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('expenses.supplier')}</h3>
               <p class="text-lg text-gray-900">{expense.supplier}</p>
             </div>
           {/if}
 
           {#if expense.invoice_number}
             <div>
-              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Numéro de facture</h3>
+              <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('expenses.invoice_number')}</h3>
               <p class="text-lg text-gray-900">{expense.invoice_number}</p>
             </div>
           {/if}
@@ -367,7 +368,7 @@
     {#if distributions.length > 0}
       <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
         <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
-          <h2 class="text-xl font-semibold text-white">Repartition des Charges</h2>
+          <h2 class="text-xl font-semibold text-white">{$_('expenses.charge_distribution')}</h2>
         </div>
         <div class="p-6">
           <div class="space-y-3">
@@ -375,10 +376,10 @@
               <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                 <div class="flex-1">
                   <p class="text-sm font-medium text-gray-900">
-                    Proprietaire #{dist.owner_id.substring(0, 8)}
+                    {$_('expenses.owner')} #{dist.owner_id.substring(0, 8)}
                   </p>
                   <p class="text-xs text-gray-500">
-                    Quote-part: {(dist.quota_percentage * 100).toFixed(2)}%
+                    {$_('expenses.quota_part')}: {(dist.quota_percentage * 100).toFixed(2)}%
                   </p>
                 </div>
                 <span class="text-sm font-bold text-indigo-600">
@@ -388,7 +389,7 @@
             {/each}
           </div>
           <div class="mt-4 pt-3 border-t text-sm text-gray-500">
-            {distributions.length} proprietaire{distributions.length > 1 ? 's' : ''} concerne{distributions.length > 1 ? 's' : ''}
+            {distributions.length} {$_('expenses.owner_count', { values: { count: distributions.length } })}
           </div>
         </div>
       </div>
@@ -398,10 +399,10 @@
     <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
       <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
         <div class="flex items-center justify-between">
-          <h2 class="text-xl font-semibold text-white">Paiements</h2>
+          <h2 class="text-xl font-semibold text-white">{$_('expenses.payments')}</h2>
           {#if totalPaidCents > 0}
             <span class="px-3 py-1 rounded-full text-sm font-medium bg-white/20 text-white">
-              Total payé : {formatCentsToEur(totalPaidCents)}
+              {$_('expenses.total_paid')}: {formatCentsToEur(totalPaidCents)}
             </span>
           {/if}
         </div>
@@ -413,7 +414,7 @@
             {@const paidPercent = Math.min(100, (totalPaidCents / 100 / expense.amount) * 100)}
             <div class="mb-6">
               <div class="flex items-center justify-between text-sm text-gray-600 mb-1">
-                <span>Progression du paiement</span>
+                <span>{$_('expenses.payment_progress')}</span>
                 <span class="font-medium">{Math.round(paidPercent)}%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2.5">
@@ -423,8 +424,8 @@
                 ></div>
               </div>
               <div class="flex items-center justify-between text-xs text-gray-500 mt-1">
-                <span>{formatCentsToEur(totalPaidCents)} payé</span>
-                <span>{formatCurrency(expense.amount)} total</span>
+                <span>{formatCentsToEur(totalPaidCents)} {$_('expenses.paid')}</span>
+                <span>{formatCurrency(expense.amount)} {$_('common.total')}</span>
               </div>
             </div>
           {/if}
@@ -445,7 +446,7 @@
                     <span>{formatDate(payment.created_at)}</span>
                     {#if payment.refunded_amount_cents > 0}
                       <span>·</span>
-                      <span class="text-purple-600">Remboursé : {formatCentsToEur(payment.refunded_amount_cents)}</span>
+                      <span class="text-purple-600">{$_('expenses.refunded')}: {formatCentsToEur(payment.refunded_amount_cents)}</span>
                     {/if}
                   </div>
                   {#if payment.failure_reason}
@@ -457,7 +458,7 @@
           </div>
         {:else}
           <div class="text-center py-8">
-            <p class="text-gray-500">Aucun paiement enregistré pour cette dépense</p>
+            <p class="text-gray-500">{$_('expenses.no_payments')}</p>
           </div>
         {/if}
       </div>

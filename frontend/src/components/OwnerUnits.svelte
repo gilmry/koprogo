@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import type { UnitOwner, Unit } from '../lib/types';
 
@@ -38,7 +39,7 @@
 
       error = '';
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des lots';
+      error = e instanceof Error ? e.message : $_('owners.error.units_loading');
       console.error('Error loading owner units:', e);
     } finally {
       loading = false;
@@ -60,9 +61,9 @@
 
   function getUnitTypeLabel(type: string): string {
     const labels: Record<string, string> = {
-      'Apartment': 'Appartement',
-      'Parking': 'Parking',
-      'Cellar': 'Cave'
+      'Apartment': $_('common.unit_type.apartment'),
+      'Parking': $_('common.unit_type.parking'),
+      'Cellar': $_('common.unit_type.cellar')
     };
     return labels[type] || type;
   }
@@ -88,13 +89,13 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-4">Chargement...</p>
+    <p class="text-center text-gray-600 py-4">{$_('common.loading')}</p>
   {:else}
     <!-- Active Units -->
     {#if activeUnits.length > 0}
       <div class="space-y-2">
         <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Lots actuels ({activeUnits.length})
+          {$_('owners.active_units', { values: { count: activeUnits.length } })}
         </h4>
 
         {#each activeUnits as ownerUnit (ownerUnit.id)}
@@ -106,10 +107,10 @@
                     <span class="text-2xl">{getUnitTypeIcon(ownerUnit.unit.unit_type)}</span>
                     <div>
                       <h5 class="font-semibold text-gray-900">
-                        Lot {ownerUnit.unit.unit_number}
+                        {$_('common.unit')} {ownerUnit.unit.unit_number}
                       </h5>
                       <p class="text-sm text-gray-600">
-                        {getUnitTypeLabel(ownerUnit.unit.unit_type)} - Étage {ownerUnit.unit.floor}
+                        {getUnitTypeLabel(ownerUnit.unit.unit_type)} - {$_('common.floor')} {ownerUnit.unit.floor}
                       </p>
                       <p class="text-xs text-gray-500">
                         {ownerUnit.unit.surface_area} m² • {Math.round(ownerUnit.unit.quota)}/1000èmes
@@ -118,14 +119,14 @@
                   </div>
                   {#if ownerUnit.is_primary_contact}
                     <span class="inline-block mt-2 px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
-                      Contact principal
+                      {$_('common.primary_contact')}
                     </span>
                   {/if}
                 {:else}
-                  <p class="text-gray-500 italic">Chargement des détails...</p>
+                  <p class="text-gray-500 italic">{$_('common.loading_details')}</p>
                 {/if}
                 <p class="text-xs text-gray-500 mt-1">
-                  Depuis le {formatDate(ownerUnit.start_date)}
+                  {$_('owners.since')} {formatDate(ownerUnit.start_date)}
                 </p>
               </div>
 
@@ -133,7 +134,7 @@
                 <p class="text-2xl font-bold text-primary-600">
                   {formatPercentage(ownerUnit.ownership_percentage)}
                 </p>
-                <p class="text-xs text-gray-500">Quote-part</p>
+                <p class="text-xs text-gray-500">{$_('common.quota')}</p>
               </div>
             </div>
           </div>
@@ -141,7 +142,7 @@
       </div>
     {:else}
       <p class="text-center text-gray-600 py-4">
-        Aucun lot actuel
+        {$_('owners.empty.active_units')}
       </p>
     {/if}
 
@@ -149,7 +150,7 @@
     {#if showHistory && inactiveUnits.length > 0}
       <div class="space-y-2 mt-6">
         <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Historique ({inactiveUnits.length})
+          {$_('owners.history_units', { values: { count: inactiveUnits.length } })}
         </h4>
 
         {#each inactiveUnits as ownerUnit (ownerUnit.id)}
@@ -161,7 +162,7 @@
                     <span class="text-xl opacity-50">{getUnitTypeIcon(ownerUnit.unit.unit_type)}</span>
                     <div>
                       <h5 class="font-medium text-gray-700">
-                        Lot {ownerUnit.unit.unit_number}
+                        {$_('common.unit')} {ownerUnit.unit.unit_number}
                       </h5>
                       <p class="text-sm text-gray-600">
                         {getUnitTypeLabel(ownerUnit.unit.unit_type)}
@@ -169,10 +170,10 @@
                     </div>
                   </div>
                 {:else}
-                  <p class="text-gray-500 italic">Chargement des détails...</p>
+                  <p class="text-gray-500 italic">{$_('common.loading_details')}</p>
                 {/if}
                 <p class="text-xs text-gray-500 mt-1">
-                  {formatDate(ownerUnit.start_date)} → {ownerUnit.end_date ? formatDate(ownerUnit.end_date) : 'En cours'}
+                  {formatDate(ownerUnit.start_date)} → {ownerUnit.end_date ? formatDate(ownerUnit.end_date) : $_('common.ongoing')}
                 </p>
               </div>
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import {
     convocationsApi,
     type Convocation,
@@ -38,7 +39,7 @@
       if (err.message?.includes('404') || err.message?.includes('not found') || err.message?.includes('Not Found')) {
         convocation = null;
       } else {
-        error = err.message || 'Erreur lors du chargement';
+        error = err.message || $_('common.loadingError');
       }
     } finally {
       loading = false;
@@ -55,9 +56,9 @@
         meeting_date: '', // Le backend le calculera depuis le meeting
         language: 'fr',
       });
-      toast.success('Convocation créée');
+      toast.success($_('convocations.messages.created'));
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la création');
+      toast.error(err.message || $_('convocations.errors.creationFailed'));
     } finally {
       actionLoading = false;
     }
@@ -65,14 +66,14 @@
 
   async function handleSend() {
     if (!convocation) return;
-    if (!confirm('Envoyer la convocation à tous les copropriétaires ?')) return;
+    if (!confirm($_('convocations.confirms.sendToAll'))) return;
 
     try {
       actionLoading = true;
       convocation = await convocationsApi.send(convocation.id);
-      toast.success('Convocation envoyée');
+      toast.success($_('convocations.messages.sent'));
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'envoi');
+      toast.error(err.message || $_('convocations.errors.sendingFailed'));
     } finally {
       actionLoading = false;
     }
@@ -80,14 +81,14 @@
 
   async function handleCancel() {
     if (!convocation) return;
-    if (!confirm('Annuler cette convocation ?')) return;
+    if (!confirm($_('convocations.confirms.cancelConvocation'))) return;
 
     try {
       actionLoading = true;
       convocation = await convocationsApi.cancel(convocation.id);
-      toast.success('Convocation annulée');
+      toast.success($_('convocations.messages.cancelled'));
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'annulation');
+      toast.error(err.message || $_('convocations.errors.cancellationFailed'));
     } finally {
       actionLoading = false;
     }
@@ -99,10 +100,10 @@
     try {
       actionLoading = true;
       await convocationsApi.sendReminders(convocation.id);
-      toast.success('Rappels envoyés');
+      toast.success($_('convocations.messages.remindersEntered'));
       await loadConvocation();
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'envoi des rappels');
+      toast.error(err.message || $_('convocations.errors.remindersSendingFailed'));
     } finally {
       actionLoading = false;
     }
@@ -110,15 +111,15 @@
 
   async function handleDelete() {
     if (!convocation) return;
-    if (!confirm('Supprimer cette convocation ? Cette action est irréversible.')) return;
+    if (!confirm($_('convocations.confirms.deleteConvocation'))) return;
 
     try {
       actionLoading = true;
       await convocationsApi.delete(convocation.id);
       convocation = null;
-      toast.success('Convocation supprimée');
+      toast.success($_('convocations.messages.deleted'));
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la suppression');
+      toast.error(err.message || $_('convocations.errors.deletionFailed'));
     } finally {
       actionLoading = false;
     }
@@ -136,19 +137,19 @@
 
   function getStatusConfig(status: ConvocationStatus): { bg: string; text: string; label: string; icon: string } {
     const config: Record<ConvocationStatus, { bg: string; text: string; label: string; icon: string }> = {
-      [ConvocationStatus.Draft]: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Brouillon', icon: '📝' },
-      [ConvocationStatus.Scheduled]: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Planifiée', icon: '📅' },
-      [ConvocationStatus.Sent]: { bg: 'bg-green-100', text: 'text-green-800', label: 'Envoyée', icon: '✅' },
-      [ConvocationStatus.Cancelled]: { bg: 'bg-red-100', text: 'text-red-800', label: 'Annulée', icon: '❌' },
+      [ConvocationStatus.Draft]: { bg: 'bg-gray-100', text: 'text-gray-800', label: $_('convocations.status.draft'), icon: '📝' },
+      [ConvocationStatus.Scheduled]: { bg: 'bg-blue-100', text: 'text-blue-800', label: $_('convocations.status.scheduled'), icon: '📅' },
+      [ConvocationStatus.Sent]: { bg: 'bg-green-100', text: 'text-green-800', label: $_('convocations.status.sent'), icon: '✅' },
+      [ConvocationStatus.Cancelled]: { bg: 'bg-red-100', text: 'text-red-800', label: $_('convocations.status.cancelled'), icon: '❌' },
     };
     return config[status] || config[ConvocationStatus.Draft];
   }
 
   function getMeetingTypeLabel(type: MeetingType): string {
     switch (type) {
-      case MeetingType.Ordinary: return 'AG Ordinaire (15j min)';
-      case MeetingType.Extraordinary: return 'AG Extraordinaire (8j min)';
-      case MeetingType.SecondConvocation: return '2e Convocation (8j min)';
+      case MeetingType.Ordinary: return $_('convocations.meetingType.ordinaryWithDays');
+      case MeetingType.Extraordinary: return $_('convocations.meetingType.extraordinaryWithDays');
+      case MeetingType.SecondConvocation: return $_('convocations.meetingType.secondConvocationWithDays');
       default: return type;
     }
   }
@@ -157,7 +158,7 @@
 <div class="bg-white rounded-lg shadow-lg overflow-hidden">
   <div class="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">
     <div class="flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-white">Convocation</h2>
+      <h2 class="text-xl font-semibold text-white">{$_('convocations.title')}</h2>
       {#if convocation}
         {@const statusCfg = getStatusConfig(convocation.status)}
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {statusCfg.bg} {statusCfg.text}">
@@ -172,34 +173,34 @@
     {#if loading}
       <div class="py-6 text-center">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-        <p class="mt-2 text-sm text-gray-500">Chargement...</p>
+        <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
       </div>
 
     {:else if error}
       <div class="p-4 bg-red-50 border border-red-200 rounded-md">
         <p class="text-sm text-red-800">{error}</p>
         <button on:click={loadConvocation} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
-          Réessayer
+          {$_('common.retry')}
         </button>
       </div>
 
     {:else if !convocation}
       <!-- No convocation yet -->
       <div class="py-6 text-center">
-        <p class="text-gray-500 mb-2">Aucune convocation n'a été créée pour cette assemblée.</p>
+        <p class="text-gray-500 mb-2">{$_('convocations.noConvocationCreated')}</p>
         {#if isAdmin && meetingStatus === 'Scheduled'}
           <button
             on:click={handleCreate}
             disabled={actionLoading}
             class="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
           >
-            {actionLoading ? 'Création...' : '📨 Créer la convocation'}
+            {actionLoading ? $_('common.creating') : '📨 ' + $_('convocations.actions.create')}
           </button>
           <p class="mt-3 text-xs text-gray-400">
-            Les délais légaux seront vérifiés automatiquement (15j pour AG ordinaire, 8j pour AG extraordinaire).
+            {$_('convocations.legalDeadlineHint')}
           </p>
         {:else}
-          <p class="text-sm text-gray-400">Le syndic n'a pas encore créé de convocation.</p>
+          <p class="text-sm text-gray-400">{$_('convocations.syndicNotCreatedYet')}</p>
         {/if}
       </div>
 
@@ -209,26 +210,26 @@
         <!-- Info grid -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div>
-            <p class="text-xs text-gray-500 mb-1">Type</p>
+            <p class="text-xs text-gray-500 mb-1">{$_('common.type')}</p>
             <p class="text-sm font-medium text-gray-900">{getMeetingTypeLabel(convocation.meeting_type)}</p>
           </div>
           <div>
-            <p class="text-xs text-gray-500 mb-1">Date AG</p>
+            <p class="text-xs text-gray-500 mb-1">{$_('convocations.meetingDate')}</p>
             <p class="text-sm font-medium text-gray-900">{formatDate(convocation.meeting_date)}</p>
           </div>
           <div>
-            <p class="text-xs text-gray-500 mb-1">Date limite d'envoi</p>
+            <p class="text-xs text-gray-500 mb-1">{$_('convocations.sendDeadline')}</p>
             <p class="text-sm font-medium text-gray-900">{formatDate(convocation.minimum_send_date)}</p>
           </div>
           <div>
-            <p class="text-xs text-gray-500 mb-1">Délai légal</p>
+            <p class="text-xs text-gray-500 mb-1">{$_('convocations.legalDeadline')}</p>
             {#if convocation.respects_legal_deadline}
               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                ✅ Respecté
+                ✅ {$_('common.respected')}
               </span>
             {:else}
               <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                ⚠️ Non respecté
+                ⚠️ {$_('common.notRespected')}
               </span>
             {/if}
           </div>
@@ -236,12 +237,12 @@
 
         <!-- Recipients summary -->
         <div class="flex items-center gap-4 text-sm text-gray-600">
-          <span>📧 {convocation.total_recipients} destinataire{convocation.total_recipients > 1 ? 's' : ''}</span>
+          <span>📧 {convocation.total_recipients} {$_('common.recipient', { count: convocation.total_recipients })}</span>
           {#if convocation.opened_count > 0}
-            <span>👁️ {convocation.opened_count} ouvert{convocation.opened_count > 1 ? 's' : ''}</span>
+            <span>👁️ {convocation.opened_count} {$_('common.opened', { count: convocation.opened_count })}</span>
           {/if}
           {#if convocation.will_attend_count > 0}
-            <span>✅ {convocation.will_attend_count} présent{convocation.will_attend_count > 1 ? 's' : ''}</span>
+            <span>✅ {convocation.will_attend_count} {$_('common.present', { count: convocation.will_attend_count })}</span>
           {/if}
         </div>
 
@@ -259,14 +260,14 @@
                 disabled={actionLoading}
                 class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
-                📨 Envoyer
+                📨 {$_('common.send')}
               </button>
               <button
                 on:click={handleDelete}
                 disabled={actionLoading}
                 class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 disabled:opacity-50 transition-colors"
               >
-                Supprimer
+                {$_('common.delete')}
               </button>
             {:else if convocation.status === ConvocationStatus.Scheduled}
               <button
@@ -274,14 +275,14 @@
                 disabled={actionLoading}
                 class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
-                📨 Envoyer maintenant
+                📨 {$_('convocations.actions.sendNow')}
               </button>
               <button
                 on:click={handleCancel}
                 disabled={actionLoading}
                 class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors"
               >
-                Annuler
+                {$_('common.cancel')}
               </button>
             {:else if convocation.status === ConvocationStatus.Sent}
               <button
@@ -289,7 +290,7 @@
                 disabled={actionLoading}
                 class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
               >
-                🔔 Envoyer rappels (J-3)
+                🔔 {$_('convocations.actions.sendReminders')}
               </button>
             {/if}
 
@@ -298,7 +299,7 @@
                 on:click={() => showRecipients = !showRecipients}
                 class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
               >
-                {showRecipients ? 'Masquer' : 'Voir'} les destinataires ({convocation.total_recipients})
+                {showRecipients ? $_('common.hide') : $_('common.view')} {$_('convocations.recipients')} ({convocation.total_recipients})
               </button>
             {/if}
           </div>

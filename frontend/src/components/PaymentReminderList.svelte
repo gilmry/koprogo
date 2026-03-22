@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
 
@@ -35,7 +36,7 @@
 
       reminders = await api.get(endpoint);
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement des relances';
+      error = err.message || $_('paymentReminders.loadError');
       console.error('Error loading reminders:', err);
     } finally {
       loading = false;
@@ -54,22 +55,22 @@
 
   function getLevelBadge(level: string): { class: string; label: string; emoji: string } {
     const badges: Record<string, { class: string; label: string; emoji: string }> = {
-      'FirstReminder': { class: 'bg-yellow-100 text-yellow-800', label: 'Rappel Aimable', emoji: '📧' },
-      'SecondReminder': { class: 'bg-orange-100 text-orange-800', label: 'Relance Ferme', emoji: '⚠️' },
-      'FormalNotice': { class: 'bg-red-100 text-red-800', label: 'Mise en Demeure', emoji: '🚨' },
-      'LegalAction': { class: 'bg-purple-100 text-purple-800', label: 'Procédure Huissier', emoji: '⚖️' }
+      'FirstReminder': { class: 'bg-yellow-100 text-yellow-800', label: $_('paymentReminders.kindReminder'), emoji: '📧' },
+      'SecondReminder': { class: 'bg-orange-100 text-orange-800', label: $_('paymentReminders.firmReminder'), emoji: '⚠️' },
+      'FormalNotice': { class: 'bg-red-100 text-red-800', label: $_('paymentReminders.formalNotice'), emoji: '🚨' },
+      'LegalAction': { class: 'bg-purple-100 text-purple-800', label: $_('paymentReminders.legalAction'), emoji: '⚖️' }
     };
     return badges[level] || { class: 'bg-gray-100 text-gray-800', label: level, emoji: '📄' };
   }
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Pending': { class: 'bg-blue-100 text-blue-800', label: 'En attente' },
-      'Sent': { class: 'bg-indigo-100 text-indigo-800', label: 'Envoyée' },
-      'Opened': { class: 'bg-purple-100 text-purple-800', label: 'Ouverte' },
-      'Paid': { class: 'bg-green-100 text-green-800', label: 'Payée' },
-      'Escalated': { class: 'bg-orange-100 text-orange-800', label: 'Escaladée' },
-      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: 'Annulée' }
+      'Pending': { class: 'bg-blue-100 text-blue-800', label: $_('paymentReminders.pending') },
+      'Sent': { class: 'bg-indigo-100 text-indigo-800', label: $_('paymentReminders.sent') },
+      'Opened': { class: 'bg-purple-100 text-purple-800', label: $_('paymentReminders.opened') },
+      'Paid': { class: 'bg-green-100 text-green-800', label: $_('paymentReminders.paid') },
+      'Escalated': { class: 'bg-orange-100 text-orange-800', label: $_('paymentReminders.escalated') },
+      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('paymentReminders.cancelled') }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
@@ -94,7 +95,7 @@
   });
 
   function bulkCreateReminders() {
-    if (confirm('Créer automatiquement des relances pour toutes les charges impayées ?')) {
+    if (confirm($_('paymentReminders.bulkCreateConfirm'))) {
       createBulkReminders();
     }
   }
@@ -105,11 +106,11 @@
       const response = await api.post('/payment-reminders/bulk-create', {
         min_days_overdue: 15
       });
-      toast.success(`${response.created_count} relances créées, ${response.skipped_count} ignorées`);
+      toast.success($_('paymentReminders.bulkCreateSuccess', { values: { created: response.created_count, skipped: response.skipped_count } }));
       await loadReminders();
       await loadStats();
     } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || 'Impossible de créer les relances'));
+      toast.error('Erreur: ' + (err.message || $_('paymentReminders.bulkCreateError')));
     } finally {
       loading = false;
     }
@@ -122,7 +123,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Total Impayés</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.totalOwed')}</span>
           <span class="text-2xl">💰</span>
         </div>
         <p class="text-3xl font-bold text-gray-900">{formatCurrency(stats.total_owed)}</p>
@@ -130,7 +131,7 @@
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Pénalités</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.penalties')}</span>
           <span class="text-2xl">📊</span>
         </div>
         <p class="text-3xl font-bold text-red-600">{formatCurrency(stats.total_penalties)}</p>
@@ -138,7 +139,7 @@
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Relances Actives</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.activeReminders')}</span>
           <span class="text-2xl">📧</span>
         </div>
         <p class="text-3xl font-bold text-blue-600">
@@ -148,7 +149,7 @@
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-gray-600 text-sm font-medium">Taux Récupération</span>
+          <span class="text-gray-600 text-sm font-medium">{$_('paymentReminders.recoveryRate')}</span>
           <span class="text-2xl">✅</span>
         </div>
         <p class="text-3xl font-bold text-green-600">
@@ -164,36 +165,36 @@
       <div class="flex items-center space-x-4">
         <div>
           <label for="filter-status" class="block text-sm font-medium text-gray-700 mb-1">
-            Statut
+            {$_('paymentReminders.status')}
           </label>
           <select
             id="filter-status"
             bind:value={filterStatus}
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
           >
-            <option value="all">Tous</option>
-            <option value="Pending">En attente</option>
-            <option value="Sent">Envoyée</option>
-            <option value="Opened">Ouverte</option>
-            <option value="Paid">Payée</option>
-            <option value="Escalated">Escaladée</option>
-            <option value="Cancelled">Annulée</option>
+            <option value="all">{$_('common.all')}</option>
+            <option value="Pending">{$_('paymentReminders.pending')}</option>
+            <option value="Sent">{$_('paymentReminders.sent')}</option>
+            <option value="Opened">{$_('paymentReminders.opened')}</option>
+            <option value="Paid">{$_('paymentReminders.paid')}</option>
+            <option value="Escalated">{$_('paymentReminders.escalated')}</option>
+            <option value="Cancelled">{$_('paymentReminders.cancelled')}</option>
           </select>
         </div>
 
         <div>
           <label for="filter-level" class="block text-sm font-medium text-gray-700 mb-1">
-            Niveau
+            {$_('paymentReminders.level')}
           </label>
           <select
             id="filter-level"
             bind:value={filterLevel}
             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
           >
-            <option value="all">Tous</option>
-            <option value="FirstReminder">Rappel Aimable</option>
-            <option value="SecondReminder">Relance Ferme</option>
-            <option value="FormalNotice">Mise en Demeure</option>
+            <option value="all">{$_('common.all')}</option>
+            <option value="FirstReminder">{$_('paymentReminders.kindReminder')}</option>
+            <option value="SecondReminder">{$_('paymentReminders.firmReminder')}</option>
+            <option value="FormalNotice">{$_('paymentReminders.formalNotice')}</option>
           </select>
         </div>
       </div>
@@ -203,7 +204,7 @@
           on:click={bulkCreateReminders}
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
         >
-          🤖 Créer Relances Automatiques
+          🤖 {$_('paymentReminders.createAutomatic')}
         </button>
       {/if}
     </div>
@@ -224,14 +225,14 @@
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <p class="text-gray-600">Chargement des relances...</p>
+        <p class="text-gray-600">{$_('paymentReminders.loading')}</p>
       </div>
     </div>
   {:else if filteredReminders.length === 0}
     <div class="bg-white rounded-lg shadow p-12 text-center">
       <div class="text-6xl mb-4">📭</div>
-      <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucune relance</h3>
-      <p class="text-gray-600">Aucune relance de paiement trouvée pour les critères sélectionnés.</p>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">{$_('paymentReminders.none')}</h3>
+      <p class="text-gray-600">{$_('paymentReminders.empty')}</p>
     </div>
   {:else}
     <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -239,25 +240,25 @@
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Niveau
+              {$_('paymentReminders.level')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Propriétaire
+              {$_('paymentReminders.owner')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Montant
+              {$_('paymentReminders.amount')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Pénalités
+              {$_('paymentReminders.penalties')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Jours Retard
+              {$_('paymentReminders.daysOverdue')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Statut
+              {$_('paymentReminders.status')}
             </th>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Date Envoi
+              {$_('paymentReminders.sentDate')}
             </th>
           </tr>
         </thead>
@@ -293,7 +294,7 @@
                 +{formatCurrency(reminder.penalty_amount)}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                <span class="font-bold">{reminder.days_overdue}</span> jours
+                <span class="font-bold">{reminder.days_overdue}</span> {$_('paymentReminders.days')}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium {statusBadge.class}">
@@ -311,7 +312,7 @@
 
     <div class="bg-white rounded-lg shadow p-4">
       <p class="text-sm text-gray-600">
-        Total: {filteredReminders.length} relance{filteredReminders.length > 1 ? 's' : ''}
+        {$_('paymentReminders.total', { values: { count: filteredReminders.length } })}
       </p>
     </div>
   {/if}

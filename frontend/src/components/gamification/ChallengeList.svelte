@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
   import { onMount } from 'svelte';
   import {
     gamificationApi,
@@ -67,7 +68,7 @@
       }
       userProgress = new Map(userChallenges.map(p => [p.challenge_id, p]));
     } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement des challenges';
+      error = err.message || $_('gamification.load_error');
     } finally {
       loading = false;
     }
@@ -77,19 +78,19 @@
 
   function getStatusConfig(status: ChallengeStatus): { bg: string; text: string; label: string } {
     switch (status) {
-      case ChallengeStatus.Draft: return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Brouillon' };
-      case ChallengeStatus.Active: return { bg: 'bg-green-100', text: 'text-green-700', label: 'Actif' };
-      case ChallengeStatus.Completed: return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Terminé' };
-      case ChallengeStatus.Cancelled: return { bg: 'bg-red-100', text: 'text-red-700', label: 'Annulé' };
+      case ChallengeStatus.Draft: return { bg: 'bg-gray-100', text: 'text-gray-700', label: $_('gamification.status_draft') };
+      case ChallengeStatus.Active: return { bg: 'bg-green-100', text: 'text-green-700', label: $_('gamification.status_active') };
+      case ChallengeStatus.Completed: return { bg: 'bg-blue-100', text: 'text-blue-700', label: $_('gamification.status_completed') };
+      case ChallengeStatus.Cancelled: return { bg: 'bg-red-100', text: 'text-red-700', label: $_('gamification.status_cancelled') };
       default: return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
     }
   }
 
   function getTypeLabel(type: ChallengeType): string {
     switch (type) {
-      case ChallengeType.Individual: return 'Individuel';
-      case ChallengeType.Team: return 'Équipe';
-      case ChallengeType.Building: return 'Immeuble';
+      case ChallengeType.Individual: return $_('gamification.type_individual');
+      case ChallengeType.Team: return $_('gamification.type_team');
+      case ChallengeType.Building: return $_('gamification.type_building');
       default: return type;
     }
   }
@@ -116,9 +117,9 @@
 
 <div class="bg-white shadow-md rounded-lg">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
-    <h3 class="text-lg leading-6 font-medium text-gray-900">Challenges</h3>
+    <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.challenges_title')}</h3>
     <p class="mt-1 text-sm text-gray-500">
-      Relevez des défis pour gagner des points.
+      {$_('gamification.challenges_description')}
     </p>
   </div>
 
@@ -126,9 +127,9 @@
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex gap-1">
       {#each [
-        { value: 'active', label: 'Actifs' },
-        { value: 'all', label: 'Tous' },
-        { value: 'completed', label: 'Terminés' },
+        { value: 'active', label: $_('gamification.status_actives') },
+        { value: 'all', label: $_('common.all') },
+        { value: 'completed', label: $_('gamification.status_completed_plural') },
       ] as f}
         <button on:click={() => statusFilter = f.value}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
@@ -142,16 +143,16 @@
   {#if loading}
     <div class="p-8 text-center">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement...</p>
+      <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">Réessayer</button>
+      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if challenges.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">Aucun challenge {statusFilter === 'active' ? 'actif' : ''} pour le moment</p>
+      <p class="text-gray-500">{$_('gamification.no_challenges_filter', { filter: statusFilter === 'active' ? $_('gamification.status_active') : '' })}</p>
     </div>
   {:else}
     <ul class="divide-y divide-gray-200">
@@ -194,11 +195,11 @@
                 <span>{formatDate(challenge.start_date)} - {formatDate(challenge.end_date)}</span>
                 {#if challenge.status === ChallengeStatus.Active && daysLeft > 0}
                   <span class="font-medium {daysLeft <= 3 ? 'text-red-600' : 'text-gray-600'}">
-                    {daysLeft}j restants
+                    {$_('gamification.days_remaining', { days: daysLeft })}
                   </span>
                 {/if}
                 {#if progress?.completed}
-                  <span class="text-green-600 font-medium">Complété !</span>
+                  <span class="text-green-600 font-medium">{$_('gamification.completed')}</span>
                 {/if}
               </div>
             </div>

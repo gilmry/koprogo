@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from "svelte-i18n";
   import { noticesApi, type Notice, NoticeStatus } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
   import NoticeTypeBadge from "./NoticeTypeBadge.svelte";
@@ -36,31 +37,31 @@
   }
 
   async function handleArchive() {
-    if (!confirm("Are you sure you want to archive this notice?")) return;
+    if (!confirm($_("notices.archive_confirmation"))) return;
 
     try {
       archiving = true;
       await noticesApi.archive(noticeId);
-      toast.success("Notice archived successfully");
+      toast.success($_("notices.archived_successfully"));
       window.location.href = "/notices";
     } catch (err: any) {
-      toast.error(err.message || "Failed to archive notice");
+      toast.error(err.message || $_("notices.archive_failed"));
     } finally {
       archiving = false;
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this notice? This action cannot be undone."))
+    if (!confirm($_("notices.delete_confirmation")))
       return;
 
     try {
       deleting = true;
       await noticesApi.delete(noticeId);
-      toast.success("Notice deleted successfully");
+      toast.success($_("notices.deleted_successfully"));
       window.location.href = "/notices";
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete notice");
+      toast.error(err.message || $_("notices.delete_failed"));
     } finally {
       deleting = false;
     }
@@ -81,7 +82,7 @@
 
 <div class="bg-white shadow rounded-lg overflow-hidden">
   {#if loading}
-    <div class="text-center py-12 text-gray-500">Loading notice...</div>
+    <div class="text-center py-12 text-gray-500">{$_("notices.loading")}</div>
   {:else if notice}
     <div class="p-6">
       <!-- Header -->
@@ -91,7 +92,7 @@
             <NoticeTypeBadge type={notice.notice_type} />
             <NoticeStatusBadge status={notice.status} />
             {#if notice.is_pinned}
-              <span class="text-xs text-gray-500">📌 Pinned</span>
+              <span class="text-xs text-gray-500">📌 {$_("notices.pinned")}</span>
             {/if}
           </div>
           <h1 class="text-2xl font-bold text-gray-900">{notice.title}</h1>
@@ -104,14 +105,14 @@
               disabled={archiving || notice.status === "Archived"}
               class="px-3 py-1 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {archiving ? "Archiving..." : "Archive"}
+              {archiving ? $_("notices.archiving") : $_("notices.archive")}
             </button>
             <button
               on:click={handleDelete}
               disabled={deleting}
               class="px-3 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {deleting ? "Deleting..." : "Delete"}
+              {deleting ? $_("notices.deleting") : $_("common.delete")}
             </button>
           </div>
         {/if}
@@ -120,14 +121,14 @@
       <!-- Metadata -->
       <div class="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-4">
         {#if notice.author_name}
-          <span>👤 Posted by {notice.author_name}</span>
+          <span>👤 {$_("notices.posted_by")} {notice.author_name}</span>
         {/if}
         <span>📅 {formatDate(notice.created_at)}</span>
         {#if notice.published_at}
-          <span>📤 Published {formatDate(notice.published_at)}</span>
+          <span>📤 {$_("notices.published")} {formatDate(notice.published_at)}</span>
         {/if}
         {#if notice.expires_at}
-          <span>⏰ Expires {formatDate(notice.expires_at)}</span>
+          <span>⏰ {$_("notices.expires")} {formatDate(notice.expires_at)}</span>
         {/if}
       </div>
 
@@ -148,14 +149,14 @@
       <!-- Event Info -->
       {#if notice.event_date}
         <div class="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-4">
-          <h3 class="text-sm font-semibold text-pink-900 mb-1">Event Details</h3>
+          <h3 class="text-sm font-semibold text-pink-900 mb-1">{$_("notices.event_details")}</h3>
           <p class="text-sm text-pink-700">📅 {formatDate(notice.event_date)}</p>
           {#if notice.event_location}
             <p class="text-sm text-pink-700">📍 {notice.event_location}</p>
           {/if}
           {#if notice.days_until_event !== undefined && notice.days_until_event !== null}
             <p class="text-sm text-pink-600 mt-1">
-              {notice.days_until_event > 0 ? `In ${notice.days_until_event} days` : notice.days_until_event === 0 ? "Today!" : "Past event"}
+              {notice.days_until_event > 0 ? $_("notices.in_days", { values: { days: notice.days_until_event } }) : notice.days_until_event === 0 ? $_("notices.today") : $_("notices.past_event")}
             </p>
           {/if}
         </div>
@@ -164,12 +165,12 @@
       <!-- Contact Info -->
       {#if notice.contact_info}
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <h3 class="text-sm font-semibold text-blue-900 mb-1">Contact Information</h3>
+          <h3 class="text-sm font-semibold text-blue-900 mb-1">{$_("notices.contact_information")}</h3>
           <p class="text-sm text-blue-700">{notice.contact_info}</p>
         </div>
       {/if}
     </div>
   {:else}
-    <div class="text-center py-12 text-gray-500">Notice not found</div>
+    <div class="text-center py-12 text-gray-500">{$_("notices.not_found")}</div>
   {/if}
 </div>

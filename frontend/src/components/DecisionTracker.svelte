@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import type { BoardDecisionResponse } from '../lib/types';
@@ -12,18 +13,18 @@
   let error = '';
   let statusFilter = filterStatus || 'all';
 
-  const statusOptions = [
-    { value: 'all', label: 'Toutes' },
-    { value: 'pending', label: 'En attente' },
-    { value: 'in_progress', label: 'En cours' },
-    { value: 'completed', label: 'Terminées' },
-    { value: 'overdue', label: 'En retard' },
-    { value: 'cancelled', label: 'Annulées' }
+  $: statusOptions = [
+    { value: 'all', label: $_('common.all') },
+    { value: 'pending', label: $_('board.status.pending') },
+    { value: 'in_progress', label: $_('board.status.inProgress') },
+    { value: 'completed', label: $_('board.status.completed') },
+    { value: 'overdue', label: $_('board.status.overdue') },
+    { value: 'cancelled', label: $_('board.status.cancelled') }
   ];
 
   onMount(() => {
     if (!buildingId) {
-      error = 'ID de l\'immeuble manquant';
+      error = $_('board.error.buildingIdMissing');
       loading = false;
       return;
     }
@@ -42,7 +43,7 @@
 
       decisions = await api.get<BoardDecisionResponse[]>(endpoint);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Erreur lors du chargement des décisions';
+      error = e instanceof Error ? e.message : $_('board.error.loadDecisions');
       console.error('Error loading decisions:', e);
       toast.error(error);
     } finally {
@@ -53,10 +54,10 @@
   async function updateDecisionStatus(decisionId: string, newStatus: string) {
     try {
       await api.put(`/board-decisions/${decisionId}/status`, { status: newStatus });
-      toast.success('Statut mis à jour');
+      toast.success($_('board.success.statusUpdated'));
       loadDecisions();
     } catch (e) {
-      toast.error('Erreur lors de la mise à jour du statut');
+      toast.error($_('board.error.updateStatus'));
       console.error('Error updating status:', e);
     }
   }
@@ -64,10 +65,10 @@
   async function completeDecision(decisionId: string) {
     try {
       await api.put(`/board-decisions/${decisionId}/complete`, {});
-      toast.success('Décision marquée comme terminée');
+      toast.success($_('board.success.decisionCompleted'));
       loadDecisions();
     } catch (e) {
-      toast.error('Erreur lors de la validation de la décision');
+      toast.error($_('board.error.completeDecision'));
       console.error('Error completing decision:', e);
     }
   }
@@ -85,11 +86,11 @@
 
   function getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
-      'pending': 'En attente',
-      'in_progress': 'En cours',
-      'completed': 'Terminée',
-      'overdue': 'En retard',
-      'cancelled': 'Annulée'
+      'pending': $_('board.status.pending'),
+      'in_progress': $_('board.status.inProgress'),
+      'completed': $_('board.status.completed'),
+      'overdue': $_('board.status.overdue'),
+      'cancelled': $_('board.status.cancelled')
     };
     return labels[status] || status;
   }
@@ -136,15 +137,15 @@
     <div class="flex items-center justify-between">
       <div>
         <h2 class="text-xl font-semibold text-gray-900">
-          Suivi des Décisions AG
+          {$_('board.decisionTracker')}
         </h2>
         <p class="mt-1 text-sm text-gray-600">
-          {decisions.length} décision{decisions.length > 1 ? 's' : ''}
+          {$_('board.decisionCount', { values: { count: decisions.length } })}
         </p>
       </div>
       <div class="flex items-center space-x-4">
         <label class="text-sm font-medium text-gray-700">
-          Filtrer par statut :
+          {$_('board.filterByStatus')}:
         </label>
         <select
           bind:value={statusFilter}
@@ -163,7 +164,7 @@
     <div class="flex items-center justify-center py-12">
       <div class="text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p class="mt-4 text-gray-600">Chargement des décisions...</p>
+        <p class="mt-4 text-gray-600">{$_('common.loading')}</p>
       </div>
     </div>
   {:else if error}
@@ -176,11 +177,11 @@
   {:else if decisions.length === 0}
     <div class="p-12 text-center">
       <span class="text-6xl">📋</span>
-      <h3 class="mt-4 text-lg font-medium text-gray-900">Aucune décision</h3>
+      <h3 class="mt-4 text-lg font-medium text-gray-900">{$_('board.noDecisions')}</h3>
       <p class="mt-2 text-sm text-gray-600">
         {statusFilter === 'all'
-          ? 'Aucune décision d\'AG à suivre pour le moment.'
-          : `Aucune décision avec le statut "${getStatusLabel(statusFilter)}".`}
+          ? $_('board.noDecisionsToTrack')
+          : $_('board.noDecisionsWithStatus', { values: { status: getStatusLabel(statusFilter) } })}
       </p>
     </div>
   {:else}

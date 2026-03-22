@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from 'svelte-i18n';
   import { onMount } from "svelte";
   import {
     localExchangesApi,
@@ -21,7 +22,7 @@
       error = null;
       leaderboard = await localExchangesApi.getLeaderboard(buildingId, limit);
     } catch (err: any) {
-      error = err.message || "Impossible de charger le classement";
+      error = err.message || $_('exchanges.leaderboard_error');
       console.error("Error loading leaderboard:", err);
     } finally {
       loading = false;
@@ -35,7 +36,7 @@
 
 <div class="bg-white shadow rounded-lg p-6">
   <h3 class="text-lg font-semibold text-gray-900 mb-4">
-    🏆 Classement des Contributeurs
+    🏆 {$_('exchanges.leaderboard_title')}
   </h3>
 
   {#if loading}
@@ -50,7 +51,7 @@
     </div>
   {:else if leaderboard.length === 0}
     <p class="text-gray-500 text-center py-8">
-      Aucun contributeur pour le moment
+      {$_('exchanges.no_contributors')}
     </p>
   {:else}
     <div class="space-y-3">
@@ -98,7 +99,7 @@
               <span class="font-medium {balanceColor}">
                 {owner.balance > 0 ? "+" : ""}{owner.balance}h
               </span>
-              <span>📊 {owner.total_exchanges} échanges</span>
+              <span>📊 {$_('exchanges.exchange_count', { count: owner.total_exchanges })}</span>
               {#if owner.average_rating}
                 <span>
                   ⭐ {owner.average_rating.toFixed(1)}
@@ -112,14 +113,14 @@
             <p class="text-lg font-bold {balanceColor}">
               {owner.balance > 0 ? "+" : ""}{owner.balance}
             </p>
-            <p class="text-xs text-gray-500">crédits</p>
+            <p class="text-xs text-gray-500">{$_('exchanges.credits')}</p>
           </div>
         </div>
       {/each}
     </div>
 
     <p class="mt-4 text-xs text-gray-500 text-center">
-      Classement basé sur le solde de crédits (heures données - heures reçues)
+      {$_('exchanges.leaderboard_info')}
     </p>
   {/if}
 </div>

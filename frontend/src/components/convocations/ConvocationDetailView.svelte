@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { _ } from 'svelte-i18n';
   import {
     convocationsApi,
     type Convocation,
@@ -51,19 +52,19 @@
 
   function getMeetingTypeLabel(type: MeetingType): string {
     switch (type) {
-      case MeetingType.Ordinary: return 'AG Ordinaire';
-      case MeetingType.Extraordinary: return 'AG Extraordinaire';
-      case MeetingType.SecondConvocation: return '2e Convocation';
+      case MeetingType.Ordinary: return $_('convocations.meetingType.ordinary');
+      case MeetingType.Extraordinary: return $_('convocations.meetingType.extraordinary');
+      case MeetingType.SecondConvocation: return $_('convocations.meetingType.secondConvocation');
       default: return type;
     }
   }
 
   function getStatusConfig(status: ConvocationStatus): { bg: string; text: string; label: string } {
     switch (status) {
-      case ConvocationStatus.Draft: return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Brouillon' };
-      case ConvocationStatus.Scheduled: return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Planifiée' };
-      case ConvocationStatus.Sent: return { bg: 'bg-green-100', text: 'text-green-700', label: 'Envoyée' };
-      case ConvocationStatus.Cancelled: return { bg: 'bg-red-100', text: 'text-red-700', label: 'Annulée' };
+      case ConvocationStatus.Draft: return { bg: 'bg-gray-100', text: 'text-gray-700', label: $_('convocations.status.draft') };
+      case ConvocationStatus.Scheduled: return { bg: 'bg-blue-100', text: 'text-blue-700', label: $_('convocations.status.scheduled') };
+      case ConvocationStatus.Sent: return { bg: 'bg-green-100', text: 'text-green-700', label: $_('convocations.status.sent') };
+      case ConvocationStatus.Cancelled: return { bg: 'bg-red-100', text: 'text-red-700', label: $_('convocations.status.cancelled') };
       default: return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
     }
   }
@@ -78,67 +79,67 @@
   }
 
   async function handleSchedule() {
-    const sendDate = prompt('Date d\'envoi planifiée (YYYY-MM-DD):');
+    const sendDate = prompt($_('convocations.prompts.scheduledSendDate'));
     if (!sendDate) return;
     actionLoading = true;
     try {
       convocation = await convocationsApi.schedule(convocation.id, sendDate);
-      toast.success('Convocation planifiée !');
+      toast.success($_('convocations.messages.scheduled'));
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la planification');
+      toast.error(err.message || $_('convocations.errors.schedulingFailed'));
     } finally {
       actionLoading = false;
     }
   }
 
   async function handleSend() {
-    if (!confirm('Envoyer cette convocation à tous les copropriétaires ? Un PDF sera généré et les emails envoyés.')) return;
+    if (!confirm($_('convocations.confirms.sendToAll'))) return;
     actionLoading = true;
     try {
       convocation = await convocationsApi.send(convocation.id);
-      toast.success('Convocation envoyée !');
+      toast.success($_('convocations.messages.sent'));
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'envoi');
+      toast.error(err.message || $_('convocations.errors.sendingFailed'));
     } finally {
       actionLoading = false;
     }
   }
 
   async function handleCancel() {
-    if (!confirm('Annuler cette convocation ?')) return;
+    if (!confirm($_('convocations.confirms.cancelConvocation'))) return;
     actionLoading = true;
     try {
       convocation = await convocationsApi.cancel(convocation.id);
-      toast.success('Convocation annulée');
+      toast.success($_('convocations.messages.cancelled'));
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'annulation');
+      toast.error(err.message || $_('convocations.errors.cancellationFailed'));
     } finally {
       actionLoading = false;
     }
   }
 
   async function handleSendReminders() {
-    if (!confirm('Envoyer des rappels aux copropriétaires qui n\'ont pas ouvert l\'email ?')) return;
+    if (!confirm($_('convocations.confirms.sendReminders'))) return;
     actionLoading = true;
     try {
       await convocationsApi.sendReminders(convocation.id);
-      toast.success('Rappels envoyés !');
+      toast.success($_('convocations.messages.remindersEntered'));
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'envoi des rappels');
+      toast.error(err.message || $_('convocations.errors.remindersSendingFailed'));
     } finally {
       actionLoading = false;
     }
   }
 
   async function handleDelete() {
-    if (!confirm('Supprimer cette convocation ? Cette action est irréversible.')) return;
+    if (!confirm($_('convocations.confirms.deleteConvocation'))) return;
     actionLoading = true;
     try {
       await convocationsApi.delete(convocation.id);
-      toast.success('Convocation supprimée');
+      toast.success($_('convocations.messages.deleted'));
       window.location.href = '/convocations';
     } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la suppression');
+      toast.error(err.message || $_('convocations.errors.deletionFailed'));
     } finally {
       actionLoading = false;
     }
@@ -151,7 +152,7 @@
     <div class="flex items-start justify-between">
       <div>
         <div class="flex items-center gap-3 mb-2">
-          <h2 class="text-2xl font-bold text-gray-900">Convocation</h2>
+          <h2 class="text-2xl font-bold text-gray-900">{$_('convocations.title')}</h2>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {getStatusConfig(convocation.status).bg} {getStatusConfig(convocation.status).text}">
             {getStatusConfig(convocation.status).label}
           </span>
@@ -160,7 +161,7 @@
           </span>
         </div>
         <p class="text-sm text-gray-500">
-          Langue: {convocation.language.toUpperCase()} - Créée le {formatDate(convocation.created_at)}
+          {$_('common.language')}: {convocation.language.toUpperCase()} - {$_('common.createdOn')} {formatDate(convocation.created_at)}
         </p>
       </div>
 
@@ -168,11 +169,11 @@
       <div class="text-right">
         {#if convocation.respects_legal_deadline}
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
-            Délai légal respecté ({getLegalDeadlineDays(convocation.meeting_type)}j)
+            {$_('convocations.legalDeadlineRespected', { values: { days: getLegalDeadlineDays(convocation.meeting_type) } })}
           </span>
         {:else}
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-700">
-            Délai légal non respecté
+            {$_('convocations.legalDeadlineNotRespected')}
           </span>
         {/if}
       </div>
@@ -181,19 +182,19 @@
     <!-- Key Dates -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
       <div class="p-3 bg-blue-50 rounded-lg">
-        <div class="text-xs text-blue-600 font-medium">Date AG</div>
+        <div class="text-xs text-blue-600 font-medium">{$_('convocations.meetingDate')}</div>
         <div class="text-sm text-blue-900 font-medium">{formatDateShort(convocation.meeting_date)}</div>
       </div>
       <div class="p-3 bg-amber-50 rounded-lg">
-        <div class="text-xs text-amber-600 font-medium">Envoi minimum</div>
+        <div class="text-xs text-amber-600 font-medium">{$_('convocations.minimumSendDate')}</div>
         <div class="text-sm text-amber-900 font-medium">{formatDateShort(convocation.minimum_send_date)}</div>
       </div>
       <div class="p-3 bg-green-50 rounded-lg">
-        <div class="text-xs text-green-600 font-medium">Destinataires</div>
+        <div class="text-xs text-green-600 font-medium">{$_('convocations.recipients')}</div>
         <div class="text-sm text-green-900 font-bold">{convocation.total_recipients}</div>
       </div>
       <div class="p-3 bg-purple-50 rounded-lg">
-        <div class="text-xs text-purple-600 font-medium">Ouvertures</div>
+        <div class="text-xs text-purple-600 font-medium">{$_('convocations.openings')}</div>
         <div class="text-sm text-purple-900 font-bold">{convocation.opened_count}/{convocation.total_recipients}</div>
       </div>
     </div>
@@ -202,7 +203,7 @@
   <!-- Tracking Summary (if sent) -->
   {#if convocation.status === ConvocationStatus.Sent && tracking}
     <div class="bg-white shadow-md rounded-lg p-6">
-      <h3 class="text-lg font-medium text-gray-900 mb-4">Suivi des envois</h3>
+      <h3 class="text-lg font-medium text-gray-900 mb-4">{$_('convocations.trackingTitle')}</h3>
       <ConvocationTrackingSummary summary={tracking} />
     </div>
   {/if}
@@ -211,12 +212,12 @@
   {#if convocation.status === ConvocationStatus.Sent}
     <div class="bg-white shadow-md rounded-lg">
       <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-        <h3 class="text-lg font-medium text-gray-900">Destinataires</h3>
+        <h3 class="text-lg font-medium text-gray-900">{$_('convocations.recipients')}</h3>
         <button
           on:click={() => showRecipients = !showRecipients}
           class="text-sm text-blue-600 hover:text-blue-800"
         >
-          {showRecipients ? 'Masquer' : 'Afficher'} la liste
+          {showRecipients ? $_('common.hide') : $_('common.show')} {$_('common.list')}
         </button>
       </div>
       {#if showRecipients}
@@ -230,7 +231,7 @@
   <!-- Actions (admin only) -->
   {#if isAdmin}
     <div class="bg-white shadow-md rounded-lg p-6">
-      <h3 class="text-lg font-medium text-gray-900 mb-4">Actions</h3>
+      <h3 class="text-lg font-medium text-gray-900 mb-4">{$_('common.actions')}</h3>
       <div class="flex flex-wrap gap-3">
         {#if convocation.status === ConvocationStatus.Draft}
           <button
@@ -238,21 +239,21 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            Planifier l'envoi
+            {$_('convocations.actions.scheduleSend')}
           </button>
           <button
             on:click={handleSend}
             disabled={actionLoading}
             class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
           >
-            Envoyer maintenant
+            {$_('convocations.actions.sendNow')}
           </button>
           <button
             on:click={handleDelete}
             disabled={actionLoading}
             class="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-md hover:bg-red-200 disabled:opacity-50"
           >
-            Supprimer
+            {$_('common.delete')}
           </button>
         {/if}
 
@@ -262,14 +263,14 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
           >
-            Envoyer maintenant
+            {$_('convocations.actions.sendNow')}
           </button>
           <button
             on:click={handleCancel}
             disabled={actionLoading}
             class="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-md hover:bg-red-200 disabled:opacity-50"
           >
-            Annuler
+            {$_('common.cancel')}
           </button>
         {/if}
 
@@ -279,7 +280,7 @@
             disabled={actionLoading}
             class="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 disabled:opacity-50"
           >
-            Envoyer les rappels (J-3)
+            {$_('convocations.actions.sendReminders')}
           </button>
         {/if}
       </div>

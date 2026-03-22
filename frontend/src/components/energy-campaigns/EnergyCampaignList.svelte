@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { _ } from "svelte-i18n";
   import { onMount } from "svelte";
   import {
     energyCampaignsApi,
@@ -24,7 +25,7 @@
       campaigns = await energyCampaignsApi.list(organizationId);
     } catch (err: any) {
       error =
-        err.message || "Erreur lors du chargement des campagnes d'énergie";
+        err.message || $_("energy.campaign.loadError");
       console.error("Failed to load energy campaigns:", err);
     } finally {
       loading = false;
@@ -37,9 +38,9 @@
 
   function getEnergyTypesLabel(types: string[]): string {
     const labels: Record<string, string> = {
-      Electricity: "⚡ Électricité",
-      Gas: "🔥 Gaz",
-      Heating: "🌡️ Chauffage",
+      Electricity: "⚡ " + $_("energy.electricity"),
+      Gas: "🔥 " + $_("energy.gas"),
+      Heating: "🌡️ " + $_("energy.heating"),
     };
     return types.map((t) => labels[t] || t).join(", ");
   }
@@ -62,26 +63,25 @@
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <h3 class="text-lg leading-6 font-medium text-gray-900">
-        📊 Achats Groupés d'Énergie
+        📊 {$_("energy.campaign.groupBuying")}
       </h3>
       <a
         href="/energy-campaigns/new"
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
       >
         <span class="mr-2">➕</span>
-        Nouvelle campagne
+        {$_("energy.campaign.newCampaign")}
       </a>
     </div>
     <p class="mt-1 text-sm text-gray-500">
-      Négociez collectivement vos contrats d'énergie. Économies de 15-25% sur
-      vos factures.
+      {$_("energy.campaign.listDescription")}
     </p>
   </div>
 
   {#if loading}
     <div class="p-8 text-center">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      <p class="mt-2 text-sm text-gray-500">Chargement des campagnes...</p>
+      <p class="mt-2 text-sm text-gray-500">{$_("common.loading")}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
@@ -90,15 +90,14 @@
         on:click={loadCampaigns}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
-        Réessayer
+        {$_("common.retry")}
       </button>
     </div>
   {:else if campaigns.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">Aucune campagne d'achat groupé d'énergie</p>
+      <p class="text-gray-500">{$_("energy.campaign.noCampaigns")}</p>
       <p class="mt-2 text-sm text-gray-400">
-        Créez votre première campagne pour commencer à économiser sur vos
-        factures d'énergie.
+        {$_("energy.campaign.emptyStateMessage")}
       </p>
     </div>
   {:else}
@@ -130,12 +129,12 @@
                 </div>
                 <div class="mt-2 flex items-center text-xs text-gray-400">
                   <span>
-                    Participation jusqu'au {formatDate(campaign.deadline_participation)}
+                    {$_("energy.campaign.participationUntil")} {formatDate(campaign.deadline_participation)}
                   </span>
                   {#if campaign.offers_received.length > 0}
                     <span class="mx-2">•</span>
                     <span>
-                      💼 {campaign.offers_received.length} offres reçues
+                      💼 {campaign.offers_received.length} {$_("energy.campaign.offersReceivedLabel")}
                     </span>
                   {/if}
                 </div>
