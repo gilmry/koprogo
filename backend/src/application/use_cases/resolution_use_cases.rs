@@ -1,4 +1,4 @@
-use crate::application::ports::{ResolutionRepository, VoteRepository};
+use crate::application::ports::{MeetingRepository, ResolutionRepository, VoteRepository};
 use crate::domain::entities::{
     MajorityType, Resolution, ResolutionStatus, ResolutionType, Vote, VoteChoice,
 };
@@ -8,20 +8,24 @@ use uuid::Uuid;
 pub struct ResolutionUseCases {
     resolution_repository: Arc<dyn ResolutionRepository>,
     vote_repository: Arc<dyn VoteRepository>,
+    meeting_repository: Arc<dyn MeetingRepository>,
 }
 
 impl ResolutionUseCases {
     pub fn new(
         resolution_repository: Arc<dyn ResolutionRepository>,
         vote_repository: Arc<dyn VoteRepository>,
+        meeting_repository: Arc<dyn MeetingRepository>,
     ) -> Self {
         Self {
             resolution_repository,
             vote_repository,
+            meeting_repository,
         }
     }
 
     /// Create a new resolution for a meeting
+    /// Enforces quorum validation per Art. 3.87 §5 CC before allowing resolution creation.
     pub async fn create_resolution(
         &self,
         meeting_id: Uuid,
@@ -30,6 +34,16 @@ impl ResolutionUseCases {
         resolution_type: ResolutionType,
         majority_required: MajorityType,
     ) -> Result<Resolution, String> {
+        // Fetch the meeting and check quorum (Art. 3.87 §5 CC)
+        let meeting = self
+            .meeting_repository
+            .find_by_id(meeting_id)
+            .await?
+            .ok_or_else(|| format!("Meeting not found: {}", meeting_id))?;
+
+        // Enforce quorum validation before allowing resolution creation
+        meeting.check_quorum_for_voting()?;
+
         let resolution = Resolution::new(
             meeting_id,
             title,
@@ -358,13 +372,75 @@ pub struct VoteStatistics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::ResolutionRepository;
-    use crate::application::ports::VoteRepository;
+    use crate::application::dto::PageRequest;
+    use crate::application::ports::{MeetingRepository, ResolutionRepository, VoteRepository};
+    use crate::domain::entities::{Meeting, MeetingStatus, MeetingType};
     use async_trait::async_trait;
+    use chrono::Utc;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
     // Mock repositories for testing
+    struct MockMeetingRepository {
+        meetings: Mutex<HashMap<Uuid, Meeting>>,
+    }
+
+    impl MockMeetingRepository {
+        fn new() -> Self {
+            Self {
+                meetings: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl MeetingRepository for MockMeetingRepository {
+        async fn create(&self, meeting: &Meeting) -> Result<Meeting, String> {
+            self.meetings
+                .lock()
+                .unwrap()
+                .insert(meeting.id, meeting.clone());
+            Ok(meeting.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Meeting>, String> {
+            Ok(self.meetings.lock().unwrap().get(&id).cloned())
+        }
+
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Meeting>, String> {
+            Ok(self
+                .meetings
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|m| m.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn update(&self, meeting: &Meeting) -> Result<Meeting, String> {
+            self.meetings
+                .lock()
+                .unwrap()
+                .insert(meeting.id, meeting.clone());
+            Ok(meeting.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            Ok(self.meetings.lock().unwrap().remove(&id).is_some())
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &PageRequest,
+            _organization_id: Option<Uuid>,
+        ) -> Result<(Vec<Meeting>, i64), String> {
+            let meetings: Vec<_> = self.meetings.lock().unwrap().values().cloned().collect();
+            let total = meetings.len() as i64;
+            Ok((meetings, total))
+        }
+    }
+
     struct MockResolutionRepository {
         resolutions: Mutex<HashMap<Uuid, Resolution>>,
     }
@@ -607,9 +683,29 @@ mod tests {
     async fn test_create_resolution() {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo);
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
 
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
+
+        // Create a meeting with quorum reached
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        // Validate quorum (600/1000 = 60% > 50%)
+        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting_repo.create(&meeting).await.unwrap();
+
         let result = use_cases
             .create_resolution(
                 meeting_id,
@@ -627,13 +723,74 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_create_resolution_fails_without_quorum() {
+        let resolution_repo = Arc::new(MockResolutionRepository::new());
+        let vote_repo = Arc::new(MockVoteRepository::new());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let meeting_id = Uuid::new_v4();
+
+        // Create a meeting with quorum NOT reached
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        // Validate quorum (400/1000 = 40% < 50%) — quorum NOT reached
+        meeting.validate_quorum(400.0, 1000.0).unwrap();
+        meeting_repo.create(&meeting).await.unwrap();
+
+        let result = use_cases
+            .create_resolution(
+                meeting_id,
+                "Test Resolution".to_string(),
+                "Description".to_string(),
+                ResolutionType::Ordinary,
+                MajorityType::Simple,
+            )
+            .await;
+
+        // Should fail because quorum not reached
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("second convocation"));
+    }
+
+    #[tokio::test]
     async fn test_cast_vote_updates_counts() {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone(), meeting_repo.clone());
 
         // Create a resolution
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
+
+        // Create a meeting with quorum reached
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting_repo.create(&meeting).await.unwrap();
+
         let resolution = use_cases
             .create_resolution(
                 meeting_id,
@@ -675,10 +832,29 @@ mod tests {
     async fn test_cannot_vote_twice() {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo);
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
 
         // Create resolution
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
+
+        // Create a meeting with quorum reached
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting_repo.create(&meeting).await.unwrap();
+
         let resolution = use_cases
             .create_resolution(
                 meeting_id,
@@ -726,9 +902,28 @@ mod tests {
     async fn test_proxy_limit_max_3_enforced() {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone(), meeting_repo.clone());
 
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
+
+        // Create a meeting with quorum reached
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting_repo.create(&meeting).await.unwrap();
+
         let resolution = use_cases
             .create_resolution(
                 meeting_id,
@@ -789,9 +984,28 @@ mod tests {
     async fn test_proxy_limit_10_percent_exception_allows_more() {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone());
+        let meeting_repo = Arc::new(MockMeetingRepository::new());
+        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone(), meeting_repo.clone());
 
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
         let meeting_id = Uuid::new_v4();
+
+        // Create a meeting with quorum reached
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            Utc::now() + chrono::Duration::days(30),
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+        meeting.id = meeting_id;
+        meeting.validate_quorum(600.0, 1000.0).unwrap();
+        meeting_repo.create(&meeting).await.unwrap();
+
         let resolution = use_cases
             .create_resolution(
                 meeting_id,

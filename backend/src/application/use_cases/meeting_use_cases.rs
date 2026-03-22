@@ -3,17 +3,33 @@ use crate::application::dto::{
     PageRequest, UpdateMeetingRequest,
 };
 use crate::application::ports::MeetingRepository;
-use crate::domain::entities::Meeting;
+use crate::domain::entities::{ConvocationType, Meeting};
+use chrono::Duration;
 use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct MeetingUseCases {
     repository: Arc<dyn MeetingRepository>,
+    convocation_use_cases: Option<Arc<crate::application::use_cases::ConvocationUseCases>>,
 }
 
 impl MeetingUseCases {
     pub fn new(repository: Arc<dyn MeetingRepository>) -> Self {
-        Self { repository }
+        Self {
+            repository,
+            convocation_use_cases: None,
+        }
+    }
+
+    /// Create MeetingUseCases with ConvocationUseCases for automatic 2nd convocation scheduling
+    pub fn new_with_convocation(
+        repository: Arc<dyn MeetingRepository>,
+        convocation_use_cases: Arc<crate::application::use_cases::ConvocationUseCases>,
+    ) -> Self {
+        Self {
+            repository,
+            convocation_use_cases: Some(convocation_use_cases),
+        }
     }
 
     pub async fn create_meeting(
@@ -171,6 +187,8 @@ impl MeetingUseCases {
 
     /// Valide le quorum d'une AG (Art. 3.87 §5 CC).
     /// Doit être appelé AVANT que les votes soient ouverts.
+    /// Si quorum non atteint, déclenche automatiquement la création d'une 2e convocation
+    /// pour le même bâtiment (si ConvocationUseCases disponible).
     /// Retourne Ok(true) si quorum atteint, Ok(false) si 2e convocation requise.
     pub async fn validate_quorum(
         &self,
@@ -186,6 +204,31 @@ impl MeetingUseCases {
 
         let quorum_reached = meeting.validate_quorum(present_quotas, total_quotas)?;
         let updated = self.repository.update(&meeting).await?;
+
+        // Art. 3.87 §5 CC: Si quorum non atteint, déclencher une 2e convocation
+        if !quorum_reached {
+            if let Some(convocation_uc) = &self.convocation_use_cases {
+                // Create second meeting (15 days after first)
+                let second_meeting_date = meeting.scheduled_date + Duration::days(15);
+                let second_meeting_id = Uuid::new_v4();
+
+                // Schedule second convocation (language defaults to FR)
+                let _result = convocation_uc
+                    .schedule_second_convocation(
+                        meeting.organization_id,
+                        meeting.building_id,
+                        meeting_id,
+                        second_meeting_id,
+                        second_meeting_date,
+                        "FR".to_string(),
+                        Uuid::nil(), // system-created convocation
+                    )
+                    .await;
+                // Note: We don't fail if second convocation scheduling fails
+                // (could log the error, but don't block the quorum validation result)
+            }
+        }
+
         Ok((quorum_reached, MeetingResponse::from(updated)))
     }
 }

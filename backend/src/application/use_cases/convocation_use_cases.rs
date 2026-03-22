@@ -413,6 +413,53 @@ impl ConvocationUseCases {
         Ok(processed)
     }
 
+    /// Schedule a second convocation after quorum not reached
+    /// Art. 3.87 §5 CC: "La deuxième assemblée délibère valablement quel que soit le nombre de présents."
+    ///
+    /// # Arguments
+    /// * `first_meeting_id` - ID of the first meeting where quorum was not reached
+    /// * `new_meeting_id` - ID of the new meeting scheduled for the second convocation
+    /// * `new_meeting_date` - Date of the second meeting (must be ≥15 days after first meeting)
+    /// * `language` - Language for the convocation (FR/NL/DE/EN)
+    /// * `created_by` - User ID creating the second convocation
+    ///
+    /// # Returns
+    /// Result with the created second convocation
+    pub async fn schedule_second_convocation(
+        &self,
+        organization_id: Uuid,
+        building_id: Uuid,
+        first_meeting_id: Uuid,
+        new_meeting_id: Uuid,
+        new_meeting_date: chrono::DateTime<chrono::Utc>,
+        language: String,
+        created_by: Uuid,
+    ) -> Result<ConvocationResponse, String> {
+        // Fetch the first meeting to get its meeting date
+        let first_meeting = self
+            .meeting_repository
+            .find_by_id(first_meeting_id)
+            .await?
+            .ok_or_else(|| format!("First meeting not found: {}", first_meeting_id))?;
+
+        // Create the second convocation using the domain entity constructor
+        // This validates that the second meeting is at least 15 days after the first
+        let second_convocation = Convocation::new_second_convocation(
+            organization_id,
+            building_id,
+            new_meeting_id,
+            first_meeting_id,
+            first_meeting.scheduled_date,
+            new_meeting_date,
+            language,
+            created_by,
+        )?;
+
+        let created = self.convocation_repository.create(&second_convocation).await?;
+
+        Ok(ConvocationResponse::from(created))
+    }
+
     /// Internal helper: Update convocation tracking counts from recipients
     async fn update_convocation_tracking(&self, convocation_id: Uuid) -> Result<(), String> {
         let summary = self

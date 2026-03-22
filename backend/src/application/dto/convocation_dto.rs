@@ -39,6 +39,7 @@ pub struct ConvocationResponse {
 
     // 2e convocation — Art. 3.87 §5 CC
     pub first_meeting_id: Option<Uuid>,
+    pub no_quorum_required: bool, // TRUE for second convocations (quorum not required per Art. 3.87 §5)
 
     // Audit
     pub created_at: DateTime<Utc>,
@@ -76,6 +77,7 @@ impl From<Convocation> for ConvocationResponse {
             respects_legal_deadline,
             reminder_sent_at: convocation.reminder_sent_at,
             first_meeting_id: convocation.first_meeting_id,
+            no_quorum_required: convocation.no_quorum_required,
             created_at: convocation.created_at,
             updated_at: convocation.updated_at,
             created_by: convocation.created_by,
