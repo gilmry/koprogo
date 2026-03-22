@@ -1,13 +1,13 @@
-================================
+===================================
 Jalon 5: Mobile & API Publique 📱
-================================
+===================================
 
 :Number: 10
 :State: open
 :Due Date: No due date
-:Open Issues: 3
-:Closed Issues: 0
-:Total Issues: 3
+:Open Issues: 10
+:Closed Issues: 2
+:Total Issues: 12
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/10>`_
 
 Description
@@ -37,13 +37,13 @@ Description
 
 **Effort estimé**: Équipe = 14-18 sem | Communauté active = 6-8 sem
 
-Issues (3)
+Issues (12)
 ========
 
-🔵 Issue #87: feat: Progressive Web App (PWA) with Offline Mode
+✅ Issue #87: feat: Progressive Web App (PWA) with Offline Mode
 ---------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#87 <../issues/issue-87.rst>`_
 
 🔵 Issue #97: feat: Business Intelligence & Analytics Dashboard
@@ -57,4 +57,58 @@ Issues (3)
 
 :State: OPEN
 :Link: `#98 <../issues/issue-98.rst>`_
+
+✅ Issue #203: feat: Internationalization (i18n) - 4 Belgian Languages
+---------------------------------------------------------------------------
+
+:State: CLOSED
+:Link: `#203 <../issues/issue-203.rst>`_
+
+🔵 Issue #266: feat(infra): Provisionning cluster K3s sur OVH avec Terraform + OpenStack
+---------------------------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#266 <../issues/issue-266.rst>`_
+
+🔵 Issue #267: feat(infra): Provisionning K3s avec Ansible (installation + hardening)
+------------------------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#267 <../issues/issue-267.rst>`_
+
+🔵 Issue #268: feat(infra): GitOps pipeline avec ArgoCD sur K3s
+--------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#268 <../issues/issue-268.rst>`_
+
+🔵 Issue #295: Tauri Shell: Application desktop (Windows/macOS/Linux)
+--------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#295 <../issues/issue-295.rst>`_
+
+🔵 Issue #296: Tauri Mobile: Application iOS & Android
+-----------------------------------------------------------
+
+:State: OPEN
+:Link: `#296 <../issues/issue-296.rst>`_
+
+🔵 Issue #297: Adapters SQLite: Implémentation Repository traits pour mode local
+--------------------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#297 <../issues/issue-297.rst>`_
+
+🔵 Issue #298: Sync bidirectionnelle SQLite ↔ PostgreSQL (mode offline/online)
+-------------------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#298 <../issues/issue-298.rst>`_
+
+🔵 Issue #299: Workspace Cargo: Extraire crate partagé koprogo-core (Domain + Application)
+------------------------------------------------------------------------------------------------
+
+:State: OPEN
+:Link: `#299 <../issues/issue-299.rst>`_
 

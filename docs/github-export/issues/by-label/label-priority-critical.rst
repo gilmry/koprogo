@@ -2,7 +2,7 @@
 Label: priority:critical
 =========================
 
-Total: 14 issues
+Total: 21 issues
 
 .. toctree::
    :maxdepth: 1
@@ -21,3 +21,10 @@ Total: 14 issues
    ../issue-81
    ../issue-82
    ../issue-83
+   ../issue-200
+   ../issue-201
+   ../issue-202
+   ../issue-205
+   ../issue-207
+   ../issue-271
+   ../issue-272

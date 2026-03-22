@@ -2,12 +2,12 @@
 Issue #52: feat: Contractor backoffice (Work reports, photos, payment validation)
 ==================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: phase:k3s,track:software priority:medium
+:Labels: phase:k3s,track:software priority:medium
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-13
+:Updated: 2026-02-18
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/52>`_
 
 Description

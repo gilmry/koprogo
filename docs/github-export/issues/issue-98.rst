@@ -4,7 +4,7 @@ Issue #98: feat: Native Mobile App (iOS/Android) with Biometric Auth
 
 :State: **OPEN**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: enhancement,phase:k8s track:software,priority:low
+:Labels: enhancement,phase:k8s track:software,priority:low
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2025-11-13

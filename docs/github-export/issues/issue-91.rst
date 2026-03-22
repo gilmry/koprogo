@@ -3,11 +3,11 @@ Issue #91: feat: Contractor Quotes Module with Multi-Comparison
 ================================================================
 
 :State: **CLOSED**
-:Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,phase:k3s track:software,priority:high finance
+:Milestone: Jalon 3: Features Différenciantes 🎯
+:Labels: enhancement,phase:k3s track:software,priority:high finance
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-17
+:Updated: 2026-03-21
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/91>`_
 
 Description

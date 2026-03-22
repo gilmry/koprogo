@@ -4,7 +4,7 @@ Issue #45: feat: Implement file upload UI with drag-and-drop
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: phase:vps,track:software priority:high
+:Labels: phase:vps,track:software priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
 :Updated: 2025-11-13

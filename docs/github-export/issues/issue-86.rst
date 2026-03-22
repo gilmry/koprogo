@@ -3,11 +3,11 @@ Issue #86: feat: Multi-Channel Notifications System (Email + Push + In-app)
 ============================================================================
 
 :State: **CLOSED**
-:Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,phase:vps track:software,priority:high automation
+:Milestone: Jalon 3: Features Différenciantes 🎯
+:Labels: enhancement,phase:vps track:software,priority:high automation
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-17
+:Updated: 2026-03-21
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/86>`_
 
 Description

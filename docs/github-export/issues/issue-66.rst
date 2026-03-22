@@ -2,12 +2,12 @@
 Issue #66: E2E: Admin login timeouts after user logout in GDPR tests
 =====================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: None
+:Labels: release:v0.5.0,e2e
 :Assignees: Unassigned
 :Created: 2025-10-30
-:Updated: 2025-11-13
+:Updated: 2026-03-07
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/66>`_
 
 Description

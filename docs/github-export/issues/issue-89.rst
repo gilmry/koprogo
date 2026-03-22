@@ -2,12 +2,12 @@
 Issue #89: feat: Digital Maintenance Logbook (Carnet d'Entretien)
 ==================================================================
 
-:State: **OPEN**
-:Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,maintenance
+:State: **CLOSED**
+:Milestone: Jalon 3: Features Différenciantes 🎯
+:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,maintenance
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-13
+:Updated: 2026-03-21
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/89>`_
 
 Description

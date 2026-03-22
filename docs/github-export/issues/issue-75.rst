@@ -1,10 +1,10 @@
-===========================================================================
+==============================================================================
 Issue #75: feat: Complete Meeting Management API (AG assemblées générales)
-===========================================================================
+==============================================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: enhancement,phase:vps track:software,priority:critical
+:Labels: enhancement,phase:vps track:software,priority:critical
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2025-11-17

@@ -2,12 +2,12 @@
 Issue #55: Automate MinIO/S3 bucket bootstrap
 ==============================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
 :Labels: None
 :Assignees: Unassigned
 :Created: 2025-10-29
-:Updated: 2025-11-13
+:Updated: 2026-02-18
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/55>`_
 
 Description

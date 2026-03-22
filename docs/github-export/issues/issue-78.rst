@@ -2,12 +2,12 @@
 Issue #78: feat: Security Hardening for Production (Rate limiting, 2FA, audit logs)
 ====================================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: enhancement,phase:vps track:software,priority:critical security
+:Labels: enhancement,phase:vps track:software,priority:critical security
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-18
+:Updated: 2026-02-18
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/78>`_
 
 Description

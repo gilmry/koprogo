@@ -1,13 +1,13 @@
-==================================================
+=====================================================
 Jalon 6: Intelligence & Expansion (PropTech 2.0) 🤖
-==================================================
+=====================================================
 
 :Number: 11
 :State: open
 :Due Date: No due date
 :Open Issues: 4
-:Closed Issues: 0
-:Total Issues: 4
+:Closed Issues: 1
+:Total Issues: 5
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/milestone/11>`_
 
 Description
@@ -64,9 +64,9 @@ Issues (5)
 :State: OPEN
 :Link: `#109 <../issues/issue-109.rst>`_
 
-🔵 Issue #110: feat: Energy Buying Groups Platform (Groupements d'Achat Énergie)
--------------------------------------------------------------------------------------
+✅ Issue #110: feat: Energy Buying Groups Platform (Groupements d'Achat Énergie)
+--------------------------------------------------------------------------------------
 
-:State: OPEN
+:State: CLOSED
 :Link: `#110 <../issues/issue-110.rst>`_
 

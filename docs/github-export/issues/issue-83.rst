@@ -1,10 +1,10 @@
-===========================================================================
+============================================================================
 Issue #83: feat: Payment Recovery Workflow (Workflow Recouvrement Impayés)
-===========================================================================
+============================================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: enhancement,phase:vps track:software,priority:critical finance,automation
+:Labels: enhancement,phase:vps track:software,priority:critical finance,automation
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2025-11-13

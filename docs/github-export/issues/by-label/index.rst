@@ -7,13 +7,13 @@ Top labels by issue count:
 .. toctree::
    :maxdepth: 1
 
-   label-track-software
    label-enhancement
+   label-track-software
    label-phase-vps
    label-priority-high
    label-priority-critical
-   label-phase-k8s
-   label-priority-low
-   label-phase-k3s
    label-legal-compliance
-   label-automation
+   label-r-d
+   label-priority-medium
+   label-priority-low
+   label-track-mcp

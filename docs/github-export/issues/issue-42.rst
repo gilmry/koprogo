@@ -4,7 +4,7 @@ Issue #42: feat: Implement GDPR data export & deletion (Right to be forgotten)
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: phase:vps,track:software priority:critical
+:Labels: phase:vps,track:software priority:critical
 :Assignees: Unassigned
 :Created: 2025-10-27
 :Updated: 2025-11-17

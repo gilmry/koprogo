@@ -1,10 +1,10 @@
-===========================================================
+============================================================
 Issue #28: feat: Support multi-rôles pour les utilisateurs
-===========================================================
+============================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 0: Fondations Techniques ✅
-:Labels: enhancement,phase:vps track:software,priority:high
+:Labels: enhancement,phase:vps track:software,priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
 :Updated: 2025-11-13

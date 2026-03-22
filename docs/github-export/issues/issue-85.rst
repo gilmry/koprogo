@@ -3,11 +3,11 @@ Issue #85: feat: Ticketing System for Maintenance Requests
 ===========================================================
 
 :State: **CLOSED**
-:Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,phase:vps track:software,priority:high maintenance
+:Milestone: Jalon 3: Features Différenciantes 🎯
+:Labels: enhancement,phase:vps track:software,priority:high maintenance
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-17
+:Updated: 2026-03-21
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/85>`_
 
 Description

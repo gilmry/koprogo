@@ -4,7 +4,7 @@ Issue #32: Rewrite E2E tests for unit_owner endpoints
 
 :State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: phase:vps,track:software priority:medium
+:Labels: phase:vps,track:software priority:medium
 :Assignees: Unassigned
 :Created: 2025-10-27
 :Updated: 2025-11-17

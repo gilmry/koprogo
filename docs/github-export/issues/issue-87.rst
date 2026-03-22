@@ -2,12 +2,12 @@
 Issue #87: feat: Progressive Web App (PWA) with Offline Mode
 =============================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 5: Mobile & API Publique 📱
-:Labels: enhancement,phase:vps track:software,priority:high
+:Labels: enhancement,phase:vps track:software,priority:high
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-13
+:Updated: 2026-03-10
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/87>`_
 
 Description

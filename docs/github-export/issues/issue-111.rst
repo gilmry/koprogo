@@ -4,7 +4,7 @@ Issue #111: feat: Public API v2 + SDK Multi-langages + Marketplace
 
 :State: **OPEN**
 :Milestone: Jalon 7: Platform Economy (PropTech 2.0) 🚀
-:Labels: enhancement,track:software priority:low,automation community,phase:ecosystem
+:Labels: enhancement,track:software priority:low,automation community,phase:ecosystem
 :Assignees: Unassigned
 :Created: 2025-11-07
 :Updated: 2025-11-13

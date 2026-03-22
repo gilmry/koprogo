@@ -4,7 +4,7 @@ Issue #84: feat: Online Payment System (Stripe + SEPA Direct Debit)
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,phase:vps track:software,priority:high finance
+:Labels: enhancement,phase:vps track:software,priority:high finance
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2025-11-17

@@ -4,7 +4,7 @@ Issue #96: feat: Sustainability & Ecology Tracking (Carbon footprint, DPE)
 
 :State: **OPEN**
 :Milestone: Jalon 6: Intelligence & Expansion (PropTech 2.0) 🤖
-:Labels: enhancement,phase:k8s track:software,priority:low community,proptech:iot proptech:energy
+:Labels: enhancement,phase:k8s track:software,priority:low community,proptech:iot proptech:energy
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2025-11-13

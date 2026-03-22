@@ -3,11 +3,11 @@ Issue #48: feat: Implement strong authentication for voting (itsme, eID)
 =========================================================================
 
 :State: **OPEN**
-:Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: phase:k8s,track:software priority:low,proptech:blockchain
+:Milestone: Jalon 4: Automation & Intégrations 📅
+:Labels: phase:k8s,track:software priority:low,proptech:blockchain release:v0.7.0
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-13
+:Updated: 2026-03-15
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/48>`_
 
 Description

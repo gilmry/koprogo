@@ -3,11 +3,11 @@ Issue #88: feat: Automatic AG Convocations with Legal Deadline Verification
 ============================================================================
 
 :State: **CLOSED**
-:Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,automation pdf
+:Milestone: Jalon 3: Features Différenciantes 🎯
+:Labels: enhancement,phase:k3s track:software,priority:high legal-compliance,automation pdf
 :Assignees: Unassigned
 :Created: 2025-11-01
-:Updated: 2025-11-17
+:Updated: 2026-03-21
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/88>`_
 
 Description

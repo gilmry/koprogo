@@ -2,7 +2,7 @@
 Phase: K3S
 ===================
 
-Total: 8 issues
+Total: 11 issues
 
 .. toctree::
    :maxdepth: 1
@@ -15,3 +15,6 @@ Total: 8 issues
    ../issue-91
    ../issue-92
    ../issue-93
+   ../issue-266
+   ../issue-267
+   ../issue-268

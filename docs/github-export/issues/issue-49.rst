@@ -4,10 +4,10 @@ Issue #49: feat: Community features (SEL, neighbor exchange, social engagement)
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: phase:k3s,track:software priority:medium
+:Labels: phase:k3s,track:software priority:medium
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-17
+:Updated: 2026-02-17
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/49>`_
 
 Description

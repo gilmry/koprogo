@@ -4,7 +4,7 @@ Issue #29: feat: Validation des quotes-parts unitaires (total = 100%)
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: enhancement,phase:vps track:software,priority:high
+:Labels: enhancement,phase:vps track:software,priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
 :Updated: 2025-11-17

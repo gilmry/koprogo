@@ -1,10 +1,10 @@
-=============================================================
+===============================================================
 Issue #80: feat: État Daté Generation for Property Transfers
-=============================================================
+===============================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: enhancement,phase:vps track:software,priority:critical legal-compliance,pdf
+:Labels: enhancement,phase:vps track:software,priority:critical legal-compliance,pdf
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2025-11-17

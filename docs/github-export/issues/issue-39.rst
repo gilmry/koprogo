@@ -2,12 +2,12 @@
 Issue #39: feat(infra): Implement encryption at rest (LUKS) for VPS
 ====================================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 1: Sécurité & GDPR 🔒
-:Labels: phase:vps,track:infrastructure priority:critical
+:Labels: phase:vps,track:infrastructure priority:critical
 :Assignees: Unassigned
 :Created: 2025-10-27
-:Updated: 2025-11-17
+:Updated: 2025-12-02
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/39>`_
 
 Description

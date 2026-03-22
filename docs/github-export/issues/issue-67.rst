@@ -2,12 +2,12 @@
 Issue #67: Phase 13-14: Final GDPR Documentation and QA Review
 ===============================================================
 
-:State: **OPEN**
+:State: **CLOSED**
 :Milestone: Jalon 4: Automation & Intégrations 📅
-:Labels: None
+:Labels: documentation,release:v0.7.0
 :Assignees: Unassigned
 :Created: 2025-10-30
-:Updated: 2025-11-13
+:Updated: 2026-03-10
 :URL: `View on GitHub <https://github.com/gilmry/koprogo/issues/67>`_
 
 Description

@@ -4,7 +4,7 @@ Issue #44: feat: Implement document storage strategy (Local volume vs S3/MinIO)
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: phase:vps,track:infrastructure priority:high
+:Labels: phase:vps,track:infrastructure priority:high
 :Assignees: Unassigned
 :Created: 2025-10-27
 :Updated: 2025-11-13

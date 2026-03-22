@@ -4,7 +4,7 @@ Issue #99: feat: Community Modules (SEL, Swap Shop, Skills, Object Lending)
 
 :State: **CLOSED**
 :Milestone: Jalon 3: Features Différenciantes 🎯
-:Labels: enhancement,phase:k8s track:software,priority:low community,proptech:energy
+:Labels: enhancement,phase:k8s track:software,priority:low community,proptech:energy
 :Assignees: Unassigned
 :Created: 2025-11-01
 :Updated: 2025-11-18

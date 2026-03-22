@@ -2,7 +2,7 @@
 Priority: HIGH
 ====================
 
-Total: 20 issues
+Total: 28 issues
 
 .. toctree::
    :maxdepth: 1
@@ -27,3 +27,11 @@ Total: 20 issues
    ../issue-93
    ../issue-133
    ../issue-134
+   ../issue-158
+   ../issue-203
+   ../issue-204
+   ../issue-206
+   ../issue-208
+   ../issue-220
+   ../issue-222
+   ../issue-223

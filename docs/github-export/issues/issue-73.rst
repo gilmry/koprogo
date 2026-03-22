@@ -1,10 +1,10 @@
-==============================================================================
+===============================================================================
 Issue #73: Système Complet d'Encodage de Factures avec Workflow de Validation
-==============================================================================
+===============================================================================
 
 :State: **CLOSED**
 :Milestone: Jalon 2: Conformité Légale Belge 📋
-:Labels: enhancement,javascript phase:vps,track:software priority:critical,rust
+:Labels: enhancement,javascript phase:vps,track:software priority:critical,rust
 :Assignees: gilmry
 :Created: 2025-10-31
 :Updated: 2025-11-13

@@ -2,7 +2,7 @@
 Label: phase:vps
 =================
 
-Total: 30 issues
+Total: 37 issues
 
 .. toctree::
    :maxdepth: 1
@@ -37,3 +37,10 @@ Total: 30 issues
    ../issue-87
    ../issue-133
    ../issue-134
+   ../issue-200
+   ../issue-201
+   ../issue-202
+   ../issue-203
+   ../issue-204
+   ../issue-205
+   ../issue-206
