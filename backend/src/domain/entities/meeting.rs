@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -36,6 +36,9 @@ pub struct Meeting {
     pub quorum_percentage: Option<f64>, // % des quotes-parts présentes/représentées (0.0-100.0)
     pub total_quotas: Option<f64>,      // Total millièmes du bâtiment (généralement 1000)
     pub present_quotas: Option<f64>,    // Millièmes présents + représentés par procuration
+    // PV Distribution — Issue #313: Track when AG minutes are sent to owners
+    pub minutes_document_id: Option<Uuid>,  // FK to Document
+    pub minutes_sent_at: Option<DateTime<Utc>>,  // When PV was distributed
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -74,6 +77,8 @@ impl Meeting {
             quorum_percentage: None,
             total_quotas: None,
             present_quotas: None,
+            minutes_document_id: None,
+            minutes_sent_at: None,
             created_at: now,
             updated_at: now,
         })
@@ -175,6 +180,32 @@ impl Meeting {
             ));
         }
         Ok(())
+    }
+
+    /// Sets minutes as sent (Issue #313: PV distribution tracking).
+    /// Can only be called once meeting is Completed.
+    pub fn set_minutes_sent(&mut self, document_id: Uuid) -> Result<(), String> {
+        if self.status != MeetingStatus::Completed {
+            return Err("Minutes can only be sent after meeting is completed".to_string());
+        }
+        self.minutes_document_id = Some(document_id);
+        self.minutes_sent_at = Some(Utc::now());
+        self.updated_at = Utc::now();
+        Ok(())
+    }
+
+    /// Checks if minutes are overdue (Issue #313: 30 days after meeting completion).
+    /// Returns true if meeting is Completed, minutes not yet sent, and >30 days have passed.
+    pub fn is_minutes_overdue(&self) -> bool {
+        if self.status != MeetingStatus::Completed {
+            return false;
+        }
+        if self.minutes_sent_at.is_some() {
+            return false;
+        }
+        // Minutes are overdue if more than 30 days have passed since completion/update
+        let deadline = self.updated_at + Duration::days(30);
+        Utc::now() > deadline
     }
 }
 
@@ -457,5 +488,164 @@ mod tests {
         let result = meeting.reschedule(new_date);
         assert!(result.is_ok());
         assert_eq!(meeting.scheduled_date, new_date);
+    }
+
+    #[test]
+    fn test_set_minutes_sent_success() {
+        // Arrange
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+        let doc_id = Uuid::new_v4();
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // Act: Complete the meeting first
+        meeting.complete(45).unwrap();
+        let result = meeting.set_minutes_sent(doc_id);
+
+        // Assert
+        assert!(result.is_ok());
+        assert_eq!(meeting.minutes_document_id, Some(doc_id));
+        assert!(meeting.minutes_sent_at.is_some());
+    }
+
+    #[test]
+    fn test_set_minutes_sent_before_completion_fails() {
+        // Arrange
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+        let doc_id = Uuid::new_v4();
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // Act: Try to send minutes while meeting is still Scheduled
+        let result = meeting.set_minutes_sent(doc_id);
+
+        // Assert
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Minutes can only be sent after meeting is completed"
+        );
+    }
+
+    #[test]
+    fn test_is_minutes_overdue_not_completed() {
+        // Arrange
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // Act & Assert
+        assert!(!meeting.is_minutes_overdue()); // Not completed yet
+    }
+
+    #[test]
+    fn test_is_minutes_overdue_sent() {
+        // Arrange
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+        let doc_id = Uuid::new_v4();
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // Act
+        meeting.complete(45).unwrap();
+        meeting.set_minutes_sent(doc_id).unwrap();
+
+        // Assert
+        assert!(!meeting.is_minutes_overdue()); // Minutes sent
+    }
+
+    #[test]
+    fn test_is_minutes_overdue_past_30_days() {
+        // Arrange
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // Act: Complete the meeting and manually set updated_at to >30 days ago
+        meeting.complete(45).unwrap();
+        meeting.updated_at = Utc::now() - Duration::days(31);
+
+        // Assert
+        assert!(meeting.is_minutes_overdue()); // >30 days without sending minutes
+    }
+
+    #[test]
+    fn test_is_minutes_overdue_within_30_days() {
+        // Arrange
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Ordinary,
+            "AGO 2024".to_string(),
+            None,
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // Act: Complete the meeting
+        meeting.complete(45).unwrap();
+
+        // Assert
+        assert!(!meeting.is_minutes_overdue()); // Within 30 days
     }
 }
