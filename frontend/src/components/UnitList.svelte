@@ -142,6 +142,11 @@
     showDeleteConfirm = false;
     unitToDelete = null;
   }
+
+  // Calcul du total des tantièmes de tous les lots
+  $: totalQuotas = units.reduce((sum, unit) => sum + (unit.quota || 0), 0);
+  $: expectedTotal = building?.total_tantiemes || 1000;
+  $: quotasMismatch = Math.abs(totalQuotas - expectedTotal) > 0.5;
 </script>
 
 <div class="space-y-4">
@@ -226,6 +231,29 @@
         </div>
       {/each}
     </div>
+
+    <!-- Récapitulatif des tantièmes -->
+    {#if building && units.length > 0}
+      <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+        <div class="flex justify-between items-center">
+          <span class="font-semibold text-gray-700">Total tantièmes</span>
+          <div class="text-right">
+            <span class="text-xl font-bold" class:text-green-600={!quotasMismatch} class:text-red-600={quotasMismatch}>
+              {Math.round(totalQuotas)}/{expectedTotal}èmes
+            </span>
+          </div>
+        </div>
+        {#if quotasMismatch}
+          <p class="text-xs text-red-600 mt-1">
+            La somme des tantièmes des lots ({Math.round(totalQuotas)}) ne correspond pas au total de l'immeuble ({expectedTotal}). Différence: {Math.round(totalQuotas - expectedTotal)} tantièmes.
+          </p>
+        {:else}
+          <p class="text-xs text-green-600 mt-1">
+            La répartition des tantièmes est correcte.
+          </p>
+        {/if}
+      </div>
+    {/if}
 
     {#if totalPages > 1}
       <Pagination
