@@ -51,6 +51,7 @@ pub struct BoardMember {
 
 impl BoardMember {
     /// Crée un nouveau membre du conseil avec validation
+    /// Validation per Art. 3.89 CC: mandate duration must be 1-3 years
     pub fn new(
         owner_id: Uuid,
         building_id: Uuid,
@@ -64,10 +65,10 @@ impl BoardMember {
             return Err("Mandate start date must be before end date".to_string());
         }
 
-        // Validation: durée du mandat doit être environ 1 an (entre 11 et 13 mois)
+        // Validation: durée du mandat doit être entre 1 et 3 ans (Art. 3.89 CC)
         let duration_days = (mandate_end - mandate_start).num_days();
-        if !(330..=395).contains(&duration_days) {
-            return Err("Mandate duration must be approximately 1 year (11-13 months)".to_string());
+        if !(365..=1095).contains(&duration_days) {
+            return Err("Board member mandate cannot exceed 3 years (Art. 3.89 CC)".to_string());
         }
 
         let now = Utc::now();
@@ -105,15 +106,25 @@ impl BoardMember {
         self.days_remaining() > 0 && self.days_remaining() < 60
     }
 
-    /// Renouvelle le mandat pour une année supplémentaire
-    pub fn extend_mandate(&mut self, new_elected_by_meeting_id: Uuid) -> Result<(), String> {
+    /// Renouvelle le mandat pour une durée supplémentaire (Art. 3.89 CC: max 3 years)
+    /// mandate_duration_days: duration of the new mandate in days (min 365, max 1095)
+    pub fn extend_mandate(
+        &mut self,
+        mandate_duration_days: i64,
+        new_elected_by_meeting_id: Uuid,
+    ) -> Result<(), String> {
         if !self.expires_soon() && self.is_active() {
             return Err("Cannot extend mandate more than 60 days before expiration".to_string());
         }
 
+        // Validate mandate duration (Art. 3.89 CC: 1-3 years)
+        if !(365..=1095).contains(&mandate_duration_days) {
+            return Err("Board member mandate cannot exceed 3 years (Art. 3.89 CC)".to_string());
+        }
+
         // Nouveau mandat commence à la fin de l'ancien
         self.mandate_start = self.mandate_end;
-        self.mandate_end = self.mandate_start + Duration::days(365);
+        self.mandate_end = self.mandate_start + Duration::days(mandate_duration_days);
         self.elected_by_meeting_id = new_elected_by_meeting_id;
         self.updated_at = Utc::now();
 
@@ -179,7 +190,7 @@ mod tests {
     fn test_mandate_duration_too_short_fails() {
         // Arrange
         let start = Utc::now();
-        let end = start + Duration::days(300); // Trop court (< 330 jours)
+        let end = start + Duration::days(300); // Trop court (< 365 jours, min 1 year)
 
         // Act
         let result = BoardMember::new(
@@ -195,15 +206,55 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            "Mandate duration must be approximately 1 year (11-13 months)"
+            "Board member mandate cannot exceed 3 years (Art. 3.89 CC)"
         );
     }
 
     #[test]
-    fn test_mandate_duration_too_long_fails() {
+    fn test_mandate_duration_two_years() {
         // Arrange
         let start = Utc::now();
-        let end = start + Duration::days(400); // Trop long (> 395 jours)
+        let end = start + Duration::days(730); // 2 years (within 1-3 year range)
+
+        // Act
+        let result = BoardMember::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            BoardPosition::Member,
+            start,
+            end,
+            Uuid::new_v4(),
+        );
+
+        // Assert
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mandate_duration_three_years() {
+        // Arrange
+        let start = Utc::now();
+        let end = start + Duration::days(1095); // Exactly 3 years
+
+        // Act
+        let result = BoardMember::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            BoardPosition::Member,
+            start,
+            end,
+            Uuid::new_v4(),
+        );
+
+        // Assert
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_mandate_duration_exceeds_three_years_fails() {
+        // Arrange
+        let start = Utc::now();
+        let end = start + Duration::days(1100); // Exceeds 3 years
 
         // Act
         let result = BoardMember::new(
@@ -219,7 +270,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err(),
-            "Mandate duration must be approximately 1 year (11-13 months)"
+            "Board member mandate cannot exceed 3 years (Art. 3.89 CC)"
         );
     }
 
@@ -385,14 +436,68 @@ mod tests {
 
         let original_end = member.mandate_end;
 
-        // Act
-        let result = member.extend_mandate(new_meeting_id);
+        // Act: Extend for another 365 days
+        let result = member.extend_mandate(365, new_meeting_id);
 
         // Assert
         assert!(result.is_ok());
         assert_eq!(member.mandate_start, original_end);
         assert_eq!(member.mandate_end, original_end + Duration::days(365));
         assert_eq!(member.elected_by_meeting_id, new_meeting_id);
+    }
+
+    #[test]
+    fn test_extend_mandate_two_years() {
+        // Arrange
+        let start = Utc::now() - Duration::days(320); // Expire dans 45 jours
+        let end = start + Duration::days(365);
+        let new_meeting_id = Uuid::new_v4();
+        let mut member = BoardMember::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            BoardPosition::President,
+            start,
+            end,
+            Uuid::new_v4(),
+        )
+        .unwrap();
+
+        let original_end = member.mandate_end;
+
+        // Act: Extend for 2 years (730 days)
+        let result = member.extend_mandate(730, new_meeting_id);
+
+        // Assert
+        assert!(result.is_ok());
+        assert_eq!(member.mandate_start, original_end);
+        assert_eq!(member.mandate_end, original_end + Duration::days(730));
+    }
+
+    #[test]
+    fn test_extend_mandate_exceeds_three_years_fails() {
+        // Arrange
+        let start = Utc::now() - Duration::days(320); // Expire dans 45 jours
+        let end = start + Duration::days(365);
+        let new_meeting_id = Uuid::new_v4();
+        let mut member = BoardMember::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            BoardPosition::President,
+            start,
+            end,
+            Uuid::new_v4(),
+        )
+        .unwrap();
+
+        // Act: Try to extend for > 3 years (1100 days)
+        let result = member.extend_mandate(1100, new_meeting_id);
+
+        // Assert
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Board member mandate cannot exceed 3 years (Art. 3.89 CC)"
+        );
     }
 
     #[test]
@@ -411,7 +516,7 @@ mod tests {
         .unwrap();
 
         // Act
-        let result = member.extend_mandate(Uuid::new_v4());
+        let result = member.extend_mandate(365, Uuid::new_v4());
 
         // Assert
         assert!(result.is_err());

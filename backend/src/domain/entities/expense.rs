@@ -74,6 +74,9 @@ pub struct Expense {
     /// Code du compte comptable PCMN (e.g., "604001" for electricity, "611002" for elevator maintenance)
     /// References: accounts.code column in the database
     pub account_code: Option<String>,
+    /// Link to contractor report for work expenses (Issue #309)
+    /// Required for category = Works before approval
+    pub contractor_report_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -134,6 +137,7 @@ impl Expense {
             supplier,
             invoice_number,
             account_code,
+            contractor_report_id: None,
             created_at: now,
             updated_at: now,
         })
@@ -193,6 +197,7 @@ impl Expense {
             supplier,
             invoice_number,
             account_code,
+            contractor_report_id: None,
             created_at: now,
             updated_at: now,
         })
@@ -246,7 +251,15 @@ impl Expense {
     }
 
     /// Approuve la facture (PendingApproval → Approved)
+    /// Pour les charges de type "Works", une référence à un rapport contracteur validé est obligatoire
     pub fn approve(&mut self, approved_by_user_id: Uuid) -> Result<(), String> {
+        // Issue #309: Validation work order chain - Works expenses must have a contractor report
+        if self.category == ExpenseCategory::Works && self.contractor_report_id.is_none() {
+            return Err(
+                "Work expenses require a validated contractor report before approval".to_string(),
+            );
+        }
+
         match self.approval_status {
             ApprovalStatus::PendingApproval => {
                 self.approval_status = ApprovalStatus::Approved;
@@ -346,6 +359,16 @@ impl Expense {
             }
             PaymentStatus::Paid => Err("Cannot cancel a paid expense".to_string()),
             PaymentStatus::Cancelled => Err("Expense is already cancelled".to_string()),
+
+    /// Set the contractor report link for work expenses (Issue #309)
+    pub fn set_contractor_report(&mut self, contractor_report_id: Uuid) -> Result<(), String> {
+        if self.category != ExpenseCategory::Works {
+            return Err("Contractor report can only be linked to Works category expenses".to_string());
+        }
+        self.contractor_report_id = Some(contractor_report_id);
+        self.updated_at = Utc::now();
+        Ok(())
+    }
         }
     }
 
@@ -1104,5 +1127,121 @@ mod tests {
         invoice.mark_as_paid().unwrap();
         assert!(invoice.is_paid());
         assert!(invoice.paid_date.is_some());
+    }
+
+    #[test]
+    fn test_approve_works_expense_without_contractor_report_fails() {
+        // Issue #309: Work expenses must have a contractor report before approval
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
+
+        let mut expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Works,
+            "Réparation toiture".to_string(),
+            5000.0,
+            Utc::now(),
+            Some("Construction SPRL".to_string()),
+            Some("DV-2025-001".to_string()),
+            None,
+        )
+        .unwrap();
+
+        expense.submit_for_approval().unwrap();
+
+        // Try to approve without contractor report
+        let result = expense.approve(syndic_id);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("contractor report"));
+    }
+
+    #[test]
+    fn test_set_contractor_report_for_works_expense() {
+        // Issue #309: Set contractor report link on Works expense
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let contractor_report_id = Uuid::new_v4();
+
+        let mut expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Works,
+            "Réparation toiture".to_string(),
+            5000.0,
+            Utc::now(),
+            Some("Construction SPRL".to_string()),
+            Some("DV-2025-001".to_string()),
+            None,
+        )
+        .unwrap();
+
+        // Set contractor report
+        let result = expense.set_contractor_report(contractor_report_id);
+        assert!(result.is_ok());
+        assert_eq!(expense.contractor_report_id, Some(contractor_report_id));
+    }
+
+    #[test]
+    fn test_set_contractor_report_for_non_works_fails() {
+        // Issue #309: Can only set contractor report for Works category
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let contractor_report_id = Uuid::new_v4();
+
+        let mut expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Maintenance,
+            "Maintenance".to_string(),
+            1000.0,
+            Utc::now(),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Try to set contractor report on non-Works expense
+        let result = expense.set_contractor_report(contractor_report_id);
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Works category"));
+    }
+
+    #[test]
+    fn test_approve_works_expense_with_contractor_report_succeeds() {
+        // Issue #309: Work expenses with contractor report can be approved
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let syndic_id = Uuid::new_v4();
+        let contractor_report_id = Uuid::new_v4();
+
+        let mut expense = Expense::new(
+            org_id,
+            building_id,
+            ExpenseCategory::Works,
+            "Réparation toiture".to_string(),
+            5000.0,
+            Utc::now(),
+            Some("Construction SPRL".to_string()),
+            Some("DV-2025-001".to_string()),
+            None,
+        )
+        .unwrap();
+
+        // Set contractor report
+        expense.set_contractor_report(contractor_report_id).unwrap();
+
+        // Submit and approve
+        expense.submit_for_approval().unwrap();
+        let result = expense.approve(syndic_id);
+
+        assert!(result.is_ok());
+        assert_eq!(expense.approval_status, ApprovalStatus::Approved);
     }
 }

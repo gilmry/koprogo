@@ -53,6 +53,7 @@ pub struct Ticket {
     pub priority: TicketPriority,
     pub status: TicketStatus,
     pub resolution_notes: Option<String>, // Notes from resolver
+    pub work_order_sent_at: Option<DateTime<Utc>>, // When magic link PWA was sent to contractor (Issue #309)
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub resolved_at: Option<DateTime<Utc>>,
@@ -103,6 +104,7 @@ impl Ticket {
             priority,
             status: TicketStatus::Open,
             resolution_notes: None,
+            work_order_sent_at: None,
             created_at: now,
             updated_at: now,
             resolved_at: None,
@@ -225,6 +227,24 @@ impl Ticket {
         self.closed_at = None;
         self.updated_at = Utc::now();
 
+        Ok(())
+    }
+
+    /// Send work order to contractor (magic link PWA) - Issue #309
+    /// Validates ticket is in InProgress status (must be assigned)
+    pub fn send_work_order_to_contractor(&mut self) -> Result<(), String> {
+        if self.status != TicketStatus::InProgress {
+            return Err(
+                "Can only send work order to contractor for tickets in InProgress status".to_string(),
+            );
+        }
+
+        if self.assigned_to.is_none() {
+            return Err("Ticket must be assigned to a contractor before sending work order".to_string());
+        }
+
+        self.work_order_sent_at = Some(Utc::now());
+        self.updated_at = Utc::now();
         Ok(())
     }
 
@@ -440,5 +460,78 @@ mod tests {
         // Closed tickets are never overdue
         ticket.status = TicketStatus::Closed;
         assert!(!ticket.is_overdue(5));
+    }
+
+    #[test]
+    fn test_send_work_order_success() {
+        let mut ticket = Ticket::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "Test".to_string(),
+            "Test description".to_string(),
+            TicketCategory::Plumbing,
+            TicketPriority::High,
+        )
+        .unwrap();
+
+        // Assign contractor
+        ticket.assign(Uuid::new_v4()).unwrap();
+        assert_eq!(ticket.status, TicketStatus::InProgress);
+
+        // Send work order
+        let result = ticket.send_work_order_to_contractor();
+        assert!(result.is_ok());
+        assert!(ticket.work_order_sent_at.is_some());
+    }
+
+    #[test]
+    fn test_send_work_order_requires_assignment() {
+        let mut ticket = Ticket::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "Test".to_string(),
+            "Test description".to_string(),
+            TicketCategory::Electrical,
+            TicketPriority::Medium,
+        )
+        .unwrap();
+
+        // Try to send without assigning
+        let result = ticket.send_work_order_to_contractor();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("must be assigned"));
+    }
+
+    #[test]
+    fn test_send_work_order_requires_in_progress() {
+        let mut ticket = Ticket::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            None,
+            Uuid::new_v4(),
+            "Test".to_string(),
+            "Test description".to_string(),
+            TicketCategory::Heating,
+            TicketPriority::Low,
+        )
+        .unwrap();
+
+        let contractor_id = Uuid::new_v4();
+        ticket.assign(contractor_id).unwrap();
+        ticket.start_work().unwrap();
+        ticket.resolve("Fixed".to_string()).unwrap();
+
+        // Try to send work order on resolved ticket
+        let result = ticket.send_work_order_to_contractor();
+        assert!(result.is_err());
+        assert!(
+            result
+                .unwrap_err()
+                .contains("InProgress status")
+        );
     }
 }

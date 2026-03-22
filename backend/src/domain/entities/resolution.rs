@@ -44,18 +44,22 @@ pub struct Resolution {
     pub total_voting_power_contre: f64,
     pub total_voting_power_abstention: f64,
     pub status: ResolutionStatus,
+    // Issue #310: Link resolution to agenda item
+    pub agenda_item_index: Option<usize>,  // Index into meeting.agenda Vec
     pub created_at: DateTime<Utc>,
     pub voted_at: Option<DateTime<Utc>>,
 }
 
 impl Resolution {
     /// Crée une nouvelle résolution
+    /// Issue #310: Optional agenda_item_index for Art. 3.87 CC compliance (Belgian law)
     pub fn new(
         meeting_id: Uuid,
         title: String,
         description: String,
         resolution_type: ResolutionType,
         majority_required: MajorityType,
+        agenda_item_index: Option<usize>,
     ) -> Result<Self, String> {
         if title.is_empty() {
             return Err("Resolution title cannot be empty".to_string());
@@ -86,6 +90,7 @@ impl Resolution {
             total_voting_power_contre: 0.0,
             total_voting_power_abstention: 0.0,
             status: ResolutionStatus::Pending,
+            agenda_item_index,
             created_at: now,
             voted_at: None,
         })
@@ -206,6 +211,7 @@ mod tests {
             "Vote pour approuver les comptes annuels de l'exercice 2024".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Simple,
+            Some(0),
         );
 
         assert!(resolution.is_ok());
@@ -213,6 +219,24 @@ mod tests {
         assert_eq!(resolution.meeting_id, meeting_id);
         assert_eq!(resolution.status, ResolutionStatus::Pending);
         assert_eq!(resolution.total_votes(), 0);
+        assert_eq!(resolution.agenda_item_index, Some(0));
+    }
+
+    #[test]
+    fn test_create_resolution_without_agenda_item() {
+        let meeting_id = Uuid::new_v4();
+        let resolution = Resolution::new(
+            meeting_id,
+            "Approbation des comptes 2024".to_string(),
+            "Vote pour approuver les comptes annuels de l'exercice 2024".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Simple,
+            None,
+        );
+
+        assert!(resolution.is_ok());
+        let resolution = resolution.unwrap();
+        assert_eq!(resolution.agenda_item_index, None);
     }
 
     #[test]
@@ -224,6 +248,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Simple,
+            Some(0),
         );
 
         assert!(resolution.is_err());
@@ -239,6 +264,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Extraordinary,
             MajorityType::Qualified(1.5), // Invalid: > 1.0
+            Some(0),
         );
 
         assert!(resolution.is_err());
@@ -256,6 +282,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Simple,
+            Some(0),
         )
         .unwrap();
 
@@ -282,6 +309,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Simple,
+            Some(0),
         )
         .unwrap();
 
@@ -302,6 +330,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Simple,
+            Some(0),
         )
         .unwrap();
 
@@ -322,6 +351,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Absolute,
+            Some(0),
         )
         .unwrap();
 
@@ -342,6 +372,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Absolute,
+            Some(0),
         )
         .unwrap();
 
@@ -362,6 +393,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Extraordinary,
             MajorityType::Qualified(0.67), // 2/3 required
+            Some(0),
         )
         .unwrap();
 
@@ -382,6 +414,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Extraordinary,
             MajorityType::Qualified(0.67), // 2/3 required
+            Some(0),
         )
         .unwrap();
 
@@ -402,6 +435,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Simple,
+            Some(0),
         )
         .unwrap();
 
@@ -423,6 +457,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Simple,
+            Some(0),
         )
         .unwrap();
 
@@ -446,6 +481,7 @@ mod tests {
             "Description".to_string(),
             ResolutionType::Ordinary,
             MajorityType::Simple,
+            Some(0),
         )
         .unwrap();
 
