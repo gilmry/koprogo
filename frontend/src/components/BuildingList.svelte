@@ -2,11 +2,15 @@
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { authStore } from '../stores/auth';
   import type { Building, PageResponse } from '../lib/types';
   import BuildingForm from './admin/BuildingForm.svelte';
   import ConfirmDialog from './ui/ConfirmDialog.svelte';
   import Button from './ui/Button.svelte';
   import Pagination from './Pagination.svelte';
+
+  // Seul le superadmin peut créer/modifier/supprimer des immeubles (données structurelles)
+  $: isSuperAdmin = $authStore.user?.role === 'superadmin';
 
   let buildings: Building[] = [];
   let loading = true;
@@ -114,9 +118,11 @@
         Gérer les immeubles de votre copropriété
       </p>
     </div>
-    <Button variant="primary" on:click={handleCreate} data-testid="create-building-button">
-      ➕ Nouvel immeuble
-    </Button>
+    {#if isSuperAdmin}
+      <Button variant="primary" on:click={handleCreate} data-testid="create-building-button">
+        ➕ Nouvel immeuble
+      </Button>
+    {/if}
   </div>
 
   <!-- Search -->
@@ -180,24 +186,26 @@
                 </div>
               </div>
               <div class="flex items-center space-x-2 ml-4">
-                <button
-                  on:click={() => handleEdit(building)}
-                  class="text-primary-600 hover:text-primary-900"
-                  title="Modifier"
-                  disabled={actionLoading}
-                  data-testid="edit-building-button"
-                >
-                  ✏️
-                </button>
-                <button
-                  on:click={() => handleDeleteClick(building)}
-                  class="text-red-600 hover:text-red-900"
-                  title="Supprimer"
-                  disabled={actionLoading}
-                  data-testid="delete-building-button"
-                >
-                  🗑️
-                </button>
+                {#if isSuperAdmin}
+                  <button
+                    on:click={() => handleEdit(building)}
+                    class="text-primary-600 hover:text-primary-900"
+                    title="Modifier"
+                    disabled={actionLoading}
+                    data-testid="edit-building-button"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    on:click={() => handleDeleteClick(building)}
+                    class="text-red-600 hover:text-red-900"
+                    title="Supprimer"
+                    disabled={actionLoading}
+                    data-testid="delete-building-button"
+                  >
+                    🗑️
+                  </button>
+                {/if}
                 <a
                   href={`/building-detail?id=${building.id}`}
                   class="text-primary-600 hover:text-primary-900 text-sm font-medium"

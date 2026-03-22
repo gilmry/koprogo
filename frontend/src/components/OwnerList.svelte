@@ -1,11 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
+  import { authStore } from '../stores/auth';
   import type { Owner, PageResponse } from '../lib/types';
   import Pagination from './Pagination.svelte';
   import OwnerEditModal from './OwnerEditModal.svelte';
   import OwnerCreateModal from './OwnerCreateModal.svelte';
   import OwnerUnits from './OwnerUnits.svelte';
+
+  // Syndic et superadmin peuvent gérer les copropriétaires
+  $: canManageOwners = $authStore.user?.role === 'superadmin' || $authStore.user?.role === 'syndic';
 
   let owners: Owner[] = [];
   let loading = true;
@@ -92,12 +96,14 @@
     <p class="text-gray-600">
       {totalItems} copropriétaire{totalItems !== 1 ? 's' : ''}
     </p>
-    <button
-      on:click={openCreateModal}
-      class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition font-medium"
-    >
-      + Ajouter un copropriétaire
-    </button>
+    {#if canManageOwners}
+      <button
+        on:click={openCreateModal}
+        class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition font-medium"
+      >
+        + Ajouter un copropriétaire
+      </button>
+    {/if}
   </div>
 
   {#if error}
@@ -139,12 +145,14 @@
                 >
                   {expandedOwners.has(owner.id) ? '▼' : '▶'} Lots
                 </button>
-                <button
-                  on:click={() => openEditModal(owner)}
-                  class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
-                >
-                  Modifier
-                </button>
+                {#if canManageOwners}
+                  <button
+                    on:click={() => openEditModal(owner)}
+                    class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
+                  >
+                    Modifier
+                  </button>
+                {/if}
               </div>
             </div>
           </div>

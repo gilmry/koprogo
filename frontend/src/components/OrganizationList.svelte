@@ -2,10 +2,14 @@
   import { onMount } from 'svelte';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { authStore } from '../stores/auth';
   import type { Organization } from '../lib/types';
   import OrganizationForm from './admin/OrganizationForm.svelte';
   import ConfirmDialog from './ui/ConfirmDialog.svelte';
   import Button from './ui/Button.svelte';
+
+  // Composant réservé SuperAdmin uniquement (défense en profondeur)
+  $: isSuperAdmin = $authStore.user?.role === 'superadmin';
 
   let organizations: Organization[] = [];
   let loading = true;

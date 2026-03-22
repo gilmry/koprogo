@@ -2,11 +2,15 @@
   import { onMount } from 'svelte';
 import { api } from '../lib/api';
 import { toast } from '../stores/toast';
+import { authStore } from '../stores/auth';
 import type { User } from '../lib/types';
 import { mapUserFromBackend } from '../stores/auth';
   import UserForm from './admin/UserForm.svelte';
   import ConfirmDialog from './ui/ConfirmDialog.svelte';
   import Button from './ui/Button.svelte';
+
+  // Composant réservé SuperAdmin uniquement (défense en profondeur)
+  $: isSuperAdmin = $authStore.user?.role === 'superadmin';
 
 interface BackendRole {
   id: string;
