@@ -369,20 +369,47 @@ Les tests Playwright enregistrent des vidéos (déjà configuré : 1280x720). Ce
 
 ### Issues encore ouvertes (à compléter)
 
-#### Jalon 1 — Bugs legal (2 issues)
+#### Jalon 1 — Sécurité & GDPR (7 issues)
 
-| Issue | Titre | Effort estimé | État |
-|-------|-------|---------------|------|
-| #271 | Quorum 50%+ validation AG (Art 3.87§5) | ~2h | migration existe, vérifier wiring |
-| #272 | 2e convocation si quorum non atteint (Art 3.87§5) | ~2h | migration existe, vérifier wiring |
-| ~~#273~~ | ~~Réduction vote mandataire (Art 3.87§7)~~ | — | ✅ FERMÉE 2026-03-21 |
+| Issue | Titre | Sévérité | Effort estimé | État |
+|-------|-------|----------|---------------|------|
+| #271 | Quorum 50%+ validation AG (Art 3.87§5) | conformité | ~2h | migration existe, vérifier wiring |
+| #272 | 2e convocation si quorum non atteint (Art 3.87§5) | conformité | ~2h | migration existe, vérifier wiring |
+| ~~#273~~ | ~~Réduction vote mandataire (Art 3.87§7)~~ | — | — | ✅ FERMÉE 2026-03-21 |
+| **#301** | **Permissions rôles : boutons admin visibles syndic** | MAJEUR | ~1h | NEW 22/03 |
+| **#302** | **CRITIQUE : Isolation multi-tenant — données non filtrées** | **CRITIQUE** | ~8h | NEW 22/03 |
+| **#315** | **[RGPD] Art. 13-14 : Politique de confidentialité** | RGPD | ~4h | NEW 22/03 |
+| **#316** | **[RGPD] Art. 28 : DPA sous-traitants** | RGPD | ~2h | NEW 22/03 |
+| **#317** | **[RGPD] Art. 33 : Notification violation 72h** | RGPD | ~4h | NEW 22/03 |
 
-#### Jalon 3 — Features (8 issues)
+#### Jalon 2 — Conformité Légale Belge (7 issues)
+
+| Issue | Titre | Sévérité | Effort estimé | État |
+|-------|-------|----------|---------------|------|
+| **#303** | **Calcul tantièmes ≠ 1000 millièmes** | MAJEUR | ~4h | NEW 22/03 |
+| **#306** | **CRITIQUE : Validation tantièmes >100%** | **CRITIQUE** | ~4h | NEW 22/03 |
+| **#310** | **AG : Lien agenda-résolutions — bloquer votes hors ODJ** | conformité | ~4h | NEW 22/03 |
+| **#311** | **AG : Quorum 50%+50% et 2ème convocation auto** | conformité | ~4h | NEW 22/03 |
+| **#312** | **AG : Procurations — max 3 mandats + exception 10%** | conformité | ~3h | NEW 22/03 |
+| **#313** | **AG : Distribution PV 30 jours + génération auto** | conformité | ~6h | NEW 22/03 |
+| **#314** | **Syndic : Mandat max 3 ans avec validation** | conformité | ~2h | NEW 22/03 |
+
+#### Bugs UX (4 issues, sans milestone)
+
+| Issue | Titre | Sévérité | Effort estimé | État |
+|-------|-------|----------|---------------|------|
+| **#304** | **Pages en anglais : Tickets, Announcements, Bookings** | cosmétique | ~2h | NEW 22/03 |
+| **#305** | **Bouton créer ticket silencieux si building_id manquant** | MAJEUR | ~2h | NEW 22/03 |
+| **#307** | **Sondages/Annonces/Réservations : immeubles non chargés** | MAJEUR | ~2h | NEW 22/03 |
+| **#308** | **Label sondages 'Building' au lieu de 'Immeuble'** | cosmétique | ~0.5h | NEW 22/03 |
+
+#### Jalon 3 — Features (9 issues)
 
 | Issue | Titre | Effort estimé | État |
 |-------|-------|---------------|------|
 | #274 | BC15: AG Visioconférence (AgSession, quorum combiné) | ~4h | backend ✅, BDD ✅, E2E ✅ → manque frontend |
 | #275 | BC16: Backoffice prestataires PWA (ContractorReport) | ~2h | backend ✅, BDD ✅, E2E ✅, frontend ✅ → **à fermer ?** |
+| **#309** | **Connecter chaîne approbation dépenses (Ticket→Rapport→Dépense)** | ~12h | NEW 22/03 — GAP architectural |
 | #276 | BC14: Marketplace corps de métier + satisfaction | ~20h | non implémenté |
 | #277 | Guide légal contextuel UI (LegalHelper, AG Wizard) | ~10h | non implémenté |
 | #278 | Blog 18 articles RST | ~22h | docs only |
@@ -390,7 +417,7 @@ Les tests Playwright enregistrent des vidéos (déjà configuré : 1280x720). Ce
 | #280 | Orchestrateur énergie neutre (CER, CREG) | ~16h | non implémenté |
 | #300 | IoT MQTT + BOINC Grid Computing | ~4h | backend ✅, BDD ✅ → manque E2E + frontend |
 
-**Effort total restant estimé : ~84h** (features ~80h + bugs legal ~4h)
+**Effort total restant estimé : ~148h** (features ~80h + bugs legal ~4h + 17 nouvelles issues E2E ~64h)
 
 ### Ordre de priorité
 

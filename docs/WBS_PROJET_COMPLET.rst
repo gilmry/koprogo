@@ -11,6 +11,14 @@ KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
 
 .. note::
 
+   **Mise a jour 2026-03-22** : Tests E2E manuels — 17 issues creees (#301-#317).
+   8 bugs (2 CRITIQUES: multi-tenant #302, tantiemes #306), 1 GAP architectural (#309),
+   5 conformite legale AG (#310-#314), 3 RGPD (#315-#317).
+   Matrice conformite : 67% (25/37). RGPD : 60% (6/10 articles).
+   docs/github-export/ resynchronise (59 -> 139 fichiers RST).
+
+.. note::
+
    **Mise a jour 2026-03-15** : Reorganisation des jalons et releases.
    Schema de releases simplifie : v0.5.0/v0.6.0/v0.7.0 remplace par **v0.1.0 / v0.2.0**.
    MCP Tools (#252-265) et itsme (#48) repousses de Jalon 3 vers Jalon 4.
