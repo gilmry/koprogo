@@ -6,6 +6,7 @@
 
   export let open = false;
   export let unitId: string;
+  export let currentTotalPercentage = 0; // Total actuel des quotes-parts (0.0 - 1.0)
 
   const dispatch = createEventDispatcher();
 
@@ -17,6 +18,11 @@
   let loading = false;
   let error = '';
   let searchQuery = '';
+
+  // Calcul du pourcentage disponible
+  $: availablePercentage = Math.max(0, (1 - currentTotalPercentage) * 100);
+  $: wouldExceed = ownershipPercentage > 0 && ownershipPercentage > availablePercentage + 0.01;
+  $: isSubmitDisabled = loading || loadingOwners || wouldExceed || ownershipPercentage <= 0 || !selectedOwnerId;
 
   // Load all owners when modal opens
   $: if (open) {
@@ -70,6 +76,11 @@
 
     if (ownershipPercentage <= 0 || ownershipPercentage > 100) {
       error = 'Le pourcentage doit être entre 0.01% et 100%';
+      return;
+    }
+
+    if (ownershipPercentage > availablePercentage + 0.01) {
+      error = `Le total des quotes-parts dépasserait 100% (disponible: ${availablePercentage.toFixed(2)}%)`;
       return;
     }
 
@@ -184,15 +195,27 @@
               type="number"
               step="0.01"
               min="0.01"
-              max="100"
+              max={availablePercentage > 0 ? availablePercentage : 100}
               bind:value={ownershipPercentage}
               placeholder="Ex: 50.00"
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              class:border-red-500={wouldExceed}
+              class:border-gray-300={!wouldExceed}
             />
-            <p class="text-xs text-gray-500 mt-1">
-              Pourcentage de propriété de ce copropriétaire sur ce lot (la somme de tous les copropriétaires doit faire 100%)
-            </p>
+            <div class="flex justify-between items-center mt-1">
+              <p class="text-xs text-gray-500">
+                La somme de tous les copropriétaires doit faire 100%
+              </p>
+              <p class="text-xs font-semibold" class:text-green-600={availablePercentage > 0} class:text-red-600={availablePercentage <= 0}>
+                Disponible: {availablePercentage.toFixed(2)}%
+              </p>
+            </div>
+            {#if wouldExceed}
+              <p class="text-xs text-red-600 mt-1 font-medium">
+                Le total des quotes-parts dépasserait 100% (actuel: {(currentTotalPercentage * 100).toFixed(2)}% + {ownershipPercentage.toFixed(2)}% = {((currentTotalPercentage * 100) + ownershipPercentage).toFixed(2)}%)
+              </p>
+            {/if}
           </div>
 
           <!-- Primary Contact -->
@@ -213,7 +236,7 @@
 
           <!-- Actions -->
           <div class="flex gap-2 pt-4">
-            <Button type="submit" variant="primary" disabled={loading || loadingOwners}>
+            <Button type="submit" variant="primary" disabled={isSubmitDisabled}>
               {loading ? 'Ajout...' : 'Ajouter'}
             </Button>
             <Button type="button" variant="outline" on:click={handleClose}>

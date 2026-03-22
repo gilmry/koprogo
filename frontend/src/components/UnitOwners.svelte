@@ -266,6 +266,7 @@
 <UnitOwnerEditModal
   bind:open={showEditModal}
   unitOwner={selectedUnitOwner}
+  currentTotalPercentage={totalPercentage}
   on:updated={loadUnitOwners}
   on:close={() => {
     showEditModal = false;
@@ -277,6 +278,7 @@
 <UnitOwnerAddModal
   bind:open={showAddModal}
   unitId={unitId}
+  currentTotalPercentage={totalPercentage}
   on:added={loadUnitOwners}
   on:close={() => showAddModal = false}
 />
