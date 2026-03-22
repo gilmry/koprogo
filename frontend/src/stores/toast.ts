@@ -29,17 +29,17 @@ function createToastStore() {
 
       return id;
     },
-    success: (message: string, duration = 5000) => {
-      return createToastStore().show(message, "success", duration);
+    success: function (message: string, duration = 5000) {
+      return this.show(message, "success", duration);
     },
-    error: (message: string, duration = 7000) => {
-      return createToastStore().show(message, "error", duration);
+    error: function (message: string, duration = 7000) {
+      return this.show(message, "error", duration);
     },
-    info: (message: string, duration = 5000) => {
-      return createToastStore().show(message, "info", duration);
+    info: function (message: string, duration = 5000) {
+      return this.show(message, "info", duration);
     },
-    warning: (message: string, duration = 6000) => {
-      return createToastStore().show(message, "warning", duration);
+    warning: function (message: string, duration = 6000) {
+      return this.show(message, "warning", duration);
     },
     dismiss: (id: number) => {
       update((toasts) => toasts.filter((t) => t.id !== id));
