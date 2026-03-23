@@ -877,5 +877,48 @@
       "linkText": "politique de confidentialité",
       "accept": "Accepter"
     }
+  },
+  "agSession": {
+    "title": "Visioconférence (Art. 3.87 §1 CC)",
+    "createButton": "Créer session",
+    "createSuccess": "Session vidéo créée",
+    "createError": "Erreur lors de la création",
+    "connectionError": "Erreur de connexion",
+    "startSuccess": "Session démarrée",
+    "endSuccess": "Session terminée",
+    "platform": "Plateforme",
+    "meetingUrl": "URL de la réunion",
+    "hostUrl": "URL animateur (optionnel)",
+    "password": "Mot de passe (optionnel)",
+    "waitingRoom": "Salle d'attente",
+    "recording": "Enregistrement",
+    "remoteAttendees": "Participants distants",
+    "votingPower": "Pouvoir de vote",
+    "quorumContribution": "Contrib. quorum",
+    "start": "Démarrer",
+    "end": "Terminer",
+    "noSession": "Aucune session vidéo configurée"
+  },
+  "proxy": {
+    "limitReached": "Limite de procurations atteinte (Art. 3.87 §6 CC)",
+    "warning": "Attention — Procurations (Art. 3.87 §6 CC)",
+    "mandateCount": "Ce mandataire détient {count} mandats — maximum légal: {max}",
+    "mandateNearLimit": "Ce mandataire détient {count}/{max} mandats",
+    "quotaExceeded": "Représente {pct}% des quotités — maximum légal: {max}%",
+    "quotaAtRisk": "Représente {pct}% des quotités (limite: {max}%)"
+  },
+  "ageRequest": {
+    "thresholdProgress": "Progression du seuil d'AGE",
+    "thresholdReached": "Seuil atteint",
+    "ofShares": "des quotes-parts",
+    "target": "Objectif",
+    "congratulations": "Bravo !",
+    "thresholdReachedMessage": "Le seuil d'1/5 des quotes-parts est atteint. La demande d'AGE peut être soumise au syndic (délai : 15 jours pour action).",
+    "remaining": "restant",
+    "thresholdNotReachedMessage": "Vous devez atteindre {pct}% des quotes-parts pour soumettre une demande d'AGE au syndic. Art. 3.87 §2 Code Civil Belge.",
+    "cosignatories": "Cosignataires",
+    "owner": "Propriétaire",
+    "legalBasisLabel": "Base légale",
+    "legalBasisText": "Art. 3.87 §2 Code Civil Belge — Une AGE doit être convoquée si au moins 1/5 des quotes-parts la demandent."
   }
 }
