@@ -16,7 +16,6 @@
 ///   4. Client calls `tools/call` → tool executes and returns result
 ///
 /// Reference: https://modelcontextprotocol.io/specification/2024-11-05/basic/transports/
-
 use crate::infrastructure::web::app_state::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
 use actix_web::{
@@ -1363,21 +1362,18 @@ async fn dispatch_tool(
             if let Some(bid) = building_id {
                 // Check meetings without PV (simplified)
                 use crate::domain::entities::meeting::MeetingStatus;
-                match state.meeting_use_cases.list_meetings_by_building(bid).await {
-                    Ok(meetings) => {
-                        for meeting in meetings {
-                            if meeting.status == MeetingStatus::Completed {
-                                alerts.push(json!({
-                                    "type": "MINUTES_MISSING",
-                                    "severity": "high",
-                                    "title": "PV d'AG non envoyé",
-                                    "message": format!("AG du {} sans minutes publiées", meeting.title),
-                                    "action": "Envoyer le PV aux copropriétaires"
-                                }));
-                            }
+                if let Ok(meetings) = state.meeting_use_cases.list_meetings_by_building(bid).await {
+                    for meeting in meetings {
+                        if meeting.status == MeetingStatus::Completed {
+                            alerts.push(json!({
+                                "type": "MINUTES_MISSING",
+                                "severity": "high",
+                                "title": "PV d'AG non envoyé",
+                                "message": format!("AG du {} sans minutes publiées", meeting.title),
+                                "action": "Envoyer le PV aux copropriétaires"
+                            }));
                         }
                     }
-                    Err(_) => {} // Ignore errors
                 }
             }
 

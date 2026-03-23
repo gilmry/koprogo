@@ -138,7 +138,7 @@ mod tests {
         let e = eval.unwrap();
         assert_eq!(e.criteria.len(), 3);
         assert!(e.global_score > 0.0);
-        assert_eq!(e.would_recommend, true);
+        assert!(e.would_recommend);
     }
 
     #[test]
