@@ -23,6 +23,12 @@ pub struct CreateBoardMemberDto {
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]
 pub struct RenewMandateDto {
     pub new_elected_by_meeting_id: String, // UUID de la nouvelle AG qui renouvelle
+    #[serde(default = "default_mandate_duration_days")]
+    pub mandate_duration_days: i64, // Durée du mandat en jours (365-1095, défaut: 1095 = 3 ans)
+}
+
+fn default_mandate_duration_days() -> i64 {
+    1095 // 3 years (Art. 3.89 CC max)
 }
 
 /// DTO pour la réponse API d'un membre du conseil

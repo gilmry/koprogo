@@ -2,7 +2,6 @@
 
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use uuid::Uuid;
 use crate::domain::entities::ServiceProvider;
 
 /// Request DTO for creating a service provider

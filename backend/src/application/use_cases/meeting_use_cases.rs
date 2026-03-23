@@ -3,7 +3,7 @@ use crate::application::dto::{
     PageRequest, UpdateMeetingRequest,
 };
 use crate::application::ports::MeetingRepository;
-use crate::domain::entities::{ConvocationType, Meeting};
+use crate::domain::entities::Meeting;
 use chrono::Duration;
 use std::sync::Arc;
 use uuid::Uuid;

@@ -388,7 +388,7 @@ mod tests {
     use super::*;
     use crate::application::dto::PageRequest;
     use crate::application::ports::{MeetingRepository, ResolutionRepository, VoteRepository};
-    use crate::domain::entities::{Meeting, MeetingStatus, MeetingType};
+    use crate::domain::entities::{Meeting, MeetingType};
     use async_trait::async_trait;
     use chrono::Utc;
     use std::collections::HashMap;
@@ -727,6 +727,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Simple,
+                None,
             )
             .await;
 
@@ -770,6 +771,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Simple,
+                None,
             )
             .await;
 
@@ -812,6 +814,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Simple,
+                None,
             )
             .await
             .unwrap();
@@ -876,6 +879,7 @@ mod tests {
                 "Desc".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Simple,
+                None,
             )
             .await
             .unwrap();
@@ -945,6 +949,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Simple,
+                None,
             )
             .await
             .unwrap();
@@ -1027,6 +1032,7 @@ mod tests {
                 "Description".to_string(),
                 ResolutionType::Ordinary,
                 MajorityType::Simple,
+                None,
             )
             .await
             .unwrap();
