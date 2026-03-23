@@ -2,14 +2,17 @@
 import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout title="Tickets - Maintenance Requests">
+<Layout title="Tickets - Demandes de maintenance">
   <div class="container mx-auto px-4 py-8">
     <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Maintenance Tickets</h1>
+      <h1 class="text-3xl font-bold text-gray-900">🎫 Tickets de maintenance</h1>
       <p class="mt-2 text-gray-600">
-        Manage maintenance requests and track resolutions
+        Gérez les demandes de maintenance et suivez les résolutions
       </p>
     </div>
+
+    <!-- Building Selector -->
+    <div id="building-selector-container" class="mb-6"></div>
 
     <!-- Statistics Widget -->
     <div class="mb-6">
@@ -20,7 +23,8 @@ import Layout from "../layouts/Layout.astro";
     <div class="mb-6">
       <button
         id="create-ticket-btn"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled
       >
         <svg
           class="-ml-1 mr-2 h-5 w-5"
@@ -33,8 +37,13 @@ import Layout from "../layouts/Layout.astro";
             d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
             clip-rule="evenodd"></path>
         </svg>
-        Create New Ticket
+        Créer un nouveau ticket
       </button>
+      <div id="building-warning" class="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md hidden">
+        <p class="text-sm text-yellow-800">
+          ⚠️ Veuillez d'abord sélectionner un immeuble avant de créer un ticket
+        </p>
+      </div>
     </div>
 
     <!-- Tickets List -->
@@ -50,6 +59,7 @@ import Layout from "../layouts/Layout.astro";
   import TicketList from "../components/tickets/TicketList.svelte";
   import TicketStatistics from "../components/tickets/TicketStatistics.svelte";
   import TicketCreateModal from "../components/tickets/TicketCreateModal.svelte";
+  import BuildingSelector from "../components/BuildingSelector.svelte";
 
   function showPageToast(message: string, type: "success" | "error" | "warning" | "info" = "info") {
     const colors = { success: "bg-green-600", error: "bg-red-600", warning: "bg-yellow-500", info: "bg-blue-600" };
@@ -60,6 +70,45 @@ import Layout from "../layouts/Layout.astro";
     setTimeout(() => el.remove(), 3500);
   }
 
+  let selectedBuildingId = new URLSearchParams(window.location.search).get("building_id") || "";
+  const createButton = document.getElementById("create-ticket-btn");
+  const warningDiv = document.getElementById("building-warning");
+
+  // Mount building selector
+  const selectorContainer = document.getElementById("building-selector-container");
+  if (selectorContainer) {
+    mount(BuildingSelector as any, {
+      target: selectorContainer,
+      props: {
+        label: "Immeuble",
+        selectedBuildingId: selectedBuildingId,
+        onSelect: (buildingId: string) => {
+          selectedBuildingId = buildingId;
+          // Update button state
+          if (createButton) {
+            createButton.disabled = !buildingId;
+            if (warningDiv) {
+              warningDiv.classList.toggle("hidden", !!buildingId);
+            }
+          }
+          // Reload ticket list with new building
+          const listContainer = document.getElementById("tickets-list");
+          if (listContainer) {
+            try { unmount(listComponent); } catch {}
+            listContainer.innerHTML = "";
+            listComponent = mount(TicketList as any, {
+              target: listContainer,
+              props: {
+                view: buildingId ? "all" : "my",
+                buildingId: buildingId,
+              },
+            });
+          }
+        },
+      },
+    });
+  }
+
   // Mount statistics widget
   const statsContainer = document.getElementById("ticket-statistics");
   if (statsContainer) {
@@ -68,9 +117,10 @@ import Layout from "../layouts/Layout.astro";
 
   // Mount tickets list
   const listContainer = document.getElementById("tickets-list");
+  let listComponent: any = null;
   if (listContainer) {
     const urlBuildingId = new URLSearchParams(window.location.search).get("building_id") || undefined;
-    mount(TicketList as any, {
+    listComponent = mount(TicketList as any, {
       target: listContainer,
       props: {
         view: urlBuildingId ? "all" : "my",
@@ -89,35 +139,39 @@ import Layout from "../layouts/Layout.astro";
       }
     }
 
+    // Update button state based on initial building selection
+    if (createButton) {
+      createButton.disabled = !selectedBuildingId;
+      if (warningDiv) {
+        warningDiv.classList.toggle("hidden", !!selectedBuildingId);
+      }
+    }
+
     // Handle create button click
-    document
-      .getElementById("create-ticket-btn")
-      ?.addEventListener("click", () => {
-        const buildingId = new URLSearchParams(window.location.search).get(
-          "building_id",
-        );
-        const userId = localStorage.getItem("koprogo_user_id") || "";
+    createButton?.addEventListener("click", () => {
+      const buildingId = selectedBuildingId;
+      const userId = localStorage.getItem("koprogo_user_id") || "";
 
-        if (!buildingId) {
-          showPageToast("Veuillez d'abord sélectionner un immeuble.", "warning");
-          return;
-        }
+      if (!buildingId) {
+        showPageToast("Veuillez d'abord sélectionner un immeuble.", "warning");
+        return;
+      }
 
-        closeModal();
-        if (modalContainer) {
-          createModal = mount(TicketCreateModal as any, {
-            target: modalContainer,
-            props: {
-              open: true,
-              buildingId: buildingId,
-              requesterId: userId,
-              onClose: closeModal,
-              onCreated: () => {
-                window.location.reload();
-              },
+      closeModal();
+      if (modalContainer) {
+        createModal = mount(TicketCreateModal as any, {
+          target: modalContainer,
+          props: {
+            open: true,
+            buildingId: buildingId,
+            requesterId: userId,
+            onClose: closeModal,
+            onCreated: () => {
+              window.location.reload();
             },
-          });
-        }
-      });
+          },
+        });
+      }
+    });
   }
 </script>

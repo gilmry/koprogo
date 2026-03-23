@@ -36,6 +36,8 @@ pub struct Meeting {
     pub quorum_percentage: Option<f64>, // % des quotes-parts présentes/représentées (0.0-100.0)
     pub total_quotas: Option<f64>,      // Total millièmes du bâtiment (généralement 1000)
     pub present_quotas: Option<f64>,    // Millièmes présents + représentés par procuration
+    // Second Convocation — Issue #311 (Art. 3.87 §5 CC: No quorum required for 2nd convocation)
+    pub is_second_convocation: bool,  // true = 2e convocation (no quorum check needed)
     // PV Distribution — Issue #313: Track when AG minutes are sent to owners
     pub minutes_document_id: Option<Uuid>,  // FK to Document
     pub minutes_sent_at: Option<DateTime<Utc>>,  // When PV was distributed
@@ -77,6 +79,7 @@ impl Meeting {
             quorum_percentage: None,
             total_quotas: None,
             present_quotas: None,
+            is_second_convocation: false,  // Default: first convocation
             minutes_document_id: None,
             minutes_sent_at: None,
             created_at: now,
@@ -167,7 +170,15 @@ impl Meeting {
 
     /// Vérifie si le quorum est atteint avant d'autoriser un vote.
     /// Retourne Err si le quorum n'a pas encore été validé ou n'est pas atteint.
+    ///
+    /// EXCEPTION (Art. 3.87 §5 CC): No quorum check required for second convocation (is_second_convocation = true).
+    /// Belgian law: 2e convocation = voting allowed without quorum requirement.
     pub fn check_quorum_for_voting(&self) -> Result<(), String> {
+        // Art. 3.87 §5 CC: No quorum check needed for 2nd convocation
+        if self.is_second_convocation {
+            return Ok(());
+        }
+
         if self.quorum_percentage.is_none() {
             return Err("Quorum has not been validated yet (Art. 3.87 §5 CC)".to_string());
         }
@@ -421,6 +432,32 @@ mod tests {
         let result = meeting.check_quorum_for_voting();
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("not been validated yet"));
+    }
+
+    #[test]
+    fn test_check_quorum_skipped_for_second_convocation() {
+        // Art. 3.87 §5 CC: No quorum check for 2nd convocation
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let future_date = Utc::now() + Duration::days(30);
+
+        let mut meeting = Meeting::new(
+            org_id,
+            building_id,
+            MeetingType::Extraordinary,
+            "2e Convocation AGE".to_string(),
+            Some("Deuxième convocation - sans quorum".to_string()),
+            future_date,
+            "Salle des fêtes".to_string(),
+        )
+        .unwrap();
+
+        // Mark as second convocation
+        meeting.is_second_convocation = true;
+
+        // Should allow voting even without quorum validation
+        let result = meeting.check_quorum_for_voting();
+        assert!(result.is_ok(), "2nd convocation should skip quorum check");
     }
 
     #[test]

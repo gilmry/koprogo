@@ -56,17 +56,20 @@ impl UnitOwnerUseCases {
             return Err("Owner is already active on this unit".to_string());
         }
 
-        // Validate total ownership percentage won't exceed 100%
+        // Validate total ownership percentage won't exceed 100% (Art. 577-2 §4 CC)
         let current_total = self
             .unit_owner_repository
             .get_total_ownership_percentage(unit_id)
             .await?;
 
+        // CRITICAL: This validation MUST block if total > 100.0% (Belgian legal requirement)
         if current_total + ownership_percentage > 1.0 {
             return Err(format!(
-                "Total ownership would exceed 100% (current: {:.2}%, adding: {:.2}%)",
+                "Total ownership would exceed 100% (Art. 577-2 §4 CC). \
+                 Current: {:.2}%, adding: {:.2}%, total would be: {:.2}%",
                 current_total * 100.0,
-                ownership_percentage * 100.0
+                ownership_percentage * 100.0,
+                (current_total + ownership_percentage) * 100.0
             ));
         }
 
@@ -127,10 +130,13 @@ impl UnitOwnerUseCases {
         let old_percentage = unit_owner.ownership_percentage;
         let new_total = current_total - old_percentage + new_percentage;
 
+        // CRITICAL: This validation MUST block if total > 100.0% (Art. 577-2 §4 CC)
         if new_total > 1.0 {
             return Err(format!(
-                "Total ownership would exceed 100% (current: {:.2}%, new total: {:.2}%)",
-                current_total * 100.0,
+                "Total ownership would exceed 100% (Art. 577-2 §4 CC). \
+                 Current without this owner: {:.2}%, new percentage: {:.2}%, total would be: {:.2}%",
+                (current_total - old_percentage) * 100.0,
+                new_percentage * 100.0,
                 new_total * 100.0
             ));
         }

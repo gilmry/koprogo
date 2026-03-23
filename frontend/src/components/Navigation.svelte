@@ -113,7 +113,12 @@
 
   // --- Grouped navigation items ---
   const getNavGroups = (role: UserRole | undefined, t: any): NavGroup[] => {
+    // Safety check: only return navigation if role is valid and authenticated user has that role
     if (!role) return [];
+
+    // Ensure role matches expected values (lowercase enum)
+    const validRoles = [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER];
+    if (!validRoles.includes(role)) return [];
 
     const communityGroup: NavGroup = {
       id: 'communaute',
@@ -130,135 +135,141 @@
       ],
     };
 
-    switch (role) {
-      case UserRole.SUPERADMIN:
-        return [
-          {
-            id: 'principal',
-            label: 'Principal',
-            items: [
-              { href: '/admin', label: t('navigation.admin'), icon: '⚙️' },
-              { href: '/admin/monitoring', label: t('navigation.monitoring'), icon: '📈' },
-              { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
-            ],
-          },
-          {
-            id: 'gestion',
-            label: 'Gestion',
-            items: [
-              { href: '/admin/organizations', label: 'Organisations', icon: '🏛️' },
-              { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
-              { href: '/admin/board-members', label: 'Conseil', icon: '👑' },
-              { href: '/admin/gdpr', label: 'RGPD', icon: '🔒' },
-              { href: '/admin/gamification', label: 'Gamification', icon: '🏆' },
-            ],
-          },
-          communityGroup,
-        ];
-
-      case UserRole.SYNDIC:
-        return [
-          {
-            id: 'principal',
-            label: 'Principal',
-            items: [
-              { href: '/syndic', label: t('navigation.dashboard'), icon: '📊' },
-              { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
-            ],
-          },
-          {
-            id: 'gestion',
-            label: 'Gestion',
-            items: [
-              { href: '/owners', label: t('navigation.owners'), icon: '👤' },
-              { href: '/units', label: t('navigation.units'), icon: '🚪' },
-              { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
-              { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
-              { href: '/call-for-funds', label: 'Appels de fonds', icon: '📢' },
-              { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
-              { href: '/payment-reminders', label: 'Relances', icon: '📧' },
-              { href: '/budgets', label: 'Budgets', icon: '📊' },
-              { href: '/etats-dates', label: 'Etats dates', icon: '📋' },
-              { href: '/admin/gamification', label: 'Gamification', icon: '🏆' },
-            ],
-          },
-          {
-            id: 'gouvernance',
-            label: 'Gouvernance',
-            items: [
-              { href: '/meetings', label: t('navigation.meetings'), icon: '📅' },
-              { href: '/convocations', label: 'Convocations', icon: '📨' },
-              { href: '/tickets', label: 'Tickets', icon: '🎫' },
-              { href: '/quotes', label: 'Devis', icon: '📋' },
-              { href: '/work-reports', label: 'Travaux', icon: '🔧' },
-              { href: '/inspections', label: 'Inspections', icon: '🔍' },
-              { href: '/syndic/board-members', label: 'Conseil', icon: '👑' },
-              { href: '/documents', label: t('navigation.documents'), icon: '📄' },
-            ],
-          },
-          communityGroup,
-        ];
-
-      case UserRole.ACCOUNTANT:
-        return [
-          {
-            id: 'principal',
-            label: 'Principal',
-            items: [
-              { href: '/accountant', label: t('navigation.dashboard'), icon: '📊' },
-              { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
-            ],
-          },
-          {
-            id: 'comptabilite',
-            label: 'Comptabilité',
-            items: [
-              { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
-              { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
-              { href: '/call-for-funds', label: 'Appels de fonds', icon: '📢' },
-              { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
-              { href: '/payment-reminders', label: 'Relances', icon: '📧' },
-              { href: '/budgets', label: 'Budgets', icon: '📊' },
-              { href: '/etats-dates', label: 'Etats dates', icon: '📋' },
-              { href: '/journal-entries', label: 'Ecritures comptables', icon: '📒' },
-              { href: '/reports', label: 'Rapports PCMN', icon: '📈' },
-            ],
-          },
-          communityGroup,
-        ];
-
-      case UserRole.OWNER:
-        return [
-          {
-            id: 'principal',
-            label: 'Principal',
-            items: [
-              { href: '/owner', label: t('navigation.dashboard'), icon: '🏠' },
-              { href: '/owner/units', label: t('navigation.units'), icon: '🚪' },
-            ],
-          },
-          {
-            id: 'espace',
-            label: 'Mon espace',
-            items: [
-              { href: '/owner/expenses', label: t('navigation.expenses'), icon: '💰' },
-              { href: '/owner/payments', label: 'Paiements', icon: '💳' },
-              { href: '/owner/payment-methods', label: 'Moyens paiement', icon: '🏦' },
-              { href: '/owner/tickets', label: 'Mes tickets', icon: '🎫' },
-              { href: '/owner/documents', label: t('navigation.documents'), icon: '📄' },
-              { href: '/owner/profile', label: 'Profil', icon: '👤' },
-            ],
-          },
-          communityGroup,
-        ];
-
-      default:
-        return [{
+    // Explicitly handle SUPERADMIN role only - no other role should see admin items
+    if (role === UserRole.SUPERADMIN) {
+      return [
+        {
           id: 'principal',
           label: 'Principal',
-          items: [{ href: '/buildings', label: t('navigation.buildings'), icon: '🏢' }],
-        }];
+          items: [
+            { href: '/admin', label: t('navigation.admin'), icon: '⚙️' },
+            { href: '/admin/monitoring', label: t('navigation.monitoring'), icon: '📈' },
+            { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
+          ],
+        },
+        {
+          id: 'gestion',
+          label: 'Gestion',
+          items: [
+            { href: '/admin/organizations', label: 'Organisations', icon: '🏛️' },
+            { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
+            { href: '/admin/board-members', label: 'Conseil', icon: '👑' },
+            { href: '/admin/gdpr', label: 'RGPD', icon: '🔒' },
+            { href: '/admin/gamification', label: 'Gamification', icon: '🏆' },
+          ],
+        },
+        communityGroup,
+      ];
     }
+
+    // SYNDIC role - must not include any /admin/* items
+    if (role === UserRole.SYNDIC) {
+      return [
+        {
+          id: 'principal',
+          label: 'Principal',
+          items: [
+            { href: '/syndic', label: t('navigation.dashboard'), icon: '📊' },
+            { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
+          ],
+        },
+        {
+          id: 'gestion',
+          label: 'Gestion',
+          items: [
+            { href: '/owners', label: t('navigation.owners'), icon: '👤' },
+            { href: '/units', label: t('navigation.units'), icon: '🚪' },
+            { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
+            { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
+            { href: '/call-for-funds', label: 'Appels de fonds', icon: '📢' },
+            { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
+            { href: '/payment-reminders', label: 'Relances', icon: '📧' },
+            { href: '/budgets', label: 'Budgets', icon: '📊' },
+            { href: '/etats-dates', label: 'Etats dates', icon: '📋' },
+            { href: '/admin/gamification', label: 'Gamification', icon: '🏆' },
+          ],
+        },
+        {
+          id: 'gouvernance',
+          label: 'Gouvernance',
+          items: [
+            { href: '/meetings', label: t('navigation.meetings'), icon: '📅' },
+            { href: '/convocations', label: 'Convocations', icon: '📨' },
+            { href: '/tickets', label: 'Tickets', icon: '🎫' },
+            { href: '/quotes', label: 'Devis', icon: '📋' },
+            { href: '/work-reports', label: 'Travaux', icon: '🔧' },
+            { href: '/inspections', label: 'Inspections', icon: '🔍' },
+            { href: '/syndic/board-members', label: 'Conseil', icon: '👑' },
+            { href: '/documents', label: t('navigation.documents'), icon: '📄' },
+          ],
+        },
+        communityGroup,
+      ];
+    }
+
+    // ACCOUNTANT role
+    if (role === UserRole.ACCOUNTANT) {
+      return [
+        {
+          id: 'principal',
+          label: 'Principal',
+          items: [
+            { href: '/accountant', label: t('navigation.dashboard'), icon: '📊' },
+            { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
+          ],
+        },
+        {
+          id: 'comptabilite',
+          label: 'Comptabilité',
+          items: [
+            { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
+            { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
+            { href: '/call-for-funds', label: 'Appels de fonds', icon: '📢' },
+            { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
+            { href: '/payment-reminders', label: 'Relances', icon: '📧' },
+            { href: '/budgets', label: 'Budgets', icon: '📊' },
+            { href: '/etats-dates', label: 'Etats dates', icon: '📋' },
+            { href: '/journal-entries', label: 'Ecritures comptables', icon: '📒' },
+            { href: '/reports', label: 'Rapports PCMN', icon: '📈' },
+          ],
+        },
+        communityGroup,
+      ];
+    }
+
+    // OWNER role
+    if (role === UserRole.OWNER) {
+      return [
+        {
+          id: 'principal',
+          label: 'Principal',
+          items: [
+            { href: '/owner', label: t('navigation.dashboard'), icon: '🏠' },
+            { href: '/owner/units', label: t('navigation.units'), icon: '🚪' },
+          ],
+        },
+        {
+          id: 'espace',
+          label: 'Mon espace',
+          items: [
+            { href: '/owner/expenses', label: t('navigation.expenses'), icon: '💰' },
+            { href: '/owner/payments', label: 'Paiements', icon: '💳' },
+            { href: '/owner/payment-methods', label: 'Moyens paiement', icon: '🏦' },
+            { href: '/owner/tickets', label: 'Mes tickets', icon: '🎫' },
+            { href: '/owner/documents', label: t('navigation.documents'), icon: '📄' },
+            { href: '/owner/profile', label: 'Profil', icon: '👤' },
+          ],
+        },
+        communityGroup,
+      ];
+    }
+
+    // Fallback for any unmapped roles - return minimal navigation
+    return [{
+      id: 'principal',
+      label: 'Principal',
+      items: [{ href: '/buildings', label: t('navigation.buildings'), icon: '🏢' }],
+    }];
   };
 
   $: navGroups = getNavGroups(user?.role, $_);
