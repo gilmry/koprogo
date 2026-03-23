@@ -137,6 +137,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                 status,
                 created_at: row.get("created_at"),
                 voted_at: row.get("voted_at"),
+                agenda_item_index: None,
             }
         }))
     }
@@ -193,6 +194,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                     status,
                     created_at: row.get("created_at"),
                     voted_at: row.get("voted_at"),
+                    agenda_item_index: None,
                 }
             })
             .collect())
@@ -249,6 +251,7 @@ impl ResolutionRepository for PostgresResolutionRepository {
                     status: status.clone(),
                     created_at: row.get("created_at"),
                     voted_at: row.get("voted_at"),
+                    agenda_item_index: None,
                 }
             })
             .collect())

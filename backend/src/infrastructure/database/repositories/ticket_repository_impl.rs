@@ -147,6 +147,7 @@ impl TicketRepository for PostgresTicketRepository {
             updated_at: row.updated_at,
             resolved_at: row.resolved_at,
             closed_at: row.closed_at,
+            work_order_sent_at: None,
         })
     }
 
@@ -183,6 +184,7 @@ impl TicketRepository for PostgresTicketRepository {
                 updated_at: r.updated_at,
                 resolved_at: r.resolved_at,
                 closed_at: r.closed_at,
+                work_order_sent_at: None,
             })),
             None => Ok(None),
         }
@@ -223,6 +225,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
+                    work_order_sent_at: None,
                 })
             })
             .collect()
@@ -263,6 +266,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
+                    work_order_sent_at: None,
                 })
             })
             .collect()
@@ -303,6 +307,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
+                    work_order_sent_at: None,
                 })
             })
             .collect()
@@ -343,6 +348,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
+                    work_order_sent_at: None,
                 })
             })
             .collect()
@@ -390,6 +396,7 @@ impl TicketRepository for PostgresTicketRepository {
                     updated_at: r.updated_at,
                     resolved_at: r.resolved_at,
                     closed_at: r.closed_at,
+                    work_order_sent_at: None,
                 })
             })
             .collect()
@@ -459,6 +466,7 @@ impl TicketRepository for PostgresTicketRepository {
             updated_at: row.updated_at,
             resolved_at: row.resolved_at,
             closed_at: row.closed_at,
+            work_order_sent_at: None,
         })
     }
 
