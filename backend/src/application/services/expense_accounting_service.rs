@@ -401,6 +401,7 @@ mod tests {
             approved_at: Some(Utc::now()),
             approved_by: None,
             rejection_reason: None,
+            contractor_report_id: None,
         };
 
         let result = service
@@ -473,6 +474,7 @@ mod tests {
             approved_at: Some(Utc::now()),
             approved_by: None,
             rejection_reason: None,
+            contractor_report_id: None,
         };
 
         let result = service.generate_payment_entry(&expense, None, None).await;

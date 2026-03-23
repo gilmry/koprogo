@@ -259,4 +259,10 @@ impl AgSessionUseCases {
         self.ag_session_repo.delete(id).await?;
         Ok(())
     }
+
+    /// Liste les sessions en attente de démarrage (platform stats helper)
+    pub async fn list_pending_sessions(&self) -> Result<Vec<AgSessionResponse>, String> {
+        let sessions = self.ag_session_repo.find_pending_start().await?;
+        Ok(sessions.iter().map(AgSessionResponse::from).collect())
+    }
 }

@@ -70,19 +70,23 @@ pub struct UnsubscribeConfirmationDto {
 
 impl From<IndividualMember> for IndividualMemberResponseDto {
     fn from(member: IndividualMember) -> Self {
+        let is_active = member.is_active();
+        let created_at = member.created_at.to_rfc3339();
+        let unsubscribed_at = member.unsubscribed_at.map(|dt| dt.to_rfc3339());
+        let consent_at = member.consent_at.map(|dt| dt.to_rfc3339());
         IndividualMemberResponseDto {
             id: member.id.to_string(),
             campaign_id: member.campaign_id.to_string(),
             email: member.email,
             postal_code: member.postal_code,
             has_gdpr_consent: member.has_gdpr_consent,
-            consent_at: member.consent_at.map(|dt| dt.to_rfc3339()),
+            consent_at,
             annual_consumption_kwh: member.annual_consumption_kwh,
             current_provider: member.current_provider,
             ean_code: member.ean_code,
-            is_active: member.is_active(),
-            unsubscribed_at: member.unsubscribed_at.map(|dt| dt.to_rfc3339()),
-            created_at: member.created_at.to_rfc3339(),
+            is_active,
+            unsubscribed_at,
+            created_at,
         }
     }
 }

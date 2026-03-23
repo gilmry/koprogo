@@ -125,7 +125,7 @@ impl BoardMemberUseCases {
             .map_err(|_| "Invalid meeting_id format".to_string())?;
 
         // Renouveler le mandat (validation dans l'entity)
-        member.extend_mandate(new_meeting_id)?;
+        member.extend_mandate(dto.mandate_duration_days, new_meeting_id)?;
 
         // Persister
         let updated = self.repository.update(&member).await?;
@@ -475,6 +475,7 @@ mod tests {
 
         let dto = RenewMandateDto {
             new_elected_by_meeting_id: Uuid::new_v4().to_string(),
+            mandate_duration_days: 1095,
         };
 
         // Act
