@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, created_at, updated_at, created_by\n            FROM convocations\n            WHERE organization_id = $1\n            ORDER BY meeting_date DESC\n            ",
+  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, no_quorum_required, created_at, updated_at, created_by\n            FROM convocations\n            WHERE organization_id = $1\n            ORDER BY meeting_date DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -95,16 +95,21 @@
       },
       {
         "ordinal": 18,
+        "name": "no_quorum_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 19,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "created_by",
         "type_info": "Uuid"
       }
@@ -135,8 +140,9 @@
       true,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "9c3ccac3b4c98f63c5aae53bcac1cf44a94626612ff06d88b1c98d2ad8b62841"
+  "hash": "bc5eb396b2684f2d8874b01aa25d43dc17756c04d42645215a6f80a91e7e266d"
 }

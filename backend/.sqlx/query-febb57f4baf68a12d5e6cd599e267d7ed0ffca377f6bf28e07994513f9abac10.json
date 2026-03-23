@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            UPDATE convocations\n            SET organization_id = $2, building_id = $3, meeting_id = $4, meeting_type = $5::TEXT::convocation_type, meeting_date = $6,\n                status = $7::TEXT::convocation_status, minimum_send_date = $8, actual_send_date = $9, scheduled_send_date = $10,\n                pdf_file_path = $11, language = $12, total_recipients = $13, opened_count = $14,\n                will_attend_count = $15, will_not_attend_count = $16, reminder_sent_at = $17,\n                updated_at = $18\n            WHERE id = $1\n            RETURNING id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                      status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                      pdf_file_path, language, total_recipients, opened_count,\n                      will_attend_count, will_not_attend_count, reminder_sent_at,\n                      first_meeting_id, created_at, updated_at, created_by\n            ",
+  "query": "\n            UPDATE convocations\n            SET organization_id = $2, building_id = $3, meeting_id = $4, meeting_type = $5::TEXT::convocation_type, meeting_date = $6,\n                status = $7::TEXT::convocation_status, minimum_send_date = $8, actual_send_date = $9, scheduled_send_date = $10,\n                pdf_file_path = $11, language = $12, total_recipients = $13, opened_count = $14,\n                will_attend_count = $15, will_not_attend_count = $16, reminder_sent_at = $17,\n                first_meeting_id = $18, no_quorum_required = $19, updated_at = $20\n            WHERE id = $1\n            RETURNING id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                      status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                      pdf_file_path, language, total_recipients, opened_count,\n                      will_attend_count, will_not_attend_count, reminder_sent_at,\n                      first_meeting_id, no_quorum_required, created_at, updated_at, created_by\n            ",
   "describe": {
     "columns": [
       {
@@ -95,16 +95,21 @@
       },
       {
         "ordinal": 18,
+        "name": "no_quorum_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 19,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "created_by",
         "type_info": "Uuid"
       }
@@ -128,6 +133,8 @@
         "Int4",
         "Int4",
         "Timestamptz",
+        "Uuid",
+        "Bool",
         "Timestamptz"
       ]
     },
@@ -152,8 +159,9 @@
       true,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "05812a53482d865a466834492b84cae4b0f9201013a9b51ec0e733d11ee86793"
+  "hash": "febb57f4baf68a12d5e6cd599e267d7ed0ffca377f6bf28e07994513f9abac10"
 }
