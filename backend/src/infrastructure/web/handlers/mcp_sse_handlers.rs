@@ -1728,11 +1728,43 @@ pub async fn mcp_info_endpoint() -> HttpResponse {
         "transport": "SSE+HTTP",
         "endpoints": {
             "sse": "/mcp/sse",
-            "messages": "/mcp/messages"
+            "messages": "/mcp/messages",
+            "system_prompt": "/mcp/system-prompt",
+            "legal_index": "/mcp/legal-index"
         },
         "tools_count": get_mcp_tools().len(),
         "description": "Model Context Protocol server for KoproGo — Belgian property management SaaS"
     }))
+}
+
+/// GET /mcp/system-prompt — System prompt for AI agents
+/// Returns a Markdown document that AI clients (like Claude Desktop) can fetch
+/// to understand KoproGo context, available tools, and Belgian legal rules.
+/// Issue #263
+#[get("/mcp/system-prompt")]
+pub async fn mcp_system_prompt_endpoint(
+    claims: AuthenticatedUser,
+    _state: Data<Arc<AppState>>,
+) -> HttpResponse {
+    let prompt = include_str!("../../mcp_system_prompt.md");
+    HttpResponse::Ok()
+        .content_type("text/markdown; charset=utf-8")
+        .body(prompt)
+}
+
+/// GET /mcp/legal-index — Legal document index in JSON
+/// Returns a comprehensive index of Belgian legal rules, GDPR articles,
+/// and KoproGo-specific compliance rules. Embedded as static JSON.
+/// Issue #262
+#[get("/mcp/legal-index")]
+pub async fn mcp_legal_index_endpoint(
+    claims: AuthenticatedUser,
+    _state: Data<Arc<AppState>>,
+) -> HttpResponse {
+    let index = include_str!("../../legal_index.json");
+    HttpResponse::Ok()
+        .content_type("application/json; charset=utf-8")
+        .body(index)
 }
 
 // ─────────────────────────────────────────────────────────

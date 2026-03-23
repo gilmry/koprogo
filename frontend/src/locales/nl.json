@@ -434,6 +434,47 @@
       "active": "Actief",
       "closed": "Gesloten",
       "cancelled": "Geannuleerd"
+    },
+    "createForm": {
+      "title": "Poll maken",
+      "formDescription": "Raadpleeg mede-eigenaars tussen algemene vergaderingen over individuele beslissingen",
+      "buildingLabel": "Gebouw",
+      "pollType": "Type poll",
+      "typeYesNo": "Ja/Nee",
+      "typeMultiple": "Meerdere keuzes",
+      "typeRating": "Beoordeling",
+      "typeOpenEnded": "Vrij antwoord",
+      "question": "Vraag",
+      "questionPlaceholder": "Formuleert u uw vraag duidelijk",
+      "description": "Beschrijving (optioneel)",
+      "descriptionPlaceholder": "Context of aanvullende instructies",
+      "options": "Antwoordopties",
+      "newOptionPlaceholder": "Voeg een nieuwe optie toe",
+      "optionsHint": "Druk op Enter of klik op + om een optie toe te voegen",
+      "yesNoInfo": "De opties Ja en Nee zijn vooringevuld",
+      "ratingScale": "Beoordelingschaal",
+      "minRating": "Minimale score",
+      "maxRating": "Maximale score",
+      "ratingExample": "Respondenten kunnen beoordelen van 1 tot 5",
+      "startDate": "Startdatum",
+      "endDate": "Einddatum",
+      "durationRecommendation": "Aanbeveling: Minimale duur van 7 dagen voor goede deelname",
+      "anonymousVote": "Anonieme stemming (antwoorden zijn niet gekoppeld aan eigenaren)",
+      "multipleSelection": "Meerdere selecties toestaan",
+      "legalFramework": "Juridisch kader",
+      "legalReference": "Artikel 577-8/4 §4 van het Belgisch Burgerlijk Wetboek",
+      "legalText": "De syndicus kan de mede-eigenaars tussen de algemene vergaderingen raadplegen over elke beslissing die geen formele AG-stemming vereist. De resultaten moeten worden vastgelegd in het verslag van de volgende AG.",
+      "submitButton": "Poll maken",
+      "creatingButton": "Maken...",
+      "successMessage": "Poll met succes gemaakt!",
+      "errors": {
+        "selectBuilding": "Selecteer een gebouw",
+        "titleRequired": "Titel/vraag is verplicht",
+        "endDateRequired": "Einddatum is verplicht",
+        "endDateAfterStart": "De einddatum moet na de startdatum liggen",
+        "optionRequired": "Minimaal één optie is vereist voor dit type poll",
+        "creationFailed": "Fout bij het maken van poll"
+      }
     }
   },
   "bookings": {
@@ -827,5 +868,14 @@
     "tooShort": "Veld is te kort",
     "tooLong": "Veld is te lang",
     "invalidFormat": "Ongeldig formaat"
+  },
+  "privacy": {
+    "title": "Privacybeleid",
+    "consent": {
+      "title": "Uw Gegevensbescherming",
+      "message": "Wij verwerken uw persoonlijke gegevens in overeenstemming met de GDPR en de Belgische wet. Lees alstublieft ons ",
+      "linkText": "privacybeleid",
+      "accept": "Accepteren"
+    }
   }
 }
