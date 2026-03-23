@@ -21,6 +21,7 @@ async fn create_superadmin_token(
     common::register_and_login(app_state, org_id).await
 }
 
+#[allow(dead_code)]
 async fn create_syndic_token(
     app_state: &actix_web::web::Data<AppState>,
     org_id: Uuid,
