@@ -35,6 +35,7 @@ pub enum AuditEventType {
     InvoiceRejected,
     MeetingCreated,
     MeetingCompleted,
+    MeetingMinutesSent,
     DocumentUploaded,
     DocumentDeleted,
 
@@ -63,6 +64,7 @@ pub enum AuditEventType {
     TicketCancelled,
     TicketReopened,
     TicketDeleted,
+    TicketWorkOrderSent,
 
     // Notification events (Issue #86 - Phase 2)
     NotificationCreated,
@@ -97,6 +99,7 @@ pub enum AuditEventType {
     ConvocationReminderSent,
     ConvocationAttendanceUpdated,
     ConvocationProxySet,
+    SecondConvocationScheduled,
 
     // Quote events (Contractor Quotes Module - Issue #91 - Phase 2)
     QuoteCreated,

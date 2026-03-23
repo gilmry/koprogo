@@ -21,6 +21,9 @@ pub struct MeetingResponse {
     pub quorum_percentage: Option<f64>,
     pub total_quotas: Option<f64>,
     pub present_quotas: Option<f64>,
+    pub is_second_convocation: bool,
+    pub minutes_document_id: Option<Uuid>,
+    pub minutes_sent_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -42,6 +45,9 @@ impl From<Meeting> for MeetingResponse {
             quorum_percentage: meeting.quorum_percentage,
             total_quotas: meeting.total_quotas,
             present_quotas: meeting.present_quotas,
+            is_second_convocation: meeting.is_second_convocation,
+            minutes_document_id: meeting.minutes_document_id,
+            minutes_sent_at: meeting.minutes_sent_at,
             created_at: meeting.created_at,
             updated_at: meeting.updated_at,
         }
@@ -95,4 +101,19 @@ pub struct CompleteMeetingRequest {
 #[derive(Debug, Deserialize)]
 pub struct RescheduleMeetingRequest {
     pub scheduled_date: DateTime<Utc>,
+}
+
+/// Request DTO for attaching minutes document to a completed meeting (Issue #313)
+#[derive(Debug, Deserialize)]
+pub struct AttachMinutesRequest {
+    pub document_id: Uuid,
+}
+
+/// Request DTO for scheduling a second convocation (Issue #311)
+#[derive(Debug, Deserialize)]
+pub struct ScheduleSecondConvocationRequest {
+    pub building_id: Uuid,
+    pub first_meeting_id: Uuid,
+    pub new_meeting_date: DateTime<Utc>,
+    pub language: String,
 }

@@ -1,6 +1,6 @@
 use crate::application::dto::{
-    AddAgendaItemRequest, CompleteMeetingRequest, CreateMeetingRequest, PageRequest, PageResponse,
-    RescheduleMeetingRequest, UpdateMeetingRequest,
+    AddAgendaItemRequest, AttachMinutesRequest, CompleteMeetingRequest, CreateMeetingRequest,
+    PageRequest, PageResponse, RescheduleMeetingRequest, UpdateMeetingRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -290,6 +290,54 @@ pub async fn delete_meeting(state: web::Data<AppState>, id: web::Path<Uuid>) -> 
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": err
         })),
+    }
+}
+
+#[post("/meetings/{id}/attach-minutes")]
+pub async fn attach_minutes(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    request: web::Json<AttachMinutesRequest>,
+) -> impl Responder {
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "error": e.to_string()
+            }))
+        }
+    };
+
+    match state
+        .meeting_use_cases
+        .attach_minutes(*id, request.document_id)
+        .await
+    {
+        Ok(meeting) => {
+            AuditLogEntry::new(
+                AuditEventType::MeetingMinutesSent,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Meeting", *id)
+            .log();
+
+            HttpResponse::Ok().json(meeting)
+        }
+        Err(err) => {
+            AuditLogEntry::new(
+                AuditEventType::MeetingMinutesSent,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({
+                "error": err
+            }))
+        }
     }
 }
 

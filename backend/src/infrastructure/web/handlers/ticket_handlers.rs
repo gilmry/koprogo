@@ -670,6 +670,62 @@ pub async fn reopen_ticket(
     }
 }
 
+// ==================== Ticket Work Order Endpoint ====================
+
+#[utoipa::path(
+    put,
+    path = "/tickets/{id}/send-work-order",
+    tag = "Tickets",
+    summary = "Send work order to contractor (magic link PWA)",
+    params(
+        ("id" = Uuid, Path, description = "Ticket ID")
+    ),
+    responses(
+        (status = 200, description = "Work order sent"),
+        (status = 400, description = "Bad request"),
+        (status = 401, description = "Unauthorized"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[put("/tickets/{id}/send-work-order")]
+pub async fn send_work_order(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+) -> impl Responder {
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
+
+    match state.ticket_use_cases.send_work_order(*id).await {
+        Ok(ticket) => {
+            AuditLogEntry::new(
+                AuditEventType::TicketWorkOrderSent,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Ticket", ticket.id)
+            .log();
+
+            HttpResponse::Ok().json(ticket)
+        }
+        Err(err) => {
+            AuditLogEntry::new(
+                AuditEventType::TicketWorkOrderSent,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_error(err.clone())
+            .log();
+
+            HttpResponse::BadRequest().json(serde_json::json!({"error": err}))
+        }
+    }
+}
+
 // ==================== Ticket Statistics Endpoints ====================
 
 #[utoipa::path(
