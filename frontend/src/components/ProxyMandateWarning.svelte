@@ -1,4 +1,5 @@
 <script lang="ts">
+  import '../lib/i18n';
   import { _ } from 'svelte-i18n';
 
   export let mandateCount: number = 0;
@@ -28,15 +29,15 @@
         />
       </svg>
       <div>
-        <p class="text-sm font-semibold text-red-800">Limite de procurations atteinte (Art. 3.87 §6 CC)</p>
+        <p class="text-sm font-semibold text-red-800">{$_('proxy.limitReached')}</p>
         {#if isAtLimit}
           <p class="text-xs text-red-700 mt-0.5">
-            Ce mandataire détient {mandateCount} mandats — maximum légal: {MAX_MANDATES}
+            {$_('proxy.mandateCount', { values: { count: mandateCount, max: MAX_MANDATES } })}
           </p>
         {/if}
         {#if isQuotaExceeded}
           <p class="text-xs text-red-700 mt-0.5">
-            Représente {totalDelegatedPct.toFixed(1)}% des quotités — maximum légal: {MAX_PCT}%
+            {$_('proxy.quotaExceeded', { values: { pct: totalDelegatedPct.toFixed(1), max: MAX_PCT } })}
           </p>
         {/if}
       </div>
@@ -57,15 +58,15 @@
         />
       </svg>
       <div>
-        <p class="text-sm font-semibold text-amber-800">Attention — Procurations (Art. 3.87 §6 CC)</p>
+        <p class="text-sm font-semibold text-amber-800">{$_('proxy.warning')}</p>
         {#if isNearLimit}
           <p class="text-xs text-amber-700 mt-0.5">
-            Ce mandataire détient {mandateCount}/{MAX_MANDATES} mandats
+            {$_('proxy.mandateNearLimit', { values: { count: mandateCount, max: MAX_MANDATES } })}
           </p>
         {/if}
         {#if isQuotaAtRisk && !isQuotaExceeded}
           <p class="text-xs text-amber-700 mt-0.5">
-            Représente {totalDelegatedPct.toFixed(1)}% des quotités (limite: {MAX_PCT}%)
+            {$_('proxy.quotaAtRisk', { values: { pct: totalDelegatedPct.toFixed(1), max: MAX_PCT } })}
           </p>
         {/if}
       </div>

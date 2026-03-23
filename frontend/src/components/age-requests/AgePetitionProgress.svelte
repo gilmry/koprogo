@@ -1,4 +1,6 @@
 <script lang="ts">
+	import '../../lib/i18n';
+	import { _ } from 'svelte-i18n';
 	import type { AgeRequestCosignatory } from '$lib/types';
 
 	/**
@@ -25,11 +27,11 @@
 <div class="age-petition-progress space-y-4 rounded-lg border border-gray-200 bg-white p-6">
 	<!-- Titre et statut -->
 	<div class="flex items-center justify-between">
-		<h3 class="text-lg font-semibold text-gray-800">Progression du seuil d'AGE</h3>
+		<h3 class="text-lg font-semibold text-gray-800">{$_('ageRequest.thresholdProgress')}</h3>
 		{#if isThresholdReached}
 			<span class="inline-flex items-center gap-2 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
 				<span class="text-lg">✅</span>
-				Seuil atteint
+				{$_('ageRequest.thresholdReached')}
 			</span>
 		{/if}
 	</div>
@@ -38,10 +40,10 @@
 	<div class="space-y-2">
 		<div class="flex items-center justify-between text-sm">
 			<span class="font-medium text-gray-700">
-				{(totalSharesPct * 100).toFixed(1)}% des quotes-parts
+				{(totalSharesPct * 100).toFixed(1)}% {$_('ageRequest.ofShares')}
 			</span>
 			<span class="text-gray-600">
-				Objectif : {(thresholdPct * 100).toFixed(0)}%
+				{$_('ageRequest.target')} : {(thresholdPct * 100).toFixed(0)}%
 			</span>
 		</div>
 
@@ -54,7 +56,7 @@
 				aria-valuenow={Math.round(displayProgress)}
 				aria-valuemin={0}
 				aria-valuemax={100}
-				aria-label={`Progression du seuil d'AGE : ${Math.round(displayProgress)}%`}
+				aria-label={`${$_('ageRequest.thresholdProgress')} : ${Math.round(displayProgress)}%`}
 			></div>
 		</div>
 	</div>
@@ -63,14 +65,12 @@
 	<div class="rounded-md bg-blue-50 p-4 text-sm">
 		{#if isThresholdReached}
 			<p class="text-green-700">
-				<strong>Bravo !</strong> Le seuil d'1/5 des quotes-parts est atteint. La demande d'AGE peut
-				être soumise au syndic (délai : 15 jours pour action).
+				<strong>{$_('ageRequest.congratulations')}</strong> {$_('ageRequest.thresholdReachedMessage')}
 			</p>
 		{:else}
 			<p class="text-gray-700">
-				<strong>{sharesPercentageMissing.toFixed(1)}% restant.</strong>
-				Vous devez atteindre {(thresholdPct * 100).toFixed(0)}% des quotes-parts pour soumettre une
-				demande d'AGE au syndic. Art. 3.87 §2 Code Civil Belge.
+				<strong>{sharesPercentageMissing.toFixed(1)}% {$_('ageRequest.remaining')}.</strong>
+				{$_('ageRequest.thresholdNotReachedMessage', { values: { pct: (thresholdPct * 100).toFixed(0) } })}
 			</p>
 		{/if}
 	</div>
@@ -79,12 +79,12 @@
 	{#if cosignatories.length > 0}
 		<div class="border-t border-gray-200 pt-4">
 			<p class="mb-2 text-sm font-medium text-gray-700">
-				Cosignataires ({cosignatories.length})
+				{$_('ageRequest.cosignatories')} ({cosignatories.length})
 			</p>
 			<ul class="space-y-1 text-xs text-gray-600">
 				{#each cosignatories as cosignatory}
 					<li class="flex items-center justify-between">
-						<span>Propriétaire {cosignatory.owner_id.slice(0, 8)}...</span>
+						<span>{$_('ageRequest.owner')} {cosignatory.owner_id.slice(0, 8)}...</span>
 						<span class="font-medium">{(cosignatory.shares_pct * 100).toFixed(1)}%</span>
 					</li>
 				{/each}
@@ -95,8 +95,7 @@
 	<!-- Informations légales -->
 	<div class="border-t border-gray-200 pt-4 text-xs text-gray-500">
 		<p>
-			<strong>Base légale :</strong> Art. 3.87 §2 Code Civil Belge — Une AGE doit être convoquée si
-			au moins 1/5 des quotes-parts la demandent.
+			<strong>{$_('ageRequest.legalBasisLabel')} :</strong> {$_('ageRequest.legalBasisText')}
 		</p>
 	</div>
 </div>

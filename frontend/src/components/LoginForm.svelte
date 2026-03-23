@@ -1,4 +1,5 @@
 <script lang="ts">
+  import '../lib/i18n';
   import { onMount } from 'svelte';
   import { _ } from 'svelte-i18n';
   import { authStore, mapUserFromBackend } from '../stores/auth';
