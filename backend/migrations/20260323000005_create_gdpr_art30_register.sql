@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS data_processing_activities (
     activity_name VARCHAR(255) NOT NULL,
     controller_name VARCHAR(255) NOT NULL,
     purpose TEXT NOT NULL,
-    legal_basis VARCHAR(50) NOT NULL, -- Art. 6(1)(a) through (f), Art. 6(1)(c) for legal obligations
+    legal_basis VARCHAR(255) NOT NULL, -- Art. 6(1)(a) through (f), Art. 6(1)(c) for legal obligations
     data_categories TEXT[] NOT NULL, -- array: "personal_identifiers", "financial_data", "contact_info", etc.
     data_subjects TEXT[] NOT NULL, -- array: "building_owners", "syndics", "occupants", etc.
     recipients TEXT[] NOT NULL, -- array: "stripe", "aws_s3", "smtp_provider", etc.
@@ -144,7 +144,7 @@ INSERT INTO data_processor_agreements (
         NULL,
         'Deferred',
         ARRAY['email_addresses', 'names', 'meeting_information', 'payment_details'],
-        ARRAY[]
+        ARRAY[]::TEXT[]
     ),
     (
         'Twilio',
