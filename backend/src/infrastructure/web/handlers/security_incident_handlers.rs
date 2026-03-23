@@ -529,9 +529,9 @@ pub async fn report_incident_to_apd(
             .await
             {
                 Ok(Some(Some(_))) => {
-                    return HttpResponse::Conflict().json(serde_json::json!({
+                    HttpResponse::Conflict().json(serde_json::json!({
                         "error": "Incident already reported to APD"
-                    }));
+                    }))
                 }
                 Ok(Some(None)) => {
                     // Update incident as reported
