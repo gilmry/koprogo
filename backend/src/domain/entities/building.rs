@@ -165,7 +165,9 @@ impl Building {
     ///
     /// Belgian legal requirement: All units' shares must sum to the building's total_shares
     /// to ensure proper copropriété governance and voting/cost allocation.
-    pub fn validate_unit_shares_distribution(units: &[crate::domain::entities::Unit]) -> Result<(), String> {
+    pub fn validate_unit_shares_distribution(
+        units: &[crate::domain::entities::Unit],
+    ) -> Result<(), String> {
         let total_shares: i32 = units.iter().map(|u| u.quota as i32).sum();
 
         // Note: During setup, units may not sum to total_shares yet (incomplete distribution is OK)

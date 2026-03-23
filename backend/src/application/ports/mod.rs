@@ -17,11 +17,11 @@ pub mod convocation_repository;
 pub mod document_repository;
 pub mod energy_bill_upload_repository;
 pub mod energy_campaign_repository;
-pub mod individual_member_repository;
 pub mod etat_date_repository;
 pub mod expense_repository;
 pub mod gdpr_repository;
 pub mod grid_participation_port;
+pub mod individual_member_repository;
 pub mod iot_repository;
 pub mod journal_entry_repository;
 pub mod linky_api_client;
@@ -81,11 +81,11 @@ pub use energy_campaign_repository::EnergyCampaignRepository;
 pub use etat_date_repository::EtatDateRepository;
 pub use expense_repository::ExpenseRepository;
 pub use gdpr_repository::GdprRepository;
-pub use individual_member_repository::IndividualMemberRepository;
 pub use grid_participation_port::{
     BoincConsent, GridError, GridParticipationPort, GridTask, GridTaskId, GridTaskKind,
     GridTaskStatus,
 };
+pub use individual_member_repository::IndividualMemberRepository;
 pub use iot_repository::IoTRepository;
 pub use journal_entry_repository::JournalEntryRepository;
 pub use linky_api_client::{

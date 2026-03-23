@@ -651,6 +651,5 @@ mod tests {
         // 20% des quotes-parts : 20% / 20% = 100% progress (seuil atteint)
         req.add_cosignatory(Uuid::new_v4(), 0.10).unwrap();
         assert_eq!(req.calculate_progress_percentage(1.0), 100.0);
-
     }
 }

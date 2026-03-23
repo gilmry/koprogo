@@ -49,7 +49,9 @@ impl ResolutionUseCases {
         // Issue #310: If agenda_item_index provided, validate it exists and is non-empty
         if let Some(index) = agenda_item_index {
             if index >= meeting.agenda.len() {
-                return Err("Resolution must correspond to a valid agenda item (Art. 3.87 CC)".to_string());
+                return Err(
+                    "Resolution must correspond to a valid agenda item (Art. 3.87 CC)".to_string(),
+                );
             }
             let agenda_item = &meeting.agenda[index];
             if agenda_item.trim().is_empty() {
@@ -698,7 +700,8 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
+        let use_cases =
+            ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
@@ -742,7 +745,8 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
+        let use_cases =
+            ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
@@ -785,7 +789,11 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone(), meeting_repo.clone());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            meeting_repo.clone(),
+        );
 
         // Create a resolution
         let org_id = Uuid::new_v4();
@@ -850,7 +858,8 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
+        let use_cases =
+            ResolutionUseCases::new(resolution_repo.clone(), vote_repo, meeting_repo.clone());
 
         // Create resolution
         let org_id = Uuid::new_v4();
@@ -921,7 +930,11 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone(), meeting_repo.clone());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            meeting_repo.clone(),
+        );
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
@@ -1004,7 +1017,11 @@ mod tests {
         let resolution_repo = Arc::new(MockResolutionRepository::new());
         let vote_repo = Arc::new(MockVoteRepository::new());
         let meeting_repo = Arc::new(MockMeetingRepository::new());
-        let use_cases = ResolutionUseCases::new(resolution_repo.clone(), vote_repo.clone(), meeting_repo.clone());
+        let use_cases = ResolutionUseCases::new(
+            resolution_repo.clone(),
+            vote_repo.clone(),
+            meeting_repo.clone(),
+        );
 
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();

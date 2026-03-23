@@ -4,8 +4,8 @@ use crate::application::dto::contractor_report_dto::{
 };
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
-use uuid::Uuid;
 use serde::Deserialize;
+use uuid::Uuid;
 
 // ---------------------------------------------------------------------------
 // Endpoints authentifiés (syndic / CdC)
@@ -385,11 +385,7 @@ pub async fn submit_report_by_magic_token(
     let token = path.into_inner();
 
     // First, get the report by token to validate it exists and is in Draft state
-    match state
-        .contractor_report_use_cases
-        .get_by_token(&token)
-        .await
-    {
+    match state.contractor_report_use_cases.get_by_token(&token).await {
         Ok(_report) => {
             // Report exists, now submit it
             match state

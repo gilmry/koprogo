@@ -87,11 +87,7 @@ async fn test_marketplace_search_providers_with_filters() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        200,
-        "Filtered search should return 200"
-    );
+    assert_eq!(resp.status(), 200, "Filtered search should return 200");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
     assert!(body.is_array(), "Response should be an array");
@@ -279,10 +275,7 @@ async fn test_marketplace_get_evaluations_report() {
 
     let body: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(body["building_id"], building_id);
-    assert!(
-        body["report_year"].is_number(),
-        "Should have a report year"
-    );
+    assert!(body["report_year"].is_number(), "Should have a report year");
     assert!(
         body["total_evaluations"].is_number(),
         "Should have total_evaluations field"
@@ -326,11 +319,7 @@ async fn test_marketplace_get_evaluations_report_with_year() {
 #[serial]
 async fn test_marketplace_evaluations_report_unauthenticated() {
     let (app_state, _container, org_id) = common::setup_test_db().await;
-    let building_id = create_test_building_for_marketplace(
-        &app_state,
-        org_id,
-    )
-    .await;
+    let building_id = create_test_building_for_marketplace(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()

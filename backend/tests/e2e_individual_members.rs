@@ -91,7 +91,10 @@ async fn test_join_campaign_minimal_fields() {
     let body: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(body["email"], "minimal@example.be");
     assert_eq!(body["postal_code"], "1050");
-    assert!(body["annual_consumption_kwh"].is_null(), "Optional field should be null");
+    assert!(
+        body["annual_consumption_kwh"].is_null(),
+        "Optional field should be null"
+    );
 }
 
 #[actix_web::test]

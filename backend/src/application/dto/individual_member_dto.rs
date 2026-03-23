@@ -1,8 +1,8 @@
 // DTOs for Individual Members API (Issue #280)
 
+use crate::domain::entities::IndividualMember;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use crate::domain::entities::IndividualMember;
 
 /// Request DTO for joining a campaign as individual member
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]

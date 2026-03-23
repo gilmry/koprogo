@@ -347,11 +347,12 @@ impl IndividualMemberRepository for PostgresIndividualMemberRepository {
     }
 
     async fn count_by_campaign(&self, campaign_id: Uuid) -> Result<i64, String> {
-        let row = sqlx::query("SELECT COUNT(*) as count FROM individual_members WHERE campaign_id = $1")
-            .bind(campaign_id)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| format!("Database error: {}", e))?;
+        let row =
+            sqlx::query("SELECT COUNT(*) as count FROM individual_members WHERE campaign_id = $1")
+                .bind(campaign_id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(row.get::<i64, _>("count"))
     }

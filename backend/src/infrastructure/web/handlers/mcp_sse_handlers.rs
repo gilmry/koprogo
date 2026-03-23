@@ -523,17 +523,22 @@ async fn dispatch_tool(
 ) -> Result<ToolResult, RpcError> {
     let org_id = match user.organization_id {
         Some(id) => id,
-        None => return Err(RpcError {
-            code: ErrorCode::INVALID_REQUEST,
-            message: "User does not belong to an organization".to_string(),
-            data: None,
-        }),
+        None => {
+            return Err(RpcError {
+                code: ErrorCode::INVALID_REQUEST,
+                message: "User does not belong to an organization".to_string(),
+                data: None,
+            })
+        }
     };
 
     match tool_name {
         "list_buildings" => {
             let page = arguments.get("page").and_then(|v| v.as_u64()).unwrap_or(1) as i64;
-            let per_page = arguments.get("per_page").and_then(|v| v.as_u64()).unwrap_or(20) as i64;
+            let per_page = arguments
+                .get("per_page")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(20) as i64;
 
             let page_request = crate::application::dto::PageRequest {
                 page,
@@ -541,12 +546,19 @@ async fn dispatch_tool(
                 sort_by: None,
                 order: crate::application::dto::SortOrder::default(),
             };
-            match state.building_use_cases.list_buildings_paginated(&page_request, Some(org_id)).await {
+            match state
+                .building_use_cases
+                .list_buildings_paginated(&page_request, Some(org_id))
+                .await
+            {
                 Ok((buildings, _total)) => {
                     let text = serde_json::to_string_pretty(&buildings)
                         .unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -559,7 +571,8 @@ async fn dispatch_tool(
         }
 
         "get_building" => {
-            let building_id_str = arguments.get("building_id")
+            let building_id_str = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -578,7 +591,10 @@ async fn dispatch_tool(
                     let text = serde_json::to_string_pretty(&building)
                         .unwrap_or_else(|_| "{}".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -596,7 +612,8 @@ async fn dispatch_tool(
         }
 
         "list_owners" => {
-            let _building_id = arguments.get("building_id")
+            let _building_id = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .and_then(|s| Uuid::parse_str(s).ok());
 
@@ -606,12 +623,19 @@ async fn dispatch_tool(
                 sort_by: None,
                 order: crate::application::dto::SortOrder::default(),
             };
-            match state.owner_use_cases.list_owners_paginated(&page_request, Some(org_id)).await {
+            match state
+                .owner_use_cases
+                .list_owners_paginated(&page_request, Some(org_id))
+                .await
+            {
                 Ok((owners, _total)) => {
-                    let text = serde_json::to_string_pretty(&owners)
-                        .unwrap_or_else(|_| "[]".to_string());
+                    let text =
+                        serde_json::to_string_pretty(&owners).unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -624,7 +648,8 @@ async fn dispatch_tool(
         }
 
         "list_meetings" => {
-            let building_id_str = arguments.get("building_id")
+            let building_id_str = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -638,12 +663,19 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.meeting_use_cases.list_meetings_by_building(building_id).await {
+            match state
+                .meeting_use_cases
+                .list_meetings_by_building(building_id)
+                .await
+            {
                 Ok(meetings) => {
                     let text = serde_json::to_string_pretty(&meetings)
                         .unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -656,7 +688,8 @@ async fn dispatch_tool(
         }
 
         "get_financial_summary" => {
-            let building_id_str = arguments.get("building_id")
+            let building_id_str = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -671,7 +704,8 @@ async fn dispatch_tool(
             })?;
 
             // Gather expenses stats
-            let expenses_result = state.expense_use_cases
+            let expenses_result = state
+                .expense_use_cases
                 .list_expenses_by_building(building_id)
                 .await;
 
@@ -679,13 +713,13 @@ async fn dispatch_tool(
                 Ok(expenses) => {
                     use crate::domain::entities::{ApprovalStatus, PaymentStatus};
 
-                    let total_expenses: f64 = expenses.iter()
-                        .map(|e| e.amount)
-                        .sum();
-                    let pending_count = expenses.iter()
+                    let total_expenses: f64 = expenses.iter().map(|e| e.amount).sum();
+                    let pending_count = expenses
+                        .iter()
                         .filter(|e| e.approval_status == ApprovalStatus::PendingApproval)
                         .count();
-                    let overdue_count = expenses.iter()
+                    let overdue_count = expenses
+                        .iter()
                         .filter(|e| e.payment_status == PaymentStatus::Overdue)
                         .count();
 
@@ -697,10 +731,13 @@ async fn dispatch_tool(
                         "total_expense_count": expenses.len()
                     });
 
-                    let text = serde_json::to_string_pretty(&summary)
-                        .unwrap_or_else(|_| "{}".to_string());
+                    let text =
+                        serde_json::to_string_pretty(&summary).unwrap_or_else(|_| "{}".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -713,7 +750,8 @@ async fn dispatch_tool(
         }
 
         "list_tickets" => {
-            let building_id_str = arguments.get("building_id")
+            let building_id_str = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -727,12 +765,19 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.ticket_use_cases.list_tickets_by_building(building_id).await {
+            match state
+                .ticket_use_cases
+                .list_tickets_by_building(building_id)
+                .await
+            {
                 Ok(tickets) => {
-                    let text = serde_json::to_string_pretty(&tickets)
-                        .unwrap_or_else(|_| "[]".to_string());
+                    let text =
+                        serde_json::to_string_pretty(&tickets).unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -745,7 +790,8 @@ async fn dispatch_tool(
         }
 
         "get_owner_balance" => {
-            let owner_id_str = arguments.get("owner_id")
+            let owner_id_str = arguments
+                .get("owner_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -759,11 +805,13 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.owner_contribution_use_cases.get_outstanding_contributions(owner_id).await {
+            match state
+                .owner_contribution_use_cases
+                .get_outstanding_contributions(owner_id)
+                .await
+            {
                 Ok(contributions) => {
-                    let total_due: f64 = contributions.iter()
-                        .map(|c| c.amount)
-                        .sum();
+                    let total_due: f64 = contributions.iter().map(|c| c.amount).sum();
 
                     let balance = json!({
                         "owner_id": owner_id,
@@ -771,10 +819,13 @@ async fn dispatch_tool(
                         "total_due_eur": format!("{:.2}", total_due)
                     });
 
-                    let text = serde_json::to_string_pretty(&balance)
-                        .unwrap_or_else(|_| "{}".to_string());
+                    let text =
+                        serde_json::to_string_pretty(&balance).unwrap_or_else(|_| "{}".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -787,7 +838,8 @@ async fn dispatch_tool(
         }
 
         "list_pending_expenses" => {
-            let building_id = arguments.get("building_id")
+            let building_id = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .and_then(|s| Uuid::parse_str(s).ok());
 
@@ -801,7 +853,10 @@ async fn dispatch_tool(
                         sort_by: None,
                         order: crate::application::dto::SortOrder::default(),
                     };
-                    state.expense_use_cases.list_expenses_paginated(&page_request, Some(org_id)).await
+                    state
+                        .expense_use_cases
+                        .list_expenses_paginated(&page_request, Some(org_id))
+                        .await
                         .map(|(expenses, _total)| expenses)
                 }
             };
@@ -810,7 +865,8 @@ async fn dispatch_tool(
                 Ok(mut all_expenses) => {
                     use crate::domain::entities::ApprovalStatus as AS;
                     // Filter to pending approval by default
-                    let status_filter = arguments.get("status")
+                    let status_filter = arguments
+                        .get("status")
                         .and_then(|v| v.as_str())
                         .unwrap_or("PendingApproval");
 
@@ -829,7 +885,10 @@ async fn dispatch_tool(
                     let text = serde_json::to_string_pretty(&all_expenses)
                         .unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -842,7 +901,8 @@ async fn dispatch_tool(
         }
 
         "check_quorum" => {
-            let meeting_id_str = arguments.get("meeting_id")
+            let meeting_id_str = arguments
+                .get("meeting_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -879,10 +939,13 @@ async fn dispatch_tool(
                         }
                     });
 
-                    let text = serde_json::to_string_pretty(&result)
-                        .unwrap_or_else(|_| "{}".to_string());
+                    let text =
+                        serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -900,7 +963,8 @@ async fn dispatch_tool(
         }
 
         "get_building_documents" => {
-            let building_id_str = arguments.get("building_id")
+            let building_id_str = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -914,12 +978,19 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.document_use_cases.list_documents_by_building(building_id).await {
+            match state
+                .document_use_cases
+                .list_documents_by_building(building_id)
+                .await
+            {
                 Ok(docs) => {
-                    let text = serde_json::to_string_pretty(&docs)
-                        .unwrap_or_else(|_| "[]".to_string());
+                    let text =
+                        serde_json::to_string_pretty(&docs).unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -932,7 +1003,11 @@ async fn dispatch_tool(
         }
 
         "legal_search" => {
-            let query = arguments.get("query").and_then(|v| v.as_str()).unwrap_or("").to_lowercase();
+            let query = arguments
+                .get("query")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_lowercase();
 
             // Static legal knowledge base — hardcoded Belgian copropriété references
             let legal_base = vec![
@@ -949,26 +1024,46 @@ async fn dispatch_tool(
             ];
 
             // Filter by query
-            let results: Vec<_> = legal_base.iter()
+            let results: Vec<_> = legal_base
+                .iter()
                 .filter(|item| {
-                    let title = item.get("title").and_then(|v| v.as_str()).unwrap_or("").to_lowercase();
-                    let content = item.get("content").and_then(|v| v.as_str()).unwrap_or("").to_lowercase();
-                    let code = item.get("code").and_then(|v| v.as_str()).unwrap_or("").to_lowercase();
+                    let title = item
+                        .get("title")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_lowercase();
+                    let content = item
+                        .get("content")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_lowercase();
+                    let code = item
+                        .get("code")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_lowercase();
                     title.contains(&query) || content.contains(&query) || code.contains(&query)
                 })
                 .cloned()
                 .collect();
 
-            let text = serde_json::to_string_pretty(&json!({"count": results.len(), "results": results}))
-                .unwrap_or_else(|_| "{}".to_string());
+            let text =
+                serde_json::to_string_pretty(&json!({"count": results.len(), "results": results}))
+                    .unwrap_or_else(|_| "{}".to_string());
             Ok(ToolResult {
-                content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                content: vec![ContentBlock {
+                    content_type: "text".to_string(),
+                    text,
+                }],
                 is_error: None,
             })
         }
 
         "majority_calculator" => {
-            let decision_type = arguments.get("decision_type").and_then(|v| v.as_str()).unwrap_or("ordinary");
+            let decision_type = arguments
+                .get("decision_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("ordinary");
 
             let result = match decision_type {
                 "ordinary" => json!({
@@ -1021,16 +1116,19 @@ async fn dispatch_tool(
                 }),
             };
 
-            let text = serde_json::to_string_pretty(&result)
-                .unwrap_or_else(|_| "{}".to_string());
+            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
             Ok(ToolResult {
-                content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                content: vec![ContentBlock {
+                    content_type: "text".to_string(),
+                    text,
+                }],
                 is_error: None,
             })
         }
 
         "list_owners_of_building" => {
-            let building_id_str = arguments.get("building_id")
+            let building_id_str = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1050,12 +1148,19 @@ async fn dispatch_tool(
                 sort_by: None,
                 order: crate::application::dto::SortOrder::default(),
             };
-            match state.owner_use_cases.list_owners_paginated(&page_request, Some(org_id)).await {
+            match state
+                .owner_use_cases
+                .list_owners_paginated(&page_request, Some(org_id))
+                .await
+            {
                 Ok((owners, _total)) => {
-                    let text = serde_json::to_string_pretty(&owners)
-                        .unwrap_or_else(|_| "[]".to_string());
+                    let text =
+                        serde_json::to_string_pretty(&owners).unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -1068,7 +1173,8 @@ async fn dispatch_tool(
         }
 
         "ag_quorum_check" => {
-            let meeting_id_str = arguments.get("meeting_id")
+            let meeting_id_str = arguments
+                .get("meeting_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1113,10 +1219,13 @@ async fn dispatch_tool(
                         })
                     };
 
-                    let text = serde_json::to_string_pretty(&result)
-                        .unwrap_or_else(|_| "{}".to_string());
+                    let text =
+                        serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -1134,7 +1243,8 @@ async fn dispatch_tool(
         }
 
         "ag_vote" => {
-            let resolution_id_str = arguments.get("resolution_id")
+            let resolution_id_str = arguments
+                .get("resolution_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1142,7 +1252,8 @@ async fn dispatch_tool(
                     data: None,
                 })?;
 
-            let choice_str = arguments.get("choice")
+            let choice_str = arguments
+                .get("choice")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1166,16 +1277,19 @@ async fn dispatch_tool(
                 "note": "Vote final enregistré au fermeture de scrutin par le syndic"
             });
 
-            let text = serde_json::to_string_pretty(&result)
-                .unwrap_or_else(|_| "{}".to_string());
+            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
             Ok(ToolResult {
-                content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                content: vec![ContentBlock {
+                    content_type: "text".to_string(),
+                    text,
+                }],
                 is_error: None,
             })
         }
 
         "comptabilite_situation" => {
-            let building_id_str = arguments.get("building_id")
+            let building_id_str = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1189,16 +1303,22 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.expense_use_cases.list_expenses_by_building(building_id).await {
+            match state
+                .expense_use_cases
+                .list_expenses_by_building(building_id)
+                .await
+            {
                 Ok(expenses) => {
                     use crate::domain::entities::{ApprovalStatus, PaymentStatus};
 
-                    let total_expenses: f64 = expenses.iter()
+                    let total_expenses: f64 = expenses
+                        .iter()
                         .filter(|e| e.approval_status == ApprovalStatus::Approved)
                         .map(|e| e.amount)
                         .sum();
 
-                    let outstanding: f64 = expenses.iter()
+                    let outstanding: f64 = expenses
+                        .iter()
                         .filter(|e| e.payment_status != PaymentStatus::Paid)
                         .map(|e| e.amount)
                         .sum();
@@ -1215,7 +1335,10 @@ async fn dispatch_tool(
                     let text = serde_json::to_string_pretty(&situation)
                         .unwrap_or_else(|_| "{}".to_string());
                     Ok(ToolResult {
-                        content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                        content: vec![ContentBlock {
+                            content_type: "text".to_string(),
+                            text,
+                        }],
                         is_error: None,
                     })
                 }
@@ -1228,7 +1351,8 @@ async fn dispatch_tool(
         }
 
         "appel_de_fonds" => {
-            let building_id_str = arguments.get("building_id")
+            let building_id_str = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1236,7 +1360,8 @@ async fn dispatch_tool(
                     data: None,
                 })?;
 
-            let amount_cents = arguments.get("amount_cents")
+            let amount_cents = arguments
+                .get("amount_cents")
                 .and_then(|v| v.as_i64())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1244,7 +1369,8 @@ async fn dispatch_tool(
                     data: None,
                 })?;
 
-            let due_date = arguments.get("due_date")
+            let due_date = arguments
+                .get("due_date")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1252,7 +1378,8 @@ async fn dispatch_tool(
                     data: None,
                 })?;
 
-            let description = arguments.get("description")
+            let description = arguments
+                .get("description")
                 .and_then(|v| v.as_str())
                 .unwrap_or("Appel de fonds extraordinaires");
 
@@ -1273,16 +1400,19 @@ async fn dispatch_tool(
                 "next_step": "Vérifier les coordonnées email de tous les copropriétaires avant envoi"
             });
 
-            let text = serde_json::to_string_pretty(&result)
-                .unwrap_or_else(|_| "{}".to_string());
+            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
             Ok(ToolResult {
-                content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                content: vec![ContentBlock {
+                    content_type: "text".to_string(),
+                    text,
+                }],
                 is_error: None,
             })
         }
 
         "travaux_qualifier" => {
-            let description = arguments.get("description")
+            let description = arguments
+                .get("description")
                 .and_then(|v| v.as_str())
                 .ok_or_else(|| RpcError {
                     code: ErrorCode::INVALID_PARAMS,
@@ -1290,11 +1420,13 @@ async fn dispatch_tool(
                     data: None,
                 })?;
 
-            let estimated_amount_eur = arguments.get("estimated_amount_eur")
+            let estimated_amount_eur = arguments
+                .get("estimated_amount_eur")
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0);
 
-            let is_emergency = arguments.get("is_emergency")
+            let is_emergency = arguments
+                .get("is_emergency")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(false);
 
@@ -1343,16 +1475,19 @@ async fn dispatch_tool(
                 })
             };
 
-            let text = serde_json::to_string_pretty(&result)
-                .unwrap_or_else(|_| "{}".to_string());
+            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
             Ok(ToolResult {
-                content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                content: vec![ContentBlock {
+                    content_type: "text".to_string(),
+                    text,
+                }],
                 is_error: None,
             })
         }
 
         "alertes_list" => {
-            let building_id = arguments.get("building_id")
+            let building_id = arguments
+                .get("building_id")
                 .and_then(|v| v.as_str())
                 .and_then(|s| Uuid::parse_str(s).ok());
 
@@ -1392,16 +1527,19 @@ async fn dispatch_tool(
                 "alerts": alerts
             });
 
-            let text = serde_json::to_string_pretty(&result)
-                .unwrap_or_else(|_| "{}".to_string());
+            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
             Ok(ToolResult {
-                content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                content: vec![ContentBlock {
+                    content_type: "text".to_string(),
+                    text,
+                }],
                 is_error: None,
             })
         }
 
         "energie_campagne_list" => {
-            let status_filter = arguments.get("status")
+            let status_filter = arguments
+                .get("status")
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
 
@@ -1425,10 +1563,12 @@ async fn dispatch_tool(
                 "campaigns": campaigns
             });
 
-            let text = serde_json::to_string_pretty(&result)
-                .unwrap_or_else(|_| "{}".to_string());
+            let text = serde_json::to_string_pretty(&result).unwrap_or_else(|_| "{}".to_string());
             Ok(ToolResult {
-                content: vec![ContentBlock { content_type: "text".to_string(), text }],
+                content: vec![ContentBlock {
+                    content_type: "text".to_string(),
+                    text,
+                }],
                 is_error: None,
             })
         }
@@ -1448,11 +1588,7 @@ async fn dispatch_tool(
 // ─────────────────────────────────────────────────────────
 
 /// Processes a JSON-RPC 2.0 request and returns a JSON-RPC response value
-async fn handle_jsonrpc(
-    req: JsonRpcRequest,
-    state: &AppState,
-    user: &AuthenticatedUser,
-) -> Value {
+async fn handle_jsonrpc(req: JsonRpcRequest, state: &AppState, user: &AuthenticatedUser) -> Value {
     let id = req.id.clone();
 
     if req.jsonrpc != "2.0" {
@@ -1464,13 +1600,16 @@ async fn handle_jsonrpc(
                 message: "jsonrpc must be '2.0'".to_string(),
                 data: None,
             },
-        }).unwrap_or(json!({"error": "serialization error"}));
+        })
+        .unwrap_or(json!({"error": "serialization error"}));
     }
 
     match req.method.as_str() {
         // MCP lifecycle: initialize
         "initialize" => {
-            let client_info = req.params.as_ref()
+            let client_info = req
+                .params
+                .as_ref()
                 .and_then(|p| p.get("clientInfo"))
                 .cloned()
                 .unwrap_or(json!({}));
@@ -1498,7 +1637,8 @@ async fn handle_jsonrpc(
                 jsonrpc: "2.0".to_string(),
                 id,
                 result,
-            }).unwrap_or(json!({"error": "serialization error"}))
+            })
+            .unwrap_or(json!({"error": "serialization error"}))
         }
 
         // MCP lifecycle: initialized (notification, no response needed)
@@ -1515,7 +1655,8 @@ async fn handle_jsonrpc(
                 jsonrpc: "2.0".to_string(),
                 id,
                 result,
-            }).unwrap_or(json!({"error": "serialization error"}))
+            })
+            .unwrap_or(json!({"error": "serialization error"}))
         }
 
         // tools/call
@@ -1531,7 +1672,8 @@ async fn handle_jsonrpc(
                             message: "params are required for tools/call".to_string(),
                             data: None,
                         },
-                    }).unwrap_or(json!({"error": "serialization error"}));
+                    })
+                    .unwrap_or(json!({"error": "serialization error"}));
                 }
             };
 
@@ -1546,13 +1688,12 @@ async fn handle_jsonrpc(
                             message: "params.name is required".to_string(),
                             data: None,
                         },
-                    }).unwrap_or(json!({"error": "serialization error"}));
+                    })
+                    .unwrap_or(json!({"error": "serialization error"}));
                 }
             };
 
-            let arguments = params.get("arguments")
-                .cloned()
-                .unwrap_or(json!({}));
+            let arguments = params.get("arguments").cloned().unwrap_or(json!({}));
 
             tracing::info!(
                 method = "tools/call",
@@ -1562,45 +1703,40 @@ async fn handle_jsonrpc(
             );
 
             match dispatch_tool(&tool_name, &arguments, state, user).await {
-                Ok(tool_result) => {
-                    serde_json::to_value(JsonRpcResponse {
-                        jsonrpc: "2.0".to_string(),
-                        id,
-                        result: serde_json::to_value(tool_result)
-                            .unwrap_or(json!({})),
-                    }).unwrap_or(json!({"error": "serialization error"}))
-                }
-                Err(err) => {
-                    serde_json::to_value(JsonRpcError {
-                        jsonrpc: "2.0".to_string(),
-                        id,
-                        error: err,
-                    }).unwrap_or(json!({"error": "serialization error"}))
-                }
+                Ok(tool_result) => serde_json::to_value(JsonRpcResponse {
+                    jsonrpc: "2.0".to_string(),
+                    id,
+                    result: serde_json::to_value(tool_result).unwrap_or(json!({})),
+                })
+                .unwrap_or(json!({"error": "serialization error"})),
+                Err(err) => serde_json::to_value(JsonRpcError {
+                    jsonrpc: "2.0".to_string(),
+                    id,
+                    error: err,
+                })
+                .unwrap_or(json!({"error": "serialization error"})),
             }
         }
 
         // ping
-        "ping" => {
-            serde_json::to_value(JsonRpcResponse {
-                jsonrpc: "2.0".to_string(),
-                id,
-                result: json!({}),
-            }).unwrap_or(json!({"error": "serialization error"}))
-        }
+        "ping" => serde_json::to_value(JsonRpcResponse {
+            jsonrpc: "2.0".to_string(),
+            id,
+            result: json!({}),
+        })
+        .unwrap_or(json!({"error": "serialization error"})),
 
         // Unknown method
-        _ => {
-            serde_json::to_value(JsonRpcError {
-                jsonrpc: "2.0".to_string(),
-                id,
-                error: RpcError {
-                    code: ErrorCode::METHOD_NOT_FOUND,
-                    message: format!("Method not found: {}", req.method),
-                    data: None,
-                },
-            }).unwrap_or(json!({"error": "serialization error"}))
-        }
+        _ => serde_json::to_value(JsonRpcError {
+            jsonrpc: "2.0".to_string(),
+            id,
+            error: RpcError {
+                code: ErrorCode::METHOD_NOT_FOUND,
+                message: format!("Method not found: {}", req.method),
+                data: None,
+            },
+        })
+        .unwrap_or(json!({"error": "serialization error"})),
     }
 }
 
@@ -1637,7 +1773,8 @@ pub async fn mcp_sse_endpoint(
         // SSE `endpoint` event — tells client where to POST JSON-RPC messages
         let endpoint_event = format!(
             "event: endpoint\ndata: {}\n\n",
-            serde_json::to_string(&messages_url).unwrap_or_else(|_| format!("\"{}\"", messages_url))
+            serde_json::to_string(&messages_url)
+                .unwrap_or_else(|_| format!("\"{}\"", messages_url))
         );
         Ok::<_, actix_web::Error>(actix_web::web::Bytes::from(endpoint_event))
     });
@@ -1667,7 +1804,9 @@ pub async fn mcp_messages_endpoint(
     state: Data<Arc<AppState>>,
     body: web::Json<Value>,
 ) -> HttpResponse {
-    let session_id = req.uri().query()
+    let session_id = req
+        .uri()
+        .query()
         .and_then(|q| {
             q.split('&')
                 .find(|p| p.starts_with("session_id="))
@@ -1731,18 +1870,16 @@ pub async fn mcp_messages_endpoint(
                     .json(response)
             }
         }
-        Err(e) => {
-            HttpResponse::BadRequest()
-                .content_type("application/json")
-                .json(json!({
-                    "jsonrpc": "2.0",
-                    "id": null,
-                    "error": {
-                        "code": ErrorCode::PARSE_ERROR,
-                        "message": format!("Parse error: {}", e)
-                    }
-                }))
-        }
+        Err(e) => HttpResponse::BadRequest()
+            .content_type("application/json")
+            .json(json!({
+                "jsonrpc": "2.0",
+                "id": null,
+                "error": {
+                    "code": ErrorCode::PARSE_ERROR,
+                    "message": format!("Parse error: {}", e)
+                }
+            })),
     }
 }
 
@@ -1825,7 +1962,11 @@ mod tests {
         let tools = get_mcp_tools();
         for tool in &tools {
             assert!(!tool.name.is_empty(), "Tool has empty name");
-            assert!(!tool.description.is_empty(), "Tool '{}' has empty description", tool.name);
+            assert!(
+                !tool.description.is_empty(),
+                "Tool '{}' has empty description",
+                tool.name
+            );
             assert!(
                 tool.input_schema.get("type").is_some(),
                 "Tool '{}' input_schema missing 'type' field",

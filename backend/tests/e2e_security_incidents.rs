@@ -150,7 +150,11 @@ async fn test_create_security_incident_empty_title() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 400, "Should reject empty title and description");
+    assert_eq!(
+        resp.status(),
+        400,
+        "Should reject empty title and description"
+    );
 }
 
 // ==================== List Security Incidents Tests ====================
@@ -514,11 +518,7 @@ async fn test_list_incidents_without_auth() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        401,
-        "Should require authentication"
-    );
+    assert_eq!(resp.status(), 401, "Should require authentication");
 }
 
 // ==================== Complete Incident Lifecycle Test ====================

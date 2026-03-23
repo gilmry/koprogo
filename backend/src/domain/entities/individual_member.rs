@@ -21,11 +21,7 @@ pub struct IndividualMember {
 }
 
 impl IndividualMember {
-    pub fn new(
-        campaign_id: Uuid,
-        email: String,
-        postal_code: String,
-    ) -> Result<Self, String> {
+    pub fn new(campaign_id: Uuid, email: String, postal_code: String) -> Result<Self, String> {
         if email.is_empty() || !email.contains('@') {
             return Err("Invalid email address".to_string());
         }
@@ -133,9 +129,12 @@ mod tests {
     #[test]
     fn test_grant_consent() {
         let campaign_id = Uuid::new_v4();
-        let mut member =
-            IndividualMember::new(campaign_id, "user@example.com".to_string(), "1000".to_string())
-                .unwrap();
+        let mut member = IndividualMember::new(
+            campaign_id,
+            "user@example.com".to_string(),
+            "1000".to_string(),
+        )
+        .unwrap();
 
         assert!(!member.has_gdpr_consent);
         let _ = member.grant_consent();
@@ -146,9 +145,12 @@ mod tests {
     #[test]
     fn test_unsubscribe() {
         let campaign_id = Uuid::new_v4();
-        let mut member =
-            IndividualMember::new(campaign_id, "user@example.com".to_string(), "1000".to_string())
-                .unwrap();
+        let mut member = IndividualMember::new(
+            campaign_id,
+            "user@example.com".to_string(),
+            "1000".to_string(),
+        )
+        .unwrap();
 
         assert!(member.is_active());
         let _ = member.unsubscribe();
@@ -159,9 +161,12 @@ mod tests {
     #[test]
     fn test_has_valid_consent() {
         let campaign_id = Uuid::new_v4();
-        let mut member =
-            IndividualMember::new(campaign_id, "user@example.com".to_string(), "1000".to_string())
-                .unwrap();
+        let mut member = IndividualMember::new(
+            campaign_id,
+            "user@example.com".to_string(),
+            "1000".to_string(),
+        )
+        .unwrap();
 
         assert!(!member.has_valid_consent());
         let _ = member.grant_consent();
@@ -173,9 +178,12 @@ mod tests {
     #[test]
     fn test_update_consumption() {
         let campaign_id = Uuid::new_v4();
-        let mut member =
-            IndividualMember::new(campaign_id, "user@example.com".to_string(), "1000".to_string())
-                .unwrap();
+        let mut member = IndividualMember::new(
+            campaign_id,
+            "user@example.com".to_string(),
+            "1000".to_string(),
+        )
+        .unwrap();
 
         let result = member.update_consumption(
             5000.0,
@@ -190,9 +198,12 @@ mod tests {
     #[test]
     fn test_update_consumption_negative() {
         let campaign_id = Uuid::new_v4();
-        let mut member =
-            IndividualMember::new(campaign_id, "user@example.com".to_string(), "1000".to_string())
-                .unwrap();
+        let mut member = IndividualMember::new(
+            campaign_id,
+            "user@example.com".to_string(),
+            "1000".to_string(),
+        )
+        .unwrap();
 
         let result = member.update_consumption(-100.0, None, None);
         assert!(result.is_err());

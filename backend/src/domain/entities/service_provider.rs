@@ -92,7 +92,7 @@ pub struct ServiceProvider {
     pub certifications: Vec<String>, // VCA, Saber, BOSEC, etc.
     pub ipi_registration: Option<String>,
     pub bce_number: Option<String>, // Belgian company number (BCE/KBO)
-    pub rating_avg: Option<f64>,     // 0.0-5.0
+    pub rating_avg: Option<f64>,    // 0.0-5.0
     pub reviews_count: i32,
     pub is_verified: bool,
     pub public_profile_slug: String,
@@ -137,7 +137,8 @@ impl ServiceProvider {
         }
         let current_avg = self.rating_avg.unwrap_or(0.0);
         let new_reviews_count = self.reviews_count + 1;
-        self.rating_avg = Some((current_avg * self.reviews_count as f64 + new_score) / new_reviews_count as f64);
+        self.rating_avg =
+            Some((current_avg * self.reviews_count as f64 + new_score) / new_reviews_count as f64);
         self.reviews_count = new_reviews_count;
         self.updated_at = Utc::now();
         Ok(())

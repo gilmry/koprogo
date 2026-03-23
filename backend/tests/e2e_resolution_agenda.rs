@@ -103,7 +103,11 @@ async fn test_create_resolution_with_agenda_item_index() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 201, "Should create resolution with agenda_item_index");
+    assert_eq!(
+        resp.status(),
+        201,
+        "Should create resolution with agenda_item_index"
+    );
 
     let resolution: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(resolution["title"], "Approve Renovation Budget");
@@ -137,7 +141,11 @@ async fn test_create_resolution_without_agenda_item_index() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(resp.status(), 201, "Should create resolution without agenda_item_index");
+    assert_eq!(
+        resp.status(),
+        201,
+        "Should create resolution without agenda_item_index"
+    );
 
     let resolution: serde_json::Value = test::read_body_json(resp).await;
     assert_eq!(resolution["title"], "Approve Annual Budget");
@@ -292,7 +300,10 @@ async fn test_create_resolution_agenda_item_persists_on_get() {
     assert_eq!(get_resp.status(), 200);
 
     let resolution: serde_json::Value = test::read_body_json(get_resp).await;
-    assert_eq!(resolution["agenda_item_index"], 5, "agenda_item_index should persist on GET");
+    assert_eq!(
+        resolution["agenda_item_index"], 5,
+        "agenda_item_index should persist on GET"
+    );
     assert_eq!(resolution["resolution_type"], "extraordinary");
     assert_eq!(resolution["majority_required"], "qualified");
 }

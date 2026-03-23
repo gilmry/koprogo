@@ -289,11 +289,7 @@ pub async fn get_ag_session_platform_stats(
     }
 
     // Platform stats - count pending sessions as a basic metric
-    match state
-        .ag_session_use_cases
-        .list_pending_sessions()
-        .await
-    {
+    match state.ag_session_use_cases.list_pending_sessions().await {
         Ok(pending) => HttpResponse::Ok().json(serde_json::json!({
             "pending_sessions_count": pending.len(),
             "note": "Platform-wide statistics endpoint - detailed metrics coming soon"

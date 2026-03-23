@@ -37,10 +37,10 @@ pub struct Meeting {
     pub total_quotas: Option<f64>,      // Total millièmes du bâtiment (généralement 1000)
     pub present_quotas: Option<f64>,    // Millièmes présents + représentés par procuration
     // Second Convocation — Issue #311 (Art. 3.87 §5 CC: No quorum required for 2nd convocation)
-    pub is_second_convocation: bool,  // true = 2e convocation (no quorum check needed)
+    pub is_second_convocation: bool, // true = 2e convocation (no quorum check needed)
     // PV Distribution — Issue #313: Track when AG minutes are sent to owners
-    pub minutes_document_id: Option<Uuid>,  // FK to Document
-    pub minutes_sent_at: Option<DateTime<Utc>>,  // When PV was distributed
+    pub minutes_document_id: Option<Uuid>, // FK to Document
+    pub minutes_sent_at: Option<DateTime<Utc>>, // When PV was distributed
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -79,7 +79,7 @@ impl Meeting {
             quorum_percentage: None,
             total_quotas: None,
             present_quotas: None,
-            is_second_convocation: false,  // Default: first convocation
+            is_second_convocation: false, // Default: first convocation
             minutes_document_id: None,
             minutes_sent_at: None,
             created_at: now,

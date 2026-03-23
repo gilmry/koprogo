@@ -128,11 +128,7 @@ async fn test_list_processing_activities_without_auth() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        401,
-        "Should require authentication"
-    );
+    assert_eq!(resp.status(), 401, "Should require authentication");
 }
 
 // ==================== Sub-Processors Tests ====================
@@ -213,11 +209,7 @@ async fn test_list_sub_processors_without_auth() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        401,
-        "Should require authentication"
-    );
+    assert_eq!(resp.status(), 401, "Should require authentication");
 }
 
 // ==================== Response Structure Tests ====================
@@ -246,8 +238,14 @@ async fn test_processing_activities_response_structure() {
     let body: serde_json::Value = test::read_body_json(resp).await;
 
     // Verify response structure has expected fields
-    assert!(body.get("activities").is_some(), "Response should have 'activities' field");
-    assert!(body.get("total").is_some(), "Response should have 'total' field");
+    assert!(
+        body.get("activities").is_some(),
+        "Response should have 'activities' field"
+    );
+    assert!(
+        body.get("total").is_some(),
+        "Response should have 'total' field"
+    );
 
     // If there are activities, verify each activity has the expected structure
     if let Some(activities) = body["activities"].as_array() {

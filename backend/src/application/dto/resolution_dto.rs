@@ -19,7 +19,7 @@ pub struct ResolutionResponse {
     pub total_voting_power_contre: f64,
     pub total_voting_power_abstention: f64,
     pub status: ResolutionStatus,
-    pub agenda_item_index: Option<usize>,  // Issue #310: Link to agenda item
+    pub agenda_item_index: Option<usize>, // Issue #310: Link to agenda item
     pub created_at: DateTime<Utc>,
     pub voted_at: Option<DateTime<Utc>>,
     // Calculated fields
@@ -65,7 +65,7 @@ pub struct CreateResolutionRequest {
     pub description: String,
     pub resolution_type: ResolutionType,
     pub majority_required: MajorityType,
-    pub agenda_item_index: Option<usize>,  // Issue #310: Optional link to agenda item
+    pub agenda_item_index: Option<usize>, // Issue #310: Optional link to agenda item
 }
 
 /// Request DTO for updating a resolution

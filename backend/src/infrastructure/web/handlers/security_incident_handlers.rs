@@ -30,7 +30,7 @@ fn extract_user_agent(req: &HttpRequest) -> Option<String> {
 /// Request body for creating a security incident
 #[derive(Debug, Deserialize)]
 pub struct CreateSecurityIncidentRequest {
-    pub severity: String, // "critical", "high", "medium", "low"
+    pub severity: String,      // "critical", "high", "medium", "low"
     pub incident_type: String, // "data_breach", "unauthorized_access", "malware", etc.
     pub title: String,
     pub description: String,
@@ -368,7 +368,9 @@ pub async fn list_security_incidents(
                                 incident_type: row.incident_type,
                                 title: row.title,
                                 description: row.description,
-                                data_categories_affected: row.data_categories_affected.unwrap_or_default(),
+                                data_categories_affected: row
+                                    .data_categories_affected
+                                    .unwrap_or_default(),
                                 affected_subjects_count: row.affected_subjects_count,
                                 discovery_at: row.discovery_at.to_rfc3339(),
                                 notification_at: row.notification_at.map(|dt| dt.to_rfc3339()),
@@ -385,10 +387,7 @@ pub async fn list_security_incidents(
                         })
                         .collect();
 
-                    HttpResponse::Ok().json(SecurityIncidentsResponse {
-                        incidents,
-                        total,
-                    })
+                    HttpResponse::Ok().json(SecurityIncidentsResponse { incidents, total })
                 }
                 Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to fetch incidents: {}", e)
@@ -511,7 +510,8 @@ pub async fn report_incident_to_apd(
 
     let incident_id = path.into_inner();
 
-    if body.apd_reference_number.is_none() || body.apd_reference_number.as_ref().unwrap().is_empty() {
+    if body.apd_reference_number.is_none() || body.apd_reference_number.as_ref().unwrap().is_empty()
+    {
         return HttpResponse::BadRequest().json(serde_json::json!({
             "error": "apd_reference_number is required"
         }));
@@ -658,7 +658,9 @@ pub async fn list_overdue_incidents(
                                 incident_type: row.incident_type,
                                 title: row.title,
                                 description: row.description,
-                                data_categories_affected: row.data_categories_affected.unwrap_or_default(),
+                                data_categories_affected: row
+                                    .data_categories_affected
+                                    .unwrap_or_default(),
                                 affected_subjects_count: row.affected_subjects_count,
                                 discovery_at: row.discovery_at.to_rfc3339(),
                                 notification_at: row.notification_at.map(|dt| dt.to_rfc3339()),
@@ -675,10 +677,7 @@ pub async fn list_overdue_incidents(
                         })
                         .collect();
 
-                    HttpResponse::Ok().json(SecurityIncidentsResponse {
-                        incidents,
-                        total,
-                    })
+                    HttpResponse::Ok().json(SecurityIncidentsResponse { incidents, total })
                 }
                 Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to fetch overdue incidents: {}", e)

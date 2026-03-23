@@ -24,10 +24,7 @@ async fn setup_app() -> (
 }
 
 /// Helper: Create a building for ticket tests
-async fn create_test_building(
-    app_state: &actix_web::web::Data<AppState>,
-    org_id: Uuid,
-) -> Uuid {
+async fn create_test_building(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> Uuid {
     let building_dto = CreateBuildingDto {
         organization_id: org_id.to_string(),
         name: format!("Test Building WorkOrder {}", Uuid::new_v4()),
@@ -162,10 +159,7 @@ async fn test_send_work_order_rejected_for_open_ticket() {
 
     let body: serde_json::Value = test::read_body_json(work_order_resp).await;
     assert!(
-        body["error"]
-            .as_str()
-            .unwrap()
-            .contains("InProgress"),
+        body["error"].as_str().unwrap().contains("InProgress"),
         "Error should mention InProgress status requirement"
     );
 }
