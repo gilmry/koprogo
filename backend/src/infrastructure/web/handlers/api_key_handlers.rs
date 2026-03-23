@@ -168,7 +168,7 @@ pub async fn create_api_key(
         rate_limit,
         body.expires_at,
     )
-    .fetch_one(&*state.db_pool)
+    .fetch_one(&state.pool)
     .await;
 
     match result {
@@ -184,7 +184,7 @@ pub async fn create_api_key(
                 claims.user_id,
                 Some(format!("API key created by {}", claims.user_id))
             )
-            .execute(&*state.db_pool)
+            .execute(&state.pool)
             .await;
 
             HttpResponse::Created().json(ApiKeyCreatedResponse {
@@ -230,7 +230,7 @@ pub async fn list_api_keys(
         "#,
         org_id,
     )
-    .fetch_all(&*state.db_pool)
+    .fetch_all(&state.pool)
     .await;
 
     match rows {
@@ -288,7 +288,7 @@ pub async fn get_api_key(
         key_id,
         org_id,
     )
-    .fetch_optional(&*state.db_pool)
+    .fetch_optional(&state.pool)
     .await;
 
     match row {
@@ -337,7 +337,7 @@ pub async fn update_api_key(
         key_id,
         org_id,
     )
-    .fetch_optional(&*state.db_pool)
+    .fetch_optional(&state.pool)
     .await;
 
     match existing {
@@ -380,7 +380,7 @@ pub async fn update_api_key(
         key_id,
         org_id,
     )
-    .fetch_one(&*state.db_pool)
+    .fetch_one(&state.pool)
     .await;
 
     match result {
@@ -396,7 +396,7 @@ pub async fn update_api_key(
                 claims.user_id,
                 Some(format!("API key updated by {}", claims.user_id))
             )
-            .execute(&*state.db_pool)
+            .execute(&state.pool)
             .await;
 
             HttpResponse::Ok().json(ApiKeyDto {
@@ -440,7 +440,7 @@ pub async fn revoke_api_key(
         key_id,
         org_id,
     )
-    .execute(&*state.db_pool)
+    .execute(&state.pool)
     .await;
 
     match result {
@@ -456,7 +456,7 @@ pub async fn revoke_api_key(
                 claims.user_id,
                 Some(format!("API key revoked by {}", claims.user_id))
             )
-            .execute(&*state.db_pool)
+            .execute(&state.pool)
             .await;
 
             HttpResponse::Ok().json(ApiKeyResponse {
@@ -481,7 +481,7 @@ pub async fn revoke_api_key(
 #[post("/api-keys/{id}/rotate")]
 pub async fn rotate_api_key(
     claims: AuthenticatedUser,
-    state: web::Data<Arc<AppState>>,
+    _state: web::Data<Arc<AppState>>,
     path: web::Path<Uuid>,
 ) -> HttpResponse {
     let _key_id = path.into_inner();

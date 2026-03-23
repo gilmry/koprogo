@@ -288,13 +288,16 @@ pub async fn get_ag_session_platform_stats(
         }));
     }
 
-    // Query platform-wide statistics
+    // Platform stats - count pending sessions as a basic metric
     match state
         .ag_session_use_cases
-        .get_platform_stats()
+        .list_pending_sessions()
         .await
     {
-        Ok(stats) => HttpResponse::Ok().json(stats),
+        Ok(pending) => HttpResponse::Ok().json(serde_json::json!({
+            "pending_sessions_count": pending.len(),
+            "note": "Platform-wide statistics endpoint - detailed metrics coming soon"
+        })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
     }
 }

@@ -1,9 +1,9 @@
-use actix_web::{delete, post, web, HttpResponse};
+use actix_web::{delete, post, put, web, HttpResponse};
 use uuid::Uuid;
 
 use crate::application::dto::{
     JoinCampaignAsIndividualDto, IndividualMemberResponseDto, GrantConsentDto,
-    UpdateConsumptionDto, UnsubscribeRequestDto, UnsubscribeConfirmationDto,
+    UpdateConsumptionDto, UnsubscribeConfirmationDto,
 };
 use crate::domain::entities::IndividualMember;
 use crate::infrastructure::web::AppState;
@@ -13,7 +13,7 @@ use crate::infrastructure::web::AppState;
 /// Issue #280: Energy group buying extensions
 #[post("/energy-campaigns/{campaign_id}/join-as-individual")]
 pub async fn join_campaign_as_individual(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     campaign_id: web::Path<Uuid>,
     request: web::Json<JoinCampaignAsIndividualDto>,
 ) -> Result<HttpResponse, actix_web::Error> {
@@ -41,11 +41,11 @@ pub async fn join_campaign_as_individual(
 /// Grant GDPR consent for campaign participation
 #[post("/energy-campaigns/{campaign_id}/members/{member_id}/consent")]
 pub async fn grant_consent(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     path: web::Path<(Uuid, Uuid)>,
-    request: web::Json<GrantConsentDto>,
+    _request: web::Json<GrantConsentDto>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let (campaign_id, member_id) = path.into_inner();
+    let (_campaign_id, _member_id) = path.into_inner();
 
     // TODO: Fetch member from database
     // TODO: Verify campaign_id matches
@@ -62,11 +62,11 @@ pub async fn grant_consent(
 /// Update consumption data for member
 #[put("/energy-campaigns/{campaign_id}/members/{member_id}/consumption")]
 pub async fn update_consumption(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     path: web::Path<(Uuid, Uuid)>,
-    request: web::Json<UpdateConsumptionDto>,
+    _request: web::Json<UpdateConsumptionDto>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let (campaign_id, member_id) = path.into_inner();
+    let (_campaign_id, _member_id) = path.into_inner();
 
     // TODO: Fetch member from database
     // TODO: Verify campaign_id matches
@@ -84,10 +84,10 @@ pub async fn update_consumption(
 /// TODO: Requires email token or authenticated user
 #[delete("/energy-campaigns/{campaign_id}/members/{member_id}/withdraw")]
 pub async fn withdraw_from_campaign(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     path: web::Path<(Uuid, Uuid)>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let (campaign_id, member_id) = path.into_inner();
+    let (_campaign_id, _member_id) = path.into_inner();
 
     // TODO: Fetch member from database
     // TODO: Verify campaign_id matches

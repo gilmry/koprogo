@@ -433,6 +433,7 @@ pub async fn export_meeting_minutes_pdf(
             status: resolution_dto.status,
             voted_at: resolution_dto.voted_at,
             created_at: resolution_dto.created_at,
+            agenda_item_index: None,
         };
 
         let votes: Vec<Vote> = votes_dto
@@ -528,6 +529,9 @@ pub async fn export_meeting_minutes_pdf(
         present_quotas: meeting.present_quotas,
         created_at: meeting.created_at,
         updated_at: meeting.updated_at,
+        is_second_convocation: false,
+        minutes_document_id: None,
+        minutes_sent_at: None,
     };
 
     // 5. Generate PDF

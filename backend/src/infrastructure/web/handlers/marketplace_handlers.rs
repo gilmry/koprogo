@@ -1,9 +1,9 @@
-use actix_web::{delete, get, post, put, web, HttpResponse};
+use actix_web::{get, post, web, HttpResponse};
+use chrono::Datelike;
 use uuid::Uuid;
 
 use crate::application::dto::{
-    CreateServiceProviderDto, SearchServiceProvidersQuery, ServiceProviderResponseDto,
-    CreateContractEvaluationDto, ContractEvaluationResponseDto, ContractEvaluationsAnnualReportDto,
+    CreateServiceProviderDto, SearchServiceProvidersQuery, ServiceProviderResponseDto, ContractEvaluationsAnnualReportDto,
 };
 use crate::domain::entities::{ServiceProvider, TradeCategory};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
@@ -14,7 +14,7 @@ use crate::infrastructure::web::AppState;
 /// Query params: trade_category, postal_code, min_rating, is_verified_only
 #[get("/marketplace/providers")]
 pub async fn search_service_providers(
-    query: web::Query<SearchServiceProvidersQuery>,
+    _query: web::Query<SearchServiceProvidersQuery>,
 ) -> Result<HttpResponse, actix_web::Error> {
     // TODO: Implement search with filters
     // For now, return empty list as placeholder
@@ -39,7 +39,7 @@ pub async fn get_provider_by_slug(
 /// Create a new service provider (authenticated - syndic/admin only)
 #[post("/service-providers")]
 pub async fn create_service_provider(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     request: web::Json<CreateServiceProviderDto>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
@@ -71,10 +71,10 @@ pub async fn create_service_provider(
 /// Query param: year (default: current year)
 #[get("/buildings/{building_id}/reports/contract-evaluations/annual")]
 pub async fn get_contract_evaluations_annual(
-    state: web::Data<AppState>,
+    _state: web::Data<AppState>,
     building_id: web::Path<Uuid>,
     web::Query(params): web::Query<std::collections::HashMap<String, String>>,
-    user: AuthenticatedUser,
+    _user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
     let building_id = building_id.into_inner();
     let year = params

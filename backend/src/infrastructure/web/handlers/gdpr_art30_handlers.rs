@@ -1,7 +1,6 @@
-use crate::application::dto::PageRequest;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 /// DTO for data processing activity (Art. 30 register)
 #[derive(Debug, Serialize)]

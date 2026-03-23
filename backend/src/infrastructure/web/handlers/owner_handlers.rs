@@ -693,6 +693,7 @@ pub async fn export_owner_statement_pdf(
                 supplier: e.supplier.clone(),
                 invoice_number: e.invoice_number.clone(),
                 account_code: e.account_code.clone(),
+                contractor_report_id: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
             })
