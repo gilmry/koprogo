@@ -1,6 +1,7 @@
 pub mod account_handlers;
 pub mod admin_gdpr_handlers;
 pub mod ag_session_handlers;
+pub mod api_key_handlers;
 pub mod age_request_handlers;
 pub mod auth_handlers;
 pub mod board_decision_handlers;
@@ -64,6 +65,7 @@ pub mod work_report_handlers;
 pub use account_handlers::*;
 pub use admin_gdpr_handlers::*;
 pub use ag_session_handlers::*;
+pub use api_key_handlers::*;
 pub use age_request_handlers::*;
 pub use auth_handlers::*;
 pub use board_decision_handlers::*;
