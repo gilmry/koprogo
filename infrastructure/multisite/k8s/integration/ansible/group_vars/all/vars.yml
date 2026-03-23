@@ -1,0 +1,4 @@
+---
+koprogo_branch: integration
+k3s_version: "v1.29.2+k3s1"
+enable_monitoring: false
