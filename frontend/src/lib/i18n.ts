@@ -45,6 +45,11 @@ export function setupI18n() {
 // Auto-init when imported as side-effect (for backward compat)
 setupI18n();
 
+// Re-export svelte-i18n utilities so that importing from this module
+// guarantees i18n is initialized (the setupI18n() call above runs first).
+// Components should use: import { _ } from '../../lib/i18n';
+export { _, locale, isLoading } from "svelte-i18n";
+
 // Export language options for selector
 export const languages = [
   { code: "nl", name: "Nederlands", flag: "🇧🇪", priority: 1 },
