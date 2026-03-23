@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
   import type { Building, DocumentType, DocumentUploadPayload, User } from '../lib/types';
   import { DOCUMENT_TYPE_OPTIONS as DOCUMENT_TYPES } from '../lib/types';
   import { api } from '../lib/api';

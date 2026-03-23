@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
 
   export let lineItems: LineItem[] = [];
   export let disabled = false;

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import type { Document } from '../lib/types';
   import Button from './ui/Button.svelte';

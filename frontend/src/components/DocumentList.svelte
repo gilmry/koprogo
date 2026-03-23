@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import Pagination from './Pagination.svelte';
   import DocumentUploadModal from './DocumentUploadModal.svelte';

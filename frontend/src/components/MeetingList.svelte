@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import type { PageResponse } from '../lib/types';
   import Pagination from './Pagination.svelte';

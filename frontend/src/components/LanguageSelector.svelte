@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { locale } from 'svelte-i18n';
+  import { locale } from '../lib/i18n';
   import { languages, type LanguageCode } from '../lib/i18n';
 
   let isOpen = false;

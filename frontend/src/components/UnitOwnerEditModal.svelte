@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import type { UnitOwner, Owner } from '../lib/types';
   import Button from './ui/Button.svelte';

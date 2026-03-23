@@ -7,7 +7,7 @@
   import FormInput from './ui/FormInput.svelte';
   import FormSelect from './ui/FormSelect.svelte';
   import Button from './ui/Button.svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
 
   let formData = {
     email: '',

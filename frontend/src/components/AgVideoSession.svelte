@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../lib/i18n';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
   import { apiEndpoint } from '../lib/config';
   import { authStore } from '../stores/auth';
   import Button from './ui/Button.svelte';

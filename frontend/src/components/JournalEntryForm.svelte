@@ -15,7 +15,7 @@
   // - Quick account code entry
 
   import { onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../lib/i18n';
 
   const API_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
