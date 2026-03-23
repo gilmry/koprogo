@@ -256,6 +256,9 @@ pub enum AuditEventType {
     GdprMarketingOptIn,
     GdprMarketingPreferenceChangeFailed,
 
+    // GDPR Article 33: Security Incidents & APD Notification (Issue #317)
+    SecurityIncidentReported,
+
     // Accounting events
     AccountCreated,
     AccountUpdated,
