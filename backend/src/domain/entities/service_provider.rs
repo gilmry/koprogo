@@ -81,6 +81,7 @@ impl TradeCategory {
     }
 }
 
+#[derive(Clone)]
 pub struct ServiceProvider {
     pub id: Uuid,
     pub organization_id: Uuid,
