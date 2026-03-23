@@ -1,0 +1,66 @@
+---
+# Backup setup: GPG encrypted backups + S3
+
+- name: Install backup tools
+  apt:
+    name: [gnupg, s3cmd, gzip]
+    state: present
+
+- name: Generate GPG key parameters file
+  template:
+    src: gpg-key-params.j2
+    dest: /root/gpg-key-params
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: Check if GPG key exists
+  shell: gpg --list-keys "{{ gpg_backup_email | default('backup@koprogo.local') }}"
+  register: gpg_key_check
+  failed_when: false
+  changed_when: false
+
+- name: Generate GPG backup key
+  command: gpg --batch --gen-key /root/gpg-key-params
+  when: gpg_key_check.rc != 0
+
+- name: Deploy encrypted backup script
+  template:
+    src: backup-encrypted.sh.j2
+    dest: "{{ koprogo_dir }}/scripts/backup-encrypted.sh"
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0755'
+
+- name: Create scripts directory
+  file:
+    path: "{{ koprogo_dir }}/scripts"
+    state: directory
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0755'
+
+- name: Setup encrypted backup cron job
+  cron:
+    name: "KoproGo Daily Encrypted Backup"
+    minute: "0"
+    hour: "2"
+    job: "{{ koprogo_dir }}/scripts/backup-encrypted.sh >> /var/log/koprogo-backup.log 2>&1"
+    user: root
+
+- name: Create monitoring script
+  template:
+    src: health-check.sh.j2
+    dest: "{{ koprogo_dir }}/scripts/health-check.sh"
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0755'
+  when: false  # Health check moved to monitoring role
+
+- name: Setup health check cron job (every 5 min)
+  cron:
+    name: "KoproGo Health Check"
+    minute: "*/5"
+    job: "{{ koprogo_dir }}/scripts/health-check.sh >> /var/log/koprogo-health.log 2>&1"
+    user: "{{ koprogo_user }}"
+  when: false  # Health check moved to monitoring role

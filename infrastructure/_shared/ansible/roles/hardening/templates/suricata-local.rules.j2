@@ -1,0 +1,13 @@
+# KoproGo Suricata IDS Rules - ISO 27001 A.13.1
+# SQL Injection detection
+alert http any any -> any any (msg:"KoproGo SQL Injection attempt"; flow:to_server; content:"UNION"; nocase; content:"SELECT"; nocase; sid:1000001; rev:1;)
+alert http any any -> any any (msg:"KoproGo SQL Injection OR 1=1"; flow:to_server; content:"OR 1=1"; nocase; sid:1000002; rev:1;)
+
+# XSS detection
+alert http any any -> any any (msg:"KoproGo XSS attempt"; flow:to_server; content:"<script"; nocase; sid:1000003; rev:1;)
+
+# Path traversal
+alert http any any -> any any (msg:"KoproGo Path Traversal"; flow:to_server; content:"../"; sid:1000004; rev:1;)
+
+# API abuse
+alert http any any -> any any (msg:"KoproGo API brute force"; flow:to_server; content:"POST"; http_method; content:"/api/v1/auth/login"; http_uri; threshold:type both,track by_src,count 10,seconds 60; sid:1000005; rev:1;)

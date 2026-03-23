@@ -1,0 +1,45 @@
+---
+# OVH DNS configuration
+
+- name: Install Python3 pip
+  apt:
+    name: python3-pip
+    state: present
+  when: koprogo_domain is defined and koprogo_domain != ''
+
+- name: Install Python OVH module
+  pip:
+    name: ovh
+    state: present
+  when: koprogo_domain is defined and koprogo_domain != ''
+
+- name: Copy OVH DNS configuration script
+  copy:
+    src: configure-ovh-dns.py
+    dest: /tmp/configure-ovh-dns.py
+    mode: '0755'
+  when: koprogo_domain is defined and koprogo_domain != ''
+
+- name: Configure OVH DNS for frontend domain
+  command: python3 /tmp/configure-ovh-dns.py
+  environment:
+    DOMAIN: "{{ frontend_domain }}"
+    TARGET_IP: "{{ ansible_host }}"
+    OVH_ENDPOINT: "{{ lookup('env', 'OVH_ENDPOINT') | default('ovh-eu', true) }}"
+    OVH_APPLICATION_KEY: "{{ lookup('env', 'OVH_APPLICATION_KEY') }}"
+    OVH_APPLICATION_SECRET: "{{ lookup('env', 'OVH_APPLICATION_SECRET') }}"
+    OVH_CONSUMER_KEY: "{{ lookup('env', 'OVH_CONSUMER_KEY') }}"
+  when: koprogo_domain is defined and koprogo_domain != '' and lookup('env', 'OVH_APPLICATION_KEY') != ''
+  failed_when: false
+
+- name: Configure OVH DNS for API domain
+  command: python3 /tmp/configure-ovh-dns.py
+  environment:
+    DOMAIN: "{{ api_domain }}"
+    TARGET_IP: "{{ ansible_host }}"
+    OVH_ENDPOINT: "{{ lookup('env', 'OVH_ENDPOINT') | default('ovh-eu', true) }}"
+    OVH_APPLICATION_KEY: "{{ lookup('env', 'OVH_APPLICATION_KEY') }}"
+    OVH_APPLICATION_SECRET: "{{ lookup('env', 'OVH_APPLICATION_SECRET') }}"
+    OVH_CONSUMER_KEY: "{{ lookup('env', 'OVH_CONSUMER_KEY') }}"
+  when: koprogo_domain is defined and koprogo_domain != '' and lookup('env', 'OVH_APPLICATION_KEY') != ''
+  failed_when: false

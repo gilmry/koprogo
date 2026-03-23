@@ -1,0 +1,25 @@
+---
+# ArgoCD installation on K3s
+
+- name: Create ArgoCD namespace
+  command: kubectl create namespace argocd
+  register: argocd_ns
+  failed_when: argocd_ns.rc != 0 and "already exists" not in argocd_ns.stderr
+
+- name: Install ArgoCD
+  command: kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+- name: Wait for ArgoCD server to be ready
+  command: kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
+
+- name: Get ArgoCD admin password
+  shell: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+  register: argocd_password
+  changed_when: false
+
+- name: Display ArgoCD info
+  debug:
+    msg:
+      - "ArgoCD installed successfully"
+      - "Admin password: {{ argocd_password.stdout }}"
+      - "Access: kubectl port-forward svc/argocd-server -n argocd 8443:443"

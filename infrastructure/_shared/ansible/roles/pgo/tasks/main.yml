@@ -1,0 +1,18 @@
+---
+# Install CrunchyData PostgreSQL Operator (PGO)
+- name: Add CrunchyData Helm repo
+  command: helm repo add crunchydata https://raw.githubusercontent.com/CrunchyData/postgres-operator-examples/main/helm
+  changed_when: false
+
+- name: Update Helm repos
+  command: helm repo update
+  changed_when: false
+
+- name: Install PGO operator
+  command: >
+    helm upgrade --install pgo crunchydata/pgo
+    --namespace postgres-operator --create-namespace
+    --wait --timeout 5m
+
+- name: Wait for PGO to be ready
+  command: kubectl wait --for=condition=available deployment/pgo -n postgres-operator --timeout=300s

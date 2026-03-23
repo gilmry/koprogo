@@ -1,0 +1,33 @@
+# KoproGo Audit Rules - ISO 27001 A.12.4 (Logging and monitoring)
+# Monitor authentication events
+-w /etc/pam.d/ -p wa -k auth_changes
+-w /etc/shadow -p wa -k shadow_changes
+-w /var/log/auth.log -p wa -k auth_log
+
+# Monitor user/group modifications (A.9.2)
+-w /etc/passwd -p wa -k user_changes
+-w /etc/group -p wa -k group_changes
+-w /usr/sbin/useradd -p x -k user_add
+-w /usr/sbin/userdel -p x -k user_del
+
+# Monitor sudo usage (A.9.4)
+-w /etc/sudoers -p wa -k sudo_changes
+-w /var/log/sudo.log -p wa -k sudo_log
+
+# Monitor Docker daemon
+-w /usr/bin/docker -p x -k docker_commands
+-w /var/lib/docker -p wa -k docker_data
+-w /etc/docker -p wa -k docker_config
+
+# Monitor KoproGo application directories
+-w /home/koprogo/koprogo/deploy -p wa -k koprogo_deploy
+-w /home/koprogo/koprogo/.env -p r -k koprogo_secrets_access
+
+# Monitor network configuration (A.13.1)
+-w /etc/hosts -p wa -k network_config
+-w /etc/network -p wa -k network_config
+-w /etc/sysctl.conf -p wa -k sysctl_changes
+
+# Monitor cron (A.12.1)
+-w /etc/crontab -p wa -k cron_changes
+-w /var/spool/cron -p wa -k cron_changes

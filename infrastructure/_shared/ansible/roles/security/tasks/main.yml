@@ -1,0 +1,165 @@
+---
+# Security hardening: LUKS, fail2ban, CrowdSec, Suricata, SSH, kernel
+
+# LUKS Encryption (Issue #39)
+- name: Install LUKS encryption tools
+  apt:
+    name: [cryptsetup, cryptsetup-bin]
+    state: present
+
+- name: Deploy LUKS setup script
+  template:
+    src: luks-setup.sh.j2
+    dest: /usr/local/bin/koprogo-luks-setup.sh
+    owner: root
+    group: root
+    mode: '0700'
+
+# fail2ban (Issue #43)
+- name: Deploy fail2ban custom jails
+  template:
+    src: fail2ban-koprogo.conf.j2
+    dest: /etc/fail2ban/jail.d/koprogo.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart fail2ban
+
+- name: Deploy fail2ban filters
+  copy:
+    src: "fail2ban-filters/{{ item }}"
+    dest: "/etc/fail2ban/filter.d/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - traefik-auth.conf
+    - traefik-badbots.conf
+    - koprogo-api-abuse.conf
+    - postgres-bruteforce.conf
+  notify: restart fail2ban
+
+- name: Ensure fail2ban is running
+  systemd:
+    name: fail2ban
+    state: started
+    enabled: yes
+
+# CrowdSec WAF
+- name: Add CrowdSec repository key
+  apt_key:
+    url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
+    state: present
+
+- name: Add CrowdSec repository
+  apt_repository:
+    repo: "deb https://packagecloud.io/crowdsec/crowdsec/ubuntu/ {{ ansible_distribution_release }} main"
+    state: present
+
+- name: Install CrowdSec
+  apt:
+    name: [crowdsec, crowdsec-firewall-bouncer-iptables]
+    state: present
+    update_cache: yes
+
+- name: Enable CrowdSec service
+  systemd:
+    name: crowdsec
+    state: started
+    enabled: yes
+
+# Suricata IDS
+- name: Add Suricata PPA
+  apt_repository:
+    repo: ppa:oisf/suricata-stable
+    state: present
+
+- name: Install Suricata
+  apt:
+    name: suricata
+    state: present
+    update_cache: yes
+
+- name: Deploy custom Suricata rules
+  template:
+    src: suricata-local.rules.j2
+    dest: /etc/suricata/rules/local.rules
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload suricata
+
+- name: Enable Suricata service
+  systemd:
+    name: suricata
+    state: started
+    enabled: yes
+
+# SSH Hardening
+- name: Backup original sshd_config
+  copy:
+    src: /etc/ssh/sshd_config
+    dest: /etc/ssh/sshd_config.backup
+    owner: root
+    group: root
+    mode: '0600'
+    remote_src: yes
+    force: no
+
+- name: Deploy hardened SSH configuration
+  template:
+    src: sshd_config_hardening.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0600'
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: restart sshd
+
+# Kernel hardening
+- name: Deploy kernel hardening sysctl configuration
+  template:
+    src: sysctl-hardening.conf.j2
+    dest: /etc/sysctl.d/99-koprogo-hardening.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Apply sysctl hardening
+  command: sysctl -p /etc/sysctl.d/99-koprogo-hardening.conf
+
+# Security audit tools
+- name: Install security audit tools
+  apt:
+    name: [lynis, rkhunter, aide, unattended-upgrades]
+    state: present
+
+- name: Initialize AIDE database
+  command: aideinit
+  args:
+    creates: /var/lib/aide/aide.db
+
+- name: Deploy security audit script
+  template:
+    src: security-audit.sh.j2
+    dest: /usr/local/bin/koprogo-security-audit.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Schedule weekly security audit
+  cron:
+    name: "KoproGo Security Audit"
+    minute: "0"
+    hour: "3"
+    weekday: "0"
+    job: "/usr/local/bin/koprogo-security-audit.sh"
+    user: root
+
+- name: Schedule daily rkhunter scan
+  cron:
+    name: "KoproGo Rootkit Scan"
+    minute: "0"
+    hour: "4"
+    job: "/usr/bin/rkhunter --check --skip-keypress --report-warnings-only | logger -t rkhunter"
+    user: root

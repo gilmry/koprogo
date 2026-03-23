@@ -1,0 +1,70 @@
+---
+# GitOps setup: clone repo, deploy, systemd service
+
+- name: Remove existing KoproGo directory if present
+  file:
+    path: "{{ koprogo_dir }}"
+    state: absent
+
+- name: Clone KoproGo repository
+  git:
+    repo: "{{ koprogo_repo }}"
+    dest: "{{ koprogo_dir }}"
+    version: "{{ koprogo_branch }}"
+
+- name: Set ownership of KoproGo directory
+  file:
+    path: "{{ koprogo_dir }}"
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    recurse: yes
+
+- name: Configure git safe directory for koprogo user
+  shell: |
+    su - {{ koprogo_user }} -c "git config --global --add safe.directory {{ koprogo_dir }}"
+
+- name: Configure git safe directory for root
+  command: git config --global --add safe.directory {{ koprogo_dir }}
+
+- name: Create .env file for deployment
+  template:
+    src: env-production.j2
+    dest: "{{ koprogo_dir }}/.env"
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0600'
+
+- name: Copy GitOps deploy script
+  copy:
+    src: "{{ koprogo_dir }}/infrastructure/_shared/scripts/gitops-deploy.sh"
+    dest: "{{ koprogo_dir }}/scripts/gitops-deploy.sh"
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0755'
+    remote_src: yes
+
+- name: Install GitOps systemd service
+  template:
+    src: koprogo-gitops.service.j2
+    dest: /etc/systemd/system/koprogo-gitops.service
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create log file with correct permissions
+  file:
+    path: /var/log/koprogo-gitops.log
+    state: touch
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0644'
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Enable and start GitOps service
+  systemd:
+    name: koprogo-gitops
+    enabled: yes
+    state: started
