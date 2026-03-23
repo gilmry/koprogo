@@ -1,377 +1,259 @@
 {
-  "version": "1.0.0",
+  "jurisdiction": "Belgium",
+  "language": "FR/NL/DE/EN",
   "last_updated": "2026-03-23",
-  "rules": [
+  "version": "1.0",
+  "legal_rules": [
     {
-      "code": "AG01",
-      "category": "assemblee-generale",
-      "roles": ["syndic", "coproprietaire", "commissaire", "conseil-copropriete"],
-      "article": "Art. 3.87 §3 CC",
-      "title": "Convocation AG ordinaire — délai minimum",
-      "content": "Le syndic convoque l'assemblée générale ordinaire au moins 15 jours avant la date fixée. La convocation indique avec précision le lieu, la date, l'heure et l'ordre du jour.",
-      "keywords": ["convocation", "délai", "15 jours", "ordinaire", "ordre du jour"]
+      "id": "art_3_84",
+      "title": "Article 3.84 - Définition de la copropriété",
+      "reference": "Code Civil Belge",
+      "summary": "Définit la structure et les droits/devoirs dans une copropriété.",
+      "key_points": [
+        "La copropriété est régie par une convention collective",
+        "Les copropriétaires sont solidaires pour les charges communes",
+        "Chaque copropriétaire a un quote-part (tantième/millième)"
+      ]
     },
     {
-      "code": "AG02",
-      "category": "assemblee-generale",
-      "roles": ["syndic", "coproprietaire", "conseil-copropriete"],
-      "article": "Art. 3.87 §3 CC",
-      "title": "Convocation AG extraordinaire — délai minimum",
-      "content": "La convocation à une assemblée générale extraordinaire doit être faite au moins 15 jours avant la date fixée, sauf en cas d'urgence où elle peut être réduite à 8 jours.",
-      "keywords": ["convocation", "extraordinaire", "délai", "urgence", "8 jours"]
+      "id": "art_3_87_3",
+      "title": "Article 3.87 §3 - Délai de convocation AG",
+      "reference": "Code Civil Belge",
+      "summary": "Convocation à l'assemblée générale doit être faite au moins 15 jours à l'avance.",
+      "key_points": [
+        "Délai minimum: 15 jours calendrier avant l'AG",
+        "Doit être notifiée par écrit",
+        "Le syndic prépare l'ordre du jour"
+      ],
+      "applicable_to": ["AG Ordinaire", "AGE (Assemblée Générale Extraordinaire)"]
     },
     {
-      "code": "AG03",
-      "category": "assemblee-generale",
-      "roles": ["syndic", "coproprietaire"],
-      "article": "Art. 3.87 §4 CC",
-      "title": "Quorum minimal pour la tenue d'une AG",
-      "content": "L'assemblée générale ne peut délibérer que si elle réunit plus de 50% des quotes-parts (quorum). Si le quorum n'est pas atteint, l'assemblée peut être reportée et une seconde convocation est lancée sans obligation de quorum.",
-      "keywords": ["quorum", "50%", "quotes-parts", "délibération", "présents", "représentés"]
+      "id": "art_3_87_5",
+      "title": "Article 3.87 §5 - Quorum AG",
+      "reference": "Code Civil Belge",
+      "summary": "Conditions pour valider une assemblée générale.",
+      "key_points": [
+        "Première convocation: 50%+1 des tantièmes/millièmes doivent être présents ou représentés",
+        "Deuxième convocation: 25% suffisent",
+        "Le quorum doit être atteint avant le vote"
+      ],
+      "formula": "quorum_percentage >= 50% (first call), >= 25% (second call)"
     },
     {
-      "code": "AG04",
-      "category": "assemblee-generale",
-      "roles": ["commissaire", "coproprietaire"],
-      "article": "Art. 3.91 CC",
-      "title": "Rapport du commissaire — présentation avant vote des comptes",
-      "content": "Le commissaire aux comptes doit présenter son rapport avant le vote d'approbation des comptes. Ce rapport vérifie la régularité comptable et financière de la gestion.",
-      "keywords": ["commissaire", "rapport", "comptes", "vérification", "régularité"]
+      "id": "art_3_88_1",
+      "title": "Article 3.88 §1 - Majorité simple",
+      "reference": "Code Civil Belge",
+      "summary": "Type de majorité pour les décisions courantes.",
+      "key_points": [
+        "Majorité simple = 50%+1 des votes exprimés",
+        "Applicable aux dépenses ordinaires, élection du syndic, etc."
+      ],
+      "examples": [
+        "Approbation des comptes annuels",
+        "Élection du syndic",
+        "Dépenses courantes d'entretien"
+      ]
     },
     {
-      "code": "AG05",
-      "category": "assemblee-generale",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Art. 3.89 §5 15°",
-      "title": "Approbation des comptes — résolution obligatoire",
-      "content": "L'approbation des comptes de l'exercice est une résolution obligatoire de l'AG. Elle se vote à la majorité absolue (>50% des voix présentes/représentées).",
-      "keywords": ["approbation", "comptes", "résolution obligatoire", "majorité absolue"]
+      "id": "art_3_88_2",
+      "title": "Article 3.88 §2 - Majorité 4/5",
+      "reference": "Code Civil Belge",
+      "summary": "Majorité renforcée pour les travaux importants.",
+      "key_points": [
+        "Majorité 4/5 requise pour travaux > 50,000€",
+        "Valable pour réparations structurelles majeures",
+        "Amélioration du bâtiment (isolation, chauffage, etc.)"
+      ],
+      "threshold": "80% (quatre cinquièmes)"
     },
     {
-      "code": "AG06",
-      "category": "assemblee-generale",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Jurisprudence constante",
-      "title": "Quitus du syndic — point séparé obligatoire",
-      "content": "Le quitus du syndic doit être un point d'ordre du jour distinct de l'approbation des comptes. Il est possible d'approuver les comptes sans donner quitus, mais PAS l'inverse. Le quitus est facultatif mais quasi-systématiquement inscrit à l'ordre du jour.",
-      "keywords": ["quitus", "décharge", "syndic", "distinct", "point séparé"]
+      "id": "art_3_88_3",
+      "title": "Article 3.88 §3 - Unanimité",
+      "reference": "Code Civil Belge",
+      "summary": "Unanimité requise pour modifications statutaires.",
+      "key_points": [
+        "Tout changement aux statuts/règlement de copropriété",
+        "Modification de la répartition des charges",
+        "Changement du régime de gestion"
+      ],
+      "threshold": "100%"
     },
     {
-      "code": "AG07",
-      "category": "assemblee-generale",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Art. 3.89 §5 16°",
-      "title": "Budget prévisionnel — résolution obligatoire",
-      "content": "L'approbation du budget prévisionnel (fonds de roulement et fonds de réserve) est une résolution obligatoire de l'AG. Elle logiquement place après l'approbation des comptes de l'exercice écoulé.",
-      "keywords": ["budget", "prévisionnel", "fonds de réserve", "fonds de roulement", "résolution obligatoire"]
+      "id": "art_3_89_5",
+      "title": "Article 3.89 §5 - Obligations du syndic",
+      "reference": "Code Civil Belge",
+      "summary": "Responsabilités principales du syndic.",
+      "key_points": [
+        "Présenter rapport annuel d'exécution",
+        "Soumettre comptes et budget à l'approbation",
+        "Gérer les fonds communs de manière transparente",
+        "Respecter les décisions des copropriétaires"
+      ]
     },
     {
-      "code": "AG08",
-      "category": "assemblee-generale",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Art. 3.89 §1 al.4 CC",
-      "title": "Renouvellement du mandat du syndic",
-      "content": "Le renouvellement du mandat du syndic doit être logiquement placé après la décharge (quitus). L'AG doit se prononcer sur la continuité ou le remplacement du syndic pour le mandat suivant.",
-      "keywords": ["mandat", "syndic", "renouvellement", "continuité", "succession"]
+      "id": "art_3_86_3",
+      "title": "Article 3.86 §3 - Fonds de réserve",
+      "reference": "Code Civil Belge",
+      "summary": "Constitution obligatoire d'une réserve pour gros travaux.",
+      "key_points": [
+        "Minimum légal: 8% des charges communes annuelles",
+        "Destiné aux travaux de longue durée (20-30 ans)",
+        "Gestion contrôlée par l'assemblée générale"
+      ],
+      "minimum_percentage": 8
     },
     {
-      "code": "AG09",
-      "category": "assemblee-generale",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Art. 3.89 §5 12°",
-      "title": "Rapport d'évaluation des contrats de fournitures régulières",
-      "content": "Le rapport d'évaluation des contrats de fournitures régulières (gaz, électricité, entretien, etc.) est une résolution obligatoire de l'AG. Il permet d'examiner les coûts et de décider d'une renégociation.",
-      "keywords": ["contrats", "fournitures", "évaluation", "énergies", "entretien"]
+      "id": "art_577_2_4",
+      "title": "Article 577-2 §4 - Validation quotes-parts",
+      "reference": "Code Civil Belge (nouvelles dispositions)",
+      "summary": "Les quotes-parts (pourcentages de propriété) doivent totaliser 100%.",
+      "key_points": [
+        "Total des quotes-parts actives doit = 100%",
+        "Validation obligatoire lors d'ajout/transfert de propriétaire",
+        "Permet les états transitoires lors de mutations"
+      ],
+      "validation": "sum(active_quotes_parts) == 100%"
     },
     {
-      "code": "AG10",
-      "category": "assemblee-generale",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Art. 3.91 CC",
-      "title": "Désignation du commissaire aux comptes",
-      "content": "L'assemblée générale désigne chaque année un commissaire aux comptes ou une personne chargée du contrôle des comptes. Cette désignation est obligatoire et annuelle.",
-      "keywords": ["commissaire", "designation", "désignation", "contrôle", "comptes"]
+      "id": "ar_12_07_2012",
+      "title": "AR 12/07/2012 - Plan Comptable Minimum Normalisé (PCMN)",
+      "reference": "Arrêté Royal Belge",
+      "summary": "Normes comptables obligatoires pour les ASBL/copropriétés.",
+      "key_points": [
+        "8 classes comptables: Actif, Passif, Charges, Produits, Hors-bilan, etc.",
+        "Codes comptes standardisés (ex: 4100 pour Copropriétaires/Associés)",
+        "Rapports obligatoires: Bilan, Compte de résultats, Annexes"
+      ],
+      "applicable_entities": ["ASBL", "Copropriétés", "Organisations à but non lucratif"]
     },
     {
-      "code": "AG11",
-      "category": "assemblee-generale",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Pratique + Jurisprudence",
-      "title": "Divers — pas de vote possible",
-      "content": "Les points classés sous 'Divers' ne font pas l'objet de vote. C'est un tour de table informel où les coproprétaires peuvent formuler des suggestions pour les prochaines agendas ou exprimer des préoccupations générales.",
-      "keywords": ["divers", "tour de table", "pas de vote", "informel", "suggestions"]
+      "id": "bc15_ag_session",
+      "title": "BC15 - Article 3.87 §1 CC - Visioconférence AG",
+      "reference": "Code Civil Belge (amendements numériques)",
+      "summary": "Possibilité de tenir l'AG partiellement ou totalement en visioconférence.",
+      "key_points": [
+        "Les copropriétaires peuvent assister via vidéo",
+        "Doivent avoir accès au vote électronique",
+        "Quorum combiné: présents physiques + distants",
+        "Plateforme certifiée RGPD obligatoire"
+      ],
+      "platforms": ["Zoom", "Teams", "Meet", "Whereby", "Jitsi"]
     },
     {
-      "code": "AG12",
-      "category": "assemblee-generale",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Pratique",
-      "title": "Travaux et propositions des coproprétaires",
-      "content": "Les points proposés par les coproprétaires ou le conseil de copropriété doivent être reçus au moins 3 semaines avant l'AG. Chaque proposition doit préciser la majorité requise pour son vote.",
-      "keywords": ["travaux", "propositions", "copropriétaires", "3 semaines", "majorité"]
+      "id": "bc16_contractor_reports",
+      "title": "BC16 - Rapports de travaux prestataires",
+      "reference": "Norme belge de transparence travaux",
+      "summary": "Documentation standardisée pour les interventions de construction/réparation.",
+      "key_points": [
+        "Photos avant/après obligatoires",
+        "Détail des matériaux et coûts",
+        "Garanties et modalités d'entretien",
+        "Signature/validation du syndic requise"
+      ]
     },
     {
-      "code": "T01",
-      "category": "travaux",
-      "roles": ["syndic"],
-      "article": "Art. 3.89 §5 2° CC",
-      "title": "Travaux urgents — syndic seul",
-      "content": "Le syndic peut exécuter seul les actes conservatoires et d'administration provisoire. Cela inclut les travaux absolument urgents et ceux nécessaires à l'entretien normal et à la conservation du bien. La justification de l'urgence doit être documentée.",
-      "keywords": ["urgents", "conservatoires", "administration provisoire", "entretien", "conservation"]
+      "id": "bc17_age_concertation",
+      "title": "BC17 - Article 3.87 §2 CC - Demandes d'AGE par copropriétaires",
+      "reference": "Code Civil Belge",
+      "summary": "Procédure pour demander une Assemblée Générale Extraordinaire.",
+      "key_points": [
+        "Seuil: 1/5 (20%) des quotes-parts peuvent demander AGE",
+        "Doit être adressée au syndic avec motif",
+        "Syndic a 15 jours pour organiser l'AGE",
+        "Ou AGE automatique si syndic refuse sans raison"
+      ],
+      "threshold_percentage": 20
     },
     {
-      "code": "T02",
-      "category": "travaux",
-      "roles": ["syndic", "coproprietaire"],
-      "article": "Art. 3.88 §1 1°b CC",
-      "title": "Travaux non-urgents — majorité 2/3",
-      "content": "Tous les travaux affectant les parties communes nécessitent une majorité des 2/3 des voix. Exception : les travaux conservatoires (maintenance/réparation courante) ne requièrent que la majorité absolue.",
-      "keywords": ["travaux", "2/3", "majorité qualifiée", "parties communes", "conservatoires"]
+      "id": "gdpr_art_15",
+      "title": "RGPD Article 15 - Droit d'accès",
+      "reference": "Règlement Général sur la Protection des Données",
+      "summary": "Tout personne a le droit d'accéder à ses données personnelles.",
+      "key_points": [
+        "KoproGo doit fournir export de données en format électronique",
+        "Délai: 30 jours max",
+        "Gratuit pour première demande"
+      ]
     },
     {
-      "code": "T03",
-      "category": "travaux",
-      "roles": ["syndic", "coproprietaire"],
-      "article": "Art. 3.88 §1 1°c CC",
-      "title": "Mise en concurrence obligatoire",
-      "content": "L'AG fixe le montant seuil à partir duquel une mise en concurrence (3 devis minimum selon pratique belge) est obligatoire. Exception : les actes conservatoires sont exclus. Un seul devis au-dessus du seuil déclenche une alerte de conformité.",
-      "keywords": ["concurrence", "devis", "appels d'offres", "seuil", "3 devis"]
+      "id": "gdpr_art_16",
+      "title": "RGPD Article 16 - Droit à la rectification",
+      "reference": "Règlement Général sur la Protection des Données",
+      "summary": "Droit de corriger les données personnelles inexactes.",
+      "key_points": [
+        "Utilisateur peut corriger: email, adresse, prénom/nom",
+        "Notification obligatoire aux tiers ayant reçu les données",
+        "Pas d'oubli de l'historique (traçabilité audit)"
+      ]
     },
     {
-      "code": "T04",
-      "category": "travaux",
-      "roles": ["syndic"],
-      "article": "Déonto. IPI art. 73 CC",
-      "title": "Fournisseurs agréés — certifications obligatoires",
-      "content": "Le syndic ne peut passer commande qu'à des fournisseurs disposant des agréations éventuellement requises par la loi ou la réglementation (électriciens, plombiers, gaz, RGE, etc.).",
-      "keywords": ["agréations", "certifications", "fournisseurs", "légales", "compétences"]
+      "id": "gdpr_art_17",
+      "title": "RGPD Article 17 - Droit à l'oubli",
+      "reference": "Règlement Général sur la Protection des Données",
+      "summary": "Droit de demander la suppression de ses données.",
+      "key_points": [
+        "Anonymisation plutôt que suppression (audit trail)",
+        "Exceptions: obligations légales, prescriptions",
+        "Délai: 30 jours"
+      ]
     },
     {
-      "code": "T05",
-      "category": "travaux",
-      "roles": ["syndic"],
-      "article": "Déonto. IPI art. 74 CC",
-      "title": "Provision avant commande — fonds garantis",
-      "content": "Le syndic réclame une provision suffisante avant de commander des travaux ou services. Cette provision garantit la capacité de paiement de la copropriété et évite les impayés.",
-      "keywords": ["provision", "appel de fonds", "travaux", "services", "capacité de paiement"]
+      "id": "gdpr_art_18",
+      "title": "RGPD Article 18 - Droit à la limitation du traitement",
+      "reference": "Règlement Général sur la Protection des Données",
+      "summary": "Droit de demander une restriction temporaire du traitement.",
+      "key_points": [
+        "Données ne peuvent pas être modifiées/transmises",
+        "Traitement limité à conservation et traitement d'une action",
+        "Levée sur demande ou après délai"
+      ]
     },
     {
-      "code": "T06",
-      "category": "travaux",
-      "roles": ["syndic", "coproprietaire"],
-      "article": "Déonto. IPI art. 75 CC",
-      "title": "Conflit d'intérêts — fournisseurs liés au syndic",
-      "content": "Le syndic ne peut pas passer commande avec des personnes ayant un lien familial ou juridique direct, sauf autorisation ou ratification de l'ACP dûment informée. Tout conflit d'intérêt doit être déclaré.",
-      "keywords": ["conflit d'intérêts", "lien familial", "fournisseur", "syndic", "transparence"]
+      "id": "gdpr_art_21",
+      "title": "RGPD Article 21 - Droit d'opposition",
+      "reference": "Règlement Général sur la Protection des Données",
+      "summary": "Droit de s'opposer au traitement à des fins de marketing.",
+      "key_points": [
+        "Opt-out marketing immédiat",
+        "Pas d'impact sur traitements légaux obligatoires",
+        "Préférences de communication granulaires"
+      ]
     },
     {
-      "code": "T07",
-      "category": "travaux",
-      "roles": ["coproprietaire", "syndic"],
-      "article": "Art. 3.82 CC (depuis 2024)",
-      "title": "Travaux énergétiques d'un copropriétaire — délai 2 mois",
-      "content": "Un copropriétaire peut utiliser les parties communes pour améliorer énergétiquement son lot (pompes à chaleur, bornes de recharge, sauf panneaux solaires). Il doit adresser une demande écrite motivée au syndic au minimum 2 mois avant. L'ACP doit se prononcer dans les 2 mois (sinon approbation tacite).",
-      "keywords": ["énergétique", "pompe à chaleur", "borne de recharge", "2 mois", "approbation tacite"]
+      "id": "quotas_distribution",
+      "title": "Distribution des quotas/tantièmes",
+      "reference": "Code Civil Belge + Jurisprudence",
+      "summary": "Règles de répartition des charges communes.",
+      "key_points": [
+        "Quote-part = fraction du bien immeuble",
+        "Distribution basée sur superficie habitable (généralement)",
+        "Peut être modifiée uniquement à l'unanimité",
+        "Documents de propriété doivent mentionner les quotes-parts"
+      ]
     },
     {
-      "code": "CP01",
-      "category": "coproprietaire",
-      "roles": ["coproprietaire"],
-      "article": "Art. 3.86 CC",
-      "title": "Droit de participer aux assemblées générales",
-      "content": "Chaque coproprétaire a le droit de participer aux assemblées générales selon sa quote-part (vote proportionnel). Les copropriétaires peuvent se faire représenter par un autre copropriétaire.",
-      "keywords": ["participation", "vote", "quote-part", "assemblée", "procuration"]
-    },
-    {
-      "code": "CP02",
-      "category": "coproprietaire",
-      "roles": ["coproprietaire"],
-      "article": "Art. 3.86 CC",
-      "title": "Droit de vote par procuration — limites",
-      "content": "Un coproprétaire peut voter par procuration (mandat donné à un tiers), mais une même personne ne peut pas représenter plus de 3 coproprétaires. Cette limitation assure la représentation démocratique.",
-      "keywords": ["procuration", "représentation", "vote", "3 coproprétaires", "limite"]
-    },
-    {
-      "code": "CP03",
-      "category": "coproprietaire",
-      "roles": ["coproprietaire"],
-      "article": "Art. 3.84 CC",
-      "title": "Obligation de payer les charges communes",
-      "content": "Chaque coproprétaire est tenu de payer sa quote-part des charges communes (frais généraux, fonds de réserve, travaux autorisés). Le non-paiement expose à des intérêts de retard et à des poursuites légales.",
-      "keywords": ["charges", "quote-part", "obligation", "paiement", "dettes"]
-    },
-    {
-      "code": "CP04",
-      "category": "coproprietaire",
-      "roles": ["coproprietaire", "locataire"],
-      "article": "Art. 3.79 CC",
-      "title": "Information des locataires — obligation du coproprétaire",
-      "content": "Le coproprétaire propriétaire doit informer ses locataires de l'existence et du fonctionnement de la copropriété, notamment des appels de fonds et règles collectives.",
-      "keywords": ["locataires", "information", "transparent", "appels de fonds", "règles"]
-    },
-    {
-      "code": "F01",
-      "category": "finance",
-      "roles": ["syndic", "commissaire", "coproprietaire"],
-      "article": "Art. 3.88 §1 2° CC",
-      "title": "Modification répartition des charges — majorité 4/5",
-      "content": "Toute modification de la répartition des charges communes entre coproprétaires ou de la quotité (tantième) d'un lot requiert une majorité des 4/5 des voix. C'est une décision très difficile qui protège les minorités.",
-      "keywords": ["répartition", "charges", "4/5", "majorité qualifiée", "tantième", "quotité"]
-    },
-    {
-      "code": "F02",
-      "category": "finance",
-      "roles": ["syndic", "coproprietaire"],
-      "article": "Art. 3.89 §5 4° CC",
-      "title": "Fonds de réserve — résolution obligatoire",
-      "content": "L'AG doit obligatoirement constituer un fonds de réserve pour couvrir les travaux d'importance (peinture, toiture, installations). Un montant minimal par lot/an doit être établi par l'AG ou par le syndic.",
-      "keywords": ["réserve", "fonds", "travaux", "importance", "constitution"]
-    },
-    {
-      "code": "F03",
-      "category": "finance",
-      "roles": ["syndic"],
-      "article": "Art. 3.89 §5 CC",
-      "title": "Comptes financiers — tenue obligatoire",
-      "content": "Le syndic est tenu de tenir des comptes distincts par immeuble et de les soumettre au commissaire aux comptes chaque année. Les comptes doivent être précis, réguliers et audités.",
-      "keywords": ["comptes", "comptabilité", "syndic", "audit", "régularité", "audité"]
-    },
-    {
-      "code": "M01",
-      "category": "syndic-mandat",
-      "roles": ["syndic"],
-      "article": "Art. 3.89 §1 al.4 CC",
-      "title": "Durée du mandat du syndic",
-      "content": "Le mandats du syndic est fixé par l'AG pour une durée de 1, 2 ou 3 ans maximum. À l'expiration, une nouvelle AG doit se tenir pour renouveler ou changer de syndic.",
-      "keywords": ["mandat", "durée", "syndic", "AG", "renouvellement", "succession"]
+      "id": "works_majority_rules",
+      "title": "Classification des travaux et majorités requises",
+      "reference": "Code Civil Belge Articles 3.88 + jurisprudence",
+      "summary": "Règles pour déterminer la majorité requise selon type de travaux.",
+      "key_points": [
+        "Travaux courants/entretien: majorité simple (50%+1)",
+        "Travaux importants (> 5000€): 3 devis obligatoires",
+        "Travaux majeurs (> 50000€): majorité 4/5 requise",
+        "Amélioration substantielle (isolation, chauffage): 4/5 généralement"
+      ],
+      "thresholds": {
+        "maintenance": "50%+1",
+        "improvement_above_5000": "3_quotes_required",
+        "major_above_50000": "80%"
+      }
     }
   ],
-  "majority_types": [
-    {
-      "decision_type": "ordinary",
-      "label": "Majorité simple (absolue)",
-      "threshold_description": "Plus de 50% des votes exprimés",
-      "article": "Art. 3.88 §1 CC",
-      "examples": ["Approbation des comptes", "Désignation du commissaire", "Travaux conservatoires", "Décharge du syndic"],
-      "percentage": 50
-    },
-    {
-      "decision_type": "qualified_two_thirds",
-      "label": "Majorité qualifiée (2/3)",
-      "threshold_description": "Au moins 2/3 des voix",
-      "article": "Art. 3.88 §1 1° CC",
-      "examples": ["Travaux non-conservatoires", "Modification statuts", "Mise en concurrence"],
-      "percentage": 66.67
-    },
-    {
-      "decision_type": "qualified_four_fifths",
-      "label": "Majorité qualifiée (4/5)",
-      "threshold_description": "Au moins 4/5 des voix",
-      "article": "Art. 3.88 §1 2° CC",
-      "examples": ["Modification répartition des charges", "Modification destination de l'immeuble"],
-      "percentage": 80
-    },
-    {
-      "decision_type": "unanimity",
-      "label": "Unanimité",
-      "threshold_description": "Accord de 100% des coproprétaires",
-      "article": "Art. 3.88 §2-§3 CC",
-      "examples": ["Modification droits réels (acte de base)", "Démolition/reconstruction", "Changements structurels majeurs"],
-      "percentage": 100
-    },
-    {
-      "decision_type": "proxy_limit",
-      "label": "Limite de procuration",
-      "threshold_description": "Une personne ne peut représenter plus de 3 coproprétaires",
-      "article": "Art. 3.86 CC",
-      "examples": ["Vote par procuration", "Représentation aux AG"],
-      "percentage": null
-    }
-  ],
-  "ag_sequence": [
-    {
-      "step": 1,
-      "point_odj": "Ouverture et constitution du bureau",
-      "mandatory": true,
-      "majority": null,
-      "notes": "Élection du président (copropriétaire), désignation du secrétaire (souvent syndic), élection scrutateurs. Source: Pratique + ROI."
-    },
-    {
-      "step": 2,
-      "point_odj": "Vérification du quorum et émargement",
-      "mandatory": true,
-      "majority": null,
-      "notes": "Signature feuille de présence, calcul quorum (>50% quotes-parts), report si quorum non atteint (2e AG après 15j min). Source: Art. 3.87 §4-§5."
-    },
-    {
-      "step": 3,
-      "point_odj": "Rapport du commissaire aux comptes",
-      "mandatory": true,
-      "majority": null,
-      "notes": "Présentation rapport vérification des comptes AVANT vote d'approbation. Source: Art. 3.91."
-    },
-    {
-      "step": 4,
-      "point_odj": "Approbation des comptes de l'exercice écoulé",
-      "mandatory": true,
-      "majority": "ordinary",
-      "notes": "Résolution obligatoire votée à majorité absolue. Concerne régularité comptable/financière, pas la gestion. Source: Art. 3.89 §5 15°."
-    },
-    {
-      "step": 5,
-      "point_odj": "Décharge (quitus) du syndic",
-      "mandatory": false,
-      "majority": "ordinary",
-      "notes": "Point séparé obligatoire. Possible d'approuver comptes sans quitus, mais PAS l'inverse. Quitus facultatif mais quasi-systématique. Source: Jurisprudence."
-    },
-    {
-      "step": 6,
-      "point_odj": "Décharge du commissaire aux comptes",
-      "mandatory": false,
-      "majority": "ordinary",
-      "notes": "Point distinct. Reconnaissance du travail du commissaire."
-    },
-    {
-      "step": 7,
-      "point_odj": "Rapport d'évaluation des contrats de fournitures régulières",
-      "mandatory": true,
-      "majority": "ordinary",
-      "notes": "Évaluation gaz, électricité, entretien, services récurrents. Permet décision renégociation. Source: Art. 3.89 §5 12°."
-    },
-    {
-      "step": 8,
-      "point_odj": "Budget prévisionnel",
-      "mandatory": true,
-      "majority": "ordinary",
-      "notes": "Fonds de roulement + fonds de réserve. Logiquement après les comptes. Source: Art. 3.89 §5 16°."
-    },
-    {
-      "step": 9,
-      "point_odj": "Renouvellement du mandat du syndic",
-      "mandatory": false,
-      "majority": "ordinary",
-      "notes": "Si mandat expire. Logiquement APRÈS décharge. Décision continuité ou changement. Source: Art. 3.89 §1 al.4."
-    },
-    {
-      "step": 10,
-      "point_odj": "Désignation du commissaire aux comptes",
-      "mandatory": true,
-      "majority": "ordinary",
-      "notes": "Annuelle. Source: Art. 3.91."
-    },
-    {
-      "step": 11,
-      "point_odj": "Travaux, propositions des copropriétaires",
-      "mandatory": false,
-      "majority": "varies",
-      "notes": "Points soumis par copropriétaires/CdC (reçus 3 semaines avant). Chaque point précise majorité requise. Majoritaire ordinaire, 2/3 ou 4/5 selon type."
-    },
-    {
-      "step": 12,
-      "point_odj": "Divers",
-      "mandatory": false,
-      "majority": null,
-      "notes": "PAS de vote possible. Tour de table informel. Suggestions pour prochaines AG. Source: Jurisprudence."
-    }
-  ]
+  "metadata": {
+    "total_rules": 21,
+    "jurisdiction": "Belgium",
+    "compliance_focus": ["copropriété", "GDPR", "PCMN", "transparency"],
+    "contact": "legal@koprogo.be",
+    "disclaimer": "This legal index is provided for informational purposes. Always consult with a qualified Belgian legal professional for specific legal advice."
+  }
 }
