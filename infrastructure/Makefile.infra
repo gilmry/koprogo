@@ -1,0 +1,188 @@
+# ============================================================================
+# KoproGo Infrastructure Deployment Targets
+# Include from root: -include infrastructure/Makefile.infra
+# ============================================================================
+
+ENV  ?= dev
+ARCH ?= vps
+SITE ?= monosite
+INFRA_DIR := infrastructure
+
+ifeq ($(ARCH),k8s)
+  SITE := multisite
+endif
+TARGET_DIR := $(INFRA_DIR)/$(SITE)/$(ARCH)/$(ENV)
+
+# ---- Terraform ----
+.PHONY: tf-init tf-plan tf-apply tf-destroy
+tf-init:
+	cd $(TARGET_DIR)/terraform && terraform init
+tf-plan:
+	cd $(TARGET_DIR)/terraform && terraform plan
+tf-apply:
+	cd $(TARGET_DIR)/terraform && terraform apply
+tf-destroy:
+	cd $(TARGET_DIR)/terraform && terraform destroy
+
+# ---- Ansible ----
+.PHONY: ansible-setup ansible-check
+ansible-setup:
+	cd $(TARGET_DIR)/ansible && ansible-playbook -i inventory.ini playbook.yml
+ansible-check:
+	cd $(TARGET_DIR)/ansible && ansible-playbook -i inventory.ini playbook.yml --syntax-check
+
+# ---- VPS Docker Compose ----
+COMPOSE_BASE := $(INFRA_DIR)/_shared/docker-compose/docker-compose.base.yml
+
+.PHONY: deploy-dev-vps deploy-integration-vps deploy-staging-vps deploy-prod-vps vps-down vps-logs vps-ps
+deploy-dev-vps:
+	docker compose -f $(COMPOSE_BASE) -f $(INFRA_DIR)/monosite/vps/dev/docker-compose.override.yml --env-file $(INFRA_DIR)/monosite/vps/dev/.env up -d
+deploy-integration-vps:
+	docker compose -f $(COMPOSE_BASE) -f $(INFRA_DIR)/monosite/vps/integration/docker-compose.override.yml --env-file $(INFRA_DIR)/monosite/vps/integration/.env up -d
+deploy-staging-vps:
+	docker compose -f $(COMPOSE_BASE) -f $(INFRA_DIR)/monosite/vps/staging/docker-compose.override.yml --env-file $(INFRA_DIR)/monosite/vps/staging/.env up -d
+deploy-prod-vps:
+	docker compose -f $(COMPOSE_BASE) -f $(INFRA_DIR)/monosite/vps/production/docker-compose.override.yml --env-file $(INFRA_DIR)/monosite/vps/production/.env up -d
+vps-down:
+	docker compose -f $(COMPOSE_BASE) -f $(INFRA_DIR)/monosite/vps/$(ENV)/docker-compose.override.yml --env-file $(INFRA_DIR)/monosite/vps/$(ENV)/.env down
+vps-logs:
+	docker compose -f $(COMPOSE_BASE) -f $(INFRA_DIR)/monosite/vps/$(ENV)/docker-compose.override.yml --env-file $(INFRA_DIR)/monosite/vps/$(ENV)/.env logs -f
+vps-ps:
+	docker compose -f $(COMPOSE_BASE) -f $(INFRA_DIR)/monosite/vps/$(ENV)/docker-compose.override.yml --env-file $(INFRA_DIR)/monosite/vps/$(ENV)/.env ps
+
+# ---- Helm ----
+HELM_CHART := $(INFRA_DIR)/_shared/helm/koprogo
+
+.PHONY: helm-install helm-upgrade helm-rollback helm-status helm-history helm-uninstall
+helm-install:
+	helm install koprogo $(HELM_CHART) -f $(TARGET_DIR)/helm-values.yaml -n koprogo-$(ENV) --create-namespace
+helm-upgrade:
+	helm upgrade koprogo $(HELM_CHART) -f $(TARGET_DIR)/helm-values.yaml -n koprogo-$(ENV)
+helm-rollback:
+	helm rollback koprogo $(REVISION) -n koprogo-$(ENV)
+helm-status:
+	helm status koprogo -n koprogo-$(ENV)
+helm-history:
+	helm history koprogo -n koprogo-$(ENV)
+helm-uninstall:
+	helm uninstall koprogo -n koprogo-$(ENV)
+
+# ---- Kustomize ----
+.PHONY: kustomize-build kustomize-apply
+kustomize-build:
+	kustomize build $(TARGET_DIR)/kustomize
+kustomize-apply:
+	kustomize build $(TARGET_DIR)/kustomize | kubectl apply -f -
+
+# ---- ArgoCD ----
+.PHONY: argocd-sync argocd-status
+argocd-sync:
+	argocd app sync koprogo-infra-$(ENV) && argocd app sync koprogo-app-$(ENV)
+argocd-status:
+	argocd app get koprogo-infra-$(ENV) && argocd app get koprogo-app-$(ENV)
+
+# ---- Local K8s (Docker Desktop / minikube / k3d) ----
+LOCAL_VALUES := $(INFRA_DIR)/monosite/k3s/local/helm-values.yaml
+LOCAL_KUSTOMIZE := $(INFRA_DIR)/monosite/k3s/local/kustomize
+
+.PHONY: local-k8s-up local-k8s-down local-k8s-status local-k8s-logs local-k8s-forward
+local-k8s-up:
+	@echo "Deploying KoproGo on local Kubernetes..."
+	kustomize build $(LOCAL_KUSTOMIZE) | kubectl apply -f -
+	helm upgrade --install koprogo $(HELM_CHART) -f $(LOCAL_VALUES) -n koprogo --create-namespace --wait --timeout 5m
+	@echo ""
+	@echo "KoproGo deployed! Add to /etc/hosts: 127.0.0.1 koprogo.localhost api.koprogo.localhost"
+	@echo "  Frontend: http://koprogo.localhost"
+	@echo "  API:      http://api.koprogo.localhost/api/v1"
+
+local-k8s-down:
+	helm uninstall koprogo -n koprogo 2>/dev/null || true
+	kubectl delete namespace koprogo 2>/dev/null || true
+
+local-k8s-status:
+	@helm status koprogo -n koprogo 2>/dev/null || echo "Not installed"
+	@echo "---"
+	@kubectl get pods -n koprogo 2>/dev/null || echo "Namespace not found"
+
+local-k8s-logs:
+	kubectl logs -n koprogo -l app.kubernetes.io/name=koprogo-$(SERVICE) -f
+
+local-k8s-forward:
+	@echo "Forwarding: backend:8080, frontend:3000, postgres:5432"
+	kubectl port-forward -n koprogo svc/koprogo-backend 8080:8080 &
+	kubectl port-forward -n koprogo svc/koprogo-frontend 3000:80 &
+	kubectl port-forward -n koprogo svc/koprogo-postgres 5432:5432 &
+
+# ---- Monitoring ----
+MONITORING_CHART := $(INFRA_DIR)/_shared/helm/monitoring
+
+.PHONY: monitoring-up monitoring-down monitoring-status
+monitoring-up:
+	@if [ "$(ARCH)" = "vps" ]; then \
+		docker compose -f $(INFRA_DIR)/_shared/monitoring/docker-compose.monitoring.yml up -d; \
+	else \
+		helm upgrade --install koprogo-monitoring $(MONITORING_CHART) -f $(TARGET_DIR)/monitoring-values.yaml -n koprogo-monitoring --create-namespace; \
+	fi
+
+monitoring-down:
+	@if [ "$(ARCH)" = "vps" ]; then \
+		docker compose -f $(INFRA_DIR)/_shared/monitoring/docker-compose.monitoring.yml down; \
+	else \
+		helm uninstall koprogo-monitoring -n koprogo-monitoring; \
+	fi
+
+monitoring-status:
+	@if [ "$(ARCH)" = "vps" ]; then \
+		docker compose -f $(INFRA_DIR)/_shared/monitoring/docker-compose.monitoring.yml ps; \
+	else \
+		kubectl get pods -n koprogo-monitoring; \
+	fi
+
+# ---- Secrets (SOPS + age) ----
+AGE_KEY := $(INFRA_DIR)/_shared/secrets/age-key.txt
+
+.PHONY: secrets-keygen secrets-encrypt secrets-decrypt secrets-edit
+secrets-keygen:
+	age-keygen -o $(AGE_KEY) && echo "Key saved to $(AGE_KEY) - DO NOT COMMIT"
+secrets-encrypt:
+	sops --encrypt --in-place $(TARGET_DIR)/.env.enc 2>/dev/null || sops --encrypt $(TARGET_DIR)/.env > $(TARGET_DIR)/.env.enc
+secrets-decrypt:
+	sops --decrypt $(TARGET_DIR)/.env.enc > $(TARGET_DIR)/.env
+secrets-edit:
+	sops $(TARGET_DIR)/.env.enc
+
+# ---- Velero / PRA ----
+.PHONY: velero-backup velero-restore velero-status pra-restore
+velero-backup:
+	velero backup create koprogo-$(ENV)-manual-$$(date +%Y%m%d%H%M) --include-namespaces koprogo-$(ENV)
+velero-restore:
+	velero restore create --from-backup $(BACKUP) --namespace-mappings koprogo-$(ENV):koprogo-$(ENV)
+velero-status:
+	velero backup get && velero schedule get
+pra-restore:
+	bash $(INFRA_DIR)/_shared/scripts/pra/full-restore.sh $(ENV)
+
+# ---- Full provisioning ----
+.PHONY: provision replicate-env
+provision: tf-init tf-apply ansible-setup
+replicate-env:
+	$(INFRA_DIR)/_shared/scripts/replicate-env.sh $(TARGET) $(ARCH) $(SITE)
+
+# ---- Retro-compatible aliases ----
+.PHONY: deploy-prod deploy-staging
+deploy-prod: deploy-prod-vps
+deploy-staging: deploy-staging-vps
+
+# ---- Help ----
+.PHONY: infra-help
+infra-help:
+	@echo "=== KoproGo Infrastructure ==="
+	@echo "VPS:      make deploy-dev-vps | deploy-prod-vps | vps-logs ENV=dev"
+	@echo "Helm:     make helm-install ENV=dev ARCH=k3s | helm-rollback REVISION=3"
+	@echo "Local:    make local-k8s-up | local-k8s-down | local-k8s-forward"
+	@echo "Monitor:  make monitoring-up ENV=dev ARCH=vps"
+	@echo "Secrets:  make secrets-keygen | secrets-encrypt ENV=prod ARCH=vps"
+	@echo "Velero:   make velero-backup ENV=prod | velero-status"
+	@echo "PRA:      make pra-restore ENV=production"
+	@echo "Infra:    make tf-plan ENV=staging ARCH=k3s | ansible-setup"
+	@echo "Full:     make provision ENV=staging ARCH=vps"

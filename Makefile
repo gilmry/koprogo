@@ -1,6 +1,9 @@
 # KoproGo - Makefile simplifié pour contributeurs
 # Usage: make help
 
+# Include infrastructure deployment targets
+-include infrastructure/Makefile.infra
+
 .PHONY: help dev up down logs test test-unit test-int test-bdd codegen lint format build clean install setup migrate reset-db docs docs-serve audit ci pre-commit deploy-prod deploy-staging
 
 # Couleurs pour output

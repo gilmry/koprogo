@@ -14,3 +14,33 @@ ansible/*.retry
 *.key
 .env
 .env.local
+
+# ============================================
+# Secrets - NEVER commit in plaintext
+# ============================================
+# VPS .env files (use .env.example as template)
+monosite/**/.env
+multisite/**/.env
+
+# Helm secrets files (use SOPS encrypted versions)
+monosite/**/helm-secrets.yaml
+multisite/**/helm-secrets.yaml
+
+# Age encryption key
+_shared/secrets/age-key.txt
+
+# Terraform state (stored in S3)
+**/*.tfstate
+**/*.tfstate.backup
+**/.terraform/
+
+# Ansible vault password file
+.vault_password
+
+# ============================================
+# Encrypted files OK to commit
+# ============================================
+!monosite/**/.env.enc
+!multisite/**/.env.enc
+!monosite/**/*.enc.yaml
+!multisite/**/*.enc.yaml
