@@ -1,0 +1,67 @@
+# Local development Helm values (Docker Desktop / minikube / k3d)
+# Usage: helm install koprogo infrastructure/_shared/helm/koprogo -f infrastructure/monosite/k3s/local/helm-values.yaml -n koprogo --create-namespace
+
+backend:
+  image:
+    repository: ghcr.io/gilmry/koprogo-backend
+    tag: main-latest
+    pullPolicy: Always
+  replicas: 1
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 500m
+    requests:
+      memory: 128Mi
+      cpu: 100m
+  env:
+    RUST_LOG: debug
+    CORS_ALLOWED_ORIGINS: "*"
+    ENABLE_RATE_LIMITING: "false"
+
+frontend:
+  image:
+    repository: ghcr.io/gilmry/koprogo-frontend
+    tag: main-latest
+    pullPolicy: Always
+  replicas: 1
+  resources:
+    limits:
+      memory: 128Mi
+      cpu: 250m
+    requests:
+      memory: 64Mi
+      cpu: 50m
+
+postgres:
+  enabled: true
+  storage: 2Gi
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 250m
+  config:
+    sharedBuffers: 64MB
+    effectiveCacheSize: 128MB
+    maxConnections: "10"
+    maxWalSize: 256MB
+
+minio:
+  enabled: true
+  storage: 2Gi
+  resources:
+    limits:
+      memory: 128Mi
+      cpu: 125m
+
+global:
+  domain: koprogo.localhost
+  apiDomain: api.koprogo.localhost
+  tls:
+    enabled: false
+
+secrets:
+  postgresPassword: koprogo123
+  jwtSecret: local-dev-jwt-secret-minimum-32-characters
+  s3AccessKey: koprogo
+  s3SecretKey: koprogo123

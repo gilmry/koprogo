@@ -1,0 +1,11 @@
+---
+# K3s Dev Environment Variables
+environment: dev
+koprogo_branch: develop
+k3s_version: "v1.29.2+k3s1"
+enable_ssl: false
+enable_monitoring: false
+enable_backup: false
+rust_log: debug
+cors_allowed_origins: "*"
+domain: "dev.koprogo.be"

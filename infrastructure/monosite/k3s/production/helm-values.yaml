@@ -1,0 +1,31 @@
+# Production environment Helm values
+backend:
+  image:
+    tag: production-latest
+  replicas: 2
+  env:
+    RUST_LOG: warn
+    CORS_ALLOWED_ORIGINS: "https://app.koprogo.be"
+
+frontend:
+  image:
+    tag: production-latest
+  replicas: 2
+
+postgres:
+  storage: 50Gi
+
+minio:
+  storage: 50Gi
+
+global:
+  domain: app.koprogo.be
+  apiDomain: api.koprogo.be
+  tls:
+    enabled: true
+
+secrets:
+  postgresPassword: changeme
+  jwtSecret: production-jwt-secret-minimum-32-characters
+  s3AccessKey: changeme
+  s3SecretKey: changeme

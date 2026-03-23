@@ -1,0 +1,12 @@
+---
+- name: Configure KoproGo K3s (Staging)
+  hosts: k3s_master
+  become: yes
+  roles:
+    - role: ../../../_shared/ansible/roles/common
+    - role: ../../../_shared/ansible/roles/hardening
+    - role: ../../../_shared/ansible/roles/security
+    - role: ../../../_shared/ansible/roles/docker
+    - role: ../../../_shared/ansible/roles/k3s-master
+    - role: ../../../_shared/ansible/roles/monitoring
+    - role: ../../../_shared/ansible/roles/argocd
