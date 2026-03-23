@@ -41,6 +41,8 @@ pub struct ExpenseResponseDto {
     pub invoice_number: Option<String>,
     /// Belgian PCMN account code if linked to chart of accounts
     pub account_code: Option<String>,
+    /// Contractor report reference for Works category (Issue #309)
+    pub contractor_report_id: Option<String>,
 }
 
 // ========== New Invoice DTOs (with VAT & Workflow) ==========
@@ -162,6 +164,9 @@ pub struct InvoiceResponseDto {
     pub payment_status: PaymentStatus,
     pub supplier: Option<String>,
     pub invoice_number: Option<String>,
+
+    /// Contractor report reference for Works category (Issue #309)
+    pub contractor_report_id: Option<String>,
 
     pub created_at: String,
     pub updated_at: String,
