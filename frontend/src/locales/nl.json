@@ -877,5 +877,48 @@
       "linkText": "privacybeleid",
       "accept": "Accepteren"
     }
+  },
+  "agSession": {
+    "title": "Videoconferentie (Art. 3.87 §1 BW)",
+    "createButton": "Sessie aanmaken",
+    "createSuccess": "Videosessie aangemaakt",
+    "createError": "Fout bij het aanmaken",
+    "connectionError": "Verbindingsfout",
+    "startSuccess": "Sessie gestart",
+    "endSuccess": "Sessie beëindigd",
+    "platform": "Platform",
+    "meetingUrl": "Vergadering URL",
+    "hostUrl": "Gastheer URL (optioneel)",
+    "password": "Wachtwoord (optioneel)",
+    "waitingRoom": "Wachtkamer",
+    "recording": "Opname",
+    "remoteAttendees": "Deelnemers op afstand",
+    "votingPower": "Stemrecht",
+    "quorumContribution": "Quorum bijdrage",
+    "start": "Starten",
+    "end": "Beëindigen",
+    "noSession": "Geen videosessie geconfigureerd"
+  },
+  "proxy": {
+    "limitReached": "Volmachtlimiet bereikt (Art. 3.87 §6 BW)",
+    "warning": "Opgelet — Volmachten (Art. 3.87 §6 BW)",
+    "mandateCount": "Deze gevolmachtigde heeft {count} volmachten — wettelijk maximum: {max}",
+    "mandateNearLimit": "Deze gevolmachtigde heeft {count}/{max} volmachten",
+    "quotaExceeded": "Vertegenwoordigt {pct}% van de aandelen — wettelijk maximum: {max}%",
+    "quotaAtRisk": "Vertegenwoordigt {pct}% van de aandelen (limiet: {max}%)"
+  },
+  "ageRequest": {
+    "thresholdProgress": "Voortgang BAV-drempel",
+    "thresholdReached": "Drempel bereikt",
+    "ofShares": "van de aandelen",
+    "target": "Doelstelling",
+    "congratulations": "Proficiat!",
+    "thresholdReachedMessage": "De drempel van 1/5 van de aandelen is bereikt. Het BAV-verzoek kan worden ingediend bij de syndicus (termijn: 15 dagen voor actie).",
+    "remaining": "resterend",
+    "thresholdNotReachedMessage": "U moet {pct}% van de aandelen bereiken om een BAV-verzoek in te dienen bij de syndicus. Art. 3.87 §2 Belgisch Burgerlijk Wetboek.",
+    "cosignatories": "Medeondertekenaars",
+    "owner": "Eigenaar",
+    "legalBasisLabel": "Rechtsgrond",
+    "legalBasisText": "Art. 3.87 §2 Belgisch Burgerlijk Wetboek — Een BAV moet worden bijeengeroepen als ten minste 1/5 van de aandelen erom vraagt."
   }
 }

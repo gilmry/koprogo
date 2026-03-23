@@ -877,5 +877,48 @@
       "linkText": "Datenschutzrichtlinie",
       "accept": "Akzeptieren"
     }
+  },
+  "agSession": {
+    "title": "Videokonferenz (Art. 3.87 §1 ZGB)",
+    "createButton": "Sitzung erstellen",
+    "createSuccess": "Videositzung erstellt",
+    "createError": "Fehler beim Erstellen",
+    "connectionError": "Verbindungsfehler",
+    "startSuccess": "Sitzung gestartet",
+    "endSuccess": "Sitzung beendet",
+    "platform": "Plattform",
+    "meetingUrl": "Besprechungs-URL",
+    "hostUrl": "Moderator-URL (optional)",
+    "password": "Passwort (optional)",
+    "waitingRoom": "Warteraum",
+    "recording": "Aufnahme",
+    "remoteAttendees": "Fernteilnehmer",
+    "votingPower": "Stimmrecht",
+    "quorumContribution": "Quorum-Beitrag",
+    "start": "Starten",
+    "end": "Beenden",
+    "noSession": "Keine Videositzung konfiguriert"
+  },
+  "proxy": {
+    "limitReached": "Vollmachtslimit erreicht (Art. 3.87 §6 ZGB)",
+    "warning": "Achtung — Vollmachten (Art. 3.87 §6 ZGB)",
+    "mandateCount": "Dieser Bevollmächtigte hat {count} Vollmachten — gesetzliches Maximum: {max}",
+    "mandateNearLimit": "Dieser Bevollmächtigte hat {count}/{max} Vollmachten",
+    "quotaExceeded": "Vertritt {pct}% der Anteile — gesetzliches Maximum: {max}%",
+    "quotaAtRisk": "Vertritt {pct}% der Anteile (Grenze: {max}%)"
+  },
+  "ageRequest": {
+    "thresholdProgress": "Fortschritt der AEV-Schwelle",
+    "thresholdReached": "Schwelle erreicht",
+    "ofShares": "der Anteile",
+    "target": "Ziel",
+    "congratulations": "Herzlichen Glückwunsch!",
+    "thresholdReachedMessage": "Die Schwelle von 1/5 der Anteile ist erreicht. Der AEV-Antrag kann beim Verwalter eingereicht werden (Frist: 15 Tage).",
+    "remaining": "verbleibend",
+    "thresholdNotReachedMessage": "Sie müssen {pct}% der Anteile erreichen, um einen AEV-Antrag beim Verwalter einzureichen. Art. 3.87 §2 Belgisches Zivilgesetzbuch.",
+    "cosignatories": "Mitunterzeichner",
+    "owner": "Eigentümer",
+    "legalBasisLabel": "Rechtsgrundlage",
+    "legalBasisText": "Art. 3.87 §2 Belgisches Zivilgesetzbuch — Eine AEV muss einberufen werden, wenn mindestens 1/5 der Anteile dies verlangen."
   }
 }

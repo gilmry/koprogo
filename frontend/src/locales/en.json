@@ -877,5 +877,48 @@
       "linkText": "privacy policy",
       "accept": "Accept"
     }
+  },
+  "agSession": {
+    "title": "Video Conference (Art. 3.87 §1 CC)",
+    "createButton": "Create session",
+    "createSuccess": "Video session created",
+    "createError": "Error creating session",
+    "connectionError": "Connection error",
+    "startSuccess": "Session started",
+    "endSuccess": "Session ended",
+    "platform": "Platform",
+    "meetingUrl": "Meeting URL",
+    "hostUrl": "Host URL (optional)",
+    "password": "Password (optional)",
+    "waitingRoom": "Waiting room",
+    "recording": "Recording",
+    "remoteAttendees": "Remote attendees",
+    "votingPower": "Voting power",
+    "quorumContribution": "Quorum contrib.",
+    "start": "Start",
+    "end": "End",
+    "noSession": "No video session configured"
+  },
+  "proxy": {
+    "limitReached": "Proxy mandate limit reached (Art. 3.87 §6 CC)",
+    "warning": "Warning — Proxy mandates (Art. 3.87 §6 CC)",
+    "mandateCount": "This proxy holder has {count} mandates — legal maximum: {max}",
+    "mandateNearLimit": "This proxy holder has {count}/{max} mandates",
+    "quotaExceeded": "Represents {pct}% of shares — legal maximum: {max}%",
+    "quotaAtRisk": "Represents {pct}% of shares (limit: {max}%)"
+  },
+  "ageRequest": {
+    "thresholdProgress": "EGM threshold progress",
+    "thresholdReached": "Threshold reached",
+    "ofShares": "of shares",
+    "target": "Target",
+    "congratulations": "Congratulations!",
+    "thresholdReachedMessage": "The 1/5 share threshold has been reached. The EGM request can be submitted to the syndic (deadline: 15 days for action).",
+    "remaining": "remaining",
+    "thresholdNotReachedMessage": "You must reach {pct}% of shares to submit an EGM request to the syndic. Art. 3.87 §2 Belgian Civil Code.",
+    "cosignatories": "Cosignatories",
+    "owner": "Owner",
+    "legalBasisLabel": "Legal basis",
+    "legalBasisText": "Art. 3.87 §2 Belgian Civil Code — An EGM must be convened if at least 1/5 of the shares request it."
   }
 }

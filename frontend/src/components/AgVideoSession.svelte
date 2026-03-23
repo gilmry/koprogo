@@ -1,4 +1,6 @@
 <script lang="ts">
+  import '../lib/i18n';
+  import { _ } from 'svelte-i18n';
   import { apiEndpoint } from '../lib/config';
   import { authStore } from '../stores/auth';
   import Button from './ui/Button.svelte';
@@ -73,13 +75,13 @@
       if (res.ok) {
         session = await res.json();
         showForm = false;
-        toast.show('Session vidéo créée', 'success');
+        toast.show($_('agSession.createSuccess'), 'success');
       } else {
         const err = await res.json();
-        toast.show(err.error || 'Erreur lors de la création', 'error');
+        toast.show(err.error || $_('agSession.createError'), 'error');
       }
     } catch (e) {
-      toast.show('Erreur de connexion', 'error');
+      toast.show($_('agSession.connectionError'), 'error');
     } finally {
       creating = false;
     }
@@ -94,7 +96,7 @@
     });
     if (res.ok) {
       session = await res.json();
-      toast.show('Session démarrée', 'success');
+      toast.show($_('agSession.startSuccess'), 'success');
     }
   }
 
@@ -107,7 +109,7 @@
     });
     if (res.ok) {
       session = await res.json();
-      toast.show('Session terminée', 'success');
+      toast.show($_('agSession.endSuccess'), 'success');
     }
   }
 
@@ -130,21 +132,21 @@
       <svg class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
       </svg>
-      Visioconférence (Art. 3.87 §1 CC)
+      {$_('agSession.title')}
     </h3>
     {#if !readOnly && !session && !showForm}
       <Button size="sm" variant="outline" on:click={() => (showForm = true)} data-testid="ag-session-create-btn">
-        + Créer session
+        + {$_('agSession.createButton')}
       </Button>
     {/if}
   </div>
 
   {#if loading}
-    <p class="text-sm text-gray-500">Chargement...</p>
+    <p class="text-sm text-gray-500">{$_('common.loading')}</p>
   {:else if showForm}
     <form on:submit|preventDefault={createSession} class="space-y-3" data-testid="ag-session-form">
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">Plateforme</label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.platform')}</label>
         <select bind:value={form.platform} class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-platform-select">
           {#each platforms as p}
             <option value={p}>{p}</option>
@@ -152,30 +154,30 @@
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">URL de la réunion *</label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.meetingUrl')} *</label>
         <input bind:value={form.video_url} type="url" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" placeholder="https://meet.jit.si/..." data-testid="ag-session-video-url-input" />
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">URL animateur (optionnel)</label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.hostUrl')}</label>
         <input bind:value={form.host_url} type="url" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-host-url-input" />
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">Mot de passe (optionnel)</label>
+        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.password')}</label>
         <input bind:value={form.access_password} type="text" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-password-input" />
       </div>
       <div class="flex gap-4">
         <label class="flex items-center gap-1 text-xs">
           <input type="checkbox" bind:checked={form.waiting_room_enabled} data-testid="ag-session-waiting-room-checkbox" />
-          Salle d'attente
+          {$_('agSession.waitingRoom')}
         </label>
         <label class="flex items-center gap-1 text-xs">
           <input type="checkbox" bind:checked={form.recording_enabled} data-testid="ag-session-recording-checkbox" />
-          Enregistrement
+          {$_('agSession.recording')}
         </label>
       </div>
       <div class="flex gap-2">
-        <Button type="submit" size="sm" loading={creating} data-testid="ag-session-submit-btn">Créer</Button>
-        <Button type="button" size="sm" variant="ghost" on:click={() => (showForm = false)} data-testid="ag-session-cancel-btn">Annuler</Button>
+        <Button type="submit" size="sm" loading={creating} data-testid="ag-session-submit-btn">{$_('common.create')}</Button>
+        <Button type="button" size="sm" variant="ghost" on:click={() => (showForm = false)} data-testid="ag-session-cancel-btn">{$_('common.cancel')}</Button>
       </div>
     </form>
   {:else if session}
@@ -194,35 +196,35 @@
       </div>
 
       {#if session.access_password}
-        <p class="text-xs text-gray-500">Mot de passe: <span class="font-mono">{session.access_password}</span></p>
+        <p class="text-xs text-gray-500">{$_('agSession.password')}: <span class="font-mono">{session.access_password}</span></p>
       {/if}
 
       <div class="grid grid-cols-3 gap-2 mt-2 text-xs text-gray-600">
         <div class="bg-gray-50 rounded p-1.5 text-center">
           <p class="font-semibold text-gray-900">{session.remote_attendees_count}</p>
-          <p>Participants distants</p>
+          <p>{$_('agSession.remoteAttendees')}</p>
         </div>
         <div class="bg-gray-50 rounded p-1.5 text-center">
           <p class="font-semibold text-gray-900">{(session.remote_voting_power * 100).toFixed(1)}%</p>
-          <p>Pouvoir de vote</p>
+          <p>{$_('agSession.votingPower')}</p>
         </div>
         <div class="bg-gray-50 rounded p-1.5 text-center">
           <p class="font-semibold text-gray-900">{(session.quorum_remote_contribution * 100).toFixed(1)}%</p>
-          <p>Contrib. quorum</p>
+          <p>{$_('agSession.quorumContribution')}</p>
         </div>
       </div>
 
       {#if !readOnly}
         <div class="flex gap-2 mt-2">
           {#if session.status === 'Scheduled'}
-            <Button size="sm" variant="primary" on:click={startSession} data-testid="ag-session-start-btn">▶ Démarrer</Button>
+            <Button size="sm" variant="primary" on:click={startSession} data-testid="ag-session-start-btn">▶ {$_('agSession.start')}</Button>
           {:else if session.status === 'Live'}
-            <Button size="sm" variant="danger" on:click={endSession} data-testid="ag-session-end-btn">⏹ Terminer</Button>
+            <Button size="sm" variant="danger" on:click={endSession} data-testid="ag-session-end-btn">⏹ {$_('agSession.end')}</Button>
           {/if}
         </div>
       {/if}
     </div>
   {:else}
-    <p class="text-sm text-gray-500 italic">Aucune session vidéo configurée</p>
+    <p class="text-sm text-gray-500 italic">{$_('agSession.noSession')}</p>
   {/if}
 </div>
