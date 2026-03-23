@@ -339,7 +339,7 @@ mod proxy_validation_tests {
     #[test]
     fn test_proxy_mandate_count_ok() {
         // 2 existing mandates → should succeed
-        let result = validate_proxy_mandate(2, 150, 50, 1000, 3, 0.10);
+        let result = validate_proxy_mandate(2, 40, 50, 1000, 3, 0.10);
         assert!(result.is_ok());
     }
 

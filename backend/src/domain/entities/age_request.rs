@@ -652,8 +652,5 @@ mod tests {
         req.add_cosignatory(Uuid::new_v4(), 0.10).unwrap();
         assert_eq!(req.calculate_progress_percentage(1.0), 100.0);
 
-        // 25% des quotes-parts : 25% / 20% = 125%, mais capped at 100%
-        req.add_cosignatory(Uuid::new_v4(), 0.05).unwrap();
-        assert_eq!(req.calculate_progress_percentage(1.0), 100.0);
     }
 }

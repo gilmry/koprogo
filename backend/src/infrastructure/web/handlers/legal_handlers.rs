@@ -311,68 +311,78 @@ mod tests {
         assert!(result.is_ok(), "Legal index JSON is malformed");
 
         let index = result.unwrap();
-        assert!(index.get("rules").is_some(), "Missing 'rules' field");
-        assert!(index.get("majority_types").is_some(), "Missing 'majority_types' field");
-        assert!(index.get("ag_sequence").is_some(), "Missing 'ag_sequence' field");
+        assert!(index.get("legal_rules").is_some(), "Missing 'legal_rules' field");
+        assert!(index.get("jurisdiction").is_some(), "Missing 'jurisdiction' field");
+        assert!(index.get("metadata").is_some(), "Missing 'metadata' field");
+        assert!(index.get("version").is_some(), "Missing 'version' field");
     }
 
     #[test]
-    fn test_rules_have_required_fields() {
+    fn test_legal_rules_have_required_fields() {
         let index: Value = serde_json::from_str(LEGAL_INDEX).unwrap();
-        let rules = index.get("rules").unwrap().as_array().unwrap();
+        let rules = index.get("legal_rules").unwrap().as_array().unwrap();
+
+        assert!(!rules.is_empty(), "legal_rules should not be empty");
 
         for rule in rules {
-            assert!(rule.get("code").is_some(), "Rule missing 'code' field");
-            assert!(rule.get("category").is_some(), "Rule missing 'category' field");
-            assert!(rule.get("roles").is_some(), "Rule missing 'roles' field");
-            assert!(rule.get("article").is_some(), "Rule missing 'article' field");
+            assert!(rule.get("id").is_some(), "Rule missing 'id' field");
             assert!(rule.get("title").is_some(), "Rule missing 'title' field");
-            assert!(rule.get("content").is_some(), "Rule missing 'content' field");
-            assert!(rule.get("keywords").is_some(), "Rule missing 'keywords' field");
+            assert!(rule.get("reference").is_some(), "Rule missing 'reference' field");
+            assert!(rule.get("summary").is_some(), "Rule missing 'summary' field");
+            assert!(rule.get("key_points").is_some(), "Rule missing 'key_points' field");
         }
     }
 
     #[test]
-    fn test_majority_types_have_required_fields() {
+    fn test_majority_rules_exist() {
         let index: Value = serde_json::from_str(LEGAL_INDEX).unwrap();
-        let majorities = index.get("majority_types").unwrap().as_array().unwrap();
+        let rules = index.get("legal_rules").unwrap().as_array().unwrap();
 
-        for majority in majorities {
-            assert!(majority.get("decision_type").is_some(), "Majority missing 'decision_type'");
-            assert!(majority.get("label").is_some(), "Majority missing 'label'");
-            assert!(majority.get("threshold_description").is_some(), "Majority missing 'threshold_description'");
-            assert!(majority.get("article").is_some(), "Majority missing 'article'");
-            assert!(majority.get("examples").is_some(), "Majority missing 'examples'");
+        // Verify majority-related rules exist in legal_rules
+        let majority_ids = vec!["art_3_88_1", "art_3_88_2", "art_3_88_3"];
+        for id in majority_ids {
+            let found = rules.iter().any(|r| {
+                r.get("id")
+                    .and_then(|i| i.as_str())
+                    .map(|i| i == id)
+                    .unwrap_or(false)
+            });
+            assert!(found, "Expected majority rule id {} not found", id);
         }
     }
 
     #[test]
-    fn test_ag_sequence_has_required_fields() {
+    fn test_ag_related_rules_exist() {
         let index: Value = serde_json::from_str(LEGAL_INDEX).unwrap();
-        let sequence = index.get("ag_sequence").unwrap().as_array().unwrap();
+        let rules = index.get("legal_rules").unwrap().as_array().unwrap();
 
-        for step in sequence {
-            assert!(step.get("step").is_some(), "AG step missing 'step' field");
-            assert!(step.get("point_odj").is_some(), "AG step missing 'point_odj' field");
-            assert!(step.get("mandatory").is_some(), "AG step missing 'mandatory' field");
-            assert!(step.get("notes").is_some(), "AG step missing 'notes' field");
+        // Verify AG-related rules exist in legal_rules
+        let ag_ids = vec!["art_3_87_3", "art_3_87_5", "bc15_ag_session", "bc17_age_concertation"];
+        for id in ag_ids {
+            let found = rules.iter().any(|r| {
+                r.get("id")
+                    .and_then(|i| i.as_str())
+                    .map(|i| i == id)
+                    .unwrap_or(false)
+            });
+            assert!(found, "Expected AG rule id {} not found", id);
         }
     }
 
     #[test]
     fn test_sample_rules_exist() {
         let index: Value = serde_json::from_str(LEGAL_INDEX).unwrap();
-        let rules = index.get("rules").unwrap().as_array().unwrap();
+        let rules = index.get("legal_rules").unwrap().as_array().unwrap();
 
-        let codes = vec!["AG01", "T01", "T03", "CP01", "F01"];
-        for code in codes {
+        let ids = vec!["art_3_84", "art_3_87_3", "ar_12_07_2012", "gdpr_art_15", "quotas_distribution"];
+        for id in ids {
             let found = rules.iter().any(|r| {
-                r.get("code")
-                    .and_then(|c| c.as_str())
-                    .map(|c| c == code)
+                r.get("id")
+                    .and_then(|i| i.as_str())
+                    .map(|i| i == id)
                     .unwrap_or(false)
             });
-            assert!(found, "Expected rule code {} not found", code);
+            assert!(found, "Expected rule id {} not found", id);
         }
     }
 }
