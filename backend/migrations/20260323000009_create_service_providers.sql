@@ -1,12 +1,15 @@
 -- Issue #276: Marketplace corps de métier + ContractEvaluation
 -- Service Providers and Contract Evaluations for marketplace system
 
-CREATE TYPE IF NOT EXISTS trade_category AS ENUM (
-    'Syndic', 'BureauEtude', 'Architecte', 'AssistantMaitreOeuvre', 'IngenieurStabilite',
-    'Plombier', 'Electricien', 'Chauffagiste', 'Menuisier', 'Peintre', 'Maconnerie',
-    'Etancheite', 'Ascensoriste', 'Jardinier', 'Nettoyage', 'Securite', 'Deboucheur',
-    'Couvreur', 'Carreleur', 'TechniquesSpeciales'
-);
+DO $$ BEGIN
+    CREATE TYPE trade_category AS ENUM (
+        'Syndic', 'BureauEtude', 'Architecte', 'AssistantMaitreOeuvre', 'IngenieurStabilite',
+        'Plombier', 'Electricien', 'Chauffagiste', 'Menuisier', 'Peintre', 'Maconnerie',
+        'Etancheite', 'Ascensoriste', 'Jardinier', 'Nettoyage', 'Securite', 'Deboucheur',
+        'Couvreur', 'Carreleur', 'TechniquesSpeciales'
+    );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS service_providers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -32,13 +32,11 @@ CREATE INDEX idx_security_incidents_status ON security_incidents(status);
 CREATE INDEX idx_security_incidents_created_at ON security_incidents(created_at DESC);
 CREATE INDEX idx_security_incidents_discovery_at ON security_incidents(discovery_at DESC);
 
--- Partial index: Find incidents overdue for APD notification (>72 hours old, not yet reported)
--- Used for automated compliance checks
+-- Partial index: Find incidents not yet reported to APD
 CREATE INDEX idx_security_incidents_not_reported
     ON security_incidents(discovery_at)
     WHERE notification_at IS NULL
-      AND status IN ('detected', 'investigating', 'contained')
-      AND discovery_at < (NOW() - INTERVAL '72 hours');
+      AND status IN ('detected', 'investigating', 'contained');
 
 -- Partial index: Find high-severity incidents requiring urgent response
 CREATE INDEX idx_security_incidents_urgent
