@@ -1,9 +1,9 @@
-import { register, init, getLocaleFromNavigator } from "svelte-i18n";
+import { register, init, getLocaleFromNavigator, addMessages } from "svelte-i18n";
+import frMessages from "../locales/fr.json";
 
-// Lazy-load locales: each import() creates a separate chunk
-// Only the active locale is loaded at startup, others on demand
-// Vite code-splits these into ~7 KB gzipped chunks each
-register("fr", () => import("../locales/fr.json"));
+// Load French (default) synchronously to prevent hydration race condition
+// Other locales are lazy-loaded on demand
+addMessages("fr", frMessages);
 register("nl", () => import("../locales/nl.json"));
 register("de", () => import("../locales/de.json"));
 register("en", () => import("../locales/en.json"));
