@@ -550,6 +550,7 @@
         <button
           on:click={logout}
           class="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          data-testid="mobile-drawer-logout"
         >
           🚪 {$_('navigation.logout')}
         </button>

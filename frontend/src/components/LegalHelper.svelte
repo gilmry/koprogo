@@ -122,6 +122,7 @@
     class="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center font-bold text-xl transition-all duration-200 hover:shadow-xl"
     aria-label={$_('legal.help.button', { default: 'Legal Help' })}
     title={$_('legal.help.button', { default: 'Legal Help' })}
+    data-testid="legal-helper-toggle-btn"
   >
     ?
   </button>
@@ -145,6 +146,7 @@
         on:click={closePanel}
         class="text-white hover:bg-blue-800 rounded p-1 transition-colors"
         aria-label={$_('legal.close', { default: 'Close' })}
+        data-testid="legal-helper-close-btn"
       >
         ✕
       </button>

@@ -68,30 +68,30 @@
       </div>
 
       <div id="form-section">
-        <form id="report-form">
+        <form id="report-form" data-testid="contractor-report-form">
           <div class="card">
             <h2>Informations de base</h2>
             <div class="field">
               <label>Date des travaux *</label>
-              <input type="date" id="work_date" required />
+              <input type="date" id="work_date" required data-testid="contractor-report-date-input" />
             </div>
             <div class="field">
               <label>Entreprise *</label>
-              <input type="text" id="contractor_name" required placeholder="Nom de votre entreprise" />
+              <input type="text" id="contractor_name" required placeholder="Nom de votre entreprise" data-testid="contractor-report-name-input" />
             </div>
           </div>
 
           <div class="card">
             <h2>Compte rendu des travaux *</h2>
             <div class="field">
-              <textarea id="compte_rendu" required placeholder="Décrivez les travaux effectués, les problèmes rencontrés et les solutions apportées..."></textarea>
+              <textarea id="compte_rendu" required placeholder="Décrivez les travaux effectués, les problèmes rencontrés et les solutions apportées..." data-testid="contractor-report-description-input"></textarea>
             </div>
           </div>
 
           <div class="card">
             <h2>Pièces remplacées</h2>
             <div id="parts-list"></div>
-            <button type="button" onclick="addPart()" style="margin-top:0.5rem;padding:0.375rem 0.75rem;border:1px solid #d1d5db;border-radius:0.375rem;background:white;cursor:pointer;font-size:0.875rem">
+            <button type="button" onclick="addPart()" style="margin-top:0.5rem;padding:0.375rem 0.75rem;border:1px solid #d1d5db;border-radius:0.375rem;background:white;cursor:pointer;font-size:0.875rem" data-testid="contractor-report-add-part-btn">
               + Ajouter une pièce
             </button>
           </div>
@@ -117,7 +117,7 @@
           </div>
 
           <div class="card">
-            <button type="submit" class="btn btn-primary" id="submit-btn">
+            <button type="submit" class="btn btn-primary" id="submit-btn" data-testid="contractor-report-submit-btn">
               Soumettre le rapport
             </button>
             <p style="font-size:0.75rem;color:#9ca3af;text-align:center;margin-top:0.5rem">

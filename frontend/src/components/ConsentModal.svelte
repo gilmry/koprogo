@@ -61,6 +61,7 @@
           target="_blank"
           rel="noopener noreferrer"
           class="text-blue-600 hover:underline font-medium"
+          data-testid="consent-modal-privacy-link"
         >
           {$_('privacy.consent.linkText')}
         </a>
@@ -70,6 +71,7 @@
         <button
           on:click={handleAccept}
           class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          data-testid="consent-modal-accept-btn"
         >
           {$_('privacy.consent.accept')}
         </button>
