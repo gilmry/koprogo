@@ -24,10 +24,9 @@ use actix_web::{
     web::{self, Data},
     HttpRequest, HttpResponse,
 };
-use futures_util::stream::{self, Stream};
+use futures_util::stream::{self};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::pin::Pin;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -537,8 +536,14 @@ async fn dispatch_tool(
             let page = arguments.get("page").and_then(|v| v.as_u64()).unwrap_or(1) as i64;
             let per_page = arguments.get("per_page").and_then(|v| v.as_u64()).unwrap_or(20) as i64;
 
-            match state.building_use_cases.find_all(Some(org_id), Some(page), Some(per_page)).await {
-                Ok(buildings) => {
+            let page_request = crate::application::dto::PageRequest {
+                page,
+                per_page,
+                sort_by: None,
+                order: crate::application::dto::SortOrder::default(),
+            };
+            match state.building_use_cases.list_buildings_paginated(&page_request, Some(org_id)).await {
+                Ok((buildings, _total)) => {
                     let text = serde_json::to_string_pretty(&buildings)
                         .unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
@@ -569,7 +574,7 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.building_use_cases.find_by_id(building_id).await {
+            match state.building_use_cases.get_building(building_id).await {
                 Ok(Some(building)) => {
                     let text = serde_json::to_string_pretty(&building)
                         .unwrap_or_else(|_| "{}".to_string());
@@ -592,12 +597,18 @@ async fn dispatch_tool(
         }
 
         "list_owners" => {
-            let building_id = arguments.get("building_id")
+            let _building_id = arguments.get("building_id")
                 .and_then(|v| v.as_str())
                 .and_then(|s| Uuid::parse_str(s).ok());
 
-            match state.owner_use_cases.find_all(Some(org_id), building_id, None, None).await {
-                Ok(owners) => {
+            let page_request = crate::application::dto::PageRequest {
+                page: 1,
+                per_page: 100,
+                sort_by: None,
+                order: crate::application::dto::SortOrder::default(),
+            };
+            match state.owner_use_cases.list_owners_paginated(&page_request, Some(org_id)).await {
+                Ok((owners, _total)) => {
                     let text = serde_json::to_string_pretty(&owners)
                         .unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
@@ -628,7 +639,7 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.meeting_use_cases.find_by_building(building_id, org_id).await {
+            match state.meeting_use_cases.list_meetings_by_building(building_id).await {
                 Ok(meetings) => {
                     let text = serde_json::to_string_pretty(&meetings)
                         .unwrap_or_else(|_| "[]".to_string());
@@ -662,25 +673,26 @@ async fn dispatch_tool(
 
             // Gather expenses stats
             let expenses_result = state.expense_use_cases
-                .find_by_building(building_id, org_id)
+                .list_expenses_by_building(building_id)
                 .await;
 
             match expenses_result {
                 Ok(expenses) => {
-                    let total_expenses: i64 = expenses.iter()
-                        .map(|e| e.total_amount_cents.unwrap_or(0))
+                    use crate::domain::entities::{ApprovalStatus, PaymentStatus};
+
+                    let total_expenses: f64 = expenses.iter()
+                        .map(|e| e.amount)
                         .sum();
                     let pending_count = expenses.iter()
-                        .filter(|e| e.approval_status == "pending_approval" || e.approval_status == "PendingApproval")
+                        .filter(|e| e.approval_status == ApprovalStatus::PendingApproval)
                         .count();
                     let overdue_count = expenses.iter()
-                        .filter(|e| e.approval_status == "overdue" || e.approval_status == "Overdue")
+                        .filter(|e| e.payment_status == PaymentStatus::Overdue)
                         .count();
 
                     let summary = json!({
                         "building_id": building_id,
-                        "total_expenses_cents": total_expenses,
-                        "total_expenses_eur": format!("{:.2}", total_expenses as f64 / 100.0),
+                        "total_expenses_eur": format!("{:.2}", total_expenses),
                         "pending_approval_count": pending_count,
                         "overdue_count": overdue_count,
                         "total_expense_count": expenses.len()
@@ -716,7 +728,7 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.ticket_use_cases.find_by_building(building_id, org_id).await {
+            match state.ticket_use_cases.list_tickets_by_building(building_id).await {
                 Ok(tickets) => {
                     let text = serde_json::to_string_pretty(&tickets)
                         .unwrap_or_else(|_| "[]".to_string());
@@ -748,17 +760,16 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.owner_contribution_use_cases.get_outstanding_by_owner(owner_id, org_id).await {
+            match state.owner_contribution_use_cases.get_outstanding_contributions(owner_id).await {
                 Ok(contributions) => {
-                    let total_due: i64 = contributions.iter()
-                        .map(|c| c.amount_cents.unwrap_or(0))
+                    let total_due: f64 = contributions.iter()
+                        .map(|c| c.amount)
                         .sum();
 
                     let balance = json!({
                         "owner_id": owner_id,
-                        "outstanding_contributions": contributions,
-                        "total_due_cents": total_due,
-                        "total_due_eur": format!("{:.2}", total_due as f64 / 100.0)
+                        "outstanding_contributions": contributions.len(),
+                        "total_due_eur": format!("{:.2}", total_due)
                     });
 
                     let text = serde_json::to_string_pretty(&balance)
@@ -782,21 +793,39 @@ async fn dispatch_tool(
                 .and_then(|s| Uuid::parse_str(s).ok());
 
             let expenses = if let Some(bid) = building_id {
-                state.expense_use_cases.find_by_building(bid, org_id).await
+                state.expense_use_cases.list_expenses_by_building(bid).await
             } else {
-                state.expense_use_cases.find_by_organization(org_id).await
+                {
+                    let page_request = crate::application::dto::PageRequest {
+                        page: 1,
+                        per_page: 1000,
+                        sort_by: None,
+                        order: crate::application::dto::SortOrder::default(),
+                    };
+                    state.expense_use_cases.list_expenses_paginated(&page_request, Some(org_id)).await
+                        .map(|(expenses, _total)| expenses)
+                }
             };
 
             match expenses {
                 Ok(mut all_expenses) => {
+                    use crate::domain::entities::ApprovalStatus as AS;
                     // Filter to pending approval by default
                     let status_filter = arguments.get("status")
                         .and_then(|v| v.as_str())
                         .unwrap_or("PendingApproval");
 
-                    all_expenses.retain(|e| {
-                        e.approval_status.to_lowercase() == status_filter.to_lowercase()
-                    });
+                    let target_status = match status_filter {
+                        "Draft" | "draft" => Some(AS::Draft),
+                        "PendingApproval" | "pending_approval" => Some(AS::PendingApproval),
+                        "Approved" | "approved" => Some(AS::Approved),
+                        "Rejected" | "rejected" => Some(AS::Rejected),
+                        _ => None,
+                    };
+
+                    if let Some(target) = target_status {
+                        all_expenses.retain(|e| e.approval_status == target);
+                    }
 
                     let text = serde_json::to_string_pretty(&all_expenses)
                         .unwrap_or_else(|_| "[]".to_string());
@@ -828,7 +857,7 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.meeting_use_cases.find_by_id(meeting_id, org_id).await {
+            match state.meeting_use_cases.get_meeting(meeting_id).await {
                 Ok(Some(meeting)) => {
                     let quorum_ok = meeting.quorum_validated;
                     let pct = meeting.quorum_percentage.unwrap_or(0.0);
@@ -886,7 +915,7 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.document_use_cases.find_by_building(building_id, org_id).await {
+            match state.document_use_cases.list_documents_by_building(building_id).await {
                 Ok(docs) => {
                     let text = serde_json::to_string_pretty(&docs)
                         .unwrap_or_else(|_| "[]".to_string());
@@ -1010,14 +1039,20 @@ async fn dispatch_tool(
                     data: None,
                 })?;
 
-            let building_id = Uuid::parse_str(building_id_str).map_err(|_| RpcError {
+            let _building_id = Uuid::parse_str(building_id_str).map_err(|_| RpcError {
                 code: ErrorCode::INVALID_PARAMS,
                 message: "building_id must be a valid UUID".to_string(),
                 data: None,
             })?;
 
-            match state.owner_use_cases.find_all(Some(org_id), Some(building_id), None, None).await {
-                Ok(owners) => {
+            let page_request = crate::application::dto::PageRequest {
+                page: 1,
+                per_page: 100,
+                sort_by: None,
+                order: crate::application::dto::SortOrder::default(),
+            };
+            match state.owner_use_cases.list_owners_paginated(&page_request, Some(org_id)).await {
+                Ok((owners, _total)) => {
                     let text = serde_json::to_string_pretty(&owners)
                         .unwrap_or_else(|_| "[]".to_string());
                     Ok(ToolResult {
@@ -1048,7 +1083,7 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.meeting_use_cases.find_by_id(meeting_id, org_id).await {
+            match state.meeting_use_cases.get_meeting(meeting_id).await {
                 Ok(Some(meeting)) => {
                     let quorum_ok = meeting.quorum_validated;
                     let pct = meeting.quorum_percentage.unwrap_or(0.0);
@@ -1155,27 +1190,27 @@ async fn dispatch_tool(
                 data: None,
             })?;
 
-            match state.expense_use_cases.find_by_building(building_id, org_id).await {
+            match state.expense_use_cases.list_expenses_by_building(building_id).await {
                 Ok(expenses) => {
-                    let total_expenses: i64 = expenses.iter()
-                        .filter(|e| e.approval_status.to_lowercase() == "approved")
-                        .map(|e| e.total_amount_cents.unwrap_or(0))
+                    use crate::domain::entities::{ApprovalStatus, PaymentStatus};
+
+                    let total_expenses: f64 = expenses.iter()
+                        .filter(|e| e.approval_status == ApprovalStatus::Approved)
+                        .map(|e| e.amount)
                         .sum();
 
-                    let outstanding: i64 = expenses.iter()
-                        .filter(|e| e.approval_status.to_lowercase() != "paid")
-                        .map(|e| e.total_amount_cents.unwrap_or(0))
+                    let outstanding: f64 = expenses.iter()
+                        .filter(|e| e.payment_status != PaymentStatus::Paid)
+                        .map(|e| e.amount)
                         .sum();
 
                     let situation = json!({
                         "building_id": building_id,
-                        "total_expenses_approved_cents": total_expenses,
-                        "total_expenses_approved_eur": format!("{:.2}", total_expenses as f64 / 100.0),
-                        "outstanding_cents": outstanding,
-                        "outstanding_eur": format!("{:.2}", outstanding as f64 / 100.0),
+                        "total_expenses_approved_eur": format!("{:.2}", total_expenses),
+                        "outstanding_eur": format!("{:.2}", outstanding),
                         "expense_count": expenses.len(),
-                        "paid_count": expenses.iter().filter(|e| e.approval_status.to_lowercase() == "paid").count(),
-                        "pending_count": expenses.iter().filter(|e| e.approval_status.to_lowercase() == "pending_approval").count()
+                        "paid_count": expenses.iter().filter(|e| e.payment_status == PaymentStatus::Paid).count(),
+                        "pending_count": expenses.iter().filter(|e| e.approval_status == ApprovalStatus::PendingApproval).count()
                     });
 
                     let text = serde_json::to_string_pretty(&situation)
@@ -1327,10 +1362,11 @@ async fn dispatch_tool(
 
             if let Some(bid) = building_id {
                 // Check meetings without PV (simplified)
-                match state.meeting_use_cases.find_by_building(bid, org_id).await {
+                use crate::domain::entities::meeting::MeetingStatus;
+                match state.meeting_use_cases.list_meetings_by_building(bid).await {
                     Ok(meetings) => {
                         for meeting in meetings {
-                            if meeting.minutes_sent_at.is_none() && meeting.status == "Completed" {
+                            if meeting.status == MeetingStatus::Completed {
                                 alerts.push(json!({
                                     "type": "MINUTES_MISSING",
                                     "severity": "high",
@@ -1585,9 +1621,9 @@ async fn handle_jsonrpc(
 /// Authentication: JWT Bearer token in Authorization header
 #[get("/mcp/sse")]
 pub async fn mcp_sse_endpoint(
-    req: HttpRequest,
+    _req: HttpRequest,
     claims: AuthenticatedUser,
-    state: Data<Arc<AppState>>,
+    _state: Data<Arc<AppState>>,
 ) -> HttpResponse {
     // Generate a unique session ID for this SSE connection
     let session_id = Uuid::new_v4();
@@ -1743,7 +1779,7 @@ pub async fn mcp_info_endpoint() -> HttpResponse {
 /// Issue #263
 #[get("/mcp/system-prompt")]
 pub async fn mcp_system_prompt_endpoint(
-    claims: AuthenticatedUser,
+    _claims: AuthenticatedUser,
     _state: Data<Arc<AppState>>,
 ) -> HttpResponse {
     let prompt = include_str!("../../mcp_system_prompt.md");
@@ -1758,7 +1794,7 @@ pub async fn mcp_system_prompt_endpoint(
 /// Issue #262
 #[get("/mcp/legal-index")]
 pub async fn mcp_legal_index_endpoint(
-    claims: AuthenticatedUser,
+    _claims: AuthenticatedUser,
     _state: Data<Arc<AppState>>,
 ) -> HttpResponse {
     let index = include_str!("../../legal_index.json");

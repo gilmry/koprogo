@@ -760,6 +760,7 @@ pub async fn export_work_quote_pdf(
         supplier: expense_dto.supplier.clone(),
         invoice_number: expense_dto.invoice_number.clone(),
         account_code: expense_dto.account_code.clone(),
+        contractor_report_id: None,
         created_at: Utc::now(),
         updated_at: Utc::now(),
     };

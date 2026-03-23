@@ -1,5 +1,5 @@
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
-use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, post, put, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -122,7 +122,7 @@ pub async fn create_security_incident(
         }));
     }
 
-    let valid_statuses = ["detected", "investigating"];
+    let _valid_statuses = ["detected", "investigating"];
     let status = "detected".to_string();
 
     // Extract client info for audit

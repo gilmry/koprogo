@@ -5,7 +5,7 @@ use crate::application::dto::contractor_report_dto::{
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
 use uuid::Uuid;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 // ---------------------------------------------------------------------------
 // Endpoints authentifiés (syndic / CdC)
@@ -380,7 +380,7 @@ pub struct MagicLinkSubmitDto {
 pub async fn submit_report_by_magic_token(
     state: web::Data<AppState>,
     path: web::Path<String>,
-    body: web::Json<MagicLinkSubmitDto>,
+    _body: web::Json<MagicLinkSubmitDto>,
 ) -> impl Responder {
     let token = path.into_inner();
 

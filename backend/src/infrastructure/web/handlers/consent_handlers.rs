@@ -1,7 +1,6 @@
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 /// Extract client IP address from request
 fn extract_ip_address(req: &HttpRequest) -> Option<String> {
@@ -33,7 +32,7 @@ fn extract_user_agent(req: &HttpRequest) -> Option<String> {
 }
 
 /// Request body for recording user consent
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, utoipa::ToSchema)]
 pub struct RecordConsentRequest {
     /// Type of consent: 'privacy_policy' or 'terms'
     pub consent_type: String,
@@ -43,7 +42,7 @@ pub struct RecordConsentRequest {
 }
 
 /// Response for consent status check
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ConsentStatusResponse {
     /// Whether the user has given consent to privacy policy
     pub privacy_policy_accepted: bool,
@@ -58,7 +57,7 @@ pub struct ConsentStatusResponse {
 }
 
 /// Response for successful consent recording
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, utoipa::ToSchema)]
 pub struct ConsentRecordedResponse {
     /// Success message
     pub message: String,
@@ -100,8 +99,8 @@ pub struct ConsentRecordedResponse {
 #[post("/consent")]
 pub async fn record_consent(
     req: HttpRequest,
-    data: web::Data<AppState>,
-    auth: AuthenticatedUser,
+    _data: web::Data<AppState>,
+    _auth: AuthenticatedUser,
     body: web::Json<RecordConsentRequest>,
 ) -> impl Responder {
     // Validate consent_type
@@ -112,9 +111,9 @@ pub async fn record_consent(
     }
 
     // Extract client information for audit trail
-    let ip_address = extract_ip_address(&req);
-    let user_agent = extract_user_agent(&req);
-    let policy_version = body.policy_version.clone().unwrap_or_else(|| "1.0".to_string());
+    let _ip_address = extract_ip_address(&req);
+    let _user_agent = extract_user_agent(&req);
+    let _policy_version = body.policy_version.clone().unwrap_or_else(|| "1.0".to_string());
 
     // Record consent in database
     // Note: Database implementation required in consent repository
@@ -160,7 +159,7 @@ pub async fn record_consent(
 #[get("/consent/status")]
 pub async fn get_consent_status(
     _req: HttpRequest,
-    data: web::Data<AppState>,
+    _data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
     // TODO: Query database for consent records
