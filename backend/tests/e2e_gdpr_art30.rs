@@ -8,7 +8,6 @@ use actix_web::http::header;
 use actix_web::{test, App};
 use koprogo_api::infrastructure::web::configure_routes;
 use koprogo_api::infrastructure::web::AppState;
-use serde_json::json;
 use serial_test::serial;
 use uuid::Uuid;
 
