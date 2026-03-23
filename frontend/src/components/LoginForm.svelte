@@ -1,7 +1,8 @@
 <script lang="ts">
-  import '../lib/i18n';
+  import { setupI18n } from '../lib/i18n';
+  setupI18n();
   import { onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _, isLoading } from 'svelte-i18n';
   import { authStore, mapUserFromBackend } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import type { User } from '../lib/types';
@@ -61,6 +62,11 @@
   };
 </script>
 
+{#if $isLoading}
+  <div class="flex justify-center py-8">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+  </div>
+{:else}
 <form on:submit={handleLogin} class="space-y-6" data-testid="login-form">
   {#if error}
     <div
@@ -131,3 +137,4 @@
     {loading ? $_('auth.loggingIn') : $_('auth.login')}
   </button>
 </form>
+{/if}
