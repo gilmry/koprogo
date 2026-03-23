@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, created_at, updated_at, created_by\n            FROM convocations\n            WHERE building_id = $1\n            ORDER BY meeting_date DESC\n            ",
+  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, no_quorum_required, created_at, updated_at, created_by\n            FROM convocations\n            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status\n            ORDER BY meeting_date DESC\n            ",
   "describe": {
     "columns": [
       {
@@ -95,23 +95,29 @@
       },
       {
         "ordinal": 18,
+        "name": "no_quorum_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 19,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "created_by",
         "type_info": "Uuid"
       }
     ],
     "parameters": {
       "Left": [
-        "Uuid"
+        "Uuid",
+        "Text"
       ]
     },
     "nullable": [
@@ -135,8 +141,9 @@
       true,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "359bd0e1c3fd88333726aaa7933866b01a963e424bbfa99ef568d92aa111ef8d"
+  "hash": "e49aa52764530c86ae2ef7d4e7a922dbe76868c826b1fa1c9227fd9ba1ccd43b"
 }

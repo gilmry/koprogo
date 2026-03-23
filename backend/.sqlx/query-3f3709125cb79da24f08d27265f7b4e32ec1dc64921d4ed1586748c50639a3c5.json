@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT\n                    id,\n                    processor_name,\n                    service_description,\n                    dpa_signed_at,\n                    dpa_url,\n                    transfer_mechanism,\n                    data_categories,\n                    certifications,\n                    created_at,\n                    updated_at\n                FROM data_processor_agreements\n                ORDER BY processor_name ASC\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "processor_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "service_description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "dpa_signed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "dpa_url",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "transfer_mechanism",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "data_categories",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 7,
+        "name": "certifications",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "3f3709125cb79da24f08d27265f7b4e32ec1dc64921d4ed1586748c50639a3c5"
+}

@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                   status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                   pdf_file_path, language, total_recipients, opened_count,\n                   will_attend_count, will_not_attend_count, reminder_sent_at,\n                   first_meeting_id, created_at, updated_at, created_by\n            FROM convocations\n            WHERE organization_id = $1 AND status = $2::TEXT::convocation_status\n            ORDER BY meeting_date DESC\n            ",
+  "query": "\n            INSERT INTO convocations (\n                id, organization_id, building_id, meeting_id, meeting_type, meeting_date,\n                status, minimum_send_date, actual_send_date, scheduled_send_date,\n                pdf_file_path, language, total_recipients, opened_count,\n                will_attend_count, will_not_attend_count, reminder_sent_at,\n                first_meeting_id, no_quorum_required, created_at, updated_at, created_by\n            )\n            VALUES ($1, $2, $3, $4, $5::TEXT::convocation_type, $6, $7::TEXT::convocation_status, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)\n            RETURNING id, organization_id, building_id, meeting_id, meeting_type::text AS \"meeting_type!\", meeting_date,\n                      status::text AS \"status!\", minimum_send_date, actual_send_date, scheduled_send_date,\n                      pdf_file_path, language, total_recipients, opened_count,\n                      will_attend_count, will_not_attend_count, reminder_sent_at,\n                      first_meeting_id, no_quorum_required, created_at, updated_at, created_by\n            ",
   "describe": {
     "columns": [
       {
@@ -95,16 +95,21 @@
       },
       {
         "ordinal": 18,
+        "name": "no_quorum_required",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 19,
         "name": "created_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "updated_at",
         "type_info": "Timestamptz"
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "created_by",
         "type_info": "Uuid"
       }
@@ -112,7 +117,27 @@
     "parameters": {
       "Left": [
         "Uuid",
-        "Text"
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Timestamptz",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Timestamptz",
+        "Text",
+        "Varchar",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Int4",
+        "Timestamptz",
+        "Uuid",
+        "Bool",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
       ]
     },
     "nullable": [
@@ -136,8 +161,9 @@
       true,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "8304a15894ef6887a92c24e6fea3723324ade2a26a3fb391b6930618433dbf7e"
+  "hash": "ee322a136ce0684ff07d540c20e1de178bb69781801cac50f3fe7a2accff667e"
 }

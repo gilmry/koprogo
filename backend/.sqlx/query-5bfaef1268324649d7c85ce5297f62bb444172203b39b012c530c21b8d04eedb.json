@@ -1,0 +1,86 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT\n                    id,\n                    activity_name,\n                    controller_name,\n                    purpose,\n                    legal_basis,\n                    data_categories,\n                    data_subjects,\n                    recipients,\n                    retention_period,\n                    security_measures,\n                    created_at,\n                    updated_at\n                FROM data_processing_activities\n                ORDER BY created_at DESC\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "activity_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "controller_name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "purpose",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "legal_basis",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "data_categories",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 6,
+        "name": "data_subjects",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 7,
+        "name": "recipients",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 8,
+        "name": "retention_period",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 9,
+        "name": "security_measures",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "5bfaef1268324649d7c85ce5297f62bb444172203b39b012c530c21b8d04eedb"
+}
