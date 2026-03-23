@@ -411,6 +411,22 @@ impl AgeRequest {
             (self.threshold_pct - self.total_shares_pct).max(0.0)
         }
     }
+
+    /// Calcule le progrès vers le seuil 1/5 en pourcentage (0-100%)
+    ///
+    /// Exemple : Si 10% des quotes-parts ont signé et le seuil est 20%,
+    /// retourne 50.0 (50% du chemin vers le seuil).
+    ///
+    /// # Arguments
+    /// * `building_total_shares` - Total des quotes-parts du bâtiment (normalement 1.0)
+    ///
+    /// # Returns
+    /// Pourcentage de progression : 0.0 (0%) à 100.0 (seuil atteint ou dépassé)
+    pub fn calculate_progress_percentage(&self, _building_total_shares: f64) -> f64 {
+        // Calcul : (current / threshold) * 100, capped at 100%
+        let progress = (self.total_shares_pct / self.threshold_pct) * 100.0;
+        progress.min(100.0) // Ne jamais dépasser 100%
+    }
 }
 
 #[cfg(test)]
@@ -614,5 +630,30 @@ mod tests {
         assert!(!AgeRequestStatus::Open.is_terminal());
         assert!(!AgeRequestStatus::Reached.is_terminal());
         assert!(!AgeRequestStatus::Submitted.is_terminal());
+    }
+
+    #[test]
+    fn test_calculate_progress_percentage() {
+        let mut req = make_request();
+        req.open().unwrap();
+
+        // 0 signatures : 0% progress
+        assert_eq!(req.calculate_progress_percentage(1.0), 0.0);
+
+        // 5% des quotes-parts : 5% / 20% = 25% progress
+        req.add_cosignatory(Uuid::new_v4(), 0.05).unwrap();
+        assert!((req.calculate_progress_percentage(1.0) - 25.0).abs() < 1e-9);
+
+        // 10% des quotes-parts : 10% / 20% = 50% progress
+        req.add_cosignatory(Uuid::new_v4(), 0.05).unwrap();
+        assert!((req.calculate_progress_percentage(1.0) - 50.0).abs() < 1e-9);
+
+        // 20% des quotes-parts : 20% / 20% = 100% progress (seuil atteint)
+        req.add_cosignatory(Uuid::new_v4(), 0.10).unwrap();
+        assert_eq!(req.calculate_progress_percentage(1.0), 100.0);
+
+        // 25% des quotes-parts : 25% / 20% = 125%, mais capped at 100%
+        req.add_cosignatory(Uuid::new_v4(), 0.05).unwrap();
+        assert_eq!(req.calculate_progress_percentage(1.0), 100.0);
     }
 }
