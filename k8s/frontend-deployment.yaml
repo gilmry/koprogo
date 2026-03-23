@@ -1,0 +1,125 @@
+---
+# KoproGo Frontend Deployment
+# Issue #266-#268: K3s + ArgoCD GitOps
+# Astro + Svelte static SPA served via Nginx
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: koprogo-frontend
+  namespace: koprogo
+  labels:
+    app: koprogo-frontend
+    version: "1.0.0"
+    component: ui
+  annotations:
+    description: "KoproGo Astro + Svelte frontend"
+
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  selector:
+    matchLabels:
+      app: koprogo-frontend
+
+  template:
+    metadata:
+      labels:
+        app: koprogo-frontend
+
+    spec:
+      serviceAccountName: koprogo-frontend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        fsGroup: 101
+
+      containers:
+      - name: frontend
+        image: ghcr.io/gilmry/koprogo-frontend:latest
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+
+        env:
+        - name: PUBLIC_API_URL
+          value: "https://api.koprogo.be/api/v1"
+        - name: ENVIRONMENT
+          value: "production"
+
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 2
+
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 101
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+
+        volumeMounts:
+        - name: nginx-cache
+          mountPath: /var/cache/nginx
+        - name: nginx-pid
+          mountPath: /var/run
+
+      volumes:
+      - name: nginx-cache
+        emptyDir:
+          sizeLimit: 100Mi
+      - name: nginx-pid
+        emptyDir:
+          sizeLimit: 50Mi
+
+      imagePullSecrets:
+      - name: ghcr-secret
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - koprogo-frontend
+              topologyKey: kubernetes.io/hostname
+
+      terminationGracePeriodSeconds: 30
