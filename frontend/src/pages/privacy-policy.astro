@@ -1,0 +1,157 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Politique de Confidentialité - KoproGo">
+	<main class="container mx-auto px-4 py-12 max-w-4xl">
+		<h1 class="text-4xl font-bold mb-8 text-gray-900">Politique de Confidentialité</h1>
+
+		<div class="prose prose-lg max-w-none text-gray-700 space-y-6">
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">1. Responsable du Traitement</h2>
+				<p>
+					<strong>KoproGo SCRL</strong><br/>
+					Rue de Bruxelles 42<br/>
+					1000 Bruxelles<br/>
+					Belgique<br/>
+					Email: <a href="mailto:info@koprogo.be" class="text-blue-600 hover:underline">info@koprogo.be</a>
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">2. Délégué à la Protection des Données</h2>
+				<p>
+					Pour toute question relative à la protection de vos données personnelles, vous pouvez contacter notre Délégué à la Protection des Données (DPO) à l'adresse suivante :<br/>
+					Email: <a href="mailto:dpo@koprogo.be" class="text-blue-600 hover:underline">dpo@koprogo.be</a>
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">3. Finalités et Base Légale du Traitement</h2>
+				<p>Nous traitons vos données personnelles pour les finalités suivantes :</p>
+				<ul class="list-disc list-inside space-y-2 mt-4">
+					<li><strong>Exécution du contrat</strong> : Gestion de votre compte, administration des copropriétés, gestion des dépenses et des assemblées générales</li>
+					<li><strong>Intérêt légitime</strong> : Amélioration de nos services, prévention de la fraude, analyses statistiques, marketing direct</li>
+					<li><strong>Obligation légale</strong> : Respect des obligations comptables, fiscales et légales belges (Code Civil, loi sur la copropriété)</li>
+					<li><strong>Consentement</strong> : Envoi de communications marketing, utilisation de cookies non-essentiels</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">4. Catégories de Données Personnelles Traitées</h2>
+				<p>Nous traitons les catégories de données personnelles suivantes :</p>
+				<ul class="list-disc list-inside space-y-2 mt-4">
+					<li><strong>Données d'identité</strong> : Nom, prénom, email, numéro de téléphone, adresse postale</li>
+					<li><strong>Données de connexion</strong> : Adresse IP, identifiants de session, date et heure de connexion</li>
+					<li><strong>Données financières</strong> : Informations de compte bancaire (IBAN), données de paiement (traitées via Stripe, jamais stockées en clair), historique des dépenses et des paiements</li>
+					<li><strong>Données de copropriété</strong> : Quote-parts, historique de propriété, procès-verbaux d'assemblées, votes et résolutions</li>
+					<li><strong>Données de tiers</strong> : Coordonnées de tiers (syndics, entrepreneurs) fournies par les gestionnaires de copropriétés</li>
+					<li><strong>Données de journalisation</strong> : Logs d'accès à la plateforme, activités utilisateur (à des fins de sécurité et d'audit)</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">5. Destinataires des Données</h2>
+				<p>Vos données personnelles peuvent être communiquées aux destinataires suivants :</p>
+				<ul class="list-disc list-inside space-y-2 mt-4">
+					<li><strong>Stripe</strong> (processeur de paiement) : données financières pour le traitement des paiements</li>
+					<li><strong>Amazon Web Services (AWS)</strong> : données techniques et fichiers stockés sur S3 (chiffrement en transit et au repos)</li>
+					<li><strong>Fournisseurs d'email</strong> : adresses email pour l'envoi de notifications et communications</li>
+					<li><strong>Autorités légales</strong> : en cas d'obligation légale ou demande judiciaire</li>
+					<li><strong>Copropriétaires</strong> : informations partagées lors d'assemblées générales ou convocations (selon les règles légales belges)</li>
+				</ul>
+				<p class="mt-4 text-sm text-gray-600">
+					Les processeurs de données tiers (Stripe, AWS) sont tenus de respecter les mêmes standards GDPR et disposent de clauses contractuelles assurant la protection de vos données.
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">6. Durée de Conservation des Données</h2>
+				<p>Vos données personnelles sont conservées pour les durées suivantes :</p>
+				<ul class="list-disc list-inside space-y-2 mt-4">
+					<li><strong>Données comptables</strong> : 5 ans (obligation légale belge - décrets royaux sur la comptabilité)</li>
+					<li><strong>Données de connexion et logs</strong> : 3 ans (sécurité et audit)</li>
+					<li><strong>Données de copropriété</strong> : pendant la durée de votre appartenance à la copropriété + 5 ans après départ</li>
+					<li><strong>Communications marketing</strong> : jusqu'à retrait du consentement ou opt-out</li>
+					<li><strong>Données de paiement</strong> : conformément aux exigences PCI-DSS (tokens Stripe conservés selon politique Stripe)</li>
+				</ul>
+				<p class="mt-4">
+					À l'expiration de ces délais, vos données sont supprimées ou anonymisées, sauf si la loi nous oblige à les conserver plus longtemps.
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">7. Vos Droits</h2>
+				<p>Conformément à la réglementation GDPR et à la loi belge, vous disposez des droits suivants :</p>
+				<ul class="list-disc list-inside space-y-2 mt-4">
+					<li><strong>Droit d'accès (Article 15)</strong> : Vous pouvez demander l'accès à vos données personnelles via <a href="/gdpr/export" class="text-blue-600 hover:underline">GET /gdpr/export</a></li>
+					<li><strong>Droit de rectification (Article 16)</strong> : Vous pouvez corriger des données inexactes via <a href="/gdpr/rectify" class="text-blue-600 hover:underline">PUT /gdpr/rectify</a></li>
+					<li><strong>Droit à l'effacement (Article 17)</strong> : Vous pouvez demander la suppression de vos données via <a href="/gdpr/erase" class="text-blue-600 hover:underline">DELETE /gdpr/erase</a></li>
+					<li><strong>Droit à la limitation du traitement (Article 18)</strong> : Vous pouvez limiter le traitement de vos données via <a href="/gdpr/restrict-processing" class="text-blue-600 hover:underline">PUT /gdpr/restrict-processing</a></li>
+					<li><strong>Droit à la portabilité (Article 20)</strong> : Vous pouvez demander vos données dans un format structuré</li>
+					<li><strong>Droit d'opposition (Article 21)</strong> : Vous pouvez vous opposer au marketing direct et au profilage via <a href="/gdpr/marketing-preference" class="text-blue-600 hover:underline">PUT /gdpr/marketing-preference</a></li>
+				</ul>
+				<p class="mt-4">
+					Pour exercer ces droits, contactez notre Délégué à la Protection des Données à <a href="mailto:dpo@koprogo.be" class="text-blue-600 hover:underline">dpo@koprogo.be</a>. Les demandes seront traitées dans un délai de 30 jours.
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">8. Plainte auprès d'une Autorité de Contrôle</h2>
+				<p>
+					Si vous estimez que vos droits ne sont pas respectés, vous avez le droit de déposer une plainte auprès de l'autorité belge de protection des données :
+				</p>
+				<p class="mt-4">
+					<strong>Autorité de Protection des Données (APD)</strong><br/>
+					Rue de Belgique 30<br/>
+					1060 Bruxelles<br/>
+					Belgique<br/>
+					Email: <a href="mailto:contact@autoriteprotectiondonnees.be" class="text-blue-600 hover:underline">contact@autoriteprotectiondonnees.be</a><br/>
+					Site web: <a href="https://www.autoriteprotectiondonnees.be" class="text-blue-600 hover:underline" target="_blank">www.autoriteprotectiondonnees.be</a>
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">9. Sécurité des Données</h2>
+				<p>
+					Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles pour protéger vos données contre l'accès non autorisé, la modification ou la suppression :
+				</p>
+				<ul class="list-disc list-inside space-y-2 mt-4">
+					<li>Chiffrement des données en transit (TLS 1.3) et au repos (AES-256)</li>
+					<li>Authentification multi-facteur (2FA) pour l'accès aux comptes</li>
+					<li>Monitoring de sécurité 24/7 et IDS (Suricata)</li>
+					<li>Pare-feu applicatif (WAF) et protection DDoS</li>
+					<li>Sauvegarde encryptée quotidienne avec stockage hors-site (AWS S3)</li>
+					<li>Conformité PCI-DSS pour le traitement des cartes de crédit</li>
+				</ul>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">10. Prise de Décision Automatisée et Profilage</h2>
+				<p>
+					KoproGo ne procède à aucune prise de décision entièrement automatisée ou profilage ayant des effets juridiques ou significatifs sur vous. Tous les processus décisionnels impliquent une supervision humaine.
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">11. Modifications de cette Politique</h2>
+				<p>
+					Nous nous réservons le droit de modifier cette politique de confidentialité à tout moment. Les modifications seront publiées sur cette page avec la date de mise à jour. Votre utilisation continue de KoproGo après une modification constitue votre acceptation des nouvelles conditions.
+				</p>
+			</section>
+
+			<section>
+				<h2 class="text-2xl font-bold mt-8 mb-4 text-gray-900">12. Contact</h2>
+				<p>
+					Pour toute question concernant cette politique de confidentialité, veuillez nous contacter :<br/>
+					<strong>KoproGo SCRL</strong><br/>
+					Email: <a href="mailto:info@koprogo.be" class="text-blue-600 hover:underline">info@koprogo.be</a>
+				</p>
+			</section>
+
+			<p class="mt-12 pt-6 border-t border-gray-300 text-sm text-gray-600">
+				<strong>Dernière mise à jour</strong> : 23 mars 2026
+			</p>
+		</div>
+	</main>
+</Layout>
