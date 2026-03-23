@@ -1,6 +1,6 @@
 use crate::application::dto::{
-    CreateConvocationRequest, ScheduleConvocationRequest, SendConvocationRequest, SetProxyRequest,
-    UpdateAttendanceRequest,
+    CreateConvocationRequest, ScheduleConvocationRequest, ScheduleSecondConvocationRequest,
+    SendConvocationRequest, SetProxyRequest, UpdateAttendanceRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
@@ -391,6 +391,79 @@ pub async fn send_convocation_reminders(
             .log();
 
             HttpResponse::Ok().json(recipients)
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({"error": err})),
+    }
+}
+
+// ==================== Second Convocation Endpoint (Art. 3.87 §5 CC) ====================
+
+#[post("/convocations/second")]
+pub async fn schedule_second_convocation(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    request: web::Json<ScheduleSecondConvocationRequest>,
+) -> impl Responder {
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
+
+    let req = request.into_inner();
+
+    // Create a new meeting for the second convocation
+    let new_meeting_req = crate::application::dto::CreateMeetingRequest {
+        organization_id,
+        building_id: req.building_id,
+        meeting_type: crate::domain::entities::MeetingType::Ordinary,
+        title: format!("Second Convocation (Art. 3.87 §5 CC)"),
+        description: Some("Second convocation after quorum not reached".to_string()),
+        scheduled_date: req.new_meeting_date,
+        location: "Same as first meeting".to_string(),
+    };
+
+    // Create the new meeting
+    let new_meeting = match state
+        .meeting_use_cases
+        .create_meeting(new_meeting_req)
+        .await
+    {
+        Ok(m) => m,
+        Err(err) => {
+            return HttpResponse::BadRequest()
+                .json(serde_json::json!({"error": format!("Failed to create meeting: {}", err)}))
+        }
+    };
+
+    match state
+        .convocation_use_cases
+        .schedule_second_convocation(
+            organization_id,
+            req.building_id,
+            req.first_meeting_id,
+            new_meeting.id,
+            req.new_meeting_date,
+            req.language,
+            user.user_id,
+        )
+        .await
+    {
+        Ok(convocation) => {
+            AuditLogEntry::new(
+                AuditEventType::SecondConvocationScheduled,
+                Some(user.user_id),
+                Some(organization_id),
+            )
+            .with_resource("Convocation", convocation.id)
+            .with_details(format!(
+                "first_meeting_id: {}, new_meeting_id: {}",
+                req.first_meeting_id, new_meeting.id
+            ))
+            .log();
+
+            HttpResponse::Created().json(convocation)
         }
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({"error": err})),
     }

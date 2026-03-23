@@ -185,6 +185,24 @@ impl MeetingUseCases {
         self.repository.delete(id).await
     }
 
+    /// Attach minutes document to a completed meeting (Issue #313)
+    pub async fn attach_minutes(
+        &self,
+        id: Uuid,
+        document_id: Uuid,
+    ) -> Result<MeetingResponse, String> {
+        let mut meeting = self
+            .repository
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| "Meeting not found".to_string())?;
+
+        meeting.set_minutes_sent(document_id)?;
+
+        let updated = self.repository.update(&meeting).await?;
+        Ok(MeetingResponse::from(updated))
+    }
+
     /// Valide le quorum d'une AG (Art. 3.87 §5 CC).
     /// Doit être appelé AVANT que les votes soient ouverts.
     /// Si quorum non atteint, déclenche automatiquement la création d'une 2e convocation
