@@ -1,0 +1,9 @@
+---
+koprogo_branch: integration
+enable_ssl: false
+enable_monitoring: false
+enable_backup: false
+rust_log: info
+cors_allowed_origins: "*"
+frontend_domain: "integration.koprogo.local"
+api_domain: "api-integration.koprogo.local"

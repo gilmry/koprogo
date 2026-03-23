@@ -1,0 +1,30 @@
+# Dev overrides: debug logging, no HTTPS, relaxed limits, exposed postgres
+services:
+  traefik:
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--log.level=DEBUG"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+    ports:
+      - "80:80"
+      - "8081:8080"
+  backend:
+    environment:
+      RUST_LOG: debug
+      CORS_ALLOWED_ORIGINS: "*"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.1'
+  postgres:
+    ports:
+      - "5432:5432"
