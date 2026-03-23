@@ -8,6 +8,13 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
 
     cfg.service(metrics_endpoint);
 
+    // MCP (Model Context Protocol) — Issue #252
+    // SSE transport for Claude/AI integration (JSON-RPC 2.0 over SSE)
+    // Note: /mcp/info is public (no auth); /mcp/sse and /mcp/messages require JWT
+    cfg.service(mcp_info_endpoint); // GET /mcp/info — no auth required
+    cfg.service(mcp_sse_endpoint); // GET /mcp/sse — JWT required
+    cfg.service(mcp_messages_endpoint); // POST /mcp/messages — JWT required
+
     cfg.service(
         web::scope("/api/v1")
             .service(health_check)
