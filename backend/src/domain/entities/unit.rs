@@ -44,8 +44,11 @@ impl Unit {
         if surface_area <= 0.0 {
             return Err("Surface area must be greater than 0".to_string());
         }
+        // Validate shares (tantièmes) according to Art. 577-2 §4 Code Civil belge
+        // Shares must be positive and typically don't exceed 1000 (building tantiemes)
+        // Individual unit shares must sum to building.total_shares (usually 1000)
         if quota <= 0.0 || quota > 1000.0 {
-            return Err("Quota must be between 0 and 1000".to_string());
+            return Err("Quota (shares) must be between 0 (exclusive) and 1000 (inclusive), representing building tantièmes".to_string());
         }
 
         let now = Utc::now();

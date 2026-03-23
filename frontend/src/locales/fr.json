@@ -423,6 +423,47 @@
     "selectBuilding": "Veuillez sélectionner un immeuble",
     "questionRequired": "La question est obligatoire",
     "endDateRequired": "La date de fin est obligatoire",
+    "createForm": {
+      "title": "Créer un sondage",
+      "formDescription": "Consultez les copropriétaires entre les assemblées générales sur des décisions ponctuelles",
+      "buildingLabel": "Immeuble",
+      "pollType": "Type de sondage",
+      "typeYesNo": "Oui/Non",
+      "typeMultiple": "Choix multiples",
+      "typeRating": "Notation",
+      "typeOpenEnded": "Réponse libre",
+      "question": "Question",
+      "questionPlaceholder": "Formulez votre question de manière claire",
+      "description": "Description (optionnel)",
+      "descriptionPlaceholder": "Contexte ou instructions supplémentaires",
+      "options": "Options de réponse",
+      "newOptionPlaceholder": "Ajouter une nouvelle option",
+      "optionsHint": "Appuyez sur Entrée ou cliquez sur + pour ajouter une option",
+      "yesNoInfo": "Les options Oui et Non sont pré-remplies",
+      "ratingScale": "Échelle de notation",
+      "minRating": "Note minimale",
+      "maxRating": "Note maximale",
+      "ratingExample": "Les répondants pourront noter de 1 à 5",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "durationRecommendation": "Recommandation: Durée minimale de 7 jours pour une bonne participation",
+      "anonymousVote": "Vote anonyme (les réponses ne seront pas liées aux propriétaires)",
+      "multipleSelection": "Autoriser plusieurs sélections",
+      "legalFramework": "Cadre légal",
+      "legalReference": "Article 577-8/4 §4 du Code Civil Belge",
+      "legalText": "Le syndic peut consulter les copropriétaires entre les assemblées générales sur toute décision ne nécessitant pas de vote formel en AG. Les résultats doivent être documentés au procès-verbal de la prochaine AG.",
+      "submitButton": "Créer le sondage",
+      "creatingButton": "Création...",
+      "successMessage": "Sondage créé avec succès!",
+      "errors": {
+        "selectBuilding": "Veuillez sélectionner un immeuble",
+        "titleRequired": "Le titre/question est obligatoire",
+        "endDateRequired": "La date de fin est obligatoire",
+        "endDateAfterStart": "La date de fin doit être après la date de début",
+        "optionRequired": "Au moins une option est requise pour ce type de sondage",
+        "creationFailed": "Erreur lors de la création du sondage"
+      }
+    },
     "types": {
       "yesNo": "Oui/Non",
       "multipleChoice": "Choix multiples",
@@ -827,5 +868,14 @@
     "tooShort": "Le champ est trop court",
     "tooLong": "Le champ est trop long",
     "invalidFormat": "Format invalide"
+  },
+  "privacy": {
+    "title": "Politique de Confidentialité",
+    "consent": {
+      "title": "Protection de vos Données",
+      "message": "Nous traitons vos données personnelles conformément au RGPD et à la loi belge. Consultez notre ",
+      "linkText": "politique de confidentialité",
+      "accept": "Accepter"
+    }
   }
 }
