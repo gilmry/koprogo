@@ -1,0 +1,97 @@
+global:
+  resolve_timeout: 5m
+  smtp_from: 'alertmanager@koprogo.com'
+  smtp_smarthost: '${SMTP_HOST:-smtp.gmail.com}:${SMTP_PORT:-587}'
+  smtp_auth_username: '${SMTP_USERNAME}'
+  smtp_auth_password: '${SMTP_PASSWORD}'
+  smtp_require_tls: true
+
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+route:
+  group_by: ['alertname', 'cluster', 'component']
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 12h
+  receiver: 'email-default'
+
+  routes:
+    # Critical alerts go immediately
+    - match:
+        severity: critical
+      receiver: 'email-critical'
+      group_wait: 0s
+      repeat_interval: 4h
+
+    # Warning alerts can wait longer
+    - match:
+        severity: warning
+      receiver: 'email-warning'
+      group_wait: 30s
+      repeat_interval: 24h
+
+    # Backup alerts
+    - match:
+        component: backup
+      receiver: 'email-backup'
+      repeat_interval: 6h
+
+receivers:
+  - name: 'email-default'
+    email_configs:
+      - to: '${ALERT_EMAIL:-admin@example.com}'
+        headers:
+          Subject: '[KoproGo] {{ .GroupLabels.alertname }}'
+        html: |
+          {{ range .Alerts }}
+          <h3>{{ .Labels.alertname }}</h3>
+          <p><b>Severity:</b> {{ .Labels.severity }}</p>
+          <p><b>Component:</b> {{ .Labels.component }}</p>
+          <p><b>Summary:</b> {{ .Annotations.summary }}</p>
+          <p><b>Description:</b> {{ .Annotations.description }}</p>
+          <p><b>Started:</b> {{ .StartsAt.Format "2006-01-02 15:04:05" }}</p>
+          {{ end }}
+
+  - name: 'email-critical'
+    email_configs:
+      - to: '${ALERT_EMAIL:-admin@example.com}'
+        headers:
+          Subject: '🚨 [CRITICAL] KoproGo Alert: {{ .GroupLabels.alertname }}'
+        html: |
+          <h2 style="color: red;">🚨 CRITICAL ALERT</h2>
+          {{ range .Alerts }}
+          <h3>{{ .Labels.alertname }}</h3>
+          <p><b>Component:</b> {{ .Labels.component }}</p>
+          <p><b>Summary:</b> {{ .Annotations.summary }}</p>
+          <p><b>Description:</b> {{ .Annotations.description }}</p>
+          <p><b>Started:</b> {{ .StartsAt.Format "2006-01-02 15:04:05" }}</p>
+          <p style="color: red;"><b>ACTION REQUIRED IMMEDIATELY</b></p>
+          {{ end }}
+
+  - name: 'email-warning'
+    email_configs:
+      - to: '${ALERT_EMAIL:-admin@example.com}'
+        headers:
+          Subject: '⚠️ [WARNING] KoproGo Alert: {{ .GroupLabels.alertname }}'
+
+  - name: 'email-backup'
+    email_configs:
+      - to: '${ALERT_EMAIL:-admin@example.com}'
+        headers:
+          Subject: '📦 [BACKUP] KoproGo Backup Alert: {{ .GroupLabels.alertname }}'
+
+inhibit_rules:
+  # Inhibit warning if critical is firing
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+
+  # Inhibit specific alert if node is down
+  - source_match:
+      alertname: 'ContainerDown'
+    target_match_re:
+      alertname: '.*'
+    equal: ['instance']

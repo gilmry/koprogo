@@ -1,0 +1,211 @@
+groups:
+  - name: koprogo_alerts
+    interval: 30s
+    rules:
+      # ========================================
+      # System Alerts
+      # ========================================
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value | humanize }}% (threshold: 85%)"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value | humanize }}% (threshold: 85%)"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "{{ $value | humanize }}% disk space remaining (threshold: 20%)"
+
+      - alert: DiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+        annotations:
+          summary: "Critical disk space on {{ $labels.instance }}"
+          description: "Only {{ $value | humanize }}% disk space remaining!"
+
+      - alert: HighLoadAverage
+        expr: node_load15 / count(node_cpu_seconds_total{mode="idle"}) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High load average on {{ $labels.instance }}"
+          description: "15-minute load average is {{ $value | humanize }}"
+
+      # ========================================
+      # PostgreSQL Alerts
+      # ========================================
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database is not responding"
+
+      - alert: PostgreSQLTooManyConnections
+        expr: sum(pg_stat_activity_count) > 12
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL has too many connections"
+          description: "{{ $value }} connections active (max configured: 15)"
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_statements_mean_exec_time_seconds[5m]) > 0.005
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL queries are slow"
+          description: "Average query time {{ $value | humanize }}s exceeds 5ms target"
+
+      - alert: PostgreSQLCacheHitRatioLow
+        expr: pg_stat_database_blks_hit / (pg_stat_database_blks_hit + pg_stat_database_blks_read) < 0.95
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "PostgreSQL cache hit ratio is low"
+          description: "Cache hit ratio is {{ $value | humanizePercentage }} (target: >95%)"
+
+      - alert: PostgreSQLDeadTuplesHigh
+        expr: pg_stat_user_tables_n_dead_tup / (pg_stat_user_tables_n_live_tup + pg_stat_user_tables_n_dead_tup) > 0.20
+        for: 30m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High dead tuples in PostgreSQL"
+          description: "{{ $value | humanizePercentage }} dead tuples - consider VACUUM"
+
+      # ========================================
+      # Container Alerts
+      # ========================================
+      - alert: ContainerDown
+        expr: up{job="cadvisor"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: container
+        annotations:
+          summary: "Container {{ $labels.name }} is down"
+          description: "Container stopped responding"
+
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{name=~"koprogo-.*"} / container_spec_memory_limit_bytes{name=~"koprogo-.*"} > 0.90
+        for: 5m
+        labels:
+          severity: warning
+          component: container
+        annotations:
+          summary: "Container {{ $labels.name }} using high memory"
+          description: "Memory usage at {{ $value | humanizePercentage }} of limit"
+
+      - alert: ContainerRestartingFrequently
+        expr: rate(container_last_seen{name=~"koprogo-.*"}[15m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: container
+        annotations:
+          summary: "Container {{ $labels.name }} restarting frequently"
+          description: "Container has restarted multiple times in 15 minutes"
+
+      # ========================================
+      # Backup Alerts
+      # ========================================
+      - alert: BackupNotRunRecently
+        expr: (time() - koprogo_last_backup_timestamp_seconds) > 86400
+        for: 1h
+        labels:
+          severity: critical
+          component: backup
+        annotations:
+          summary: "Backup has not run in 24 hours"
+          description: "Last backup was {{ $value | humanizeDuration }} ago"
+
+      - alert: BackupMissing
+        expr: absent(koprogo_last_backup_timestamp_seconds)
+        for: 30m
+        labels:
+          severity: warning
+          component: backup
+        annotations:
+          summary: "Backup metrics not found"
+          description: "Backup monitoring metric is missing - check backup script"
+
+      # ========================================
+      # Application Alerts
+      # ========================================
+      - alert: HighHTTPErrorRate
+        expr: rate(traefik_service_requests_total{code=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: application
+        annotations:
+          summary: "High HTTP 5xx error rate"
+          description: "{{ $value | humanize }} requests/sec returning 5xx errors"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.99, rate(traefik_service_request_duration_seconds_bucket[5m])) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: application
+        annotations:
+          summary: "High API latency (P99)"
+          description: "P99 latency is {{ $value | humanize }}s (target: <0.05s)"
+
+      # ========================================
+      # MinIO Alerts
+      # ========================================
+      - alert: MinIODown
+        expr: up{job="minio"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: storage
+        annotations:
+          summary: "MinIO storage service is down"
+          description: "MinIO is not responding"
+
+      - alert: MinIODiskSpaceLow
+        expr: minio_cluster_disk_free_bytes / minio_cluster_disk_total_bytes < 0.20
+        for: 10m
+        labels:
+          severity: warning
+          component: storage
+        annotations:
+          summary: "MinIO disk space low"
+          description: "Only {{ $value | humanizePercentage }} free space remaining"
