@@ -343,6 +343,24 @@ impl TicketUseCases {
 
         Ok(overdue)
     }
+
+    /// Send work order to contractor via PWA magic link (Issue #309)
+    /// Validates ticket is in InProgress status and sends work order notification
+    pub async fn send_work_order(
+        &self,
+        ticket_id: Uuid,
+    ) -> Result<TicketResponse, String> {
+        let mut ticket = self
+            .ticket_repository
+            .find_by_id(ticket_id)
+            .await?
+            .ok_or_else(|| "Ticket not found".to_string())?;
+
+        ticket.send_work_order_to_contractor()?;
+        let updated = self.ticket_repository.update(&ticket).await?;
+
+        Ok(TicketResponse::from(updated))
+    }
 }
 
 /// Ticket statistics for a building
