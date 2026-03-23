@@ -49,6 +49,7 @@ pub async fn create_resolution(
             request.description.clone(),
             request.resolution_type.clone(),
             request.majority_required.clone(),
+            request.agenda_item_index,
         )
         .await
     {

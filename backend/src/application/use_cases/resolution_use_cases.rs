@@ -26,6 +26,7 @@ impl ResolutionUseCases {
 
     /// Create a new resolution for a meeting
     /// Enforces quorum validation per Art. 3.87 §5 CC before allowing resolution creation.
+    /// Issue #310: Validates agenda_item_index if provided (Art. 3.87 CC - only agenda items can be voted on)
     pub async fn create_resolution(
         &self,
         meeting_id: Uuid,
@@ -33,6 +34,7 @@ impl ResolutionUseCases {
         description: String,
         resolution_type: ResolutionType,
         majority_required: MajorityType,
+        agenda_item_index: Option<usize>,
     ) -> Result<Resolution, String> {
         // Fetch the meeting and check quorum (Art. 3.87 §5 CC)
         let meeting = self
@@ -44,12 +46,24 @@ impl ResolutionUseCases {
         // Enforce quorum validation before allowing resolution creation
         meeting.check_quorum_for_voting()?;
 
+        // Issue #310: If agenda_item_index provided, validate it exists and is non-empty
+        if let Some(index) = agenda_item_index {
+            if index >= meeting.agenda.len() {
+                return Err("Resolution must correspond to a valid agenda item (Art. 3.87 CC)".to_string());
+            }
+            let agenda_item = &meeting.agenda[index];
+            if agenda_item.trim().is_empty() {
+                return Err("Agenda item cannot be empty (Art. 3.87 CC)".to_string());
+            }
+        }
+
         let resolution = Resolution::new(
             meeting_id,
             title,
             description,
             resolution_type,
             majority_required,
+            agenda_item_index,
         )?;
 
         self.resolution_repository.create(&resolution).await
