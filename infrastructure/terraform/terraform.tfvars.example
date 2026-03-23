@@ -1,17 +1,35 @@
-# Copier ce fichier vers terraform.tfvars et remplir les valeurs
+# Terraform Variables for K3s Cluster on OVH OpenStack
+# Issue #266: K3s Provisioning with Terraform + OpenStack
+# Copy to terraform.tfvars and update values
 
-# ID du projet OVH Cloud
-# Obtenir via: https://www.ovh.com/manager/public-cloud/
-ovh_service_name = "YOUR_OVH_PROJECT_ID"
+# OVH Endpoint (API region)
+ovh_endpoint = "ovh-eu"
 
-# Nom de l'instance
-instance_name = "koprogo-production"
+# OVH Cloud region (GRA = Gravelines/Roubaix France, EU-compliant)
+region = "GRA"
 
-# Région (GRA11 = Gravelines France, bas carbone)
-region = "GRA11"
+# Environment (production, staging, development)
+environment = "production"
 
-# Chemin vers votre clé SSH publique
+# Cluster name prefix (instances: koprogo-master, koprogo-agent-1, etc.)
+instance_name = "koprogo"
+
+# K3s Master node flavor (OVH instance type)
+# Options: b2-7 (2vCPU, 7GB), b2-15 (4vCPU, 15GB), b2-30 (8vCPU, 30GB)
+# Default (budget): b2-7 (~7€/month)
+k3s_master_flavor = "b2-7"
+
+# K3s Agent node flavor
+# Recommended: same as master or larger for high-availability
+k3s_agent_flavor = "b2-7"
+
+# Number of K3s agent nodes (worker nodes)
+# Minimum: 1 (single-node, no HA)
+# Recommended: 2-3 (HA with rolling updates)
+k3s_agent_count = 2
+
+# Path to SSH public key (for instance access)
 ssh_public_key_path = "~/.ssh/id_rsa.pub"
 
-# (Optionnel) Domaine pour SSL automatique via Traefik
-# domain = "koprogo.com"
+# Path to SSH private key (for Ansible provisioning)
+ssh_private_key_path = "~/.ssh/id_rsa"
