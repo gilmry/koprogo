@@ -54,9 +54,9 @@ test.describe("Legal Helper - Belgian Law Panel", () => {
     await page.getByTestId("legal-helper-close-btn").click();
 
     // Close button should no longer be visible
-    await expect(
-      page.getByTestId("legal-helper-close-btn"),
-    ).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("legal-helper-close-btn")).not.toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("should serve legal rules from the API", async ({ page }) => {
