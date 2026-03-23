@@ -503,7 +503,7 @@ mod tests {
         // Try to send without assigning
         let result = ticket.send_work_order_to_contractor();
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("must be assigned"));
+        assert!(result.unwrap_err().contains("InProgress"));
     }
 
     #[test]
