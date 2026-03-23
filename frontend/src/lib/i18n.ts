@@ -4,38 +4,46 @@ import nlMessages from "../locales/nl.json";
 import deMessages from "../locales/de.json";
 import enMessages from "../locales/en.json";
 
-// Load all locales synchronously to prevent hydration race condition
-// on Astro islands (svelte-i18n requires messages before first render)
-addMessages("fr", frMessages);
-addMessages("nl", nlMessages);
-addMessages("de", deMessages);
-addMessages("en", enMessages);
+let initialized = false;
 
-// Priority: 1) user preference (localStorage), 2) browser language, 3) "fr"
-const supportedLocales = ["nl", "fr", "de", "en"];
-const savedLocale =
-  typeof localStorage !== "undefined"
-    ? localStorage.getItem("preferred-language")
-    : null;
+/**
+ * Initialize svelte-i18n synchronously. Safe to call multiple times.
+ * Must be called before any $_() usage in Svelte components.
+ */
+export function setupI18n() {
+  if (initialized) return;
+  initialized = true;
 
-function resolveLocale(): string {
-  // 1. User's saved preference
-  if (savedLocale && supportedLocales.includes(savedLocale)) {
-    return savedLocale;
+  addMessages("fr", frMessages);
+  addMessages("nl", nlMessages);
+  addMessages("de", deMessages);
+  addMessages("en", enMessages);
+
+  const supportedLocales = ["nl", "fr", "de", "en"];
+  const savedLocale =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem("preferred-language")
+      : null;
+
+  function resolveLocale(): string {
+    if (savedLocale && supportedLocales.includes(savedLocale)) {
+      return savedLocale;
+    }
+    const browserLocale = getLocaleFromNavigator()?.split("-")[0];
+    if (browserLocale && supportedLocales.includes(browserLocale)) {
+      return browserLocale;
+    }
+    return "fr";
   }
-  // 2. Browser language (e.g. "fr-BE" → "fr")
-  const browserLocale = getLocaleFromNavigator()?.split("-")[0];
-  if (browserLocale && supportedLocales.includes(browserLocale)) {
-    return browserLocale;
-  }
-  // 3. Default: French (Belgian context)
-  return "fr";
+
+  init({
+    fallbackLocale: "fr",
+    initialLocale: resolveLocale(),
+  });
 }
 
-init({
-  fallbackLocale: "fr",
-  initialLocale: resolveLocale(),
-});
+// Auto-init when imported as side-effect (for backward compat)
+setupI18n();
 
 // Export language options for selector
 export const languages = [
