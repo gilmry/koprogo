@@ -1,0 +1,41 @@
+# Network Policy - ISO 27001 A.13.1 (Network security)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "koprogo.fullname" . }}-network-policy
+  labels:
+    {{- include "koprogo.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: koprogo
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Backend: allow from frontend and ingress only
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: koprogo-frontend
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - port: {{ .Values.backend.port }}
+    # Frontend: allow from ingress only
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - port: {{ .Values.frontend.port }}
+    # Postgres: allow from backend only
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: koprogo-backend
+      ports:
+        - port: {{ .Values.postgres.port }}
+  egress:
+    - {} # Allow all egress (restrict further in production)

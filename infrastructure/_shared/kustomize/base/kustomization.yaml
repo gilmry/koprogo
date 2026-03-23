@@ -1,0 +1,21 @@
+---
+# KoproGo Infra-Level Kustomize Base
+# App deployments/services are managed by Helm chart
+# This base handles: namespace, service accounts, RBAC, ingress
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: koprogo
+
+resources:
+  - namespace.yaml
+  - backend-serviceaccount.yaml
+  - frontend-serviceaccount.yaml
+  - ingress.yaml
+
+commonLabels:
+  app.kubernetes.io/name: koprogo
+  app.kubernetes.io/managed-by: argocd
+  app.kubernetes.io/part-of: koprogo
+  gdpr-compliant: "true"
+  region: eu-west

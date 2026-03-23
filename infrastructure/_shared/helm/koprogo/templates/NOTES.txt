@@ -1,0 +1,21 @@
+KoproGo has been deployed!
+
+Backend:  {{ .Values.backend.replicas }} replica(s)
+Frontend: {{ .Values.frontend.replicas }} replica(s)
+Postgres: {{ if .Values.postgres.enabled }}enabled{{ else }}external{{ end }}
+MinIO:    {{ if .Values.minio.enabled }}enabled{{ else }}external{{ end }}
+
+Domains:
+  Frontend: {{ if .Values.global.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.global.domain }}
+  API:      {{ if .Values.global.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.global.apiDomain }}/api/v1
+
+Chart version: {{ .Chart.Version }}
+App version:   {{ .Chart.AppVersion }}
+
+To check status:
+  helm status {{ .Release.Name }}
+  kubectl get pods -n {{ .Release.Namespace }}
+
+To rollback:
+  helm rollback {{ .Release.Name }} [REVISION]
+  helm history {{ .Release.Name }}

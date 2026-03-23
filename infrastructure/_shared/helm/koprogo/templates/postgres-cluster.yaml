@@ -1,0 +1,69 @@
+{{- if and .Values.postgres.enabled .Values.postgres.usePGO }}
+# CrunchyData PostgreSQL Operator - HA PostgreSQL Cluster
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  name: {{ include "koprogo.fullname" . }}-pg
+  labels:
+    {{- include "koprogo.labels" . | nindent 4 }}
+spec:
+  postgresVersion: {{ .Values.postgres.version | default 15 }}
+
+  instances:
+    - name: instance
+      replicas: {{ .Values.postgres.replicas | default 1 }}
+      resources:
+        {{- toYaml .Values.postgres.resources | nindent 8 }}
+      dataVolumeClaimSpec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.postgres.storageClass }}
+        storageClassName: {{ .Values.postgres.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 1
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    postgres-operator.crunchydata.com/cluster: {{ include "koprogo.fullname" . }}-pg
+
+  backups:
+    pgbackrest:
+      repos:
+        - name: repo1
+          volume:
+            volumeClaimSpec:
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: {{ .Values.postgres.backupStorage | default "10Gi" }}
+      {{- if .Values.postgres.s3Backup }}
+        - name: repo2
+          s3:
+            bucket: {{ .Values.postgres.s3Backup.bucket }}
+            endpoint: {{ .Values.postgres.s3Backup.endpoint }}
+            region: {{ .Values.postgres.s3Backup.region }}
+      {{- end }}
+
+  users:
+    - name: {{ .Values.postgres.user | default "koprogo" }}
+      databases:
+        - {{ .Values.postgres.database | default "koprogo_db" }}
+      password:
+        type: AlphaNumeric
+
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        parameters:
+          shared_buffers: {{ .Values.postgres.config.sharedBuffers | default "256MB" }}
+          effective_cache_size: {{ .Values.postgres.config.effectiveCacheSize | default "768MB" }}
+          max_connections: {{ .Values.postgres.config.maxConnections | default "15" }}
+          max_wal_size: {{ .Values.postgres.config.maxWalSize | default "1GB" }}
+          shared_preload_libraries: pg_stat_statements
+{{- end }}

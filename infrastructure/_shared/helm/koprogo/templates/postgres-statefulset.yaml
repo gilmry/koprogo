@@ -1,0 +1,73 @@
+{{- if and .Values.postgres.enabled (not .Values.postgres.usePGO) }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "koprogo.fullname" . }}-postgres
+  labels:
+    {{- include "koprogo.labels" . | nindent 4 }}
+    app.kubernetes.io/name: koprogo-postgres
+spec:
+  serviceName: {{ include "koprogo.fullname" . }}-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: koprogo-postgres
+  template:
+    metadata:
+      labels:
+        {{- include "koprogo.labels" . | nindent 8 }}
+        app.kubernetes.io/name: koprogo-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgres.image }}
+          ports:
+            - containerPort: {{ .Values.postgres.port }}
+          env:
+            - name: POSTGRES_DB
+              value: {{ .Values.postgres.database }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgres.user }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "koprogo.fullname" . }}-secrets
+                  key: postgres-password
+          args:
+            - "-c"
+            - "shared_buffers={{ .Values.postgres.config.sharedBuffers }}"
+            - "-c"
+            - "effective_cache_size={{ .Values.postgres.config.effectiveCacheSize }}"
+            - "-c"
+            - "max_connections={{ .Values.postgres.config.maxConnections }}"
+            - "-c"
+            - "max_wal_size={{ .Values.postgres.config.maxWalSize }}"
+            - "-c"
+            - "shared_preload_libraries=pg_stat_statements"
+          resources:
+            {{- toYaml .Values.postgres.resources | nindent 12 }}
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.postgres.user }}
+                - -d
+                - {{ .Values.postgres.database }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- if .Values.postgres.storageClass }}
+        storageClassName: {{ .Values.postgres.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.storage }}
+{{- end }}
