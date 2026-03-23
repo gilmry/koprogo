@@ -10,12 +10,14 @@ pub mod building_repository;
 pub mod call_for_funds_repository;
 pub mod challenge_repository;
 pub mod charge_distribution_repository;
+pub mod contract_evaluation_repository;
 pub mod contractor_report_repository;
 pub mod convocation_recipient_repository;
 pub mod convocation_repository;
 pub mod document_repository;
 pub mod energy_bill_upload_repository;
 pub mod energy_campaign_repository;
+pub mod individual_member_repository;
 pub mod etat_date_repository;
 pub mod expense_repository;
 pub mod gdpr_repository;
@@ -42,6 +44,7 @@ pub mod quote_repository;
 pub mod refresh_token_repository;
 pub mod resolution_repository;
 pub mod resource_booking_repository;
+pub mod service_provider_repository;
 pub mod shared_object_repository;
 pub mod skill_repository;
 pub mod technical_inspection_repository;
@@ -66,6 +69,7 @@ pub use building_repository::BuildingRepository;
 pub use call_for_funds_repository::CallForFundsRepository;
 pub use challenge_repository::{ChallengeProgressRepository, ChallengeRepository};
 pub use charge_distribution_repository::ChargeDistributionRepository;
+pub use contract_evaluation_repository::ContractEvaluationRepository;
 pub use contractor_report_repository::ContractorReportRepository;
 pub use convocation_recipient_repository::{
     ConvocationRecipientRepository, RecipientTrackingSummary,
@@ -77,6 +81,7 @@ pub use energy_campaign_repository::EnergyCampaignRepository;
 pub use etat_date_repository::EtatDateRepository;
 pub use expense_repository::ExpenseRepository;
 pub use gdpr_repository::GdprRepository;
+pub use individual_member_repository::IndividualMemberRepository;
 pub use grid_participation_port::{
     BoincConsent, GridError, GridParticipationPort, GridTask, GridTaskId, GridTaskKind,
     GridTaskStatus,
@@ -105,6 +110,7 @@ pub use quote_repository::QuoteRepository;
 pub use refresh_token_repository::RefreshTokenRepository;
 pub use resolution_repository::ResolutionRepository;
 pub use resource_booking_repository::ResourceBookingRepository;
+pub use service_provider_repository::ServiceProviderRepository;
 pub use shared_object_repository::SharedObjectRepository;
 pub use skill_repository::SkillRepository;
 pub use technical_inspection_repository::TechnicalInspectionRepository;

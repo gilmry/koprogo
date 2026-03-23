@@ -8,12 +8,14 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
 
     cfg.service(metrics_endpoint);
 
-    // MCP (Model Context Protocol) — Issue #252
+    // MCP (Model Context Protocol) — Issue #252, #262, #263
     // SSE transport for Claude/AI integration (JSON-RPC 2.0 over SSE)
-    // Note: /mcp/info is public (no auth); /mcp/sse and /mcp/messages require JWT
+    // Note: /mcp/info is public (no auth); /mcp/sse, /mcp/messages, /mcp/system-prompt, /mcp/legal-index require JWT
     cfg.service(mcp_info_endpoint); // GET /mcp/info — no auth required
     cfg.service(mcp_sse_endpoint); // GET /mcp/sse — JWT required
     cfg.service(mcp_messages_endpoint); // POST /mcp/messages — JWT required
+    cfg.service(mcp_system_prompt_endpoint); // GET /mcp/system-prompt — JWT required (Issue #263)
+    cfg.service(mcp_legal_index_endpoint); // GET /mcp/legal-index — JWT required (Issue #262)
 
     cfg.service(
         web::scope("/api/v1")
@@ -604,6 +606,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // AG Visioconférence (BC15 - Art. 3.87 §1 CC)
             // Specific routes BEFORE parameterized /ag-sessions/{id}
             .service(list_ag_sessions) // GET /ag-sessions
+            .service(get_ag_session_platform_stats) // GET /ag-sessions/platform-stats (Issue #274 - SuperAdmin only)
             .service(create_ag_session) // POST /meetings/{meeting_id}/ag-session
             .service(get_ag_session_for_meeting) // GET /meetings/{meeting_id}/ag-session
             .service(get_combined_quorum) // GET /ag-sessions/{id}/quorum
@@ -630,6 +633,9 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // PWA routes sans auth (magic link) BEFORE routes auth
             .service(get_report_by_token) // GET /contractor/token/{token}
             .service(submit_report_by_token) // POST /contractor/token/{token}/submit
+            // NEW: Improved magic link endpoints (Issue #275)
+            .service(get_report_by_magic_token) // GET /contractor-reports/magic/{token}
+            .service(submit_report_by_magic_token) // POST /contractor-reports/magic/{token}/submit
             // Routes authentifiées — spécifiques BEFORE paramétrées
             .service(generate_magic_link) // POST /contractor-reports/magic-link
             .service(list_contractor_reports_by_building) // GET /buildings/{building_id}/contractor-reports

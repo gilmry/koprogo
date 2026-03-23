@@ -434,6 +434,47 @@
       "active": "Aktiv",
       "closed": "Geschlossen",
       "cancelled": "Storniert"
+    },
+    "createForm": {
+      "title": "Umfrage erstellen",
+      "formDescription": "Befragen Sie Miteigentümer zwischen Generalversammlungen zu einzelnen Entscheidungen",
+      "buildingLabel": "Gebäude",
+      "pollType": "Umfragetyp",
+      "typeYesNo": "Ja/Nein",
+      "typeMultiple": "Mehrfachauswahl",
+      "typeRating": "Bewertung",
+      "typeOpenEnded": "Offene Frage",
+      "question": "Frage",
+      "questionPlaceholder": "Formulieren Sie Ihre Frage klar",
+      "description": "Beschreibung (optional)",
+      "descriptionPlaceholder": "Zusätzlicher Kontext oder Anweisungen",
+      "options": "Antwortoptionen",
+      "newOptionPlaceholder": "Neue Option hinzufügen",
+      "optionsHint": "Drücken Sie Enter oder klicken Sie auf +, um eine Option hinzuzufügen",
+      "yesNoInfo": "Die Optionen Ja und Nein sind vorausgefüllt",
+      "ratingScale": "Bewertungsskala",
+      "minRating": "Mindestbewertung",
+      "maxRating": "Höchstbewertung",
+      "ratingExample": "Respondenten können von 1 bis 5 bewerten",
+      "startDate": "Startdatum",
+      "endDate": "Enddatum",
+      "durationRecommendation": "Empfehlung: Mindestdauer von 7 Tagen für gute Beteiligung",
+      "anonymousVote": "Anonyme Abstimmung (Antworten werden nicht mit Eigentümern verknüpft)",
+      "multipleSelection": "Mehrfachauswahl zulassen",
+      "legalFramework": "Rechtlicher Rahmen",
+      "legalReference": "Artikel 577-8/4 §4 des Belgischen Zivilgesetzbuches",
+      "legalText": "Der Verwalter kann Miteigentümer zwischen Generalversammlungen zu Entscheidungen befragen, die keine formelle GV-Abstimmung erfordern. Die Ergebnisse müssen im Protokoll der nächsten GV dokumentiert werden.",
+      "submitButton": "Umfrage erstellen",
+      "creatingButton": "Wird erstellt...",
+      "successMessage": "Umfrage erfolgreich erstellt!",
+      "errors": {
+        "selectBuilding": "Bitte wählen Sie ein Gebäude",
+        "titleRequired": "Titel/Frage ist erforderlich",
+        "endDateRequired": "Enddatum ist erforderlich",
+        "endDateAfterStart": "Enddatum muss nach Startdatum liegen",
+        "optionRequired": "Mindestens eine Option ist für diesen Umfragetyp erforderlich",
+        "creationFailed": "Fehler beim Erstellen der Umfrage"
+      }
     }
   },
   "bookings": {
@@ -827,5 +868,14 @@
     "tooShort": "Feld ist zu kurz",
     "tooLong": "Feld ist zu lang",
     "invalidFormat": "Ungültiges Format"
+  },
+  "privacy": {
+    "title": "Datenschutzrichtlinie",
+    "consent": {
+      "title": "Ihr Datenschutz",
+      "message": "Wir verarbeiten Ihre persönlichen Daten gemäß DSGVO und belgischem Recht. Bitte lesen Sie unsere ",
+      "linkText": "Datenschutzrichtlinie",
+      "accept": "Akzeptieren"
+    }
   }
 }

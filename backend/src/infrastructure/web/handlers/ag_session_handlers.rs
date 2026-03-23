@@ -274,6 +274,31 @@ pub async fn delete_ag_session(
     }
 }
 
+/// GET /ag-sessions/platform-stats — Platform-wide AG session statistics (SuperAdmin only)
+/// Issue #274: AG Visioconférence Refinements
+#[get("/ag-sessions/platform-stats")]
+pub async fn get_ag_session_platform_stats(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+) -> impl Responder {
+    // Only superadmin can see platform-wide stats
+    if user.role != "SUPERADMIN" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "SuperAdmin only"
+        }));
+    }
+
+    // Query platform-wide statistics
+    match state
+        .ag_session_use_cases
+        .get_platform_stats()
+        .await
+    {
+        Ok(stats) => HttpResponse::Ok().json(stats),
+        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({"error": e})),
+    }
+}
+
 #[derive(serde::Deserialize)]
 pub struct CombinedQuorumQuery {
     pub physical_quotas: f64,

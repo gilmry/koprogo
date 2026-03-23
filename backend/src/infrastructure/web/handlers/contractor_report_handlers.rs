@@ -5,6 +5,7 @@ use crate::application::dto::contractor_report_dto::{
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpRequest, HttpResponse, Responder};
 use uuid::Uuid;
+use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------
 // Endpoints authentifiés (syndic / CdC)
@@ -338,5 +339,68 @@ pub async fn submit_report_by_token(
     {
         Ok(r) => HttpResponse::Ok().json(r),
         Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// New PWA endpoints with improved magic link UX (Issue #275)
+// ---------------------------------------------------------------------------
+
+/// GET /contractor-reports/magic/:token — PWA contractor: view report via magic link (no auth)
+/// Issue #275: Contractor PWA Backoffice Refinements
+#[get("/contractor-reports/magic/{token}")]
+pub async fn get_report_by_magic_token(
+    state: web::Data<AppState>,
+    path: web::Path<String>,
+) -> impl Responder {
+    match state
+        .contractor_report_use_cases
+        .get_by_token(&path.into_inner())
+        .await
+    {
+        Ok(r) => HttpResponse::Ok().json(r),
+        Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({"error": e})),
+    }
+}
+
+/// POST /contractor-reports/magic/:token/submit — PWA contractor: submit report via magic link (no auth)
+/// Issue #275: Contractor PWA Backoffice Refinements
+/// Accepts updated report data in body
+#[derive(Deserialize)]
+pub struct MagicLinkSubmitDto {
+    pub work_date: Option<String>,
+    pub contractor_name: Option<String>,
+    pub compte_rendu: Option<String>,
+    pub parts_replaced: Option<Vec<serde_json::Value>>,
+    pub photos_before: Option<Vec<String>>,
+    pub photos_after: Option<Vec<String>>,
+}
+
+#[post("/contractor-reports/magic/{token}/submit")]
+pub async fn submit_report_by_magic_token(
+    state: web::Data<AppState>,
+    path: web::Path<String>,
+    body: web::Json<MagicLinkSubmitDto>,
+) -> impl Responder {
+    let token = path.into_inner();
+
+    // First, get the report by token to validate it exists and is in Draft state
+    match state
+        .contractor_report_use_cases
+        .get_by_token(&token)
+        .await
+    {
+        Ok(_report) => {
+            // Report exists, now submit it
+            match state
+                .contractor_report_use_cases
+                .submit_by_token(&token)
+                .await
+            {
+                Ok(r) => HttpResponse::Ok().json(r),
+                Err(e) => HttpResponse::BadRequest().json(serde_json::json!({"error": e})),
+            }
+        }
+        Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({"error": e})),
     }
 }

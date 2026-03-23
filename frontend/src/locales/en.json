@@ -434,6 +434,47 @@
       "active": "Active",
       "closed": "Closed",
       "cancelled": "Cancelled"
+    },
+    "createForm": {
+      "title": "Create a Poll",
+      "formDescription": "Consult with co-owners between general assemblies on specific decisions",
+      "buildingLabel": "Building",
+      "pollType": "Poll Type",
+      "typeYesNo": "Yes/No",
+      "typeMultiple": "Multiple Choice",
+      "typeRating": "Rating",
+      "typeOpenEnded": "Open Ended",
+      "question": "Question",
+      "questionPlaceholder": "Phrase your question clearly",
+      "description": "Description (optional)",
+      "descriptionPlaceholder": "Additional context or instructions",
+      "options": "Answer Options",
+      "newOptionPlaceholder": "Add a new option",
+      "optionsHint": "Press Enter or click + to add an option",
+      "yesNoInfo": "Yes and No options are pre-filled",
+      "ratingScale": "Rating Scale",
+      "minRating": "Minimum Rating",
+      "maxRating": "Maximum Rating",
+      "ratingExample": "Respondents can rate from 1 to 5",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "durationRecommendation": "Recommendation: Minimum duration of 7 days for good participation",
+      "anonymousVote": "Anonymous voting (responses will not be linked to owners)",
+      "multipleSelection": "Allow multiple selections",
+      "legalFramework": "Legal Framework",
+      "legalReference": "Article 577-8/4 §4 of the Belgian Civil Code",
+      "legalText": "The syndic may consult co-owners between general assemblies on any decision not requiring formal GA voting. Results must be documented in the next GA minutes.",
+      "submitButton": "Create Poll",
+      "creatingButton": "Creating...",
+      "successMessage": "Poll created successfully!",
+      "errors": {
+        "selectBuilding": "Please select a building",
+        "titleRequired": "Title/question is required",
+        "endDateRequired": "End date is required",
+        "endDateAfterStart": "End date must be after start date",
+        "optionRequired": "At least one option is required for this poll type",
+        "creationFailed": "Error creating poll"
+      }
     }
   },
   "bookings": {
@@ -827,5 +868,14 @@
     "tooShort": "Field is too short",
     "tooLong": "Field is too long",
     "invalidFormat": "Invalid format"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "consent": {
+      "title": "Your Data Protection",
+      "message": "We process your personal data in accordance with GDPR and Belgian law. Please read our ",
+      "linkText": "privacy policy",
+      "accept": "Accept"
+    }
   }
 }
