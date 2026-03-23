@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
   import type { Organization, SubscriptionPlan } from '../../lib/types';

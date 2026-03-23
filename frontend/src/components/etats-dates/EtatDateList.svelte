@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
   import { etatsDatesApi, type EtatDate, type EtatDateStats, EtatDateStatus } from '../../lib/api/etats-dates';
   import EtatDateStatusBadge from './EtatDateStatusBadge.svelte';
   import EtatDateCreateForm from './EtatDateCreateForm.svelte';

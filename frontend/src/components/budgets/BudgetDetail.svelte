@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
   import { budgetsApi, type Budget, type BudgetVariance } from '../../lib/api/budgets';
   import BudgetStatusBadge from './BudgetStatusBadge.svelte';
   import { toast } from '../../stores/toast';

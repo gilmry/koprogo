@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
   import { authStore } from '../../stores/auth';

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
   import Modal from './Modal.svelte';
   import Button from './Button.svelte';
 

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
   import { sharingApi, type SharedObject } from "../../lib/api/sharing";
   import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";

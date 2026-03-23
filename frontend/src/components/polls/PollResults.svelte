@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { _ } from "svelte-i18n";
+  import { _ } from '../../lib/i18n';
   import { type Poll, type PollResults, PollType } from "../../lib/api/polls";
 
   export let poll: Poll;

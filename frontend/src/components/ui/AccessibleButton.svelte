@@ -4,7 +4,7 @@
    * Provides proper ARIA attributes, keyboard support, and visual feedback
    */
 
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
 
   export let type: 'button' | 'submit' | 'reset' = 'button';
   export let variant: 'primary' | 'secondary' | 'danger' | 'success' = 'primary';

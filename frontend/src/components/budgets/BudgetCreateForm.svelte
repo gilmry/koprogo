@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
   import { budgetsApi, type CreateBudgetDto } from '../../lib/api/budgets';
   import { api } from '../../lib/api';
   import type { Building } from '../../lib/types';

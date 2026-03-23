@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { _ } from "svelte-i18n";
+  import { _ } from '../../lib/i18n';
   import { quotesApi, type QuoteComparison } from "../../lib/api/quotes";
   import { toast } from "../../stores/toast";
   import QuoteStatusBadge from "./QuoteStatusBadge.svelte";

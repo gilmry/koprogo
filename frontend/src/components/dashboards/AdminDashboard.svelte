@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
+  import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
   import { apiEndpoint } from '../../lib/config';
   import { api } from '../../lib/api';
