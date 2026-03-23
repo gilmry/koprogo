@@ -51,6 +51,9 @@ fn row_to_meeting(row: &sqlx::postgres::PgRow) -> Meeting {
         present_quotas: row.try_get("present_quotas").unwrap_or(None),
         created_at: row.get("created_at"),
         updated_at: row.get("updated_at"),
+        is_second_convocation: row.try_get("is_second_convocation").unwrap_or(false),
+        minutes_document_id: row.try_get("minutes_document_id").unwrap_or(None),
+        minutes_sent_at: row.try_get("minutes_sent_at").unwrap_or(None),
     }
 }
 
