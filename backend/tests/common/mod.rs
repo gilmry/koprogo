@@ -231,7 +231,7 @@ pub async fn setup_test_db() -> (
         building_repo.clone(),
         meeting_repo.clone(),
     );
-    let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo);
+    let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo, meeting_repo.clone());
     let ticket_use_cases = TicketUseCases::new(ticket_repo);
     let encryption_key: [u8; 32] = *b"test-encryption-key-32bytes!!!!!";
     let two_factor_use_cases =

@@ -2764,6 +2764,7 @@ async fn when_renew_board_mandate(world: &mut BuildingWorld) {
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
+        mandate_duration_days: 1095,
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {
@@ -3819,6 +3820,7 @@ async fn when_renew_mandate_of_owner(
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
+        mandate_duration_days: 1095,
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {
@@ -3851,6 +3853,7 @@ async fn when_try_renew_mandate(world: &mut BuildingWorld) {
     let use_cases = world.board_member_use_cases.as_ref().unwrap();
     let dto = RenewMandateDto {
         new_elected_by_meeting_id: meeting_id.to_string(),
+        mandate_duration_days: 1095,
     };
     match use_cases.renew_mandate(member_id, dto).await {
         Ok(m) => {
