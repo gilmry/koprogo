@@ -262,3 +262,106 @@ mod tests {
         assert_eq!(abstention, VoteChoice::Abstention);
     }
 }
+
+/// Belgian law Art. 3.87 §6 CC proxy validation error
+#[derive(Debug, Clone, PartialEq)]
+pub enum ProxyValidationError {
+    /// Proxy holder already has 3 mandates for this meeting
+    TooManyMandates { current: usize, max: usize },
+    /// Proxy holder would represent more than 10% of total quotas
+    ExceedsQuotaThreshold { current_pct: f64, max_pct: f64, total_quotas: i32 },
+}
+
+impl std::fmt::Display for ProxyValidationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::TooManyMandates { current, max } => {
+                write!(f, "Le mandataire détient déjà {} mandats (maximum: {} selon Art. 3.87 §6 CC)", current, max)
+            }
+            Self::ExceedsQuotaThreshold { current_pct, max_pct, total_quotas: _ } => {
+                write!(f, "Le mandataire représenterait {:.1}% des quotités (maximum: {:.0}% selon Art. 3.87 §6 CC)", current_pct, max_pct)
+            }
+        }
+    }
+}
+
+/// Validate proxy mandate constraints for Belgian AG (Art. 3.87 §6 CC)
+///
+/// Rules:
+/// 1. A proxy holder cannot hold more than 3 mandates per AG
+/// 2. A proxy holder cannot represent more than 10% of total building quotas
+///
+/// Returns `Ok(())` if valid, or `Err(ProxyValidationError)` if constraint violated.
+pub fn validate_proxy_mandate(
+    existing_mandate_count: usize,
+    existing_delegated_quotas: i32,
+    new_voting_power: i32,
+    total_building_quotas: i32,
+    max_mandates: usize,        // typically 3 per Belgian law
+    max_quota_pct: f64,         // typically 0.10 (10%) per Belgian law
+) -> Result<(), ProxyValidationError> {
+    // Check mandate count limit
+    if existing_mandate_count >= max_mandates {
+        return Err(ProxyValidationError::TooManyMandates {
+            current: existing_mandate_count,
+            max: max_mandates,
+        });
+    }
+
+    // Check quota percentage limit
+    if total_building_quotas > 0 {
+        let new_total_quotas = existing_delegated_quotas + new_voting_power;
+        let new_pct = new_total_quotas as f64 / total_building_quotas as f64;
+        if new_pct > max_quota_pct {
+            return Err(ProxyValidationError::ExceedsQuotaThreshold {
+                current_pct: new_pct * 100.0,
+                max_pct: max_quota_pct * 100.0,
+                total_quotas: total_building_quotas,
+            });
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod proxy_validation_tests {
+    use super::*;
+
+    #[test]
+    fn test_proxy_mandate_count_limit() {
+        // 3 existing mandates → should fail
+        let result = validate_proxy_mandate(3, 150, 50, 1000, 3, 0.10);
+        assert!(result.is_err());
+        assert!(matches!(result, Err(ProxyValidationError::TooManyMandates { current: 3, max: 3 })));
+    }
+
+    #[test]
+    fn test_proxy_mandate_count_ok() {
+        // 2 existing mandates → should succeed
+        let result = validate_proxy_mandate(2, 150, 50, 1000, 3, 0.10);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_proxy_quota_threshold_exceeded() {
+        // Existing: 80 quotas (8%), adding 50 → 130/1000 = 13% > 10%
+        let result = validate_proxy_mandate(1, 80, 50, 1000, 3, 0.10);
+        assert!(result.is_err());
+        assert!(matches!(result, Err(ProxyValidationError::ExceedsQuotaThreshold { .. })));
+    }
+
+    #[test]
+    fn test_proxy_quota_threshold_ok() {
+        // Existing: 50 quotas (5%), adding 40 → 90/1000 = 9% < 10%
+        let result = validate_proxy_mandate(1, 50, 40, 1000, 3, 0.10);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_proxy_exactly_at_limit() {
+        // Exactly at 10% → should succeed (boundary condition, not exceeded)
+        let result = validate_proxy_mandate(2, 60, 40, 1000, 3, 0.10);
+        assert!(result.is_ok()); // 100/1000 = 10.0% == 10.0% (not strictly greater)
+    }
+}
