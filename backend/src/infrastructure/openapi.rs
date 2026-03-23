@@ -147,6 +147,14 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::gdpr_handlers::rectify_user_data,
         crate::infrastructure::web::handlers::gdpr_handlers::restrict_user_processing,
         crate::infrastructure::web::handlers::gdpr_handlers::set_marketing_preference,
+        // Consent (GDPR)
+        crate::infrastructure::web::handlers::consent_handlers::record_consent,
+        crate::infrastructure::web::handlers::consent_handlers::get_consent_status,
+        // Legal Reference
+        crate::infrastructure::web::handlers::legal_handlers::list_legal_rules,
+        crate::infrastructure::web::handlers::legal_handlers::get_legal_rule,
+        crate::infrastructure::web::handlers::legal_handlers::get_ag_sequence,
+        crate::infrastructure::web::handlers::legal_handlers::get_majority_for,
     ),
     modifiers(&SecurityAddon),
     tags(
@@ -170,6 +178,8 @@ use utoipa_swagger_ui::SwaggerUi;
         (name = "Quotes", description = "Contractor quote management"),
         (name = "EtatsDates", description = "Property sale documentation"),
         (name = "PaymentRecovery", description = "Automated payment reminders"),
+        (name = "Consent", description = "User consent management (GDPR Art. 7)"),
+        (name = "Legal Reference", description = "Belgian legal reference rules and majority types"),
     )
 )]
 pub struct ApiDoc;
