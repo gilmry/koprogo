@@ -423,6 +423,7 @@ impl ExpenseUseCases {
             supplier: expense.supplier.clone(),
             invoice_number: expense.invoice_number.clone(),
             account_code: expense.account_code.clone(),
+            contractor_report_id: expense.contractor_report_id.map(|id| id.to_string()),
         }
     }
 
@@ -458,6 +459,8 @@ impl ExpenseUseCases {
             payment_status: expense.payment_status.clone(),
             supplier: expense.supplier.clone(),
             invoice_number: expense.invoice_number.clone(),
+
+            contractor_report_id: expense.contractor_report_id.map(|id| id.to_string()),
 
             created_at: expense.created_at.to_rfc3339(),
             updated_at: expense.updated_at.to_rfc3339(),
