@@ -1,7 +1,7 @@
 ---
 // Contractor PWA report page - accessible via magic link, no authentication required
 // Issue #275 - BC16 Backoffice Prestataires
-// URL: /contractor-report/[token] where token is the magic JWT
+// URL: /contractor-report/?token=<magic-jwt>
 ---
 <!DOCTYPE html>
 <html lang="fr">
@@ -132,7 +132,11 @@
   <script>
     // @ts-nocheck — vanilla JS PWA page, DOM elements are guaranteed by the HTML above
     const API_BASE = '/api/v1';
-    const token = window.location.pathname.split('/').pop();
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (!token) {
+      document.getElementById('loading').innerHTML =
+        '<div style="text-align:center;padding:2rem"><p style="color:#dc2626;font-size:1.125rem">❌ Lien invalide</p><p style="color:#6b7280;margin-top:0.5rem">Aucun token fourni dans l\'URL.</p></div>';
+    }
     let reportId = null;
     const photosBeforeData = [];
     const photosAfterData = [];
