@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: koprogo
+  namespace: argocd
+spec:
+  description: KoproGo Property Management Platform
+  sourceRepos:
+    - https://github.com/gilmry/koprogo.git
+  destinations:
+    - namespace: "koprogo-*"
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace

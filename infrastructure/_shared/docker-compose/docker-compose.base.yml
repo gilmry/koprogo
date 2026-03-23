@@ -1,0 +1,241 @@
+################################################################################
+# KoproGo Base Docker Compose - Shared across all VPS environments
+# Used with: docker compose -f base.yml -f <env>/docker-compose.override.yml up
+################################################################################
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: koprogo-traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--log.level=${TRAEFIK_LOG_LEVEL:-INFO}"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    networks:
+      - koprogo-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: koprogo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: koprogo_db
+      POSTGRES_USER: koprogo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-koprogo123}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - "5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=${PG_SHARED_BUFFERS:-256MB}"
+      - "-c"
+      - "effective_cache_size=${PG_EFFECTIVE_CACHE:-768MB}"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "work_mem=5MB"
+      - "-c"
+      - "max_connections=${PG_MAX_CONNECTIONS:-15}"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+      - "-c"
+      - "max_wal_size=1GB"
+      - "-c"
+      - "min_wal_size=512MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=8MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "log_statement=${PG_LOG_STATEMENT:-ddl}"
+      - "-c"
+      - "log_min_duration_statement=${PG_LOG_MIN_DURATION:-1000}"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements"
+      - "-c"
+      - "pg_stat_statements.track=all"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U koprogo -d koprogo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - koprogo-network
+
+  backend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-gilmry/koprogo}/backend:${IMAGE_TAG:-latest}
+    container_name: koprogo-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://koprogo:${POSTGRES_PASSWORD:-koprogo123}@postgres:5432/koprogo_db
+      SERVER_HOST: 0.0.0.0
+      SERVER_PORT: 8080
+      RUST_LOG: ${RUST_LOG:-warn}
+      RUST_BACKTRACE: ${RUST_BACKTRACE:-0}
+      ACTIX_WORKERS: ${ACTIX_WORKERS:-1}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
+      DB_POOL_MAX_CONNECTIONS: ${DB_POOL_MAX_CONNECTIONS:-8}
+      DB_POOL_MIN_CONNECTIONS: ${DB_POOL_MIN_CONNECTIONS:-2}
+      ENABLE_RATE_LIMITING: ${ENABLE_RATE_LIMITING:-false}
+      JWT_SECRET: ${JWT_SECRET}
+      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-s3}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
+      S3_REGION: ${S3_REGION:-eu-west-0}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-koprogo123}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-true}
+      S3_KEY_PREFIX: ${S3_KEY_PREFIX:-documents}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - backend_uploads:/app/uploads
+      - backend_logs:/app/logs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`${API_DOMAIN:-api.koprogo.local}`)"
+      - "traefik.http.services.backend.loadbalancer.server.port=8080"
+      - "traefik.http.routers.backend.middlewares=rate-limit,security-headers"
+      - "traefik.http.middlewares.rate-limit.ratelimit.average=${RATE_LIMIT_AVG:-500}"
+      - "traefik.http.middlewares.rate-limit.ratelimit.burst=${RATE_LIMIT_BURST:-1000}"
+      - "traefik.http.middlewares.security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.security-headers.headers.stsIncludeSubdomains=true"
+    deploy:
+      resources:
+        limits:
+          memory: ${BACKEND_MEM_LIMIT:-384M}
+          cpus: '${BACKEND_CPU_LIMIT:-0.75}'
+        reservations:
+          memory: ${BACKEND_MEM_RESERVE:-256M}
+          cpus: '${BACKEND_CPU_RESERVE:-0.25}'
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - koprogo-network
+
+  frontend:
+    image: ghcr.io/${GITHUB_REPOSITORY:-gilmry/koprogo}/frontend:${IMAGE_TAG:-latest}
+    container_name: koprogo-frontend
+    restart: unless-stopped
+    environment:
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080/api/v1}
+    depends_on:
+      backend:
+        condition: service_healthy
+    expose:
+      - "80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN:-app.koprogo.local}`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.frontend.middlewares=frontend-security-headers"
+      - "traefik.http.middlewares.frontend-security-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.frontend-security-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.frontend-security-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.frontend-security-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.frontend-security-headers.headers.stsIncludeSubdomains=true"
+    deploy:
+      resources:
+        limits:
+          memory: ${FRONTEND_MEM_LIMIT:-128M}
+          cpus: '${FRONTEND_CPU_LIMIT:-0.5}'
+        reservations:
+          memory: ${FRONTEND_MEM_RESERVE:-96M}
+          cpus: '${FRONTEND_CPU_RESERVE:-0.125}'
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - koprogo-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: koprogo-minio
+    restart: unless-stopped
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-koprogo}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-koprogo123}
+    expose:
+      - "9000"
+      - "9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:9000/minio/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - koprogo-network
+
+  minio-bootstrap:
+    image: minio/mc:latest
+    container_name: koprogo-minio-bootstrap
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_BUCKET: ${S3_BUCKET:-koprogo-documents}
+      S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-koprogo}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-koprogo123}
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      set -e;
+      until mc alias set local "$${S3_ENDPOINT}" "$${S3_ACCESS_KEY}" "$${S3_SECRET_KEY}"; do
+        echo "Waiting for MinIO...";
+        sleep 2;
+      done;
+      mc mb --ignore-existing "local/$${S3_BUCKET}";
+      mc anonymous set private "local/$${S3_BUCKET}" >/dev/null 2>&1 || true;
+      echo "MinIO bucket $${S3_BUCKET} ready.";
+    networks:
+      - koprogo-network
+
+networks:
+  koprogo-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  traefik_letsencrypt:
+  backend_uploads:
+  backend_logs:
+  minio_data:
