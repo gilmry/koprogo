@@ -1,0 +1,61 @@
+# Velero Helm values for KoproGo PRA
+# Chart: vmware-tanzu/velero
+# Usage: helm install velero vmware-tanzu/velero -f values.yaml -n velero --create-namespace
+
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: koprogo-velero-backups
+      config:
+        region: eu-west-0
+        s3ForcePathStyle: "true"
+        s3Url: http://minio:9000
+  volumeSnapshotLocation:
+    - name: default
+      provider: aws
+      config:
+        region: eu-west-0
+
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.9.0
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+credentials:
+  useSecret: true
+  secretContents:
+    cloud: |
+      [default]
+      aws_access_key_id=koprogo
+      aws_secret_access_key=changeme
+
+schedules:
+  daily-all:
+    disabled: false
+    schedule: "0 2 * * *"
+    template:
+      ttl: "720h"
+      includedNamespaces:
+        - koprogo-production
+        - koprogo-staging
+      snapshotVolumes: true
+      storageLocation: default
+  hourly-prod:
+    disabled: false
+    schedule: "0 * * * *"
+    template:
+      ttl: "168h"
+      includedNamespaces:
+        - koprogo-production
+      snapshotVolumes: true
+
+resources:
+  limits:
+    memory: 512Mi
+    cpu: 500m
+  requests:
+    memory: 128Mi
+    cpu: 100m

@@ -1,0 +1,46 @@
+# HashiCorp Vault Helm values
+# Chart: hashicorp/vault
+# Usage: helm install vault hashicorp/vault -f values.yaml -n vault --create-namespace
+
+server:
+  dev:
+    enabled: false
+
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      config: |
+        ui = true
+        listener "tcp" {
+          tls_disable = 1
+          address = "[::]:8200"
+          cluster_address = "[::]:8201"
+        }
+        storage "raft" {
+          path = "/vault/data"
+        }
+        service_registration "kubernetes" {}
+
+  resources:
+    limits:
+      memory: 256Mi
+      cpu: 250m
+    requests:
+      memory: 128Mi
+      cpu: 100m
+
+  dataStorage:
+    enabled: true
+    size: 10Gi
+
+  auditStorage:
+    enabled: true
+    size: 10Gi
+
+ui:
+  enabled: true
+
+injector:
+  enabled: true
