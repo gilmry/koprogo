@@ -1,0 +1,18 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "koprogo.fullname" . }}-postgres
+  labels:
+    {{- include "koprogo.labels" . | nindent 4 }}
+    app.kubernetes.io/name: koprogo-postgres
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.postgres.port }}
+      targetPort: {{ .Values.postgres.port }}
+      protocol: TCP
+      name: postgres
+  selector:
+    app.kubernetes.io/name: koprogo-postgres
+{{- end }}

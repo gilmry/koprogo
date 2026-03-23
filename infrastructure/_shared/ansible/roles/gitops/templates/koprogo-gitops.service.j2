@@ -1,0 +1,21 @@
+[Unit]
+Description=KoproGo GitOps Auto-Update Service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User={{ koprogo_user }}
+Group={{ koprogo_user }}
+WorkingDirectory={{ koprogo_dir }}
+ExecStart={{ koprogo_dir }}/scripts/gitops-deploy.sh watch
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/koprogo-gitops.log
+StandardError=append:/var/log/koprogo-gitops.log
+
+Environment=REPO_DIR={{ koprogo_dir }}
+Environment=BRANCH={{ koprogo_branch }}
+
+[Install]
+WantedBy=multi-user.target

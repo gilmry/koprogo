@@ -1,0 +1,10 @@
+# Add these to _shared/helm/koprogo/values.yaml under postgres:
+# postgres:
+#   usePGO: false          # Set to true to use CrunchyData PGO instead of StatefulSet
+#   replicas: 1            # 1=single, 2+=HA with replicas
+#   version: 15
+#   backupStorage: "10Gi"
+#   s3Backup:              # Optional S3 backup for pgbackrest
+#     bucket: koprogo-pg-backups
+#     endpoint: s3.eu-west-0.amazonaws.com
+#     region: eu-west-0

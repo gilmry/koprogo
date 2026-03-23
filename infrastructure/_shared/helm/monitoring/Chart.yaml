@@ -1,0 +1,18 @@
+apiVersion: v2
+name: koprogo-monitoring
+description: KoproGo Monitoring Stack (Prometheus + Grafana + ELK)
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: kube-prometheus-stack
+    version: "56.21.4"
+    repository: https://prometheus-community.github.io/helm-charts
+  - name: elasticsearch
+    version: "8.5.1"
+    repository: https://helm.elastic.co
+  - name: kibana
+    version: "8.5.1"
+    repository: https://helm.elastic.co
+  - name: filebeat
+    version: "8.5.1"
+    repository: https://helm.elastic.co

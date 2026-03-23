@@ -1,0 +1,31 @@
+# Dev environment Helm values
+backend:
+  image:
+    tag: dev-latest
+  replicas: 1
+  env:
+    RUST_LOG: debug
+    CORS_ALLOWED_ORIGINS: "*"
+
+frontend:
+  image:
+    tag: dev-latest
+  replicas: 1
+
+postgres:
+  storage: 5Gi
+
+minio:
+  storage: 5Gi
+
+global:
+  domain: dev.koprogo.local
+  apiDomain: api-dev.koprogo.local
+  tls:
+    enabled: false
+
+secrets:
+  postgresPassword: koprogo123
+  jwtSecret: dev-jwt-secret-minimum-32-characters-long
+  s3AccessKey: koprogo
+  s3SecretKey: koprogo123

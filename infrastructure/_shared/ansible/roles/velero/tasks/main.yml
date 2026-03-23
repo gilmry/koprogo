@@ -1,0 +1,26 @@
+---
+# Install Velero for backup & disaster recovery
+
+- name: Add Velero Helm repo
+  command: helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+  changed_when: false
+
+- name: Update Helm repos
+  command: helm repo update
+  changed_when: false
+
+- name: Install Velero
+  command: >
+    helm upgrade --install velero vmware-tanzu/velero
+    -f {{ koprogo_dir }}/infrastructure/_shared/helm/velero/values.yaml
+    --namespace velero --create-namespace
+    --wait --timeout 5m
+
+- name: Verify Velero installation
+  command: kubectl get pods -n velero
+  register: velero_pods
+  changed_when: false
+
+- name: Display Velero status
+  debug:
+    msg: "Velero installed. Run 'velero backup get' to check backups."

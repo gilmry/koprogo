@@ -1,0 +1,14 @@
+apiVersion: v2
+name: koprogo
+description: KoproGo - SaaS Property Management Platform (Belgian Copropriete)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+home: https://github.com/gilmry/koprogo
+maintainers:
+  - name: gilmry
+keywords:
+  - property-management
+  - copropriete
+  - belgium
+  - saas

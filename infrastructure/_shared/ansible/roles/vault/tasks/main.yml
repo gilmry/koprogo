@@ -1,0 +1,27 @@
+---
+# Install HashiCorp Vault on K3s
+
+- name: Add HashiCorp Helm repo
+  command: helm repo add hashicorp https://helm.releases.hashicorp.com
+  changed_when: false
+
+- name: Update Helm repos
+  command: helm repo update
+  changed_when: false
+
+- name: Install Vault
+  command: >
+    helm upgrade --install vault hashicorp/vault
+    -f {{ koprogo_dir }}/infrastructure/_shared/helm/vault/values.yaml
+    --namespace {{ vault_namespace }} --create-namespace
+    --wait --timeout 5m
+
+- name: Install External Secrets Operator
+  command: >
+    helm upgrade --install external-secrets
+    oci://ghcr.io/external-secrets/charts/external-secrets
+    --namespace external-secrets --create-namespace
+    --wait --timeout 5m
+
+- name: Wait for Vault to be ready
+  command: kubectl wait --for=condition=ready pod/vault-0 -n {{ vault_namespace }} --timeout=300s

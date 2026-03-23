@@ -1,0 +1,15 @@
+---
+# KoproGo Kubernetes Namespace
+# Issue #266-#268: K3s + ArgoCD GitOps
+# Belgian GDPR compliance: Production environment
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: koprogo
+  labels:
+    app.kubernetes.io/name: koprogo
+    app.kubernetes.io/component: platform
+    environment: production
+    gdpr-compliant: "true"
+    region: eu-west

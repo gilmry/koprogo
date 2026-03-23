@@ -1,0 +1,189 @@
+---
+# Security Hardening Role - Applied to ALL deployment types
+# Covers: rkhunter, lynis, AIDE, CrowdSec, fail2ban, suricata
+# ISO 27001 controls: A.12.6 (Technical vulnerability management), A.13.1 (Network security)
+
+# ---- fail2ban (Brute-force protection) ----
+- name: Install fail2ban
+  apt:
+    name: fail2ban
+    state: present
+
+- name: Deploy fail2ban KoproGo jails
+  template:
+    src: fail2ban-koprogo.conf.j2
+    dest: /etc/fail2ban/jail.d/koprogo.conf
+    mode: '0644'
+  notify: restart fail2ban
+
+- name: Deploy fail2ban custom filters
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/fail2ban/filter.d/{{ item | basename }}"
+    mode: '0644'
+  loop:
+    - fail2ban-filters/traefik-auth.conf
+    - fail2ban-filters/traefik-badbots.conf
+    - fail2ban-filters/koprogo-api-abuse.conf
+    - fail2ban-filters/postgres-bruteforce.conf
+  notify: restart fail2ban
+
+- name: Enable fail2ban
+  systemd:
+    name: fail2ban
+    state: started
+    enabled: yes
+
+# ---- CrowdSec (Community threat intelligence WAF) ----
+- name: Add CrowdSec repository key
+  apt_key:
+    url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
+    state: present
+
+- name: Add CrowdSec repository
+  apt_repository:
+    repo: "deb https://packagecloud.io/crowdsec/crowdsec/ubuntu/ {{ ansible_distribution_release }} main"
+    state: present
+
+- name: Install CrowdSec
+  apt:
+    name: [crowdsec, crowdsec-firewall-bouncer-iptables]
+    state: present
+    update_cache: yes
+
+- name: Enable CrowdSec
+  systemd:
+    name: crowdsec
+    state: started
+    enabled: yes
+
+# ---- Suricata IDS (Intrusion Detection) ----
+- name: Add Suricata PPA
+  apt_repository:
+    repo: ppa:oisf/suricata-stable
+    state: present
+
+- name: Install Suricata
+  apt:
+    name: suricata
+    state: present
+    update_cache: yes
+
+- name: Deploy custom Suricata rules
+  template:
+    src: suricata-local.rules.j2
+    dest: /etc/suricata/rules/local.rules
+    mode: '0644'
+  notify: reload suricata
+
+- name: Enable Suricata
+  systemd:
+    name: suricata
+    state: started
+    enabled: yes
+
+# ---- rkhunter (Rootkit detection) ----
+- name: Install rkhunter
+  apt:
+    name: rkhunter
+    state: present
+
+- name: Update rkhunter database
+  command: rkhunter --update
+  failed_when: false
+  changed_when: false
+
+- name: Set rkhunter properties
+  command: rkhunter --propupd
+  changed_when: false
+
+- name: Schedule daily rkhunter scan
+  cron:
+    name: "KoproGo Rootkit Scan (ISO 27001 A.12.2)"
+    minute: "0"
+    hour: "4"
+    job: "/usr/bin/rkhunter --check --skip-keypress --report-warnings-only --logfile /var/log/rkhunter.log"
+    user: root
+
+# ---- Lynis (Security audit) ----
+- name: Install Lynis
+  apt:
+    name: lynis
+    state: present
+
+- name: Schedule weekly Lynis audit
+  cron:
+    name: "KoproGo Security Audit Lynis (ISO 27001 A.18.2)"
+    minute: "0"
+    hour: "3"
+    weekday: "0"
+    job: "/usr/bin/lynis audit system --cronjob --quiet > /var/log/lynis-audit.log 2>&1"
+    user: root
+
+# ---- AIDE (File integrity monitoring) ----
+- name: Install AIDE
+  apt:
+    name: aide
+    state: present
+
+- name: Initialize AIDE database
+  command: aideinit
+  args:
+    creates: /var/lib/aide/aide.db
+
+- name: Schedule daily AIDE check
+  cron:
+    name: "KoproGo File Integrity Check AIDE (ISO 27001 A.12.4)"
+    minute: "30"
+    hour: "3"
+    job: "/usr/bin/aide --check > /var/log/aide-check.log 2>&1"
+    user: root
+
+# ---- SSH Hardening ----
+- name: Deploy hardened SSH configuration
+  template:
+    src: sshd_config_hardening.j2
+    dest: /etc/ssh/sshd_config
+    mode: '0600'
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: restart sshd
+
+# ---- Kernel Hardening ----
+- name: Deploy kernel hardening sysctl
+  template:
+    src: sysctl-hardening.conf.j2
+    dest: /etc/sysctl.d/99-koprogo-hardening.conf
+    mode: '0644'
+
+- name: Apply sysctl hardening
+  command: sysctl -p /etc/sysctl.d/99-koprogo-hardening.conf
+
+# ---- Unattended Upgrades ----
+- name: Install unattended-upgrades
+  apt:
+    name: unattended-upgrades
+    state: present
+
+- name: Configure unattended upgrades
+  command: dpkg-reconfigure -plow unattended-upgrades
+  args:
+    creates: /etc/apt/apt.conf.d/20auto-upgrades
+
+# ---- Audit logging (ISO 27001 A.12.4) ----
+- name: Install auditd
+  apt:
+    name: [auditd, audispd-plugins]
+    state: present
+
+- name: Deploy audit rules
+  template:
+    src: audit-rules.j2
+    dest: /etc/audit/rules.d/koprogo.rules
+    mode: '0640'
+  notify: restart auditd
+
+- name: Enable auditd
+  systemd:
+    name: auditd
+    state: started
+    enabled: yes

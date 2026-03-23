@@ -1,0 +1,4 @@
+---
+vault_namespace: vault
+vault_version: "1.15.0"
+vault_ha_enabled: false

@@ -1,0 +1,58 @@
+---
+# Monitoring stack: Prometheus + Grafana + Loki + Alertmanager
+
+- name: Create monitoring directory
+  file:
+    path: "{{ koprogo_dir }}/monitoring"
+    state: directory
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0755'
+
+- name: Create monitoring subdirectories
+  file:
+    path: "{{ koprogo_dir }}/monitoring/{{ item }}"
+    state: directory
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0755'
+  loop:
+    - prometheus
+    - prometheus/alerts
+    - grafana/provisioning/datasources
+    - grafana/provisioning/dashboards
+    - grafana/dashboards
+    - loki
+    - promtail
+    - alertmanager
+    - postgres-exporter
+
+- name: Create monitoring .env file
+  copy:
+    content: |
+      GRAFANA_ADMIN_PASSWORD={{ grafana_admin_password | default('changeme') }}
+      GRAFANA_ROOT_URL=http://localhost:3001
+      ALERT_EMAIL={{ alert_email | default('admin@example.com') }}
+      POSTGRES_USER=koprogo
+      POSTGRES_PASSWORD={{ postgres_password | default('koprogo123') }}
+      POSTGRES_HOST=postgres
+      POSTGRES_DB=koprogo_db
+    dest: "{{ koprogo_dir }}/monitoring/.env"
+    owner: "{{ koprogo_user }}"
+    group: "{{ koprogo_user }}"
+    mode: '0600'
+
+- name: Create textfile collector directory for node-exporter
+  file:
+    path: /var/lib/node_exporter/textfile_collector
+    state: directory
+    owner: nobody
+    group: nogroup
+    mode: '0755'
+
+- name: Start monitoring stack
+  command: docker compose -f {{ koprogo_dir }}/monitoring/docker-compose.yml up -d
+  args:
+    chdir: "{{ koprogo_dir }}/monitoring"
+  become: yes
+  become_user: "{{ koprogo_user }}"

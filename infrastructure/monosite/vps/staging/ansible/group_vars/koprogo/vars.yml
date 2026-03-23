@@ -1,0 +1,12 @@
+---
+koprogo_branch: staging
+enable_ssl: true
+enable_monitoring: true
+enable_backup: true
+rust_log: warn
+cors_allowed_origins: "https://staging.koprogo.be"
+frontend_domain: "staging.koprogo.be"
+api_domain: "api-staging.koprogo.be"
+koprogo_domain: "koprogo.be"
+acme_email: "admin@koprogo.be"
+grafana_admin_password: "{{ vault_grafana_admin_password }}"

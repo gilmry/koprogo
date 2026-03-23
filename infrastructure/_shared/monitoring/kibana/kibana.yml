@@ -1,0 +1,5 @@
+# Kibana configuration for VPS
+server.host: "0.0.0.0"
+server.name: koprogo-kibana
+elasticsearch.hosts: ["http://elasticsearch:9200"]
+monitoring.ui.container.elasticsearch.enabled: true

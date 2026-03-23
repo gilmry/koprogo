@@ -1,0 +1,28 @@
+---
+# K3s master node installation
+# Extracted from k3s-install.yml
+
+- name: Install K3s on master node
+  shell: |
+    curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION={{ k3s_version }} sh -s - server \
+      --cluster-init \
+      --tls-san {{ ansible_host }} \
+      --write-kubeconfig-mode 644
+  args:
+    creates: /usr/local/bin/k3s
+
+- name: Wait for K3s to be ready
+  command: k3s kubectl get nodes
+  register: k3s_nodes
+  retries: 10
+  delay: 10
+  until: k3s_nodes.rc == 0
+
+- name: Get K3s node token
+  slurp:
+    src: /var/lib/rancher/k3s/server/node-token
+  register: k3s_token
+
+- name: Save node token as fact
+  set_fact:
+    k3s_node_token: "{{ k3s_token.content | b64decode | trim }}"

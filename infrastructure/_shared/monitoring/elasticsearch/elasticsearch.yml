@@ -1,0 +1,14 @@
+# Elasticsearch configuration for VPS (Docker Compose)
+cluster.name: koprogo-logs
+node.name: es-node-1
+network.host: 0.0.0.0
+discovery.type: single-node
+xpack.security.enabled: false
+xpack.security.enrollment.enabled: false
+
+# Performance tuning
+indices.memory.index_buffer_size: 20%
+thread_pool.write.queue_size: 1000
+
+# Index lifecycle
+indices.lifecycle.poll_interval: 1m

@@ -1,0 +1,25 @@
+# Integration overrides: info logging, no HTTPS
+services:
+  traefik:
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--metrics.prometheus=true"
+    ports:
+      - "80:80"
+  backend:
+    environment:
+      RUST_LOG: info
+      CORS_ALLOWED_ORIGINS: "*"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.1'

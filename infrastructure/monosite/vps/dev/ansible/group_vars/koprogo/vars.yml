@@ -1,0 +1,9 @@
+---
+koprogo_branch: dev
+enable_ssl: false
+enable_monitoring: false
+enable_backup: false
+rust_log: debug
+cors_allowed_origins: "*"
+frontend_domain: "dev.koprogo.local"
+api_domain: "api-dev.koprogo.local"

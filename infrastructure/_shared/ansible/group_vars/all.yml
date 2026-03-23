@@ -1,0 +1,12 @@
+---
+# Global defaults for all KoproGo environments
+koprogo_user: koprogo
+koprogo_repo: https://github.com/gilmry/koprogo.git
+koprogo_branch: main
+koprogo_dir: /home/{{ koprogo_user }}/koprogo
+enable_ssl: false
+enable_monitoring: false
+enable_backup: false
+rust_log: info
+cors_allowed_origins: "*"
+acme_email: "admin@example.com"

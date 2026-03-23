@@ -1,0 +1,16 @@
+# Alert on error rate spike
+name: KoproGo Error Spike
+type: spike
+index: koprogo-logs-*
+timeframe:
+  hours: 1
+spike_height: 3
+spike_type: "up"
+threshold_cur: 10
+filter:
+  - term:
+      level: "ERROR"
+alert:
+  - "email"
+email:
+  - "admin@koprogo.be"

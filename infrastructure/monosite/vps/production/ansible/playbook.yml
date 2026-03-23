@@ -1,0 +1,13 @@
+---
+- name: Configure KoproGo VPS (Production)
+  hosts: koprogo
+  become: yes
+  roles:
+    - role: ../../../_shared/ansible/roles/common
+    - role: ../../../_shared/ansible/roles/hardening
+    - role: ../../../_shared/ansible/roles/docker
+    - role: ../../../_shared/ansible/roles/security
+    - role: ../../../_shared/ansible/roles/monitoring
+    - role: ../../../_shared/ansible/roles/backup
+    - role: ../../../_shared/ansible/roles/gitops
+    - role: ../../../_shared/ansible/roles/dns

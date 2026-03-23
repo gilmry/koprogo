@@ -1,0 +1,21 @@
+{{- if gt (int .Values.backend.replicas) 1 }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "koprogo.fullname" . }}-backend-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "koprogo.backend.selectorLabels" . | nindent 6 }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "koprogo.fullname" . }}-frontend-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      {{- include "koprogo.frontend.selectorLabels" . | nindent 6 }}
+{{- end }}
