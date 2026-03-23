@@ -359,6 +359,8 @@ impl Expense {
             }
             PaymentStatus::Paid => Err("Cannot cancel a paid expense".to_string()),
             PaymentStatus::Cancelled => Err("Expense is already cancelled".to_string()),
+        }
+    }
 
     /// Set the contractor report link for work expenses (Issue #309)
     pub fn set_contractor_report(&mut self, contractor_report_id: Uuid) -> Result<(), String> {
@@ -368,8 +370,6 @@ impl Expense {
         self.contractor_report_id = Some(contractor_report_id);
         self.updated_at = Utc::now();
         Ok(())
-    }
-        }
     }
 
     pub fn reactivate(&mut self) -> Result<(), String> {
