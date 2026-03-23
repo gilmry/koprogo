@@ -1,12 +1,15 @@
-import { register, init, getLocaleFromNavigator, addMessages } from "svelte-i18n";
+import { init, getLocaleFromNavigator, addMessages } from "svelte-i18n";
 import frMessages from "../locales/fr.json";
+import nlMessages from "../locales/nl.json";
+import deMessages from "../locales/de.json";
+import enMessages from "../locales/en.json";
 
-// Load French (default) synchronously to prevent hydration race condition
-// Other locales are lazy-loaded on demand
+// Load all locales synchronously to prevent hydration race condition
+// on Astro islands (svelte-i18n requires messages before first render)
 addMessages("fr", frMessages);
-register("nl", () => import("../locales/nl.json"));
-register("de", () => import("../locales/de.json"));
-register("en", () => import("../locales/en.json"));
+addMessages("nl", nlMessages);
+addMessages("de", deMessages);
+addMessages("en", enMessages);
 
 // Priority: 1) user preference (localStorage), 2) browser language, 3) "fr"
 const supportedLocales = ["nl", "fr", "de", "en"];
