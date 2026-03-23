@@ -108,6 +108,8 @@
     "organizationIdHint": "Laat leeg als u een nieuwe organisatie aanmaakt",
     "passwordHint": "Minstens 6 tekens",
     "termsNotice": "Door een account aan te maken, gaat u akkoord met onze gebruiksvoorwaarden en ons privacybeleid.",
+    "emailPlaceholder": "uw@email.com",
+    "connectionError": "Kan geen verbinding maken met de server",
     "loginError": "Onjuist e-mailadres of wachtwoord",
     "loginServerError": "Er is een fout opgetreden bij het inloggen. Controleer of de server draait.",
     "registerSuccess": "Account succesvol aangemaakt! Welkom bij KoproGo.",

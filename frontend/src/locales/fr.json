@@ -108,6 +108,8 @@
     "organizationIdHint": "Laissez vide si vous créez une nouvelle organisation",
     "passwordHint": "Au moins 6 caractères",
     "termsNotice": "En créant un compte, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.",
+    "emailPlaceholder": "votre@email.com",
+    "connectionError": "Impossible de se connecter au serveur",
     "loginError": "Email ou mot de passe incorrect",
     "loginServerError": "Une erreur est survenue lors de la connexion. Vérifiez que le serveur est démarré.",
     "registerSuccess": "Compte créé avec succès ! Bienvenue sur KoproGo.",
