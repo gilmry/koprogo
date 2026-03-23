@@ -108,6 +108,8 @@
     "organizationIdHint": "Leer lassen, wenn Sie eine neue Organisation erstellen",
     "passwordHint": "Mindestens 6 Zeichen",
     "termsNotice": "Mit der Erstellung eines Kontos stimmen Sie unseren Nutzungsbedingungen und unserer Datenschutzrichtlinie zu.",
+    "emailPlaceholder": "ihre@email.com",
+    "connectionError": "Verbindung zum Server nicht möglich",
     "loginError": "Falsche E-Mail-Adresse oder falsches Passwort",
     "loginServerError": "Bei der Anmeldung ist ein Fehler aufgetreten. Bitte überprüfen Sie, ob der Server läuft.",
     "registerSuccess": "Konto erfolgreich erstellt! Willkommen bei KoproGo.",
