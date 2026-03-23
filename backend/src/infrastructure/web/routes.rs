@@ -422,6 +422,16 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(delete_upload)
             .service(withdraw_consent)
             .service(get_campaign_uploads)
+            // Individual Members (Issue #280 - Non-copropriétaire energy group members)
+            .service(join_campaign_as_individual) // POST /energy-campaigns/{id}/join-as-individual
+            .service(grant_consent) // POST /energy-campaigns/{campaign_id}/members/{member_id}/consent
+            .service(update_consumption) // PUT /energy-campaigns/{campaign_id}/members/{member_id}/consumption
+            .service(withdraw_from_campaign) // DELETE /energy-campaigns/{campaign_id}/members/{member_id}/withdraw
+            // Marketplace (Issue #276 - Service provider marketplace)
+            .service(search_service_providers) // GET /marketplace/providers
+            .service(get_provider_by_slug) // GET /marketplace/providers/{slug}
+            .service(create_service_provider) // POST /service-providers
+            .service(get_contract_evaluations_annual) // GET /buildings/{id}/reports/contract-evaluations/annual
             // États Datés (Belgian legal requirement for property sales)
             // Specific routes MUST come before parameterized /etats-dates/{id}
             .service(create_etat_date)
