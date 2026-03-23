@@ -398,6 +398,7 @@ mod tests {
                 account_code: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
+                contractor_report_id: None,
             },
             Expense {
                 id: Uuid::new_v4(),
@@ -425,6 +426,7 @@ mod tests {
                 account_code: None,
                 created_at: Utc::now(),
                 updated_at: Utc::now(),
+                contractor_report_id: None,
             },
         ];
 

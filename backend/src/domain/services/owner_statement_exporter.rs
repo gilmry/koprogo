@@ -403,6 +403,7 @@ mod tests {
             account_code: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
+            contractor_report_id: None,
         }];
 
         let result = OwnerStatementExporter::export_to_pdf(

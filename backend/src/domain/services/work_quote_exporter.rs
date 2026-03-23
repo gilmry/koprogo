@@ -366,6 +366,7 @@ mod tests {
             supplier: None,
             invoice_number: Some("DEV-2025-001".to_string()),
             account_code: None,
+            contractor_report_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };

@@ -369,6 +369,9 @@ mod tests {
             quorum_percentage: None,
             total_quotas: None,
             present_quotas: None,
+            is_second_convocation: false,
+            minutes_document_id: None,
+            minutes_sent_at: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
         };
@@ -406,6 +409,7 @@ mod tests {
             total_voting_power_contre: 0.0,
             total_voting_power_abstention: 0.0,
             status: ResolutionStatus::Adopted,
+            agenda_item_index: None,
             voted_at: Some(Utc::now()),
             created_at: Utc::now(),
         };
