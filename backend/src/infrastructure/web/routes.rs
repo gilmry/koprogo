@@ -530,10 +530,22 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(rectify_user_data) // Article 16: Right to Rectification
             .service(restrict_user_processing) // Article 18: Right to Restriction
             .service(set_marketing_preference) // Article 21: Right to Object
+            // GDPR Consent Recording (Issue #315 - Privacy Policy)
+            .service(record_consent)
+            .service(get_consent_status)
             // GDPR Admin (SuperAdmin only)
             .service(list_audit_logs)
             .service(admin_export_user_data)
             .service(admin_erase_user_data)
+            // GDPR Article 28 - DPA with Sub-Processors (Issue #316)
+            .service(list_processing_activities)
+            .service(list_sub_processors)
+            // GDPR Article 33 - Security Incidents & 72h APD Notification (Issue #317)
+            .service(create_security_incident)
+            .service(list_security_incidents)
+            .service(get_security_incident)
+            .service(report_incident_to_apd)
+            .service(list_overdue_incidents)
             // Two-Factor Authentication (2FA TOTP - Issue #78)
             .configure(two_factor_handlers::configure_two_factor_routes)
             // Work Reports (Digital Maintenance Logbook - Issue #134)
