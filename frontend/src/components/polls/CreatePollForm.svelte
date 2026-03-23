@@ -155,7 +155,7 @@
     </div>
   {/if}
 
-  <form on:submit={handleSubmit} class="space-y-6">
+  <form on:submit={handleSubmit} class="space-y-6" data-testid="create-poll-form">
     <!-- Building Selector -->
     <BuildingSelector bind:selectedBuildingId label={$_("polls.createForm.buildingLabel")} />
 
@@ -170,6 +170,7 @@
         on:change={onPollTypeChange}
         required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        data-testid="create-poll-type-select"
       >
         <option value={PollType.YesNo}>👍👎 {$_("polls.createForm.typeYesNo")}</option>
         <option value={PollType.MultipleChoice}>☑️ {$_("polls.createForm.typeMultiple")}</option>
@@ -190,6 +191,7 @@
         required
         placeholder={$_("polls.createForm.questionPlaceholder")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        data-testid="create-poll-question-input"
       />
     </div>
 
@@ -204,6 +206,7 @@
         rows="3"
         placeholder={$_("polls.createForm.descriptionPlaceholder")}
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+        data-testid="create-poll-description-input"
       ></textarea>
     </div>
 
@@ -246,6 +249,7 @@
             bind:value={newOptionText}
             placeholder={$_("polls.createForm.newOptionPlaceholder")}
             class="flex-1 rounded-md border-gray-300"
+            data-testid="create-poll-new-option-input"
             on:keypress={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -257,6 +261,7 @@
             type="button"
             on:click={addOption}
             class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
+            data-testid="create-poll-add-option-btn"
           >
             ➕ {$_("common.add")}
           </button>
@@ -313,6 +318,7 @@
           on:change={setDefaultEndDate}
           required
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          data-testid="create-poll-start-date-input"
         />
       </div>
       <div>
@@ -325,6 +331,7 @@
           bind:value={endsAtDate}
           required
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          data-testid="create-poll-end-date-input"
         />
       </div>
     </div>
@@ -339,6 +346,7 @@
           type="checkbox"
           bind:checked={formData.is_anonymous}
           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          data-testid="create-poll-anonymous-checkbox"
         />
         <span class="ml-2 text-sm text-gray-700">
           🔒 {$_("polls.createForm.anonymousVote")}
@@ -351,6 +359,7 @@
             type="checkbox"
             bind:checked={formData.allow_multiple_votes}
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            data-testid="create-poll-multiple-votes-checkbox"
           />
           <span class="ml-2 text-sm text-gray-700">
             ☑️ {$_("polls.createForm.multipleSelection")}
@@ -375,6 +384,7 @@
         type="button"
         on:click={() => dispatch("cancel")}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+        data-testid="create-poll-cancel-btn"
       >
         {$_("common.cancel")}
       </button>
@@ -382,6 +392,7 @@
         type="submit"
         disabled={loading}
         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        data-testid="create-poll-submit-btn"
       >
         {#if loading}
           <span class="inline-block animate-spin mr-2">⏳</span>

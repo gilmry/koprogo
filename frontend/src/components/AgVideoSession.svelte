@@ -133,7 +133,7 @@
       Visioconférence (Art. 3.87 §1 CC)
     </h3>
     {#if !readOnly && !session && !showForm}
-      <Button size="sm" variant="outline" on:click={() => (showForm = true)}>
+      <Button size="sm" variant="outline" on:click={() => (showForm = true)} data-testid="ag-session-create-btn">
         + Créer session
       </Button>
     {/if}
@@ -142,10 +142,10 @@
   {#if loading}
     <p class="text-sm text-gray-500">Chargement...</p>
   {:else if showForm}
-    <form on:submit|preventDefault={createSession} class="space-y-3">
+    <form on:submit|preventDefault={createSession} class="space-y-3" data-testid="ag-session-form">
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">Plateforme</label>
-        <select bind:value={form.platform} class="w-full rounded border border-gray-300 px-2 py-1 text-sm">
+        <select bind:value={form.platform} class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-platform-select">
           {#each platforms as p}
             <option value={p}>{p}</option>
           {/each}
@@ -153,29 +153,29 @@
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">URL de la réunion *</label>
-        <input bind:value={form.video_url} type="url" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" placeholder="https://meet.jit.si/..." />
+        <input bind:value={form.video_url} type="url" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" placeholder="https://meet.jit.si/..." data-testid="ag-session-video-url-input" />
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">URL animateur (optionnel)</label>
-        <input bind:value={form.host_url} type="url" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" />
+        <input bind:value={form.host_url} type="url" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-host-url-input" />
       </div>
       <div>
         <label class="block text-xs font-medium text-gray-700 mb-1">Mot de passe (optionnel)</label>
-        <input bind:value={form.access_password} type="text" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" />
+        <input bind:value={form.access_password} type="text" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-password-input" />
       </div>
       <div class="flex gap-4">
         <label class="flex items-center gap-1 text-xs">
-          <input type="checkbox" bind:checked={form.waiting_room_enabled} />
+          <input type="checkbox" bind:checked={form.waiting_room_enabled} data-testid="ag-session-waiting-room-checkbox" />
           Salle d'attente
         </label>
         <label class="flex items-center gap-1 text-xs">
-          <input type="checkbox" bind:checked={form.recording_enabled} />
+          <input type="checkbox" bind:checked={form.recording_enabled} data-testid="ag-session-recording-checkbox" />
           Enregistrement
         </label>
       </div>
       <div class="flex gap-2">
-        <Button type="submit" size="sm" loading={creating}>Créer</Button>
-        <Button type="button" size="sm" variant="ghost" on:click={() => (showForm = false)}>Annuler</Button>
+        <Button type="submit" size="sm" loading={creating} data-testid="ag-session-submit-btn">Créer</Button>
+        <Button type="button" size="sm" variant="ghost" on:click={() => (showForm = false)} data-testid="ag-session-cancel-btn">Annuler</Button>
       </div>
     </form>
   {:else if session}
@@ -188,7 +188,7 @@
       </div>
 
       <div class="flex items-center gap-2 text-sm text-gray-600">
-        <a href={session.video_url} target="_blank" rel="noopener" class="text-blue-600 hover:underline truncate max-w-xs">
+        <a href={session.video_url} target="_blank" rel="noopener" class="text-blue-600 hover:underline truncate max-w-xs" data-testid="ag-session-video-link">
           {session.video_url}
         </a>
       </div>
@@ -215,9 +215,9 @@
       {#if !readOnly}
         <div class="flex gap-2 mt-2">
           {#if session.status === 'Scheduled'}
-            <Button size="sm" variant="primary" on:click={startSession}>▶ Démarrer</Button>
+            <Button size="sm" variant="primary" on:click={startSession} data-testid="ag-session-start-btn">▶ Démarrer</Button>
           {:else if session.status === 'Live'}
-            <Button size="sm" variant="danger" on:click={endSession}>⏹ Terminer</Button>
+            <Button size="sm" variant="danger" on:click={endSession} data-testid="ag-session-end-btn">⏹ Terminer</Button>
           {/if}
         </div>
       {/if}
