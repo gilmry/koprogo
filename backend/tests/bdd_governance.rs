@@ -381,7 +381,8 @@ impl GovernanceWorld {
             Arc::new(PostgresUserRoleRepository::new(pool.clone()));
         let two_factor_repo = Arc::new(PostgresTwoFactorRepository::new(pool.clone()));
 
-        let resolution_use_cases = ResolutionUseCases::new(resolution_repo, vote_repo, meeting_repo.clone());
+        let resolution_use_cases =
+            ResolutionUseCases::new(resolution_repo, vote_repo, meeting_repo.clone());
         let quote_use_cases = QuoteUseCases::new(quote_repo);
         let building_use_cases = BuildingUseCases::new(building_repo.clone());
         let convocation_use_cases = ConvocationUseCases::new(

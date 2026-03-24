@@ -61,9 +61,9 @@ pub async fn list_legal_rules(
                         // Filter by role if provided
                         if let Some(role) = role_filter {
                             if let Some(roles) = rule.get("roles").and_then(|r| r.as_array()) {
-                                let matches = roles.iter().any(|r| {
-                                    r.as_str().map(|s| s == role).unwrap_or(false)
-                                });
+                                let matches = roles
+                                    .iter()
+                                    .any(|r| r.as_str().map(|s| s == role).unwrap_or(false));
                                 if !matches {
                                     return false;
                                 }
@@ -311,8 +311,14 @@ mod tests {
         assert!(result.is_ok(), "Legal index JSON is malformed");
 
         let index = result.unwrap();
-        assert!(index.get("legal_rules").is_some(), "Missing 'legal_rules' field");
-        assert!(index.get("jurisdiction").is_some(), "Missing 'jurisdiction' field");
+        assert!(
+            index.get("legal_rules").is_some(),
+            "Missing 'legal_rules' field"
+        );
+        assert!(
+            index.get("jurisdiction").is_some(),
+            "Missing 'jurisdiction' field"
+        );
         assert!(index.get("metadata").is_some(), "Missing 'metadata' field");
         assert!(index.get("version").is_some(), "Missing 'version' field");
     }
@@ -327,9 +333,18 @@ mod tests {
         for rule in rules {
             assert!(rule.get("id").is_some(), "Rule missing 'id' field");
             assert!(rule.get("title").is_some(), "Rule missing 'title' field");
-            assert!(rule.get("reference").is_some(), "Rule missing 'reference' field");
-            assert!(rule.get("summary").is_some(), "Rule missing 'summary' field");
-            assert!(rule.get("key_points").is_some(), "Rule missing 'key_points' field");
+            assert!(
+                rule.get("reference").is_some(),
+                "Rule missing 'reference' field"
+            );
+            assert!(
+                rule.get("summary").is_some(),
+                "Rule missing 'summary' field"
+            );
+            assert!(
+                rule.get("key_points").is_some(),
+                "Rule missing 'key_points' field"
+            );
         }
     }
 
@@ -357,7 +372,12 @@ mod tests {
         let rules = index.get("legal_rules").unwrap().as_array().unwrap();
 
         // Verify AG-related rules exist in legal_rules
-        let ag_ids = vec!["art_3_87_3", "art_3_87_5", "bc15_ag_session", "bc17_age_concertation"];
+        let ag_ids = vec![
+            "art_3_87_3",
+            "art_3_87_5",
+            "bc15_ag_session",
+            "bc17_age_concertation",
+        ];
         for id in ag_ids {
             let found = rules.iter().any(|r| {
                 r.get("id")
@@ -374,7 +394,13 @@ mod tests {
         let index: Value = serde_json::from_str(LEGAL_INDEX).unwrap();
         let rules = index.get("legal_rules").unwrap().as_array().unwrap();
 
-        let ids = vec!["art_3_84", "art_3_87_3", "ar_12_07_2012", "gdpr_art_15", "quotas_distribution"];
+        let ids = vec![
+            "art_3_84",
+            "art_3_87_3",
+            "ar_12_07_2012",
+            "gdpr_art_15",
+            "quotas_distribution",
+        ];
         for id in ids {
             let found = rules.iter().any(|r| {
                 r.get("id")

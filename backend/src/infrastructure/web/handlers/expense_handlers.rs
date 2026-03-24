@@ -117,10 +117,12 @@ pub async fn get_expense(
         Ok(Some(expense)) => {
             // Multi-tenant isolation: verify expense's building belongs to user's organization
             if let Ok(building_id) = Uuid::parse_str(&expense.building_id) {
-                if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await {
+                if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await
+                {
                     if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
                         if let Err(e) = user.verify_org_access(building_org) {
-                            return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                            return HttpResponse::Forbidden()
+                                .json(serde_json::json!({ "error": e }));
                         }
                     }
                 }
@@ -595,10 +597,12 @@ pub async fn get_invoice(
         Ok(Some(invoice)) => {
             // Multi-tenant isolation: verify invoice's building belongs to user's organization
             if let Ok(building_id) = Uuid::parse_str(&invoice.building_id) {
-                if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await {
+                if let Ok(Some(building)) = state.building_use_cases.get_building(building_id).await
+                {
                     if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
                         if let Err(e) = user.verify_org_access(building_org) {
-                            return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
+                            return HttpResponse::Forbidden()
+                                .json(serde_json::json!({ "error": e }));
                         }
                     }
                 }

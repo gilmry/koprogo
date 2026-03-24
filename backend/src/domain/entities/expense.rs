@@ -365,7 +365,9 @@ impl Expense {
     /// Set the contractor report link for work expenses (Issue #309)
     pub fn set_contractor_report(&mut self, contractor_report_id: Uuid) -> Result<(), String> {
         if self.category != ExpenseCategory::Works {
-            return Err("Contractor report can only be linked to Works category expenses".to_string());
+            return Err(
+                "Contractor report can only be linked to Works category expenses".to_string(),
+            );
         }
         self.contractor_report_id = Some(contractor_report_id);
         self.updated_at = Utc::now();
@@ -1154,9 +1156,7 @@ mod tests {
         // Try to approve without contractor report
         let result = expense.approve(syndic_id);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .contains("contractor report"));
+        assert!(result.unwrap_err().contains("contractor report"));
     }
 
     #[test]
@@ -1208,9 +1208,7 @@ mod tests {
         // Try to set contractor report on non-Works expense
         let result = expense.set_contractor_report(contractor_report_id);
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .contains("Works category"));
+        assert!(result.unwrap_err().contains("Works category"));
     }
 
     #[test]

@@ -442,6 +442,7 @@ The following advisories are suppressed with documented justification. They must
 | 2026-03-21 | RUSTSEC-2026-0049 (`rustls-webpki 0.103.9`) | **Fixed** — updated to 0.103.10 via `cargo update` |
 | 2026-03-21 | RUSTSEC-2026-0049 (`rustls-webpki 0.101.7`) | Accepted risk — AWS SDK upstream blocker |
 | 2026-03-21 | RUSTSEC-2026-0002 (`lru 0.12.5`) | Accepted risk — transitive dep, no direct usage |
+| 2026-03-23 | RUSTSEC-2026-0066 (`astral-tokio-tar 0.5.6`) | **Fixed** — updated `testcontainers` 0.27.1 → 0.27.2 (now uses 0.6.0) |
 | 2025-11-xx | RUSTSEC-2025-0111 (`tokio-tar 0.3.1`) | Accepted risk — test environment only |
 | 2023-xx-xx | RUSTSEC-2023-0071 (`rsa 0.9.8`) | Accepted risk — sqlx-mysql not enabled |
 

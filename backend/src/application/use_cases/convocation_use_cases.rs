@@ -455,7 +455,10 @@ impl ConvocationUseCases {
             created_by,
         )?;
 
-        let created = self.convocation_repository.create(&second_convocation).await?;
+        let created = self
+            .convocation_repository
+            .create(&second_convocation)
+            .await?;
 
         Ok(ConvocationResponse::from(created))
     }

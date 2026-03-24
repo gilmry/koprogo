@@ -3,8 +3,8 @@ use crate::domain::entities::contract_evaluation::ContractEvaluation;
 use crate::infrastructure::database::pool::DbPool;
 use async_trait::async_trait;
 use sqlx::Row;
-use uuid::Uuid;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 pub struct PostgresContractEvaluationRepository {
     pool: DbPool,
@@ -35,8 +35,10 @@ impl ContractEvaluationRepository for PostgresContractEvaluationRepository {
         .bind(evaluation.ticket_id)
         .bind(evaluation.evaluator_id)
         .bind(evaluation.building_id)
-        .bind(serde_json::to_value(&evaluation.criteria)
-            .map_err(|e| format!("Failed to serialize criteria: {}", e))?)
+        .bind(
+            serde_json::to_value(&evaluation.criteria)
+                .map_err(|e| format!("Failed to serialize criteria: {}", e))?,
+        )
         .bind(evaluation.global_score)
         .bind(&evaluation.comments)
         .bind(evaluation.would_recommend)
@@ -373,8 +375,10 @@ impl ContractEvaluationRepository for PostgresContractEvaluationRepository {
             WHERE id = $9
             "#,
         )
-        .bind(serde_json::to_value(&evaluation.criteria)
-            .map_err(|e| format!("Failed to serialize criteria: {}", e))?)
+        .bind(
+            serde_json::to_value(&evaluation.criteria)
+                .map_err(|e| format!("Failed to serialize criteria: {}", e))?,
+        )
         .bind(evaluation.global_score)
         .bind(&evaluation.comments)
         .bind(evaluation.would_recommend)
@@ -401,11 +405,13 @@ impl ContractEvaluationRepository for PostgresContractEvaluationRepository {
     }
 
     async fn count_by_service_provider(&self, provider_id: Uuid) -> Result<i64, String> {
-        let row = sqlx::query("SELECT COUNT(*) as count FROM contract_evaluations WHERE service_provider_id = $1")
-            .bind(provider_id)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| format!("Database error: {}", e))?;
+        let row = sqlx::query(
+            "SELECT COUNT(*) as count FROM contract_evaluations WHERE service_provider_id = $1",
+        )
+        .bind(provider_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(row.get::<i64, _>("count"))
     }

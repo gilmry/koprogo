@@ -269,16 +269,28 @@ pub enum ProxyValidationError {
     /// Proxy holder already has 3 mandates for this meeting
     TooManyMandates { current: usize, max: usize },
     /// Proxy holder would represent more than 10% of total quotas
-    ExceedsQuotaThreshold { current_pct: f64, max_pct: f64, total_quotas: i32 },
+    ExceedsQuotaThreshold {
+        current_pct: f64,
+        max_pct: f64,
+        total_quotas: i32,
+    },
 }
 
 impl std::fmt::Display for ProxyValidationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::TooManyMandates { current, max } => {
-                write!(f, "Le mandataire détient déjà {} mandats (maximum: {} selon Art. 3.87 §6 CC)", current, max)
+                write!(
+                    f,
+                    "Le mandataire détient déjà {} mandats (maximum: {} selon Art. 3.87 §6 CC)",
+                    current, max
+                )
             }
-            Self::ExceedsQuotaThreshold { current_pct, max_pct, total_quotas: _ } => {
+            Self::ExceedsQuotaThreshold {
+                current_pct,
+                max_pct,
+                total_quotas: _,
+            } => {
                 write!(f, "Le mandataire représenterait {:.1}% des quotités (maximum: {:.0}% selon Art. 3.87 §6 CC)", current_pct, max_pct)
             }
         }
@@ -297,8 +309,8 @@ pub fn validate_proxy_mandate(
     existing_delegated_quotas: i32,
     new_voting_power: i32,
     total_building_quotas: i32,
-    max_mandates: usize,        // typically 3 per Belgian law
-    max_quota_pct: f64,         // typically 0.10 (10%) per Belgian law
+    max_mandates: usize, // typically 3 per Belgian law
+    max_quota_pct: f64,  // typically 0.10 (10%) per Belgian law
 ) -> Result<(), ProxyValidationError> {
     // Check mandate count limit
     if existing_mandate_count >= max_mandates {
@@ -333,7 +345,10 @@ mod proxy_validation_tests {
         // 3 existing mandates → should fail
         let result = validate_proxy_mandate(3, 150, 50, 1000, 3, 0.10);
         assert!(result.is_err());
-        assert!(matches!(result, Err(ProxyValidationError::TooManyMandates { current: 3, max: 3 })));
+        assert!(matches!(
+            result,
+            Err(ProxyValidationError::TooManyMandates { current: 3, max: 3 })
+        ));
     }
 
     #[test]
@@ -348,7 +363,10 @@ mod proxy_validation_tests {
         // Existing: 80 quotas (8%), adding 50 → 130/1000 = 13% > 10%
         let result = validate_proxy_mandate(1, 80, 50, 1000, 3, 0.10);
         assert!(result.is_err());
-        assert!(matches!(result, Err(ProxyValidationError::ExceedsQuotaThreshold { .. })));
+        assert!(matches!(
+            result,
+            Err(ProxyValidationError::ExceedsQuotaThreshold { .. })
+        ));
     }
 
     #[test]

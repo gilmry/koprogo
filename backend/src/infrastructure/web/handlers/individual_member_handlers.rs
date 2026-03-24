@@ -2,8 +2,8 @@ use actix_web::{delete, post, put, web, HttpResponse};
 use uuid::Uuid;
 
 use crate::application::dto::{
-    JoinCampaignAsIndividualDto, IndividualMemberResponseDto, GrantConsentDto,
-    UpdateConsumptionDto, UnsubscribeConfirmationDto,
+    GrantConsentDto, IndividualMemberResponseDto, JoinCampaignAsIndividualDto,
+    UnsubscribeConfirmationDto, UpdateConsumptionDto,
 };
 use crate::domain::entities::IndividualMember;
 use crate::infrastructure::web::AppState;

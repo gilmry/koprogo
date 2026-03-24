@@ -235,12 +235,15 @@ impl Ticket {
     pub fn send_work_order_to_contractor(&mut self) -> Result<(), String> {
         if self.status != TicketStatus::InProgress {
             return Err(
-                "Can only send work order to contractor for tickets in InProgress status".to_string(),
+                "Can only send work order to contractor for tickets in InProgress status"
+                    .to_string(),
             );
         }
 
         if self.assigned_to.is_none() {
-            return Err("Ticket must be assigned to a contractor before sending work order".to_string());
+            return Err(
+                "Ticket must be assigned to a contractor before sending work order".to_string(),
+            );
         }
 
         self.work_order_sent_at = Some(Utc::now());
@@ -528,10 +531,6 @@ mod tests {
         // Try to send work order on resolved ticket
         let result = ticket.send_work_order_to_contractor();
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .contains("InProgress status")
-        );
+        assert!(result.unwrap_err().contains("InProgress status"));
     }
 }

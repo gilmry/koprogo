@@ -47,9 +47,7 @@ test.describe("Contractor Report - Magic Link PWA", () => {
 
     // Check that the form elements exist in the DOM
     // (they may be hidden until the report loads successfully)
-    const formExists = await page
-      .getByTestId("contractor-report-form")
-      .count();
+    const formExists = await page.getByTestId("contractor-report-form").count();
     const dateInputExists = await page
       .getByTestId("contractor-report-date-input")
       .count();

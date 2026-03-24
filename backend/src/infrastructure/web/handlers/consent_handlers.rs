@@ -113,7 +113,10 @@ pub async fn record_consent(
     // Extract client information for audit trail
     let _ip_address = extract_ip_address(&req);
     let _user_agent = extract_user_agent(&req);
-    let _policy_version = body.policy_version.clone().unwrap_or_else(|| "1.0".to_string());
+    let _policy_version = body
+        .policy_version
+        .clone()
+        .unwrap_or_else(|| "1.0".to_string());
 
     // Record consent in database
     // Note: Database implementation required in consent repository

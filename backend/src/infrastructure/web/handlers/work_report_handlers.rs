@@ -67,8 +67,9 @@ pub async fn get_work_report(
                     let org_id = match uuid::Uuid::parse_str(&building.organization_id) {
                         Ok(oid) => oid,
                         Err(_) => {
-                            return HttpResponse::InternalServerError()
-                                .json(serde_json::json!({"error": "Invalid organization_id format"}))
+                            return HttpResponse::InternalServerError().json(
+                                serde_json::json!({"error": "Invalid organization_id format"}),
+                            )
                         }
                     };
 
@@ -80,7 +81,9 @@ pub async fn get_work_report(
                 Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
                     "error": "Building not found"
                 })),
-                Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
+                Err(err) => {
+                    HttpResponse::InternalServerError().json(serde_json::json!({"error": err}))
+                }
             }
         }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({

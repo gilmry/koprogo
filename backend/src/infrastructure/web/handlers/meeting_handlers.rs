@@ -68,7 +68,11 @@ pub async fn get_meeting(
     match state.meeting_use_cases.get_meeting(*id).await {
         Ok(Some(meeting)) => {
             // Multi-tenant isolation: verify meeting's building belongs to user's organization
-            if let Ok(Some(building)) = state.building_use_cases.get_building(meeting.building_id).await {
+            if let Ok(Some(building)) = state
+                .building_use_cases
+                .get_building(meeting.building_id)
+                .await
+            {
                 if let Ok(building_org) = Uuid::parse_str(&building.organization_id) {
                     if let Err(e) = user.verify_org_access(building_org) {
                         return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));

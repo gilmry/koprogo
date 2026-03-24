@@ -72,10 +72,7 @@ async fn test_record_privacy_policy_consent() {
     assert_eq!(resp.status(), 200, "Should record privacy policy consent");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert!(body["message"]
-        .as_str()
-        .unwrap()
-        .contains("privacy_policy"));
+    assert!(body["message"].as_str().unwrap().contains("privacy_policy"));
     assert_eq!(body["consent_type"], "privacy_policy");
     assert!(body["accepted_at"].as_str().is_some());
 }
@@ -130,14 +127,13 @@ async fn test_record_consent_invalid_type() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        400,
-        "Should reject invalid consent type"
-    );
+    assert_eq!(resp.status(), 400, "Should reject invalid consent type");
 
     let body: serde_json::Value = test::read_body_json(resp).await;
-    assert!(body["error"].as_str().unwrap().contains("Invalid consent_type"));
+    assert!(body["error"]
+        .as_str()
+        .unwrap()
+        .contains("Invalid consent_type"));
 }
 
 #[actix_web::test]
@@ -160,11 +156,7 @@ async fn test_record_consent_without_auth() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    assert_eq!(
-        resp.status(),
-        401,
-        "Should require authentication"
-    );
+    assert_eq!(resp.status(), 401, "Should require authentication");
 }
 
 // ==================== Get Consent Status Tests ====================

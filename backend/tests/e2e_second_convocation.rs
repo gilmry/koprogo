@@ -27,10 +27,7 @@ async fn setup_app() -> (
 }
 
 /// Helper: Create a building
-async fn create_test_building(
-    app_state: &actix_web::web::Data<AppState>,
-    org_id: Uuid,
-) -> Uuid {
+async fn create_test_building(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> Uuid {
     let building_dto = CreateBuildingDto {
         organization_id: org_id.to_string(),
         name: format!("Test Building SecondConv {}", Uuid::new_v4()),
@@ -296,10 +293,7 @@ async fn test_attach_minutes_to_non_completed_meeting_fails() {
 
     let body: serde_json::Value = test::read_body_json(resp).await;
     assert!(
-        body["error"]
-            .as_str()
-            .unwrap()
-            .contains("completed"),
+        body["error"].as_str().unwrap().contains("completed"),
         "Error should mention that meeting must be completed"
     );
 }

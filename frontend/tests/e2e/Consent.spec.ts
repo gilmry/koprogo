@@ -51,9 +51,9 @@ test.describe("Consent - Privacy Policy Consent Modal", () => {
     await page.getByTestId("consent-modal-accept-btn").click();
 
     // Modal should disappear
-    await expect(
-      page.getByTestId("consent-modal-accept-btn"),
-    ).not.toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("consent-modal-accept-btn")).not.toBeVisible({
+      timeout: 5000,
+    });
 
     // Verify localStorage was set
     const consentValue = await page.evaluate(() =>
@@ -62,9 +62,7 @@ test.describe("Consent - Privacy Policy Consent Modal", () => {
     expect(consentValue).toBe("true");
   });
 
-  test("should persist consent status after page refresh", async ({
-    page,
-  }) => {
+  test("should persist consent status after page refresh", async ({ page }) => {
     // Set consent in localStorage
     await page.goto("/login", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => {

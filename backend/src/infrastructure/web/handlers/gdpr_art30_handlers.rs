@@ -114,10 +114,7 @@ pub async fn list_processing_activities(
                         })
                         .collect();
 
-                    HttpResponse::Ok().json(ProcessingActivitiesResponse {
-                        activities,
-                        total,
-                    })
+                    HttpResponse::Ok().json(ProcessingActivitiesResponse { activities, total })
                 }
                 Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to fetch processing activities: {}", e)
@@ -192,10 +189,7 @@ pub async fn list_sub_processors(
                         })
                         .collect();
 
-                    HttpResponse::Ok().json(ProcessorsResponse {
-                        processors,
-                        total,
-                    })
+                    HttpResponse::Ok().json(ProcessorsResponse { processors, total })
                 }
                 Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Failed to fetch sub-processors: {}", e)

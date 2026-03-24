@@ -15,9 +15,7 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 test.describe("Marketplace - Service Provider Directory", () => {
   test("should search providers without authentication", async ({ page }) => {
     // Marketplace search is a public endpoint
-    const resp = await page.request.get(
-      `${API_BASE}/marketplace/providers`,
-    );
+    const resp = await page.request.get(`${API_BASE}/marketplace/providers`);
 
     expect(resp.ok()).toBeTruthy();
     const providers = await resp.json();
@@ -34,9 +32,7 @@ test.describe("Marketplace - Service Provider Directory", () => {
     expect(Array.isArray(providers)).toBeTruthy();
   });
 
-  test("should return 404 for non-existent provider slug", async ({
-    page,
-  }) => {
+  test("should return 404 for non-existent provider slug", async ({ page }) => {
     const resp = await page.request.get(
       `${API_BASE}/marketplace/providers/non-existent-provider-slug`,
     );
@@ -66,18 +62,14 @@ test.describe("Marketplace - Service Provider Directory", () => {
     );
 
     // 201 Created or 400/422 if validation fails
-    expect(
-      [200, 201, 400, 422].includes(createResp.status()),
-    ).toBeTruthy();
+    expect([200, 201, 400, 422].includes(createResp.status())).toBeTruthy();
   });
 
   test("should not require auth for marketplace search endpoint", async ({
     page,
   }) => {
     // Verify marketplace is truly public (no 401)
-    const resp = await page.request.get(
-      `${API_BASE}/marketplace/providers`,
-    );
+    const resp = await page.request.get(`${API_BASE}/marketplace/providers`);
 
     expect(resp.status()).not.toBe(401);
   });

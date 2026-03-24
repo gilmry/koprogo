@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use std::collections::HashMap;
+use uuid::Uuid;
 
 /// Contract Evaluation (Review of contractor work)
 /// Issue #276: Marketplace corps de métier + ContractEvaluation
@@ -196,9 +196,15 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         let criteria = HashMap::new();
-        let mut eval =
-            ContractEvaluation::new(org_id, provider_id, evaluator_id, building_id, criteria, true)
-                .unwrap();
+        let mut eval = ContractEvaluation::new(
+            org_id,
+            provider_id,
+            evaluator_id,
+            building_id,
+            criteria,
+            true,
+        )
+        .unwrap();
 
         assert!(!eval.is_legal_evaluation);
         let _ = eval.mark_as_legal_evaluation();

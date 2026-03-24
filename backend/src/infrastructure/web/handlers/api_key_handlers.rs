@@ -3,14 +3,14 @@
 //! Enables third-party integrations with KoproGo via API keys.
 //! Supports: PropTech, notaries, energy providers, accounting software.
 
-use actix_web::{web, HttpResponse, get, post, delete, put};
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-use std::sync::Arc;
+use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use uuid::Uuid;
 
-use crate::infrastructure::web::AppState;
 use crate::infrastructure::web::middleware::AuthenticatedUser;
+use crate::infrastructure::web::AppState;
 
 /// Available API v2 permissions
 const VALID_PERMISSIONS: &[&str] = &[
@@ -39,7 +39,7 @@ pub struct CreateApiKeyRequest {
 pub struct ApiKeyCreatedResponse {
     pub id: Uuid,
     pub name: String,
-    pub key: String,  // Full key — only shown ONCE at creation
+    pub key: String, // Full key — only shown ONCE at creation
     pub key_prefix: String,
     pub permissions: Vec<String>,
     pub rate_limit: i32,
@@ -83,12 +83,10 @@ pub struct ApiKeyListResponse {
 
 /// Generate a random API key with secure hashing
 fn generate_api_key() -> (String, String, String) {
-    use sha2::{Sha256, Digest};
+    use sha2::{Digest, Sha256};
 
     // Generate 32 random bytes for the key body
-    let random_bytes: Vec<u8> = (0..32)
-        .map(|_| rand::random::<u8>())
-        .collect();
+    let random_bytes: Vec<u8> = (0..32).map(|_| rand::random::<u8>()).collect();
 
     let key_body = hex::encode(&random_bytes);
     let full_key = format!("kpg_live_{}", key_body);
@@ -127,9 +125,11 @@ pub async fn create_api_key(
 
     let org_id = match claims.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "organization_id required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "organization_id required"
+            }))
+        }
     };
 
     // Validate name
@@ -216,9 +216,11 @@ pub async fn list_api_keys(
 ) -> HttpResponse {
     let org_id = match claims.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "organization_id required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "organization_id required"
+            }))
+        }
     };
 
     let rows = sqlx::query!(
@@ -274,9 +276,11 @@ pub async fn get_api_key(
     let key_id = path.into_inner();
     let org_id = match claims.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "organization_id required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "organization_id required"
+            }))
+        }
     };
 
     let row = sqlx::query!(
@@ -326,9 +330,11 @@ pub async fn update_api_key(
     let key_id = path.into_inner();
     let org_id = match claims.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "organization_id required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "organization_id required"
+            }))
+        }
     };
 
     // Verify authorization (only the creator or superadmin can update)
@@ -430,9 +436,11 @@ pub async fn revoke_api_key(
     let key_id = path.into_inner();
     let org_id = match claims.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "organization_id required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "organization_id required"
+            }))
+        }
     };
 
     let result = sqlx::query!(
@@ -487,9 +495,11 @@ pub async fn rotate_api_key(
     let _key_id = path.into_inner();
     let _org_id = match claims.organization_id {
         Some(id) => id,
-        None => return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "organization_id required"
-        })),
+        None => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "organization_id required"
+            }))
+        }
     };
 
     // TODO: Implement key rotation
@@ -518,7 +528,10 @@ mod tests {
 
     #[test]
     fn test_validate_permissions() {
-        let valid_perms = vec!["read:buildings".to_string(), "write:etats-dates".to_string()];
+        let valid_perms = vec![
+            "read:buildings".to_string(),
+            "write:etats-dates".to_string(),
+        ];
         for perm in valid_perms {
             assert!(VALID_PERMISSIONS.contains(&perm.as_str()));
         }

@@ -22,10 +22,7 @@ async fn create_superadmin_token(
 }
 
 #[allow(dead_code)]
-async fn create_syndic_token(
-    app_state: &actix_web::web::Data<AppState>,
-    org_id: Uuid,
-) -> String {
+async fn create_syndic_token(app_state: &actix_web::web::Data<AppState>, org_id: Uuid) -> String {
     let email = format!("syndic+{}@test.com", Uuid::new_v4());
     let reg = koprogo_api::application::dto::RegisterRequest {
         email: email.clone(),

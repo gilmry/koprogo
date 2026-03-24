@@ -1,8 +1,8 @@
 // DTOs for Marketplace API (Issue #276)
 
+use crate::domain::entities::ServiceProvider;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use crate::domain::entities::ServiceProvider;
 
 /// Request DTO for creating a service provider
 #[derive(Debug, Serialize, Deserialize, Validate, Clone)]

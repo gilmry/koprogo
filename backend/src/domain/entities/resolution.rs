@@ -45,7 +45,7 @@ pub struct Resolution {
     pub total_voting_power_abstention: f64,
     pub status: ResolutionStatus,
     // Issue #310: Link resolution to agenda item
-    pub agenda_item_index: Option<usize>,  // Index into meeting.agenda Vec
+    pub agenda_item_index: Option<usize>, // Index into meeting.agenda Vec
     pub created_at: DateTime<Utc>,
     pub voted_at: Option<DateTime<Utc>>,
 }

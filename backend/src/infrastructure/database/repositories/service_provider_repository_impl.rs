@@ -398,11 +398,13 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
     }
 
     async fn count_by_organization(&self, organization_id: Uuid) -> Result<i64, String> {
-        let row = sqlx::query("SELECT COUNT(*) as count FROM service_providers WHERE organization_id = $1")
-            .bind(organization_id)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| format!("Database error: {}", e))?;
+        let row = sqlx::query(
+            "SELECT COUNT(*) as count FROM service_providers WHERE organization_id = $1",
+        )
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(row.get::<i64, _>("count"))
     }

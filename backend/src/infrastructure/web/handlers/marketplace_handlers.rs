@@ -3,7 +3,8 @@ use chrono::Datelike;
 use uuid::Uuid;
 
 use crate::application::dto::{
-    CreateServiceProviderDto, SearchServiceProvidersQuery, ServiceProviderResponseDto, ContractEvaluationsAnnualReportDto,
+    ContractEvaluationsAnnualReportDto, CreateServiceProviderDto, SearchServiceProvidersQuery,
+    ServiceProviderResponseDto,
 };
 use crate::domain::entities::{ServiceProvider, TradeCategory};
 use crate::infrastructure::web::middleware::AuthenticatedUser;
