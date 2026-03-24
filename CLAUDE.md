@@ -53,8 +53,11 @@ KoproGo includes production-grade security and observability:
 
 **Quick deploy:**
 ```bash
-cd infrastructure/ansible
-ansible-playbook -i inventory.ini security-monitoring.yml
+# VPS (Docker Compose)
+make -f infrastructure/Makefile.infra ansible-setup ENV=production ARCH=vps SITE=monosite
+
+# K3s
+make -f infrastructure/Makefile.infra ansible-setup ENV=production ARCH=k3s SITE=monosite
 ```
 
 ## Architecture: Hexagonal (Ports & Adapters)
