@@ -11,6 +11,18 @@ KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
 
 .. note::
 
+   **Mise a jour 2026-03-24** : Grand merge integration -> main (48 commits, 65 conflits resolus).
+   55 issues fermees (#220-237 R&D, #252-265 MCP, #271-280 Legal+Features, #300-317 Bugs+GDPR, #326-334 retroactives).
+   8 issues creees retroactivement (#326-334) pour tracabilite du travail non planifie
+   (consent, security incidents, API keys, GDPR Art.30, i18n, BDD tests, OpenAPI, CI fixes).
+   Toutes les features Jalon 1-3 sont maintenant implementees (backend 100%, BDD 100%, E2E 100%).
+   Branches nettoyees : main = dev = integration = staging = production (identiques).
+   CI corrigee : formatting (cargo fmt + prettier), RUSTSEC-2026-0066, astro check, SSG build.
+   4 PRs dependabot mergees (#318-321).
+   Playwright : 219/240 tests passent (91%), 21 en echec (ApiKeys + SecurityIncidents).
+
+.. note::
+
    **Mise a jour 2026-03-22** : Tests E2E manuels — 17 issues creees (#301-#317).
    8 bugs (2 CRITIQUES: multi-tenant #302, tantiemes #306), 1 GAP architectural (#309),
    5 conformite legale AG (#310-#314), 3 RGPD (#315-#317).

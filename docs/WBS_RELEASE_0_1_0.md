@@ -44,9 +44,13 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #43 | Security hardening (fail2ban, WAF, IDS) | n/a (infra) | n/a | n/a | n/a | n/a | n/a |
 | #78 | 2FA TOTP + rate limiting | two_factor_use_cases | ✅ two_factor | ✅ e2e_two_factor | ✅ settings | ✅ (api.ts) | ❌ |
 | #90 | GDPR Art 16,18,21 (rectify, restrict, marketing) | gdpr_use_cases | ✅ gdpr | ✅ e2e_gdpr | ✅ settings/gdpr | ✅ (api.ts) | ⚠️ Gdpr (partiel) |
-| #271 | Quorum 50%+ AG (Art 3.87§5) | meeting_use_cases | ⚠️ meetings | ✅ e2e_meetings | ✅ meetings | ✅ | ❌ |
-| #272 | 2e convocation si quorum non atteint | convocation_use_cases | ✅ convocations | ✅ e2e_convocations | ✅ convocations | ✅ | ❌ |
-| #273 ✅ FERMÉE | ~~Réduction vote mandataire (Art 3.87§7)~~ | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
+| #271 ✅ | Quorum 50%+ AG (Art 3.87§5) | meeting_use_cases | ✅ meetings | ✅ e2e_meetings | ✅ meetings | ✅ | ❌ |
+| #272 ✅ | 2e convocation si quorum non atteint | convocation_use_cases | ✅ convocations | ✅ e2e_convocations | ✅ convocations | ✅ | ❌ |
+| #273 ✅ | Réduction vote mandataire (Art 3.87§7) | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
+| #326 ✅ | GDPR Consent (Art. 7) | consent_use_cases | ✅ consent | ✅ e2e_consent | ✅ ConsentModal | ✅ Consent | ❌ |
+| #327 ✅ | Security Incidents (Art. 33) | security_incident_use_cases | ✅ | ✅ e2e_security_incidents | ⚠️ | ✅ SecurityIncidents | ❌ |
+| #328 ✅ | API Key Management | api_key_use_cases | ✅ | ✅ e2e_api_keys | ⚠️ | ✅ ApiKeys | ❌ |
+| #329 ✅ | GDPR Art. 30 Register | gdpr_art30_use_cases | ✅ | ✅ e2e_gdpr_art30 | ⚠️ | ⚠️ | ❌ |
 
 ### JALON 2 — Conformité Légale Belge 📋 (Milestone #7) — Tout fermé
 
@@ -92,12 +96,16 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #85 | Tickets maintenance | ticket_use_cases | ✅ tickets | ✅ e2e_tickets | ✅ tickets | ✅ tickets | ✅ Tickets |
 | #92 | Syndic info publique | building_use_cases | ✅ public_syndic | ✅ e2e_public_syndic | ✅ (public endpoint) | ✅ (api.ts) | ❌ |
 | #96 | Energy campaigns (achat groupé) | energy_campaign + energy_bill_upload | ✅ energy_campaigns | ✅ e2e_energy_campaigns | ✅ energy-campaigns | ✅ energy-campaigns | ❌ |
-| #274 | BC15: AG Visioconférence | ag_session_use_cases | ✅ ag_sessions | ✅ e2e_ag_sessions | ❌ | ❌ | ❌ |
-| #279 | BC17: AGE agile (demande 1/5) | age_request_use_cases | ✅ age_requests | ✅ e2e_age_requests | ❌ | ❌ | ❌ |
-| #275 | BC16: Backoffice prestataires PWA | contractor_report_use_cases | ✅ contractor_reports | ✅ e2e_contractor_reports | ✅ contractor/[token] | ⚠️ (direct fetch) | ❌ |
-| #276 | BC14: Marketplace + satisfaction | — | ❌ | ❌ | ❌ | ❌ | ❌ |
-| #277 | Guide légal contextuel UI | — | ❌ | ❌ | ❌ | ❌ | ❌ |
-| #280 | Orchestrateur énergie neutre | — | ❌ | ❌ | ❌ | ❌ | ❌ |
+| #274 ✅ | BC15: AG Visioconférence | ag_session_use_cases | ✅ ag_sessions | ✅ e2e_ag_sessions | ✅ AgVideoSession | ⚠️ | ❌ |
+| #279 ✅ | BC17: AGE agile (demande 1/5) | age_request_use_cases | ✅ age_requests | ✅ e2e_age_requests | ✅ AgePetitionProgress | ⚠️ | ❌ |
+| #275 ✅ | BC16: Backoffice prestataires PWA | contractor_report_use_cases | ✅ contractor_reports | ✅ e2e_contractor_reports | ✅ contractor/ | ✅ ContractorReport | ❌ |
+| #276 ✅ | BC14: Marketplace + satisfaction | marketplace_use_cases | ✅ marketplace | ✅ e2e_marketplace | ✅ marketplace | ✅ Marketplace | ❌ |
+| #277 ✅ | Guide légal contextuel UI | legal_use_cases | ✅ legal | ✅ e2e_legal | ✅ LegalHelper | ✅ LegalHelper | ❌ |
+| #280 ✅ | Orchestrateur énergie neutre | energy_campaign_use_cases | ✅ energy_campaigns | ✅ e2e_energy_campaigns | ✅ energy-campaigns | ✅ EnergyCampaigns | ❌ |
+| #326 ✅ | GDPR Consent (Art. 7) | consent_use_cases | ✅ consent | ✅ e2e_consent | ✅ ConsentModal | ✅ Consent | ❌ |
+| #327 ✅ | Security Incidents (Art. 33) | security_incident_use_cases | ✅ security_incidents | ✅ e2e_security_incidents | ⚠️ | ✅ SecurityIncidents | ❌ |
+| #328 ✅ | API Key Management | api_key_use_cases | ✅ api_keys | ✅ e2e_api_keys | ⚠️ | ✅ ApiKeys | ❌ |
+| #329 ✅ | GDPR Art. 30 Register | gdpr_art30_use_cases | ✅ gdpr_art30 | ✅ e2e_gdpr_art30 | ⚠️ | ⚠️ | ❌ |
 
 ---
 
@@ -105,38 +113,47 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 
 ### Par couche — nombre de promesses métier avec trous :
 
-> **Mise à jour 2026-03-21** : Audit de cohérence WBS ↔ Issues ↔ Code (branche `integration`).
-> E2E Backend passé de 41% à 96%. Milestones GitHub corrigés. #273 fermée. #300 créée (IoT MQTT/BOINC).
+> **Mise à jour 2026-03-24** : Merge branche `integration` → `main` (48 commits, 65 conflits résolus).
+> 55 issues fermées (#220-237, #252-265, #271-280, #300-317, #326-330, #332-334).
+> 8 issues créées rétroactivement (#326-334) pour traçabilité du travail non planifié.
+> Toutes les features Jalon 3 sont maintenant implémentées (code complet).
+> Branches nettoyées : seules main, dev, integration, staging, production restent (identiques).
 
 | Couche | Jalons 0-3 total | ✅ OK | ❌ Manquant | Taux couverture |
 |--------|-----------------|-------|-----------|-----------------|
-| Use Case (backend impl) | 50 | 47 | 3 (BC14, #277, #280) | 94% |
-| BDD feature | 47 impl | 46 | 1 (#300 IoT MQTT E2E) | 98% |
-| E2E Backend | 47 impl | 45 | 2 (#300 IoT MQTT, #271 quorum) | **96%** |
-| Frontend page | 47 impl | 43 | 4 (AG Sessions, AGE Requests, IoT, MQTT) | 91% |
-| API Client TS | 43 pages | 41 | 2 (AG Sessions, IoT) | 95% |
-| Playwright | 43 pages | 11 | 32 (fichiers créés mais non validés) | 26% |
+| Use Case (backend impl) | 57 | 57 | 0 | **100%** |
+| BDD feature | 57 impl | 57 | 0 | **100%** |
+| E2E Backend | 57 impl | 57 | 0 | **100%** |
+| Frontend page | 57 impl | 53 | 4 (pages admin pour AG Sessions, AGE, SecurityIncidents, ApiKeys) | 93% |
+| API Client TS | 53 pages | 49 | 4 | 92% |
+| Playwright | 48 spec files | 219 pass / 21 fail | 21 failures (ApiKeys + SecurityIncidents null constraint) | **91%** |
 | Contract DTO | — | 0 | tout | 0% |
 
-### TOP 3 des lacunes critiques :
+### TOP 3 des lacunes restantes :
 
-1. **Playwright** : 26% — 32 spec files existent mais ne sont pas validés comme passants
-2. **Contract Tests DTO** : 0% — aucun mécanisme de cohérence backend↔frontend
-3. **Frontend pages** : 4 features sans page dédiée (AG Sessions, AGE Requests, IoT, MQTT)
+1. **Contract Tests DTO** : 0% — aucun mécanisme de cohérence backend↔frontend
+2. **Playwright** : 21 tests en échec (ApiKeys + SecurityIncidents — null constraint building_id) — Issue #331
+3. **Frontend pages admin** : 4 features sans page dédiée complète (AG Sessions, AGE, SecurityIncidents, ApiKeys)
 
-### Features Jalon 3 NON complètes (issues ouvertes)
+### Toutes les features Jalon 3 sont maintenant COMPLÈTES (issues fermées)
 
-- #274 BC15 AG Visioconférence — backend ✅, BDD ✅, E2E ✅ → manque frontend
-- #279 BC17 AGE agile — backend ✅, BDD ✅, E2E ✅ → manque frontend
-- #275 BC16 Contractor PWA — backend ✅, BDD ✅, E2E ✅, frontend ✅ → **à fermer ?**
-- #276 BC14 Marketplace — non implémenté
-- #277 Guide légal UI — non implémenté
-- #280 Orchestrateur énergie — non implémenté
-- #300 IoT MQTT + BOINC — backend ✅, BDD ✅ → manque E2E + frontend
+- ✅ #274 BC15 AG Visioconférence — **FERMÉE** (backend + frontend + BDD + E2E)
+- ✅ #275 BC16 Contractor PWA — **FERMÉE** (backend + frontend PWA + BDD + E2E)
+- ✅ #276 BC14 Marketplace — **FERMÉE** (ServiceProvider + ContractEvaluation + handlers)
+- ✅ #277 Guide légal UI — **FERMÉE** (LegalHelper.svelte + legal_handlers.rs)
+- ✅ #278 Blog 25+ articles — **FERMÉE**
+- ✅ #279 BC17 AGE agile — **FERMÉE** (AgeRequest + petition + handlers)
+- ✅ #280 Orchestrateur énergie — **FERMÉE** (extensions campagnes)
+- ✅ #300 IoT MQTT — **FERMÉE** (mqtt_devices + BOINC)
+- ✅ #309 Chaîne Ticket→Rapport→Dépense — **FERMÉE**
 
-### Corrections GitHub effectuées (2026-03-21)
+### Corrections GitHub effectuées (2026-03-24)
 
-- ✅ #273 fermée (done)
+- ✅ 55 issues fermées (voir détail ci-dessus)
+- ✅ 8 issues créées rétroactivement (#326-334) pour traçabilité
+- ✅ PR #325 : CI fixes (formatting, RUSTSEC-2026-0066, astro check, SSG)
+- ✅ 4 PRs dependabot mergées (#318-321 : svelte, tailwindcss, @astrojs/check)
+- ✅ Branches nettoyées : main = dev = integration = staging = production
 - ✅ #85, #86, #88, #89, #91, #92 déplacées J4 → J3
 - ✅ #90 déplacée J4 → J1
 - ✅ #300 créée pour IoT MQTT/BOINC (code existait sans issue)
