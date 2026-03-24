@@ -1,0 +1,108 @@
+#!/bin/bash
+# LUKS Encryption Setup for KoproGo Data Volumes
+# This script sets up encrypted volumes for PostgreSQL and document storage
+
+set -e
+
+LUKS_KEY_FILE="/root/.koprogo-luks-key"
+POSTGRES_VOLUME="/dev/{{ postgres_volume_device | default('vdb') }}"
+POSTGRES_MOUNT="/var/lib/docker/volumes/postgres_data/_data"
+UPLOADS_VOLUME="/dev/{{ uploads_volume_device | default('vdc') }}"
+UPLOADS_MOUNT="/var/lib/docker/volumes/backend_uploads/_data"
+
+echo "=================================================="
+echo "KoproGo LUKS Encryption Setup"
+echo "=================================================="
+
+# Generate strong encryption key if not exists
+if [ ! -f "$LUKS_KEY_FILE" ]; then
+    echo "🔐 Generating LUKS encryption key..."
+    dd if=/dev/urandom of="$LUKS_KEY_FILE" bs=512 count=8
+    chmod 0400 "$LUKS_KEY_FILE"
+    echo "✅ Encryption key generated: $LUKS_KEY_FILE"
+else
+    echo "✅ Using existing encryption key: $LUKS_KEY_FILE"
+fi
+
+# Function to setup encrypted volume
+setup_encrypted_volume() {
+    local DEVICE=$1
+    local MAPPER_NAME=$2
+    local MOUNT_POINT=$3
+
+    echo ""
+    echo "📦 Setting up encrypted volume: $DEVICE"
+    echo "   Mapper name: $MAPPER_NAME"
+    echo "   Mount point: $MOUNT_POINT"
+
+    # Check if device exists
+    if [ ! -b "$DEVICE" ]; then
+        echo "⚠️  Device $DEVICE not found - skipping"
+        return 0
+    fi
+
+    # Check if already encrypted
+    if cryptsetup isLuks "$DEVICE"; then
+        echo "✅ Volume already encrypted"
+    else
+        echo "🔒 Encrypting volume with LUKS..."
+        cryptsetup luksFormat "$DEVICE" "$LUKS_KEY_FILE" --batch-mode \
+            --cipher aes-xts-plain64 \
+            --key-size 512 \
+            --hash sha512 \
+            --use-random
+        echo "✅ Volume encrypted successfully"
+    fi
+
+    # Open LUKS volume
+    if [ ! -e "/dev/mapper/$MAPPER_NAME" ]; then
+        echo "🔓 Opening encrypted volume..."
+        cryptsetup luksOpen "$DEVICE" "$MAPPER_NAME" --key-file="$LUKS_KEY_FILE"
+        echo "✅ Volume opened: /dev/mapper/$MAPPER_NAME"
+    else
+        echo "✅ Volume already opened: /dev/mapper/$MAPPER_NAME"
+    fi
+
+    # Format if not already formatted
+    if ! blkid "/dev/mapper/$MAPPER_NAME" | grep -q ext4; then
+        echo "📝 Formatting volume as ext4..."
+        mkfs.ext4 -F "/dev/mapper/$MAPPER_NAME"
+        echo "✅ Volume formatted"
+    else
+        echo "✅ Volume already formatted"
+    fi
+
+    # Create mount point
+    mkdir -p "$MOUNT_POINT"
+
+    # Mount if not already mounted
+    if ! mount | grep -q "$MOUNT_POINT"; then
+        echo "📂 Mounting encrypted volume..."
+        mount "/dev/mapper/$MAPPER_NAME" "$MOUNT_POINT"
+        echo "✅ Volume mounted: $MOUNT_POINT"
+    else
+        echo "✅ Volume already mounted: $MOUNT_POINT"
+    fi
+
+    # Set permissions
+    chown -R 999:999 "$MOUNT_POINT" 2>/dev/null || true
+}
+
+# Setup PostgreSQL encrypted volume
+setup_encrypted_volume "$POSTGRES_VOLUME" "postgres_encrypted" "$POSTGRES_MOUNT"
+
+# Setup uploads encrypted volume
+setup_encrypted_volume "$UPLOADS_VOLUME" "uploads_encrypted" "$UPLOADS_MOUNT"
+
+echo ""
+echo "=================================================="
+echo "✅ LUKS encryption setup complete!"
+echo "=================================================="
+echo "Encrypted volumes:"
+cryptsetup status postgres_encrypted 2>/dev/null || echo "  - postgres_encrypted: not configured"
+cryptsetup status uploads_encrypted 2>/dev/null || echo "  - uploads_encrypted: not configured"
+echo ""
+echo "⚠️  IMPORTANT: Backup the encryption key securely!"
+echo "   Key location: $LUKS_KEY_FILE"
+echo "   Backup command: gpg --encrypt --recipient admin@koprogo.com $LUKS_KEY_FILE"
+echo "=================================================="

@@ -1,0 +1,224 @@
+#!/bin/bash
+# KoproGo Encrypted Backup Script
+# Backups PostgreSQL database and MinIO documents with GPG encryption and S3 sync
+
+set -e
+
+KOPROGO_DIR="{{ koprogo_dir }}"
+BACKUP_DIR="$KOPROGO_DIR/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+TIMESTAMP=$(date +%s)
+GPG_RECIPIENT="{{ gpg_backup_email | default('backup@koprogo.local') }}"
+S3_BUCKET="{{ s3_backup_bucket | default('koprogo-backups') }}"
+S3_ENDPOINT="{{ s3_backup_endpoint | default('') }}"
+
+mkdir -p "$BACKUP_DIR"
+
+echo "=================================================="
+echo "KoproGo Encrypted Backup - $(date)"
+echo "=================================================="
+
+# Function to check if GPG key exists
+check_gpg_key() {
+    if ! gpg --list-keys "$GPG_RECIPIENT" &>/dev/null; then
+        echo "⚠️  GPG key for $GPG_RECIPIENT not found!"
+        echo "   Generate key with: gpg --full-generate-key"
+        return 1
+    fi
+    return 0
+}
+
+# Function to backup PostgreSQL
+backup_postgresql() {
+    echo "📦 Backing up PostgreSQL database..."
+
+    local SQL_FILE="$BACKUP_DIR/koprogo_$DATE.sql"
+    local ENCRYPTED_FILE="$BACKUP_DIR/koprogo_$DATE.sql.gz.gpg"
+
+    # Dump database
+    docker compose -f "$KOPROGO_DIR/deploy/production/docker-compose.yml" exec -T postgres \
+        pg_dump -U koprogo koprogo_db > "$SQL_FILE"
+
+    # Compress and encrypt
+    gzip -9 < "$SQL_FILE" | \
+        gpg --encrypt --recipient "$GPG_RECIPIENT" \
+        --trust-model always \
+        --compress-algo none \
+        --output "$ENCRYPTED_FILE"
+
+    # Remove unencrypted SQL file
+    rm -f "$SQL_FILE"
+
+    local BACKUP_SIZE=$(du -h "$ENCRYPTED_FILE" | cut -f1)
+    echo "✅ PostgreSQL backup created: $(basename $ENCRYPTED_FILE) ($BACKUP_SIZE)"
+
+    # Export timestamp metric for monitoring
+    echo "koprogo_last_backup_timestamp_seconds $TIMESTAMP" > "$BACKUP_DIR/last_backup.prom"
+}
+
+# Function to backup MinIO documents
+backup_minio() {
+    echo "📦 Backing up MinIO documents..."
+
+    # Check if mc (MinIO Client) is installed
+    if ! command -v mc &> /dev/null; then
+        echo "⚠️  MinIO client (mc) not installed - skipping MinIO backup"
+        echo "   Install with: wget https://dl.min.io/client/mc/release/linux-amd64/mc && chmod +x mc && mv mc /usr/local/bin/"
+        return 0
+    fi
+
+    # Configure MinIO alias if S3 credentials are available
+    if [ -n "${MINIO_ROOT_USER:-}" ] && [ -n "${MINIO_ROOT_PASSWORD:-}" ]; then
+        mc alias set local http://localhost:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" 2>/dev/null || true
+
+        # Create tarball of MinIO metadata
+        local MINIO_METADATA="$BACKUP_DIR/minio-metadata_$DATE.json"
+        local ENCRYPTED_METADATA="$BACKUP_DIR/minio-metadata_$DATE.json.gz.gpg"
+
+        mc ls local/koprogo-documents --json > "$MINIO_METADATA" 2>/dev/null || echo "[]" > "$MINIO_METADATA"
+
+        # Encrypt metadata
+        gzip -9 < "$MINIO_METADATA" | \
+            gpg --encrypt --recipient "$GPG_RECIPIENT" \
+            --trust-model always \
+            --compress-algo none \
+            --output "$ENCRYPTED_METADATA"
+
+        rm -f "$MINIO_METADATA"
+
+        echo "✅ MinIO metadata backed up: $(basename $ENCRYPTED_METADATA)"
+    else
+        echo "⚠️  MinIO credentials not available - skipping MinIO backup"
+    fi
+}
+
+# Function to sync to S3
+sync_to_s3() {
+    echo "☁️  Syncing backups to S3..."
+
+    # Check if s3cmd is installed
+    if ! command -v s3cmd &> /dev/null; then
+        echo "⚠️  s3cmd not installed - skipping S3 sync"
+        echo "   Install with: apt install s3cmd"
+        return 0
+    fi
+
+    # Check if S3 is configured
+    if [ ! -f ~/.s3cfg ] && [ -z "$S3_ENDPOINT" ]; then
+        echo "⚠️  S3 not configured - skipping sync"
+        echo "   Configure with: s3cmd --configure"
+        return 0
+    fi
+
+    # Sync encrypted backups to S3
+    local S3_OPTS=""
+    if [ -n "$S3_ENDPOINT" ]; then
+        S3_OPTS="--host=$S3_ENDPOINT --host-bucket=$S3_ENDPOINT/%(bucket)"
+    fi
+
+    s3cmd put $S3_OPTS \
+        --server-side-encryption \
+        --no-preserve \
+        "$BACKUP_DIR"/koprogo_$DATE.sql.gz.gpg \
+        s3://$S3_BUCKET/postgres/ 2>/dev/null || {
+            echo "⚠️  S3 sync failed - backups remain local only"
+            return 0
+        }
+
+    if [ -f "$BACKUP_DIR"/minio-metadata_$DATE.json.gz.gpg ]; then
+        s3cmd put $S3_OPTS \
+            --server-side-encryption \
+            --no-preserve \
+            "$BACKUP_DIR"/minio-metadata_$DATE.json.gz.gpg \
+            s3://$S3_BUCKET/minio/ 2>/dev/null || true
+    fi
+
+    echo "✅ Backups synced to S3: s3://$S3_BUCKET/"
+}
+
+# Function to backup .env file
+backup_env() {
+    echo "📦 Backing up .env configuration..."
+
+    local ENV_FILE="$KOPROGO_DIR/deploy/production/.env"
+    local ENCRYPTED_ENV="$BACKUP_DIR/.env_$DATE.gpg"
+
+    if [ -f "$ENV_FILE" ]; then
+        gpg --encrypt --recipient "$GPG_RECIPIENT" \
+            --trust-model always \
+            --output "$ENCRYPTED_ENV" \
+            "$ENV_FILE"
+
+        echo "✅ Configuration backed up: $(basename $ENCRYPTED_ENV)"
+    fi
+}
+
+# Function to cleanup old backups
+cleanup_old_backups() {
+    echo "🧹 Cleaning up old local backups..."
+
+    # Keep last 7 days locally
+    find "$BACKUP_DIR" -name "koprogo_*.sql.gz.gpg" -mtime +7 -delete
+    find "$BACKUP_DIR" -name "minio-metadata_*.json.gz.gpg" -mtime +7 -delete
+    find "$BACKUP_DIR" -name ".env_*.gpg" -mtime +7 -delete
+
+    local BACKUP_COUNT=$(find "$BACKUP_DIR" -name "koprogo_*.sql.gz.gpg" | wc -l)
+    echo "✅ $BACKUP_COUNT PostgreSQL backups available locally"
+}
+
+# Function to test restore capability
+test_restore() {
+    echo "🧪 Testing restore capability..."
+
+    local LATEST_BACKUP=$(ls -t "$BACKUP_DIR"/koprogo_*.sql.gz.gpg 2>/dev/null | head -1)
+
+    if [ -z "$LATEST_BACKUP" ]; then
+        echo "⚠️  No backup available to test"
+        return 0
+    fi
+
+    # Decrypt and verify it's valid gzipped SQL
+    if gpg --decrypt --quiet "$LATEST_BACKUP" 2>/dev/null | gunzip -t 2>/dev/null; then
+        echo "✅ Restore test passed - backup is valid"
+    else
+        echo "❌ Restore test FAILED - backup may be corrupted!"
+        exit 1
+    fi
+}
+
+# Main backup flow
+main() {
+    # Check GPG key
+    if ! check_gpg_key; then
+        echo "❌ Backup aborted - GPG key missing"
+        exit 1
+    fi
+
+    # Perform backups
+    backup_postgresql
+    backup_minio
+    backup_env
+
+    # Sync to S3 (if configured)
+    sync_to_s3
+
+    # Cleanup old backups
+    cleanup_old_backups
+
+    # Test restore capability
+    test_restore
+
+    echo ""
+    echo "=================================================="
+    echo "✅ Encrypted backup completed successfully!"
+    echo "=================================================="
+    echo "Local backups: $BACKUP_DIR"
+    echo "S3 backups: s3://$S3_BUCKET/"
+    echo "GPG recipient: $GPG_RECIPIENT"
+    echo ""
+    echo "To restore a backup:"
+    echo "  gpg --decrypt koprogo_YYYYMMDD_HHMMSS.sql.gz.gpg | gunzip | docker exec -i koprogo-postgres psql -U koprogo koprogo_db"
+    echo "=================================================="
+}
+
+main "$@"

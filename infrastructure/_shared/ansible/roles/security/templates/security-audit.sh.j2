@@ -1,0 +1,109 @@
+#!/bin/bash
+# KoproGo Security Audit Script
+# Runs Lynis audit and other security checks
+
+set -e
+
+AUDIT_DIR="/var/log/koprogo/security-audits"
+DATE=$(date +%Y%m%d_%H%M%S)
+AUDIT_LOG="$AUDIT_DIR/audit_$DATE.log"
+
+mkdir -p "$AUDIT_DIR"
+
+echo "=================================================="
+echo "KoproGo Security Audit - $(date)"
+echo "=================================================="
+
+# Run Lynis security audit
+if command -v lynis &> /dev/null; then
+    echo "📋 Running Lynis security audit..."
+    lynis audit system --cronjob --quiet | tee "$AUDIT_LOG"
+
+    # Extract security score
+    SCORE=$(grep "Hardening index" "$AUDIT_LOG" | awk '{print $4}' | tr -d '[]')
+    echo "🔒 Security score: $SCORE"
+
+    # Alert if score is too low
+    if [ ! -z "$SCORE" ]; then
+        SCORE_NUM=$(echo "$SCORE" | tr -d '%' || echo "0")
+        if [ "$SCORE_NUM" -lt 75 ]; then
+            echo "⚠️  WARNING: Security score below 75% threshold!"
+            echo "   Run 'lynis show details' for recommendations"
+        fi
+    fi
+else
+    echo "⚠️  Lynis not installed - skipping security audit"
+    echo "   Install with: apt install lynis"
+fi
+
+# Run rkhunter (rootkit detection)
+if command -v rkhunter &> /dev/null; then
+    echo ""
+    echo "🔍 Running rootkit detection (rkhunter)..."
+    rkhunter --check --skip-keypress --report-warnings-only | tee -a "$AUDIT_LOG"
+else
+    echo "⚠️  rkhunter not installed"
+    echo "   Install with: apt install rkhunter"
+fi
+
+# Check for failed login attempts
+echo ""
+echo "🔐 Recent failed login attempts:"
+grep "Failed password" /var/log/auth.log | tail -10 || echo "  None found"
+
+# Check fail2ban status
+if command -v fail2ban-client &> /dev/null; then
+    echo ""
+    echo "🛡️  fail2ban status:"
+    fail2ban-client status | tee -a "$AUDIT_LOG"
+
+    # List banned IPs
+    echo ""
+    echo "🚫 Currently banned IPs:"
+    for jail in $(fail2ban-client status | grep "Jail list" | cut -d: -f2 | tr ',' ' '); do
+        BANNED=$(fail2ban-client status $jail | grep "Banned IP list" | cut -d: -f2)
+        if [ ! -z "$BANNED" ]; then
+            echo "  $jail: $BANNED"
+        fi
+    done
+else
+    echo "⚠️  fail2ban not running"
+fi
+
+# Check open ports
+echo ""
+echo "🌐 Open network ports:"
+ss -tulnp | grep LISTEN | tee -a "$AUDIT_LOG"
+
+# Check for security updates
+echo ""
+echo "📦 Security updates available:"
+apt list --upgradable 2>/dev/null | grep -i security || echo "  System is up to date"
+
+# Check Docker security
+if command -v docker &> /dev/null; then
+    echo ""
+    echo "🐳 Docker security checks:"
+
+    # Check for privileged containers
+    PRIVILEGED=$(docker ps --format '{{.Names}}' --filter "label=privileged=true" 2>/dev/null)
+    if [ ! -z "$PRIVILEGED" ]; then
+        echo "  ⚠️  Privileged containers running: $PRIVILEGED"
+    else
+        echo "  ✅ No privileged containers"
+    fi
+
+    # Check Docker version
+    echo "  Docker version: $(docker --version)"
+fi
+
+# Cleanup old audit logs (keep last 30 days)
+find "$AUDIT_DIR" -name "audit_*.log" -mtime +30 -delete
+
+echo ""
+echo "=================================================="
+echo "✅ Security audit complete!"
+echo "=================================================="
+echo "Full log: $AUDIT_LOG"
+echo "Score: $SCORE"
+echo "=================================================="

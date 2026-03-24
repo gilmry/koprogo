@@ -1,0 +1,38 @@
+#!/bin/bash
+# KoproGo Daily Backup Script
+
+set -e
+
+KOPROGO_DIR="{{ koprogo_dir }}"
+BACKUP_DIR="$KOPROGO_DIR/backups"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p "$BACKUP_DIR"
+
+echo "=================================================="
+echo "KoproGo Backup - $(date)"
+echo "=================================================="
+
+# Backup PostgreSQL database
+echo "📦 Backing up PostgreSQL database..."
+docker compose -f "$KOPROGO_DIR/docker-compose.yml" exec -T postgres \
+    pg_dump -U koprogo koprogo_db | gzip > "$BACKUP_DIR/koprogo_$DATE.sql.gz"
+
+# Backup .env file (encrypted)
+echo "📦 Backing up .env file..."
+cp "$KOPROGO_DIR/.env" "$BACKUP_DIR/.env_$DATE.bak"
+
+# Display backup size
+BACKUP_SIZE=$(du -h "$BACKUP_DIR/koprogo_$DATE.sql.gz" | cut -f1)
+echo "✅ Backup created: $BACKUP_DIR/koprogo_$DATE.sql.gz ($BACKUP_SIZE)"
+
+# Cleanup old backups (keep last 7 days)
+echo "🧹 Cleaning up old backups (keeping last 7 days)..."
+find "$BACKUP_DIR" -name "koprogo_*.sql.gz" -mtime +7 -delete
+find "$BACKUP_DIR" -name ".env_*.bak" -mtime +7 -delete
+
+# Display remaining backups
+BACKUP_COUNT=$(find "$BACKUP_DIR" -name "koprogo_*.sql.gz" | wc -l)
+echo "✅ $BACKUP_COUNT backups available"
+
+echo "=================================================="

@@ -1,0 +1,14 @@
+# GPG key generation parameters for KoproGo backup encryption
+# Used by: gpg --batch --gen-key gpg-key-params
+
+%echo Generating backup encryption key
+Key-Type: RSA
+Key-Length: 4096
+Subkey-Type: RSA
+Subkey-Length: 4096
+Name-Real: KoproGo Backup
+Name-Email: {{ gpg_backup_email | default('backup@koprogo.local') }}
+Expire-Date: {{ gpg_key_expiry | default('2y') }}
+Passphrase: {{ gpg_passphrase | default('') }}
+%commit
+%echo Key generation complete

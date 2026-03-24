@@ -1,0 +1,8 @@
+# KoproGo encrypted volumes - managed by Ansible
+{% if postgres_volume_device is defined %}
+/dev/mapper/postgres_encrypted /var/lib/docker/volumes/postgres_data/_data ext4 defaults,nofail 0 2
+{% endif %}
+
+{% if uploads_volume_device is defined %}
+/dev/mapper/uploads_encrypted /var/lib/docker/volumes/backend_uploads/_data ext4 defaults,nofail 0 2
+{% endif %}

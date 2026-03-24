@@ -1,0 +1,17 @@
+#!/bin/bash
+# KoproGo Health Check Script
+
+HEALTH_URL="http://localhost:8080/api/v1/health"
+LOG_FILE="/var/log/koprogo-health.log"
+
+# Check API health
+if curl -f -s "$HEALTH_URL" > /dev/null 2>&1; then
+    exit 0  # Healthy, no log spam
+else
+    echo "[$(date)] ❌ Health check failed for $HEALTH_URL" >> "$LOG_FILE"
+
+    # Optional: Send alert (email, Discord, Slack, etc.)
+    # Example: curl -X POST "https://discord.com/api/webhooks/..." -d "content=KoproGo is DOWN!"
+
+    exit 1
+fi
