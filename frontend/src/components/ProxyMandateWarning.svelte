@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../lib/i18n';
-  import { _ } from '../lib/i18n';
+  import { _ } from 'svelte-i18n';
 
   export let mandateCount: number = 0;
   export let totalDelegatedPct: number = 0;

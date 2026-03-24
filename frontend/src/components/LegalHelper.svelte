@@ -1,7 +1,7 @@
 <script lang="ts">
   import '../lib/i18n';
   import { onMount } from 'svelte';
-  import { _ } from '../lib/i18n';
+  import { _ } from 'svelte-i18n';
   import { api } from '../lib/api';
 
   interface LegalRule {

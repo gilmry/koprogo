@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { setupI18n } from '../lib/i18n';
+  setupI18n();
   import { onMount } from 'svelte';
-  import { _, isLoading } from '../lib/i18n';
+  import { _, isLoading } from 'svelte-i18n';
   import { authStore, mapUserFromBackend } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import type { User } from '../lib/types';
