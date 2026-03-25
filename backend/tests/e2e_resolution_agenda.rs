@@ -294,6 +294,7 @@ async fn test_create_resolution_agenda_item_persists_on_get() {
     // GET the resolution and verify agenda_item_index persists
     let get_req = test::TestRequest::get()
         .uri(&format!("/api/v1/resolutions/{}", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let get_resp = test::call_service(&app, get_req).await;

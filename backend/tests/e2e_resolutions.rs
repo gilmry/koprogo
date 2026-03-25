@@ -341,6 +341,7 @@ async fn test_get_resolution_success() {
     // Get resolution
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/resolutions/{}", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -355,7 +356,8 @@ async fn test_get_resolution_success() {
 #[actix_web::test]
 #[serial]
 async fn test_get_resolution_not_found() {
-    let (app_state, _container, _org_id) = setup_app().await;
+    let (app_state, _container, org_id) = setup_app().await;
+    let token = common::register_and_login(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -367,6 +369,7 @@ async fn test_get_resolution_not_found() {
     let fake_id = Uuid::new_v4();
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/resolutions/{}", fake_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -412,6 +415,7 @@ async fn test_list_meeting_resolutions() {
     // List all resolutions for the meeting
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -469,6 +473,7 @@ async fn test_delete_resolution_success() {
     // Verify deletion
     let get_req = test::TestRequest::get()
         .uri(&format!("/api/v1/resolutions/{}", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let get_resp = test::call_service(&app, get_req).await;
@@ -654,6 +659,7 @@ async fn test_list_resolution_votes() {
     // List all votes for resolution
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/resolutions/{}/votes", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -1031,6 +1037,7 @@ async fn test_get_meeting_vote_summary() {
     // Get vote summary for meeting
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/meetings/{}/vote-summary", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -1131,6 +1138,7 @@ async fn test_complete_voting_lifecycle() {
     // 5. List all votes
     let list_req = test::TestRequest::get()
         .uri(&format!("/api/v1/resolutions/{}/votes", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let list_resp = test::call_service(&app, list_req).await;
@@ -1155,6 +1163,7 @@ async fn test_complete_voting_lifecycle() {
     // 7. Get meeting vote summary
     let summary_req = test::TestRequest::get()
         .uri(&format!("/api/v1/meetings/{}/vote-summary", meeting_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let summary_resp = test::call_service(&app, summary_req).await;

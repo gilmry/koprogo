@@ -278,6 +278,7 @@ async fn test_get_ticket_by_id() {
     // Get ticket
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/tickets/{}", ticket_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -291,7 +292,8 @@ async fn test_get_ticket_by_id() {
 #[actix_web::test]
 #[serial]
 async fn test_get_ticket_not_found() {
-    let (app_state, _container, _org_id) = common::setup_test_db().await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -303,6 +305,7 @@ async fn test_get_ticket_not_found() {
     let fake_id = Uuid::new_v4();
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/tickets/{}", fake_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -344,6 +347,7 @@ async fn test_list_building_tickets() {
     // List all tickets for the building
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/buildings/{}/tickets", building_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -389,6 +393,7 @@ async fn test_list_tickets_by_status() {
             "/api/v1/buildings/{}/tickets/status/Open",
             building_id
         ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -442,6 +447,7 @@ async fn test_delete_ticket() {
     // Verify deletion
     let get_req = test::TestRequest::get()
         .uri(&format!("/api/v1/tickets/{}", ticket_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let get_resp = test::call_service(&app, get_req).await;
@@ -833,6 +839,7 @@ async fn test_get_ticket_statistics() {
             "/api/v1/buildings/{}/tickets/statistics",
             building_id
         ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let stats_resp = test::call_service(&app, stats_req).await;
@@ -918,6 +925,7 @@ async fn test_complete_ticket_lifecycle() {
     // 5. Verify in building tickets list
     let list_req = test::TestRequest::get()
         .uri(&format!("/api/v1/buildings/{}/tickets", building_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let list_resp = test::call_service(&app, list_req).await;
@@ -930,6 +938,7 @@ async fn test_complete_ticket_lifecycle() {
             "/api/v1/buildings/{}/tickets/status/Closed",
             building_id
         ))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let closed_list_resp = test::call_service(&app, closed_list_req).await;
