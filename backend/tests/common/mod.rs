@@ -1,5 +1,10 @@
 // Shared test setup for all E2E tests
 // Extracted from e2e.rs to avoid duplication
+//
+// Supports two modes:
+// 1. Testcontainers (default): spins up an ephemeral PostgreSQL container per test
+// 2. Existing DB (DATABASE_URL env): connects to a running PostgreSQL (e.g. docker compose)
+//    Set DATABASE_URL to use this mode. Migrations are re-applied (idempotent).
 
 use async_trait::async_trait;
 use koprogo_api::application::ports::{MqttEnergyPort, MqttError};
@@ -60,36 +65,77 @@ use testcontainers_modules::testcontainers::{runners::AsyncRunner, ContainerAsyn
 use uuid::Uuid;
 
 /// Setup a complete test environment with all repositories, use cases, and AppState.
-/// Returns (app_state, postgres_container, org_id).
-/// The container must be kept alive for the duration of the test.
+/// Returns (app_state, container_handle, org_id).
+///
+/// If `DATABASE_URL` env var is set, uses that database directly (no testcontainer).
+/// Otherwise, spins up a testcontainer PostgreSQL instance.
+/// The container handle must be kept alive for the duration of the test.
 pub async fn setup_test_db() -> (
     actix_web::web::Data<AppState>,
-    ContainerAsync<Postgres>,
+    Option<ContainerAsync<Postgres>>,
     Uuid,
 ) {
-    let postgres_container = Postgres::default()
-        .start()
-        .await
-        .expect("Failed to start postgres container");
+    let (pool, container) = if let Ok(database_url) = std::env::var("DATABASE_URL") {
+        // Mode 2: Use existing PostgreSQL server — create an isolated test database
+        let admin_pool = create_pool(&database_url)
+            .await
+            .expect("Failed to connect to existing DATABASE_URL");
 
-    let host_port = postgres_container
-        .get_host_port_ipv4(5432)
-        .await
-        .expect("Failed to get host port");
+        // Create a unique test database for isolation
+        let test_db_name = format!("e2e_test_{}", Uuid::new_v4().to_string().replace('-', ""));
+        sqlx::query(&format!("CREATE DATABASE \"{}\"", test_db_name))
+            .execute(&admin_pool)
+            .await
+            .expect("Failed to create test database");
 
-    let connection_string = format!(
-        "postgres://postgres:postgres@127.0.0.1:{}/postgres",
-        host_port
-    );
+        // Build connection URL for the new test database
+        let test_db_url = {
+            let base = database_url.rsplitn(2, '/').collect::<Vec<_>>();
+            if base.len() == 2 {
+                format!("{}/{}", base[1], test_db_name)
+            } else {
+                format!("{}/{}", database_url, test_db_name)
+            }
+        };
 
-    let pool = create_pool(&connection_string)
-        .await
-        .expect("Failed to create pool");
+        let pool = create_pool(&test_db_url)
+            .await
+            .expect("Failed to connect to test database");
 
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await
-        .expect("Failed to run migrations");
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("Failed to run migrations on test database");
+
+        (pool, None)
+    } else {
+        // Mode 1: Testcontainers (original behavior)
+        let postgres_container = Postgres::default()
+            .start()
+            .await
+            .expect("Failed to start postgres container");
+
+        let host_port = postgres_container
+            .get_host_port_ipv4(5432)
+            .await
+            .expect("Failed to get host port");
+
+        let connection_string = format!(
+            "postgres://postgres:postgres@127.0.0.1:{}/postgres",
+            host_port
+        );
+
+        let pool = create_pool(&connection_string)
+            .await
+            .expect("Failed to create pool");
+
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("Failed to run migrations");
+
+        (pool, Some(postgres_container))
+    };
 
     let building_repo = Arc::new(PostgresBuildingRepository::new(pool.clone()));
     let unit_repo = Arc::new(PostgresUnitRepository::new(pool.clone()));
@@ -156,13 +202,17 @@ pub async fn setup_test_db() -> (
     );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
 
-    // Create an organization for FK references
+    // Create a unique organization for FK references (unique slug per test)
     let org_id = Uuid::new_v4();
+    let org_slug = format!("org-test-{}", &org_id.to_string()[..8]);
+    let org_email = format!("org-{}@test.com", &org_id.to_string()[..8]);
     sqlx::query(
         r#"INSERT INTO organizations (id, name, slug, contact_email, subscription_plan, max_buildings, max_users, is_active, created_at, updated_at)
-           VALUES ($1, 'Org Test', 'org-test', 'org@test.com', 'starter', 10, 10, true, NOW(), NOW())"#
+           VALUES ($1, 'Org Test', $2, $3, 'starter', 10, 10, true, NOW(), NOW())"#
     )
     .bind(org_id)
+    .bind(&org_slug)
+    .bind(&org_email)
     .execute(&pool)
     .await
     .expect("insert org");
@@ -386,7 +436,7 @@ pub async fn setup_test_db() -> (
         boinc_use_cases,
     ));
 
-    (app_state, postgres_container, org_id)
+    (app_state, container, org_id)
 }
 
 /// Helper to register a user and get a JWT token

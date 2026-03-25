@@ -66,6 +66,7 @@ pub struct ReplacedPart {
 /// 1. Ticket/Quote assigné → magic link JWT 72h envoyé au corps de métier
 /// 2. Corps de métier : photos avant/après + pièces + compte-rendu → submit
 /// 3. CdC : valide (→ paiement auto) ou demande corrections ou rejette
+#[derive(Debug, Clone)]
 pub struct ContractorReport {
     pub id: Uuid,
     pub organization_id: Uuid,
