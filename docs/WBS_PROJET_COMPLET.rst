@@ -2,12 +2,23 @@
 KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
 =========================================================
 
-:Version: 2.0
-:Date: 15 mars 2026
+:Version: 2.1
+:Date: 25 mars 2026
 :Methode: Domain-Driven Design + Behavior-Driven Development + Test-Driven Development + SOLID
 :Auteur: Claude Code (Audit automatise)
 :Statut: Document de reference technique
 :Couverture: Jalon 0 (complete) -> Jalon 7 (vision long terme)
+
+.. note::
+
+   **Mise a jour 2026-03-25** : Audit croise code vs GitHub issues.
+   7 issues creees (#335-#341) pour stubs non implementes, bugs silencieux et RBAC manquant.
+   #331 (Playwright E2E) assignee au Jalon 1.
+   4 commits thematiques : unit tests 30 modules use cases (+14,580 LOC),
+   fix auth headers E2E (4 fichiers), refactor i18n centralise (closes #330),
+   fix misc (dto duplicates, derive Clone, test infra dual-mode).
+   Milestones GitHub resynchro : J0 3/3, J1 28/31, J2 24/24, J3 24/28,
+   J4 20/22, J5 2/12, J6 1/5, J7 0/1.
 
 .. note::
 
@@ -276,35 +287,35 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
      - 100%
      - COMPLETE
    * - J1 Securite & GDPR
-     - 18
-     - 15
+     - 31
+     - 28
      - 3
-     - 83%
-     - Bugs legal (#271,#272,#273)
+     - 90%
+     - #340 RBAC gamification, #337 consent stubs, #331 Playwright E2E
    * - J2 Conformite Legale Belge
-     - 17
-     - 17
+     - 24
+     - 24
      - 0
      - 100%
      - COMPLETE
    * - J3 Features Differenciantes
-     - 16
-     - 9
-     - 7
-     - 56%
-     - BC14-17 (#274-280) — scope release 0.1.0
-   * - J4 Automation & Integrations
      - 28
-     - 14
-     - 14
-     - 50%
-     - MCP Tools (#252-265), itsme (#48) — scope release 0.2.0
-   * - J5 Mobile & API Publique
-     - 7
+     - 24
+     - 4
+     - 86%
+     - #335 marketplace stubs, #336 individual member stubs, #338 Uuid::nil bug, #341 auto-payment
+   * - J4 Automation & Integrations
+     - 22
+     - 20
      - 2
-     - 5
-     - 29%
-     - PWA (#87), BI (#97), Mobile (#98), K3s infra (#266-268)
+     - 91%
+     - #339 API key rotation, #48 itsme/eID
+   * - J5 Mobile & API Publique
+     - 12
+     - 2
+     - 10
+     - 17%
+     - Tauri (#295-299), K3s (#266-268), Mobile (#98), BI (#97)
    * - J6 Intelligence & Expansion
      - 5
      - 1
@@ -318,31 +329,32 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
      - 0%
      - API v2 + SDK (#111)
    * -
-     - **95**
-     - **61**
-     - **34**
-     - **64%**
+     - **126**
+     - **102**
+     - **24**
+     - **81%**
      -
 
-**Issues sans jalon** : 17 R&D (#220-237), #197 (Frontend UI), #158 (E2E compilation, FERME)
+**Issues sans jalon** : 0 (toutes assignees)
 
 6. Metriques Code
 -------------------
 
 .. code-block:: text
 
-   Backend Rust   : ~110,000 LOC (domain+application+infrastructure+tests)
+   Backend Rust   : ~125,000 LOC (domain+application+infrastructure+tests) [+14,700 tests use cases]
    Frontend Svelte: ~18,000 LOC (pages+components+lib)
    Migrations SQL : ~8,500 LOC (64 migrations)
    Documentation  : ~28,000 LOC (50+ RST/MD files)
    Infrastructure : ~5,000 LOC (Ansible, Docker, CI)
-   TOTAL          : ~169,500 LOC
+   TOTAL          : ~184,500 LOC
 
    Bounded Contexts   : 17 (BC1-BC17)
    Entites domaine    : 57
    Endpoints API REST : 511+
-   Tests unitaires    : 777+
+   Tests unitaires    : ~900+ (777 domain + ~120 use case mocks)
    Tests BDD          : 454+ scenarios (5 fichiers bdd_*.rs, 0 failures, 0 skips)
+   GitHub Issues      : 126 total (102 fermees, 24 ouvertes)
 
 7. Dette Technique Identifiee
 -------------------------------
@@ -382,14 +394,49 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
      - 8h
      - v0.1.0
    * - DT-6
-     - Use case unit tests faibles (17/45 fichiers ont des tests)
-     - FAIBLE
-     - 20h
-     - v0.2.0
+     - Use case unit tests : RESOLU (30/30 modules ont des tests avec mocks)
+     - ~~FAIBLE~~
+     - ~~20h~~
+     - ✅ v0.1.0
    * - DT-7
      - Hardcoded total_eligible_voters=10 dans poll_use_cases
      - FAIBLE
      - 1h
+     - v0.1.0
+   * - DT-8
+     - Marketplace handlers 100% stub (#335) — #276 fermee sans impl DB
+     - HAUT
+     - 20h
+     - v0.1.0
+   * - DT-9
+     - Individual member handlers 100% stub (#336) — #280 fermee sans impl DB
+     - HAUT
+     - 16h
+     - v0.1.0
+   * - DT-10
+     - Consent handlers 100% stub (#337) — #326 fermee sans persistance
+     - HAUT
+     - 12h
+     - v0.1.0
+   * - DT-11
+     - RBAC manquant sur 9 endpoints gamification (#340)
+     - HAUT
+     - 4h
+     - v0.1.0
+   * - DT-12
+     - Uuid::nil() hardcode pour unit_id dans energy_bill_upload (#338)
+     - MOYEN
+     - 2h
+     - v0.1.0
+   * - DT-13
+     - API key rotation retourne 501 Not Implemented (#339)
+     - MOYEN
+     - 4h
+     - v0.2.0
+   * - DT-14
+     - Paiement auto contractor post-validation non implemente (#341)
+     - MOYEN
+     - 8h
      - v0.1.0
 
 
@@ -417,21 +464,22 @@ Aucun travail restant. Toutes les issues fermees.
 load tests (287 req/s), documentation Sphinx.
 
 =========================================================
-9. Jalon 1 : Securite & GDPR [83% -> 100%]
+9. Jalon 1 : Securite & GDPR [90%]
 =========================================================
 
 **Debloque** : 50-100 coproprietes (beta publique)
 
-**Release cible** : v0.1.0 (bugs legal) / v0.2.0 (#48 itsme)
+**Release cible** : v0.1.0 (bugs legal + RBAC + Playwright) / v0.2.0 (#48 itsme)
 
-**Issues ouvertes** : #271, #272, #273
+**Issues ouvertes** : #331, #337, #340
 
 .. note::
 
-   #48 (itsme/eID) deplace en **Jalon 4** (mars 2026). Les issues #66, #69
-   ont ete fermees. Il reste 3 bugs de conformite legale belge.
+   **Mise a jour 2026-03-25** : #48 (itsme/eID) en Jalon 4. Issues #271, #272, #273
+   fermees. 3 nouvelles issues detectees par audit code : #331 (Playwright E2E 48 fichiers),
+   #337 (consent handlers stubs), #340 (RBAC gamification 9 endpoints).
 
-9.1 WP-FEAT-J1 : Bugs legal restants
+9.1 WP-FEAT-J1 : Issues restantes
 --------------------------------------
 
 .. list-table::
@@ -445,28 +493,46 @@ load tests (287 req/s), documentation Sphinx.
      - BC
      - Cycle TDD
    * - WP-FEAT-J1.1
-     - Quorum 50%+ validation AG (Art. 3.87 §5 CC).
-       Migration existe, verifier wiring + tests.
-     - #271
-     - 2h
-     - BC3
-     - BDD: meetings.feature, E2E: e2e_meetings
+     - ~~Quorum 50%+ validation AG~~ FERME
+     - ~~#271~~
+     - ~~2h~~
+     - ~~BC3~~
+     - ✅
    * - WP-FEAT-J1.2
-     - 2e convocation si quorum non atteint (Art. 3.87 §5 CC).
-       Workflow convocation_use_cases + domain validation.
-     - #272
-     - 2h
-     - BC3
-     - BDD: convocations.feature
+     - ~~2e convocation si quorum non atteint~~ FERME
+     - ~~#272~~
+     - ~~2h~~
+     - ~~BC3~~
+     - ✅
    * - WP-FEAT-J1.3
-     - Reduction vote mandataire (Art. 3.87 §7 CC).
-       Titre dit "done" — a verifier et fermer.
-     - #273
-     - 2h
-     - BC3
-     - BDD: resolutions.feature
+     - ~~Reduction vote mandataire~~ FERME
+     - ~~#273~~
+     - ~~2h~~
+     - ~~BC3~~
+     - ✅
+   * - WP-FEAT-J1.4
+     - **RBAC gamification** : 9 endpoints acceptent n'importe quel user authentifie.
+       Ajouter require_role admin/superadmin sur create/update/delete handlers.
+     - #340
+     - 4h
+     - BC5
+     - TDD: gamification_handlers unit tests
+   * - WP-FEAT-J1.5
+     - **Consent handlers stubs** : #326 fermee mais 0 persistance DB.
+       Creer ConsentRepository + migration + wiring.
+     - #337
+     - 12h
+     - BC7
+     - BDD: consent.feature, E2E: e2e_consent
+   * - WP-PW-J1.1
+     - **Playwright E2E** : 48 fichiers E2E couvrant tous les modules.
+       Ecrire specs + stabiliser test infra.
+     - #331
+     - 24h
+     - All FE
+     - Playwright test suite
 
-**Total Jalon 1 restant** : ~6h
+**Total Jalon 1 restant** : ~40h
 
 =========================================================
 10. Jalon 2 : Conformite Legale Belge [COMPLETE]
@@ -516,26 +582,25 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
 **Total Jalon 2 dette** : 25h (inclus dans budget v0.5.0)
 
 =========================================================
-11. Jalon 3 : Features Differenciantes [56% -> 100%]
+11. Jalon 3 : Features Differenciantes [86%]
 =========================================================
 
 **Debloque** : 500-1,000 coproprietes (differenciation marche)
 
 **Release cible** : v0.1.0
 
-**Issues ouvertes** : #274, #275, #276, #277, #278, #279, #280
+**Issues ouvertes** : #335, #336, #338, #341
 
 .. note::
 
-   **Mise a jour mars 2026** : Les 13 issues MCP (#252-265), l'issue #48 (itsme)
-   et les 3 issues K3s infra (#266-268) ont ete deplacees hors du Jalon 3.
-   Les 9 issues fermees couvrent : votes AG (#46), paiements (#84), SEL 6 phases (#49/#99),
-   IoT (#133), work reports (#134), devis (#52/#91), convocations (#88),
-   notifications (#86), tickets (#85), syndic public (#92), energy campaigns (#96).
-   BDD couvre ag_sessions, age_requests, contractor_reports (Phase 2 WBS 0.1.0 terminee).
+   **Mise a jour 2026-03-25** : 24/28 issues fermees. #274-280 fermees.
+   4 nouvelles issues detectees par audit code : #335 (marketplace stubs),
+   #336 (individual member stubs), #338 (Uuid::nil energy bill),
+   #341 (auto-payment contractor). Ce sont des implementations manquantes
+   derriere des issues precedemment fermees.
 
-11.1 WP-FEAT-J3 : Features restantes (7 issues ouvertes)
-----------------------------------------------------------
+11.1 WP-FEAT-J3 : Issues restantes (4 ouvertes, 7 fermees)
+------------------------------------------------------------
 
 .. list-table::
    :header-rows: 1
@@ -548,81 +613,86 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - BC
      - Etat actuel
    * - WP-FEAT-J3.1
-     - **BC15 AG Visioconference** : AgSession + quorum combine.
-       Backend et BDD faits, manque E2E + frontend.
-     - #274
-     - 8h
-     - BC15
-     - Backend ✅, BDD ✅, E2E ❌, Frontend ❌
+     - ~~BC15 AG Visioconference~~ FERME
+     - ~~#274~~
+     - ~~8h~~
+     - ~~BC15~~
+     - ✅
    * - WP-FEAT-J3.2
-     - **BC17 AGE Agile** : Demande 1/5 quotites + concertation.
-       Backend et BDD faits, manque E2E + frontend.
-     - #279
-     - 8h
-     - BC17
-     - Backend ✅, BDD ✅, E2E ❌, Frontend ❌
+     - ~~BC17 AGE Agile~~ FERME
+     - ~~#279~~
+     - ~~8h~~
+     - ~~BC17~~
+     - ✅
    * - WP-FEAT-J3.3
-     - **BC16 Backoffice prestataires** : ContractorReport PWA.
-       Backend, BDD et frontend (page) faits, manque E2E.
-     - #275
-     - 6h
-     - BC16
-     - Backend ✅, BDD ✅, Frontend ✅, E2E ❌
+     - ~~BC16 Backoffice prestataires~~ FERME
+     - ~~#275~~
+     - ~~6h~~
+     - ~~BC16~~
+     - ✅
    * - WP-FEAT-J3.4
-     - **BC14 Marketplace** : Corps de metier + satisfaction.
-       Feature complete a implementer (domain -> frontend).
-     - #276
+     - **Marketplace handlers stubs** : #276 fermee mais handlers
+       retournent JSON hardcode. Creer domain+repo+migration.
+     - #335
      - 20h
      - BC14
-     - Non implemente
+     - Handlers stubs only, 0 persistance
    * - WP-FEAT-J3.5
-     - **Guide legal contextuel UI** : LegalHelper.svelte, AG Wizard.
-     - #277
-     - 10h
-     - BC3
-     - Non implemente
-   * - WP-FEAT-J3.6
-     - **Orchestrateur energie neutre** : CER, maisons indiv., CREG.
-     - #280
+     - **Individual member handlers stubs** : #280 fermee mais handlers
+       retournent JSON hardcode. Creer repo+migration+GDPR consent.
+     - #336
      - 16h
      - BC8
-     - Non implemente
+     - Handlers stubs only, 0 persistance
+   * - WP-FEAT-J3.6
+     - **Uuid::nil() energy bill** : unit_id hardcode a Uuid::nil()
+       dans energy_bill_upload_handlers.rs. Lookup unit_owners requis.
+     - #338
+     - 2h
+     - BC8
+     - Bug silencieux, GET retourne vide
    * - WP-FEAT-J3.7
-     - **Blog 18 articles RST** : 5 series thematiques.
-     - #278
-     - 22h
-     - Docs
-     - Documentation only
+     - **Paiement auto contractor** : Apres validation ContractorReport,
+       le paiement automatique lie au devis n'est pas declenche.
+     - #341
+     - 8h
+     - BC16+BC2
+     - TODO B16-6 dans use_cases
+   * - WP-FEAT-J3.8
+     - ~~Guide legal contextuel UI~~ FERME
+     - ~~#277~~
+     - ~~10h~~
+     - ~~BC3~~
+     - ✅
+   * - WP-FEAT-J3.9
+     - ~~Orchestrateur energie neutre~~ FERME
+     - ~~#280~~
+     - ~~16h~~
+     - ~~BC8~~
+     - ✅
+   * - WP-FEAT-J3.10
+     - ~~Blog 18 articles RST~~ FERME
+     - ~~#278~~
+     - ~~22h~~
+     - ~~Docs~~
+     - ✅
 
-11.2 WP-E2E-J3 : Tests E2E backend (dette)
----------------------------------------------
-
-Voir WBS_RELEASE_0_1_0.md Phase 3 pour la liste complete des 27 tests E2E manquants.
-
-11.3 WP-PW-J3 : Tests Playwright (dette)
--------------------------------------------
-
-Voir WBS_RELEASE_0_1_0.md Phase 5 pour la liste complete des 32 specs manquants.
-
-**Total Jalon 3 restant** : ~90h features + tests E2E/Playwright (voir WBS 0.1.0)
+**Total Jalon 3 restant** : ~46h (stubs + bug + auto-payment)
 
 =========================================================
-12. Jalon 4 : Automation & Integrations [50% -> 100%]
+12. Jalon 4 : Automation & Integrations [91%]
 =========================================================
 
 **Debloque** : 1,000-2,000 coproprietes (scalabilite)
 
 **Release cible** : v0.2.0
 
-**Issues ouvertes** : 14 (dont 13 MCP #252-265, #48 itsme)
+**Issues ouvertes** : 2 (#339 API key rotation, #48 itsme)
 
 .. note::
 
-   **Mise a jour mars 2026** : Le Jalon 4 absorbe les MCP Tools (#252-265)
-   et l'authentification itsme (#48) repousses de J1/J3. Les 14 issues deja
-   fermees couvrent : convocations (#88), GDPR Art.16/18/21 (#90), carnet
-   entretien (#89), WCAG (#93), devis (#91), syndic public (#92), tickets (#85),
-   notifications (#86), RBAC etude (#71,#72), GDPR docs (#67), GDPR Art.21 (#64,#65).
+   **Mise a jour 2026-03-25** : 20/22 issues fermees. MCP Tools (#252-265) fermes.
+   Reste #339 (API key rotation 501 Not Implemented) et #48 (itsme/eID).
 
 12.1 WP-FEAT-J4 : Features restantes
 --------------------------------------
@@ -796,14 +866,14 @@ Voir WBS_RELEASE_0_1_0.md Phase 5 pour la liste complete des 32 specs manquants.
 **Total Jalon 4** : ~170h (97h features + 44h dette test + 22h docs + 7h PW)
 
 =========================================================
-13. Jalon 5 : Mobile & API Publique [25% -> 100%]
+13. Jalon 5 : Mobile & API Publique [17%]
 =========================================================
 
 **Debloque** : 2,000-5,000 coproprietes (expansion)
 
 **Release cible** : v1.0.0
 
-**Issues ouvertes** : #87, #97, #98
+**Issues ouvertes** : #97, #98, #266, #267, #268, #295, #296, #297, #298, #299
 
 13.1 WP-FEAT-J5 : Features
 -----------------------------
