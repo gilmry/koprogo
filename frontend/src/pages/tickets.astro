@@ -72,7 +72,7 @@ import Layout from "../layouts/Layout.astro";
   }
 
   let selectedBuildingId = new URLSearchParams(window.location.search).get("building_id") || "";
-  const createButton = document.getElementById("create-ticket-btn");
+  const createButton = document.getElementById("create-ticket-btn") as HTMLButtonElement | null;
   const warningDiv = document.getElementById("building-warning");
 
   // Mount building selector
