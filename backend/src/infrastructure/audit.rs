@@ -259,6 +259,10 @@ pub enum AuditEventType {
     GdprMarketingOptIn,
     GdprMarketingPreferenceChangeFailed,
 
+    // GDPR Article 7: Consent Management (Issue #337)
+    ConsentRecorded,
+    ConsentStatusChecked,
+
     // GDPR Article 33: Security Incidents & APD Notification (Issue #317)
     SecurityIncidentReported,
 

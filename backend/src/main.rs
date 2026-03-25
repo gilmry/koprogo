@@ -363,6 +363,14 @@ async fn main() -> std::io::Result<()> {
         AgSessionUseCases::new(ag_session_repo.clone(), meeting_repo.clone());
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo.clone());
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone());
+
+    // Consent (GDPR Art. 7)
+    let consent_repo = Arc::new(PostgresConsentRepository::new(pool.clone()));
+    let consent_use_cases = consent_use_cases::ConsentUseCases::new(
+        consent_repo,
+        audit_log_repo.clone(),
+    );
+
     let energy_campaign_use_cases = EnergyCampaignUseCases::new(
         energy_campaign_repo.clone(),
         energy_bill_upload_repo.clone(),
@@ -424,6 +432,7 @@ async fn main() -> std::io::Result<()> {
         ag_session_use_cases,
         age_request_use_cases,
         contractor_report_use_cases,
+        consent_use_cases,
         audit_logger,
         email_service,
         pool.clone(),

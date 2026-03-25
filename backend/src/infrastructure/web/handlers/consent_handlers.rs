@@ -71,7 +71,7 @@ pub struct ConsentRecordedResponse {
 /// Record user consent to privacy policy or terms of service
 ///
 /// Requires JWT authentication. Records the consent in the database with
-/// audit trail (IP address, user agent, timestamp) for GDPR Art. 13-14 compliance.
+/// audit trail (IP address, user agent, timestamp) for GDPR Art. 7 / Art. 13-14 compliance.
 ///
 /// # Parameters
 /// * `consent_type` - Type of consent: "privacy_policy" or "terms"
@@ -99,40 +99,50 @@ pub struct ConsentRecordedResponse {
 #[post("/consent")]
 pub async fn record_consent(
     req: HttpRequest,
-    _data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    data: web::Data<AppState>,
+    auth: AuthenticatedUser,
     body: web::Json<RecordConsentRequest>,
 ) -> impl Responder {
-    // Validate consent_type
-    if !["privacy_policy", "terms"].contains(&body.consent_type.as_str()) {
-        return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Invalid consent_type. Must be 'privacy_policy' or 'terms'"
-        }));
-    }
-
     // Extract client information for audit trail
-    let _ip_address = extract_ip_address(&req);
-    let _user_agent = extract_user_agent(&req);
-    let _policy_version = body
-        .policy_version
-        .clone()
-        .unwrap_or_else(|| "1.0".to_string());
+    let ip_address = extract_ip_address(&req);
+    let user_agent = extract_user_agent(&req);
 
-    // Record consent in database
-    // Note: Database implementation required in consent repository
-    // For now, return success (database persistence will be implemented in full stack)
-    let now = chrono::Utc::now();
-    let consent_recorded = ConsentRecordedResponse {
-        message: format!("Consent to {} recorded successfully", body.consent_type),
-        consent_type: body.consent_type.clone(),
-        accepted_at: now.to_rfc3339(),
+    // Get organization_id (required for consent records)
+    let organization_id = match auth.require_organization() {
+        Ok(org_id) => org_id,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "error": "Organization context required to record consent"
+            }));
+        }
     };
 
-    // TODO: Implement database persistence in consent repository
-    // INSERT INTO consent_records (user_id, organization_id, consent_type, ip_address, user_agent, policy_version)
-    // VALUES (auth.user_id, auth.organization_id, body.consent_type, ip_address, user_agent, policy_version)
-
-    HttpResponse::Ok().json(consent_recorded)
+    // Call use case (validates consent_type, persists, creates audit trail)
+    match data
+        .consent_use_cases
+        .record_consent(
+            auth.user_id,
+            organization_id,
+            &body.consent_type,
+            ip_address,
+            user_agent,
+            body.policy_version.clone(),
+        )
+        .await
+    {
+        Ok(response) => HttpResponse::Ok().json(ConsentRecordedResponse {
+            message: response.message,
+            consent_type: response.consent_type,
+            accepted_at: response.accepted_at.to_rfc3339(),
+        }),
+        Err(e) if e.contains("Invalid consent type") => {
+            HttpResponse::BadRequest().json(serde_json::json!({ "error": e }))
+        }
+        Err(e) => {
+            log::error!("Failed to record consent: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({ "error": e }))
+        }
+    }
 }
 
 /// GET /api/v1/consent/status
@@ -144,7 +154,6 @@ pub async fn record_consent(
 /// # Returns
 /// * `200 OK` - Consent status returned
 /// * `401 Unauthorized` - Missing or invalid authentication
-/// * `404 Not Found` - User not found
 /// * `500 Internal Server Error` - Database error
 #[utoipa::path(
     get,
@@ -154,7 +163,6 @@ pub async fn record_consent(
     responses(
         (status = 200, description = "Consent status", body = ConsentStatusResponse),
         (status = 401, description = "Unauthorized"),
-        (status = 404, description = "User not found"),
         (status = 500, description = "Internal server error"),
     ),
     security(("bearer_auth" = []))
@@ -162,23 +170,20 @@ pub async fn record_consent(
 #[get("/consent/status")]
 pub async fn get_consent_status(
     _req: HttpRequest,
-    _data: web::Data<AppState>,
+    data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
-    // TODO: Query database for consent records
-    // SELECT consent_type, accepted_at FROM consent_records
-    // WHERE user_id = auth.user_id
-    // GROUP BY consent_type
-    // ORDER BY accepted_at DESC
-
-    // For now, return placeholder response
-    let response = ConsentStatusResponse {
-        privacy_policy_accepted: false,
-        terms_accepted: false,
-        privacy_policy_accepted_at: None,
-        terms_accepted_at: None,
-        user_id: auth.user_id.to_string(),
-    };
-
-    HttpResponse::Ok().json(response)
+    match data.consent_use_cases.get_consent_status(auth.user_id).await {
+        Ok(status) => HttpResponse::Ok().json(ConsentStatusResponse {
+            privacy_policy_accepted: status.privacy_policy_accepted,
+            terms_accepted: status.terms_accepted,
+            privacy_policy_accepted_at: status.privacy_policy_accepted_at.map(|t| t.to_rfc3339()),
+            terms_accepted_at: status.terms_accepted_at.map(|t| t.to_rfc3339()),
+            user_id: auth.user_id.to_string(),
+        }),
+        Err(e) => {
+            log::error!("Failed to get consent status: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({ "error": e }))
+        }
+    }
 }

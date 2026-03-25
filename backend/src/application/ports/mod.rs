@@ -10,6 +10,7 @@ pub mod building_repository;
 pub mod call_for_funds_repository;
 pub mod challenge_repository;
 pub mod charge_distribution_repository;
+pub mod consent_repository;
 pub mod contract_evaluation_repository;
 pub mod contractor_report_repository;
 pub mod convocation_recipient_repository;

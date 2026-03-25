@@ -7,6 +7,7 @@ pub mod board_member_dto;
 pub mod budget_dto;
 pub mod building_dto;
 pub mod call_for_funds_dto;
+pub mod consent_dto;
 pub mod contractor_report_dto;
 pub mod convocation_dto;
 pub mod convocation_recipient_dto;

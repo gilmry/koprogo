@@ -10,6 +10,7 @@ pub mod budget_use_cases;
 pub mod building_use_cases;
 pub mod call_for_funds_use_cases;
 pub mod charge_distribution_use_cases;
+pub mod consent_use_cases;
 pub mod contractor_report_use_cases;
 pub mod convocation_use_cases;
 pub mod dashboard_use_cases;
