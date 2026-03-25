@@ -12,7 +12,7 @@ import DocumentList from '../../components/DocumentList.svelte';
         appels de fonds et autres pièces importantes en quelques clics.
       </p>
 
-      <DocumentList client:load allowUpload={false} allowDelete={false} />
+      <DocumentList client:only="svelte" allowUpload={false} allowDelete={false} />
 
       <div class="mt-6">
         <a href="/owner" class="inline-flex items-center text-primary-600 hover:text-primary-700">

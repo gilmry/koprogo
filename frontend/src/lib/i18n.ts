@@ -1,4 +1,12 @@
-import { init, getLocaleFromNavigator, addMessages } from "svelte-i18n";
+import {
+  init,
+  getLocaleFromNavigator,
+  addMessages,
+  _,
+  locale,
+  isLoading,
+  waitLocale,
+} from "svelte-i18n";
 import frMessages from "../locales/fr.json";
 import nlMessages from "../locales/nl.json";
 import deMessages from "../locales/de.json";
@@ -54,3 +62,5 @@ export const languages = [
 ] as const;
 
 export type LanguageCode = (typeof languages)[number]["code"];
+
+export { _, locale, isLoading, waitLocale };

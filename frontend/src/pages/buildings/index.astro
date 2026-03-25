@@ -15,7 +15,7 @@ import BuildingList from '../../components/BuildingList.svelte';
 		</div>
 
 		<div class="bg-white rounded-lg shadow p-6">
-			<BuildingList client:load />
+			<BuildingList client:only="svelte" />
 		</div>
 	</main>
 </Layout>

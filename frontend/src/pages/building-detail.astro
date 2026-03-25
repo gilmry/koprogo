@@ -4,5 +4,5 @@ import BuildingDetailComponent from '../components/BuildingDetail.svelte';
 ---
 
 <Layout title="Détail Immeuble" showNav={true} requireAuth={true}>
-  <BuildingDetailComponent client:load />
+  <BuildingDetailComponent client:only="svelte" />
 </Layout>
