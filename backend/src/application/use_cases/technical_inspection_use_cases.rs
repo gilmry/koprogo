@@ -369,3 +369,505 @@ impl TechnicalInspectionUseCases {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::dto::{
+        AddInspectionPhotoDto, AddReportDto, CreateTechnicalInspectionDto, PageRequest,
+        TechnicalInspectionFilters,
+    };
+    use crate::application::ports::TechnicalInspectionRepository;
+    use crate::domain::entities::{InspectionStatus, InspectionType, TechnicalInspection};
+    use async_trait::async_trait;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    // ========== Mock Repository ==========
+
+    struct MockTechnicalInspectionRepository {
+        inspections: Mutex<HashMap<Uuid, TechnicalInspection>>,
+    }
+
+    impl MockTechnicalInspectionRepository {
+        fn new() -> Self {
+            Self {
+                inspections: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl TechnicalInspectionRepository for MockTechnicalInspectionRepository {
+        async fn create(
+            &self,
+            inspection: &TechnicalInspection,
+        ) -> Result<TechnicalInspection, String> {
+            let mut inspections = self.inspections.lock().unwrap();
+            inspections.insert(inspection.id, inspection.clone());
+            Ok(inspection.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<TechnicalInspection>, String> {
+            let inspections = self.inspections.lock().unwrap();
+            Ok(inspections.get(&id).cloned())
+        }
+
+        async fn find_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<TechnicalInspection>, String> {
+            let inspections = self.inspections.lock().unwrap();
+            Ok(inspections
+                .values()
+                .filter(|i| i.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_organization(
+            &self,
+            organization_id: Uuid,
+        ) -> Result<Vec<TechnicalInspection>, String> {
+            let inspections = self.inspections.lock().unwrap();
+            Ok(inspections
+                .values()
+                .filter(|i| i.organization_id == organization_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &PageRequest,
+            _filters: &TechnicalInspectionFilters,
+        ) -> Result<(Vec<TechnicalInspection>, i64), String> {
+            let inspections = self.inspections.lock().unwrap();
+            let all: Vec<TechnicalInspection> = inspections.values().cloned().collect();
+            let count = all.len() as i64;
+            Ok((all, count))
+        }
+
+        async fn find_overdue(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<TechnicalInspection>, String> {
+            let inspections = self.inspections.lock().unwrap();
+            Ok(inspections
+                .values()
+                .filter(|i| i.building_id == building_id && i.is_overdue())
+                .cloned()
+                .collect())
+        }
+
+        async fn find_upcoming(
+            &self,
+            building_id: Uuid,
+            days: i32,
+        ) -> Result<Vec<TechnicalInspection>, String> {
+            let inspections = self.inspections.lock().unwrap();
+            Ok(inspections
+                .values()
+                .filter(|i| {
+                    i.building_id == building_id
+                        && i.days_until_due() >= 0
+                        && i.days_until_due() <= days as i64
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_type(
+            &self,
+            building_id: Uuid,
+            inspection_type: &str,
+        ) -> Result<Vec<TechnicalInspection>, String> {
+            let inspections = self.inspections.lock().unwrap();
+            Ok(inspections
+                .values()
+                .filter(|i| {
+                    i.building_id == building_id
+                        && format!("{:?}", i.inspection_type).to_lowercase()
+                            == inspection_type.to_lowercase()
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn update(
+            &self,
+            inspection: &TechnicalInspection,
+        ) -> Result<TechnicalInspection, String> {
+            let mut inspections = self.inspections.lock().unwrap();
+            inspections.insert(inspection.id, inspection.clone());
+            Ok(inspection.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            let mut inspections = self.inspections.lock().unwrap();
+            Ok(inspections.remove(&id).is_some())
+        }
+    }
+
+    // ========== Helpers ==========
+
+    fn make_use_cases(repo: MockTechnicalInspectionRepository) -> TechnicalInspectionUseCases {
+        TechnicalInspectionUseCases::new(Arc::new(repo))
+    }
+
+    fn valid_create_dto(org_id: Uuid, building_id: Uuid) -> CreateTechnicalInspectionDto {
+        CreateTechnicalInspectionDto {
+            organization_id: org_id.to_string(),
+            building_id: building_id.to_string(),
+            title: "Inspection annuelle ascenseur".to_string(),
+            description: Some("Vérification complète de l'ascenseur".to_string()),
+            inspection_type: InspectionType::Elevator,
+            inspector_name: "Schindler Belgium".to_string(),
+            inspector_company: Some("Schindler SA".to_string()),
+            inspector_certification: Some("CERT-2026-001".to_string()),
+            inspection_date: "2026-03-01T10:00:00Z".to_string(),
+            result_summary: None,
+            defects_found: None,
+            recommendations: None,
+            compliant: None,
+            compliance_certificate_number: None,
+            compliance_valid_until: None,
+            cost: Some(450.0),
+            invoice_number: Some("INV-2026-100".to_string()),
+            notes: None,
+        }
+    }
+
+    // ========== Tests ==========
+
+    #[tokio::test]
+    async fn test_create_technical_inspection_success() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let result = uc
+            .create_technical_inspection(valid_create_dto(org_id, building_id))
+            .await;
+
+        assert!(result.is_ok());
+        let dto = result.unwrap();
+        assert_eq!(dto.organization_id, org_id.to_string());
+        assert_eq!(dto.building_id, building_id.to_string());
+        assert_eq!(dto.title, "Inspection annuelle ascenseur");
+        assert_eq!(dto.inspector_name, "Schindler Belgium");
+        assert_eq!(dto.inspector_company, Some("Schindler SA".to_string()));
+        assert_eq!(dto.cost, Some(450.0));
+        assert_eq!(dto.status, InspectionStatus::Scheduled);
+        assert!(dto.reports.is_empty());
+        assert!(dto.photos.is_empty());
+        assert!(dto.certificates.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_create_technical_inspection_invalid_date_format() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let mut dto = valid_create_dto(org_id, building_id);
+        dto.inspection_date = "not-a-date".to_string();
+
+        let result = uc.create_technical_inspection(dto).await;
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Invalid inspection_date format"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_create_technical_inspection_invalid_org_id() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+
+        let mut dto = valid_create_dto(Uuid::new_v4(), Uuid::new_v4());
+        dto.organization_id = "bad-uuid".to_string();
+
+        let result = uc.create_technical_inspection(dto).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid organization_id format");
+    }
+
+    #[tokio::test]
+    async fn test_get_technical_inspection_found() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let created = uc
+            .create_technical_inspection(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let inspection_id = Uuid::parse_str(&created.id).unwrap();
+
+        let result = uc.get_technical_inspection(inspection_id).await;
+        assert!(result.is_ok());
+        let found = result.unwrap();
+        assert!(found.is_some());
+        let found = found.unwrap();
+        assert_eq!(found.id, created.id);
+        assert_eq!(found.title, "Inspection annuelle ascenseur");
+    }
+
+    #[tokio::test]
+    async fn test_get_technical_inspection_not_found() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+
+        let result = uc.get_technical_inspection(Uuid::new_v4()).await;
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_list_technical_inspections_by_building() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_a = Uuid::new_v4();
+        let building_b = Uuid::new_v4();
+
+        // Create 2 inspections for building A
+        let mut dto_a1 = valid_create_dto(org_id, building_a);
+        dto_a1.title = "Elevator inspection".to_string();
+        uc.create_technical_inspection(dto_a1).await.unwrap();
+
+        let mut dto_a2 = valid_create_dto(org_id, building_a);
+        dto_a2.title = "Boiler inspection".to_string();
+        dto_a2.inspection_type = InspectionType::Boiler;
+        uc.create_technical_inspection(dto_a2).await.unwrap();
+
+        // Create 1 inspection for building B
+        let dto_b = valid_create_dto(org_id, building_b);
+        uc.create_technical_inspection(dto_b).await.unwrap();
+
+        let result = uc
+            .list_technical_inspections_by_building(building_a)
+            .await;
+        assert!(result.is_ok());
+        let inspections = result.unwrap();
+        assert_eq!(inspections.len(), 2);
+        assert!(inspections
+            .iter()
+            .all(|i| i.building_id == building_a.to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_mark_as_completed() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let created = uc
+            .create_technical_inspection(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let inspection_id = Uuid::parse_str(&created.id).unwrap();
+        assert_eq!(created.status, InspectionStatus::Scheduled);
+
+        let result = uc.mark_as_completed(inspection_id).await;
+        assert!(result.is_ok());
+        let completed = result.unwrap();
+        assert_eq!(completed.status, InspectionStatus::Completed);
+    }
+
+    #[tokio::test]
+    async fn test_mark_as_completed_not_found() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+
+        let result = uc.mark_as_completed(Uuid::new_v4()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Technical inspection not found");
+    }
+
+    #[tokio::test]
+    async fn test_add_report() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let created = uc
+            .create_technical_inspection(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let inspection_id = Uuid::parse_str(&created.id).unwrap();
+        assert!(created.reports.is_empty());
+
+        let result = uc
+            .add_report(
+                inspection_id,
+                AddReportDto {
+                    report_path: "/uploads/reports/elevator-2026-03.pdf".to_string(),
+                },
+            )
+            .await;
+
+        assert!(result.is_ok());
+        let updated = result.unwrap();
+        assert_eq!(updated.reports.len(), 1);
+        assert_eq!(
+            updated.reports[0],
+            "/uploads/reports/elevator-2026-03.pdf"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_add_report_not_found() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+
+        let result = uc
+            .add_report(
+                Uuid::new_v4(),
+                AddReportDto {
+                    report_path: "/uploads/reports/test.pdf".to_string(),
+                },
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Technical inspection not found");
+    }
+
+    #[tokio::test]
+    async fn test_add_photo() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let created = uc
+            .create_technical_inspection(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let inspection_id = Uuid::parse_str(&created.id).unwrap();
+
+        let result = uc
+            .add_photo(
+                inspection_id,
+                AddInspectionPhotoDto {
+                    photo_path: "/uploads/photos/elevator-panel.jpg".to_string(),
+                },
+            )
+            .await;
+
+        assert!(result.is_ok());
+        let updated = result.unwrap();
+        assert_eq!(updated.photos.len(), 1);
+        assert_eq!(updated.photos[0], "/uploads/photos/elevator-panel.jpg");
+    }
+
+    #[tokio::test]
+    async fn test_add_photo_not_found() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+
+        let result = uc
+            .add_photo(
+                Uuid::new_v4(),
+                AddInspectionPhotoDto {
+                    photo_path: "/uploads/photos/test.jpg".to_string(),
+                },
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Technical inspection not found");
+    }
+
+    #[tokio::test]
+    async fn test_delete_technical_inspection() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let created = uc
+            .create_technical_inspection(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let inspection_id = Uuid::parse_str(&created.id).unwrap();
+
+        // Delete should succeed
+        let result = uc.delete_technical_inspection(inspection_id).await;
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+
+        // Should no longer be found
+        let get_result = uc.get_technical_inspection(inspection_id).await;
+        assert!(get_result.is_ok());
+        assert!(get_result.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn test_delete_technical_inspection_not_found() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+
+        let result = uc.delete_technical_inspection(Uuid::new_v4()).await;
+        assert!(result.is_ok());
+        assert!(!result.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_add_multiple_reports_and_photos() {
+        let repo = MockTechnicalInspectionRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let created = uc
+            .create_technical_inspection(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let inspection_id = Uuid::parse_str(&created.id).unwrap();
+
+        // Add 2 reports
+        uc.add_report(
+            inspection_id,
+            AddReportDto {
+                report_path: "/reports/report1.pdf".to_string(),
+            },
+        )
+        .await
+        .unwrap();
+        uc.add_report(
+            inspection_id,
+            AddReportDto {
+                report_path: "/reports/report2.pdf".to_string(),
+            },
+        )
+        .await
+        .unwrap();
+
+        // Add 1 photo
+        uc.add_photo(
+            inspection_id,
+            AddInspectionPhotoDto {
+                photo_path: "/photos/photo1.jpg".to_string(),
+            },
+        )
+        .await
+        .unwrap();
+
+        let inspection = uc
+            .get_technical_inspection(inspection_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(inspection.reports.len(), 2);
+        assert_eq!(inspection.photos.len(), 1);
+    }
+}

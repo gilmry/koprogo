@@ -626,3 +626,925 @@ impl LocalExchangeUseCases {
         Ok(dtos)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::dto::{OwnerFilters, PageRequest};
+    use crate::application::ports::{
+        LocalExchangeRepository, OwnerCreditBalanceRepository, OwnerRepository,
+    };
+    use crate::domain::entities::{ExchangeStatus, ExchangeType, LocalExchange, Owner, OwnerCreditBalance};
+    use async_trait::async_trait;
+    use chrono::Utc;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    // ── Mock OwnerRepository ────────────────────────────────────────────
+
+    struct MockOwnerRepository {
+        owners: Mutex<HashMap<Uuid, Owner>>,
+    }
+
+    impl MockOwnerRepository {
+        fn new() -> Self {
+            Self {
+                owners: Mutex::new(HashMap::new()),
+            }
+        }
+
+        fn insert(&self, owner: Owner) {
+            self.owners.lock().unwrap().insert(owner.id, owner);
+        }
+    }
+
+    #[async_trait]
+    impl OwnerRepository for MockOwnerRepository {
+        async fn create(&self, owner: &Owner) -> Result<Owner, String> {
+            self.owners
+                .lock()
+                .unwrap()
+                .insert(owner.id, owner.clone());
+            Ok(owner.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Owner>, String> {
+            Ok(self.owners.lock().unwrap().get(&id).cloned())
+        }
+
+        async fn find_by_user_id(&self, user_id: Uuid) -> Result<Option<Owner>, String> {
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.user_id == Some(user_id))
+                .cloned())
+        }
+
+        async fn find_by_user_id_and_organization(
+            &self,
+            user_id: Uuid,
+            organization_id: Uuid,
+        ) -> Result<Option<Owner>, String> {
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.user_id == Some(user_id) && o.organization_id == organization_id)
+                .cloned())
+        }
+
+        async fn find_by_email(&self, email: &str) -> Result<Option<Owner>, String> {
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.email == email)
+                .cloned())
+        }
+
+        async fn find_all(&self) -> Result<Vec<Owner>, String> {
+            Ok(self.owners.lock().unwrap().values().cloned().collect())
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &PageRequest,
+            _filters: &OwnerFilters,
+        ) -> Result<(Vec<Owner>, i64), String> {
+            let owners: Vec<_> = self.owners.lock().unwrap().values().cloned().collect();
+            let total = owners.len() as i64;
+            Ok((owners, total))
+        }
+
+        async fn update(&self, owner: &Owner) -> Result<Owner, String> {
+            self.owners
+                .lock()
+                .unwrap()
+                .insert(owner.id, owner.clone());
+            Ok(owner.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            Ok(self.owners.lock().unwrap().remove(&id).is_some())
+        }
+    }
+
+    // ── Mock LocalExchangeRepository ────────────────────────────────────
+
+    struct MockLocalExchangeRepository {
+        exchanges: Mutex<HashMap<Uuid, LocalExchange>>,
+    }
+
+    impl MockLocalExchangeRepository {
+        fn new() -> Self {
+            Self {
+                exchanges: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl LocalExchangeRepository for MockLocalExchangeRepository {
+        async fn create(&self, exchange: &LocalExchange) -> Result<LocalExchange, String> {
+            self.exchanges
+                .lock()
+                .unwrap()
+                .insert(exchange.id, exchange.clone());
+            Ok(exchange.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<LocalExchange>, String> {
+            Ok(self.exchanges.lock().unwrap().get(&id).cloned())
+        }
+
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<LocalExchange>, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_building_and_status(
+            &self,
+            building_id: Uuid,
+            status: &str,
+        ) -> Result<Vec<LocalExchange>, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.building_id == building_id && e.status.to_sql() == status)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_provider(&self, provider_id: Uuid) -> Result<Vec<LocalExchange>, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.provider_id == provider_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_requester(
+            &self,
+            requester_id: Uuid,
+        ) -> Result<Vec<LocalExchange>, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.requester_id == Some(requester_id))
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<LocalExchange>, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.provider_id == owner_id || e.requester_id == Some(owner_id))
+                .cloned()
+                .collect())
+        }
+
+        async fn find_active_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<LocalExchange>, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.building_id == building_id && e.is_active())
+                .cloned()
+                .collect())
+        }
+
+        async fn find_available_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<LocalExchange>, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| {
+                    e.building_id == building_id && e.status == ExchangeStatus::Offered
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_type(
+            &self,
+            building_id: Uuid,
+            exchange_type: &str,
+        ) -> Result<Vec<LocalExchange>, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| {
+                    e.building_id == building_id && e.exchange_type.to_sql() == exchange_type
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn update(&self, exchange: &LocalExchange) -> Result<LocalExchange, String> {
+            self.exchanges
+                .lock()
+                .unwrap()
+                .insert(exchange.id, exchange.clone());
+            Ok(exchange.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            Ok(self.exchanges.lock().unwrap().remove(&id).is_some())
+        }
+
+        async fn count_by_building(&self, building_id: Uuid) -> Result<i64, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.building_id == building_id)
+                .count() as i64)
+        }
+
+        async fn count_by_building_and_status(
+            &self,
+            building_id: Uuid,
+            status: &str,
+        ) -> Result<i64, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.building_id == building_id && e.status.to_sql() == status)
+                .count() as i64)
+        }
+
+        async fn count_by_building_and_type(
+            &self,
+            building_id: Uuid,
+            exchange_type: &str,
+        ) -> Result<i64, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| {
+                    e.building_id == building_id && e.exchange_type.to_sql() == exchange_type
+                })
+                .count() as i64)
+        }
+
+        async fn get_total_credits_exchanged(&self, building_id: Uuid) -> Result<i32, String> {
+            Ok(self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| {
+                    e.building_id == building_id && e.status == ExchangeStatus::Completed
+                })
+                .map(|e| e.credits)
+                .sum())
+        }
+
+        async fn get_average_exchange_rating(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Option<f32>, String> {
+            let ratings: Vec<f32> = self
+                .exchanges
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|e| e.building_id == building_id)
+                .flat_map(|e| {
+                    let mut v = Vec::new();
+                    if let Some(r) = e.provider_rating {
+                        v.push(r as f32);
+                    }
+                    if let Some(r) = e.requester_rating {
+                        v.push(r as f32);
+                    }
+                    v
+                })
+                .collect();
+            if ratings.is_empty() {
+                Ok(None)
+            } else {
+                Ok(Some(ratings.iter().sum::<f32>() / ratings.len() as f32))
+            }
+        }
+    }
+
+    // ── Mock OwnerCreditBalanceRepository ────────────────────────────────
+
+    struct MockOwnerCreditBalanceRepository {
+        balances: Mutex<HashMap<(Uuid, Uuid), OwnerCreditBalance>>,
+    }
+
+    impl MockOwnerCreditBalanceRepository {
+        fn new() -> Self {
+            Self {
+                balances: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl OwnerCreditBalanceRepository for MockOwnerCreditBalanceRepository {
+        async fn create(
+            &self,
+            balance: &OwnerCreditBalance,
+        ) -> Result<OwnerCreditBalance, String> {
+            self.balances
+                .lock()
+                .unwrap()
+                .insert((balance.owner_id, balance.building_id), balance.clone());
+            Ok(balance.clone())
+        }
+
+        async fn find_by_owner_and_building(
+            &self,
+            owner_id: Uuid,
+            building_id: Uuid,
+        ) -> Result<Option<OwnerCreditBalance>, String> {
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .get(&(owner_id, building_id))
+                .cloned())
+        }
+
+        async fn find_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<OwnerCreditBalance>, String> {
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|b| b.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_owner(
+            &self,
+            owner_id: Uuid,
+        ) -> Result<Vec<OwnerCreditBalance>, String> {
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|b| b.owner_id == owner_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn get_or_create(
+            &self,
+            owner_id: Uuid,
+            building_id: Uuid,
+        ) -> Result<OwnerCreditBalance, String> {
+            let mut map = self.balances.lock().unwrap();
+            if let Some(existing) = map.get(&(owner_id, building_id)) {
+                Ok(existing.clone())
+            } else {
+                let balance = OwnerCreditBalance::new(owner_id, building_id);
+                map.insert((owner_id, building_id), balance.clone());
+                Ok(balance)
+            }
+        }
+
+        async fn update(
+            &self,
+            balance: &OwnerCreditBalance,
+        ) -> Result<OwnerCreditBalance, String> {
+            self.balances
+                .lock()
+                .unwrap()
+                .insert((balance.owner_id, balance.building_id), balance.clone());
+            Ok(balance.clone())
+        }
+
+        async fn delete(&self, owner_id: Uuid, building_id: Uuid) -> Result<bool, String> {
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .remove(&(owner_id, building_id))
+                .is_some())
+        }
+
+        async fn get_leaderboard(
+            &self,
+            building_id: Uuid,
+            limit: i32,
+        ) -> Result<Vec<OwnerCreditBalance>, String> {
+            let mut balances: Vec<_> = self
+                .balances
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|b| b.building_id == building_id)
+                .cloned()
+                .collect();
+            balances.sort_by(|a, b| b.balance.cmp(&a.balance));
+            balances.truncate(limit as usize);
+            Ok(balances)
+        }
+
+        async fn count_active_participants(&self, building_id: Uuid) -> Result<i64, String> {
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|b| b.building_id == building_id && b.total_exchanges > 0)
+                .count() as i64)
+        }
+
+        async fn get_total_credits_in_circulation(
+            &self,
+            building_id: Uuid,
+        ) -> Result<i32, String> {
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|b| b.building_id == building_id)
+                .map(|b| b.credits_earned)
+                .sum())
+        }
+    }
+
+    // ── Test Helpers ────────────────────────────────────────────────────
+
+    fn make_owner(user_id: Uuid) -> Owner {
+        let now = Utc::now();
+        Owner {
+            id: Uuid::new_v4(),
+            organization_id: Uuid::new_v4(),
+            user_id: Some(user_id),
+            first_name: "Jean".to_string(),
+            last_name: "Dupont".to_string(),
+            email: "jean@example.com".to_string(),
+            phone: None,
+            address: "1 rue de la Loi".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "BE".to_string(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
+
+    fn make_owner_with_name(user_id: Uuid, first: &str, last: &str) -> Owner {
+        let now = Utc::now();
+        Owner {
+            id: Uuid::new_v4(),
+            organization_id: Uuid::new_v4(),
+            user_id: Some(user_id),
+            first_name: first.to_string(),
+            last_name: last.to_string(),
+            email: format!("{}@example.com", first.to_lowercase()),
+            phone: None,
+            address: "1 rue de la Loi".to_string(),
+            city: "Bruxelles".to_string(),
+            postal_code: "1000".to_string(),
+            country: "BE".to_string(),
+            created_at: now,
+            updated_at: now,
+        }
+    }
+
+    fn setup_use_cases(
+        owner_repo: Arc<MockOwnerRepository>,
+        exchange_repo: Arc<MockLocalExchangeRepository>,
+        balance_repo: Arc<MockOwnerCreditBalanceRepository>,
+    ) -> LocalExchangeUseCases {
+        LocalExchangeUseCases::new(exchange_repo, balance_repo, owner_repo)
+    }
+
+    // ── Tests ───────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_create_exchange_success() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let user_id = Uuid::new_v4();
+        let provider = make_owner_with_name(user_id, "Alice", "Martin");
+        owner_repo.insert(provider.clone());
+
+        let building_id = Uuid::new_v4();
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Gardening help".to_string(),
+            description: "I can help with your garden".to_string(),
+            credits: 3,
+        };
+
+        let result = uc.create_exchange(user_id, dto).await;
+        assert!(result.is_ok(), "create_exchange failed: {:?}", result.err());
+
+        let resp = result.unwrap();
+        assert_eq!(resp.building_id, building_id);
+        assert_eq!(resp.provider_id, provider.id);
+        assert_eq!(resp.provider_name, "Alice Martin");
+        assert_eq!(resp.status, ExchangeStatus::Offered);
+        assert_eq!(resp.credits, 3);
+        assert_eq!(resp.title, "Gardening help");
+        assert!(resp.requester_id.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_request_exchange_success() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let requester_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        let requester = make_owner_with_name(requester_user_id, "Bob", "Leroy");
+        owner_repo.insert(provider.clone());
+        owner_repo.insert(requester.clone());
+
+        let uc = setup_use_cases(
+            owner_repo,
+            exchange_repo.clone(),
+            balance_repo,
+        );
+
+        // Create an exchange first
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::ObjectLoan,
+            title: "Drill to lend".to_string(),
+            description: "Heavy-duty drill available".to_string(),
+            credits: 1,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+
+        // Now requester requests it
+        let result = uc
+            .request_exchange(created.id, requester_user_id, RequestExchangeDto {})
+            .await;
+        assert!(result.is_ok(), "request_exchange failed: {:?}", result.err());
+
+        let resp = result.unwrap();
+        assert_eq!(resp.status, ExchangeStatus::Requested);
+        assert_eq!(resp.requester_id, Some(requester.id));
+        assert_eq!(resp.requester_name, Some("Bob Leroy".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_start_exchange_success() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let requester_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        let requester = make_owner_with_name(requester_user_id, "Bob", "Leroy");
+        owner_repo.insert(provider.clone());
+        owner_repo.insert(requester.clone());
+
+        let uc = setup_use_cases(
+            owner_repo,
+            exchange_repo.clone(),
+            balance_repo,
+        );
+
+        // Create + request
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Plumbing fix".to_string(),
+            description: "Fix leaking pipe".to_string(),
+            credits: 2,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+        uc.request_exchange(created.id, requester_user_id, RequestExchangeDto {})
+            .await
+            .unwrap();
+
+        // Provider starts the exchange
+        let result = uc.start_exchange(created.id, provider_user_id).await;
+        assert!(result.is_ok(), "start_exchange failed: {:?}", result.err());
+
+        let resp = result.unwrap();
+        assert_eq!(resp.status, ExchangeStatus::InProgress);
+        assert!(resp.started_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_complete_exchange_updates_credit_balances() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let requester_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        let requester = make_owner_with_name(requester_user_id, "Bob", "Leroy");
+        owner_repo.insert(provider.clone());
+        owner_repo.insert(requester.clone());
+
+        let uc = setup_use_cases(
+            owner_repo.clone(),
+            exchange_repo.clone(),
+            balance_repo.clone(),
+        );
+
+        // Create + request + start
+        let credits = 5;
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "IT Help".to_string(),
+            description: "Install software".to_string(),
+            credits,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+        uc.request_exchange(created.id, requester_user_id, RequestExchangeDto {})
+            .await
+            .unwrap();
+        uc.start_exchange(created.id, provider_user_id)
+            .await
+            .unwrap();
+
+        // Provider completes the exchange
+        let result = uc
+            .complete_exchange(created.id, provider_user_id, CompleteExchangeDto {})
+            .await;
+        assert!(
+            result.is_ok(),
+            "complete_exchange failed: {:?}",
+            result.err()
+        );
+
+        let resp = result.unwrap();
+        assert_eq!(resp.status, ExchangeStatus::Completed);
+        assert!(resp.completed_at.is_some());
+
+        // Verify credit balances were updated
+        let provider_balance = uc
+            .get_credit_balance(provider.id, building_id)
+            .await
+            .unwrap();
+        assert_eq!(provider_balance.credits_earned, credits);
+        assert_eq!(provider_balance.balance, credits);
+        assert_eq!(provider_balance.total_exchanges, 1);
+
+        let requester_balance = uc
+            .get_credit_balance(requester.id, building_id)
+            .await
+            .unwrap();
+        assert_eq!(requester_balance.credits_spent, credits);
+        assert_eq!(requester_balance.balance, -credits);
+        assert_eq!(requester_balance.total_exchanges, 1);
+    }
+
+    #[tokio::test]
+    async fn test_cancel_exchange_success() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let requester_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        let requester = make_owner_with_name(requester_user_id, "Bob", "Leroy");
+        owner_repo.insert(provider.clone());
+        owner_repo.insert(requester.clone());
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        // Create + request
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::SharedPurchase,
+            title: "Bulk order".to_string(),
+            description: "Shared cleaning supplies".to_string(),
+            credits: 2,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+        uc.request_exchange(created.id, requester_user_id, RequestExchangeDto {})
+            .await
+            .unwrap();
+
+        // Requester cancels with reason
+        let cancel_dto = CancelExchangeDto {
+            reason: Some("Changed my mind".to_string()),
+        };
+        let result = uc
+            .cancel_exchange(created.id, requester_user_id, cancel_dto)
+            .await;
+        assert!(
+            result.is_ok(),
+            "cancel_exchange failed: {:?}",
+            result.err()
+        );
+
+        let resp = result.unwrap();
+        assert_eq!(resp.status, ExchangeStatus::Cancelled);
+        assert!(resp.cancelled_at.is_some());
+        assert_eq!(resp.cancellation_reason, Some("Changed my mind".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_rate_provider_success() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let requester_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        let requester = make_owner_with_name(requester_user_id, "Bob", "Leroy");
+        owner_repo.insert(provider.clone());
+        owner_repo.insert(requester.clone());
+
+        let uc = setup_use_cases(
+            owner_repo,
+            exchange_repo.clone(),
+            balance_repo.clone(),
+        );
+
+        // Full workflow: create + request + start + complete
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Painting".to_string(),
+            description: "Paint the hallway".to_string(),
+            credits: 4,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+        uc.request_exchange(created.id, requester_user_id, RequestExchangeDto {})
+            .await
+            .unwrap();
+        uc.start_exchange(created.id, provider_user_id)
+            .await
+            .unwrap();
+        uc.complete_exchange(created.id, provider_user_id, CompleteExchangeDto {})
+            .await
+            .unwrap();
+
+        // Requester rates provider
+        let rate_dto = RateExchangeDto { rating: 5 };
+        let result = uc
+            .rate_provider(created.id, requester_user_id, rate_dto)
+            .await;
+        assert!(result.is_ok(), "rate_provider failed: {:?}", result.err());
+
+        let resp = result.unwrap();
+        assert_eq!(resp.provider_rating, Some(5));
+
+        // Verify provider's average rating was updated in balance
+        let provider_balance = balance_repo
+            .find_by_owner_and_building(provider.id, building_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(provider_balance.average_rating, Some(5.0));
+    }
+
+    #[tokio::test]
+    async fn test_rate_requester_success() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let provider_user_id = Uuid::new_v4();
+        let requester_user_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let provider = make_owner_with_name(provider_user_id, "Alice", "Martin");
+        let requester = make_owner_with_name(requester_user_id, "Bob", "Leroy");
+        owner_repo.insert(provider.clone());
+        owner_repo.insert(requester.clone());
+
+        let uc = setup_use_cases(
+            owner_repo,
+            exchange_repo.clone(),
+            balance_repo.clone(),
+        );
+
+        // Full workflow: create + request + start + complete
+        let dto = CreateLocalExchangeDto {
+            building_id,
+            exchange_type: ExchangeType::Service,
+            title: "Babysitting".to_string(),
+            description: "Watch kids for 3 hours".to_string(),
+            credits: 3,
+        };
+        let created = uc.create_exchange(provider_user_id, dto).await.unwrap();
+        uc.request_exchange(created.id, requester_user_id, RequestExchangeDto {})
+            .await
+            .unwrap();
+        uc.start_exchange(created.id, provider_user_id)
+            .await
+            .unwrap();
+        uc.complete_exchange(created.id, provider_user_id, CompleteExchangeDto {})
+            .await
+            .unwrap();
+
+        // Provider rates requester
+        let rate_dto = RateExchangeDto { rating: 4 };
+        let result = uc
+            .rate_requester(created.id, provider_user_id, rate_dto)
+            .await;
+        assert!(result.is_ok(), "rate_requester failed: {:?}", result.err());
+
+        let resp = result.unwrap();
+        assert_eq!(resp.requester_rating, Some(4));
+
+        // Verify requester's average rating was updated
+        let requester_balance = balance_repo
+            .find_by_owner_and_building(requester.id, building_id)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(requester_balance.average_rating, Some(4.0));
+    }
+
+    #[tokio::test]
+    async fn test_get_credit_balance_creates_if_missing() {
+        let owner_repo = Arc::new(MockOwnerRepository::new());
+        let exchange_repo = Arc::new(MockLocalExchangeRepository::new());
+        let balance_repo = Arc::new(MockOwnerCreditBalanceRepository::new());
+
+        let user_id = Uuid::new_v4();
+        let owner = make_owner(user_id);
+        let owner_id = owner.id;
+        let building_id = Uuid::new_v4();
+        owner_repo.insert(owner);
+
+        let uc = setup_use_cases(owner_repo, exchange_repo, balance_repo);
+
+        // No balance exists yet; get_credit_balance should auto-create via get_or_create
+        let result = uc.get_credit_balance(owner_id, building_id).await;
+        assert!(
+            result.is_ok(),
+            "get_credit_balance failed: {:?}",
+            result.err()
+        );
+
+        let balance = result.unwrap();
+        assert_eq!(balance.owner_id, owner_id);
+        assert_eq!(balance.building_id, building_id);
+        assert_eq!(balance.credits_earned, 0);
+        assert_eq!(balance.credits_spent, 0);
+        assert_eq!(balance.balance, 0);
+        assert_eq!(balance.total_exchanges, 0);
+    }
+}

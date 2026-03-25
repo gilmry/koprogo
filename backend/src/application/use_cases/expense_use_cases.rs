@@ -467,3 +467,457 @@ impl ExpenseUseCases {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::dto::{ExpenseFilters, PageRequest};
+    use crate::application::ports::ExpenseRepository;
+    use crate::domain::entities::{ApprovalStatus, ExpenseCategory, PaymentStatus};
+    use async_trait::async_trait;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    // ========== Mock Repository ==========
+
+    struct MockExpenseRepository {
+        expenses: Mutex<HashMap<Uuid, Expense>>,
+    }
+
+    impl MockExpenseRepository {
+        fn new() -> Self {
+            Self {
+                expenses: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl ExpenseRepository for MockExpenseRepository {
+        async fn create(&self, expense: &Expense) -> Result<Expense, String> {
+            let mut expenses = self.expenses.lock().unwrap();
+            expenses.insert(expense.id, expense.clone());
+            Ok(expense.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Expense>, String> {
+            let expenses = self.expenses.lock().unwrap();
+            Ok(expenses.get(&id).cloned())
+        }
+
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Expense>, String> {
+            let expenses = self.expenses.lock().unwrap();
+            Ok(expenses
+                .values()
+                .filter(|e| e.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &PageRequest,
+            filters: &ExpenseFilters,
+        ) -> Result<(Vec<Expense>, i64), String> {
+            let expenses = self.expenses.lock().unwrap();
+            let filtered: Vec<Expense> = expenses
+                .values()
+                .filter(|e| {
+                    if let Some(org_id) = filters.organization_id {
+                        if e.organization_id != org_id {
+                            return false;
+                        }
+                    }
+                    if let Some(ref status) = filters.approval_status {
+                        if e.approval_status != *status {
+                            return false;
+                        }
+                    }
+                    true
+                })
+                .cloned()
+                .collect();
+            let count = filtered.len() as i64;
+            Ok((filtered, count))
+        }
+
+        async fn update(&self, expense: &Expense) -> Result<Expense, String> {
+            let mut expenses = self.expenses.lock().unwrap();
+            expenses.insert(expense.id, expense.clone());
+            Ok(expense.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            let mut expenses = self.expenses.lock().unwrap();
+            Ok(expenses.remove(&id).is_some())
+        }
+    }
+
+    // ========== Helpers ==========
+
+    fn make_use_cases(repo: MockExpenseRepository) -> ExpenseUseCases {
+        ExpenseUseCases::new(Arc::new(repo))
+    }
+
+    fn valid_create_dto(org_id: Uuid, building_id: Uuid) -> CreateExpenseDto {
+        CreateExpenseDto {
+            organization_id: org_id.to_string(),
+            building_id: building_id.to_string(),
+            category: ExpenseCategory::Maintenance,
+            description: "Elevator maintenance Q1".to_string(),
+            amount: 1500.0,
+            expense_date: "2026-01-15T10:00:00Z".to_string(),
+            supplier: Some("Schindler SA".to_string()),
+            invoice_number: Some("INV-2026-001".to_string()),
+            account_code: Some("611002".to_string()),
+        }
+    }
+
+    fn valid_invoice_draft_dto(org_id: Uuid, building_id: Uuid) -> CreateInvoiceDraftDto {
+        CreateInvoiceDraftDto {
+            organization_id: org_id.to_string(),
+            building_id: building_id.to_string(),
+            category: ExpenseCategory::Utilities,
+            description: "Electricity bill January".to_string(),
+            amount_excl_vat: 1000.0,
+            vat_rate: 21.0,
+            invoice_date: "2026-01-31T10:00:00Z".to_string(),
+            due_date: Some("2026-02-28T10:00:00Z".to_string()),
+            supplier: Some("Engie Electrabel".to_string()),
+            invoice_number: Some("ELEC-2026-001".to_string()),
+        }
+    }
+
+    // ========== Tests ==========
+
+    #[tokio::test]
+    async fn test_create_expense_success() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let result = uc.create_expense(valid_create_dto(org_id, building_id)).await;
+
+        assert!(result.is_ok());
+        let dto = result.unwrap();
+        assert_eq!(dto.building_id, building_id.to_string());
+        assert_eq!(dto.description, "Elevator maintenance Q1");
+        assert_eq!(dto.amount, 1500.0);
+        assert_eq!(dto.payment_status, PaymentStatus::Pending);
+        assert_eq!(dto.approval_status, ApprovalStatus::Draft);
+        assert_eq!(dto.supplier, Some("Schindler SA".to_string()));
+        assert_eq!(dto.account_code, Some("611002".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_create_expense_invalid_building_id() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+
+        let mut dto = valid_create_dto(Uuid::new_v4(), Uuid::new_v4());
+        dto.building_id = "not-a-uuid".to_string();
+
+        let result = uc.create_expense(dto).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid building ID format");
+    }
+
+    #[tokio::test]
+    async fn test_submit_for_approval_success() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        // Create an expense (starts as Draft)
+        let created = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let expense_id = Uuid::parse_str(&created.id).unwrap();
+
+        // Submit for approval
+        let result = uc
+            .submit_for_approval(expense_id, SubmitForApprovalDto {})
+            .await;
+
+        assert!(result.is_ok());
+        let invoice = result.unwrap();
+        assert_eq!(invoice.approval_status, ApprovalStatus::PendingApproval);
+        assert!(invoice.submitted_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_approve_invoice_success() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let approver_id = Uuid::new_v4();
+
+        // Create and submit
+        let created = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let expense_id = Uuid::parse_str(&created.id).unwrap();
+        uc.submit_for_approval(expense_id, SubmitForApprovalDto {})
+            .await
+            .unwrap();
+
+        // Approve
+        let result = uc
+            .approve_invoice(
+                expense_id,
+                ApproveInvoiceDto {
+                    approved_by_user_id: approver_id.to_string(),
+                },
+            )
+            .await;
+
+        assert!(result.is_ok());
+        let invoice = result.unwrap();
+        assert_eq!(invoice.approval_status, ApprovalStatus::Approved);
+        assert_eq!(invoice.approved_by, Some(approver_id.to_string()));
+        assert!(invoice.approved_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_reject_invoice_success() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let rejector_id = Uuid::new_v4();
+
+        // Create and submit
+        let created = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let expense_id = Uuid::parse_str(&created.id).unwrap();
+        uc.submit_for_approval(expense_id, SubmitForApprovalDto {})
+            .await
+            .unwrap();
+
+        // Reject
+        let result = uc
+            .reject_invoice(
+                expense_id,
+                RejectInvoiceDto {
+                    rejected_by_user_id: rejector_id.to_string(),
+                    rejection_reason: "Missing supporting documents".to_string(),
+                },
+            )
+            .await;
+
+        assert!(result.is_ok());
+        let invoice = result.unwrap();
+        assert_eq!(invoice.approval_status, ApprovalStatus::Rejected);
+        assert_eq!(
+            invoice.rejection_reason,
+            Some("Missing supporting documents".to_string())
+        );
+    }
+
+    #[tokio::test]
+    async fn test_mark_as_paid_requires_approval() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        // Create an expense (Draft status, not approved)
+        let created = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let expense_id = Uuid::parse_str(&created.id).unwrap();
+
+        // Attempt to mark as paid without approval should fail
+        let result = uc.mark_as_paid(expense_id).await;
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("invoice must be approved first"));
+    }
+
+    #[tokio::test]
+    async fn test_mark_as_paid_after_approval() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let approver_id = Uuid::new_v4();
+
+        // Create, submit, and approve
+        let created = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let expense_id = Uuid::parse_str(&created.id).unwrap();
+        uc.submit_for_approval(expense_id, SubmitForApprovalDto {})
+            .await
+            .unwrap();
+        uc.approve_invoice(
+            expense_id,
+            ApproveInvoiceDto {
+                approved_by_user_id: approver_id.to_string(),
+            },
+        )
+        .await
+        .unwrap();
+
+        // Now mark as paid
+        let result = uc.mark_as_paid(expense_id).await;
+        assert!(result.is_ok());
+        let dto = result.unwrap();
+        assert_eq!(dto.payment_status, PaymentStatus::Paid);
+    }
+
+    #[tokio::test]
+    async fn test_find_by_building() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_a = Uuid::new_v4();
+        let building_b = Uuid::new_v4();
+
+        // Create expenses for two different buildings
+        let mut dto_a = valid_create_dto(org_id, building_a);
+        dto_a.description = "Building A expense".to_string();
+        uc.create_expense(dto_a).await.unwrap();
+
+        let mut dto_b = valid_create_dto(org_id, building_b);
+        dto_b.description = "Building B expense".to_string();
+        uc.create_expense(dto_b).await.unwrap();
+
+        // Another expense for building A
+        let mut dto_a2 = valid_create_dto(org_id, building_a);
+        dto_a2.description = "Building A expense 2".to_string();
+        uc.create_expense(dto_a2).await.unwrap();
+
+        // Query for building A
+        let result = uc.list_expenses_by_building(building_a).await;
+        assert!(result.is_ok());
+        let expenses = result.unwrap();
+        assert_eq!(expenses.len(), 2);
+        assert!(expenses
+            .iter()
+            .all(|e| e.building_id == building_a.to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_update_invoice_draft_blocked_after_approval() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let approver_id = Uuid::new_v4();
+
+        // Create invoice draft, submit, and approve
+        let created = uc
+            .create_invoice_draft(valid_invoice_draft_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let invoice_id = Uuid::parse_str(&created.id).unwrap();
+        uc.submit_for_approval(invoice_id, SubmitForApprovalDto {})
+            .await
+            .unwrap();
+        uc.approve_invoice(
+            invoice_id,
+            ApproveInvoiceDto {
+                approved_by_user_id: approver_id.to_string(),
+            },
+        )
+        .await
+        .unwrap();
+
+        // Attempt to modify the approved invoice
+        let update_dto = UpdateInvoiceDraftDto {
+            description: Some("Changed description".to_string()),
+            category: None,
+            amount_excl_vat: None,
+            vat_rate: None,
+            invoice_date: None,
+            due_date: None,
+            supplier: None,
+            invoice_number: None,
+        };
+
+        let result = uc.update_invoice_draft(invoice_id, update_dto).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("cannot be modified"));
+    }
+
+    #[tokio::test]
+    async fn test_create_invoice_draft_vat_calculations() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        // Create invoice with 21% VAT on 1000 EUR HT
+        let result = uc
+            .create_invoice_draft(valid_invoice_draft_dto(org_id, building_id))
+            .await;
+
+        assert!(result.is_ok());
+        let invoice = result.unwrap();
+
+        // 1000 * 21% = 210 VAT, total = 1210
+        assert_eq!(invoice.amount_excl_vat, Some(1000.0));
+        assert_eq!(invoice.vat_rate, Some(21.0));
+        assert_eq!(invoice.vat_amount, Some(210.0));
+        assert_eq!(invoice.amount_incl_vat, Some(1210.0));
+        // backward compat: amount field = TTC
+        assert_eq!(invoice.amount, 1210.0);
+    }
+
+    #[tokio::test]
+    async fn test_reject_then_resubmit() {
+        let repo = MockExpenseRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let rejector_id = Uuid::new_v4();
+
+        // Create, submit, reject
+        let created = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await
+            .unwrap();
+        let expense_id = Uuid::parse_str(&created.id).unwrap();
+        uc.submit_for_approval(expense_id, SubmitForApprovalDto {})
+            .await
+            .unwrap();
+        uc.reject_invoice(
+            expense_id,
+            RejectInvoiceDto {
+                rejected_by_user_id: rejector_id.to_string(),
+                rejection_reason: "Incorrect amount".to_string(),
+            },
+        )
+        .await
+        .unwrap();
+
+        // Verify rejected state
+        let rejected = uc.get_invoice(expense_id).await.unwrap().unwrap();
+        assert_eq!(rejected.approval_status, ApprovalStatus::Rejected);
+        assert_eq!(
+            rejected.rejection_reason,
+            Some("Incorrect amount".to_string())
+        );
+
+        // Re-submit after rejection (allowed)
+        let result = uc
+            .submit_for_approval(expense_id, SubmitForApprovalDto {})
+            .await;
+        assert!(result.is_ok());
+        let resubmitted = result.unwrap();
+        assert_eq!(resubmitted.approval_status, ApprovalStatus::PendingApproval);
+        // rejection_reason should be cleared upon resubmission
+        assert_eq!(resubmitted.rejection_reason, None);
+    }
+}

@@ -370,3 +370,609 @@ pub struct TicketStatistics {
     pub closed: i64,
     pub cancelled: i64,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::ports::TicketRepository;
+    use crate::domain::entities::{Ticket, TicketCategory, TicketPriority, TicketStatus};
+    use async_trait::async_trait;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    // ── Manual mock for TicketRepository ──────────────────────────────
+
+    struct MockTicketRepository {
+        tickets: Mutex<HashMap<Uuid, Ticket>>,
+    }
+
+    impl MockTicketRepository {
+        fn new() -> Self {
+            Self {
+                tickets: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl TicketRepository for MockTicketRepository {
+        async fn create(&self, ticket: &Ticket) -> Result<Ticket, String> {
+            self.tickets
+                .lock()
+                .unwrap()
+                .insert(ticket.id, ticket.clone());
+            Ok(ticket.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Ticket>, String> {
+            Ok(self.tickets.lock().unwrap().get(&id).cloned())
+        }
+
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Ticket>, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_organization(
+            &self,
+            organization_id: Uuid,
+        ) -> Result<Vec<Ticket>, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.organization_id == organization_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_created_by(&self, created_by: Uuid) -> Result<Vec<Ticket>, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.created_by == created_by)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_assigned_to(&self, assigned_to: Uuid) -> Result<Vec<Ticket>, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.assigned_to == Some(assigned_to))
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_status(
+            &self,
+            building_id: Uuid,
+            status: TicketStatus,
+        ) -> Result<Vec<Ticket>, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.building_id == building_id && t.status == status)
+                .cloned()
+                .collect())
+        }
+
+        async fn update(&self, ticket: &Ticket) -> Result<Ticket, String> {
+            self.tickets
+                .lock()
+                .unwrap()
+                .insert(ticket.id, ticket.clone());
+            Ok(ticket.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            Ok(self.tickets.lock().unwrap().remove(&id).is_some())
+        }
+
+        async fn count_by_building(&self, building_id: Uuid) -> Result<i64, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.building_id == building_id)
+                .count() as i64)
+        }
+
+        async fn count_by_status(
+            &self,
+            building_id: Uuid,
+            status: TicketStatus,
+        ) -> Result<i64, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.building_id == building_id && t.status == status)
+                .count() as i64)
+        }
+
+        async fn count_by_organization(&self, organization_id: Uuid) -> Result<i64, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.organization_id == organization_id)
+                .count() as i64)
+        }
+
+        async fn count_by_organization_and_status(
+            &self,
+            organization_id: Uuid,
+            status: TicketStatus,
+        ) -> Result<i64, String> {
+            Ok(self
+                .tickets
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|t| t.organization_id == organization_id && t.status == status)
+                .count() as i64)
+        }
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    fn make_use_cases(repo: Arc<dyn TicketRepository>) -> TicketUseCases {
+        TicketUseCases::new(repo)
+    }
+
+    fn make_create_request(building_id: Uuid) -> CreateTicketRequest {
+        CreateTicketRequest {
+            building_id,
+            unit_id: None,
+            title: "Fuite d'eau cuisine".to_string(),
+            description: "L'eau coule sous l'évier de la cuisine commune".to_string(),
+            category: TicketCategory::Plumbing,
+            priority: TicketPriority::High,
+        }
+    }
+
+    /// Helper: create a ticket through the use case and return its id
+    async fn create_ticket_helper(
+        use_cases: &TicketUseCases,
+        org_id: Uuid,
+        building_id: Uuid,
+    ) -> TicketResponse {
+        let user_id = Uuid::new_v4();
+        let request = make_create_request(building_id);
+        use_cases
+            .create_ticket(org_id, user_id, request)
+            .await
+            .expect("create_ticket should succeed")
+    }
+
+    // ── Tests ────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_create_ticket_success() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+        let request = make_create_request(building_id);
+
+        let result = use_cases.create_ticket(org_id, user_id, request).await;
+
+        assert!(result.is_ok());
+        let ticket = result.unwrap();
+        assert_eq!(ticket.status, TicketStatus::Open);
+        assert_eq!(ticket.building_id, building_id);
+        assert_eq!(ticket.organization_id, org_id);
+        assert_eq!(ticket.created_by, user_id);
+        assert_eq!(ticket.title, "Fuite d'eau cuisine");
+        assert!(ticket.assigned_to.is_none());
+        assert!(ticket.resolution_notes.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_create_ticket_empty_title_fails() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let request = CreateTicketRequest {
+            building_id: Uuid::new_v4(),
+            unit_id: None,
+            title: "   ".to_string(),
+            description: "Some description".to_string(),
+            category: TicketCategory::Electrical,
+            priority: TicketPriority::Low,
+        };
+
+        let result = use_cases
+            .create_ticket(Uuid::new_v4(), Uuid::new_v4(), request)
+            .await;
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Title cannot be empty"));
+    }
+
+    #[tokio::test]
+    async fn test_assign_contractor_transitions_to_in_progress() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+        assert_eq!(ticket.status, TicketStatus::Open);
+
+        let contractor_id = Uuid::new_v4();
+        let assign_request = AssignTicketRequest {
+            assigned_to: contractor_id,
+        };
+
+        let result = use_cases.assign_ticket(ticket.id, assign_request).await;
+
+        assert!(result.is_ok());
+        let updated = result.unwrap();
+        assert_eq!(updated.status, TicketStatus::InProgress);
+        assert_eq!(updated.assigned_to, Some(contractor_id));
+    }
+
+    #[tokio::test]
+    async fn test_start_work_open_to_in_progress() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        let result = use_cases.start_work(ticket.id).await;
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().status, TicketStatus::InProgress);
+    }
+
+    #[tokio::test]
+    async fn test_resolve_ticket_with_notes() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Transition to InProgress first
+        use_cases.start_work(ticket.id).await.unwrap();
+
+        let resolve_request = ResolveTicketRequest {
+            resolution_notes: "Fuite réparée, joint remplacé".to_string(),
+        };
+        let result = use_cases.resolve_ticket(ticket.id, resolve_request).await;
+
+        assert!(result.is_ok());
+        let resolved = result.unwrap();
+        assert_eq!(resolved.status, TicketStatus::Resolved);
+        assert_eq!(
+            resolved.resolution_notes.as_deref(),
+            Some("Fuite réparée, joint remplacé")
+        );
+        assert!(resolved.resolved_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_close_ticket_after_resolution() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Full lifecycle: Open -> InProgress -> Resolved -> Closed
+        use_cases.start_work(ticket.id).await.unwrap();
+        use_cases
+            .resolve_ticket(
+                ticket.id,
+                ResolveTicketRequest {
+                    resolution_notes: "Done".to_string(),
+                },
+            )
+            .await
+            .unwrap();
+
+        let result = use_cases.close_ticket(ticket.id).await;
+
+        assert!(result.is_ok());
+        let closed = result.unwrap();
+        assert_eq!(closed.status, TicketStatus::Closed);
+        assert!(closed.closed_at.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_close_open_ticket_fails() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Attempt to close directly from Open (skipping Resolved)
+        let result = use_cases.close_ticket(ticket.id).await;
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Must be Resolved first"));
+    }
+
+    #[tokio::test]
+    async fn test_cancel_ticket_with_reason() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        let cancel_request = CancelTicketRequest {
+            reason: "Erreur de déclaration, problème déjà résolu".to_string(),
+        };
+        let result = use_cases.cancel_ticket(ticket.id, cancel_request).await;
+
+        assert!(result.is_ok());
+        let cancelled = result.unwrap();
+        assert_eq!(cancelled.status, TicketStatus::Cancelled);
+        assert!(cancelled
+            .resolution_notes
+            .as_deref()
+            .unwrap()
+            .contains("CANCELLED"));
+    }
+
+    #[tokio::test]
+    async fn test_reopen_resolved_ticket() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Open -> InProgress -> Resolved
+        use_cases.start_work(ticket.id).await.unwrap();
+        use_cases
+            .resolve_ticket(
+                ticket.id,
+                ResolveTicketRequest {
+                    resolution_notes: "Fixed".to_string(),
+                },
+            )
+            .await
+            .unwrap();
+
+        // Reopen
+        let reopen_request = ReopenTicketRequest {
+            reason: "Problème persiste après intervention".to_string(),
+        };
+        let result = use_cases.reopen_ticket(ticket.id, reopen_request).await;
+
+        assert!(result.is_ok());
+        let reopened = result.unwrap();
+        assert_eq!(reopened.status, TicketStatus::InProgress);
+        assert!(reopened.resolved_at.is_none());
+        assert!(reopened.closed_at.is_none());
+        assert!(reopened
+            .resolution_notes
+            .as_deref()
+            .unwrap()
+            .contains("REOPENED"));
+    }
+
+    #[tokio::test]
+    async fn test_reopen_open_ticket_fails() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Ticket is Open, cannot reopen
+        let reopen_request = ReopenTicketRequest {
+            reason: "Some reason".to_string(),
+        };
+        let result = use_cases.reopen_ticket(ticket.id, reopen_request).await;
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Can only reopen resolved or closed tickets"));
+    }
+
+    #[tokio::test]
+    async fn test_send_work_order_in_progress_ticket() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Assign contractor (auto-transitions to InProgress)
+        let contractor_id = Uuid::new_v4();
+        use_cases
+            .assign_ticket(
+                ticket.id,
+                AssignTicketRequest {
+                    assigned_to: contractor_id,
+                },
+            )
+            .await
+            .unwrap();
+
+        // Send work order
+        let result = use_cases.send_work_order(ticket.id).await;
+
+        assert!(result.is_ok());
+        let updated = result.unwrap();
+        assert!(updated.work_order_sent_at.is_some());
+        assert_eq!(updated.status, TicketStatus::InProgress);
+    }
+
+    #[tokio::test]
+    async fn test_send_work_order_open_ticket_fails() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Ticket is Open (not InProgress), should fail
+        let result = use_cases.send_work_order(ticket.id).await;
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("InProgress"));
+    }
+
+    #[tokio::test]
+    async fn test_get_overdue_tickets() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo.clone());
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let user_id = Uuid::new_v4();
+
+        // Create a ticket and manually age it
+        let request = make_create_request(building_id);
+        let created = use_cases
+            .create_ticket(org_id, user_id, request)
+            .await
+            .unwrap();
+
+        // Manually set created_at to 10 days ago in the mock store
+        {
+            let mut store = repo.tickets.lock().unwrap();
+            if let Some(ticket) = store.get_mut(&created.id) {
+                ticket.created_at = chrono::Utc::now() - chrono::Duration::days(10);
+            }
+        }
+
+        let overdue = use_cases
+            .get_overdue_tickets(building_id, 5)
+            .await
+            .unwrap();
+        assert_eq!(overdue.len(), 1);
+        assert_eq!(overdue[0].id, created.id);
+
+        // With a longer threshold, ticket should not be overdue
+        let not_overdue = use_cases
+            .get_overdue_tickets(building_id, 15)
+            .await
+            .unwrap();
+        assert_eq!(not_overdue.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_ticket_statistics() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        // Create 3 tickets, transition them to different states
+        let t1 = create_ticket_helper(&use_cases, org_id, building_id).await; // stays Open
+        let t2 = create_ticket_helper(&use_cases, org_id, building_id).await;
+        let t3 = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // t2 -> InProgress -> Resolved
+        use_cases.start_work(t2.id).await.unwrap();
+        use_cases
+            .resolve_ticket(
+                t2.id,
+                ResolveTicketRequest {
+                    resolution_notes: "Done".to_string(),
+                },
+            )
+            .await
+            .unwrap();
+
+        // t3 -> Cancelled
+        use_cases
+            .cancel_ticket(
+                t3.id,
+                CancelTicketRequest {
+                    reason: "Duplicate".to_string(),
+                },
+            )
+            .await
+            .unwrap();
+
+        let stats = use_cases
+            .get_ticket_statistics(building_id)
+            .await
+            .unwrap();
+
+        assert_eq!(stats.total, 3);
+        assert_eq!(stats.open, 1); // t1
+        assert_eq!(stats.in_progress, 0);
+        assert_eq!(stats.resolved, 1); // t2
+        assert_eq!(stats.closed, 0);
+        assert_eq!(stats.cancelled, 1); // t3
+    }
+
+    #[tokio::test]
+    async fn test_delete_open_ticket_succeeds() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        let result = use_cases.delete_ticket(ticket.id).await;
+
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+
+        // Verify ticket no longer exists
+        let fetched = use_cases.get_ticket(ticket.id).await.unwrap();
+        assert!(fetched.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_delete_in_progress_ticket_fails() {
+        let repo = Arc::new(MockTicketRepository::new());
+        let use_cases = make_use_cases(repo);
+
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket = create_ticket_helper(&use_cases, org_id, building_id).await;
+
+        // Transition to InProgress
+        use_cases.start_work(ticket.id).await.unwrap();
+
+        let result = use_cases.delete_ticket(ticket.id).await;
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Can only delete tickets with Open status"));
+    }
+}

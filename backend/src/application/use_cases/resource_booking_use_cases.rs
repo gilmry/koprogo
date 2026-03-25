@@ -447,3 +447,583 @@ impl ResourceBookingUseCases {
         Ok(result)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::dto::{BookingStatisticsDto, OwnerFilters, PageRequest};
+    use crate::application::ports::{OwnerRepository, ResourceBookingRepository};
+    use crate::domain::entities::{
+        BookingStatus, Owner, RecurringPattern, ResourceBooking, ResourceType,
+    };
+    use async_trait::async_trait;
+    use chrono::{DateTime, Duration, Utc};
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
+    use uuid::Uuid;
+
+    // ── Mock ResourceBookingRepository ──────────────────────────────────────
+    struct MockBookingRepo {
+        bookings: Mutex<HashMap<Uuid, ResourceBooking>>,
+    }
+
+    impl MockBookingRepo {
+        fn new() -> Self {
+            Self {
+                bookings: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl ResourceBookingRepository for MockBookingRepo {
+        async fn create(&self, booking: &ResourceBooking) -> Result<ResourceBooking, String> {
+            let mut map = self.bookings.lock().unwrap();
+            map.insert(booking.id, booking.clone());
+            Ok(booking.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map.get(&id).cloned())
+        }
+
+        async fn find_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| b.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_building_and_resource_type(
+            &self,
+            building_id: Uuid,
+            resource_type: ResourceType,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| b.building_id == building_id && b.resource_type == resource_type)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_resource(
+            &self,
+            building_id: Uuid,
+            resource_type: ResourceType,
+            resource_name: &str,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| {
+                    b.building_id == building_id
+                        && b.resource_type == resource_type
+                        && b.resource_name == resource_name
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| b.booked_by == user_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_user_and_status(
+            &self,
+            user_id: Uuid,
+            status: BookingStatus,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| b.booked_by == user_id && b.status == status)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_building_and_status(
+            &self,
+            building_id: Uuid,
+            status: BookingStatus,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| b.building_id == building_id && b.status == status)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_upcoming(
+            &self,
+            building_id: Uuid,
+            _limit: Option<i64>,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            let now = Utc::now();
+            Ok(map
+                .values()
+                .filter(|b| {
+                    b.building_id == building_id
+                        && b.start_time > now
+                        && matches!(b.status, BookingStatus::Pending | BookingStatus::Confirmed)
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn find_active(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            let now = Utc::now();
+            Ok(map
+                .values()
+                .filter(|b| {
+                    b.building_id == building_id
+                        && b.status == BookingStatus::Confirmed
+                        && now >= b.start_time
+                        && now < b.end_time
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn find_past(
+            &self,
+            building_id: Uuid,
+            _limit: Option<i64>,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            let now = Utc::now();
+            Ok(map
+                .values()
+                .filter(|b| b.building_id == building_id && b.end_time < now)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_conflicts(
+            &self,
+            building_id: Uuid,
+            resource_type: ResourceType,
+            resource_name: &str,
+            start_time: DateTime<Utc>,
+            end_time: DateTime<Utc>,
+            exclude_booking_id: Option<Uuid>,
+        ) -> Result<Vec<ResourceBooking>, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| {
+                    b.building_id == building_id
+                        && b.resource_type == resource_type
+                        && b.resource_name == resource_name
+                        && matches!(b.status, BookingStatus::Pending | BookingStatus::Confirmed)
+                        && b.start_time < end_time
+                        && start_time < b.end_time
+                        && exclude_booking_id.map_or(true, |id| b.id != id)
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn update(&self, booking: &ResourceBooking) -> Result<ResourceBooking, String> {
+            let mut map = self.bookings.lock().unwrap();
+            map.insert(booking.id, booking.clone());
+            Ok(booking.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<(), String> {
+            let mut map = self.bookings.lock().unwrap();
+            map.remove(&id);
+            Ok(())
+        }
+
+        async fn count_by_building(&self, building_id: Uuid) -> Result<i64, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| b.building_id == building_id)
+                .count() as i64)
+        }
+
+        async fn count_by_building_and_status(
+            &self,
+            building_id: Uuid,
+            status: BookingStatus,
+        ) -> Result<i64, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| b.building_id == building_id && b.status == status)
+                .count() as i64)
+        }
+
+        async fn count_by_resource(
+            &self,
+            building_id: Uuid,
+            resource_type: ResourceType,
+            resource_name: &str,
+        ) -> Result<i64, String> {
+            let map = self.bookings.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|b| {
+                    b.building_id == building_id
+                        && b.resource_type == resource_type
+                        && b.resource_name == resource_name
+                })
+                .count() as i64)
+        }
+
+        async fn get_statistics(
+            &self,
+            building_id: Uuid,
+        ) -> Result<BookingStatisticsDto, String> {
+            Ok(BookingStatisticsDto {
+                building_id,
+                total_bookings: 0,
+                confirmed_bookings: 0,
+                pending_bookings: 0,
+                cancelled_bookings: 0,
+                completed_bookings: 0,
+                no_show_bookings: 0,
+                active_bookings: 0,
+                upcoming_bookings: 0,
+                total_hours_booked: 0.0,
+                most_popular_resource: None,
+            })
+        }
+    }
+
+    // ── Mock OwnerRepository ────────────────────────────────────────────────
+    struct MockOwnerRepo {
+        owners: Mutex<HashMap<Uuid, Owner>>,
+    }
+
+    impl MockOwnerRepo {
+        fn new() -> Self {
+            Self {
+                owners: Mutex::new(HashMap::new()),
+            }
+        }
+
+        fn add_owner(&self, owner: Owner) {
+            let mut map = self.owners.lock().unwrap();
+            map.insert(owner.id, owner);
+        }
+    }
+
+    #[async_trait]
+    impl OwnerRepository for MockOwnerRepo {
+        async fn create(&self, owner: &Owner) -> Result<Owner, String> {
+            let mut map = self.owners.lock().unwrap();
+            map.insert(owner.id, owner.clone());
+            Ok(owner.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Owner>, String> {
+            let map = self.owners.lock().unwrap();
+            Ok(map.get(&id).cloned())
+        }
+
+        async fn find_by_user_id(&self, user_id: Uuid) -> Result<Option<Owner>, String> {
+            let map = self.owners.lock().unwrap();
+            Ok(map.values().find(|o| o.user_id == Some(user_id)).cloned())
+        }
+
+        async fn find_by_user_id_and_organization(
+            &self,
+            user_id: Uuid,
+            organization_id: Uuid,
+        ) -> Result<Option<Owner>, String> {
+            let map = self.owners.lock().unwrap();
+            Ok(map
+                .values()
+                .find(|o| o.user_id == Some(user_id) && o.organization_id == organization_id)
+                .cloned())
+        }
+
+        async fn find_by_email(&self, email: &str) -> Result<Option<Owner>, String> {
+            let map = self.owners.lock().unwrap();
+            Ok(map.values().find(|o| o.email == email).cloned())
+        }
+
+        async fn find_all(&self) -> Result<Vec<Owner>, String> {
+            let map = self.owners.lock().unwrap();
+            Ok(map.values().cloned().collect())
+        }
+
+        async fn find_all_paginated(
+            &self,
+            _page_request: &PageRequest,
+            _filters: &OwnerFilters,
+        ) -> Result<(Vec<Owner>, i64), String> {
+            let map = self.owners.lock().unwrap();
+            let all: Vec<_> = map.values().cloned().collect();
+            let count = all.len() as i64;
+            Ok((all, count))
+        }
+
+        async fn update(&self, owner: &Owner) -> Result<Owner, String> {
+            let mut map = self.owners.lock().unwrap();
+            map.insert(owner.id, owner.clone());
+            Ok(owner.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            let mut map = self.owners.lock().unwrap();
+            Ok(map.remove(&id).is_some())
+        }
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    fn create_test_owner(user_id: Uuid, organization_id: Uuid) -> Owner {
+        let mut owner = Owner::new(
+            organization_id,
+            "Jean".to_string(),
+            "Dupont".to_string(),
+            "jean@test.com".to_string(),
+            None,
+            "Rue Test 1".to_string(),
+            "Brussels".to_string(),
+            "1000".to_string(),
+            "Belgium".to_string(),
+        )
+        .unwrap();
+        owner.user_id = Some(user_id);
+        owner
+    }
+
+    fn setup_use_cases() -> (
+        ResourceBookingUseCases,
+        Uuid,
+        Uuid,
+        Uuid,
+        Arc<MockBookingRepo>,
+    ) {
+        let user_id = Uuid::new_v4();
+        let organization_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let booking_repo = Arc::new(MockBookingRepo::new());
+        let owner_repo = Arc::new(MockOwnerRepo::new());
+
+        let owner = create_test_owner(user_id, organization_id);
+        owner_repo.add_owner(owner);
+
+        let use_cases = ResourceBookingUseCases::new(
+            booking_repo.clone() as Arc<dyn ResourceBookingRepository>,
+            owner_repo as Arc<dyn OwnerRepository>,
+        );
+
+        (use_cases, user_id, organization_id, building_id, booking_repo)
+    }
+
+    fn make_create_dto(building_id: Uuid) -> CreateResourceBookingDto {
+        let start_time = Utc::now() + Duration::hours(2);
+        let end_time = start_time + Duration::hours(2);
+        CreateResourceBookingDto {
+            building_id,
+            resource_type: ResourceType::MeetingRoom,
+            resource_name: "Meeting Room A".to_string(),
+            start_time,
+            end_time,
+            notes: Some("Team standup".to_string()),
+            recurring_pattern: RecurringPattern::None,
+            recurrence_end_date: None,
+            max_duration_hours: None,
+            max_advance_days: None,
+        }
+    }
+
+    // ── Tests ───────────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_create_booking_success() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_create_dto(building_id);
+
+        let result = use_cases.create_booking(user_id, org_id, dto).await;
+        assert!(result.is_ok());
+        let response = result.unwrap();
+        assert_eq!(response.building_id, building_id);
+        assert_eq!(response.resource_name, "Meeting Room A");
+        assert_eq!(response.booked_by_name, "Jean Dupont");
+    }
+
+    #[tokio::test]
+    async fn test_create_booking_conflict_detected() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_create_dto(building_id);
+
+        // First booking succeeds
+        use_cases
+            .create_booking(user_id, org_id, dto.clone())
+            .await
+            .unwrap();
+
+        // Second booking for same resource and time range should fail
+        let result = use_cases.create_booking(user_id, org_id, dto).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("conflicts with"));
+    }
+
+    #[tokio::test]
+    async fn test_get_booking_success() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_create_dto(building_id);
+
+        let created = use_cases
+            .create_booking(user_id, org_id, dto)
+            .await
+            .unwrap();
+
+        let result = use_cases.get_booking(created.id).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().id, created.id);
+    }
+
+    #[tokio::test]
+    async fn test_get_booking_not_found() {
+        let (use_cases, _, _, _, _) = setup_use_cases();
+        let result = use_cases.get_booking(Uuid::new_v4()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Booking not found");
+    }
+
+    #[tokio::test]
+    async fn test_cancel_booking_success() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_create_dto(building_id);
+
+        let created = use_cases
+            .create_booking(user_id, org_id, dto)
+            .await
+            .unwrap();
+
+        let result = use_cases
+            .cancel_booking(created.id, user_id, org_id)
+            .await;
+        assert!(result.is_ok());
+        let cancelled = result.unwrap();
+        assert_eq!(cancelled.status, BookingStatus::Cancelled);
+    }
+
+    #[tokio::test]
+    async fn test_cancel_booking_wrong_user() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_create_dto(building_id);
+
+        let created = use_cases
+            .create_booking(user_id, org_id, dto)
+            .await
+            .unwrap();
+
+        // Try cancelling with a different user who is not registered as owner
+        let other_user = Uuid::new_v4();
+        let result = use_cases
+            .cancel_booking(created.id, other_user, org_id)
+            .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Owner not found"));
+    }
+
+    #[tokio::test]
+    async fn test_delete_booking_success() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+        let dto = make_create_dto(building_id);
+
+        let created = use_cases
+            .create_booking(user_id, org_id, dto)
+            .await
+            .unwrap();
+
+        let result = use_cases
+            .delete_booking(created.id, user_id, org_id)
+            .await;
+        assert!(result.is_ok());
+
+        // Confirm it's gone
+        let fetch = use_cases.get_booking(created.id).await;
+        assert!(fetch.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_confirm_booking_success() {
+        let (use_cases, user_id, org_id, building_id, _booking_repo) = setup_use_cases();
+        let dto = make_create_dto(building_id);
+
+        let created = use_cases
+            .create_booking(user_id, org_id, dto)
+            .await
+            .unwrap();
+
+        // Manually confirm via the use case
+        let result = use_cases.confirm_booking(created.id).await;
+        assert!(result.is_ok());
+        let confirmed = result.unwrap();
+        assert_eq!(confirmed.status, BookingStatus::Confirmed);
+
+        // Now we can complete it
+        let completed = use_cases.complete_booking(created.id).await;
+        assert!(completed.is_ok());
+        assert_eq!(completed.unwrap().status, BookingStatus::Completed);
+    }
+
+    #[tokio::test]
+    async fn test_list_building_bookings() {
+        let (use_cases, user_id, org_id, building_id, _) = setup_use_cases();
+
+        let dto1 = make_create_dto(building_id);
+
+        let mut dto2 = make_create_dto(building_id);
+        dto2.resource_name = "Meeting Room B".to_string();
+
+        use_cases
+            .create_booking(user_id, org_id, dto1)
+            .await
+            .unwrap();
+        use_cases
+            .create_booking(user_id, org_id, dto2)
+            .await
+            .unwrap();
+
+        let result = use_cases.list_building_bookings(building_id).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_owner_not_found_for_user() {
+        let booking_repo = Arc::new(MockBookingRepo::new());
+        let owner_repo = Arc::new(MockOwnerRepo::new());
+        // Do not add any owner
+        let use_cases = ResourceBookingUseCases::new(
+            booking_repo as Arc<dyn ResourceBookingRepository>,
+            owner_repo as Arc<dyn OwnerRepository>,
+        );
+
+        let building_id = Uuid::new_v4();
+        let dto = make_create_dto(building_id);
+        let result = use_cases
+            .create_booking(Uuid::new_v4(), Uuid::new_v4(), dto)
+            .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Owner not found"));
+    }
+}

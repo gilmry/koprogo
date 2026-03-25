@@ -574,3 +574,448 @@ impl SharedObjectUseCases {
         Ok(enriched)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::dto::{OwnerFilters, PageRequest};
+    use crate::application::ports::{
+        OwnerCreditBalanceRepository, OwnerRepository, SharedObjectRepository,
+    };
+    use crate::domain::entities::{
+        ObjectCondition, Owner, OwnerCreditBalance, SharedObject, SharedObjectCategory,
+    };
+    use async_trait::async_trait;
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
+    use uuid::Uuid;
+
+    // ── Mock SharedObjectRepository ─────────────────────────────────────────
+    struct MockSharedObjectRepo {
+        objects: Mutex<HashMap<Uuid, SharedObject>>,
+    }
+
+    impl MockSharedObjectRepo {
+        fn new() -> Self {
+            Self {
+                objects: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl SharedObjectRepository for MockSharedObjectRepo {
+        async fn create(&self, object: &SharedObject) -> Result<SharedObject, String> {
+            let mut map = self.objects.lock().unwrap();
+            map.insert(object.id, object.clone());
+            Ok(object.clone())
+        }
+
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map.get(&id).cloned())
+        }
+
+        async fn find_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_available_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.is_available)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_borrowed_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.is_borrowed())
+                .cloned()
+                .collect())
+        }
+
+        async fn find_overdue_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.is_overdue())
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.owner_id == owner_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_borrowed_by_user(
+            &self,
+            borrower_id: Uuid,
+        ) -> Result<Vec<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.current_borrower_id == Some(borrower_id))
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_category(
+            &self,
+            building_id: Uuid,
+            category: SharedObjectCategory,
+        ) -> Result<Vec<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.object_category == category)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_free_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<SharedObject>, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.is_free())
+                .cloned()
+                .collect())
+        }
+
+        async fn update(&self, object: &SharedObject) -> Result<SharedObject, String> {
+            let mut map = self.objects.lock().unwrap();
+            map.insert(object.id, object.clone());
+            Ok(object.clone())
+        }
+
+        async fn delete(&self, id: Uuid) -> Result<(), String> {
+            let mut map = self.objects.lock().unwrap();
+            map.remove(&id);
+            Ok(())
+        }
+
+        async fn count_by_building(&self, building_id: Uuid) -> Result<i64, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id)
+                .count() as i64)
+        }
+
+        async fn count_available_by_building(&self, building_id: Uuid) -> Result<i64, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.is_available)
+                .count() as i64)
+        }
+
+        async fn count_borrowed_by_building(&self, building_id: Uuid) -> Result<i64, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.is_borrowed())
+                .count() as i64)
+        }
+
+        async fn count_overdue_by_building(&self, building_id: Uuid) -> Result<i64, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.is_overdue())
+                .count() as i64)
+        }
+
+        async fn count_by_category(
+            &self,
+            building_id: Uuid,
+            category: SharedObjectCategory,
+        ) -> Result<i64, String> {
+            let map = self.objects.lock().unwrap();
+            Ok(map
+                .values()
+                .filter(|o| o.building_id == building_id && o.object_category == category)
+                .count() as i64)
+        }
+    }
+
+    // ── Mock OwnerRepository ────────────────────────────────────────────────
+    struct MockOwnerRepo {
+        owners: Mutex<HashMap<Uuid, Owner>>,
+    }
+
+    impl MockOwnerRepo {
+        fn new() -> Self {
+            Self {
+                owners: Mutex::new(HashMap::new()),
+            }
+        }
+        fn add_owner(&self, owner: Owner) {
+            self.owners.lock().unwrap().insert(owner.id, owner);
+        }
+    }
+
+    #[async_trait]
+    impl OwnerRepository for MockOwnerRepo {
+        async fn create(&self, owner: &Owner) -> Result<Owner, String> {
+            self.owners.lock().unwrap().insert(owner.id, owner.clone());
+            Ok(owner.clone())
+        }
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Owner>, String> {
+            Ok(self.owners.lock().unwrap().get(&id).cloned())
+        }
+        async fn find_by_user_id(&self, user_id: Uuid) -> Result<Option<Owner>, String> {
+            Ok(self.owners.lock().unwrap().values().find(|o| o.user_id == Some(user_id)).cloned())
+        }
+        async fn find_by_user_id_and_organization(&self, user_id: Uuid, org_id: Uuid) -> Result<Option<Owner>, String> {
+            Ok(self.owners.lock().unwrap().values().find(|o| o.user_id == Some(user_id) && o.organization_id == org_id).cloned())
+        }
+        async fn find_by_email(&self, email: &str) -> Result<Option<Owner>, String> {
+            Ok(self.owners.lock().unwrap().values().find(|o| o.email == email).cloned())
+        }
+        async fn find_all(&self) -> Result<Vec<Owner>, String> {
+            Ok(self.owners.lock().unwrap().values().cloned().collect())
+        }
+        async fn find_all_paginated(&self, _p: &PageRequest, _f: &OwnerFilters) -> Result<(Vec<Owner>, i64), String> {
+            let all: Vec<_> = self.owners.lock().unwrap().values().cloned().collect();
+            let c = all.len() as i64;
+            Ok((all, c))
+        }
+        async fn update(&self, owner: &Owner) -> Result<Owner, String> {
+            self.owners.lock().unwrap().insert(owner.id, owner.clone());
+            Ok(owner.clone())
+        }
+        async fn delete(&self, id: Uuid) -> Result<bool, String> {
+            Ok(self.owners.lock().unwrap().remove(&id).is_some())
+        }
+    }
+
+    // ── Mock OwnerCreditBalanceRepository ────────────────────────────────────
+    struct MockCreditBalanceRepo {
+        balances: Mutex<HashMap<(Uuid, Uuid), OwnerCreditBalance>>,
+    }
+
+    impl MockCreditBalanceRepo {
+        fn new() -> Self {
+            Self {
+                balances: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl OwnerCreditBalanceRepository for MockCreditBalanceRepo {
+        async fn create(&self, balance: &OwnerCreditBalance) -> Result<OwnerCreditBalance, String> {
+            let mut map = self.balances.lock().unwrap();
+            map.insert((balance.owner_id, balance.building_id), balance.clone());
+            Ok(balance.clone())
+        }
+        async fn find_by_owner_and_building(&self, owner_id: Uuid, building_id: Uuid) -> Result<Option<OwnerCreditBalance>, String> {
+            Ok(self.balances.lock().unwrap().get(&(owner_id, building_id)).cloned())
+        }
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<OwnerCreditBalance>, String> {
+            Ok(self.balances.lock().unwrap().values().filter(|b| b.building_id == building_id).cloned().collect())
+        }
+        async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<OwnerCreditBalance>, String> {
+            Ok(self.balances.lock().unwrap().values().filter(|b| b.owner_id == owner_id).cloned().collect())
+        }
+        async fn get_or_create(&self, owner_id: Uuid, building_id: Uuid) -> Result<OwnerCreditBalance, String> {
+            let mut map = self.balances.lock().unwrap();
+            let key = (owner_id, building_id);
+            if let Some(existing) = map.get(&key) {
+                Ok(existing.clone())
+            } else {
+                let balance = OwnerCreditBalance::new(owner_id, building_id);
+                map.insert(key, balance.clone());
+                Ok(balance)
+            }
+        }
+        async fn update(&self, balance: &OwnerCreditBalance) -> Result<OwnerCreditBalance, String> {
+            let mut map = self.balances.lock().unwrap();
+            map.insert((balance.owner_id, balance.building_id), balance.clone());
+            Ok(balance.clone())
+        }
+        async fn delete(&self, owner_id: Uuid, building_id: Uuid) -> Result<bool, String> {
+            Ok(self.balances.lock().unwrap().remove(&(owner_id, building_id)).is_some())
+        }
+        async fn get_leaderboard(&self, _building_id: Uuid, _limit: i32) -> Result<Vec<OwnerCreditBalance>, String> {
+            Ok(vec![])
+        }
+        async fn count_active_participants(&self, _building_id: Uuid) -> Result<i64, String> {
+            Ok(0)
+        }
+        async fn get_total_credits_in_circulation(&self, _building_id: Uuid) -> Result<i32, String> {
+            Ok(0)
+        }
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    fn create_test_owner(user_id: Uuid, org_id: Uuid) -> Owner {
+        let mut owner = Owner::new(
+            org_id, "Jean".to_string(), "Dupont".to_string(),
+            "jean@test.com".to_string(), None,
+            "Rue Test".to_string(), "Brussels".to_string(),
+            "1000".to_string(), "Belgium".to_string(),
+        ).unwrap();
+        owner.user_id = Some(user_id);
+        owner
+    }
+
+    fn setup() -> (SharedObjectUseCases, Uuid, Uuid, Uuid, Uuid) {
+        let user_id = Uuid::new_v4();
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+
+        let obj_repo = Arc::new(MockSharedObjectRepo::new());
+        let owner_repo = Arc::new(MockOwnerRepo::new());
+        let credit_repo = Arc::new(MockCreditBalanceRepo::new());
+
+        let owner = create_test_owner(user_id, org_id);
+        let owner_id = owner.id;
+        owner_repo.add_owner(owner);
+
+        let uc = SharedObjectUseCases::new(
+            obj_repo as Arc<dyn SharedObjectRepository>,
+            owner_repo as Arc<dyn OwnerRepository>,
+            credit_repo as Arc<dyn OwnerCreditBalanceRepository>,
+        );
+
+        (uc, user_id, org_id, building_id, owner_id)
+    }
+
+    fn make_create_dto(building_id: Uuid) -> CreateSharedObjectDto {
+        CreateSharedObjectDto {
+            building_id,
+            object_category: SharedObjectCategory::Tools,
+            object_name: "Power Drill".to_string(),
+            description: "18V cordless drill with battery".to_string(),
+            condition: ObjectCondition::Good,
+            is_available: true,
+            rental_credits_per_day: Some(2),
+            deposit_credits: Some(10),
+            borrowing_duration_days: Some(7),
+            photos: None,
+            location_details: Some("Basement".to_string()),
+            usage_instructions: None,
+        }
+    }
+
+    // ── Tests ───────────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_create_shared_object_success() {
+        let (uc, user_id, org_id, building_id, _) = setup();
+        let dto = make_create_dto(building_id);
+        let result = uc.create_shared_object(user_id, org_id, dto).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.object_name, "Power Drill");
+        assert_eq!(resp.owner_name, "Jean Dupont");
+    }
+
+    #[tokio::test]
+    async fn test_get_shared_object_success() {
+        let (uc, user_id, org_id, building_id, _) = setup();
+        let dto = make_create_dto(building_id);
+        let created = uc.create_shared_object(user_id, org_id, dto).await.unwrap();
+
+        let result = uc.get_shared_object(created.id).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().id, created.id);
+    }
+
+    #[tokio::test]
+    async fn test_get_shared_object_not_found() {
+        let (uc, _, _, _, _) = setup();
+        let result = uc.get_shared_object(Uuid::new_v4()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Shared object not found");
+    }
+
+    #[tokio::test]
+    async fn test_delete_shared_object_success() {
+        let (uc, user_id, org_id, building_id, _) = setup();
+        let dto = make_create_dto(building_id);
+        let created = uc.create_shared_object(user_id, org_id, dto).await.unwrap();
+
+        let result = uc.delete_shared_object(created.id, user_id, org_id).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_delete_shared_object_wrong_owner() {
+        let (uc, user_id, org_id, building_id, _) = setup();
+        let dto = make_create_dto(building_id);
+        let created = uc.create_shared_object(user_id, org_id, dto).await.unwrap();
+
+        // Another user tries to delete -- will fail because user not found as owner
+        let other = Uuid::new_v4();
+        let result = uc.delete_shared_object(created.id, other, org_id).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Owner not found"));
+    }
+
+    #[tokio::test]
+    async fn test_list_building_objects() {
+        let (uc, user_id, org_id, building_id, _) = setup();
+
+        let dto1 = make_create_dto(building_id);
+        let mut dto2 = make_create_dto(building_id);
+        dto2.object_name = "Hammer".to_string();
+        dto2.description = "Steel hammer for nails".to_string();
+
+        uc.create_shared_object(user_id, org_id, dto1).await.unwrap();
+        uc.create_shared_object(user_id, org_id, dto2).await.unwrap();
+
+        let result = uc.list_building_objects(building_id).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_owner_not_found() {
+        let obj_repo = Arc::new(MockSharedObjectRepo::new());
+        let owner_repo = Arc::new(MockOwnerRepo::new());
+        let credit_repo = Arc::new(MockCreditBalanceRepo::new());
+        // No owner added
+
+        let uc = SharedObjectUseCases::new(
+            obj_repo as Arc<dyn SharedObjectRepository>,
+            owner_repo as Arc<dyn OwnerRepository>,
+            credit_repo as Arc<dyn OwnerCreditBalanceRepository>,
+        );
+
+        let dto = make_create_dto(Uuid::new_v4());
+        let result = uc.create_shared_object(Uuid::new_v4(), Uuid::new_v4(), dto).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Owner not found"));
+    }
+}

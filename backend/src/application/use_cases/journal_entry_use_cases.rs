@@ -211,3 +211,383 @@ impl JournalEntryUseCases {
             .await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::ports::journal_entry_repository::JournalEntryRepository;
+    use crate::domain::entities::journal_entry::{JournalEntry, JournalEntryLine};
+    use async_trait::async_trait;
+    use std::collections::HashMap;
+    use std::sync::Mutex;
+
+    // ========== Mock Repository ==========
+
+    struct MockJournalEntryRepository {
+        entries: Mutex<HashMap<Uuid, JournalEntry>>,
+        lines: Mutex<HashMap<Uuid, Vec<JournalEntryLine>>>,
+    }
+
+    impl MockJournalEntryRepository {
+        fn new() -> Self {
+            Self {
+                entries: Mutex::new(HashMap::new()),
+                lines: Mutex::new(HashMap::new()),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl JournalEntryRepository for MockJournalEntryRepository {
+        async fn create(&self, entry: &JournalEntry) -> Result<JournalEntry, String> {
+            let mut entries = self.entries.lock().unwrap();
+            entries.insert(entry.id, entry.clone());
+            let mut lines = self.lines.lock().unwrap();
+            lines.insert(entry.id, entry.lines.clone());
+            Ok(entry.clone())
+        }
+
+        async fn find_by_organization(
+            &self,
+            organization_id: Uuid,
+        ) -> Result<Vec<JournalEntry>, String> {
+            let entries = self.entries.lock().unwrap();
+            Ok(entries
+                .values()
+                .filter(|e| e.organization_id == organization_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_expense(&self, expense_id: Uuid) -> Result<Vec<JournalEntry>, String> {
+            let entries = self.entries.lock().unwrap();
+            Ok(entries
+                .values()
+                .filter(|e| e.expense_id == Some(expense_id))
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_date_range(
+            &self,
+            organization_id: Uuid,
+            start_date: DateTime<Utc>,
+            end_date: DateTime<Utc>,
+        ) -> Result<Vec<JournalEntry>, String> {
+            let entries = self.entries.lock().unwrap();
+            Ok(entries
+                .values()
+                .filter(|e| {
+                    e.organization_id == organization_id
+                        && e.entry_date >= start_date
+                        && e.entry_date <= end_date
+                })
+                .cloned()
+                .collect())
+        }
+
+        async fn calculate_account_balances(
+            &self,
+            _organization_id: Uuid,
+        ) -> Result<HashMap<String, f64>, String> {
+            Ok(HashMap::new())
+        }
+
+        async fn calculate_account_balances_for_period(
+            &self,
+            _organization_id: Uuid,
+            _start_date: DateTime<Utc>,
+            _end_date: DateTime<Utc>,
+        ) -> Result<HashMap<String, f64>, String> {
+            Ok(HashMap::new())
+        }
+
+        async fn find_lines_by_account(
+            &self,
+            _organization_id: Uuid,
+            _account_code: &str,
+        ) -> Result<Vec<JournalEntryLine>, String> {
+            Ok(Vec::new())
+        }
+
+        async fn validate_balance(&self, entry_id: Uuid) -> Result<bool, String> {
+            let entries = self.entries.lock().unwrap();
+            match entries.get(&entry_id) {
+                Some(entry) => Ok(entry.is_balanced()),
+                None => Err("Entry not found".to_string()),
+            }
+        }
+
+        async fn calculate_account_balances_for_building(
+            &self,
+            _organization_id: Uuid,
+            _building_id: Uuid,
+        ) -> Result<HashMap<String, f64>, String> {
+            Ok(HashMap::new())
+        }
+
+        async fn calculate_account_balances_for_building_and_period(
+            &self,
+            _organization_id: Uuid,
+            _building_id: Uuid,
+            _start_date: DateTime<Utc>,
+            _end_date: DateTime<Utc>,
+        ) -> Result<HashMap<String, f64>, String> {
+            Ok(HashMap::new())
+        }
+
+        async fn create_manual_entry(
+            &self,
+            entry: &JournalEntry,
+            entry_lines: &[JournalEntryLine],
+        ) -> Result<(), String> {
+            let mut entries = self.entries.lock().unwrap();
+            entries.insert(entry.id, entry.clone());
+            let mut lines = self.lines.lock().unwrap();
+            lines.insert(entry.id, entry_lines.to_vec());
+            Ok(())
+        }
+
+        async fn list_entries(
+            &self,
+            organization_id: Uuid,
+            _building_id: Option<Uuid>,
+            _journal_type: Option<String>,
+            _start_date: Option<DateTime<Utc>>,
+            _end_date: Option<DateTime<Utc>>,
+            _limit: i64,
+            _offset: i64,
+        ) -> Result<Vec<JournalEntry>, String> {
+            let entries = self.entries.lock().unwrap();
+            Ok(entries
+                .values()
+                .filter(|e| e.organization_id == organization_id)
+                .cloned()
+                .collect())
+        }
+
+        async fn find_by_id(
+            &self,
+            entry_id: Uuid,
+            _organization_id: Uuid,
+        ) -> Result<JournalEntry, String> {
+            let entries = self.entries.lock().unwrap();
+            entries
+                .get(&entry_id)
+                .cloned()
+                .ok_or_else(|| "Journal entry not found".to_string())
+        }
+
+        async fn find_lines_by_entry(
+            &self,
+            entry_id: Uuid,
+            _organization_id: Uuid,
+        ) -> Result<Vec<JournalEntryLine>, String> {
+            let lines = self.lines.lock().unwrap();
+            Ok(lines.get(&entry_id).cloned().unwrap_or_default())
+        }
+
+        async fn delete_entry(&self, entry_id: Uuid, _organization_id: Uuid) -> Result<(), String> {
+            let mut entries = self.entries.lock().unwrap();
+            let mut lines = self.lines.lock().unwrap();
+            entries.remove(&entry_id);
+            lines.remove(&entry_id);
+            Ok(())
+        }
+    }
+
+    // ========== Helpers ==========
+
+    fn make_use_cases(repo: MockJournalEntryRepository) -> JournalEntryUseCases {
+        JournalEntryUseCases::new(Arc::new(repo))
+    }
+
+    /// Balanced lines: 1000 debit on 6100, 1000 credit on 4400
+    fn balanced_lines() -> Vec<(String, f64, f64, String)> {
+        vec![
+            ("6100".to_string(), 1000.0, 0.0, "Utilities expense".to_string()),
+            ("4400".to_string(), 0.0, 1000.0, "Supplier payable".to_string()),
+        ]
+    }
+
+    // ========== Tests ==========
+
+    #[tokio::test]
+    async fn test_create_manual_entry_success_balanced() {
+        let repo = MockJournalEntryRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+
+        let result = uc
+            .create_manual_entry(
+                org_id,
+                None,
+                Some("ACH".to_string()),
+                Utc::now(),
+                Some("Facture eau janvier".to_string()),
+                Some("INV-2026-001".to_string()),
+                balanced_lines(),
+            )
+            .await;
+
+        assert!(result.is_ok());
+        let entry = result.unwrap();
+        assert_eq!(entry.organization_id, org_id);
+        assert_eq!(entry.journal_type, Some("ACH".to_string()));
+        assert_eq!(entry.description, Some("Facture eau janvier".to_string()));
+        assert_eq!(entry.document_ref, Some("INV-2026-001".to_string()));
+        assert!(entry.expense_id.is_none());
+        assert!(entry.contribution_id.is_none());
+        assert_eq!(entry.lines.len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_create_manual_entry_fail_unbalanced() {
+        let repo = MockJournalEntryRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+
+        let unbalanced_lines = vec![
+            ("6100".to_string(), 1000.0, 0.0, "Debit".to_string()),
+            ("4400".to_string(), 0.0, 800.0, "Credit".to_string()),
+        ];
+
+        let result = uc
+            .create_manual_entry(
+                org_id,
+                None,
+                Some("ACH".to_string()),
+                Utc::now(),
+                Some("Test unbalanced".to_string()),
+                None,
+                unbalanced_lines,
+            )
+            .await;
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("unbalanced"));
+        assert!(err.contains("debits=1000.00"));
+        assert!(err.contains("credits=800.00"));
+    }
+
+    #[tokio::test]
+    async fn test_create_manual_entry_fail_invalid_journal_type() {
+        let repo = MockJournalEntryRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+
+        let result = uc
+            .create_manual_entry(
+                org_id,
+                None,
+                Some("INVALID".to_string()),
+                Utc::now(),
+                Some("Test invalid type".to_string()),
+                None,
+                balanced_lines(),
+            )
+            .await;
+
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Invalid journal type: INVALID"));
+        assert!(err.contains("ACH"));
+        assert!(err.contains("VEN"));
+        assert!(err.contains("FIN"));
+        assert!(err.contains("ODS"));
+    }
+
+    #[tokio::test]
+    async fn test_create_manual_entry_fail_less_than_2_lines() {
+        let repo = MockJournalEntryRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+
+        let single_line = vec![("6100".to_string(), 1000.0, 0.0, "Only debit".to_string())];
+
+        let result = uc
+            .create_manual_entry(
+                org_id,
+                None,
+                Some("ODS".to_string()),
+                Utc::now(),
+                Some("Test single line".to_string()),
+                None,
+                single_line,
+            )
+            .await;
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("must have at least 2 lines"));
+    }
+
+    #[tokio::test]
+    async fn test_delete_manual_entry_success() {
+        let repo = MockJournalEntryRepository::new();
+        let uc = make_use_cases(repo);
+        let org_id = Uuid::new_v4();
+
+        // First create a manual entry
+        let created = uc
+            .create_manual_entry(
+                org_id,
+                None,
+                Some("FIN".to_string()),
+                Utc::now(),
+                Some("Manual entry to delete".to_string()),
+                None,
+                balanced_lines(),
+            )
+            .await
+            .unwrap();
+
+        // Delete it
+        let result = uc.delete_manual_entry(created.id, org_id).await;
+        assert!(result.is_ok());
+
+        // Verify it was deleted (find_by_id should fail)
+        let find_result = uc.get_entry_with_lines(created.id, org_id).await;
+        assert!(find_result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_delete_manual_entry_fail_auto_generated_with_expense_id() {
+        let repo = MockJournalEntryRepository::new();
+        let org_id = Uuid::new_v4();
+        let entry_id = Uuid::new_v4();
+        let expense_id = Uuid::new_v4();
+
+        // Insert an auto-generated entry (has expense_id set)
+        {
+            let mut entries = repo.entries.lock().unwrap();
+            let auto_entry = JournalEntry {
+                id: entry_id,
+                organization_id: org_id,
+                building_id: None,
+                entry_date: Utc::now(),
+                description: Some("Auto-generated from expense".to_string()),
+                document_ref: None,
+                journal_type: Some("ACH".to_string()),
+                expense_id: Some(expense_id),
+                contribution_id: None,
+                lines: Vec::new(),
+                created_at: Utc::now(),
+                updated_at: Utc::now(),
+                created_by: None,
+            };
+            entries.insert(entry_id, auto_entry);
+        }
+
+        let uc = make_use_cases(repo);
+
+        let result = uc.delete_manual_entry(entry_id, org_id).await;
+
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .contains("Cannot delete auto-generated journal entries"));
+    }
+}

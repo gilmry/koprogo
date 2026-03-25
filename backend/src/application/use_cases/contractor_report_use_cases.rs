@@ -320,3 +320,202 @@ impl ContractorReportUseCases {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::ports::contractor_report_repository::ContractorReportRepository;
+    use async_trait::async_trait;
+    use mockall::mock;
+
+    mock! {
+        ContractorReportRepo {}
+
+        #[async_trait]
+        impl ContractorReportRepository for ContractorReportRepo {
+            async fn create(&self, report: &ContractorReport) -> Result<ContractorReport, String>;
+            async fn find_by_id(&self, id: Uuid) -> Result<Option<ContractorReport>, String>;
+            async fn find_by_magic_token(&self, token_hash: &str) -> Result<Option<ContractorReport>, String>;
+            async fn find_by_ticket(&self, ticket_id: Uuid) -> Result<Vec<ContractorReport>, String>;
+            async fn find_by_quote(&self, quote_id: Uuid) -> Result<Vec<ContractorReport>, String>;
+            async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<ContractorReport>, String>;
+            async fn find_by_organization(&self, organization_id: Uuid) -> Result<Vec<ContractorReport>, String>;
+            async fn update(&self, report: &ContractorReport) -> Result<ContractorReport, String>;
+            async fn delete(&self, id: Uuid) -> Result<bool, String>;
+        }
+    }
+
+    fn make_draft_report(org_id: Uuid) -> ContractorReport {
+        let mut r = ContractorReport::new(
+            org_id,
+            Uuid::new_v4(),
+            "Martin Plomberie SPRL".to_string(),
+            Some(Uuid::new_v4()),
+            None,
+            None,
+        )
+        .unwrap();
+        r.compte_rendu = Some("Travaux effectués conformément au devis".to_string());
+        r
+    }
+
+    #[tokio::test]
+    async fn test_create_report_success() {
+        let org_id = Uuid::new_v4();
+        let building_id = Uuid::new_v4();
+        let ticket_id = Uuid::new_v4();
+
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo.expect_create().returning(|r| Ok(r.clone()));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+
+        let dto = CreateContractorReportDto {
+            building_id,
+            contractor_name: "Plombier SA".to_string(),
+            ticket_id: Some(ticket_id),
+            quote_id: None,
+            contractor_user_id: None,
+        };
+
+        let result = uc.create(org_id, dto).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.organization_id, org_id);
+        assert_eq!(resp.building_id, building_id);
+        assert_eq!(resp.contractor_name, "Plombier SA");
+        assert_eq!(resp.status, "draft");
+    }
+
+    #[tokio::test]
+    async fn test_get_by_token_success() {
+        let org_id = Uuid::new_v4();
+        let mut report = make_draft_report(org_id);
+        let token = "valid-token-hash";
+        report.magic_token_hash = Some(token.to_string());
+        report.magic_token_expires_at = Some(Utc::now() + Duration::hours(24));
+
+        let report_clone = report.clone();
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_magic_token()
+            .withf(|t| t == "valid-token-hash")
+            .returning(move |_| Ok(Some(report_clone.clone())));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+
+        let result = uc.get_by_token(token).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.contractor_name, "Martin Plomberie SPRL");
+    }
+
+    #[tokio::test]
+    async fn test_submit_report_success() {
+        let org_id = Uuid::new_v4();
+        let report = make_draft_report(org_id);
+        let report_id = report.id;
+
+        let report_for_find = report.clone();
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .withf(move |id| *id == report_id)
+            .returning(move |_| Ok(Some(report_for_find.clone())));
+        mock_repo
+            .expect_update()
+            .returning(|r| Ok(r.clone()));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+
+        let result = uc.submit(report_id, org_id).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.status, "submitted");
+    }
+
+    #[tokio::test]
+    async fn test_start_review_via_update() {
+        // Test the review workflow by submitting then validating (which accepts Submitted state)
+        let org_id = Uuid::new_v4();
+        let mut report = make_draft_report(org_id);
+        // Pre-set to Submitted state to test review path
+        report.status = ContractorReportStatus::Submitted;
+        report.submitted_at = Some(Utc::now());
+        let report_id = report.id;
+
+        let report_for_find = report.clone();
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .withf(move |id| *id == report_id)
+            .returning(move |_| Ok(Some(report_for_find.clone())));
+        mock_repo
+            .expect_update()
+            .returning(|r| Ok(r.clone()));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+        let validator_id = Uuid::new_v4();
+
+        let result = uc.validate(report_id, org_id, validator_id).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.status, "validated");
+        assert_eq!(resp.validated_by, Some(validator_id));
+    }
+
+    #[tokio::test]
+    async fn test_validate_report_success() {
+        let org_id = Uuid::new_v4();
+        let validator_id = Uuid::new_v4();
+        let mut report = make_draft_report(org_id);
+        report.status = ContractorReportStatus::UnderReview;
+        let report_id = report.id;
+
+        let report_for_find = report.clone();
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .withf(move |id| *id == report_id)
+            .returning(move |_| Ok(Some(report_for_find.clone())));
+        mock_repo
+            .expect_update()
+            .returning(|r| Ok(r.clone()));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+
+        let result = uc.validate(report_id, org_id, validator_id).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.status, "validated");
+        assert!(resp.validated_at.is_some());
+        assert_eq!(resp.validated_by, Some(validator_id));
+    }
+
+    #[tokio::test]
+    async fn test_generate_magic_link_success() {
+        let org_id = Uuid::new_v4();
+        let report = make_draft_report(org_id);
+        let report_id = report.id;
+
+        let report_for_find = report.clone();
+        let mut mock_repo = MockContractorReportRepo::new();
+        mock_repo
+            .expect_find_by_id()
+            .withf(move |id| *id == report_id)
+            .returning(move |_| Ok(Some(report_for_find.clone())));
+        mock_repo
+            .expect_update()
+            .returning(|r| Ok(r.clone()));
+
+        let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
+
+        let result = uc
+            .generate_magic_link(report_id, org_id, "https://app.koprogo.be")
+            .await;
+        assert!(result.is_ok());
+        let link_dto = result.unwrap();
+        assert!(link_dto.magic_link.starts_with("https://app.koprogo.be/contractor/?token="));
+        assert!(link_dto.expires_at > Utc::now());
+    }
+}

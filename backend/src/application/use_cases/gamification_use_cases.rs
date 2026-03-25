@@ -754,3 +754,473 @@ impl GamificationStatsUseCases {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::ports::{
+        AchievementRepository, ChallengeProgressRepository, ChallengeRepository,
+        UserAchievementRepository, UserRepository,
+    };
+    use crate::domain::entities::{
+        Achievement, AchievementCategory, AchievementTier, Challenge, ChallengeProgress,
+        ChallengeStatus, ChallengeType, User, UserAchievement, UserRole,
+    };
+    use async_trait::async_trait;
+    use chrono::{Duration, Utc};
+    use std::collections::HashMap;
+    use std::sync::{Arc, Mutex};
+    use uuid::Uuid;
+
+    // ── Mock AchievementRepository ──────────────────────────────────────────
+    struct MockAchievementRepo {
+        items: Mutex<HashMap<Uuid, Achievement>>,
+    }
+    impl MockAchievementRepo {
+        fn new() -> Self {
+            Self { items: Mutex::new(HashMap::new()) }
+        }
+    }
+    #[async_trait]
+    impl AchievementRepository for MockAchievementRepo {
+        async fn create(&self, a: &Achievement) -> Result<Achievement, String> {
+            self.items.lock().unwrap().insert(a.id, a.clone());
+            Ok(a.clone())
+        }
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Achievement>, String> {
+            Ok(self.items.lock().unwrap().get(&id).cloned())
+        }
+        async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<Achievement>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|a| a.organization_id == org_id).cloned().collect())
+        }
+        async fn find_by_organization_and_category(&self, org_id: Uuid, cat: AchievementCategory) -> Result<Vec<Achievement>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|a| a.organization_id == org_id && a.category == cat).cloned().collect())
+        }
+        async fn find_visible_for_user(&self, org_id: Uuid, _user_id: Uuid) -> Result<Vec<Achievement>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|a| a.organization_id == org_id && !a.is_secret).cloned().collect())
+        }
+        async fn update(&self, a: &Achievement) -> Result<Achievement, String> {
+            self.items.lock().unwrap().insert(a.id, a.clone());
+            Ok(a.clone())
+        }
+        async fn delete(&self, id: Uuid) -> Result<(), String> {
+            self.items.lock().unwrap().remove(&id);
+            Ok(())
+        }
+        async fn count_by_organization(&self, org_id: Uuid) -> Result<i64, String> {
+            Ok(self.items.lock().unwrap().values().filter(|a| a.organization_id == org_id).count() as i64)
+        }
+    }
+
+    // ── Mock UserAchievementRepository ──────────────────────────────────────
+    struct MockUserAchievementRepo {
+        items: Mutex<HashMap<Uuid, UserAchievement>>,
+    }
+    impl MockUserAchievementRepo {
+        fn new() -> Self {
+            Self { items: Mutex::new(HashMap::new()) }
+        }
+    }
+    #[async_trait]
+    impl UserAchievementRepository for MockUserAchievementRepo {
+        async fn create(&self, ua: &UserAchievement) -> Result<UserAchievement, String> {
+            self.items.lock().unwrap().insert(ua.id, ua.clone());
+            Ok(ua.clone())
+        }
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<UserAchievement>, String> {
+            Ok(self.items.lock().unwrap().get(&id).cloned())
+        }
+        async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<UserAchievement>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|u| u.user_id == user_id).cloned().collect())
+        }
+        async fn find_by_user_and_achievement(&self, user_id: Uuid, achievement_id: Uuid) -> Result<Option<UserAchievement>, String> {
+            Ok(self.items.lock().unwrap().values().find(|u| u.user_id == user_id && u.achievement_id == achievement_id).cloned())
+        }
+        async fn update(&self, ua: &UserAchievement) -> Result<UserAchievement, String> {
+            self.items.lock().unwrap().insert(ua.id, ua.clone());
+            Ok(ua.clone())
+        }
+        async fn calculate_total_points(&self, _user_id: Uuid) -> Result<i32, String> {
+            Ok(0)
+        }
+        async fn count_by_user(&self, user_id: Uuid) -> Result<i64, String> {
+            Ok(self.items.lock().unwrap().values().filter(|u| u.user_id == user_id).count() as i64)
+        }
+        async fn find_recent_by_user(&self, user_id: Uuid, limit: i64) -> Result<Vec<UserAchievement>, String> {
+            let map = self.items.lock().unwrap();
+            let mut v: Vec<_> = map.values().filter(|u| u.user_id == user_id).cloned().collect();
+            v.sort_by(|a, b| b.earned_at.cmp(&a.earned_at));
+            v.truncate(limit as usize);
+            Ok(v)
+        }
+    }
+
+    // ── Mock ChallengeRepository ────────────────────────────────────────────
+    struct MockChallengeRepo {
+        items: Mutex<HashMap<Uuid, Challenge>>,
+    }
+    impl MockChallengeRepo {
+        fn new() -> Self {
+            Self { items: Mutex::new(HashMap::new()) }
+        }
+    }
+    #[async_trait]
+    impl ChallengeRepository for MockChallengeRepo {
+        async fn create(&self, c: &Challenge) -> Result<Challenge, String> {
+            self.items.lock().unwrap().insert(c.id, c.clone());
+            Ok(c.clone())
+        }
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<Challenge>, String> {
+            Ok(self.items.lock().unwrap().get(&id).cloned())
+        }
+        async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<Challenge>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|c| c.organization_id == org_id).cloned().collect())
+        }
+        async fn find_by_organization_and_status(&self, org_id: Uuid, status: ChallengeStatus) -> Result<Vec<Challenge>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|c| c.organization_id == org_id && c.status == status).cloned().collect())
+        }
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Challenge>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|c| c.building_id == Some(building_id)).cloned().collect())
+        }
+        async fn find_active(&self, org_id: Uuid) -> Result<Vec<Challenge>, String> {
+            let now = Utc::now();
+            Ok(self.items.lock().unwrap().values().filter(|c| c.organization_id == org_id && c.status == ChallengeStatus::Active && now >= c.start_date && now < c.end_date).cloned().collect())
+        }
+        async fn find_ended_not_completed(&self) -> Result<Vec<Challenge>, String> {
+            let now = Utc::now();
+            Ok(self.items.lock().unwrap().values().filter(|c| c.status == ChallengeStatus::Active && now >= c.end_date).cloned().collect())
+        }
+        async fn update(&self, c: &Challenge) -> Result<Challenge, String> {
+            self.items.lock().unwrap().insert(c.id, c.clone());
+            Ok(c.clone())
+        }
+        async fn delete(&self, id: Uuid) -> Result<(), String> {
+            self.items.lock().unwrap().remove(&id);
+            Ok(())
+        }
+        async fn count_by_organization(&self, org_id: Uuid) -> Result<i64, String> {
+            Ok(self.items.lock().unwrap().values().filter(|c| c.organization_id == org_id).count() as i64)
+        }
+    }
+
+    // ── Mock ChallengeProgressRepository ────────────────────────────────────
+    struct MockProgressRepo {
+        items: Mutex<HashMap<Uuid, ChallengeProgress>>,
+    }
+    impl MockProgressRepo {
+        fn new() -> Self {
+            Self { items: Mutex::new(HashMap::new()) }
+        }
+    }
+    #[async_trait]
+    impl ChallengeProgressRepository for MockProgressRepo {
+        async fn create(&self, p: &ChallengeProgress) -> Result<ChallengeProgress, String> {
+            self.items.lock().unwrap().insert(p.id, p.clone());
+            Ok(p.clone())
+        }
+        async fn find_by_id(&self, id: Uuid) -> Result<Option<ChallengeProgress>, String> {
+            Ok(self.items.lock().unwrap().get(&id).cloned())
+        }
+        async fn find_by_user_and_challenge(&self, user_id: Uuid, challenge_id: Uuid) -> Result<Option<ChallengeProgress>, String> {
+            Ok(self.items.lock().unwrap().values().find(|p| p.user_id == user_id && p.challenge_id == challenge_id).cloned())
+        }
+        async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<ChallengeProgress>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|p| p.user_id == user_id).cloned().collect())
+        }
+        async fn find_by_challenge(&self, challenge_id: Uuid) -> Result<Vec<ChallengeProgress>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|p| p.challenge_id == challenge_id).cloned().collect())
+        }
+        async fn find_active_by_user(&self, user_id: Uuid) -> Result<Vec<ChallengeProgress>, String> {
+            Ok(self.items.lock().unwrap().values().filter(|p| p.user_id == user_id && !p.completed).cloned().collect())
+        }
+        async fn update(&self, p: &ChallengeProgress) -> Result<ChallengeProgress, String> {
+            self.items.lock().unwrap().insert(p.id, p.clone());
+            Ok(p.clone())
+        }
+        async fn count_completed_by_user(&self, user_id: Uuid) -> Result<i64, String> {
+            Ok(self.items.lock().unwrap().values().filter(|p| p.user_id == user_id && p.completed).count() as i64)
+        }
+        async fn get_leaderboard(&self, _org_id: Uuid, _building_id: Option<Uuid>, _limit: i64) -> Result<Vec<(Uuid, i32)>, String> {
+            Ok(vec![])
+        }
+    }
+
+    // ── Mock UserRepository (minimal, needed by AchievementUseCases) ────────
+    struct MockUserRepo;
+    #[async_trait]
+    impl UserRepository for MockUserRepo {
+        async fn create(&self, _u: &User) -> Result<User, String> { Err("not impl".to_string()) }
+        async fn find_by_id(&self, _id: Uuid) -> Result<Option<User>, String> { Ok(None) }
+        async fn find_by_email(&self, _e: &str) -> Result<Option<User>, String> { Ok(None) }
+        async fn find_all(&self) -> Result<Vec<User>, String> { Ok(vec![]) }
+        async fn find_by_organization(&self, _o: Uuid) -> Result<Vec<User>, String> { Ok(vec![]) }
+        async fn update(&self, _u: &User) -> Result<User, String> { Err("not impl".to_string()) }
+        async fn delete(&self, _id: Uuid) -> Result<bool, String> { Ok(false) }
+        async fn count_by_organization(&self, _o: Uuid) -> Result<i64, String> { Ok(0) }
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+    fn make_achievement_dto(org_id: Uuid) -> CreateAchievementDto {
+        CreateAchievementDto {
+            organization_id: org_id,
+            category: AchievementCategory::Community,
+            tier: AchievementTier::Bronze,
+            name: "First Booking".to_string(),
+            description: "Made your first resource booking in the system".to_string(),
+            icon: "star".to_string(),
+            points_value: 10,
+            requirements: r#"{"action": "booking_created", "count": 1}"#.to_string(),
+            is_secret: false,
+            is_repeatable: false,
+            display_order: 1,
+        }
+    }
+
+    fn make_challenge_dto(org_id: Uuid) -> CreateChallengeDto {
+        let start = Utc::now() + Duration::days(1);
+        let end = start + Duration::days(7);
+        CreateChallengeDto {
+            organization_id: org_id,
+            building_id: None,
+            challenge_type: ChallengeType::Individual,
+            title: "Booking Week".to_string(),
+            description: "Make 5 resource bookings this week to earn points!".to_string(),
+            icon: "calendar".to_string(),
+            start_date: start,
+            end_date: end,
+            target_metric: "bookings_created".to_string(),
+            target_value: 5,
+            reward_points: 50,
+        }
+    }
+
+    fn setup_achievement_uc() -> (AchievementUseCases, Uuid) {
+        let org_id = Uuid::new_v4();
+        let uc = AchievementUseCases::new(
+            Arc::new(MockAchievementRepo::new()) as Arc<dyn AchievementRepository>,
+            Arc::new(MockUserAchievementRepo::new()) as Arc<dyn UserAchievementRepository>,
+            Arc::new(MockUserRepo) as Arc<dyn UserRepository>,
+        );
+        (uc, org_id)
+    }
+
+    fn setup_challenge_uc() -> (ChallengeUseCases, Uuid) {
+        let org_id = Uuid::new_v4();
+        let uc = ChallengeUseCases::new(
+            Arc::new(MockChallengeRepo::new()) as Arc<dyn ChallengeRepository>,
+            Arc::new(MockProgressRepo::new()) as Arc<dyn ChallengeProgressRepository>,
+        );
+        (uc, org_id)
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  AchievementUseCases Tests
+    // ══════════════════════════════════════════════════════════════════════
+
+    #[tokio::test]
+    async fn test_create_achievement_success() {
+        let (uc, org_id) = setup_achievement_uc();
+        let dto = make_achievement_dto(org_id);
+        let result = uc.create_achievement(dto).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.name, "First Booking");
+        assert_eq!(resp.points_value, 10);
+    }
+
+    #[tokio::test]
+    async fn test_get_achievement_success() {
+        let (uc, org_id) = setup_achievement_uc();
+        let dto = make_achievement_dto(org_id);
+        let created = uc.create_achievement(dto).await.unwrap();
+
+        let result = uc.get_achievement(created.id).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().id, created.id);
+    }
+
+    #[tokio::test]
+    async fn test_get_achievement_not_found() {
+        let (uc, _) = setup_achievement_uc();
+        let result = uc.get_achievement(Uuid::new_v4()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Achievement not found");
+    }
+
+    #[tokio::test]
+    async fn test_award_achievement_success() {
+        let (uc, org_id) = setup_achievement_uc();
+        let dto = make_achievement_dto(org_id);
+        let created = uc.create_achievement(dto).await.unwrap();
+
+        let user_id = Uuid::new_v4();
+        let result = uc.award_achievement(user_id, created.id, None).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.user_id, user_id);
+        assert_eq!(resp.times_earned, 1);
+    }
+
+    #[tokio::test]
+    async fn test_award_non_repeatable_twice_fails() {
+        let (uc, org_id) = setup_achievement_uc();
+        let dto = make_achievement_dto(org_id); // is_repeatable = false
+        let created = uc.create_achievement(dto).await.unwrap();
+
+        let user_id = Uuid::new_v4();
+        uc.award_achievement(user_id, created.id, None).await.unwrap();
+
+        // Second award should fail
+        let result = uc.award_achievement(user_id, created.id, None).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not repeatable"));
+    }
+
+    #[tokio::test]
+    async fn test_award_repeatable_increments() {
+        let (uc, org_id) = setup_achievement_uc();
+        let mut dto = make_achievement_dto(org_id);
+        dto.is_repeatable = true;
+        let created = uc.create_achievement(dto).await.unwrap();
+
+        let user_id = Uuid::new_v4();
+        uc.award_achievement(user_id, created.id, None).await.unwrap();
+
+        // Second award should succeed and increment
+        let result = uc.award_achievement(user_id, created.id, None).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().times_earned, 2);
+    }
+
+    #[tokio::test]
+    async fn test_list_achievements() {
+        let (uc, org_id) = setup_achievement_uc();
+        let dto1 = make_achievement_dto(org_id);
+        let mut dto2 = make_achievement_dto(org_id);
+        dto2.name = "SEL Pioneer".to_string();
+        dto2.description = "Completed your first SEL exchange in the system".to_string();
+
+        uc.create_achievement(dto1).await.unwrap();
+        uc.create_achievement(dto2).await.unwrap();
+
+        let result = uc.list_achievements(org_id).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn test_delete_achievement() {
+        let (uc, org_id) = setup_achievement_uc();
+        let dto = make_achievement_dto(org_id);
+        let created = uc.create_achievement(dto).await.unwrap();
+
+        let result = uc.delete_achievement(created.id).await;
+        assert!(result.is_ok());
+
+        let fetch = uc.get_achievement(created.id).await;
+        assert!(fetch.is_err());
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  ChallengeUseCases Tests
+    // ══════════════════════════════════════════════════════════════════════
+
+    #[tokio::test]
+    async fn test_create_challenge_success() {
+        let (uc, org_id) = setup_challenge_uc();
+        let dto = make_challenge_dto(org_id);
+        let result = uc.create_challenge(dto).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.title, "Booking Week");
+        assert_eq!(resp.status, ChallengeStatus::Draft);
+    }
+
+    #[tokio::test]
+    async fn test_activate_challenge_success() {
+        let (uc, org_id) = setup_challenge_uc();
+        let dto = make_challenge_dto(org_id);
+        let created = uc.create_challenge(dto).await.unwrap();
+
+        let result = uc.activate_challenge(created.id).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().status, ChallengeStatus::Active);
+    }
+
+    #[tokio::test]
+    async fn test_activate_already_active_fails() {
+        let (uc, org_id) = setup_challenge_uc();
+        let dto = make_challenge_dto(org_id);
+        let created = uc.create_challenge(dto).await.unwrap();
+        uc.activate_challenge(created.id).await.unwrap();
+
+        let result = uc.activate_challenge(created.id).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("already active"));
+    }
+
+    #[tokio::test]
+    async fn test_cancel_challenge_success() {
+        let (uc, org_id) = setup_challenge_uc();
+        let dto = make_challenge_dto(org_id);
+        let created = uc.create_challenge(dto).await.unwrap();
+
+        let result = uc.cancel_challenge(created.id).await;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().status, ChallengeStatus::Cancelled);
+    }
+
+    #[tokio::test]
+    async fn test_challenge_not_found() {
+        let (uc, _) = setup_challenge_uc();
+        let result = uc.get_challenge(Uuid::new_v4()).await;
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Challenge not found");
+    }
+
+    #[tokio::test]
+    async fn test_increment_progress_creates_and_increments() {
+        let (uc, org_id) = setup_challenge_uc();
+        let dto = make_challenge_dto(org_id);
+        let created = uc.create_challenge(dto).await.unwrap();
+
+        let user_id = Uuid::new_v4();
+
+        // Increment (auto-creates progress record)
+        let result = uc.increment_progress(user_id, created.id, 3).await;
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert_eq!(resp.current_value, 3);
+        assert!(!resp.completed);
+    }
+
+    #[tokio::test]
+    async fn test_increment_progress_auto_completes() {
+        let (uc, org_id) = setup_challenge_uc();
+        let dto = make_challenge_dto(org_id); // target_value = 5
+        let created = uc.create_challenge(dto).await.unwrap();
+
+        let user_id = Uuid::new_v4();
+
+        // Increment to reach target
+        uc.increment_progress(user_id, created.id, 3).await.unwrap();
+        let result = uc.increment_progress(user_id, created.id, 3).await; // total = 6 >= 5
+        assert!(result.is_ok());
+        let resp = result.unwrap();
+        assert!(resp.completed);
+        assert_eq!(resp.current_value, 6);
+    }
+
+    #[tokio::test]
+    async fn test_delete_challenge() {
+        let (uc, org_id) = setup_challenge_uc();
+        let dto = make_challenge_dto(org_id);
+        let created = uc.create_challenge(dto).await.unwrap();
+
+        let result = uc.delete_challenge(created.id).await;
+        assert!(result.is_ok());
+
+        let fetch = uc.get_challenge(created.id).await;
+        assert!(fetch.is_err());
+    }
+}
