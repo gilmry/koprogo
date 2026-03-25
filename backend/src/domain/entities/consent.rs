@@ -84,7 +84,7 @@ impl ConsentRecord {
 }
 
 /// Consent status summary for a user
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct ConsentStatus {
     pub privacy_policy_accepted: bool,
     pub terms_accepted: bool,
@@ -94,18 +94,7 @@ pub struct ConsentStatus {
     pub terms_version: Option<String>,
 }
 
-impl Default for ConsentStatus {
-    fn default() -> Self {
-        Self {
-            privacy_policy_accepted: false,
-            terms_accepted: false,
-            privacy_policy_accepted_at: None,
-            terms_accepted_at: None,
-            privacy_policy_version: None,
-            terms_version: None,
-        }
-    }
-}
+
 
 #[cfg(test)]
 mod tests {
