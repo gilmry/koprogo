@@ -35,9 +35,14 @@ use uuid::Uuid;
 #[post("/achievements")]
 pub async fn create_achievement(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     request: web::Json<CreateAchievementDto>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can create achievements"
+        }));
+    }
     match data
         .achievement_use_cases
         .create_achievement(request.into_inner())
@@ -160,10 +165,15 @@ pub async fn list_visible_achievements(
 #[put("/achievements/{id}")]
 pub async fn update_achievement(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<UpdateAchievementDto>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can update achievements"
+        }));
+    }
     match data
         .achievement_use_cases
         .update_achievement(id.into_inner(), request.into_inner())
@@ -187,9 +197,14 @@ pub async fn update_achievement(
 #[delete("/achievements/{id}")]
 pub async fn delete_achievement(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can delete achievements"
+        }));
+    }
     match data
         .achievement_use_cases
         .delete_achievement(id.into_inner())
@@ -317,9 +332,14 @@ pub async fn get_recent_achievements(
 #[post("/challenges")]
 pub async fn create_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     request: web::Json<CreateChallengeDto>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can create challenges"
+        }));
+    }
     match data
         .challenge_use_cases
         .create_challenge(request.into_inner())
@@ -462,10 +482,15 @@ pub async fn list_active_challenges(
 #[put("/challenges/{id}")]
 pub async fn update_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
     request: web::Json<UpdateChallengeDto>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can update challenges"
+        }));
+    }
     match data
         .challenge_use_cases
         .update_challenge(id.into_inner(), request.into_inner())
@@ -490,9 +515,14 @@ pub async fn update_challenge(
 #[put("/challenges/{id}/activate")]
 pub async fn activate_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can activate challenges"
+        }));
+    }
     match data
         .challenge_use_cases
         .activate_challenge(id.into_inner())
@@ -517,9 +547,14 @@ pub async fn activate_challenge(
 #[put("/challenges/{id}/complete")]
 pub async fn complete_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can complete challenges"
+        }));
+    }
     match data
         .challenge_use_cases
         .complete_challenge(id.into_inner())
@@ -544,9 +579,14 @@ pub async fn complete_challenge(
 #[put("/challenges/{id}/cancel")]
 pub async fn cancel_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can cancel challenges"
+        }));
+    }
     match data
         .challenge_use_cases
         .cancel_challenge(id.into_inner())
@@ -570,9 +610,14 @@ pub async fn cancel_challenge(
 #[delete("/challenges/{id}")]
 pub async fn delete_challenge(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser, // TODO: Check admin role
+    auth: AuthenticatedUser,
     id: web::Path<Uuid>,
 ) -> impl Responder {
+    if auth.role != "superadmin" && auth.role != "syndic" {
+        return HttpResponse::Forbidden().json(serde_json::json!({
+            "error": "Only superadmin or syndic can delete challenges"
+        }));
+    }
     match data
         .challenge_use_cases
         .delete_challenge(id.into_inner())
