@@ -308,10 +308,7 @@ mod tests {
             Ok(sessions.get(&id).cloned())
         }
 
-        async fn find_by_meeting_id(
-            &self,
-            meeting_id: Uuid,
-        ) -> Result<Option<AgSession>, String> {
+        async fn find_by_meeting_id(&self, meeting_id: Uuid) -> Result<Option<AgSession>, String> {
             let sessions = self.sessions.lock().unwrap();
             Ok(sessions
                 .values()

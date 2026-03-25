@@ -405,8 +405,18 @@ mod tests {
     /// Balanced lines: 1000 debit on 6100, 1000 credit on 4400
     fn balanced_lines() -> Vec<(String, f64, f64, String)> {
         vec![
-            ("6100".to_string(), 1000.0, 0.0, "Utilities expense".to_string()),
-            ("4400".to_string(), 0.0, 1000.0, "Supplier payable".to_string()),
+            (
+                "6100".to_string(),
+                1000.0,
+                0.0,
+                "Utilities expense".to_string(),
+            ),
+            (
+                "4400".to_string(),
+                0.0,
+                1000.0,
+                "Supplier payable".to_string(),
+            ),
         ]
     }
 
@@ -519,9 +529,7 @@ mod tests {
             .await;
 
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .contains("must have at least 2 lines"));
+        assert!(result.unwrap_err().contains("must have at least 2 lines"));
     }
 
     #[tokio::test]

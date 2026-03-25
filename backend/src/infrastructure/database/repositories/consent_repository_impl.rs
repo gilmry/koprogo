@@ -119,9 +119,7 @@ impl ConsentRepository for PostgresConsentRepository {
         let privacy = self
             .find_latest_by_user_and_type(user_id, "privacy_policy")
             .await?;
-        let terms = self
-            .find_latest_by_user_and_type(user_id, "terms")
-            .await?;
+        let terms = self.find_latest_by_user_and_type(user_id, "terms").await?;
 
         Ok(ConsentStatus {
             privacy_policy_accepted: privacy.is_some(),

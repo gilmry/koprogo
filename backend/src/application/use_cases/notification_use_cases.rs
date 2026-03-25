@@ -332,7 +332,7 @@ mod tests {
     use super::*;
     use crate::application::ports::{NotificationPreferenceRepository, NotificationRepository};
     use crate::domain::entities::{
-        Notification, NotificationChannel, NotificationPriority, NotificationPreference,
+        Notification, NotificationChannel, NotificationPreference, NotificationPriority,
         NotificationStatus, NotificationType,
     };
     use async_trait::async_trait;
@@ -583,16 +583,11 @@ mod tests {
                 .lock()
                 .unwrap()
                 .values()
-                .find(|p| {
-                    p.user_id == user_id && p.notification_type == notification_type
-                })
+                .find(|p| p.user_id == user_id && p.notification_type == notification_type)
                 .cloned())
         }
 
-        async fn find_by_user(
-            &self,
-            user_id: Uuid,
-        ) -> Result<Vec<NotificationPreference>, String> {
+        async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<NotificationPreference>, String> {
             Ok(self
                 .preferences
                 .lock()
@@ -895,17 +890,15 @@ mod tests {
         let user_id = Uuid::new_v4();
 
         // Seed an existing preference
-        let pref =
-            NotificationPreference::new(user_id, NotificationType::ExpenseCreated);
+        let pref = NotificationPreference::new(user_id, NotificationType::ExpenseCreated);
 
-        let pref_repo =
-            MockNotificationPreferenceRepository::new().with_preference(pref);
+        let pref_repo = MockNotificationPreferenceRepository::new().with_preference(pref);
 
         let uc = make_use_cases(MockNotificationRepository::new(), pref_repo);
 
         let request = UpdatePreferenceRequest {
             email_enabled: Some(false),
-            in_app_enabled: None,    // unchanged
+            in_app_enabled: None,     // unchanged
             push_enabled: Some(true), // unchanged (already true by default)
         };
 
@@ -918,6 +911,6 @@ mod tests {
         assert_eq!(resp.user_id, user_id);
         assert!(!resp.email_enabled); // disabled
         assert!(resp.in_app_enabled); // unchanged default
-        assert!(resp.push_enabled);   // unchanged
+        assert!(resp.push_enabled); // unchanged
     }
 }

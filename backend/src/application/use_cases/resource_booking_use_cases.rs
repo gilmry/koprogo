@@ -584,10 +584,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_active(
-            &self,
-            building_id: Uuid,
-        ) -> Result<Vec<ResourceBooking>, String> {
+        async fn find_active(&self, building_id: Uuid) -> Result<Vec<ResourceBooking>, String> {
             let map = self.bookings.lock().unwrap();
             let now = Utc::now();
             Ok(map
@@ -690,10 +687,7 @@ mod tests {
                 .count() as i64)
         }
 
-        async fn get_statistics(
-            &self,
-            building_id: Uuid,
-        ) -> Result<BookingStatisticsDto, String> {
+        async fn get_statistics(&self, building_id: Uuid) -> Result<BookingStatisticsDto, String> {
             Ok(BookingStatisticsDto {
                 building_id,
                 total_bookings: 0,
@@ -831,7 +825,13 @@ mod tests {
             owner_repo as Arc<dyn OwnerRepository>,
         );
 
-        (use_cases, user_id, organization_id, building_id, booking_repo)
+        (
+            use_cases,
+            user_id,
+            organization_id,
+            building_id,
+            booking_repo,
+        )
     }
 
     fn make_create_dto(building_id: Uuid) -> CreateResourceBookingDto {
@@ -916,9 +916,7 @@ mod tests {
             .await
             .unwrap();
 
-        let result = use_cases
-            .cancel_booking(created.id, user_id, org_id)
-            .await;
+        let result = use_cases.cancel_booking(created.id, user_id, org_id).await;
         assert!(result.is_ok());
         let cancelled = result.unwrap();
         assert_eq!(cancelled.status, BookingStatus::Cancelled);
@@ -953,9 +951,7 @@ mod tests {
             .await
             .unwrap();
 
-        let result = use_cases
-            .delete_booking(created.id, user_id, org_id)
-            .await;
+        let result = use_cases.delete_booking(created.id, user_id, org_id).await;
         assert!(result.is_ok());
 
         // Confirm it's gone

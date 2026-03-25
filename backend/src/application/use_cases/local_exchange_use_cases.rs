@@ -634,7 +634,9 @@ mod tests {
     use crate::application::ports::{
         LocalExchangeRepository, OwnerCreditBalanceRepository, OwnerRepository,
     };
-    use crate::domain::entities::{ExchangeStatus, ExchangeType, LocalExchange, Owner, OwnerCreditBalance};
+    use crate::domain::entities::{
+        ExchangeStatus, ExchangeType, LocalExchange, Owner, OwnerCreditBalance,
+    };
     use async_trait::async_trait;
     use chrono::Utc;
     use std::collections::HashMap;
@@ -661,10 +663,7 @@ mod tests {
     #[async_trait]
     impl OwnerRepository for MockOwnerRepository {
         async fn create(&self, owner: &Owner) -> Result<Owner, String> {
-            self.owners
-                .lock()
-                .unwrap()
-                .insert(owner.id, owner.clone());
+            self.owners.lock().unwrap().insert(owner.id, owner.clone());
             Ok(owner.clone())
         }
 
@@ -721,10 +720,7 @@ mod tests {
         }
 
         async fn update(&self, owner: &Owner) -> Result<Owner, String> {
-            self.owners
-                .lock()
-                .unwrap()
-                .insert(owner.id, owner.clone());
+            self.owners.lock().unwrap().insert(owner.id, owner.clone());
             Ok(owner.clone())
         }
 
@@ -846,9 +842,7 @@ mod tests {
                 .lock()
                 .unwrap()
                 .values()
-                .filter(|e| {
-                    e.building_id == building_id && e.status == ExchangeStatus::Offered
-                })
+                .filter(|e| e.building_id == building_id && e.status == ExchangeStatus::Offered)
                 .cloned()
                 .collect())
         }
@@ -928,9 +922,7 @@ mod tests {
                 .lock()
                 .unwrap()
                 .values()
-                .filter(|e| {
-                    e.building_id == building_id && e.status == ExchangeStatus::Completed
-                })
+                .filter(|e| e.building_id == building_id && e.status == ExchangeStatus::Completed)
                 .map(|e| e.credits)
                 .sum())
         }
@@ -980,10 +972,7 @@ mod tests {
 
     #[async_trait]
     impl OwnerCreditBalanceRepository for MockOwnerCreditBalanceRepository {
-        async fn create(
-            &self,
-            balance: &OwnerCreditBalance,
-        ) -> Result<OwnerCreditBalance, String> {
+        async fn create(&self, balance: &OwnerCreditBalance) -> Result<OwnerCreditBalance, String> {
             self.balances
                 .lock()
                 .unwrap()
@@ -1018,10 +1007,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_by_owner(
-            &self,
-            owner_id: Uuid,
-        ) -> Result<Vec<OwnerCreditBalance>, String> {
+        async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<OwnerCreditBalance>, String> {
             Ok(self
                 .balances
                 .lock()
@@ -1047,10 +1033,7 @@ mod tests {
             }
         }
 
-        async fn update(
-            &self,
-            balance: &OwnerCreditBalance,
-        ) -> Result<OwnerCreditBalance, String> {
+        async fn update(&self, balance: &OwnerCreditBalance) -> Result<OwnerCreditBalance, String> {
             self.balances
                 .lock()
                 .unwrap()
@@ -1095,10 +1078,7 @@ mod tests {
                 .count() as i64)
         }
 
-        async fn get_total_credits_in_circulation(
-            &self,
-            building_id: Uuid,
-        ) -> Result<i32, String> {
+        async fn get_total_credits_in_circulation(&self, building_id: Uuid) -> Result<i32, String> {
             Ok(self
                 .balances
                 .lock()
@@ -1209,11 +1189,7 @@ mod tests {
         owner_repo.insert(provider.clone());
         owner_repo.insert(requester.clone());
 
-        let uc = setup_use_cases(
-            owner_repo,
-            exchange_repo.clone(),
-            balance_repo,
-        );
+        let uc = setup_use_cases(owner_repo, exchange_repo.clone(), balance_repo);
 
         // Create an exchange first
         let dto = CreateLocalExchangeDto {
@@ -1229,7 +1205,11 @@ mod tests {
         let result = uc
             .request_exchange(created.id, requester_user_id, RequestExchangeDto {})
             .await;
-        assert!(result.is_ok(), "request_exchange failed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "request_exchange failed: {:?}",
+            result.err()
+        );
 
         let resp = result.unwrap();
         assert_eq!(resp.status, ExchangeStatus::Requested);
@@ -1252,11 +1232,7 @@ mod tests {
         owner_repo.insert(provider.clone());
         owner_repo.insert(requester.clone());
 
-        let uc = setup_use_cases(
-            owner_repo,
-            exchange_repo.clone(),
-            balance_repo,
-        );
+        let uc = setup_use_cases(owner_repo, exchange_repo.clone(), balance_repo);
 
         // Create + request
         let dto = CreateLocalExchangeDto {
@@ -1387,16 +1363,15 @@ mod tests {
         let result = uc
             .cancel_exchange(created.id, requester_user_id, cancel_dto)
             .await;
-        assert!(
-            result.is_ok(),
-            "cancel_exchange failed: {:?}",
-            result.err()
-        );
+        assert!(result.is_ok(), "cancel_exchange failed: {:?}", result.err());
 
         let resp = result.unwrap();
         assert_eq!(resp.status, ExchangeStatus::Cancelled);
         assert!(resp.cancelled_at.is_some());
-        assert_eq!(resp.cancellation_reason, Some("Changed my mind".to_string()));
+        assert_eq!(
+            resp.cancellation_reason,
+            Some("Changed my mind".to_string())
+        );
     }
 
     #[tokio::test]
@@ -1414,11 +1389,7 @@ mod tests {
         owner_repo.insert(provider.clone());
         owner_repo.insert(requester.clone());
 
-        let uc = setup_use_cases(
-            owner_repo,
-            exchange_repo.clone(),
-            balance_repo.clone(),
-        );
+        let uc = setup_use_cases(owner_repo, exchange_repo.clone(), balance_repo.clone());
 
         // Full workflow: create + request + start + complete
         let dto = CreateLocalExchangeDto {
@@ -1473,11 +1444,7 @@ mod tests {
         owner_repo.insert(provider.clone());
         owner_repo.insert(requester.clone());
 
-        let uc = setup_use_cases(
-            owner_repo,
-            exchange_repo.clone(),
-            balance_repo.clone(),
-        );
+        let uc = setup_use_cases(owner_repo, exchange_repo.clone(), balance_repo.clone());
 
         // Full workflow: create + request + start + complete
         let dto = CreateLocalExchangeDto {

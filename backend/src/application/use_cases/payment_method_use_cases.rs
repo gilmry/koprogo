@@ -344,10 +344,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_active_by_owner(
-            &self,
-            owner_id: Uuid,
-        ) -> Result<Vec<PaymentMethod>, String> {
+        async fn find_active_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentMethod>, String> {
             Ok(self
                 .methods
                 .lock()
@@ -412,11 +409,7 @@ mod tests {
             Ok(self.methods.lock().unwrap().remove(&id).is_some())
         }
 
-        async fn set_as_default(
-            &self,
-            id: Uuid,
-            owner_id: Uuid,
-        ) -> Result<PaymentMethod, String> {
+        async fn set_as_default(&self, id: Uuid, owner_id: Uuid) -> Result<PaymentMethod, String> {
             let mut store = self.methods.lock().unwrap();
             // Unset all other defaults for this owner
             for method in store.values_mut() {
@@ -457,9 +450,7 @@ mod tests {
 
     // --- Helper functions ---
 
-    fn make_use_cases(
-        repo: Arc<MockPaymentMethodRepository>,
-    ) -> PaymentMethodUseCases {
+    fn make_use_cases(repo: Arc<MockPaymentMethodRepository>) -> PaymentMethodUseCases {
         PaymentMethodUseCases::new(repo)
     }
 
@@ -490,12 +481,8 @@ mod tests {
         let org_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let request = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 4242",
-            false,
-        );
+        let request =
+            make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 4242", false);
 
         let result = use_cases.create_payment_method(org_id, request).await;
         assert!(result.is_ok());
@@ -541,12 +528,7 @@ mod tests {
         let owner_id = Uuid::new_v4();
 
         // Create first method as default
-        let req1 = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 1111",
-            true,
-        );
+        let req1 = make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 1111", true);
         let method1 = use_cases.create_payment_method(org_id, req1).await.unwrap();
         assert!(method1.is_default);
 
@@ -567,7 +549,11 @@ mod tests {
         assert!(updated_method2.is_default);
 
         // Verify first method is no longer default
-        let first = use_cases.get_payment_method(method1.id).await.unwrap().unwrap();
+        let first = use_cases
+            .get_payment_method(method1.id)
+            .await
+            .unwrap()
+            .unwrap();
         assert!(!first.is_default);
     }
 
@@ -578,13 +564,12 @@ mod tests {
         let org_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let request = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 4242",
-            false,
-        );
-        let created = use_cases.create_payment_method(org_id, request).await.unwrap();
+        let request =
+            make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 4242", false);
+        let created = use_cases
+            .create_payment_method(org_id, request)
+            .await
+            .unwrap();
         assert!(created.is_active);
 
         let result = use_cases.deactivate_payment_method(created.id).await;
@@ -602,16 +587,18 @@ mod tests {
         let org_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let request = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 4242",
-            false,
-        );
-        let created = use_cases.create_payment_method(org_id, request).await.unwrap();
+        let request =
+            make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 4242", false);
+        let created = use_cases
+            .create_payment_method(org_id, request)
+            .await
+            .unwrap();
 
         // Deactivate once (success)
-        use_cases.deactivate_payment_method(created.id).await.unwrap();
+        use_cases
+            .deactivate_payment_method(created.id)
+            .await
+            .unwrap();
 
         // Deactivate again (should fail)
         let result = use_cases.deactivate_payment_method(created.id).await;
@@ -626,16 +613,18 @@ mod tests {
         let org_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let request = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 4242",
-            false,
-        );
-        let created = use_cases.create_payment_method(org_id, request).await.unwrap();
+        let request =
+            make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 4242", false);
+        let created = use_cases
+            .create_payment_method(org_id, request)
+            .await
+            .unwrap();
 
         // Deactivate first
-        use_cases.deactivate_payment_method(created.id).await.unwrap();
+        use_cases
+            .deactivate_payment_method(created.id)
+            .await
+            .unwrap();
 
         // Reactivate
         let result = use_cases.reactivate_payment_method(created.id).await;
@@ -655,12 +644,7 @@ mod tests {
         let other_owner_id = Uuid::new_v4();
 
         // Create 2 methods for owner_id
-        let req1 = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 1111",
-            true,
-        );
+        let req1 = make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 1111", true);
         let req2 = make_create_request(
             owner_id,
             PaymentMethodType::SepaDebit,
@@ -716,18 +700,19 @@ mod tests {
         let owner_id = Uuid::new_v4();
 
         // Initially no methods
-        let count = use_cases.count_active_payment_methods(owner_id).await.unwrap();
+        let count = use_cases
+            .count_active_payment_methods(owner_id)
+            .await
+            .unwrap();
         assert_eq!(count, 0);
-        let has = use_cases.has_active_payment_methods(owner_id).await.unwrap();
+        let has = use_cases
+            .has_active_payment_methods(owner_id)
+            .await
+            .unwrap();
         assert!(!has);
 
         // Create two methods
-        let req1 = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 1111",
-            false,
-        );
+        let req1 = make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 1111", false);
         let req2 = make_create_request(
             owner_id,
             PaymentMethodType::SepaDebit,
@@ -737,14 +722,23 @@ mod tests {
         let m1 = use_cases.create_payment_method(org_id, req1).await.unwrap();
         use_cases.create_payment_method(org_id, req2).await.unwrap();
 
-        let count = use_cases.count_active_payment_methods(owner_id).await.unwrap();
+        let count = use_cases
+            .count_active_payment_methods(owner_id)
+            .await
+            .unwrap();
         assert_eq!(count, 2);
-        let has = use_cases.has_active_payment_methods(owner_id).await.unwrap();
+        let has = use_cases
+            .has_active_payment_methods(owner_id)
+            .await
+            .unwrap();
         assert!(has);
 
         // Deactivate one, count should decrease
         use_cases.deactivate_payment_method(m1.id).await.unwrap();
-        let count = use_cases.count_active_payment_methods(owner_id).await.unwrap();
+        let count = use_cases
+            .count_active_payment_methods(owner_id)
+            .await
+            .unwrap();
         assert_eq!(count, 1);
     }
 
@@ -756,19 +750,20 @@ mod tests {
         let owner_id = Uuid::new_v4();
 
         // No default initially
-        let result = use_cases.get_default_payment_method(owner_id).await.unwrap();
+        let result = use_cases
+            .get_default_payment_method(owner_id)
+            .await
+            .unwrap();
         assert!(result.is_none());
 
         // Create a default method
-        let req = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 4242",
-            true,
-        );
+        let req = make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 4242", true);
         let created = use_cases.create_payment_method(org_id, req).await.unwrap();
 
-        let result = use_cases.get_default_payment_method(owner_id).await.unwrap();
+        let result = use_cases
+            .get_default_payment_method(owner_id)
+            .await
+            .unwrap();
         assert!(result.is_some());
         assert_eq!(result.unwrap().id, created.id);
     }
@@ -780,12 +775,7 @@ mod tests {
         let org_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let req = make_create_request(
-            owner_id,
-            PaymentMethodType::Card,
-            "Visa **** 4242",
-            false,
-        );
+        let req = make_create_request(owner_id, PaymentMethodType::Card, "Visa **** 4242", false);
         let created = use_cases.create_payment_method(org_id, req).await.unwrap();
 
         // Delete

@@ -397,9 +397,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_meeting_not_found() {
         let mut mock_repo = MockMeetingRepo::new();
-        mock_repo
-            .expect_find_by_id()
-            .returning(|_| Ok(None));
+        mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
@@ -451,9 +449,7 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        mock_repo
-            .expect_update()
-            .returning(|m| Ok(m.clone()));
+        mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
@@ -476,9 +472,7 @@ mod tests {
     #[tokio::test]
     async fn test_update_meeting_not_found() {
         let mut mock_repo = MockMeetingRepo::new();
-        mock_repo
-            .expect_find_by_id()
-            .returning(|_| Ok(None));
+        mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
@@ -561,9 +555,7 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        mock_repo
-            .expect_update()
-            .returning(|m| Ok(m.clone()));
+        mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
@@ -593,9 +585,7 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        mock_repo
-            .expect_update()
-            .returning(|m| Ok(m.clone()));
+        mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         // No convocation_use_cases set, so second convocation won't be triggered
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
@@ -615,13 +605,13 @@ mod tests {
     #[tokio::test]
     async fn test_validate_quorum_meeting_not_found() {
         let mut mock_repo = MockMeetingRepo::new();
-        mock_repo
-            .expect_find_by_id()
-            .returning(|_| Ok(None));
+        mock_repo.expect_find_by_id().returning(|_| Ok(None));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
-        let result = use_cases.validate_quorum(Uuid::new_v4(), 600.0, 1000.0).await;
+        let result = use_cases
+            .validate_quorum(Uuid::new_v4(), 600.0, 1000.0)
+            .await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Meeting not found"));
     }
@@ -643,13 +633,13 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        mock_repo
-            .expect_update()
-            .returning(|m| Ok(m.clone()));
+        mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
-        let request = CompleteMeetingRequest { attendees_count: 42 };
+        let request = CompleteMeetingRequest {
+            attendees_count: 42,
+        };
         let result = use_cases.complete_meeting(meeting_id, request).await;
         assert!(result.is_ok());
         let response = result.unwrap();
@@ -674,9 +664,7 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        mock_repo
-            .expect_update()
-            .returning(|m| Ok(m.clone()));
+        mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
@@ -702,9 +690,7 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        mock_repo
-            .expect_update()
-            .returning(|m| Ok(m.clone()));
+        mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 
@@ -735,9 +721,7 @@ mod tests {
             .withf(move |id| *id == meeting_id)
             .returning(move |_| Ok(Some(meeting_clone.clone())));
 
-        mock_repo
-            .expect_update()
-            .returning(|m| Ok(m.clone()));
+        mock_repo.expect_update().returning(|m| Ok(m.clone()));
 
         let use_cases = MeetingUseCases::new(Arc::new(mock_repo));
 

@@ -313,8 +313,8 @@ mod tests {
         BuildingRepository, EnergyBillUploadRepository, EnergyCampaignRepository,
     };
     use crate::domain::entities::{
-        Building, CampaignStatus, CampaignType, ContractType, EnergyCampaign,
-        EnergyBillUpload, EnergyType, ProviderOffer,
+        Building, CampaignStatus, CampaignType, ContractType, EnergyBillUpload, EnergyCampaign,
+        EnergyType, ProviderOffer,
     };
     use async_trait::async_trait;
     use chrono::Utc;
@@ -383,10 +383,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_by_building(
-            &self,
-            building_id: Uuid,
-        ) -> Result<Vec<EnergyCampaign>, String> {
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<EnergyCampaign>, String> {
             let store = self.campaigns.lock().unwrap();
             Ok(store
                 .values()

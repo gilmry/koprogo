@@ -703,10 +703,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_active_by_owner(
-            &self,
-            owner_id: Uuid,
-        ) -> Result<Vec<PaymentMethod>, String> {
+        async fn find_active_by_owner(&self, owner_id: Uuid) -> Result<Vec<PaymentMethod>, String> {
             Ok(self
                 .methods
                 .lock()
@@ -768,11 +765,7 @@ mod tests {
             Ok(self.methods.lock().unwrap().remove(&id).is_some())
         }
 
-        async fn set_as_default(
-            &self,
-            id: Uuid,
-            _owner_id: Uuid,
-        ) -> Result<PaymentMethod, String> {
+        async fn set_as_default(&self, id: Uuid, _owner_id: Uuid) -> Result<PaymentMethod, String> {
             let mut methods = self.methods.lock().unwrap();
             let pm = methods
                 .get_mut(&id)
@@ -805,7 +798,11 @@ mod tests {
         PaymentUseCases::new(payment_repo, pm_repo)
     }
 
-    fn make_create_request(building_id: Uuid, owner_id: Uuid, amount_cents: i64) -> CreatePaymentRequest {
+    fn make_create_request(
+        building_id: Uuid,
+        owner_id: Uuid,
+        amount_cents: i64,
+    ) -> CreatePaymentRequest {
         CreatePaymentRequest {
             building_id,
             owner_id,
@@ -879,7 +876,9 @@ mod tests {
         let result = uc.create_payment(Uuid::new_v4(), request).await;
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Amount must be greater than 0"));
+        assert!(result
+            .unwrap_err()
+            .contains("Amount must be greater than 0"));
     }
 
     #[tokio::test]
@@ -892,7 +891,9 @@ mod tests {
         let result = uc.create_payment(Uuid::new_v4(), request).await;
 
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Amount must be greater than 0"));
+        assert!(result
+            .unwrap_err()
+            .contains("Amount must be greater than 0"));
     }
 
     #[tokio::test]
@@ -902,7 +903,8 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 10000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 10000).await;
         let pid = payment.id;
 
         // Pending -> Processing
@@ -922,7 +924,8 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
         let pid = payment.id;
 
         // Pending -> Processing
@@ -957,7 +960,8 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 20000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 20000).await;
         let pid = payment.id;
 
         // Move to Succeeded first
@@ -965,7 +969,13 @@ mod tests {
 
         // Partial refund: 8000 out of 20000
         let resp = uc
-            .refund_payment(pid, RefundPaymentRequest { amount_cents: 8000, reason: None })
+            .refund_payment(
+                pid,
+                RefundPaymentRequest {
+                    amount_cents: 8000,
+                    reason: None,
+                },
+            )
             .await
             .unwrap();
         assert_eq!(resp.status, TransactionStatus::Refunded);
@@ -980,20 +990,33 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 10000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 10000).await;
         let pid = payment.id;
 
         // Move to Succeeded
         uc.mark_succeeded(pid).await.unwrap();
 
         // Partial refund: 6000
-        uc.refund_payment(pid, RefundPaymentRequest { amount_cents: 6000, reason: None })
-            .await
-            .unwrap();
+        uc.refund_payment(
+            pid,
+            RefundPaymentRequest {
+                amount_cents: 6000,
+                reason: None,
+            },
+        )
+        .await
+        .unwrap();
 
         // Try to refund 6000 more (total would be 12000 > 10000)
         let result = uc
-            .refund_payment(pid, RefundPaymentRequest { amount_cents: 6000, reason: None })
+            .refund_payment(
+                pid,
+                RefundPaymentRequest {
+                    amount_cents: 6000,
+                    reason: None,
+                },
+            )
             .await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("exceeds"));
@@ -1006,12 +1029,19 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 10000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 10000).await;
         let pid = payment.id;
 
         // Payment is still Pending, refund should fail
         let result = uc
-            .refund_payment(pid, RefundPaymentRequest { amount_cents: 5000, reason: None })
+            .refund_payment(
+                pid,
+                RefundPaymentRequest {
+                    amount_cents: 5000,
+                    reason: None,
+                },
+            )
             .await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("succeeded payments"));
@@ -1024,7 +1054,8 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
 
         // Found
         let result = uc.get_payment(payment.id).await.unwrap();
@@ -1068,7 +1099,8 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
 
         // Setting a non-existent payment method should fail
         let result = uc.set_payment_method_id(payment.id, Uuid::new_v4()).await;
@@ -1094,7 +1126,8 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
 
         let resp = uc.set_payment_method_id(payment.id, pm_id).await.unwrap();
         assert_eq!(resp.payment_method_id, Some(pm_id));
@@ -1107,7 +1140,8 @@ mod tests {
         let uc = make_use_cases(payment_repo.clone(), pm_repo);
 
         let org_id = Uuid::new_v4();
-        let payment = seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
+        let payment =
+            seed_payment(&payment_repo, org_id, Uuid::new_v4(), Uuid::new_v4(), 5000).await;
 
         assert!(uc.delete_payment(payment.id).await.unwrap());
         // After deletion, get should return None

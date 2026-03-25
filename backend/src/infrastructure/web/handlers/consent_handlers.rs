@@ -173,7 +173,11 @@ pub async fn get_consent_status(
     data: web::Data<AppState>,
     auth: AuthenticatedUser,
 ) -> impl Responder {
-    match data.consent_use_cases.get_consent_status(auth.user_id).await {
+    match data
+        .consent_use_cases
+        .get_consent_status(auth.user_id)
+        .await
+    {
         Ok(status) => HttpResponse::Ok().json(ConsentStatusResponse {
             privacy_policy_accepted: status.privacy_policy_accepted,
             terms_accepted: status.terms_accepted,

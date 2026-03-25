@@ -217,7 +217,10 @@ mod tests {
                 consent_ip: consent_ip.map(|s| s.to_string()),
                 consent_version: consent_version.to_string(),
             };
-            self.consents.lock().unwrap().insert(owner_id, consent.clone());
+            self.consents
+                .lock()
+                .unwrap()
+                .insert(owner_id, consent.clone());
             Ok(consent)
         }
 
@@ -234,13 +237,18 @@ mod tests {
 
         async fn submit_task(&self, _task: GridTask) -> Result<GridTaskId, GridError> {
             let task_id = GridTaskId(Uuid::new_v4().to_string());
-            self.tasks.lock().unwrap().insert(task_id.0.clone(), GridTaskStatus::Queued);
+            self.tasks
+                .lock()
+                .unwrap()
+                .insert(task_id.0.clone(), GridTaskStatus::Queued);
             Ok(task_id)
         }
 
         async fn poll_result(&self, task_id: &GridTaskId) -> Result<GridTaskStatus, GridError> {
             let map = self.tasks.lock().unwrap();
-            map.get(&task_id.0).cloned().ok_or_else(|| GridError::TaskNotFound(task_id.0.clone()))
+            map.get(&task_id.0)
+                .cloned()
+                .ok_or_else(|| GridError::TaskNotFound(task_id.0.clone()))
         }
 
         async fn cancel_task(&self, task_id: &GridTaskId) -> Result<(), GridError> {
@@ -266,14 +274,22 @@ mod tests {
             Err("not impl".to_string())
         }
         async fn find_readings_by_building(
-            &self, _b: Uuid, _dt: Option<DeviceType>, _mt: Option<MetricType>,
-            _s: DateTime<Utc>, _e: DateTime<Utc>, _l: Option<usize>,
+            &self,
+            _b: Uuid,
+            _dt: Option<DeviceType>,
+            _mt: Option<MetricType>,
+            _s: DateTime<Utc>,
+            _e: DateTime<Utc>,
+            _l: Option<usize>,
         ) -> Result<Vec<IoTReading>, String> {
             Ok(vec![])
         }
         async fn get_consumption_stats(
-            &self, building_id: Uuid, mt: MetricType,
-            s: DateTime<Utc>, e: DateTime<Utc>,
+            &self,
+            building_id: Uuid,
+            mt: MetricType,
+            s: DateTime<Utc>,
+            e: DateTime<Utc>,
         ) -> Result<ConsumptionStatsDto, String> {
             Ok(ConsumptionStatsDto {
                 building_id,
@@ -290,19 +306,31 @@ mod tests {
             })
         }
         async fn get_daily_aggregates(
-            &self, _b: Uuid, _dt: DeviceType, _mt: MetricType,
-            _s: DateTime<Utc>, _e: DateTime<Utc>,
+            &self,
+            _b: Uuid,
+            _dt: DeviceType,
+            _mt: MetricType,
+            _s: DateTime<Utc>,
+            _e: DateTime<Utc>,
         ) -> Result<Vec<DailyAggregateDto>, String> {
             Ok(vec![])
         }
         async fn get_monthly_aggregates(
-            &self, _b: Uuid, _dt: DeviceType, _mt: MetricType,
-            _s: DateTime<Utc>, _e: DateTime<Utc>,
+            &self,
+            _b: Uuid,
+            _dt: DeviceType,
+            _mt: MetricType,
+            _s: DateTime<Utc>,
+            _e: DateTime<Utc>,
         ) -> Result<Vec<MonthlyAggregateDto>, String> {
             Ok(vec![])
         }
         async fn detect_anomalies(
-            &self, _b: Uuid, _mt: MetricType, _t: f64, _d: i64,
+            &self,
+            _b: Uuid,
+            _mt: MetricType,
+            _t: f64,
+            _d: i64,
         ) -> Result<Vec<IoTReading>, String> {
             Ok(vec![])
         }
@@ -312,10 +340,17 @@ mod tests {
         async fn find_linky_device_by_id(&self, _id: Uuid) -> Result<Option<LinkyDevice>, String> {
             Ok(None)
         }
-        async fn find_linky_device_by_building(&self, _b: Uuid) -> Result<Option<LinkyDevice>, String> {
+        async fn find_linky_device_by_building(
+            &self,
+            _b: Uuid,
+        ) -> Result<Option<LinkyDevice>, String> {
             Ok(None)
         }
-        async fn find_linky_device_by_prm(&self, _p: &str, _pr: &str) -> Result<Option<LinkyDevice>, String> {
+        async fn find_linky_device_by_prm(
+            &self,
+            _p: &str,
+            _pr: &str,
+        ) -> Result<Option<LinkyDevice>, String> {
             Ok(None)
         }
         async fn update_linky_device(&self, _d: &LinkyDevice) -> Result<LinkyDevice, String> {
@@ -421,7 +456,11 @@ mod tests {
 
         // Manually insert a task in Queued state
         let task_id = "test-task-123".to_string();
-        grid_port.tasks.lock().unwrap().insert(task_id.clone(), GridTaskStatus::Queued);
+        grid_port
+            .tasks
+            .lock()
+            .unwrap()
+            .insert(task_id.clone(), GridTaskStatus::Queued);
 
         let result = uc.poll_task(&task_id).await;
         assert!(result.is_ok());
@@ -441,7 +480,11 @@ mod tests {
         let (uc, grid_port) = setup();
 
         let task_id = "task-to-cancel".to_string();
-        grid_port.tasks.lock().unwrap().insert(task_id.clone(), GridTaskStatus::Queued);
+        grid_port
+            .tasks
+            .lock()
+            .unwrap()
+            .insert(task_id.clone(), GridTaskStatus::Queued);
 
         let result = uc.cancel_task(&task_id).await;
         assert!(result.is_ok());

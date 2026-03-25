@@ -422,9 +422,7 @@ mod tests {
             .expect_find_by_id()
             .withf(move |id| *id == report_id)
             .returning(move |_| Ok(Some(report_for_find.clone())));
-        mock_repo
-            .expect_update()
-            .returning(|r| Ok(r.clone()));
+        mock_repo.expect_update().returning(|r| Ok(r.clone()));
 
         let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
 
@@ -450,9 +448,7 @@ mod tests {
             .expect_find_by_id()
             .withf(move |id| *id == report_id)
             .returning(move |_| Ok(Some(report_for_find.clone())));
-        mock_repo
-            .expect_update()
-            .returning(|r| Ok(r.clone()));
+        mock_repo.expect_update().returning(|r| Ok(r.clone()));
 
         let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
         let validator_id = Uuid::new_v4();
@@ -478,9 +474,7 @@ mod tests {
             .expect_find_by_id()
             .withf(move |id| *id == report_id)
             .returning(move |_| Ok(Some(report_for_find.clone())));
-        mock_repo
-            .expect_update()
-            .returning(|r| Ok(r.clone()));
+        mock_repo.expect_update().returning(|r| Ok(r.clone()));
 
         let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
 
@@ -504,9 +498,7 @@ mod tests {
             .expect_find_by_id()
             .withf(move |id| *id == report_id)
             .returning(move |_| Ok(Some(report_for_find.clone())));
-        mock_repo
-            .expect_update()
-            .returning(|r| Ok(r.clone()));
+        mock_repo.expect_update().returning(|r| Ok(r.clone()));
 
         let uc = ContractorReportUseCases::new(Arc::new(mock_repo));
 
@@ -515,7 +507,9 @@ mod tests {
             .await;
         assert!(result.is_ok());
         let link_dto = result.unwrap();
-        assert!(link_dto.magic_link.starts_with("https://app.koprogo.be/contractor/?token="));
+        assert!(link_dto
+            .magic_link
+            .starts_with("https://app.koprogo.be/contractor/?token="));
         assert!(link_dto.expires_at > Utc::now());
     }
 }

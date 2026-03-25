@@ -366,10 +366,8 @@ async fn main() -> std::io::Result<()> {
 
     // Consent (GDPR Art. 7)
     let consent_repo = Arc::new(PostgresConsentRepository::new(pool.clone()));
-    let consent_use_cases = consent_use_cases::ConsentUseCases::new(
-        consent_repo,
-        audit_log_repo.clone(),
-    );
+    let consent_use_cases =
+        consent_use_cases::ConsentUseCases::new(consent_repo, audit_log_repo.clone());
 
     let energy_campaign_use_cases = EnergyCampaignUseCases::new(
         energy_campaign_repo.clone(),

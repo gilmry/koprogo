@@ -353,7 +353,9 @@ mod tests {
         assert!(result.is_ok());
         let units = result.unwrap();
         assert_eq!(units.len(), 2);
-        assert!(units.iter().all(|u| u.building_id == building_a.to_string()));
+        assert!(units
+            .iter()
+            .all(|u| u.building_id == building_a.to_string()));
     }
 
     #[tokio::test]

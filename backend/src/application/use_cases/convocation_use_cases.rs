@@ -661,9 +661,7 @@ mod tests {
         let meeting_date = Utc::now() + Duration::days(20);
 
         let mut conv_repo = MockConvRepo::new();
-        conv_repo
-            .expect_create()
-            .returning(|conv| Ok(conv.clone()));
+        conv_repo.expect_create().returning(|conv| Ok(conv.clone()));
 
         let uc = make_use_cases(
             conv_repo,
@@ -681,9 +679,7 @@ mod tests {
             language: "FR".to_string(),
         };
 
-        let result = uc
-            .create_convocation(org_id, request, Uuid::new_v4())
-            .await;
+        let result = uc.create_convocation(org_id, request, Uuid::new_v4()).await;
 
         assert!(result.is_ok(), "Expected Ok, got: {:?}", result.err());
         let resp = result.unwrap();
@@ -717,9 +713,7 @@ mod tests {
             language: "FR".to_string(),
         };
 
-        let result = uc
-            .create_convocation(org_id, request, Uuid::new_v4())
-            .await;
+        let result = uc.create_convocation(org_id, request, Uuid::new_v4()).await;
 
         assert!(result.is_err());
         let err = result.unwrap_err();
@@ -740,9 +734,7 @@ mod tests {
         let meeting_date = Utc::now() + Duration::days(16); // 16 days — enough for extraordinary
 
         let mut conv_repo = MockConvRepo::new();
-        conv_repo
-            .expect_create()
-            .returning(|conv| Ok(conv.clone()));
+        conv_repo.expect_create().returning(|conv| Ok(conv.clone()));
 
         let uc = make_use_cases(
             conv_repo,
@@ -760,9 +752,7 @@ mod tests {
             language: "NL".to_string(),
         };
 
-        let result = uc
-            .create_convocation(org_id, request, Uuid::new_v4())
-            .await;
+        let result = uc.create_convocation(org_id, request, Uuid::new_v4()).await;
 
         assert!(result.is_ok());
         let resp = result.unwrap();
@@ -786,9 +776,7 @@ mod tests {
         conv_repo
             .expect_find_by_id()
             .returning(move |_| Ok(Some(conv_clone.clone())));
-        conv_repo
-            .expect_update()
-            .returning(|conv| Ok(conv.clone()));
+        conv_repo.expect_update().returning(|conv| Ok(conv.clone()));
 
         let uc = make_use_cases(
             conv_repo,
@@ -826,9 +814,7 @@ mod tests {
         conv_repo
             .expect_find_by_id()
             .returning(move |_| Ok(Some(conv_clone.clone())));
-        conv_repo
-            .expect_update()
-            .returning(|conv| Ok(conv.clone()));
+        conv_repo.expect_update().returning(|conv| Ok(conv.clone()));
 
         let uc = make_use_cases(
             conv_repo,
@@ -906,9 +892,7 @@ mod tests {
         conv_repo
             .expect_find_by_id()
             .returning(move |_| Ok(Some(conv_clone.clone())));
-        conv_repo
-            .expect_update()
-            .returning(|conv| Ok(conv.clone()));
+        conv_repo.expect_update().returning(|conv| Ok(conv.clone()));
 
         let uc = make_use_cases(
             conv_repo,
@@ -969,9 +953,7 @@ mod tests {
         conv_repo
             .expect_find_by_id()
             .returning(move |_| Ok(Some(conv_clone.clone())));
-        conv_repo
-            .expect_update()
-            .returning(|conv| Ok(conv.clone()));
+        conv_repo.expect_update().returning(|conv| Ok(conv.clone()));
 
         let uc = make_use_cases(
             conv_repo,
@@ -1029,9 +1011,7 @@ mod tests {
         conv_repo
             .expect_find_by_id()
             .returning(move |_| Ok(Some(conv_clone.clone())));
-        conv_repo
-            .expect_update()
-            .returning(|conv| Ok(conv.clone()));
+        conv_repo.expect_update().returning(|conv| Ok(conv.clone()));
 
         let uc = make_use_cases(
             conv_repo,
@@ -1077,9 +1057,7 @@ mod tests {
             MockMeetingRepo::new(),
         );
 
-        let result = uc
-            .set_recipient_proxy(recipient_id, proxy_owner_id)
-            .await;
+        let result = uc.set_recipient_proxy(recipient_id, proxy_owner_id).await;
 
         assert!(result.is_ok(), "Expected Ok, got: {:?}", result.err());
         let resp = result.unwrap();
@@ -1111,9 +1089,7 @@ mod tests {
             MockMeetingRepo::new(),
         );
 
-        let result = uc
-            .set_recipient_proxy(recipient_id, self_owner_id)
-            .await;
+        let result = uc.set_recipient_proxy(recipient_id, self_owner_id).await;
 
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Cannot delegate to self"));

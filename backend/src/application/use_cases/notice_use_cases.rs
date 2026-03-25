@@ -488,7 +488,9 @@ pub struct NoticeStatistics {
 mod tests {
     use super::*;
     use crate::application::ports::{NoticeRepository, UserRepository};
-    use crate::domain::entities::{Notice, NoticeCategory, NoticeStatus, NoticeType, User, UserRole};
+    use crate::domain::entities::{
+        Notice, NoticeCategory, NoticeStatus, NoticeType, User, UserRole,
+    };
     use async_trait::async_trait;
     use chrono::Utc;
     use std::collections::HashMap;
@@ -898,9 +900,7 @@ mod tests {
             Arc::new(MockUserRepo::with_user(user)),
         );
 
-        let result = uc
-            .archive_notice(notice_id, user_id, org_id, "owner")
-            .await;
+        let result = uc.archive_notice(notice_id, user_id, org_id, "owner").await;
         assert!(result.is_ok());
         let resp = result.unwrap();
         assert_eq!(resp.status, NoticeStatus::Archived);
@@ -1022,6 +1022,8 @@ mod tests {
 
         let result = uc.delete_notice(notice_id, user_id, org_id).await;
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Cannot delete notice in status"));
+        assert!(result
+            .unwrap_err()
+            .contains("Cannot delete notice in status"));
     }
 }

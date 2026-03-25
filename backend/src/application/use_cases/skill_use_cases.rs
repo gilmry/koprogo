@@ -431,45 +431,94 @@ mod tests {
         }
 
         async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Skill>, String> {
-            Ok(self.skills.lock().unwrap().values()
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
                 .filter(|s| s.building_id == building_id)
-                .cloned().collect())
+                .cloned()
+                .collect())
         }
 
-        async fn find_available_by_building(&self, building_id: Uuid) -> Result<Vec<Skill>, String> {
-            Ok(self.skills.lock().unwrap().values()
+        async fn find_available_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<Skill>, String> {
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
                 .filter(|s| s.building_id == building_id && s.is_available_for_help)
-                .cloned().collect())
+                .cloned()
+                .collect())
         }
 
         async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<Skill>, String> {
-            Ok(self.skills.lock().unwrap().values()
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
                 .filter(|s| s.owner_id == owner_id)
-                .cloned().collect())
+                .cloned()
+                .collect())
         }
 
-        async fn find_by_category(&self, building_id: Uuid, category: SkillCategory) -> Result<Vec<Skill>, String> {
-            Ok(self.skills.lock().unwrap().values()
+        async fn find_by_category(
+            &self,
+            building_id: Uuid,
+            category: SkillCategory,
+        ) -> Result<Vec<Skill>, String> {
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
                 .filter(|s| s.building_id == building_id && s.skill_category == category)
-                .cloned().collect())
+                .cloned()
+                .collect())
         }
 
-        async fn find_by_expertise(&self, building_id: Uuid, level: ExpertiseLevel) -> Result<Vec<Skill>, String> {
-            Ok(self.skills.lock().unwrap().values()
+        async fn find_by_expertise(
+            &self,
+            building_id: Uuid,
+            level: ExpertiseLevel,
+        ) -> Result<Vec<Skill>, String> {
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
                 .filter(|s| s.building_id == building_id && s.expertise_level == level)
-                .cloned().collect())
+                .cloned()
+                .collect())
         }
 
         async fn find_free_by_building(&self, building_id: Uuid) -> Result<Vec<Skill>, String> {
-            Ok(self.skills.lock().unwrap().values()
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
                 .filter(|s| s.building_id == building_id && s.is_free())
-                .cloned().collect())
+                .cloned()
+                .collect())
         }
 
-        async fn find_professional_by_building(&self, building_id: Uuid) -> Result<Vec<Skill>, String> {
-            Ok(self.skills.lock().unwrap().values()
+        async fn find_professional_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<Skill>, String> {
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
                 .filter(|s| s.building_id == building_id && s.is_professional())
-                .cloned().collect())
+                .cloned()
+                .collect())
         }
 
         async fn update(&self, skill: &Skill) -> Result<Skill, String> {
@@ -484,23 +533,51 @@ mod tests {
         }
 
         async fn count_by_building(&self, building_id: Uuid) -> Result<i64, String> {
-            Ok(self.skills.lock().unwrap().values()
-                .filter(|s| s.building_id == building_id).count() as i64)
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|s| s.building_id == building_id)
+                .count() as i64)
         }
 
         async fn count_available_by_building(&self, building_id: Uuid) -> Result<i64, String> {
-            Ok(self.skills.lock().unwrap().values()
-                .filter(|s| s.building_id == building_id && s.is_available_for_help).count() as i64)
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|s| s.building_id == building_id && s.is_available_for_help)
+                .count() as i64)
         }
 
-        async fn count_by_category(&self, building_id: Uuid, category: SkillCategory) -> Result<i64, String> {
-            Ok(self.skills.lock().unwrap().values()
-                .filter(|s| s.building_id == building_id && s.skill_category == category).count() as i64)
+        async fn count_by_category(
+            &self,
+            building_id: Uuid,
+            category: SkillCategory,
+        ) -> Result<i64, String> {
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|s| s.building_id == building_id && s.skill_category == category)
+                .count() as i64)
         }
 
-        async fn count_by_expertise(&self, building_id: Uuid, level: ExpertiseLevel) -> Result<i64, String> {
-            Ok(self.skills.lock().unwrap().values()
-                .filter(|s| s.building_id == building_id && s.expertise_level == level).count() as i64)
+        async fn count_by_expertise(
+            &self,
+            building_id: Uuid,
+            level: ExpertiseLevel,
+        ) -> Result<i64, String> {
+            Ok(self
+                .skills
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|s| s.building_id == building_id && s.expertise_level == level)
+                .count() as i64)
         }
     }
 
@@ -511,7 +588,9 @@ mod tests {
 
     impl MockOwnerRepo {
         fn new() -> Self {
-            Self { owners: Mutex::new(HashMap::new()) }
+            Self {
+                owners: Mutex::new(HashMap::new()),
+            }
         }
         fn add_owner(&self, owner: Owner) {
             self.owners.lock().unwrap().insert(owner.id, owner);
@@ -528,18 +607,44 @@ mod tests {
             Ok(self.owners.lock().unwrap().get(&id).cloned())
         }
         async fn find_by_user_id(&self, user_id: Uuid) -> Result<Option<Owner>, String> {
-            Ok(self.owners.lock().unwrap().values().find(|o| o.user_id == Some(user_id)).cloned())
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.user_id == Some(user_id))
+                .cloned())
         }
-        async fn find_by_user_id_and_organization(&self, user_id: Uuid, org_id: Uuid) -> Result<Option<Owner>, String> {
-            Ok(self.owners.lock().unwrap().values().find(|o| o.user_id == Some(user_id) && o.organization_id == org_id).cloned())
+        async fn find_by_user_id_and_organization(
+            &self,
+            user_id: Uuid,
+            org_id: Uuid,
+        ) -> Result<Option<Owner>, String> {
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.user_id == Some(user_id) && o.organization_id == org_id)
+                .cloned())
         }
         async fn find_by_email(&self, email: &str) -> Result<Option<Owner>, String> {
-            Ok(self.owners.lock().unwrap().values().find(|o| o.email == email).cloned())
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.email == email)
+                .cloned())
         }
         async fn find_all(&self) -> Result<Vec<Owner>, String> {
             Ok(self.owners.lock().unwrap().values().cloned().collect())
         }
-        async fn find_all_paginated(&self, _p: &PageRequest, _f: &OwnerFilters) -> Result<(Vec<Owner>, i64), String> {
+        async fn find_all_paginated(
+            &self,
+            _p: &PageRequest,
+            _f: &OwnerFilters,
+        ) -> Result<(Vec<Owner>, i64), String> {
             let v: Vec<_> = self.owners.lock().unwrap().values().cloned().collect();
             let c = v.len() as i64;
             Ok((v, c))
@@ -556,11 +661,17 @@ mod tests {
     // ── Helpers ─────────────────────────────────────────────────────────────
     fn create_test_owner(user_id: Uuid, org_id: Uuid) -> Owner {
         let mut owner = Owner::new(
-            org_id, "Marie".to_string(), "Lefevre".to_string(),
-            "marie@test.com".to_string(), None,
-            "Rue Haute 5".to_string(), "Brussels".to_string(),
-            "1000".to_string(), "Belgium".to_string(),
-        ).unwrap();
+            org_id,
+            "Marie".to_string(),
+            "Lefevre".to_string(),
+            "marie@test.com".to_string(),
+            None,
+            "Rue Haute 5".to_string(),
+            "Brussels".to_string(),
+            "1000".to_string(),
+            "Belgium".to_string(),
+        )
+        .unwrap();
         owner.user_id = Some(user_id);
         owner
     }

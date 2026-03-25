@@ -394,16 +394,10 @@ mod tests {
         ) -> Result<Vec<UnitOwner>, String> {
             unimplemented!()
         }
-        async fn find_all_owners_by_unit(
-            &self,
-            _unit_id: Uuid,
-        ) -> Result<Vec<UnitOwner>, String> {
+        async fn find_all_owners_by_unit(&self, _unit_id: Uuid) -> Result<Vec<UnitOwner>, String> {
             unimplemented!()
         }
-        async fn find_all_units_by_owner(
-            &self,
-            _owner_id: Uuid,
-        ) -> Result<Vec<UnitOwner>, String> {
+        async fn find_all_units_by_owner(&self, _owner_id: Uuid) -> Result<Vec<UnitOwner>, String> {
             unimplemented!()
         }
         async fn update(&self, _uo: &UnitOwner) -> Result<UnitOwner, String> {
@@ -665,7 +659,9 @@ mod tests {
         )
         .unwrap();
 
-        let cff_repo = Arc::new(MockCallForFundsRepo::with_overdue(vec![overdue_cff.clone()]));
+        let cff_repo = Arc::new(MockCallForFundsRepo::with_overdue(
+            vec![overdue_cff.clone()],
+        ));
         let contrib_repo = Arc::new(MockOwnerContributionRepo::new());
         let uo_repo = Arc::new(MockUnitOwnerRepo::new());
         let uc = make_use_cases(cff_repo, contrib_repo, uo_repo);

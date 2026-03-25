@@ -419,10 +419,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_by_organization(
-            &self,
-            organization_id: Uuid,
-        ) -> Result<Vec<Ticket>, String> {
+        async fn find_by_organization(&self, organization_id: Uuid) -> Result<Vec<Ticket>, String> {
             Ok(self
                 .tickets
                 .lock()
@@ -873,10 +870,7 @@ mod tests {
             }
         }
 
-        let overdue = use_cases
-            .get_overdue_tickets(building_id, 5)
-            .await
-            .unwrap();
+        let overdue = use_cases.get_overdue_tickets(building_id, 5).await.unwrap();
         assert_eq!(overdue.len(), 1);
         assert_eq!(overdue[0].id, created.id);
 
@@ -924,10 +918,7 @@ mod tests {
             .await
             .unwrap();
 
-        let stats = use_cases
-            .get_ticket_statistics(building_id)
-            .await
-            .unwrap();
+        let stats = use_cases.get_ticket_statistics(building_id).await.unwrap();
 
         assert_eq!(stats.total, 3);
         assert_eq!(stats.open, 1); // t1

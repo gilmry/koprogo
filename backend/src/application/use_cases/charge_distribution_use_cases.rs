@@ -315,10 +315,7 @@ mod tests {
             }
         }
 
-        fn with_building_ownerships(
-            building_id: Uuid,
-            ownerships: Vec<(Uuid, Uuid, f64)>,
-        ) -> Self {
+        fn with_building_ownerships(building_id: Uuid, ownerships: Vec<(Uuid, Uuid, f64)>) -> Self {
             let mut map = HashMap::new();
             map.insert(building_id, ownerships);
             Self {
@@ -351,17 +348,11 @@ mod tests {
             unimplemented!("not needed for charge distribution tests")
         }
 
-        async fn find_all_owners_by_unit(
-            &self,
-            _unit_id: Uuid,
-        ) -> Result<Vec<UnitOwner>, String> {
+        async fn find_all_owners_by_unit(&self, _unit_id: Uuid) -> Result<Vec<UnitOwner>, String> {
             unimplemented!("not needed for charge distribution tests")
         }
 
-        async fn find_all_units_by_owner(
-            &self,
-            _owner_id: Uuid,
-        ) -> Result<Vec<UnitOwner>, String> {
+        async fn find_all_units_by_owner(&self, _owner_id: Uuid) -> Result<Vec<UnitOwner>, String> {
             unimplemented!("not needed for charge distribution tests")
         }
 
@@ -394,10 +385,7 @@ mod tests {
             building_id: Uuid,
         ) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
             let ownerships = self.building_ownerships.lock().unwrap();
-            Ok(ownerships
-                .get(&building_id)
-                .cloned()
-                .unwrap_or_default())
+            Ok(ownerships.get(&building_id).cloned().unwrap_or_default())
         }
     }
 
@@ -546,9 +534,7 @@ mod tests {
 
         let uc = make_use_cases(dist_repo, expense_repo, unit_owner_repo);
 
-        let result = uc
-            .calculate_and_save_distribution(Uuid::new_v4())
-            .await;
+        let result = uc.calculate_and_save_distribution(Uuid::new_v4()).await;
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Expense/Invoice not found");
     }
@@ -616,9 +602,7 @@ mod tests {
 
         let uc = make_use_cases(dist_repo, expense_repo, unit_owner_repo);
 
-        let result = uc
-            .get_distribution_by_expense(Uuid::new_v4())
-            .await;
+        let result = uc.get_distribution_by_expense(Uuid::new_v4()).await;
         assert!(result.is_ok());
         assert!(result.unwrap().is_empty());
     }

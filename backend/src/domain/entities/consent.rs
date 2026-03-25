@@ -137,15 +137,8 @@ mod tests {
 
     #[test]
     fn test_new_terms_consent() {
-        let record = ConsentRecord::new(
-            Uuid::new_v4(),
-            Uuid::new_v4(),
-            "terms",
-            None,
-            None,
-            None,
-        )
-        .unwrap();
+        let record =
+            ConsentRecord::new(Uuid::new_v4(), Uuid::new_v4(), "terms", None, None, None).unwrap();
 
         assert_eq!(record.consent_type, "terms");
         assert_eq!(record.policy_version, "1.0"); // default
@@ -180,13 +173,17 @@ mod tests {
             Some("".to_string()),
         );
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Policy version cannot be empty"));
+        assert!(result
+            .unwrap_err()
+            .contains("Policy version cannot be empty"));
     }
 
     #[test]
     fn test_consent_generates_unique_ids() {
-        let r1 = ConsentRecord::new(Uuid::new_v4(), Uuid::new_v4(), "terms", None, None, None).unwrap();
-        let r2 = ConsentRecord::new(Uuid::new_v4(), Uuid::new_v4(), "terms", None, None, None).unwrap();
+        let r1 =
+            ConsentRecord::new(Uuid::new_v4(), Uuid::new_v4(), "terms", None, None, None).unwrap();
+        let r2 =
+            ConsentRecord::new(Uuid::new_v4(), Uuid::new_v4(), "terms", None, None, None).unwrap();
         assert_ne!(r1.id, r2.id);
     }
 

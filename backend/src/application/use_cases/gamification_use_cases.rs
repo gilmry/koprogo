@@ -778,7 +778,9 @@ mod tests {
     }
     impl MockAchievementRepo {
         fn new() -> Self {
-            Self { items: Mutex::new(HashMap::new()) }
+            Self {
+                items: Mutex::new(HashMap::new()),
+            }
         }
     }
     #[async_trait]
@@ -791,13 +793,42 @@ mod tests {
             Ok(self.items.lock().unwrap().get(&id).cloned())
         }
         async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<Achievement>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|a| a.organization_id == org_id).cloned().collect())
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|a| a.organization_id == org_id)
+                .cloned()
+                .collect())
         }
-        async fn find_by_organization_and_category(&self, org_id: Uuid, cat: AchievementCategory) -> Result<Vec<Achievement>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|a| a.organization_id == org_id && a.category == cat).cloned().collect())
+        async fn find_by_organization_and_category(
+            &self,
+            org_id: Uuid,
+            cat: AchievementCategory,
+        ) -> Result<Vec<Achievement>, String> {
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|a| a.organization_id == org_id && a.category == cat)
+                .cloned()
+                .collect())
         }
-        async fn find_visible_for_user(&self, org_id: Uuid, _user_id: Uuid) -> Result<Vec<Achievement>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|a| a.organization_id == org_id && !a.is_secret).cloned().collect())
+        async fn find_visible_for_user(
+            &self,
+            org_id: Uuid,
+            _user_id: Uuid,
+        ) -> Result<Vec<Achievement>, String> {
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|a| a.organization_id == org_id && !a.is_secret)
+                .cloned()
+                .collect())
         }
         async fn update(&self, a: &Achievement) -> Result<Achievement, String> {
             self.items.lock().unwrap().insert(a.id, a.clone());
@@ -808,7 +839,13 @@ mod tests {
             Ok(())
         }
         async fn count_by_organization(&self, org_id: Uuid) -> Result<i64, String> {
-            Ok(self.items.lock().unwrap().values().filter(|a| a.organization_id == org_id).count() as i64)
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|a| a.organization_id == org_id)
+                .count() as i64)
         }
     }
 
@@ -818,7 +855,9 @@ mod tests {
     }
     impl MockUserAchievementRepo {
         fn new() -> Self {
-            Self { items: Mutex::new(HashMap::new()) }
+            Self {
+                items: Mutex::new(HashMap::new()),
+            }
         }
     }
     #[async_trait]
@@ -831,10 +870,27 @@ mod tests {
             Ok(self.items.lock().unwrap().get(&id).cloned())
         }
         async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<UserAchievement>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|u| u.user_id == user_id).cloned().collect())
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|u| u.user_id == user_id)
+                .cloned()
+                .collect())
         }
-        async fn find_by_user_and_achievement(&self, user_id: Uuid, achievement_id: Uuid) -> Result<Option<UserAchievement>, String> {
-            Ok(self.items.lock().unwrap().values().find(|u| u.user_id == user_id && u.achievement_id == achievement_id).cloned())
+        async fn find_by_user_and_achievement(
+            &self,
+            user_id: Uuid,
+            achievement_id: Uuid,
+        ) -> Result<Option<UserAchievement>, String> {
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .find(|u| u.user_id == user_id && u.achievement_id == achievement_id)
+                .cloned())
         }
         async fn update(&self, ua: &UserAchievement) -> Result<UserAchievement, String> {
             self.items.lock().unwrap().insert(ua.id, ua.clone());
@@ -844,11 +900,25 @@ mod tests {
             Ok(0)
         }
         async fn count_by_user(&self, user_id: Uuid) -> Result<i64, String> {
-            Ok(self.items.lock().unwrap().values().filter(|u| u.user_id == user_id).count() as i64)
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|u| u.user_id == user_id)
+                .count() as i64)
         }
-        async fn find_recent_by_user(&self, user_id: Uuid, limit: i64) -> Result<Vec<UserAchievement>, String> {
+        async fn find_recent_by_user(
+            &self,
+            user_id: Uuid,
+            limit: i64,
+        ) -> Result<Vec<UserAchievement>, String> {
             let map = self.items.lock().unwrap();
-            let mut v: Vec<_> = map.values().filter(|u| u.user_id == user_id).cloned().collect();
+            let mut v: Vec<_> = map
+                .values()
+                .filter(|u| u.user_id == user_id)
+                .cloned()
+                .collect();
             v.sort_by(|a, b| b.earned_at.cmp(&a.earned_at));
             v.truncate(limit as usize);
             Ok(v)
@@ -861,7 +931,9 @@ mod tests {
     }
     impl MockChallengeRepo {
         fn new() -> Self {
-            Self { items: Mutex::new(HashMap::new()) }
+            Self {
+                items: Mutex::new(HashMap::new()),
+            }
         }
     }
     #[async_trait]
@@ -874,21 +946,65 @@ mod tests {
             Ok(self.items.lock().unwrap().get(&id).cloned())
         }
         async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<Challenge>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|c| c.organization_id == org_id).cloned().collect())
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|c| c.organization_id == org_id)
+                .cloned()
+                .collect())
         }
-        async fn find_by_organization_and_status(&self, org_id: Uuid, status: ChallengeStatus) -> Result<Vec<Challenge>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|c| c.organization_id == org_id && c.status == status).cloned().collect())
+        async fn find_by_organization_and_status(
+            &self,
+            org_id: Uuid,
+            status: ChallengeStatus,
+        ) -> Result<Vec<Challenge>, String> {
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|c| c.organization_id == org_id && c.status == status)
+                .cloned()
+                .collect())
         }
         async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<Challenge>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|c| c.building_id == Some(building_id)).cloned().collect())
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|c| c.building_id == Some(building_id))
+                .cloned()
+                .collect())
         }
         async fn find_active(&self, org_id: Uuid) -> Result<Vec<Challenge>, String> {
             let now = Utc::now();
-            Ok(self.items.lock().unwrap().values().filter(|c| c.organization_id == org_id && c.status == ChallengeStatus::Active && now >= c.start_date && now < c.end_date).cloned().collect())
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|c| {
+                    c.organization_id == org_id
+                        && c.status == ChallengeStatus::Active
+                        && now >= c.start_date
+                        && now < c.end_date
+                })
+                .cloned()
+                .collect())
         }
         async fn find_ended_not_completed(&self) -> Result<Vec<Challenge>, String> {
             let now = Utc::now();
-            Ok(self.items.lock().unwrap().values().filter(|c| c.status == ChallengeStatus::Active && now >= c.end_date).cloned().collect())
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|c| c.status == ChallengeStatus::Active && now >= c.end_date)
+                .cloned()
+                .collect())
         }
         async fn update(&self, c: &Challenge) -> Result<Challenge, String> {
             self.items.lock().unwrap().insert(c.id, c.clone());
@@ -899,7 +1015,13 @@ mod tests {
             Ok(())
         }
         async fn count_by_organization(&self, org_id: Uuid) -> Result<i64, String> {
-            Ok(self.items.lock().unwrap().values().filter(|c| c.organization_id == org_id).count() as i64)
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|c| c.organization_id == org_id)
+                .count() as i64)
         }
     }
 
@@ -909,7 +1031,9 @@ mod tests {
     }
     impl MockProgressRepo {
         fn new() -> Self {
-            Self { items: Mutex::new(HashMap::new()) }
+            Self {
+                items: Mutex::new(HashMap::new()),
+            }
         }
     }
     #[async_trait]
@@ -921,26 +1045,74 @@ mod tests {
         async fn find_by_id(&self, id: Uuid) -> Result<Option<ChallengeProgress>, String> {
             Ok(self.items.lock().unwrap().get(&id).cloned())
         }
-        async fn find_by_user_and_challenge(&self, user_id: Uuid, challenge_id: Uuid) -> Result<Option<ChallengeProgress>, String> {
-            Ok(self.items.lock().unwrap().values().find(|p| p.user_id == user_id && p.challenge_id == challenge_id).cloned())
+        async fn find_by_user_and_challenge(
+            &self,
+            user_id: Uuid,
+            challenge_id: Uuid,
+        ) -> Result<Option<ChallengeProgress>, String> {
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .find(|p| p.user_id == user_id && p.challenge_id == challenge_id)
+                .cloned())
         }
         async fn find_by_user(&self, user_id: Uuid) -> Result<Vec<ChallengeProgress>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|p| p.user_id == user_id).cloned().collect())
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|p| p.user_id == user_id)
+                .cloned()
+                .collect())
         }
-        async fn find_by_challenge(&self, challenge_id: Uuid) -> Result<Vec<ChallengeProgress>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|p| p.challenge_id == challenge_id).cloned().collect())
+        async fn find_by_challenge(
+            &self,
+            challenge_id: Uuid,
+        ) -> Result<Vec<ChallengeProgress>, String> {
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|p| p.challenge_id == challenge_id)
+                .cloned()
+                .collect())
         }
-        async fn find_active_by_user(&self, user_id: Uuid) -> Result<Vec<ChallengeProgress>, String> {
-            Ok(self.items.lock().unwrap().values().filter(|p| p.user_id == user_id && !p.completed).cloned().collect())
+        async fn find_active_by_user(
+            &self,
+            user_id: Uuid,
+        ) -> Result<Vec<ChallengeProgress>, String> {
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|p| p.user_id == user_id && !p.completed)
+                .cloned()
+                .collect())
         }
         async fn update(&self, p: &ChallengeProgress) -> Result<ChallengeProgress, String> {
             self.items.lock().unwrap().insert(p.id, p.clone());
             Ok(p.clone())
         }
         async fn count_completed_by_user(&self, user_id: Uuid) -> Result<i64, String> {
-            Ok(self.items.lock().unwrap().values().filter(|p| p.user_id == user_id && p.completed).count() as i64)
+            Ok(self
+                .items
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|p| p.user_id == user_id && p.completed)
+                .count() as i64)
         }
-        async fn get_leaderboard(&self, _org_id: Uuid, _building_id: Option<Uuid>, _limit: i64) -> Result<Vec<(Uuid, i32)>, String> {
+        async fn get_leaderboard(
+            &self,
+            _org_id: Uuid,
+            _building_id: Option<Uuid>,
+            _limit: i64,
+        ) -> Result<Vec<(Uuid, i32)>, String> {
             Ok(vec![])
         }
     }
@@ -949,14 +1121,30 @@ mod tests {
     struct MockUserRepo;
     #[async_trait]
     impl UserRepository for MockUserRepo {
-        async fn create(&self, _u: &User) -> Result<User, String> { Err("not impl".to_string()) }
-        async fn find_by_id(&self, _id: Uuid) -> Result<Option<User>, String> { Ok(None) }
-        async fn find_by_email(&self, _e: &str) -> Result<Option<User>, String> { Ok(None) }
-        async fn find_all(&self) -> Result<Vec<User>, String> { Ok(vec![]) }
-        async fn find_by_organization(&self, _o: Uuid) -> Result<Vec<User>, String> { Ok(vec![]) }
-        async fn update(&self, _u: &User) -> Result<User, String> { Err("not impl".to_string()) }
-        async fn delete(&self, _id: Uuid) -> Result<bool, String> { Ok(false) }
-        async fn count_by_organization(&self, _o: Uuid) -> Result<i64, String> { Ok(0) }
+        async fn create(&self, _u: &User) -> Result<User, String> {
+            Err("not impl".to_string())
+        }
+        async fn find_by_id(&self, _id: Uuid) -> Result<Option<User>, String> {
+            Ok(None)
+        }
+        async fn find_by_email(&self, _e: &str) -> Result<Option<User>, String> {
+            Ok(None)
+        }
+        async fn find_all(&self) -> Result<Vec<User>, String> {
+            Ok(vec![])
+        }
+        async fn find_by_organization(&self, _o: Uuid) -> Result<Vec<User>, String> {
+            Ok(vec![])
+        }
+        async fn update(&self, _u: &User) -> Result<User, String> {
+            Err("not impl".to_string())
+        }
+        async fn delete(&self, _id: Uuid) -> Result<bool, String> {
+            Ok(false)
+        }
+        async fn count_by_organization(&self, _o: Uuid) -> Result<i64, String> {
+            Ok(0)
+        }
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────────
@@ -1068,7 +1256,9 @@ mod tests {
         let created = uc.create_achievement(dto).await.unwrap();
 
         let user_id = Uuid::new_v4();
-        uc.award_achievement(user_id, created.id, None).await.unwrap();
+        uc.award_achievement(user_id, created.id, None)
+            .await
+            .unwrap();
 
         // Second award should fail
         let result = uc.award_achievement(user_id, created.id, None).await;
@@ -1084,7 +1274,9 @@ mod tests {
         let created = uc.create_achievement(dto).await.unwrap();
 
         let user_id = Uuid::new_v4();
-        uc.award_achievement(user_id, created.id, None).await.unwrap();
+        uc.award_achievement(user_id, created.id, None)
+            .await
+            .unwrap();
 
         // Second award should succeed and increment
         let result = uc.award_achievement(user_id, created.id, None).await;

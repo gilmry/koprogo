@@ -574,14 +574,10 @@ mod tests {
             .expect_find_by_email()
             .withf(|e| e == "login@example.com")
             .returning(move |_| Ok(Some(user_clone.clone())));
-        user_repo
-            .expect_update()
-            .returning(move |u| Ok(u.clone()));
+        user_repo.expect_update().returning(move |u| Ok(u.clone()));
 
         let mut refresh_repo = MockRefreshTokenRepo::new();
-        refresh_repo
-            .expect_create()
-            .returning(|rt| Ok(rt.clone()));
+        refresh_repo.expect_create().returning(|rt| Ok(rt.clone()));
 
         let mut role_repo = MockUserRoleRepo::new();
         role_repo
@@ -610,11 +606,13 @@ mod tests {
     #[tokio::test]
     async fn test_login_invalid_email() {
         let mut user_repo = MockUserRepo::new();
-        user_repo
-            .expect_find_by_email()
-            .returning(|_| Ok(None));
+        user_repo.expect_find_by_email().returning(|_| Ok(None));
 
-        let uc = build_use_cases(user_repo, MockRefreshTokenRepo::new(), MockUserRoleRepo::new());
+        let uc = build_use_cases(
+            user_repo,
+            MockRefreshTokenRepo::new(),
+            MockUserRoleRepo::new(),
+        );
 
         let result = uc
             .login(LoginRequest {
@@ -639,7 +637,11 @@ mod tests {
             .expect_find_by_email()
             .returning(move |_| Ok(Some(user_clone.clone())));
 
-        let uc = build_use_cases(user_repo, MockRefreshTokenRepo::new(), MockUserRoleRepo::new());
+        let uc = build_use_cases(
+            user_repo,
+            MockRefreshTokenRepo::new(),
+            MockUserRoleRepo::new(),
+        );
 
         let result = uc
             .login(LoginRequest {
@@ -665,7 +667,11 @@ mod tests {
             .expect_find_by_email()
             .returning(move |_| Ok(Some(user_clone.clone())));
 
-        let uc = build_use_cases(user_repo, MockRefreshTokenRepo::new(), MockUserRoleRepo::new());
+        let uc = build_use_cases(
+            user_repo,
+            MockRefreshTokenRepo::new(),
+            MockUserRoleRepo::new(),
+        );
 
         let result = uc
             .login(LoginRequest {
@@ -683,25 +689,15 @@ mod tests {
     #[tokio::test]
     async fn test_register_success() {
         let mut user_repo = MockUserRepo::new();
-        user_repo
-            .expect_find_by_email()
-            .returning(|_| Ok(None)); // email not taken
-        user_repo
-            .expect_create()
-            .returning(|u| Ok(u.clone()));
-        user_repo
-            .expect_update()
-            .returning(|u| Ok(u.clone()));
+        user_repo.expect_find_by_email().returning(|_| Ok(None)); // email not taken
+        user_repo.expect_create().returning(|u| Ok(u.clone()));
+        user_repo.expect_update().returning(|u| Ok(u.clone()));
 
         let mut refresh_repo = MockRefreshTokenRepo::new();
-        refresh_repo
-            .expect_create()
-            .returning(|rt| Ok(rt.clone()));
+        refresh_repo.expect_create().returning(|rt| Ok(rt.clone()));
 
         let mut role_repo = MockUserRoleRepo::new();
-        role_repo
-            .expect_create()
-            .returning(|a| Ok(a.clone()));
+        role_repo.expect_create().returning(|a| Ok(a.clone()));
 
         let uc = build_use_cases(user_repo, refresh_repo, role_repo);
 
@@ -716,7 +712,11 @@ mod tests {
             })
             .await;
 
-        assert!(result.is_ok(), "register should succeed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "register should succeed: {:?}",
+            result.err()
+        );
         let response = result.unwrap();
         assert!(!response.token.is_empty());
         assert_eq!(response.user.email, "new@example.com");
@@ -735,7 +735,11 @@ mod tests {
             .expect_find_by_email()
             .returning(move |_| Ok(Some(existing_clone.clone())));
 
-        let uc = build_use_cases(user_repo, MockRefreshTokenRepo::new(), MockUserRoleRepo::new());
+        let uc = build_use_cases(
+            user_repo,
+            MockRefreshTokenRepo::new(),
+            MockUserRoleRepo::new(),
+        );
 
         let result = uc
             .register(RegisterRequest {
@@ -775,14 +779,10 @@ mod tests {
         user_repo
             .expect_find_by_id()
             .returning(move |_| Ok(Some(user_clone.clone())));
-        user_repo
-            .expect_update()
-            .returning(|u| Ok(u.clone()));
+        user_repo.expect_update().returning(|u| Ok(u.clone()));
 
         let mut refresh_repo = MockRefreshTokenRepo::new();
-        refresh_repo
-            .expect_create()
-            .returning(|rt| Ok(rt.clone()));
+        refresh_repo.expect_create().returning(|rt| Ok(rt.clone()));
 
         let mut role_repo = MockUserRoleRepo::new();
         role_repo
@@ -799,7 +799,11 @@ mod tests {
 
         let result = uc.switch_active_role(user.id, target_role_id).await;
 
-        assert!(result.is_ok(), "switch_role should succeed: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "switch_role should succeed: {:?}",
+            result.err()
+        );
         let response = result.unwrap();
         assert!(!response.token.is_empty());
         assert_eq!(response.user.role, "accountant");
@@ -818,9 +822,7 @@ mod tests {
             .returning(move |_| Ok(Some(user_clone.clone())));
 
         let mut role_repo = MockUserRoleRepo::new();
-        role_repo
-            .expect_find_by_id()
-            .returning(|_| Ok(None)); // role not found
+        role_repo.expect_find_by_id().returning(|_| Ok(None)); // role not found
 
         let uc = build_use_cases(user_repo, MockRefreshTokenRepo::new(), role_repo);
 

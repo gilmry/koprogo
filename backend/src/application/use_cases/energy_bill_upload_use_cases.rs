@@ -207,8 +207,8 @@ mod tests {
     use super::*;
     use crate::application::ports::{EnergyBillUploadRepository, EnergyCampaignRepository};
     use crate::domain::entities::{
-        CampaignStatus, CampaignType, ContractType, EnergyCampaign, EnergyBillUpload,
-        EnergyType, ProviderOffer,
+        CampaignStatus, CampaignType, ContractType, EnergyBillUpload, EnergyCampaign, EnergyType,
+        ProviderOffer,
     };
     use async_trait::async_trait;
     use chrono::Utc;
@@ -402,10 +402,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_by_building(
-            &self,
-            building_id: Uuid,
-        ) -> Result<Vec<EnergyCampaign>, String> {
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<EnergyCampaign>, String> {
             let store = self.campaigns.lock().unwrap();
             Ok(store
                 .values()
@@ -702,10 +699,8 @@ mod tests {
             uploads: Mutex::new(upload_map),
         };
 
-        let uc = EnergyBillUploadUseCases::new(
-            Arc::new(upload_repo),
-            Arc::new(MockCampaignRepo::new()),
-        );
+        let uc =
+            EnergyBillUploadUseCases::new(Arc::new(upload_repo), Arc::new(MockCampaignRepo::new()));
 
         let result = uc.check_k_anonymity(campaign_id).await;
         assert!(result.is_ok());
@@ -728,10 +723,8 @@ mod tests {
             uploads: Mutex::new(upload_map),
         };
 
-        let uc = EnergyBillUploadUseCases::new(
-            Arc::new(upload_repo),
-            Arc::new(MockCampaignRepo::new()),
-        );
+        let uc =
+            EnergyBillUploadUseCases::new(Arc::new(upload_repo), Arc::new(MockCampaignRepo::new()));
 
         let result = uc.check_k_anonymity(campaign_id).await;
         assert!(result.is_ok());

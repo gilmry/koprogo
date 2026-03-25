@@ -1,8 +1,8 @@
 use crate::application::dto::consent_dto::{ConsentRecordedResponse, ConsentStatusResponse};
+use crate::application::ports::audit_log_repository::AuditLogRepository;
 use crate::application::ports::consent_repository::ConsentRepository;
 use crate::domain::entities::consent::ConsentRecord;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
-use crate::application::ports::audit_log_repository::AuditLogRepository;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -76,10 +76,7 @@ impl ConsentUseCases {
     /// Get consent status for a user
     ///
     /// Returns summary of privacy policy and terms acceptance.
-    pub async fn get_consent_status(
-        &self,
-        user_id: Uuid,
-    ) -> Result<ConsentStatusResponse, String> {
+    pub async fn get_consent_status(&self, user_id: Uuid) -> Result<ConsentStatusResponse, String> {
         let status = self.consent_repository.get_consent_status(user_id).await?;
 
         Ok(ConsentStatusResponse {
@@ -93,11 +90,7 @@ impl ConsentUseCases {
     }
 
     /// Check if user has accepted a specific consent type
-    pub async fn has_accepted(
-        &self,
-        user_id: Uuid,
-        consent_type: &str,
-    ) -> Result<bool, String> {
+    pub async fn has_accepted(&self, user_id: Uuid, consent_type: &str) -> Result<bool, String> {
         self.consent_repository
             .has_accepted(user_id, consent_type)
             .await
@@ -107,10 +100,10 @@ impl ConsentUseCases {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use async_trait::async_trait;
-    use crate::domain::entities::consent::ConsentStatus;
     use crate::application::dto::PageRequest;
     use crate::application::ports::audit_log_repository::AuditLogFilters;
+    use crate::domain::entities::consent::ConsentStatus;
+    use async_trait::async_trait;
     use std::sync::Mutex;
 
     // Mock ConsentRepository
@@ -193,7 +186,11 @@ mod tests {
     #[async_trait]
     impl AuditLogRepository for MockAuditLogRepository {
         async fn create(&self, _entry: &AuditLogEntry) -> Result<AuditLogEntry, String> {
-            Ok(AuditLogEntry::new(AuditEventType::ConsentRecorded, None, None))
+            Ok(AuditLogEntry::new(
+                AuditEventType::ConsentRecorded,
+                None,
+                None,
+            ))
         }
         async fn find_by_id(&self, _id: Uuid) -> Result<Option<AuditLogEntry>, String> {
             Ok(None)
@@ -215,7 +212,10 @@ mod tests {
         ) -> Result<(Vec<AuditLogEntry>, i64), String> {
             Ok((vec![], 0))
         }
-        async fn delete_older_than(&self, _timestamp: chrono::DateTime<chrono::Utc>) -> Result<i64, String> {
+        async fn delete_older_than(
+            &self,
+            _timestamp: chrono::DateTime<chrono::Utc>,
+        ) -> Result<i64, String> {
             Ok(0)
         }
         async fn count_by_filters(&self, _filters: &AuditLogFilters) -> Result<i64, String> {
@@ -237,7 +237,14 @@ mod tests {
         let org_id = Uuid::new_v4();
 
         let result = uc
-            .record_consent(user_id, org_id, "privacy_policy", None, None, Some("1.0".to_string()))
+            .record_consent(
+                user_id,
+                org_id,
+                "privacy_policy",
+                None,
+                None,
+                Some("1.0".to_string()),
+            )
             .await;
 
         assert!(result.is_ok());

@@ -500,16 +500,37 @@ mod tests {
         let other_building = Uuid::new_v4();
 
         let r1 = WorkReport::new(
-            org_id, building_id, "Report 1".into(), "Desc".into(),
-            WorkType::Repair, "C1".into(), Utc::now(), 100.0, WarrantyType::None,
+            org_id,
+            building_id,
+            "Report 1".into(),
+            "Desc".into(),
+            WorkType::Repair,
+            "C1".into(),
+            Utc::now(),
+            100.0,
+            WarrantyType::None,
         );
         let r2 = WorkReport::new(
-            org_id, building_id, "Report 2".into(), "Desc".into(),
-            WorkType::Maintenance, "C2".into(), Utc::now(), 200.0, WarrantyType::None,
+            org_id,
+            building_id,
+            "Report 2".into(),
+            "Desc".into(),
+            WorkType::Maintenance,
+            "C2".into(),
+            Utc::now(),
+            200.0,
+            WarrantyType::None,
         );
         let r3 = WorkReport::new(
-            org_id, other_building, "Report 3".into(), "Desc".into(),
-            WorkType::Emergency, "C3".into(), Utc::now(), 300.0, WarrantyType::None,
+            org_id,
+            other_building,
+            "Report 3".into(),
+            "Desc".into(),
+            WorkType::Emergency,
+            "C3".into(),
+            Utc::now(),
+            300.0,
+            WarrantyType::None,
         );
 
         let repo = Arc::new(MockWorkReportRepository::with_reports(vec![r1, r2, r3]));
@@ -519,7 +540,9 @@ mod tests {
         assert!(result.is_ok());
         let reports = result.unwrap();
         assert_eq!(reports.len(), 2);
-        assert!(reports.iter().all(|r| r.building_id == building_id.to_string()));
+        assert!(reports
+            .iter()
+            .all(|r| r.building_id == building_id.to_string()));
     }
 
     #[tokio::test]
@@ -528,13 +551,27 @@ mod tests {
 
         // Active warranty (Standard = 2 years from now)
         let r1 = WorkReport::new(
-            org_id, building_id, "Active warranty".into(), "Desc".into(),
-            WorkType::Renovation, "C1".into(), Utc::now(), 5000.0, WarrantyType::Standard,
+            org_id,
+            building_id,
+            "Active warranty".into(),
+            "Desc".into(),
+            WorkType::Renovation,
+            "C1".into(),
+            Utc::now(),
+            5000.0,
+            WarrantyType::Standard,
         );
         // No warranty
         let r2 = WorkReport::new(
-            org_id, building_id, "No warranty".into(), "Desc".into(),
-            WorkType::Maintenance, "C2".into(), Utc::now(), 100.0, WarrantyType::None,
+            org_id,
+            building_id,
+            "No warranty".into(),
+            "Desc".into(),
+            WorkType::Maintenance,
+            "C2".into(),
+            Utc::now(),
+            100.0,
+            WarrantyType::None,
         );
 
         let repo = Arc::new(MockWorkReportRepository::with_reports(vec![r1, r2]));
@@ -555,16 +592,30 @@ mod tests {
 
         // Warranty expiring in ~30 days (custom 0-year warranty set to expire soon)
         let mut r1 = WorkReport::new(
-            org_id, building_id, "Expiring soon".into(), "Desc".into(),
-            WorkType::Repair, "C1".into(), Utc::now(), 1000.0, WarrantyType::Standard,
+            org_id,
+            building_id,
+            "Expiring soon".into(),
+            "Desc".into(),
+            WorkType::Repair,
+            "C1".into(),
+            Utc::now(),
+            1000.0,
+            WarrantyType::Standard,
         );
         // Override warranty_expiry to 20 days from now
         r1.warranty_expiry = Utc::now() + chrono::Duration::days(20);
 
         // Warranty valid for a long time (decennial)
         let r2 = WorkReport::new(
-            org_id, building_id, "Long warranty".into(), "Desc".into(),
-            WorkType::Renovation, "C2".into(), Utc::now(), 50000.0, WarrantyType::Decennial,
+            org_id,
+            building_id,
+            "Long warranty".into(),
+            "Desc".into(),
+            WorkType::Renovation,
+            "C2".into(),
+            Utc::now(),
+            50000.0,
+            WarrantyType::Decennial,
         );
 
         let repo = Arc::new(MockWorkReportRepository::with_reports(vec![r1, r2]));

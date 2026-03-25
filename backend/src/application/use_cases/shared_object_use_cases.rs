@@ -616,10 +616,7 @@ mod tests {
             Ok(map.get(&id).cloned())
         }
 
-        async fn find_by_building(
-            &self,
-            building_id: Uuid,
-        ) -> Result<Vec<SharedObject>, String> {
+        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<SharedObject>, String> {
             let map = self.objects.lock().unwrap();
             Ok(map
                 .values()
@@ -793,18 +790,44 @@ mod tests {
             Ok(self.owners.lock().unwrap().get(&id).cloned())
         }
         async fn find_by_user_id(&self, user_id: Uuid) -> Result<Option<Owner>, String> {
-            Ok(self.owners.lock().unwrap().values().find(|o| o.user_id == Some(user_id)).cloned())
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.user_id == Some(user_id))
+                .cloned())
         }
-        async fn find_by_user_id_and_organization(&self, user_id: Uuid, org_id: Uuid) -> Result<Option<Owner>, String> {
-            Ok(self.owners.lock().unwrap().values().find(|o| o.user_id == Some(user_id) && o.organization_id == org_id).cloned())
+        async fn find_by_user_id_and_organization(
+            &self,
+            user_id: Uuid,
+            org_id: Uuid,
+        ) -> Result<Option<Owner>, String> {
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.user_id == Some(user_id) && o.organization_id == org_id)
+                .cloned())
         }
         async fn find_by_email(&self, email: &str) -> Result<Option<Owner>, String> {
-            Ok(self.owners.lock().unwrap().values().find(|o| o.email == email).cloned())
+            Ok(self
+                .owners
+                .lock()
+                .unwrap()
+                .values()
+                .find(|o| o.email == email)
+                .cloned())
         }
         async fn find_all(&self) -> Result<Vec<Owner>, String> {
             Ok(self.owners.lock().unwrap().values().cloned().collect())
         }
-        async fn find_all_paginated(&self, _p: &PageRequest, _f: &OwnerFilters) -> Result<(Vec<Owner>, i64), String> {
+        async fn find_all_paginated(
+            &self,
+            _p: &PageRequest,
+            _f: &OwnerFilters,
+        ) -> Result<(Vec<Owner>, i64), String> {
             let all: Vec<_> = self.owners.lock().unwrap().values().cloned().collect();
             let c = all.len() as i64;
             Ok((all, c))
@@ -838,16 +861,46 @@ mod tests {
             map.insert((balance.owner_id, balance.building_id), balance.clone());
             Ok(balance.clone())
         }
-        async fn find_by_owner_and_building(&self, owner_id: Uuid, building_id: Uuid) -> Result<Option<OwnerCreditBalance>, String> {
-            Ok(self.balances.lock().unwrap().get(&(owner_id, building_id)).cloned())
+        async fn find_by_owner_and_building(
+            &self,
+            owner_id: Uuid,
+            building_id: Uuid,
+        ) -> Result<Option<OwnerCreditBalance>, String> {
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .get(&(owner_id, building_id))
+                .cloned())
         }
-        async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<OwnerCreditBalance>, String> {
-            Ok(self.balances.lock().unwrap().values().filter(|b| b.building_id == building_id).cloned().collect())
+        async fn find_by_building(
+            &self,
+            building_id: Uuid,
+        ) -> Result<Vec<OwnerCreditBalance>, String> {
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|b| b.building_id == building_id)
+                .cloned()
+                .collect())
         }
         async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<OwnerCreditBalance>, String> {
-            Ok(self.balances.lock().unwrap().values().filter(|b| b.owner_id == owner_id).cloned().collect())
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .values()
+                .filter(|b| b.owner_id == owner_id)
+                .cloned()
+                .collect())
         }
-        async fn get_or_create(&self, owner_id: Uuid, building_id: Uuid) -> Result<OwnerCreditBalance, String> {
+        async fn get_or_create(
+            &self,
+            owner_id: Uuid,
+            building_id: Uuid,
+        ) -> Result<OwnerCreditBalance, String> {
             let mut map = self.balances.lock().unwrap();
             let key = (owner_id, building_id);
             if let Some(existing) = map.get(&key) {
@@ -864,15 +917,27 @@ mod tests {
             Ok(balance.clone())
         }
         async fn delete(&self, owner_id: Uuid, building_id: Uuid) -> Result<bool, String> {
-            Ok(self.balances.lock().unwrap().remove(&(owner_id, building_id)).is_some())
+            Ok(self
+                .balances
+                .lock()
+                .unwrap()
+                .remove(&(owner_id, building_id))
+                .is_some())
         }
-        async fn get_leaderboard(&self, _building_id: Uuid, _limit: i32) -> Result<Vec<OwnerCreditBalance>, String> {
+        async fn get_leaderboard(
+            &self,
+            _building_id: Uuid,
+            _limit: i32,
+        ) -> Result<Vec<OwnerCreditBalance>, String> {
             Ok(vec![])
         }
         async fn count_active_participants(&self, _building_id: Uuid) -> Result<i64, String> {
             Ok(0)
         }
-        async fn get_total_credits_in_circulation(&self, _building_id: Uuid) -> Result<i32, String> {
+        async fn get_total_credits_in_circulation(
+            &self,
+            _building_id: Uuid,
+        ) -> Result<i32, String> {
             Ok(0)
         }
     }
@@ -880,11 +945,17 @@ mod tests {
     // ── Helpers ─────────────────────────────────────────────────────────────
     fn create_test_owner(user_id: Uuid, org_id: Uuid) -> Owner {
         let mut owner = Owner::new(
-            org_id, "Jean".to_string(), "Dupont".to_string(),
-            "jean@test.com".to_string(), None,
-            "Rue Test".to_string(), "Brussels".to_string(),
-            "1000".to_string(), "Belgium".to_string(),
-        ).unwrap();
+            org_id,
+            "Jean".to_string(),
+            "Dupont".to_string(),
+            "jean@test.com".to_string(),
+            None,
+            "Rue Test".to_string(),
+            "Brussels".to_string(),
+            "1000".to_string(),
+            "Belgium".to_string(),
+        )
+        .unwrap();
         owner.user_id = Some(user_id);
         owner
     }
@@ -992,8 +1063,12 @@ mod tests {
         dto2.object_name = "Hammer".to_string();
         dto2.description = "Steel hammer for nails".to_string();
 
-        uc.create_shared_object(user_id, org_id, dto1).await.unwrap();
-        uc.create_shared_object(user_id, org_id, dto2).await.unwrap();
+        uc.create_shared_object(user_id, org_id, dto1)
+            .await
+            .unwrap();
+        uc.create_shared_object(user_id, org_id, dto2)
+            .await
+            .unwrap();
 
         let result = uc.list_building_objects(building_id).await;
         assert!(result.is_ok());
@@ -1014,7 +1089,9 @@ mod tests {
         );
 
         let dto = make_create_dto(Uuid::new_v4());
-        let result = uc.create_shared_object(Uuid::new_v4(), Uuid::new_v4(), dto).await;
+        let result = uc
+            .create_shared_object(Uuid::new_v4(), Uuid::new_v4(), dto)
+            .await;
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Owner not found"));
     }

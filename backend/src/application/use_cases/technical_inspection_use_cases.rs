@@ -577,10 +577,7 @@ mod tests {
 
         let result = uc.create_technical_inspection(dto).await;
         assert!(result.is_err());
-        assert_eq!(
-            result.unwrap_err(),
-            "Invalid inspection_date format"
-        );
+        assert_eq!(result.unwrap_err(), "Invalid inspection_date format");
     }
 
     #[tokio::test]
@@ -650,9 +647,7 @@ mod tests {
         let dto_b = valid_create_dto(org_id, building_b);
         uc.create_technical_inspection(dto_b).await.unwrap();
 
-        let result = uc
-            .list_technical_inspections_by_building(building_a)
-            .await;
+        let result = uc.list_technical_inspections_by_building(building_a).await;
         assert!(result.is_ok());
         let inspections = result.unwrap();
         assert_eq!(inspections.len(), 2);
@@ -717,10 +712,7 @@ mod tests {
         assert!(result.is_ok());
         let updated = result.unwrap();
         assert_eq!(updated.reports.len(), 1);
-        assert_eq!(
-            updated.reports[0],
-            "/uploads/reports/elevator-2026-03.pdf"
-        );
+        assert_eq!(updated.reports[0], "/uploads/reports/elevator-2026-03.pdf");
     }
 
     #[tokio::test]

@@ -412,7 +412,11 @@ mod tests {
         .unwrap()
     }
 
-    fn make_create_request(org_id: Uuid, building_id: Uuid, unit_id: Uuid) -> CreateEtatDateRequest {
+    fn make_create_request(
+        org_id: Uuid,
+        building_id: Uuid,
+        unit_id: Uuid,
+    ) -> CreateEtatDateRequest {
         CreateEtatDateRequest {
             organization_id: org_id,
             building_id,

@@ -320,7 +320,9 @@ mod tests {
         AddCosignatoryDto, CreateAgeRequestDto, SyndicResponseDto,
     };
     use crate::application::ports::age_request_repository::AgeRequestRepository;
-    use crate::domain::entities::age_request::{AgeRequest, AgeRequestCosignatory, AgeRequestStatus};
+    use crate::domain::entities::age_request::{
+        AgeRequest, AgeRequestCosignatory, AgeRequestStatus,
+    };
     use async_trait::async_trait;
     use chrono::{Duration, Utc};
     use std::collections::HashMap;
@@ -489,10 +491,7 @@ mod tests {
 
     /// Helper: create a Draft request, open it, add enough cosignatories to reach
     /// the 1/5 threshold, and return the request ID.
-    async fn create_reached(
-        uc: &AgeRequestUseCases,
-        repo: &MockAgeRequestRepository,
-    ) -> Uuid {
+    async fn create_reached(uc: &AgeRequestUseCases, repo: &MockAgeRequestRepository) -> Uuid {
         let id = create_draft(uc).await;
 
         // Open
@@ -530,10 +529,7 @@ mod tests {
     }
 
     /// Helper: create a Submitted request (threshold reached, then submitted to syndic).
-    async fn create_submitted(
-        uc: &AgeRequestUseCases,
-        repo: &MockAgeRequestRepository,
-    ) -> Uuid {
+    async fn create_submitted(uc: &AgeRequestUseCases, repo: &MockAgeRequestRepository) -> Uuid {
         let id = create_reached(uc, repo).await;
         uc.submit_to_syndic(id, org_id(), creator_id())
             .await
@@ -800,7 +796,8 @@ mod tests {
         // Manually set the deadline to 16 days in the past (expired)
         let past_submitted = Utc::now() - Duration::days(16);
         req.submitted_to_syndic_at = Some(past_submitted);
-        req.syndic_deadline_at = Some(past_submitted + Duration::days(AgeRequest::SYNDIC_DEADLINE_DAYS));
+        req.syndic_deadline_at =
+            Some(past_submitted + Duration::days(AgeRequest::SYNDIC_DEADLINE_DAYS));
 
         let request_id = req.id;
         repo.seed(req);

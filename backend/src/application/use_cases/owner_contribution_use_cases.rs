@@ -172,10 +172,7 @@ mod tests {
                 .collect())
         }
 
-        async fn find_by_owner(
-            &self,
-            owner_id: Uuid,
-        ) -> Result<Vec<OwnerContribution>, String> {
+        async fn find_by_owner(&self, owner_id: Uuid) -> Result<Vec<OwnerContribution>, String> {
             let items = self.items.lock().unwrap();
             Ok(items
                 .values()
@@ -268,10 +265,7 @@ mod tests {
             paid.payment_method,
             Some(ContributionPaymentMethod::BankTransfer)
         );
-        assert_eq!(
-            paid.payment_reference,
-            Some("VIR-2026-001".to_string())
-        );
+        assert_eq!(paid.payment_reference, Some("VIR-2026-001".to_string()));
     }
 
     #[tokio::test]
@@ -292,11 +286,7 @@ mod tests {
             None,
         )
         .unwrap();
-        contrib.mark_as_paid(
-            Utc::now(),
-            ContributionPaymentMethod::Cash,
-            None,
-        );
+        contrib.mark_as_paid(Utc::now(), ContributionPaymentMethod::Cash, None);
         let contrib_id = contrib.id;
         repo.items.lock().unwrap().insert(contrib.id, contrib);
 
@@ -332,11 +322,7 @@ mod tests {
             None,
         )
         .unwrap();
-        paid_contrib.mark_as_paid(
-            Utc::now(),
-            ContributionPaymentMethod::Domiciliation,
-            None,
-        );
+        paid_contrib.mark_as_paid(Utc::now(), ContributionPaymentMethod::Domiciliation, None);
 
         let unpaid1 = OwnerContribution::new(
             org_id,

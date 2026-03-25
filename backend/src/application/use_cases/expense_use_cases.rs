@@ -597,7 +597,9 @@ mod tests {
         let org_id = Uuid::new_v4();
         let building_id = Uuid::new_v4();
 
-        let result = uc.create_expense(valid_create_dto(org_id, building_id)).await;
+        let result = uc
+            .create_expense(valid_create_dto(org_id, building_id))
+            .await;
 
         assert!(result.is_ok());
         let dto = result.unwrap();
