@@ -12,6 +12,9 @@
   import { UserRole } from '../../lib/types';
   import QuoteStatusBadge from './QuoteStatusBadge.svelte';
   import QuoteDetail from './QuoteDetail.svelte';
+  import { withLoadingState, withErrorHandling } from '../../lib/utils/error.utils';
+  import { formatDate } from '../../lib/utils/date.utils';
+  import { formatAmount } from '../../lib/utils/finance.utils';
 
   export let buildingId: string;
 
@@ -24,11 +27,9 @@
   let showCreateForm = false;
   let createLoading = false;
 
-  // Compare mode
   let compareMode = false;
   let selectedForCompare: Set<string> = new Set();
 
-  // Create form fields
   let newContractorId = '';
   let newProjectTitle = '';
   let newProjectDescription = '';
@@ -41,16 +42,16 @@
   });
 
   async function loadQuotes() {
-    try {
-      loading = true;
-      error = '';
-      quotes = await quotesApi.listByBuilding(buildingId);
-      applyFilters();
-    } catch (err: any) {
-      error = err.message || $_("quotes.list.loadingError");
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => quotesApi.listByBuilding(buildingId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_("quotes.list.loadingError"),
+      onSuccess: (data) => {
+        quotes = data;
+        applyFilters();
+      },
+    });
   }
 
   function applyFilters() {
@@ -62,17 +63,9 @@
 
   $: if (statusFilter) applyFilters();
 
-  function formatAmount(amountCents: number | undefined): string {
+  function formatQuoteAmount(amountCents: number | undefined): string {
     if (!amountCents) return '-';
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amountCents / 100);
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatAmount(amountCents);
   }
 
   function toggleExpand(id: string) {
@@ -85,7 +78,7 @@
     } else {
       selectedForCompare.add(id);
     }
-    selectedForCompare = selectedForCompare; // trigger reactivity
+    selectedForCompare = selectedForCompare;
   }
 
   function goToCompare() {
@@ -103,28 +96,29 @@
       return;
     }
 
-    try {
-      createLoading = true;
-      const data: CreateQuoteDto = {
-        building_id: buildingId,
-        contractor_id: newContractorId,
-        project_title: newProjectTitle,
-        project_description: newProjectDescription,
-        work_category: newWorkCategory,
-      };
-      await quotesApi.create(data);
-      toast.success($_("quotes.list.createSuccess"));
-      showCreateForm = false;
-      newContractorId = '';
-      newProjectTitle = '';
-      newProjectDescription = '';
-      newWorkCategory = '';
-      await loadQuotes();
-    } catch (err: any) {
-      toast.error(err.message || $_("quotes.list.createError"));
-    } finally {
-      createLoading = false;
-    }
+    await withErrorHandling({
+      action: async () => {
+        const data: CreateQuoteDto = {
+          building_id: buildingId,
+          contractor_id: newContractorId,
+          project_title: newProjectTitle,
+          project_description: newProjectDescription,
+          work_category: newWorkCategory,
+        };
+        return quotesApi.create(data);
+      },
+      setLoading: (v) => createLoading = v,
+      successMessage: $_("quotes.list.createSuccess"),
+      errorMessage: $_("quotes.list.createError"),
+      onSuccess: async () => {
+        showCreateForm = false;
+        newContractorId = '';
+        newProjectTitle = '';
+        newProjectDescription = '';
+        newWorkCategory = '';
+        await loadQuotes();
+      },
+    });
   }
 
   function handleQuoteUpdated(event: CustomEvent<Quote>) {
@@ -175,11 +169,13 @@
             </button>
           {:else}
             <button on:click={() => compareMode = true}
+              data-testid="compare-quotes-button"
               class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors"
               disabled={quotes.length < 2}>
               {$_("quotes.list.compare")}
             </button>
             <button on:click={() => showCreateForm = !showCreateForm}
+              data-testid="request-quote-button"
               class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors">
               + {$_("quotes.list.requestQuote")}
             </button>
@@ -206,6 +202,7 @@
     <div class="flex items-center space-x-4">
       <label class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
       <select bind:value={statusFilter}
+        data-testid="quote-status-filter"
         class="text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500">
         <option value="all">{$_("common.all")}</option>
         <option value={QuoteStatus.Requested}>{$_("quotes.status.requested")}</option>
@@ -293,9 +290,9 @@
       {/if}
     </div>
   {:else}
-    <ul class="divide-y divide-gray-200">
+    <ul class="divide-y divide-gray-200" data-testid="quote-list">
       {#each filteredQuotes as quote (quote.id)}
-        <li class="hover:bg-gray-50">
+        <li class="hover:bg-gray-50" data-testid="quote-row">
           <div class="px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between cursor-pointer" on:click={() => toggleExpand(quote.id)}>
               <div class="flex items-center space-x-3 flex-1 min-w-0">
@@ -313,7 +310,7 @@
                     <span>{quote.contractor_name || quote.contractor_id.slice(0, 8)}</span>
                     <span>{quote.work_category}</span>
                     {#if quote.amount_incl_vat_cents}
-                      <span class="font-medium text-gray-700">{formatAmount(quote.amount_incl_vat_cents)}</span>
+                      <span class="font-medium text-gray-700">{formatQuoteAmount(quote.amount_incl_vat_cents)}</span>
                     {/if}
                     <span class="text-xs text-gray-400">{formatDate(quote.created_at)}</span>
                   </div>

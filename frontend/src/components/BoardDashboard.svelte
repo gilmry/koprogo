@@ -4,6 +4,8 @@
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import type { BoardDashboardResponse, DeadlineUrgency } from '../lib/types';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   export let buildingId: string = '';
 
@@ -27,19 +29,20 @@
   });
 
   async function loadDashboard() {
-    try {
-      loading = true;
-      error = '';
-      dashboard = await api.get<BoardDashboardResponse>(
+    loading = true;
+    error = '';
+    const result = await withErrorHandling({
+      action: () => api.get<BoardDashboardResponse>(
         `/board-members/dashboard?building_id=${buildingId}`
-      );
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('board.error.loadDashboard');
-      console.error('Error loading board dashboard:', e);
-      toast.error(error);
-    } finally {
-      loading = false;
+      ),
+      errorMessage: $_('board.error.loadDashboard'),
+    });
+    if (result) {
+      dashboard = result;
+    } else {
+      error = $_('board.error.loadDashboard');
     }
+    loading = false;
   }
 
   function getUrgencyColor(urgency: DeadlineUrgency): string {
@@ -64,10 +67,6 @@
     }
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR');
-  }
-
   function formatDaysRemaining(days: number): string {
     if (days === 0) return $_('common.today');
     if (days === 1) return $_('common.tomorrow');
@@ -76,7 +75,7 @@
   }
 </script>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-testid="board-dashboard">
   {#if loading}
     <div class="flex items-center justify-center min-h-screen">
       <div class="text-center">

@@ -5,6 +5,7 @@
     energyCampaignsApi,
     type CreateProviderOfferDto,
   } from "../../lib/api/energy-campaigns";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let campaignId: string;
 
@@ -33,68 +34,51 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    loading = true;
     error = "";
     success = false;
 
-    try {
-      // Validate
-      if (!formData.provider_name.trim()) {
-        throw new Error($_("energy.offer.providerNameRequired"));
-      }
-      if (!formData.price_kwh_electricity && !formData.price_kwh_gas) {
-        throw new Error($_("energy.offer.priceRequired"));
-      }
-      if (formData.contract_duration_months <= 0) {
-        throw new Error($_("energy.offer.durationRequired"));
-      }
-      if (!formData.offer_valid_until) {
-        throw new Error($_("energy.offer.validityRequired"));
-      }
-      if (formData.green_energy_pct < 0 || formData.green_energy_pct > 100) {
-        throw new Error($_("energy.offer.greenPercentageInvalid"));
-      }
-      if (formData.estimated_savings_pct < 0 || formData.estimated_savings_pct > 100) {
-        throw new Error($_("energy.offer.savingsPercentageInvalid"));
-      }
+    if (!formData.provider_name.trim()) { error = $_("energy.offer.providerNameRequired"); return; }
+    if (!formData.price_kwh_electricity && !formData.price_kwh_gas) { error = $_("energy.offer.priceRequired"); return; }
+    if (formData.contract_duration_months <= 0) { error = $_("energy.offer.durationRequired"); return; }
+    if (!formData.offer_valid_until) { error = $_("energy.offer.validityRequired"); return; }
+    if (formData.green_energy_pct < 0 || formData.green_energy_pct > 100) { error = $_("energy.offer.greenPercentageInvalid"); return; }
+    if (formData.estimated_savings_pct < 0 || formData.estimated_savings_pct > 100) { error = $_("energy.offer.savingsPercentageInvalid"); return; }
 
-      // Send date as ISO datetime for backend DateTime<Utc>
-      const payload = {
-        ...formData,
-        offer_valid_until: new Date(formData.offer_valid_until).toISOString(),
-      };
+    const payload = {
+      ...formData,
+      offer_valid_until: new Date(formData.offer_valid_until).toISOString(),
+    };
 
-      const offer = await energyCampaignsApi.addOffer(campaignId, payload as any);
-      success = true;
-      dispatch("created", offer);
-
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        formData = {
-          provider_name: "",
-          price_kwh_electricity: undefined,
-          price_kwh_gas: undefined,
-          fixed_monthly_fee: 0,
-          green_energy_pct: 0,
-          contract_duration_months: 12,
-          estimated_savings_pct: 0,
-          offer_valid_until: "",
-        };
-        success = false;
-      }, 2000);
-    } catch (err: any) {
-      error = err.message || $_("energy.offer.createError");
-      console.error("Failed to create provider offer:", err);
-    } finally {
-      loading = false;
-    }
+    await withErrorHandling({
+      action: () => energyCampaignsApi.addOffer(campaignId, payload as any),
+      setLoading: (v) => loading = v,
+      errorMessage: $_("energy.offer.createError"),
+      onSuccess: (offer) => {
+        error = "";
+        success = true;
+        dispatch("created", offer);
+        setTimeout(() => {
+          formData = {
+            provider_name: "",
+            price_kwh_electricity: undefined,
+            price_kwh_gas: undefined,
+            fixed_monthly_fee: 0,
+            green_energy_pct: 0,
+            contract_duration_months: 12,
+            estimated_savings_pct: 0,
+            offer_valid_until: "",
+          };
+          success = false;
+        }, 2000);
+      },
+    });
   }
 
   // Initialize default validity date
   setDefaultValidityDate();
 </script>
 
-<div class="bg-white shadow-md rounded-lg p-6">
+<div class="bg-white shadow-md rounded-lg p-6" data-testid="create-provider-offer-form">
   <h3 class="text-lg font-medium text-gray-900 mb-4">
     💼 {$_("energy.offer.add")}
   </h3>
@@ -130,6 +114,7 @@
         bind:value={formData.provider_name}
         required
         placeholder={$_("energy.offer.providerExample")}
+        data-testid="provider-name-input"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
     </div>
@@ -296,6 +281,7 @@
       <button
         type="submit"
         disabled={loading}
+        data-testid="provider-offer-submit-btn"
         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {#if loading}

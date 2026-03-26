@@ -2,6 +2,7 @@
   import { _ } from '../../lib/i18n';
   import { noticesApi, type CreateNoticeDto, NoticeType, NoticeCategory } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let isOpen = false;
   export let buildingId: string;
@@ -34,28 +35,23 @@
       return;
     }
 
-    try {
-      submitting = true;
-      const payload: CreateNoticeDto = { ...formData };
+    const payload: CreateNoticeDto = { ...formData };
 
-      if (expiresEnabled && expiresDate) {
-        payload.expires_at = new Date(expiresDate).toISOString();
-      }
-      if (formData.notice_type === NoticeType.Event) {
-        if (eventDate) payload.event_date = new Date(eventDate).toISOString();
-        if (eventLocation) payload.event_location = eventLocation;
-      }
-
-      await noticesApi.create(payload);
-      toast.success($_("notices.created_successfully"));
-      resetForm();
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      toast.error(err.message || $_("notices.create_failed"));
-    } finally {
-      submitting = false;
+    if (expiresEnabled && expiresDate) {
+      payload.expires_at = new Date(expiresDate).toISOString();
     }
+    if (formData.notice_type === NoticeType.Event) {
+      if (eventDate) payload.event_date = new Date(eventDate).toISOString();
+      if (eventLocation) payload.event_location = eventLocation;
+    }
+
+    await withErrorHandling({
+      action: () => noticesApi.create(payload),
+      setLoading: (v) => submitting = v,
+      successMessage: $_("notices.created_successfully"),
+      errorMessage: $_("notices.create_failed"),
+      onSuccess: () => { resetForm(); onSuccess(); onClose(); },
+    });
   }
 
   function resetForm() {
@@ -81,7 +77,7 @@
 
 {#if isOpen}
   <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" data-testid="notice-create-modal">
       <div class="p-6">
         <h2 class="text-2xl font-bold text-gray-900 mb-6">{$_("notices.create_notice")}</h2>
 
@@ -131,6 +127,7 @@
               minlength="5"
               maxlength="255"
               placeholder={$_("notices.title_placeholder")}
+              data-testid="notice-title-input"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -146,6 +143,7 @@
               required
               rows="6"
               placeholder={$_("notices.content_placeholder")}
+              data-testid="notice-content-input"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -219,6 +217,7 @@
             <button
               type="submit"
               disabled={submitting}
+              data-testid="notice-submit-btn"
               class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? $_("notices.creating") : $_("notices.create_notice")}

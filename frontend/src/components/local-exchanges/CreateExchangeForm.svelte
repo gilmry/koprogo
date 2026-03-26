@@ -9,6 +9,7 @@
     exchangeTypeIcons,
   } from "../../lib/api/local-exchanges";
   import BuildingSelector from "../BuildingSelector.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   const dispatch = createEventDispatcher();
 
@@ -51,29 +52,23 @@
       return;
     }
 
-    try {
-      loading = true;
-      error = null;
-
-      const exchange = await localExchangesApi.create(formData);
-
-      success = true;
-      dispatch("success", exchange);
-
-      // Reset form after 1.5s
-      setTimeout(() => {
-        window.location.href = `/exchange-detail?id=${exchange.id}`;
-      }, 1500);
-    } catch (err: any) {
-      error = err.message || $_("exchanges.createError");
-      console.error("Error creating exchange:", err);
-    } finally {
-      loading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.create(formData),
+      setLoading: (v) => loading = v,
+      errorMessage: $_("exchanges.createError"),
+      onSuccess: (exchange) => {
+        error = null;
+        success = true;
+        dispatch("success", exchange);
+        setTimeout(() => {
+          window.location.href = `/exchange-detail?id=${exchange.id}`;
+        }, 1500);
+      },
+    });
   }
 </script>
 
-<form on:submit={handleSubmit} class="space-y-6">
+<form on:submit={handleSubmit} class="space-y-6" data-testid="create-exchange-form">
   <!-- Success Message -->
   {#if success}
     <div
@@ -153,6 +148,7 @@
       placeholder={$_("exchanges.titlePlaceholder")}
       maxlength="100"
       required
+      data-testid="exchange-title-input"
       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
     />
     <p class="mt-1 text-xs text-gray-500">
@@ -175,6 +171,7 @@
       rows="5"
       maxlength="1000"
       required
+      data-testid="exchange-description-input"
       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
     ></textarea>
     <p class="mt-1 text-xs text-gray-500">
@@ -195,6 +192,7 @@
         max="100"
         step="1"
         bind:value={formData.credits}
+        data-testid="exchange-credits-input"
         class="flex-1"
       />
       <div
@@ -231,6 +229,7 @@
     <button
       type="submit"
       disabled={loading}
+      data-testid="exchange-submit-btn"
       class="px-6 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {loading ? $_("common.creating") : $_("exchanges.createOffer")}

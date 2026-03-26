@@ -5,6 +5,8 @@
   import { toast } from "../../stores/toast";
   import NoticeTypeBadge from "./NoticeTypeBadge.svelte";
   import NoticeStatusBadge from "./NoticeStatusBadge.svelte";
+  import { formatDateTime } from "../../lib/utils/date.utils";
+  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
   export let noticeId: string;
   export let currentUserId: string;
@@ -26,63 +28,43 @@
   });
 
   async function loadNotice() {
-    try {
-      loading = true;
-      notice = await noticesApi.getById(noticeId);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load notice");
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => noticesApi.getById(noticeId),
+      setLoading: (v) => loading = v,
+      setError: () => {},
+      onSuccess: (data) => notice = data,
+      errorMessage: "Failed to load notice",
+    });
   }
 
   async function handleArchive() {
     if (!confirm($_("notices.archive_confirmation"))) return;
-
-    try {
-      archiving = true;
-      await noticesApi.archive(noticeId);
-      toast.success($_("notices.archived_successfully"));
-      window.location.href = "/notices";
-    } catch (err: any) {
-      toast.error(err.message || $_("notices.archive_failed"));
-    } finally {
-      archiving = false;
-    }
+    await withErrorHandling({
+      action: () => noticesApi.archive(noticeId),
+      setLoading: (v) => archiving = v,
+      successMessage: $_("notices.archived_successfully"),
+      errorMessage: $_("notices.archive_failed"),
+      onSuccess: () => { window.location.href = "/notices"; },
+    });
   }
 
   async function handleDelete() {
-    if (!confirm($_("notices.delete_confirmation")))
-      return;
-
-    try {
-      deleting = true;
-      await noticesApi.delete(noticeId);
-      toast.success($_("notices.deleted_successfully"));
-      window.location.href = "/notices";
-    } catch (err: any) {
-      toast.error(err.message || $_("notices.delete_failed"));
-    } finally {
-      deleting = false;
-    }
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    if (!confirm($_("notices.delete_confirmation"))) return;
+    await withErrorHandling({
+      action: () => noticesApi.delete(noticeId),
+      setLoading: (v) => deleting = v,
+      successMessage: $_("notices.deleted_successfully"),
+      errorMessage: $_("notices.delete_failed"),
+      onSuccess: () => { window.location.href = "/notices"; },
     });
   }
 
   $: isAuthor = notice && notice.author_id === currentUserId;
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="notice-detail">
   {#if loading}
-    <div class="text-center py-12 text-gray-500">{$_("notices.loading")}</div>
+    <div class="text-center py-12 text-gray-500" data-testid="notice-detail-loading">{$_("notices.loading")}</div>
   {:else if notice}
     <div class="p-6">
       <!-- Header -->
@@ -103,6 +85,7 @@
             <button
               on:click={handleArchive}
               disabled={archiving || notice.status === "Archived"}
+              data-testid="notice-archive-btn"
               class="px-3 py-1 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {archiving ? $_("notices.archiving") : $_("notices.archive")}
@@ -110,6 +93,7 @@
             <button
               on:click={handleDelete}
               disabled={deleting}
+              data-testid="notice-delete-btn"
               class="px-3 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {deleting ? $_("notices.deleting") : $_("common.delete")}
@@ -123,12 +107,12 @@
         {#if notice.author_name}
           <span>👤 {$_("notices.posted_by")} {notice.author_name}</span>
         {/if}
-        <span>📅 {formatDate(notice.created_at)}</span>
+        <span>📅 {formatDateTime(notice.created_at)}</span>
         {#if notice.published_at}
-          <span>📤 {$_("notices.published")} {formatDate(notice.published_at)}</span>
+          <span>📤 {$_("notices.published")} {formatDateTime(notice.published_at)}</span>
         {/if}
         {#if notice.expires_at}
-          <span>⏰ {$_("notices.expires")} {formatDate(notice.expires_at)}</span>
+          <span>⏰ {$_("notices.expires")} {formatDateTime(notice.expires_at)}</span>
         {/if}
       </div>
 
@@ -150,7 +134,7 @@
       {#if notice.event_date}
         <div class="bg-pink-50 border border-pink-200 rounded-lg p-4 mb-4">
           <h3 class="text-sm font-semibold text-pink-900 mb-1">{$_("notices.event_details")}</h3>
-          <p class="text-sm text-pink-700">📅 {formatDate(notice.event_date)}</p>
+          <p class="text-sm text-pink-700">📅 {formatDateTime(notice.event_date)}</p>
           {#if notice.event_location}
             <p class="text-sm text-pink-700">📍 {notice.event_location}</p>
           {/if}

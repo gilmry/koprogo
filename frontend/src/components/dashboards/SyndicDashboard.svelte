@@ -7,6 +7,8 @@
   import OwnerEditModal from '../OwnerEditModal.svelte';
   import { ticketsApi } from '../../lib/api/tickets';
   import { notificationsApi } from '../../lib/api/notifications';
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
 
   $: user = $authStore.user;
 
@@ -94,15 +96,6 @@
     await loadDashboardData();
   }
 
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' });
-  }
-
-  function formatAmount(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
   function getTaskIcon(taskType: string): string {
     switch (taskType) {
       case 'expense': return '💰';
@@ -131,7 +124,7 @@
   }
 </script>
 
-<div>
+<div data-testid="syndic-dashboard">
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
       {$_('common.welcome')}, {user?.first_name} 👋
@@ -143,7 +136,7 @@
 
   {#if loading}
     <div class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" data-testid="syndic-dashboard-spinner"></div>
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
@@ -177,7 +170,7 @@
           <span class="text-2xl">💰</span>
         </div>
         <p class="text-3xl font-bold text-gray-900">{stats.pending_expenses_count}</p>
-        <p class="text-sm text-orange-600 mt-1">{formatAmount(stats.pending_expenses_amount)}</p>
+        <p class="text-sm text-orange-600 mt-1">{formatCurrency(stats.pending_expenses_amount)}</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
@@ -186,7 +179,7 @@
           <span class="text-2xl">📅</span>
         </div>
         {#if stats.next_meeting}
-          <p class="text-xl font-bold text-gray-900">{formatDate(stats.next_meeting.date)}</p>
+          <p class="text-xl font-bold text-gray-900">{formatDateShort(stats.next_meeting.date)}</p>
           <p class="text-sm text-gray-500 mt-1">{stats.next_meeting.building_name}</p>
         {:else}
           <p class="text-lg font-medium text-gray-500">{$_('dashboards.syndic.stats.noMeetingsPlanned')}</p>

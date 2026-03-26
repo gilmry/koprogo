@@ -6,7 +6,7 @@
     PaymentMethodType,
     type PaymentMethod,
   } from "../../lib/api/payments";
-  import { toast } from "../../stores/toast";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
   export let paymentMethod: PaymentMethod;
@@ -37,52 +37,45 @@
   }
 
   async function handleSetDefault() {
-    try {
-      actionLoading = true;
-      await paymentMethodsApi.setAsDefault(paymentMethod.id);
-      toast.success($_('payments.setDefault'));
-      dispatch("updated");
-    } catch (err: any) {
-      toast.error(err.message || $_('payments.failedSetDefault'));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => paymentMethodsApi.setAsDefault(paymentMethod.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('payments.setDefault'),
+      errorMessage: $_('payments.failedSetDefault'),
+    });
+    if (result !== undefined) dispatch("updated");
   }
 
   async function handleToggleActive() {
-    try {
-      actionLoading = true;
-      if (paymentMethod.is_active) {
-        await paymentMethodsApi.deactivate(paymentMethod.id);
-        toast.success($_('payments.deactivated'));
-      } else {
-        await paymentMethodsApi.reactivate(paymentMethod.id);
-        toast.success($_('payments.reactivated'));
-      }
-      dispatch("updated");
-    } catch (err: any) {
-      toast.error(err.message || $_('payments.failedUpdate'));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => paymentMethod.is_active
+        ? paymentMethodsApi.deactivate(paymentMethod.id)
+        : paymentMethodsApi.reactivate(paymentMethod.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: paymentMethod.is_active ? $_('payments.deactivated') : $_('payments.reactivated'),
+      errorMessage: $_('payments.failedUpdate'),
+    });
+    if (result !== undefined) dispatch("updated");
   }
 
   async function handleDelete() {
-    try {
-      actionLoading = true;
-      await paymentMethodsApi.delete(paymentMethod.id);
-      toast.success($_('payments.deleted'));
+    const result = await withErrorHandling({
+      action: () => paymentMethodsApi.delete(paymentMethod.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('payments.deleted'),
+      errorMessage: $_('payments.failedDelete'),
+    });
+    if (result !== undefined) {
+      showDeleteConfirm = false;
       dispatch("deleted");
-    } catch (err: any) {
-      toast.error(err.message || $_('payments.failedDelete'));
-    } finally {
-      actionLoading = false;
+    } else {
       showDeleteConfirm = false;
     }
   }
 </script>
 
 <div
+  data-testid="payment-method-card"
   class="relative bg-white border rounded-lg p-4 hover:shadow-md transition-shadow {!paymentMethod.is_active
     ? 'opacity-50'
     : ''}"
@@ -113,7 +106,7 @@
             {paymentMethod.brand || $_('payments.card')} •••• {paymentMethod.last4 || "****"}
           </p>
           {#if paymentMethod.expires_at}
-            <p class="text-sm text-gray-500">
+            <p class="text-sm text-gray-500" data-testid="payment-method-expiry">
               {$_('payments.expires')}: {formatExpiryDate(paymentMethod.expires_at)}
             </p>
           {/if}
@@ -137,6 +130,7 @@
             <button
               on:click={handleSetDefault}
               disabled={actionLoading}
+              data-testid="set-default-btn"
               class="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
             >
               {$_('payments.setDefault')}
@@ -146,6 +140,7 @@
           <button
             on:click={handleToggleActive}
             disabled={actionLoading}
+            data-testid="toggle-active-btn"
             class="text-sm text-gray-600 hover:text-gray-700 font-medium disabled:opacity-50"
           >
             {paymentMethod.is_active ? $_('payments.deactivate') : $_('payments.reactivate')}
@@ -155,6 +150,7 @@
             <button
               on:click={() => (showDeleteConfirm = true)}
               disabled={actionLoading}
+              data-testid="delete-method-btn"
               class="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
             >
               {$_('common.delete')}

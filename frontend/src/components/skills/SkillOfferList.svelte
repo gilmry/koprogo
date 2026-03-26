@@ -8,6 +8,7 @@
   } from "../../lib/api/skills";
   import { toast } from "../../stores/toast";
   import SkillOfferCard from "./SkillOfferCard.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let buildingId: string;
   export let showFilters = true;
@@ -24,15 +25,16 @@
   });
 
   async function loadOffers() {
-    try {
-      loading = true;
-      offers = await skillsApi.listAvailableOffers(buildingId);
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => skillsApi.listAvailableOffers(buildingId),
+      errorMessage: "Failed to load skill offers",
+    });
+    if (result) {
+      offers = result;
       applyFilters();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load skill offers");
-    } finally {
-      loading = false;
     }
+    loading = false;
   }
 
   function applyFilters() {
@@ -65,7 +67,7 @@
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="skill-offer-list">
   {#if showFilters}
     <!-- Filters -->
     <div class="bg-white shadow rounded-lg p-4">

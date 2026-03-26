@@ -8,6 +8,7 @@
   } from "../../lib/api/sharing";
   import { toast } from "../../stores/toast";
   import SharedObjectCard from "./SharedObjectCard.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let buildingId: string;
   export let showFilters = true;
@@ -24,19 +25,18 @@
   });
 
   async function loadObjects() {
-    try {
-      loading = true;
-      if (selectedAvailability === "available-only") {
-        objects = await sharingApi.listAvailableObjects(buildingId);
-      } else {
-        objects = await sharingApi.listObjectsByBuilding(buildingId);
-      }
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => selectedAvailability === "available-only"
+        ? sharingApi.listAvailableObjects(buildingId)
+        : sharingApi.listObjectsByBuilding(buildingId),
+      errorMessage: "Failed to load shared objects",
+    });
+    if (result) {
+      objects = result;
       applyFilters();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load shared objects");
-    } finally {
-      loading = false;
     }
+    loading = false;
   }
 
   function applyFilters() {
@@ -66,7 +66,7 @@
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="shared-object-list">
   {#if showFilters}
     <!-- Filters -->
     <div class="bg-white shadow rounded-lg p-4">

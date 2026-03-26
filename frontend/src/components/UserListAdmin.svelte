@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
+  import { formatDate } from "../lib/utils/date.utils";
 import { api } from '../lib/api';
 import { toast } from '../stores/toast';
 import { authStore } from '../stores/auth';
@@ -94,15 +95,6 @@ interface BackendUser {
       owner: '👤 ' + $_('admin.users.roles.owner'),
     };
     return labels[role as keyof typeof labels] || role;
-  }
-
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   }
 
   const handleCreate = () => {

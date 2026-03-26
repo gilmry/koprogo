@@ -8,6 +8,9 @@
   import { toast } from '../stores/toast';
   import { paymentsApi, type Payment } from '../lib/api/payments';
   import { chargeDistributionsApi, type ChargeDistribution } from '../lib/api/charge-distributions';
+  import { formatDate } from '../lib/utils/date.utils';
+  import { formatCurrency, formatAmount } from '../lib/utils/finance.utils';
+  import { withErrorHandling } from '../lib/utils/error.utils';
 
   let expense: Expense | null = null;
   let building: Building | null = null;
@@ -37,7 +40,6 @@
       error = '';
       expense = await api.get<Expense>(`/expenses/${expenseId}`);
 
-      // Load building info and payments in parallel
       if (expense) {
         const promises: Promise<any>[] = [];
 
@@ -45,7 +47,7 @@
           promises.push(
             api.get<Building>(`/buildings/${expense.building_id}`)
               .then(b => { building = b; })
-              .catch(e => console.error('Error loading building:', e))
+              .catch(() => {})
           );
         }
 
@@ -69,9 +71,8 @@
 
         await Promise.all(promises);
       }
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('expenses.load_error');
-      console.error('Error loading expense:', e);
+    } catch (e: any) {
+      error = e?.message || $_('expenses.load_error');
     } finally {
       loading = false;
     }
@@ -83,93 +84,65 @@
 
   const handleMarkPaid = async () => {
     if (!expense) return;
-
-    try {
-      await api.put(`/expenses/${expense.id}/mark-paid`, {});
-      await loadExpense();
-      toast.success($_('expenses.marked_paid'));
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : $_('common.update_error');
-      toast.error(`${$_('common.error')}: ${errorMsg}`);
-      console.error('Error marking as paid:', e);
-    }
+    await withErrorHandling({
+      action: async () => {
+        await api.put(`/expenses/${expense!.id}/mark-paid`, {});
+        await loadExpense();
+      },
+      successMessage: $_('expenses.marked_paid'),
+      errorMessage: $_('common.update_error'),
+    });
   };
 
   const handleMarkOverdue = async () => {
     if (!expense) return;
-
-    try {
-      await api.post(`/expenses/${expense.id}/mark-overdue`, {});
-      await loadExpense();
-      toast.success($_('expenses.marked_overdue'));
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : $_('common.update_error');
-      toast.error(`${$_('common.error')}: ${errorMsg}`);
-      console.error('Error marking as overdue:', e);
-    }
+    await withErrorHandling({
+      action: async () => {
+        await api.post(`/expenses/${expense!.id}/mark-overdue`, {});
+        await loadExpense();
+      },
+      successMessage: $_('expenses.marked_overdue'),
+      errorMessage: $_('common.update_error'),
+    });
   };
 
   const handleCancel = async () => {
     if (!expense) return;
-
-    if (!confirm($_('expenses.confirm_cancel'))) {
-      return;
-    }
-
-    try {
-      await api.post(`/expenses/${expense.id}/cancel`, {});
-      await loadExpense();
-      toast.success($_('expenses.cancelled'));
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : $_('expenses.cancel_error');
-      toast.error(`${$_('common.error')}: ${errorMsg}`);
-      console.error('Error cancelling expense:', e);
-    }
+    if (!confirm($_('expenses.confirm_cancel'))) return;
+    await withErrorHandling({
+      action: async () => {
+        await api.post(`/expenses/${expense!.id}/cancel`, {});
+        await loadExpense();
+      },
+      successMessage: $_('expenses.cancelled'),
+      errorMessage: $_('expenses.cancel_error'),
+    });
   };
 
   const handleReactivate = async () => {
     if (!expense) return;
-
-    try {
-      await api.post(`/expenses/${expense.id}/reactivate`, {});
-      await loadExpense();
-      toast.success($_('expenses.reactivated'));
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : $_('expenses.reactivate_error');
-      toast.error(`${$_('common.error')}: ${errorMsg}`);
-      console.error('Error reactivating expense:', e);
-    }
+    await withErrorHandling({
+      action: async () => {
+        await api.post(`/expenses/${expense!.id}/reactivate`, {});
+        await loadExpense();
+      },
+      successMessage: $_('expenses.reactivated'),
+      errorMessage: $_('expenses.reactivate_error'),
+    });
   };
 
   const handleUnpay = async () => {
     if (!expense) return;
-
-    if (!confirm($_('expenses.confirm_unpay'))) {
-      return;
-    }
-
-    try {
-      await api.post(`/expenses/${expense.id}/unpay`, {});
-      await loadExpense();
-      toast.success($_('expenses.unpaid'));
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : $_('expenses.unpay_error');
-      toast.error(`${$_('common.error')}: ${errorMsg}`);
-      console.error('Error unpaying expense:', e);
-    }
-  };
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    if (!confirm($_('expenses.confirm_unpay'))) return;
+    await withErrorHandling({
+      action: async () => {
+        await api.post(`/expenses/${expense!.id}/unpay`, {});
+        await loadExpense();
+      },
+      successMessage: $_('expenses.unpaid'),
+      errorMessage: $_('expenses.unpay_error'),
     });
-  }
+  };
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
@@ -179,10 +152,6 @@
       'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.status_cancelled') }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
-  }
-
-  function formatCentsToEur(cents: number): string {
-    return formatCurrency(cents / 100);
   }
 
   function getPaymentStatusBadge(status: string): { class: string; label: string } {
@@ -234,8 +203,8 @@
       {error}
     </div>
     <div class="mt-4">
-      <Button variant="outline" on:click={handleGoBack}>
-        Retour
+      <Button variant="outline" on:click={handleGoBack} data-testid="back-button">
+        {$_('common.back')}
       </Button>
     </div>
   {:else if expense}
@@ -246,6 +215,7 @@
           <button
             on:click={handleGoBack}
             class="text-gray-600 hover:text-gray-900"
+            data-testid="back-button"
           >
             {$_('common.back')}
           </button>
@@ -253,28 +223,28 @@
         </div>
         <div class="flex gap-2">
           {#if expense.payment_status === 'Pending'}
-            <Button variant="primary" on:click={handleMarkPaid}>
+            <Button variant="primary" on:click={handleMarkPaid} data-testid="mark-paid-button">
               {$_('expenses.mark_paid')}
             </Button>
-            <Button variant="outline" on:click={handleMarkOverdue}>
+            <Button variant="outline" on:click={handleMarkOverdue} data-testid="mark-overdue-button">
               {$_('expenses.mark_overdue')}
             </Button>
-            <Button variant="outline" on:click={handleCancel}>
+            <Button variant="outline" on:click={handleCancel} data-testid="cancel-button">
               {$_('common.cancel')}
             </Button>
           {:else if expense.payment_status === 'Overdue'}
-            <Button variant="primary" on:click={handleMarkPaid}>
+            <Button variant="primary" on:click={handleMarkPaid} data-testid="mark-paid-button">
               {$_('expenses.mark_paid')}
             </Button>
-            <Button variant="outline" on:click={handleCancel}>
+            <Button variant="outline" on:click={handleCancel} data-testid="cancel-button">
               {$_('common.cancel')}
             </Button>
           {:else if expense.payment_status === 'Paid'}
-            <Button variant="outline" on:click={handleUnpay}>
+            <Button variant="outline" on:click={handleUnpay} data-testid="unpay-button">
               {$_('expenses.cancel_payment')}
             </Button>
           {:else if expense.payment_status === 'Cancelled'}
-            <Button variant="primary" on:click={handleReactivate}>
+            <Button variant="primary" on:click={handleReactivate} data-testid="reactivate-button">
               {$_('expenses.reactivate')}
             </Button>
           {/if}
@@ -287,7 +257,7 @@
       <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-semibold text-white">{$_('expenses.general_info')}</h2>
-          <span class="px-3 py-1 rounded-full text-sm font-medium {getStatusBadge(expense.payment_status).class}">
+          <span class="px-3 py-1 rounded-full text-sm font-medium {getStatusBadge(expense.payment_status).class}" data-testid="status-badge">
             {getStatusBadge(expense.payment_status).label}
           </span>
         </div>
@@ -303,7 +273,7 @@
           <!-- Amount -->
           <div>
             <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('common.amount')}</h3>
-            <p class="text-2xl font-bold text-gray-900">{formatCurrency(expense.amount)}</p>
+            <p class="text-2xl font-bold text-gray-900" data-testid="amount-display">{formatCurrency(expense.amount)}</p>
           </div>
 
           <!-- Category -->
@@ -360,13 +330,13 @@
     </div>
 
     <!-- Documents Section -->
-    <div class="mb-8">
+    <div class="mb-8" data-testid="documents-section">
       <ExpenseDocuments expenseId={expenseId} expenseStatus={expense.payment_status} />
     </div>
 
     <!-- Charge Distribution Section -->
     {#if distributions.length > 0}
-      <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8" data-testid="distributions-section">
         <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
           <h2 class="text-xl font-semibold text-white">{$_('expenses.charge_distribution')}</h2>
         </div>
@@ -396,13 +366,13 @@
     {/if}
 
     <!-- Payments Section -->
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8" data-testid="payments-section">
       <div class="bg-gradient-to-r from-green-600 to-green-700 px-6 py-4">
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-semibold text-white">{$_('expenses.payments')}</h2>
           {#if totalPaidCents > 0}
             <span class="px-3 py-1 rounded-full text-sm font-medium bg-white/20 text-white">
-              {$_('expenses.total_paid')}: {formatCentsToEur(totalPaidCents)}
+              {$_('expenses.total_paid')}: {formatAmount(totalPaidCents)}
             </span>
           {/if}
         </div>
@@ -411,8 +381,8 @@
         {#if expensePayments.length > 0}
           <!-- Payment progress bar -->
           {#if expense.amount > 0}
-            {@const paidPercent = Math.min(100, (totalPaidCents / 100 / expense.amount) * 100)}
-            <div class="mb-6">
+            {@const paidPercent = expense.amount > 0 ? Math.min(100, (totalPaidCents / 100 / expense.amount) * 100) : 0}
+            <div class="mb-6" data-testid="payment-progress-bar">
               <div class="flex items-center justify-between text-sm text-gray-600 mb-1">
                 <span>{$_('expenses.payment_progress')}</span>
                 <span class="font-medium">{Math.round(paidPercent)}%</span>
@@ -424,7 +394,7 @@
                 ></div>
               </div>
               <div class="flex items-center justify-between text-xs text-gray-500 mt-1">
-                <span>{formatCentsToEur(totalPaidCents)} {$_('expenses.paid')}</span>
+                <span>{formatAmount(totalPaidCents)} {$_('expenses.paid')}</span>
                 <span>{formatCurrency(expense.amount)} {$_('common.total')}</span>
               </div>
             </div>
@@ -437,7 +407,7 @@
               <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                 <div class="flex-1">
                   <div class="flex items-center gap-3 mb-1">
-                    <span class="text-sm font-medium text-gray-900">{formatCentsToEur(payment.amount_cents)}</span>
+                    <span class="text-sm font-medium text-gray-900">{formatAmount(payment.amount_cents)}</span>
                     <span class="px-2 py-0.5 rounded-full text-xs font-medium {badge.class}">{badge.label}</span>
                   </div>
                   <div class="flex items-center gap-2 text-xs text-gray-500">
@@ -446,7 +416,7 @@
                     <span>{formatDate(payment.created_at)}</span>
                     {#if payment.refunded_amount_cents > 0}
                       <span>·</span>
-                      <span class="text-purple-600">{$_('expenses.refunded')}: {formatCentsToEur(payment.refunded_amount_cents)}</span>
+                      <span class="text-purple-600">{$_('expenses.refunded')}: {formatAmount(payment.refunded_amount_cents)}</span>
                     {/if}
                   </div>
                   {#if payment.failure_reason}

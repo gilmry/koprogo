@@ -7,6 +7,8 @@
     ConvocationStatus,
     MeetingType,
   } from '../../lib/api/convocations';
+  import { formatDate } from '../../lib/utils/date.utils';
+  import { withLoadingState } from '../../lib/utils/error.utils';
 
   export let buildingId: string;
 
@@ -21,16 +23,13 @@
   });
 
   async function loadConvocations() {
-    try {
-      loading = true;
-      error = '';
-      convocations = await convocationsApi.listByBuilding(buildingId);
-      applyFilters();
-    } catch (err: any) {
-      error = err.message || $_('convocations.errors.loadingFailed');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => convocationsApi.listByBuilding(buildingId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => { convocations = data; applyFilters(); },
+      errorMessage: $_('convocations.errors.loadingFailed'),
+    });
   }
 
   function applyFilters() {
@@ -41,14 +40,6 @@
   }
 
   $: if (statusFilter) applyFilters();
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-  }
 
   function getStatusConfig(status: ConvocationStatus): { bg: string; text: string; label: string; icon: string } {
     const config: Record<ConvocationStatus, { bg: string; text: string; label: string; icon: string }> = {
@@ -70,7 +61,7 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="convocation-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <h3 class="text-lg leading-6 font-medium text-gray-900">
       📨 {$_('convocations.title')}
@@ -98,8 +89,8 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+    <div class="p-8 text-center" data-testid="convocation-list-loading">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" data-testid="convocation-list-spinner"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('convocations.loading')}</p>
     </div>
   {:else if error}
@@ -117,10 +108,10 @@
       </p>
     </div>
   {:else}
-    <ul class="divide-y divide-gray-200">
+    <ul class="divide-y divide-gray-200" data-testid="convocation-rows">
       {#each filteredConvocations as convocation (convocation.id)}
         {@const statusCfg = getStatusConfig(convocation.status)}
-        <li class="hover:bg-gray-50">
+        <li class="hover:bg-gray-50" data-testid="convocation-row-{convocation.id}">
           <a href="/convocation-detail?id={convocation.id}" class="block px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
@@ -128,7 +119,7 @@
                   <h4 class="text-sm font-medium text-amber-700">
                     {getMeetingTypeLabel(convocation.meeting_type)}
                   </h4>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {statusCfg.bg} {statusCfg.text}">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {statusCfg.bg} {statusCfg.text}" data-testid="convocation-status-{convocation.id}">
                     <span class="mr-1">{statusCfg.icon}</span>
                     {statusCfg.label}
                   </span>

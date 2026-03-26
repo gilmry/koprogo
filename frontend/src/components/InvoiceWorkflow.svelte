@@ -4,6 +4,9 @@
   import { authStore } from '../stores/auth';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { formatDate } from '../lib/utils/date.utils';
+  import { formatCurrency } from '../lib/utils/finance.utils';
+  import { withErrorHandling, withLoadingState } from '../lib/utils/error.utils';
 
   let invoices: any[] = [];
   let filteredInvoices: any[] = [];
@@ -20,72 +23,54 @@
   let filterPaymentStatus: string = 'all';
 
   onMount(async () => {
-    // Initialize auth store from localStorage
     await authStore.init();
-
-    console.log('🔐 Auth state on mount:', {
-      user: $authStore.user,
-      isAuthenticated: $authStore.isAuthenticated,
-      hasActiveRole: !!$authStore.user?.activeRole,
-      activeRole: $authStore.user?.activeRole,
-      directRole: $authStore.user?.role,
-    });
     loadInvoices();
   });
 
   async function loadInvoices() {
-    loading = true;
-    error = '';
-    try {
-      const response = await api.get('/expenses');
-      const data = Array.isArray(response) ? response : (response?.data || []);
-      console.log('📊 Invoices loaded:', data.length, data);
-      invoices = data.sort((a: any, b: any) =>
-        new Date(b.expense_date || b.created_at).getTime() - new Date(a.expense_date || a.created_at).getTime()
-      );
-      console.log('📊 After sort:', invoices.length);
-    } catch (err: any) {
-      console.error('❌ Error loading invoices:', err);
-      error = err.message || $_('invoices.load_error');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: async () => {
+        const response = await api.get('/expenses');
+        const data = Array.isArray(response) ? response : (response?.data || []);
+        return data.sort((a: any, b: any) =>
+          new Date(b.expense_date || b.created_at).getTime() - new Date(a.expense_date || a.created_at).getTime()
+        );
+      },
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_('invoices.load_error'),
+      onSuccess: (data: any) => { invoices = data; },
+    });
   }
 
   async function submitForApproval(invoiceId: string) {
     if (!confirm($_('invoices.confirm_submit_approval'))) return;
 
-    submitting = true;
-    try {
-      console.log('🔄 Submitting invoice for approval:', invoiceId);
-      const response = await api.put(`/invoices/${invoiceId}/submit`, {});
-      console.log('✅ Invoice submitted successfully:', response);
-      console.log('📋 New approval_status:', response.approval_status);
-      await loadInvoices();
-    } catch (err: any) {
-      console.error('❌ Error submitting invoice:', err);
-      toast.error(err.message || 'Erreur lors de la soumission');
-    } finally {
-      submitting = false;
-    }
+    await withErrorHandling({
+      action: async () => {
+        await api.put(`/invoices/${invoiceId}/submit`, {});
+        await loadInvoices();
+      },
+      setLoading: (v) => submitting = v,
+      errorMessage: 'Erreur lors de la soumission',
+    });
   }
 
   async function approveInvoice() {
     if (!selectedInvoice) return;
 
-    submitting = true;
-    try {
-      await api.put(`/invoices/${selectedInvoice.id}/approve`, {
-        approved_by_user_id: $authStore.user?.id || '',
-      });
-      showApprovalModal = false;
-      selectedInvoice = null;
-      await loadInvoices();
-    } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de l\'approbation');
-    } finally {
-      submitting = false;
-    }
+    await withErrorHandling({
+      action: async () => {
+        await api.put(`/invoices/${selectedInvoice.id}/approve`, {
+          approved_by_user_id: $authStore.user?.id || '',
+        });
+        showApprovalModal = false;
+        selectedInvoice = null;
+        await loadInvoices();
+      },
+      setLoading: (v) => submitting = v,
+      errorMessage: 'Erreur lors de l\'approbation',
+    });
   }
 
   async function rejectInvoice() {
@@ -94,35 +79,33 @@
       return;
     }
 
-    submitting = true;
-    try {
-      await api.put(`/invoices/${selectedInvoice.id}/reject`, {
-        rejected_by_user_id: $authStore.user?.id || '',
-        rejection_reason: rejectionReason,
-      });
-      showRejectionModal = false;
-      selectedInvoice = null;
-      rejectionReason = '';
-      await loadInvoices();
-    } catch (err: any) {
-      toast.error(err.message || 'Erreur lors du rejet');
-    } finally {
-      submitting = false;
-    }
+    await withErrorHandling({
+      action: async () => {
+        await api.put(`/invoices/${selectedInvoice.id}/reject`, {
+          rejected_by_user_id: $authStore.user?.id || '',
+          rejection_reason: rejectionReason,
+        });
+        showRejectionModal = false;
+        selectedInvoice = null;
+        rejectionReason = '';
+        await loadInvoices();
+      },
+      setLoading: (v) => submitting = v,
+      errorMessage: 'Erreur lors du rejet',
+    });
   }
 
   async function markAsPaid(invoiceId: string) {
     if (!confirm($_('invoices.confirm_mark_paid'))) return;
 
-    submitting = true;
-    try {
-      await api.put(`/expenses/${invoiceId}/mark-paid`, {});
-      await loadInvoices();
-    } catch (err: any) {
-      toast.error(err.message || 'Erreur lors du paiement');
-    } finally {
-      submitting = false;
-    }
+    await withErrorHandling({
+      action: async () => {
+        await api.put(`/expenses/${invoiceId}/mark-paid`, {});
+        await loadInvoices();
+      },
+      setLoading: (v) => submitting = v,
+      errorMessage: 'Erreur lors du paiement',
+    });
   }
 
   function openApprovalModal(invoice: any) {
@@ -163,77 +146,47 @@
   }
 
   function canSubmitForApproval(invoice: any): boolean {
-    // Use activeRole if available, otherwise fallback to user.role
     const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
-    const canSubmit = (
+    return (
       invoice.approval_status === 'draft' &&
       (role === 'accountant' || role === 'syndic' || role === 'superadmin')
     );
-    console.log('🔍 canSubmitForApproval:', invoice.id, 'status:', invoice.approval_status, 'role:', role, 'result:', canSubmit);
-    return canSubmit;
   }
 
   function canApprove(invoice: any): boolean {
-    // Use activeRole if available, otherwise fallback to user.role
     const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
-    const canApprove = (
+    return (
       invoice.approval_status === 'pending_approval' &&
       (role === 'syndic' || role === 'superadmin')
     );
-    console.log('🔍 canApprove:', invoice.id, 'status:', invoice.approval_status, 'role:', role, 'result:', canApprove);
-    return canApprove;
   }
 
   function canReject(invoice: any): boolean {
-    // Use activeRole if available, otherwise fallback to user.role
     const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
-    const canReject = (
+    return (
       invoice.approval_status === 'pending_approval' &&
       (role === 'syndic' || role === 'superadmin')
     );
-    console.log('🔍 canReject:', invoice.id, 'status:', invoice.approval_status, 'role:', role, 'result:', canReject);
-    return canReject;
   }
 
   function canMarkAsPaid(invoice: any): boolean {
-    // Use activeRole if available, otherwise fallback to user.role
     const role = $authStore.user?.activeRole?.role ?? $authStore.user?.role;
-    const canPay = (
+    return (
       invoice.approval_status === 'approved' &&
       invoice.payment_status === 'pending' &&
       (role === 'accountant' || role === 'syndic' || role === 'superadmin')
     );
-    console.log('🔍 canMarkAsPaid:', invoice.id, 'status:', invoice.approval_status, 'payment:', invoice.payment_status, 'role:', role, 'result:', canPay);
-    return canPay;
   }
 
   $: {
     filteredInvoices = invoices.filter((inv) => {
       if (filterStatus !== 'all' && inv.approval_status !== filterStatus) {
-        console.log('❌ Filtered out by approval_status:', inv.approval_status, '!==', filterStatus);
         return false;
       }
       if (filterPaymentStatus !== 'all' && inv.payment_status !== filterPaymentStatus) {
-        console.log('❌ Filtered out by payment_status:', inv.payment_status, '!==', filterPaymentStatus);
         return false;
       }
       return true;
-    });
-    console.log('✅ Filtered invoices:', filteredInvoices.length, 'filters:', filterStatus, filterPaymentStatus);
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(amount);
-  }
-
-  function formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
     });
   }
 </script>
@@ -256,7 +209,7 @@
   <div class="filters">
     <div class="filter-group">
       <label for="filterStatus">{$_('invoices.approval_status')}</label>
-      <select id="filterStatus" bind:value={filterStatus}>
+      <select id="filterStatus" bind:value={filterStatus} data-testid="approval-status-filter">
         <option value="all">{$_('invoices.all')}</option>
         <option value="draft">{$_('invoices.status_draft')}</option>
         <option value="pending_approval">{$_('invoices.status_pending_approval')}</option>
@@ -267,7 +220,7 @@
 
     <div class="filter-group">
       <label for="filterPaymentStatus">{$_('invoices.payment_status')}</label>
-      <select id="filterPaymentStatus" bind:value={filterPaymentStatus}>
+      <select id="filterPaymentStatus" bind:value={filterPaymentStatus} data-testid="payment-status-filter">
         <option value="all">{$_('invoices.all')}</option>
         <option value="pending">{$_('invoices.payment_pending')}</option>
         <option value="paid">{$_('invoices.payment_paid')}</option>
@@ -276,7 +229,7 @@
       </select>
     </div>
 
-    <button on:click={loadInvoices} class="btn-refresh" disabled={loading}>
+    <button on:click={loadInvoices} class="btn-refresh" disabled={loading} data-testid="refresh-button">
       <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
       </svg>
@@ -299,7 +252,7 @@
   {:else}
     <div class="invoice-grid">
       {#each filteredInvoices as invoice}
-        <div class="invoice-card">
+        <div class="invoice-card" data-testid="invoice-card">
           <div class="card-header">
             <div>
               <h3 class="invoice-title">{invoice.description}</h3>
@@ -364,6 +317,7 @@
                 on:click={() => submitForApproval(invoice.id)}
                 class="btn btn-primary"
                 disabled={submitting}
+                data-testid="submit-approval-button"
               >
                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -377,6 +331,7 @@
                 on:click={() => openApprovalModal(invoice)}
                 class="btn btn-success"
                 disabled={submitting}
+                data-testid="approve-button"
               >
                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -390,6 +345,7 @@
                 on:click={() => openRejectionModal(invoice)}
                 class="btn btn-danger"
                 disabled={submitting}
+                data-testid="reject-button"
               >
                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -403,6 +359,7 @@
                 on:click={() => markAsPaid(invoice.id)}
                 class="btn btn-info"
                 disabled={submitting}
+                data-testid="mark-paid-button"
               >
                 <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>

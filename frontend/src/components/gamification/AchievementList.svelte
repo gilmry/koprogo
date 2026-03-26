@@ -9,6 +9,7 @@
     AchievementTier,
   } from '../../lib/api/gamification';
   import { authStore } from '../../stores/auth';
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
   export let organizationId: string;
 
@@ -40,22 +41,21 @@
       loading = false;
       return;
     }
-    try {
-      loading = true;
-      error = '';
-      const [achList, userAchList] = await Promise.all([
+    await withLoadingState({
+      action: () => Promise.all([
         gamificationApi.getVisibleAchievements(organizationId),
         $authStore.user?.id
           ? gamificationApi.getUserAchievements($authStore.user.id)
           : Promise.resolve([]),
-      ]);
-      achievements = achList;
-      userAchievements = userAchList;
-    } catch (err: any) {
-      error = err.message || $_('gamification.load_error');
-    } finally {
-      loading = false;
-    }
+      ]),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: ([achList, userAchList]) => {
+        achievements = achList;
+        userAchievements = userAchList;
+      },
+      errorMessage: $_('gamification.load_error'),
+    });
   }
 
   function getTierConfig(tier: AchievementTier): { bg: string; text: string; border: string } {
@@ -88,7 +88,7 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="achievement-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
@@ -119,7 +119,7 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="achievement-list-loading">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
@@ -138,7 +138,7 @@
         {@const earned = earnedIds.has(achievement.id)}
         {@const userAch = getUserAchievement(achievement.id)}
         {@const tierCfg = getTierConfig(achievement.tier)}
-        <div class="relative p-4 rounded-lg border-2 transition-all
+        <div data-testid="achievement-card" class="relative p-4 rounded-lg border-2 transition-all
           {earned ? tierCfg.border + ' ' + tierCfg.bg : 'border-gray-200 bg-gray-50 opacity-60'}">
           {#if earned}
             <div class="absolute top-2 right-2">

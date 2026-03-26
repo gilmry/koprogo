@@ -11,6 +11,9 @@
   import { authStore } from '../../stores/auth';
   import { UserRole } from '../../lib/types';
   import QuoteStatusBadge from './QuoteStatusBadge.svelte';
+  import { withErrorHandling } from '../../lib/utils/error.utils';
+  import { formatDate } from '../../lib/utils/date.utils';
+  import { formatAmount } from '../../lib/utils/finance.utils';
 
   export let quote: Quote;
 
@@ -19,7 +22,6 @@
   let actionLoading = false;
   let showSubmitForm = false;
 
-  // Submit form fields
   let amountExclVat = '';
   let vatRate = '21';
   let validityDate = '';
@@ -28,18 +30,9 @@
 
   $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
 
-  function formatAmount(amountCents: number | undefined): string {
+  function formatQuoteAmount(amountCents: number | undefined): string {
     if (!amountCents) return '-';
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amountCents / 100);
-  }
-
-  function formatDate(dateStr: string | undefined): string {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatAmount(amountCents);
   }
 
   async function handleSubmitQuote() {
@@ -48,113 +41,98 @@
       return;
     }
 
-    try {
-      actionLoading = true;
-      const data: SubmitQuoteDto = {
-        amount_excl_vat_cents: Math.round(parseFloat(amountExclVat) * 100),
-        vat_rate: parseFloat(vatRate),
-        validity_date: validityDate,
-        estimated_duration_days: parseInt(estimatedDays),
-        warranty_years: parseInt(warrantyYears),
-      };
-      const updated = await quotesApi.submit(quote.id, data);
-      toast.success($_("quotes.detail.submitSuccess"));
+    const updated = await withErrorHandling({
+      action: () => {
+        const data: SubmitQuoteDto = {
+          amount_excl_vat_cents: Math.round(parseFloat(amountExclVat) * 100),
+          vat_rate: parseFloat(vatRate),
+          validity_date: validityDate,
+          estimated_duration_days: parseInt(estimatedDays),
+          warranty_years: parseInt(warrantyYears),
+        };
+        return quotesApi.submit(quote.id, data);
+      },
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_("quotes.detail.submitSuccess"),
+      errorMessage: $_("quotes.detail.submitError"),
+    });
+    if (updated) {
       showSubmitForm = false;
       dispatch('updated', updated);
-    } catch (err: any) {
-      toast.error(err.message || $_("quotes.detail.submitError"));
-    } finally {
-      actionLoading = false;
     }
   }
 
   async function handleStartReview() {
-    try {
-      actionLoading = true;
-      const updated = await quotesApi.startReview(quote.id);
-      toast.success($_("quotes.detail.reviewSuccess"));
-      dispatch('updated', updated);
-    } catch (err: any) {
-      toast.error(err.message || $_("common.error"));
-    } finally {
-      actionLoading = false;
-    }
+    const updated = await withErrorHandling({
+      action: () => quotesApi.startReview(quote.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_("quotes.detail.reviewSuccess"),
+      errorMessage: $_("common.error"),
+    });
+    if (updated) dispatch('updated', updated);
   }
 
   async function handleAccept() {
     const notes = prompt($_("quotes.detail.decisionNotesPrompt")) || '';
-    try {
-      actionLoading = true;
-      const updated = await quotesApi.accept(quote.id, {
+    const updated = await withErrorHandling({
+      action: () => quotesApi.accept(quote.id, {
         decision_by: $authStore.user?.id || '',
         decision_notes: notes || undefined,
-      });
-      toast.success($_("quotes.detail.acceptSuccess"));
-      dispatch('updated', updated);
-    } catch (err: any) {
-      toast.error(err.message || $_("common.error"));
-    } finally {
-      actionLoading = false;
-    }
+      }),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_("quotes.detail.acceptSuccess"),
+      errorMessage: $_("common.error"),
+    });
+    if (updated) dispatch('updated', updated);
   }
 
   async function handleReject() {
     const notes = prompt($_("quotes.detail.rejectReasonPrompt"));
     if (!notes) return;
-    try {
-      actionLoading = true;
-      const updated = await quotesApi.reject(quote.id, {
+    const updated = await withErrorHandling({
+      action: () => quotesApi.reject(quote.id, {
         decision_by: $authStore.user?.id || '',
         decision_notes: notes,
-      });
-      toast.success($_("quotes.detail.rejectSuccess"));
-      dispatch('updated', updated);
-    } catch (err: any) {
-      toast.error(err.message || $_("common.error"));
-    } finally {
-      actionLoading = false;
-    }
+      }),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_("quotes.detail.rejectSuccess"),
+      errorMessage: $_("common.error"),
+    });
+    if (updated) dispatch('updated', updated);
   }
 
   async function handleWithdraw() {
     if (!confirm($_("quotes.detail.withdrawConfirm"))) return;
-    try {
-      actionLoading = true;
-      const updated = await quotesApi.withdraw(quote.id);
-      toast.success($_("quotes.detail.withdrawSuccess"));
-      dispatch('updated', updated);
-    } catch (err: any) {
-      toast.error(err.message || $_("common.error"));
-    } finally {
-      actionLoading = false;
-    }
+    const updated = await withErrorHandling({
+      action: () => quotesApi.withdraw(quote.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_("quotes.detail.withdrawSuccess"),
+      errorMessage: $_("common.error"),
+    });
+    if (updated) dispatch('updated', updated);
   }
 
   async function handleDelete() {
     if (!confirm($_("quotes.detail.deleteConfirm"))) return;
-    try {
-      actionLoading = true;
-      await quotesApi.delete(quote.id);
-      toast.success($_("quotes.detail.deleteSuccess"));
-      dispatch('deleted');
-    } catch (err: any) {
-      toast.error(err.message || $_("quotes.detail.deleteError"));
-    } finally {
-      actionLoading = false;
-    }
+    await withErrorHandling({
+      action: () => quotesApi.delete(quote.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_("quotes.detail.deleteSuccess"),
+      errorMessage: $_("quotes.detail.deleteError"),
+      onSuccess: () => dispatch('deleted'),
+    });
   }
 </script>
 
-<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
-  <!-- Header -->
+<div class="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4" data-testid="quote-detail">
   <div class="flex items-center justify-between">
     <div>
-      <h4 class="text-sm font-semibold text-gray-900">{quote.project_title}</h4>
+      <h4 class="text-sm font-semibold text-gray-900" data-testid="quote-title">{quote.project_title}</h4>
       <p class="text-xs text-gray-500 mt-0.5">
         {quote.contractor_name || quote.contractor_id.slice(0, 8)} - {quote.work_category}
       </p>
     </div>
-    <QuoteStatusBadge status={quote.status} />
+    <span data-testid="quote-status-badge"><QuoteStatusBadge status={quote.status} /></span>
   </div>
 
   <!-- Description -->
@@ -168,13 +146,13 @@
       {#if quote.amount_excl_vat_cents}
         <div>
           <p class="text-xs text-gray-500">{$_("quotes.detail.amountExclVat")}</p>
-          <p class="text-sm font-medium text-gray-900">{formatAmount(quote.amount_excl_vat_cents)}</p>
+          <p class="text-sm font-medium text-gray-900">{formatQuoteAmount(quote.amount_excl_vat_cents)}</p>
         </div>
       {/if}
       {#if quote.amount_incl_vat_cents}
         <div>
           <p class="text-xs text-gray-500">{$_("quotes.detail.amountInclVat")} ({quote.vat_rate}%)</p>
-          <p class="text-sm font-medium text-gray-900">{formatAmount(quote.amount_incl_vat_cents)}</p>
+          <p class="text-sm font-medium text-gray-900">{formatQuoteAmount(quote.amount_incl_vat_cents)}</p>
         </div>
       {/if}
       {#if quote.estimated_duration_days}
@@ -269,36 +247,43 @@
   {/if}
 
   <!-- Actions -->
-  <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+  <div class="flex flex-wrap gap-2 pt-2 border-t border-gray-100" data-testid="quote-actions">
     {#if quote.status === QuoteStatus.Requested}
       <button on:click={() => showSubmitForm = !showSubmitForm} disabled={actionLoading}
+        data-testid="submit-quote-button"
         class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.submitQuote")}
       </button>
       <button on:click={handleDelete} disabled={actionLoading}
+        data-testid="delete-quote-button"
         class="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 disabled:opacity-50 transition-colors">
         {$_("common.delete")}
       </button>
     {:else if quote.status === QuoteStatus.Received && isAdmin}
       <button on:click={handleStartReview} disabled={actionLoading}
+        data-testid="review-quote-button"
         class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.review")}
       </button>
       <button on:click={handleWithdraw} disabled={actionLoading}
+        data-testid="withdraw-quote-button"
         class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.withdraw")}
       </button>
     {:else if quote.status === QuoteStatus.UnderReview && isAdmin}
       <button on:click={handleAccept} disabled={actionLoading}
+        data-testid="accept-quote-button"
         class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.accept")}
       </button>
       <button on:click={handleReject} disabled={actionLoading}
+        data-testid="reject-quote-button"
         class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.reject")}
       </button>
     {:else if quote.status === QuoteStatus.Received || quote.status === QuoteStatus.Requested}
       <button on:click={handleWithdraw} disabled={actionLoading}
+        data-testid="withdraw-quote-button"
         class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.withdraw")}
       </button>

@@ -11,6 +11,9 @@
   } from "../../lib/api/inspections";
   import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
+  import { formatDate } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let isOpen = false;
   export let inspection: TechnicalInspection;
@@ -74,36 +77,35 @@
       toast.error($_("inspections.titleAndInspectorRequired"));
       return;
     }
-    try {
-      submitting = true;
-      const dto: UpdateInspectionDto = {
-        title: form.title,
-        description: form.description || undefined,
-        inspector_name: form.inspector_name,
-        inspector_company: form.inspector_company || undefined,
-        inspector_certification: form.inspector_certification || undefined,
-        inspection_date: form.inspection_date_str
-          ? new Date(form.inspection_date_str).toISOString()
-          : undefined,
-        status: form.status,
-        result_summary: form.result_summary || undefined,
-        defects_found: form.defects_found || undefined,
-        recommendations: form.recommendations || undefined,
-        compliant: form.compliant ?? undefined,
-        compliance_certificate_number: form.compliance_certificate_number || undefined,
-        cost: form.cost || undefined,
-        invoice_number: form.invoice_number || undefined,
-        notes: form.notes || undefined,
-      };
-      const updated = await inspectionsApi.update(inspection.id, dto);
-      toast.success($_("inspections.updateSuccess"));
+    const dto: UpdateInspectionDto = {
+      title: form.title,
+      description: form.description || undefined,
+      inspector_name: form.inspector_name,
+      inspector_company: form.inspector_company || undefined,
+      inspector_certification: form.inspector_certification || undefined,
+      inspection_date: form.inspection_date_str
+        ? new Date(form.inspection_date_str).toISOString()
+        : undefined,
+      status: form.status,
+      result_summary: form.result_summary || undefined,
+      defects_found: form.defects_found || undefined,
+      recommendations: form.recommendations || undefined,
+      compliant: form.compliant ?? undefined,
+      compliance_certificate_number: form.compliance_certificate_number || undefined,
+      cost: form.cost || undefined,
+      invoice_number: form.invoice_number || undefined,
+      notes: form.notes || undefined,
+    };
+    const updated = await withErrorHandling({
+      action: () => inspectionsApi.update(inspection.id, dto),
+      setLoading: (v) => submitting = v,
+      successMessage: $_("inspections.updateSuccess"),
+      errorMessage: $_("common.updateError"),
+    });
+    if (updated) {
       inspection = updated;
       editMode = false;
       dispatch("updated", updated);
-    } catch (err: any) {
-      toast.error(err.message || $_("common.updateError"));
-    } finally {
-      submitting = false;
     }
   }
 
@@ -111,42 +113,33 @@
     status: InspectionStatus,
     compliant: boolean | undefined,
   ) {
-    try {
-      const updated = await inspectionsApi.update(inspection.id, {
-        status,
-        compliant,
-      });
-      toast.success($_("inspections.statusUpdated", { values: { status: inspectionStatusLabels[status] } }));
+    const updated = await withErrorHandling({
+      action: () => inspectionsApi.update(inspection.id, { status, compliant }),
+      successMessage: $_("inspections.statusUpdated", { values: { status: inspectionStatusLabels[status] } }),
+      errorMessage: $_("inspections.statusUpdateError"),
+    });
+    if (updated) {
       inspection = updated;
       dispatch("updated", updated);
-    } catch (err: any) {
-      toast.error(err.message || $_("inspections.statusUpdateError"));
     }
   }
 
   async function handleDelete() {
     if (!confirm($_("inspections.deleteConfirm"))) return;
-    try {
-      await inspectionsApi.delete(inspection.id);
-      toast.success($_("inspections.deleteSuccess"));
+    const result = await withErrorHandling({
+      action: () => inspectionsApi.delete(inspection.id),
+      successMessage: $_("inspections.deleteSuccess"),
+      errorMessage: $_("inspections.deleteError"),
+    });
+    if (result !== undefined) {
       dispatch("deleted", inspection.id);
       handleClose();
-    } catch (err: any) {
-      toast.error(err.message || $_("inspections.deleteError"));
     }
   }
 
   function handleClose() {
     editMode = false;
     dispatch("close");
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
   }
 
   function statusColor(status: InspectionStatus): string {
@@ -196,12 +189,14 @@
             <button
               on:click={enterEditMode}
               class="px-3 py-1.5 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition"
+              data-testid="edit-inspection-button"
             >
               {$_("common.edit")}
             </button>
             <button
               on:click={handleDelete}
               class="px-3 py-1.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition"
+              data-testid="delete-inspection-button"
             >
               {$_("common.delete")}
             </button>
@@ -287,9 +282,7 @@
             <div>
               <p class="text-gray-500">{$_("inspections.cost")}</p>
               <p class="font-medium text-gray-900">
-                {new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(
-                  inspection.cost,
-                )}
+                {formatCurrency(inspection.cost)}
               </p>
               {#if inspection.invoice_number}
                 <p class="text-gray-600 text-xs mt-0.5">{$_("inspections.invoiceNumber")} {inspection.invoice_number}</p>
@@ -469,6 +462,7 @@
             on:click={saveEdit}
             disabled={submitting}
             class="px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 transition"
+            data-testid="save-inspection-button"
           >
             {submitting ? $_("common.saving") : $_("common.save")}
           </button>

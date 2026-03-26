@@ -7,6 +7,7 @@
     MajorityType,
   } from '../../lib/api/resolutions';
   import { toast } from '../../stores/toast';
+  import { withErrorHandling } from '../../lib/utils/error.utils';
 
   export let meetingId: string;
 
@@ -24,27 +25,25 @@
       return;
     }
 
-    try {
-      loading = true;
-      const resolution = await resolutionsApi.create(meetingId, {
+    await withErrorHandling({
+      action: () => resolutionsApi.create(meetingId, {
         meeting_id: meetingId,
         title: title.trim(),
         description: description.trim(),
         resolution_type: resolutionType,
         majority_required: majorityRequired,
-      });
-      toast.success($_("resolutions.create.success"));
-      dispatch('created', resolution);
-      // Reset form
-      title = '';
-      description = '';
-      resolutionType = 'standard';
-      majorityRequired = MajorityType.Simple;
-    } catch (err: any) {
-      toast.error(err.message || $_("resolutions.create.error"));
-    } finally {
-      loading = false;
-    }
+      }),
+      setLoading: (v) => loading = v,
+      successMessage: $_("resolutions.create.success"),
+      errorMessage: $_("resolutions.create.error"),
+      onSuccess: (resolution) => {
+        dispatch('created', resolution);
+        title = '';
+        description = '';
+        resolutionType = 'standard';
+        majorityRequired = MajorityType.Simple;
+      },
+    });
   }
 </script>
 
@@ -63,6 +62,7 @@
         placeholder={$_("resolutions.create.titlePlaceholder")}
         required
         class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        data-testid="resolution-title-input"
       />
     </div>
 
@@ -76,6 +76,7 @@
         rows="2"
         placeholder={$_("resolutions.create.descriptionPlaceholder")}
         class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+        data-testid="resolution-description-textarea"
       ></textarea>
     </div>
 
@@ -88,6 +89,7 @@
           id="resolution-type"
           bind:value={resolutionType}
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          data-testid="resolution-type-select"
         >
           <option value="standard">{$_("resolutions.create.typeStandard")}</option>
           <option value="budget">{$_("resolutions.create.typeBudget")}</option>
@@ -106,6 +108,7 @@
           id="resolution-majority"
           bind:value={majorityRequired}
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          data-testid="resolution-majority-select"
         >
           <option value={MajorityType.Simple}>{$_("resolutions.create.majoritySimple")}</option>
           <option value={MajorityType.Absolute}>{$_("resolutions.create.majorityAbsolute")}</option>
@@ -124,6 +127,7 @@
       type="button"
       on:click={() => dispatch('created', null)}
       class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+      data-testid="resolution-cancel-btn"
     >
       {$_("common.cancel")}
     </button>
@@ -131,6 +135,7 @@
       type="submit"
       disabled={loading || !title.trim()}
       class="px-4 py-2 text-sm text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      data-testid="resolution-submit-btn"
     >
       {loading ? $_("resolutions.create.creating") : $_("resolutions.create.submit")}
     </button>

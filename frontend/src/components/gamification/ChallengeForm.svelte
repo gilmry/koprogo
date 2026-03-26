@@ -7,6 +7,7 @@
     ChallengeType,
   } from '../../lib/api/gamification';
   import { toast } from '../../stores/toast';
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let organizationId: string;
   export let challenge: Challenge | null = null;
@@ -63,30 +64,27 @@
       return;
     }
 
-    try {
-      saving = true;
-      const data = {
-        organization_id: organizationId,
-        building_id: buildingId || undefined,
-        challenge_type: challengeType,
-        title: title.trim(),
-        description: description.trim(),
-        icon: icon || '🎯',
-        start_date: new Date(startDate).toISOString(),
-        end_date: new Date(endDate).toISOString(),
-        target_metric: targetMetric.trim(),
-        target_value: targetValue,
-        reward_points: rewardPoints,
-      };
+    const data = {
+      organization_id: organizationId,
+      building_id: buildingId || undefined,
+      challenge_type: challengeType,
+      title: title.trim(),
+      description: description.trim(),
+      icon: icon || '🎯',
+      start_date: new Date(startDate).toISOString(),
+      end_date: new Date(endDate).toISOString(),
+      target_metric: targetMetric.trim(),
+      target_value: targetValue,
+      reward_points: rewardPoints,
+    };
 
-      const result = await gamificationApi.createChallenge(data);
-      toast.success($_('gamification.challenge_created'));
-      dispatch('saved', result);
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.creation_error'));
-    } finally {
-      saving = false;
-    }
+    await withErrorHandling({
+      action: () => gamificationApi.createChallenge(data),
+      setLoading: (v) => saving = v,
+      successMessage: $_('gamification.challenge_created'),
+      errorMessage: $_('gamification.creation_error'),
+      onSuccess: (result) => dispatch('saved', result),
+    });
   }
 
   function handleCancel() {
@@ -94,11 +92,12 @@
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+<form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="challenge-form">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="md:col-span-2">
       <label for="ch-title" class="block text-sm font-medium text-gray-700">{$_('gamification.title')} *</label>
       <input id="ch-title" type="text" bind:value={title} required
+        data-testid="challenge-title-input"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
         placeholder={$_('gamification.title_placeholder')} />
     </div>
@@ -170,6 +169,7 @@
       {$_('common.cancel')}
     </button>
     <button type="submit" disabled={saving}
+      data-testid="challenge-submit-btn"
       class="px-4 py-2 text-sm font-medium text-white bg-amber-600 border border-transparent rounded-md hover:bg-amber-700 disabled:opacity-50">
       {#if saving}
         {$_('common.saving')}

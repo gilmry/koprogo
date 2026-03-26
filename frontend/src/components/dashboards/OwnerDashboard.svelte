@@ -7,6 +7,8 @@
 
   import { ticketsApi, type Ticket } from '../../lib/api/tickets';
   import { notificationsApi, type Notification as AppNotification } from '../../lib/api/notifications';
+  import { formatDateShort, formatDate } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
 
   $: user = $authStore.user;
 
@@ -102,15 +104,6 @@
 
   $: openTicketsCount = myTickets.filter(t => t.status !== 'Closed' && t.status !== 'Cancelled' && t.status !== 'Resolved').length;
 
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' });
-  }
-
-  function formatAmount(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
   function getUnitTypeIcon(type: string): string {
     const icons: Record<string, string> = {
       'Apartment': '🏠',
@@ -148,16 +141,11 @@
   }
 
   function formatFullDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    return formatDate(dateString);
   }
 </script>
 
-<div>
+<div data-testid="owner-dashboard">
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
       {$_('common.welcome')}, {user?.first_name} 👋
@@ -169,7 +157,7 @@
 
   {#if loading}
     <div class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" data-testid="owner-dashboard-spinner"></div>
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
@@ -193,7 +181,7 @@
           <span class="text-gray-600 text-sm font-medium">{$_('dashboards.owner.stats.expensesToPay')}</span>
           <span class="text-2xl">💰</span>
         </div>
-        <p class="text-3xl font-bold text-orange-600">{formatAmount(stats.pending_expenses_amount)}</p>
+        <p class="text-3xl font-bold text-orange-600">{formatCurrency(stats.pending_expenses_amount)}</p>
         <p class="text-sm text-gray-500 mt-1">{stats.pending_expenses_count} {$_('dashboards.owner.stats.expensesPending')}</p>
       </div>
 
@@ -203,7 +191,7 @@
           <span class="text-2xl">📅</span>
         </div>
         {#if stats.next_meeting}
-          <p class="text-xl font-bold text-gray-900">{formatDate(stats.next_meeting.date)}</p>
+          <p class="text-xl font-bold text-gray-900">{formatDateShort(stats.next_meeting.date)}</p>
           <p class="text-sm text-gray-500 mt-1">{stats.next_meeting.building_name}</p>
         {:else}
           <p class="text-lg font-medium text-gray-500">{$_('dashboards.owner.stats.noMeetingsPlanned')}</p>
@@ -368,7 +356,7 @@
                   <div class="flex items-center gap-2 text-xs text-gray-500">
                     <span>{ticket.category}</span>
                     <span>·</span>
-                    <span>{formatDate(ticket.created_at)}</span>
+                    <span>{formatDateShort(ticket.created_at)}</span>
                   </div>
                 </a>
               {/each}
@@ -402,7 +390,7 @@
                 <div class="p-3 border border-gray-200 rounded-lg bg-blue-50/50">
                   <h3 class="text-sm font-medium text-gray-900">{notif.title}</h3>
                   <p class="text-xs text-gray-600 mt-0.5 line-clamp-2">{notif.message}</p>
-                  <p class="text-xs text-gray-400 mt-1">{formatDate(notif.created_at)}</p>
+                  <p class="text-xs text-gray-400 mt-1">{formatDateShort(notif.created_at)}</p>
                 </div>
               {/each}
             </div>

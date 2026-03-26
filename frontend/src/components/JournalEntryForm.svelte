@@ -154,7 +154,7 @@
   }
 </script>
 
-<div class="journal-entry-form">
+<div class="journal-entry-form" data-testid="journal-entry-form">
   <div class="form-header">
     <h3>🧾 {$_('journal.title')}</h3>
     <p class="text-sm text-gray-600">{$_('journal.subtitle')}</p>
@@ -341,7 +341,7 @@
       <button type="button" class="btn btn-secondary" on:click={resetForm} disabled={loading}>
         🔄 {$_('journal.reset')}
       </button>
-      <button type="submit" class="btn btn-primary" disabled={loading || !isBalanced}>
+      <button type="submit" class="btn btn-primary" disabled={loading || !isBalanced} data-testid="submit-journal-entry-button">
         {#if loading}
           ⏳ {$_('journal.creating')}...
         {:else}

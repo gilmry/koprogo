@@ -2,6 +2,9 @@
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { onMount } from 'svelte';
+  import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
+  import { formatDateShort } from '../lib/utils/date.utils';
+  import { formatCurrency } from '../lib/utils/finance.utils';
 
   export let ownerId: string | null = null;
   export let organizationId: string;
@@ -18,38 +21,18 @@
   };
 
   async function loadContributions() {
-    try {
-      loading = true;
-      if (ownerId) {
-        contributions = await api.get(`/owner-contributions?owner_id=${ownerId}`);
-      } else {
-        // Load all contributions for organization
-        contributions = await api.get('/owner-contributions');
-      }
-    } catch (err: any) {
-      error = err.message;
-    } finally {
-      loading = false;
-    }
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    await withLoadingState({
+      action: () => ownerId
+        ? api.get(`/owner-contributions?owner_id=${ownerId}`)
+        : api.get('/owner-contributions'),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => { contributions = data; },
     });
   }
 
   function getStatusBadge(status: string): string {
-    const badges = {
+    const badges: Record<string, string> = {
       pending: 'bg-yellow-100 text-yellow-800',
       paid: 'bg-green-100 text-green-800',
       partial: 'bg-orange-100 text-orange-800',
@@ -59,7 +42,7 @@
   }
 
   function getStatusLabel(status: string): string {
-    const labels = {
+    const labels: Record<string, string> = {
       pending: $_('contributions.pending'),
       paid: $_('contributions.paid'),
       partial: $_('contributions.partial'),
@@ -69,7 +52,7 @@
   }
 
   function getTypeLabel(type: string): string {
-    const labels = {
+    const labels: Record<string, string> = {
       regular: $_('contributions.typeRegular'),
       extraordinary: $_('contributions.typeExtraordinary'),
       advance: $_('contributions.typeAdvance'),
@@ -96,21 +79,21 @@
   async function recordPayment() {
     if (!selectedContribution) return;
 
-    try {
-      const payload = {
-        payment_date: new Date(paymentData.payment_date).toISOString(),
-        payment_method: paymentData.payment_method,
-        payment_reference: paymentData.payment_reference || null
-      };
-
-      await api.put(`/owner-contributions/${selectedContribution.id}/mark-paid`, payload);
-
-      // Reload contributions
-      await loadContributions();
-      closePaymentModal();
-    } catch (err: any) {
-      error = err.message || 'Erreur lors de l\'enregistrement du paiement';
-    }
+    await withErrorHandling({
+      action: async () => {
+        const payload = {
+          payment_date: new Date(paymentData.payment_date).toISOString(),
+          payment_method: paymentData.payment_method,
+          payment_reference: paymentData.payment_reference || null
+        };
+        await api.put(`/owner-contributions/${selectedContribution.id}/mark-paid`, payload);
+      },
+      errorMessage: $_('contributions.recordPaymentError'),
+      onSuccess: async () => {
+        await loadContributions();
+        closePaymentModal();
+      },
+    });
   }
 
   onMount(() => {
@@ -139,7 +122,7 @@
     </div>
   {:else}
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
+      <table class="min-w-full divide-y divide-gray-200" data-testid="contribution-list">
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -164,9 +147,9 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           {#each contributions as contribution}
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-gray-50" data-testid="contribution-row">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {formatDate(contribution.contribution_date)}
+                {formatDateShort(contribution.contribution_date)}
               </td>
               <td class="px-6 py-4 text-sm text-gray-900">
                 {contribution.description}
@@ -178,7 +161,7 @@
                 {formatCurrency(contribution.amount)}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {getStatusBadge(contribution.payment_status)}">
+                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {getStatusBadge(contribution.payment_status)}" data-testid="contribution-status-badge">
                   {getStatusLabel(contribution.payment_status)}
                 </span>
               </td>
@@ -187,12 +170,13 @@
                   <button
                     on:click={() => openPaymentModal(contribution)}
                     class="text-blue-600 hover:text-blue-900 font-medium"
+                    data-testid="record-payment-button"
                   >
                     {$_('contributions.recordPayment')}
                   </button>
                 {:else if contribution.payment_date}
                   <span class="text-green-600 text-xs">
-                    {$_('contributions.paidOn')} {formatDate(contribution.payment_date)}
+                    {$_('contributions.paidOn')} {formatDateShort(contribution.payment_date)}
                   </span>
                 {/if}
               </td>

@@ -4,6 +4,7 @@
   import { bookingsApi, type BookableResource } from "../../lib/api/bookings";
   import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let isOpen = false;
   export let resource: BookableResource;
@@ -62,9 +63,8 @@
   async function handleSubmit() {
     if (!validate()) return;
 
-    try {
-      submitting = true;
-      const booking = await bookingsApi.createBooking({
+    const booking = await withErrorHandling({
+      action: () => bookingsApi.createBooking({
         resource_id: resource.id,
         owner_id: ownerId,
         start_time: new Date(startTime).toISOString(),
@@ -72,14 +72,14 @@
         purpose: purpose || undefined,
         attendees_count: attendeesCount || undefined,
         special_requests: specialRequests || undefined,
-      });
-      toast.success($_('bookings.success.created'));
+      }),
+      setLoading: (v) => submitting = v,
+      successMessage: $_('bookings.success.created'),
+      errorMessage: $_('bookings.error.creationFailed'),
+    });
+    if (booking) {
       dispatch("created", booking);
       handleClose();
-    } catch (err: any) {
-      toast.error(err.message || $_('bookings.error.creationFailed'));
-    } finally {
-      submitting = false;
     }
   }
 
@@ -91,7 +91,7 @@
 </script>
 
 <Modal {isOpen} title={$_('bookings.bookResource', { values: { name: resource?.resource_name ?? '' } })} on:close={handleClose}>
-  <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+  <form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="booking-create-form">
     <!-- Dates -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
@@ -189,6 +189,7 @@
         type="submit"
         disabled={submitting}
         class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
+        data-testid="submit-booking-button"
       >
         {submitting ? "Création…" : "Confirmer la réservation"}
       </button>

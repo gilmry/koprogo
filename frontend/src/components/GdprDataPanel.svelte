@@ -2,94 +2,89 @@
   import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
   import { authStore } from '../stores/auth';
-  import { toast } from '../stores/toast';
   import { api } from '../lib/api';
+  import { formatDateTime } from '../lib/utils/date.utils';
+  import { withErrorHandling } from '../lib/utils/error.utils';
   import type { GdprExport, GdprEraseResponse } from '../lib/types';
 
   let loading = false;
-  let canErase = true; // Default to true, backend will validate
+  let canErase = true;
   let checkingErasure = false;
   let exportData: GdprExport | null = null;
   let showExportModal = false;
   let showEraseConfirmation = false;
   let erasureResult: GdprEraseResponse | null = null;
 
-  // Article 16: Rectification
   let showRectifyModal = false;
   let rectifyEmail = '';
   let rectifyFirstName = '';
   let rectifyLastName = '';
 
-  // Article 18: Processing restriction
   let processingRestricted = false;
   let loadingRestriction = false;
 
-  // Article 21: Marketing preference
   let marketingOptOut = false;
   let loadingMarketing = false;
 
   onMount(async () => {
-    // Ensure auth store is initialized
     await authStore.init();
     await checkCanErase();
     await loadUserPreferences();
   });
 
   async function loadUserPreferences() {
-    try {
-      const user = await api.get<any>('/auth/me');
+    const user = await withErrorHandling({
+      action: () => api.get<any>('/auth/me'),
+      errorMessage: 'Failed to load user preferences',
+    });
+    if (user) {
       processingRestricted = user.processing_restricted || false;
       marketingOptOut = user.marketing_opt_out || false;
       rectifyEmail = user.email || '';
       rectifyFirstName = user.first_name || '';
       rectifyLastName = user.last_name || '';
-    } catch (error) {
-      console.error('Failed to load user preferences:', error);
     }
   }
 
   async function checkCanErase() {
     checkingErasure = true;
-    try {
-      const data = await api.get<{ can_erase: boolean; user_id: string }>('/gdpr/can-erase');
+    const data = await withErrorHandling({
+      action: () => api.get<{ can_erase: boolean; user_id: string }>('/gdpr/can-erase'),
+      errorMessage: 'Failed to check erasure eligibility',
+    });
+    if (data) {
       canErase = data.can_erase;
-    } catch (error) {
-      console.error('Failed to check erasure eligibility:', error);
-    } finally {
-      checkingErasure = false;
     }
+    checkingErasure = false;
   }
 
   async function handleExportData() {
-    loading = true;
-    try {
-      exportData = await api.get<GdprExport>('/gdpr/export');
+    const data = await withErrorHandling({
+      action: () => api.get<GdprExport>('/gdpr/export'),
+      setLoading: (v) => loading = v,
+      successMessage: 'Your personal data has been exported successfully',
+      errorMessage: 'Failed to export data',
+    });
+    if (data) {
+      exportData = data;
       showExportModal = true;
-      toast.success('Your personal data has been exported successfully');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to export data');
-    } finally {
-      loading = false;
     }
   }
 
   async function handleEraseData() {
-    loading = true;
-    try {
-      erasureResult = await api.delete<GdprEraseResponse>('/gdpr/erase');
-      showEraseConfirmation = false;
-      toast.success('Your personal data has been anonymized');
-
-      // Logout after erasure
+    const result = await withErrorHandling({
+      action: () => api.delete<GdprEraseResponse>('/gdpr/erase'),
+      setLoading: (v) => loading = v,
+      successMessage: 'Your personal data has been anonymized',
+      errorMessage: 'Failed to erase data',
+    });
+    showEraseConfirmation = false;
+    if (result) {
+      erasureResult = result;
       setTimeout(() => {
         authStore.logout();
         window.location.href = '/login';
       }, 3000);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to erase data');
-      showEraseConfirmation = false;
-    } finally {
-      loading = false;
     }
   }
 
@@ -110,49 +105,46 @@
   }
 
   async function handleRectifyData() {
-    loading = true;
-    try {
-      const requestBody: any = {};
-      if (rectifyEmail) requestBody.email = rectifyEmail;
-      if (rectifyFirstName) requestBody.first_name = rectifyFirstName;
-      if (rectifyLastName) requestBody.last_name = rectifyLastName;
+    const requestBody: any = {};
+    if (rectifyEmail) requestBody.email = rectifyEmail;
+    if (rectifyFirstName) requestBody.first_name = rectifyFirstName;
+    if (rectifyLastName) requestBody.last_name = rectifyLastName;
 
-      await api.put('/gdpr/rectify', requestBody);
+    const result = await withErrorHandling({
+      action: () => api.put('/gdpr/rectify', requestBody),
+      setLoading: (v) => loading = v,
+      successMessage: 'Your personal data has been updated successfully',
+      errorMessage: 'Failed to rectify data',
+    });
+    if (result) {
       showRectifyModal = false;
-      toast.success('Your personal data has been updated successfully');
       await loadUserPreferences();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to rectify data');
-    } finally {
-      loading = false;
     }
   }
 
   async function toggleProcessingRestriction() {
-    loadingRestriction = true;
-    try {
-      await api.put('/gdpr/restrict-processing', {});
+    const result = await withErrorHandling({
+      action: () => api.put('/gdpr/restrict-processing', {}),
+      setLoading: (v) => loadingRestriction = v,
+      successMessage: processingRestricted ? 'Data processing restriction has been lifted' : 'Data processing has been restricted',
+      errorMessage: 'Failed to update processing restriction',
+    });
+    if (result) {
       processingRestricted = !processingRestricted;
-      toast.success(processingRestricted ? 'Data processing has been restricted' : 'Data processing restriction has been lifted');
       await loadUserPreferences();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update processing restriction');
-    } finally {
-      loadingRestriction = false;
     }
   }
 
   async function toggleMarketingPreference() {
-    loadingMarketing = true;
-    try {
-      await api.put('/gdpr/marketing-preference', { opt_out: !marketingOptOut });
+    const result = await withErrorHandling({
+      action: () => api.put('/gdpr/marketing-preference', { opt_out: !marketingOptOut }),
+      setLoading: (v) => loadingMarketing = v,
+      successMessage: marketingOptOut ? 'You have opted in to marketing communications' : 'You have opted out of marketing communications',
+      errorMessage: 'Failed to update marketing preference',
+    });
+    if (result) {
       marketingOptOut = !marketingOptOut;
-      toast.success(marketingOptOut ? 'You have opted out of marketing communications' : 'You have opted in to marketing communications');
       await loadUserPreferences();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to update marketing preference');
-    } finally {
-      loadingMarketing = false;
     }
   }
 </script>
@@ -167,7 +159,7 @@
 
   <div class="space-y-6">
     <!-- Export Data Section -->
-    <div class="border-l-4 border-blue-500 bg-blue-50 p-4">
+    <div class="border-l-4 border-blue-500 bg-blue-50 p-4" data-testid="gdpr-section-export">
       <div class="flex items-start">
         <div class="flex-shrink-0">
           <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +193,7 @@
     </div>
 
     <!-- Rectify Data Section -->
-    <div class="border-l-4 border-green-500 bg-green-50 p-4">
+    <div class="border-l-4 border-green-500 bg-green-50 p-4" data-testid="gdpr-section-rectify">
       <div class="flex items-start">
         <div class="flex-shrink-0">
           <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +219,7 @@
     </div>
 
     <!-- Restrict Processing Section -->
-    <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4">
+    <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4" data-testid="gdpr-section-restrict">
       <div class="flex items-start">
         <div class="flex-shrink-0">
           <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -258,7 +250,7 @@
     </div>
 
     <!-- Marketing Preference Section -->
-    <div class="border-l-4 border-purple-500 bg-purple-50 p-4">
+    <div class="border-l-4 border-purple-500 bg-purple-50 p-4" data-testid="gdpr-section-marketing">
       <div class="flex items-start">
         <div class="flex-shrink-0">
           <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -289,7 +281,7 @@
     </div>
 
     <!-- Erase Data Section -->
-    <div class="border-l-4 border-red-500 bg-red-50 p-4">
+    <div class="border-l-4 border-red-500 bg-red-50 p-4" data-testid="gdpr-section-erase">
       <div class="flex items-start">
         <div class="flex-shrink-0">
           <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -338,7 +330,7 @@
             <h3 class="text-sm font-medium text-green-800">Data Anonymized Successfully</h3>
             <div class="mt-2 text-sm text-green-700">
               <p>Your user account and {erasureResult.owners_anonymized} owner record(s) have been anonymized.</p>
-              <p class="mt-1">Anonymized at: {new Date(erasureResult.anonymized_at).toLocaleString()}</p>
+              <p class="mt-1">Anonymized at: {formatDateTime(erasureResult.anonymized_at)}</p>
               <p class="mt-1 font-semibold">You will be logged out in 3 seconds...</p>
             </div>
           </div>
@@ -364,7 +356,7 @@
               <div class="mt-2 space-y-4 max-h-96 overflow-y-auto">
                 <div>
                   <h4 class="font-semibold text-gray-700">Export Date:</h4>
-                  <p class="text-sm text-gray-600">{new Date(exportData.export_date).toLocaleString()}</p>
+                  <p class="text-sm text-gray-600">{formatDateTime(exportData.export_date)}</p>
                 </div>
 
                 <div>

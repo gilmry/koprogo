@@ -3,6 +3,9 @@
   import { _ } from '../../lib/i18n';
   import { budgetsApi, type Budget, type BudgetVariance } from '../../lib/api/budgets';
   import BudgetStatusBadge from './BudgetStatusBadge.svelte';
+  import { withLoadingState, withErrorHandling } from '../../lib/utils/error.utils';
+  import { formatDate } from '../../lib/utils/date.utils';
+  import { formatCurrency } from '../../lib/utils/finance.utils';
   import { toast } from '../../stores/toast';
 
   let budget: Budget | null = null;
@@ -12,11 +15,9 @@
   let actionLoading = false;
   let budgetId = '';
 
-  // Approve modal
   let showApproveModal = false;
   let meetingId = '';
 
-  // Reject modal
   let showRejectModal = false;
   let rejectReason = '';
 
@@ -27,46 +28,33 @@
   });
 
   async function loadBudget() {
-    try {
-      loading = true;
-      error = '';
-      budget = await budgetsApi.getById(budgetId);
-
-      if (budget?.status === 'approved') {
-        try {
-          variance = await budgetsApi.getVariance(budgetId);
-        } catch {
-          // Variance not available yet
+    await withLoadingState({
+      action: async () => {
+        const b = await budgetsApi.getById(budgetId);
+        let v: BudgetVariance | null = null;
+        if (b?.status === 'approved') {
+          try { v = await budgetsApi.getVariance(budgetId); } catch { /* not available */ }
         }
-      }
-    } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement du budget';
-    } finally {
-      loading = false;
-    }
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
-  function formatDate(dateString: string | null): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric', month: 'long', day: 'numeric'
+        return { b, v };
+      },
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_('budgets.errors.loadingFailed'),
+      onSuccess: (result) => {
+        budget = result.b;
+        variance = result.v;
+      },
     });
   }
 
   async function submitBudget() {
     if (!confirm($_('budgets.confirms.submitForApproval'))) return;
-    try {
-      actionLoading = true;
-      budget = await budgetsApi.submit(budgetId);
-    } catch (err: any) {
-      toast.error($_('budgets.errors.submit') + ': ' + (err.message || $_('common.error')));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => budgetsApi.submit(budgetId),
+      setLoading: (v) => actionLoading = v,
+      errorMessage: $_('budgets.errors.submit'),
+    });
+    if (result) budget = result;
   }
 
   async function approveBudget() {
@@ -74,49 +62,46 @@
       toast.error($_('budgets.errors.meetingIdRequired'));
       return;
     }
-    try {
-      actionLoading = true;
-      budget = await budgetsApi.approve(budgetId, meetingId);
+    const result = await withErrorHandling({
+      action: () => budgetsApi.approve(budgetId, meetingId),
+      setLoading: (v) => actionLoading = v,
+      errorMessage: $_('budgets.errors.approve'),
+    });
+    if (result) {
+      budget = result;
       showApproveModal = false;
-    } catch (err: any) {
-      toast.error($_('budgets.errors.approve') + ': ' + (err.message || $_('common.error')));
-    } finally {
-      actionLoading = false;
     }
   }
 
   async function rejectBudget() {
-    try {
-      actionLoading = true;
-      budget = await budgetsApi.reject(budgetId, rejectReason || undefined);
+    const result = await withErrorHandling({
+      action: () => budgetsApi.reject(budgetId, rejectReason || undefined),
+      setLoading: (v) => actionLoading = v,
+      errorMessage: $_('budgets.errors.reject'),
+    });
+    if (result) {
+      budget = result;
       showRejectModal = false;
-    } catch (err: any) {
-      toast.error($_('budgets.errors.reject') + ': ' + (err.message || $_('common.error')));
-    } finally {
-      actionLoading = false;
     }
   }
 
   async function archiveBudget() {
     if (!confirm($_('budgets.confirms.archiveBudget'))) return;
-    try {
-      actionLoading = true;
-      budget = await budgetsApi.archive(budgetId);
-    } catch (err: any) {
-      toast.error($_('budgets.errors.archive') + ': ' + (err.message || $_('common.error')));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => budgetsApi.archive(budgetId),
+      setLoading: (v) => actionLoading = v,
+      errorMessage: $_('budgets.errors.archive'),
+    });
+    if (result) budget = result;
   }
 
   async function deleteBudget() {
     if (!confirm($_('budgets.confirms.deleteBudget'))) return;
-    try {
-      await budgetsApi.delete(budgetId);
-      window.location.href = '/budgets';
-    } catch (err: any) {
-      toast.error($_('budgets.errors.delete') + ': ' + (err.message || $_('common.error')));
-    }
+    await withErrorHandling({
+      action: () => budgetsApi.delete(budgetId),
+      errorMessage: $_('budgets.errors.delete'),
+      onSuccess: () => { window.location.href = '/budgets'; },
+    });
   }
 </script>
 
@@ -130,8 +115,7 @@
     <button on:click={loadBudget} class="mt-2 text-sm text-red-600 underline">{$_('common.retry')}</button>
   </div>
 {:else if budget}
-  <div class="space-y-6">
-    <!-- Header -->
+  <div class="space-y-6" data-testid="budget-detail">
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
         <div class="flex items-center justify-between">
@@ -145,7 +129,7 @@
     </div>
 
     <!-- Amounts -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4" data-testid="budget-info">
       <div class="bg-white rounded-lg shadow p-6">
         <p class="text-sm text-gray-600 mb-1">{$_('budgets.ordinaryBudget')}</p>
         <p class="text-2xl font-bold text-gray-900">{formatCurrency(budget.ordinary_budget)}</p>
@@ -198,7 +182,7 @@
 
     <!-- Variance Analysis (only for approved budgets) -->
     {#if variance}
-      <div class="bg-white rounded-lg shadow p-6">
+      <div class="bg-white rounded-lg shadow p-6" data-testid="budget-variance">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">
           {$_('budgets.varianceAnalysis')}
           {#if variance.has_overruns}
@@ -265,6 +249,7 @@
           <button
             on:click={submitBudget}
             disabled={actionLoading}
+            data-testid="submit-budget-button"
             class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
           >
             {$_('budgets.actions.submitForApproval')}
@@ -275,6 +260,7 @@
           <button
             on:click={() => showApproveModal = true}
             disabled={actionLoading}
+            data-testid="approve-budget-button"
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
           >
             {$_('budgets.actions.approve')}
@@ -282,6 +268,7 @@
           <button
             on:click={() => showRejectModal = true}
             disabled={actionLoading}
+            data-testid="reject-budget-button"
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
           >
             {$_('budgets.actions.reject')}
@@ -292,6 +279,7 @@
           <button
             on:click={archiveBudget}
             disabled={actionLoading}
+            data-testid="archive-budget-button"
             class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition disabled:opacity-50"
           >
             {$_('budgets.actions.archive')}
@@ -301,6 +289,7 @@
         {#if budget.status === 'draft'}
           <button
             on:click={deleteBudget}
+            data-testid="delete-budget-button"
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
           >
             {$_('common.delete')}

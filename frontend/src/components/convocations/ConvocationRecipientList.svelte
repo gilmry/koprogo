@@ -6,7 +6,8 @@
     type ConvocationRecipient,
     AttendanceStatus,
   } from '../../lib/api/convocations';
-  import { toast } from '../../stores/toast';
+  import { formatDateTime } from '../../lib/utils/date.utils';
+  import { withErrorHandling, withLoadingState } from '../../lib/utils/error.utils';
 
   export let convocationId: string;
 
@@ -21,16 +22,13 @@
   });
 
   async function loadRecipients() {
-    try {
-      loading = true;
-      error = '';
-      recipients = await convocationsApi.getRecipients(convocationId);
-      applyFilter();
-    } catch (err: any) {
-      error = err.message || $_('convocations.errors.loadingRecipientsFailed');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => convocationsApi.getRecipients(convocationId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => { recipients = data; applyFilter(); },
+      errorMessage: $_('convocations.errors.loadingRecipientsFailed'),
+    });
   }
 
   function applyFilter() {
@@ -60,13 +58,12 @@
   $: if (filter) applyFilter();
 
   async function updateAttendance(recipientId: string, status: AttendanceStatus) {
-    try {
-      await convocationsApi.updateAttendance(recipientId, status);
-      toast.success($_('convocations.messages.attendanceUpdated'));
-      await loadRecipients();
-    } catch (err: any) {
-      toast.error(err.message || $_('common.updateFailed'));
-    }
+    await withErrorHandling({
+      action: () => convocationsApi.updateAttendance(recipientId, status),
+      successMessage: $_('convocations.messages.attendanceUpdated'),
+      errorMessage: $_('common.updateFailed'),
+      onSuccess: () => { loadRecipients(); },
+    });
   }
 
   function getAttendanceConfig(status: AttendanceStatus): { bg: string; text: string; label: string } {
@@ -79,20 +76,9 @@
     };
     return config[status] || config[AttendanceStatus.Pending];
   }
-
-  function formatDate(dateStr: string | null | undefined): string {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
 </script>
 
-<div class="bg-gray-50 border border-gray-200 rounded-lg">
+<div class="bg-gray-50 border border-gray-200 rounded-lg" data-testid="recipient-list">
   <div class="px-4 py-3 border-b border-gray-200">
     <div class="flex items-center justify-between">
       <h4 class="text-sm font-semibold text-gray-900">
@@ -148,7 +134,7 @@
         <tbody class="divide-y divide-gray-100">
           {#each filteredRecipients as recipient (recipient.id)}
             {@const attendCfg = getAttendanceConfig(recipient.attendance_status)}
-            <tr class="hover:bg-white">
+            <tr class="hover:bg-white" data-testid="recipient-row-{recipient.id}">
               <td class="px-4 py-2">
                 <span class="font-medium text-gray-900">{recipient.owner_name || recipient.owner_id.slice(0, 8)}</span>
               </td>
@@ -157,20 +143,20 @@
                 {#if recipient.email_failed}
                   <span class="text-red-600 text-xs">❌ {$_('common.failed')}</span>
                 {:else if recipient.email_sent_at}
-                  <span class="text-green-600 text-xs">✅ {formatDate(recipient.email_sent_at)}</span>
+                  <span class="text-green-600 text-xs">✅ {formatDateTime(recipient.email_sent_at)}</span>
                 {:else}
                   <span class="text-gray-400 text-xs">-</span>
                 {/if}
               </td>
               <td class="px-4 py-2">
                 {#if recipient.email_opened_at}
-                  <span class="text-blue-600 text-xs">👁️ {formatDate(recipient.email_opened_at)}</span>
+                  <span class="text-blue-600 text-xs">👁️ {formatDateTime(recipient.email_opened_at)}</span>
                 {:else}
                   <span class="text-gray-400 text-xs">-</span>
                 {/if}
               </td>
               <td class="px-4 py-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {attendCfg.bg} {attendCfg.text}">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {attendCfg.bg} {attendCfg.text}" data-testid="recipient-status-{recipient.id}">
                   {attendCfg.label}
                 </span>
               </td>
@@ -190,6 +176,7 @@
                       on:click={() => updateAttendance(recipient.id, AttendanceStatus.WillAttend)}
                       class="text-xs text-green-600 hover:text-green-800 underline"
                       title={$_('convocations.markAsPresent')}
+                      data-testid="recipient-btn-attend-{recipient.id}"
                     >
                       ✅
                     </button>
@@ -197,6 +184,7 @@
                       on:click={() => updateAttendance(recipient.id, AttendanceStatus.WillNotAttend)}
                       class="text-xs text-red-600 hover:text-red-800 underline"
                       title={$_('convocations.markAsAbsent')}
+                      data-testid="recipient-btn-absent-{recipient.id}"
                     >
                       ❌
                     </button>

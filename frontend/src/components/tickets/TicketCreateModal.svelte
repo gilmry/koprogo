@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from "svelte";
+  import { createEventDispatcher } from "svelte";
   import { _ } from '../../lib/i18n';
   import {
     ticketsApi,
@@ -9,6 +9,8 @@
   } from "../../lib/api/tickets";
   import { api } from "../../lib/api";
   import { toast } from "../../stores/toast";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
+  import { validateCreateTicket } from "../../lib/validators/ticket.validators";
   import type { Building, PageResponse } from "../../lib/types";
   import Modal from "../ui/Modal.svelte";
   import FormInput from "../ui/FormInput.svelte";
@@ -39,42 +41,29 @@
   let submitting = false;
   let errors: Record<string, string> = {};
 
-  // Charger la liste des immeubles quand le modal s'ouvre
   $: if (open && buildings.length === 0) {
     loadBuildings();
   }
 
   async function loadBuildings() {
-    try {
-      loadingBuildings = true;
-      const response = await api.get<PageResponse<Building>>('/buildings?per_page=100');
-      buildings = response.data;
-      // Si pas de buildingId pré-sélectionné et un seul immeuble, le sélectionner
-      if (!formData.building_id && buildings.length === 1) {
-        formData.building_id = buildings[0].id;
-      }
-    } catch (e) {
-      console.error('Erreur chargement immeubles:', e);
-    } finally {
-      loadingBuildings = false;
-    }
+    await withErrorHandling({
+      action: () => api.get<PageResponse<Building>>('/buildings?per_page=100'),
+      setLoading: (v) => loadingBuildings = v,
+      onSuccess: (response) => {
+        buildings = response.data;
+        if (!formData.building_id && buildings.length === 1) {
+          formData.building_id = buildings[0].id;
+        }
+      },
+    });
   }
 
   function validate(): boolean {
-    errors = {};
-
-    if (!formData.building_id) {
-      errors.building_id = $_('validation.buildingRequired');
-    }
-
-    if (!formData.title || formData.title.trim().length < 3) {
-      errors.title = $_('validation.titleMinLength');
-    }
-
-    if (!formData.description || formData.description.trim().length < 10) {
-      errors.description = $_('validation.descriptionMinLength');
-    }
-
+    errors = validateCreateTicket(formData, {
+      buildingRequired: $_('validation.buildingRequired'),
+      titleMinLength: $_('validation.titleMinLength'),
+      descriptionMinLength: $_('validation.descriptionMinLength'),
+    });
     return Object.keys(errors).length === 0;
   }
 
@@ -84,23 +73,19 @@
       return;
     }
 
-    try {
-      submitting = true;
-
-      const ticket = await ticketsApi.create({
+    const result = await withErrorHandling({
+      action: () => ticketsApi.create({
         ...formData,
         requester_id: requesterId,
         unit_id: formData.unit_id || undefined,
-      });
-
-      toast.success($_('tickets.createSuccess'));
-
-      dispatch("created", ticket);
+      }),
+      setLoading: (v) => submitting = v,
+      successMessage: $_('tickets.createSuccess'),
+      errorMessage: $_('tickets.createError'),
+    });
+    if (result) {
+      dispatch("created", result);
       handleClose();
-    } catch (err: any) {
-      toast.error(err.message || $_('tickets.createError'));
-    } finally {
-      submitting = false;
     }
   }
 
@@ -113,7 +98,7 @@
       priority: TicketPriority.Medium,
       category: TicketCategory.General,
       requester_id: requesterId,
-      unit_id: unitId,
+      unit_id: unitId || undefined,
     };
     errors = {};
     dispatch("close");

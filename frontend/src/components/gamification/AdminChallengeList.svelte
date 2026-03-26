@@ -9,6 +9,8 @@
   } from '../../lib/api/gamification';
   import ChallengeForm from './ChallengeForm.svelte';
   import { toast } from '../../stores/toast';
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
   export let organizationId: string;
   export let buildingId: string = '';
@@ -33,59 +35,53 @@
       loading = false;
       return;
     }
-    try {
-      loading = true;
-      error = '';
-      challenges = await gamificationApi.listChallenges(organizationId);
-    } catch (err: any) {
-      error = err.message || $_('common.load_error');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => gamificationApi.listChallenges(organizationId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => challenges = data,
+      errorMessage: $_('common.load_error'),
+    });
   }
 
   async function handleActivate(challenge: Challenge) {
     if (!confirm($_('gamification.confirm_activate', { title: challenge.title }))) return;
-    try {
-      await gamificationApi.activateChallenge(challenge.id);
-      toast.success($_('gamification.activate_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.activate_error'));
-    }
+    await withErrorHandling({
+      action: () => gamificationApi.activateChallenge(challenge.id),
+      successMessage: $_('gamification.activate_success'),
+      errorMessage: $_('gamification.activate_error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   async function handleComplete(challenge: Challenge) {
     if (!confirm($_('gamification.confirm_complete', { title: challenge.title }))) return;
-    try {
-      await gamificationApi.completeChallenge(challenge.id);
-      toast.success($_('gamification.complete_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('common.error'));
-    }
+    await withErrorHandling({
+      action: () => gamificationApi.completeChallenge(challenge.id),
+      successMessage: $_('gamification.complete_success'),
+      errorMessage: $_('common.error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   async function handleCancel(challenge: Challenge) {
     if (!confirm($_('gamification.confirm_cancel', { title: challenge.title }))) return;
-    try {
-      await gamificationApi.cancelChallenge(challenge.id);
-      toast.success($_('gamification.cancel_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('common.error'));
-    }
+    await withErrorHandling({
+      action: () => gamificationApi.cancelChallenge(challenge.id),
+      successMessage: $_('gamification.cancel_success'),
+      errorMessage: $_('common.error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   async function handleDelete(challenge: Challenge) {
     if (!confirm($_('gamification.confirm_delete_challenge', { title: challenge.title }))) return;
-    try {
-      await gamificationApi.deleteChallenge(challenge.id);
-      toast.success($_('gamification.delete_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.delete_error'));
-    }
+    await withErrorHandling({
+      action: () => gamificationApi.deleteChallenge(challenge.id),
+      successMessage: $_('gamification.delete_success'),
+      errorMessage: $_('gamification.delete_error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   function handleSaved() {
@@ -109,14 +105,9 @@
     [ChallengeType.Building]: $_('gamification.type_building'),
   };
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit', month: 'short', year: 'numeric',
-    });
-  }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="admin-challenge-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
@@ -124,6 +115,7 @@
         <p class="mt-1 text-sm text-gray-500">{$_('gamification.challenge_count', { count: challenges.length })}</p>
       </div>
       <button on:click={() => showForm = !showForm}
+        data-testid="challenge-create-btn"
         class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700">
         {showForm ? $_('common.close') : '+ ' + $_('common.new')}
       </button>
@@ -163,12 +155,12 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="admin-challenge-loading">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
-    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
+    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md" data-testid="admin-challenge-error">
       <p class="text-sm text-red-800">{error}</p>
       <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
@@ -183,7 +175,7 @@
     <ul class="divide-y divide-gray-200">
       {#each filteredChallenges as challenge (challenge.id)}
         {@const statusCfg = getStatusConfig(challenge.status)}
-        <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+        <li class="px-4 py-4 sm:px-6 hover:bg-gray-50" data-testid="admin-challenge-row">
           <div class="flex items-start gap-3">
             <span class="text-2xl flex-shrink-0">{challenge.icon || '🎯'}</span>
             <div class="flex-1 min-w-0">
@@ -199,7 +191,7 @@
               {/if}
               <div class="flex items-center gap-3 text-xs text-gray-500">
                 <span>{challenge.reward_points} pts</span>
-                <span>{formatDate(challenge.start_date)} - {formatDate(challenge.end_date)}</span>
+                <span>{formatDateShort(challenge.start_date)} - {formatDateShort(challenge.end_date)}</span>
                 <span>Objectif: {challenge.target_value} {challenge.target_metric}</span>
               </div>
             </div>

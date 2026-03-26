@@ -13,6 +13,8 @@
   import { toast } from "../../stores/toast";
   import ProviderOffersList from "./ProviderOffersList.svelte";
   import EnergyBillUpload from "./EnergyBillUpload.svelte";
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
   export let campaignId: string;
   export let currentUserId: string;
@@ -31,37 +33,30 @@
   });
 
   async function loadData() {
-    try {
-      loading = true;
-      error = "";
-
-      // Load campaign and stats in parallel
-      const [campaignData, statsData] = await Promise.all([
-        energyCampaignsApi.getById(campaignId),
-        energyCampaignsApi.getStats(campaignId),
-      ]);
-
-      campaign = campaignData;
-      stats = statsData;
-
-      // Load user's uploads
-      if (currentUnitId) {
-        const allUploads = await energyBillsApi.getMyUploads();
-        myUploads = allUploads.filter(
-          (u) => u.campaign_id === campaignId && !u.deleted_at,
-        );
-      }
-    } catch (err: any) {
-      error =
-        err.message || $_("energy.campaign.loadError");
-      console.error("Failed to load campaign details:", err);
-    } finally {
-      loading = false;
-    }
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE");
+    await withLoadingState({
+      action: async () => {
+        const [campaignData, statsData] = await Promise.all([
+          energyCampaignsApi.getById(campaignId),
+          energyCampaignsApi.getStats(campaignId),
+        ]);
+        let uploads: EnergyBillUploadType[] = [];
+        if (currentUnitId) {
+          const allUploads = await energyBillsApi.getMyUploads();
+          uploads = allUploads.filter(
+            (u) => u.campaign_id === campaignId && !u.deleted_at,
+          );
+        }
+        return { campaignData, statsData, uploads };
+      },
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: ({ campaignData, statsData, uploads }) => {
+        campaign = campaignData;
+        stats = statsData;
+        myUploads = uploads;
+      },
+      errorMessage: $_("energy.campaign.loadError"),
+    });
   }
 
   function getProgressPercentage(): number {
@@ -113,31 +108,25 @@
   }
 
   async function withdrawConsent(uploadId: string) {
-    if (
-      !confirm($_("energy.withdrawConsentConfirm"))
-    ) {
-      return;
-    }
-
-    try {
-      await energyBillsApi.withdrawConsent(uploadId);
-      await loadData();
-      toast.success($_("energy.withdrawConsentSuccess"));
-    } catch (err: any) {
-      toast.error($_("energy.withdrawConsentError") + ": " + err.message);
-    }
+    if (!confirm($_("energy.withdrawConsentConfirm"))) return;
+    await withErrorHandling({
+      action: () => energyBillsApi.withdrawConsent(uploadId),
+      successMessage: $_("energy.withdrawConsentSuccess"),
+      errorMessage: $_("energy.withdrawConsentError"),
+      onSuccess: () => loadData(),
+    });
   }
 </script>
 
 {#if loading}
-  <div class="p-8 text-center">
+  <div class="p-8 text-center" data-testid="campaign-detail-loading">
     <div
       class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"
     ></div>
     <p class="mt-4 text-gray-500">{$_("common.loading")}</p>
   </div>
 {:else if error}
-  <div class="p-4 bg-red-50 border border-red-200 rounded-md">
+  <div class="p-4 bg-red-50 border border-red-200 rounded-md" data-testid="campaign-detail-error">
     <p class="text-sm text-red-800">❌ {error}</p>
     <button
       on:click={loadData}
@@ -147,9 +136,9 @@
     </button>
   </div>
 {:else if campaign}
-  <div class="space-y-6">
+  <div class="space-y-6" data-testid="campaign-detail">
     <!-- Header -->
-    <div class="bg-white shadow-md rounded-lg p-6">
+    <div class="bg-white shadow-md rounded-lg p-6" data-testid="campaign-detail-header">
       <div class="flex items-start justify-between">
         <div class="flex-1">
           <h2 class="text-2xl font-bold text-gray-900 mb-2">
@@ -184,11 +173,11 @@
         <div class="p-4 bg-blue-50 rounded-lg">
           <div class="text-sm text-blue-600 font-medium">{$_("energy.campaign.deadlineParticipation")}</div>
           <div class="text-lg text-blue-900">
-            {formatDate(campaign.deadline_participation)}
+            {formatDateShort(campaign.deadline_participation)}
           </div>
           {#if campaign.deadline_vote}
             <div class="text-xs text-blue-600 mt-1">
-              {$_("energy.campaign.voteUntil")} {formatDate(campaign.deadline_vote)}
+              {$_("energy.campaign.voteUntil")} {formatDateShort(campaign.deadline_vote)}
             </div>
           {/if}
         </div>
@@ -277,8 +266,8 @@
                         : "🌡️ Chauffage"}
                   </div>
                   <div class="text-xs text-gray-500">
-                    {formatDate(upload.billing_period_start)} →
-                    {formatDate(upload.billing_period_end)}
+                    {formatDateShort(upload.billing_period_start)} →
+                    {formatDateShort(upload.billing_period_end)}
                   </div>
                   <div class="text-xs text-gray-500">
                     {upload.verified
@@ -288,6 +277,7 @@
                 </div>
                 <button
                   on:click={() => withdrawConsent(upload.id)}
+                  data-testid="withdraw-consent-btn"
                   class="text-xs text-red-600 hover:text-red-800 underline"
                   title={$_("energy.withdrawConsentTitle")}
                 >

@@ -6,6 +6,8 @@
   import type { Building } from '../../lib/types';
   import BudgetStatusBadge from './BudgetStatusBadge.svelte';
   import BudgetCreateForm from './BudgetCreateForm.svelte';
+  import { withLoadingState, withErrorHandling } from '../../lib/utils/error.utils';
+  import { formatCurrency } from '../../lib/utils/finance.utils';
 
   let budgets: Budget[] = [];
   let stats: BudgetStats | null = null;
@@ -14,7 +16,6 @@
   let error = '';
   let showCreateForm = false;
 
-  // Filters
   let filterBuildingId = '';
   let filterStatus = '';
   let filterYear = '';
@@ -32,19 +33,20 @@
   });
 
   async function loadBudgets() {
-    try {
-      loading = true;
-      error = '';
-      const statusFilter = filterStatus ? filterStatus as BudgetStatus : undefined;
-      const buildingFilter = filterBuildingId || undefined;
-      const response = await budgetsApi.list(currentPage, 20, buildingFilter, statusFilter);
-      budgets = response.data;
-      totalPages = Math.ceil(response.total / response.per_page);
-    } catch (err: any) {
-      error = err.message || $_('budgets.errors.loadingFailed');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => {
+        const statusFilter = filterStatus ? filterStatus as BudgetStatus : undefined;
+        const buildingFilter = filterBuildingId || undefined;
+        return budgetsApi.list(currentPage, 20, buildingFilter, statusFilter);
+      },
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_('budgets.errors.loadingFailed'),
+      onSuccess: (response) => {
+        budgets = response.data;
+        totalPages = Math.ceil(response.total / response.per_page);
+      },
+    });
   }
 
   async function loadStats() {
@@ -53,10 +55,6 @@
     } catch (err) {
       console.error('Error loading stats:', err);
     }
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
   }
 
   function handleCreated() {
@@ -122,6 +120,7 @@
           id="filter-status"
           bind:value={filterStatus}
           on:change={() => { currentPage = 1; loadBudgets(); }}
+          data-testid="budget-status-filter"
           class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
         >
           <option value="">{$_('common.all')}</option>
@@ -136,6 +135,7 @@
       <div class="ml-auto">
         <button
           on:click={() => showCreateForm = !showCreateForm}
+          data-testid="create-budget-button"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
         >
           {showCreateForm ? $_('common.close') : '+ ' + $_('budgets.newBudget')}
@@ -173,7 +173,7 @@
     </div>
   {:else}
     <div class="bg-white rounded-lg shadow overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
+      <table class="min-w-full divide-y divide-gray-200" data-testid="budget-list">
         <thead class="bg-gray-50">
           <tr>
             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">{$_('budgets.year')}</th>
@@ -189,7 +189,7 @@
         <tbody class="divide-y divide-gray-200">
           {#each budgets as budget}
             {@const buildingName = buildings.find(b => b.id === budget.building_id)?.name || budget.building_id.substring(0, 8)}
-            <tr class="hover:bg-gray-50 transition">
+            <tr class="hover:bg-gray-50 transition" data-testid="budget-row">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{budget.fiscal_year}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{buildingName}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{formatCurrency(budget.ordinary_budget)}</td>

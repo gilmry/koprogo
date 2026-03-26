@@ -2,6 +2,9 @@
   import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
+  import { formatDate } from '../lib/utils/date.utils';
+  import { formatCurrency } from '../lib/utils/finance.utils';
+  import { withLoadingState } from '../lib/utils/error.utils';
 
   export let buildingId: string | null = null;
   export let onInvoiceSelected: ((invoice: any) => void) | null = null;
@@ -31,42 +34,43 @@
   });
 
   async function loadInvoices() {
-    try {
-      loading = true;
-      error = '';
+    await withLoadingState({
+      action: async () => {
+        let url = '/invoices';
+        const params = new URLSearchParams();
 
-      let url = '/invoices';
-      const params = new URLSearchParams();
+        if (buildingId) {
+          params.append('building_id', buildingId);
+        }
 
-      if (buildingId) {
-        params.append('building_id', buildingId);
-      }
+        if (showPendingOnly) {
+          params.append('approval_status', 'pending_approval');
+        } else if (statusFilter) {
+          params.append('approval_status', statusFilter);
+        }
 
-      if (showPendingOnly) {
-        params.append('approval_status', 'pending_approval');
-      } else if (statusFilter) {
-        params.append('approval_status', statusFilter);
-      }
+        if (dateFrom) {
+          params.append('date_from', dateFrom);
+        }
+        if (dateTo) {
+          params.append('date_to', dateTo);
+        }
 
-      if (dateFrom) {
-        params.append('date_from', dateFrom);
-      }
-      if (dateTo) {
-        params.append('date_to', dateTo);
-      }
+        const queryString = params.toString();
+        if (queryString) {
+          url += `?${queryString}`;
+        }
 
-      const queryString = params.toString();
-      if (queryString) {
-        url += `?${queryString}`;
-      }
-
-      invoices = await api.get(url);
-      applyFilters();
-    } catch (err: any) {
-      error = err.message || $_('invoices.load_error');
-    } finally {
-      loading = false;
-    }
+        return await api.get(url);
+      },
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_('invoices.load_error'),
+      onSuccess: (data: any) => {
+        invoices = data;
+        applyFilters();
+      },
+    });
   }
 
   function applyFilters() {
@@ -141,14 +145,9 @@
     return status;
   }
 
-  function formatDate(dateString: string | null | undefined): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-BE');
-  }
-
   function formatAmount(amount: number | null | undefined): string {
     if (amount === null || amount === undefined) return '-';
-    return `${amount.toFixed(2)} €`;
+    return formatCurrency(amount);
   }
 
   // Reactive statements
@@ -167,7 +166,7 @@
         {$_('invoices.list_title')}
       {/if}
     </h2>
-    <button class="btn btn-primary" on:click={loadInvoices} disabled={loading}>
+    <button class="btn btn-primary" on:click={loadInvoices} disabled={loading} data-testid="refresh-button">
       🔄 {$_('common.refresh')}
     </button>
   </div>
@@ -182,6 +181,7 @@
           bind:value={statusFilter}
           on:change={handleStatusFilterChange}
           disabled={loading}
+          data-testid="status-filter"
         >
           <option value="">{$_('invoices.all')}</option>
           <option value="draft">{$_('invoices.status_draft')}</option>
@@ -199,6 +199,7 @@
           bind:value={searchQuery}
           placeholder={$_('invoices.search_placeholder')}
           disabled={loading}
+          data-testid="search-input"
         />
       </div>
 
@@ -210,6 +211,7 @@
           bind:value={dateFrom}
           on:change={handleDateFilterChange}
           disabled={loading}
+          data-testid="date-from-input"
         />
       </div>
 
@@ -221,6 +223,7 @@
           bind:value={dateTo}
           on:change={handleDateFilterChange}
           disabled={loading}
+          data-testid="date-to-input"
         />
       </div>
     </div>
@@ -228,7 +231,7 @@
 
   <!-- Loading/Error States -->
   {#if loading}
-    <p class="loading">{$_('common.loading')}</p>
+    <p class="loading" data-testid="loading-spinner">{$_('common.loading')}</p>
   {:else if error}
     <div class="alert alert-error">{error}</div>
   {:else if paginatedInvoices.length === 0}
@@ -255,8 +258,8 @@
         </thead>
         <tbody>
           {#each paginatedInvoices as invoice}
-            <tr class="invoice-row" on:click={() => selectInvoice(invoice)}>
-              <td>{formatDate(invoice.invoice_date)}</td>
+            <tr class="invoice-row" on:click={() => selectInvoice(invoice)} data-testid="invoice-row">
+              <td>{formatDate(invoice.invoice_date, 'short')}</td>
               <td class="description-cell">{invoice.description}</td>
               <td>{invoice.supplier || '-'}</td>
               <td>{invoice.invoice_number || '-'}</td>
@@ -270,7 +273,7 @@
                   {getStatusLabel(invoice.approval_status)}
                 </span>
               </td>
-              <td>{formatDate(invoice.due_date)}</td>
+              <td>{formatDate(invoice.due_date, 'short')}</td>
               <td>
                 <button
                   class="btn btn-sm btn-secondary"

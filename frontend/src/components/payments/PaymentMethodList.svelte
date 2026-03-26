@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { _ } from '../../lib/i18n';
   import {
     paymentMethodsApi,
     type PaymentMethod,
   } from "../../lib/api/payments";
-  import { toast } from "../../stores/toast";
+  import { withLoadingState } from "../../lib/utils/error.utils";
   import PaymentMethodCard from "./PaymentMethodCard.svelte";
   import PaymentMethodAddModal from "./PaymentMethodAddModal.svelte";
   import Button from "../ui/Button.svelte";
@@ -14,6 +15,7 @@
 
   let paymentMethods: PaymentMethod[] = [];
   let loading = true;
+  let error = "";
   let showAddModal = false;
 
   onMount(async () => {
@@ -21,14 +23,13 @@
   });
 
   async function loadPaymentMethods() {
-    try {
-      loading = true;
-      paymentMethods = await paymentMethodsApi.listByOwner(ownerId);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load payment methods");
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => paymentMethodsApi.listByOwner(ownerId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => paymentMethods = data,
+      errorMessage: $_('payments.loadMethodsError'),
+    });
   }
 
   function handleAdded() {
@@ -37,19 +38,19 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg">
+<div class="bg-white shadow rounded-lg" data-testid="payment-method-list">
   <!-- Header -->
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between">
       <div>
-        <h2 class="text-xl font-semibold text-gray-900">Payment Methods</h2>
+        <h2 class="text-xl font-semibold text-gray-900">{$_('payments.methodsTitle')}</h2>
         <p class="mt-1 text-sm text-gray-600">
-          Manage your saved payment methods
+          {$_('payments.methodsDescription')}
         </p>
       </div>
       {#if canManage}
-        <Button on:click={() => (showAddModal = true)}>
-          Add Payment Method
+        <Button on:click={() => (showAddModal = true)} data-testid="add-payment-method-btn">
+          {$_('payments.addMethod')}
         </Button>
       {/if}
     </div>
@@ -58,11 +59,11 @@
   <!-- Payment Methods Grid -->
   <div class="p-6">
     {#if loading}
-      <div class="text-center py-12 text-gray-500">
+      <div class="text-center py-12 text-gray-500" data-testid="payment-method-list-loading">
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
         ></div>
-        <p class="mt-4">Loading payment methods...</p>
+        <p class="mt-4">{$_('common.loading')}</p>
       </div>
     {:else if paymentMethods.length === 0}
       <div class="text-center py-12">
@@ -80,15 +81,15 @@
           />
         </svg>
         <h3 class="mt-4 text-lg font-medium text-gray-900">
-          No payment methods
+          {$_('payments.noMethods')}
         </h3>
         <p class="mt-2 text-sm text-gray-600">
-          Add a payment method to make payments easier and faster.
+          {$_('payments.noMethodsDescription')}
         </p>
         {#if canManage}
           <div class="mt-6">
             <Button on:click={() => (showAddModal = true)}>
-              Add Your First Payment Method
+              {$_('payments.addFirstMethod')}
             </Button>
           </div>
         {/if}
@@ -123,12 +124,11 @@
           </div>
           <div class="ml-3">
             <h3 class="text-sm font-medium text-blue-800">
-              Secure Payment Processing
+              {$_('payments.secureProcessingTitle')}
             </h3>
             <div class="mt-2 text-sm text-blue-700">
               <p>
-                Your payment information is securely stored by Stripe. We never
-                store your full card number or CVV.
+                {$_('payments.secureProcessingDescription')}
               </p>
             </div>
           </div>

@@ -7,6 +7,8 @@
     CampaignStatus,
   } from "../../lib/api/energy-campaigns";
   import CampaignStatusBadge from "./CampaignStatusBadge.svelte";
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
   export let organizationId: string | undefined = undefined;
 
@@ -19,21 +21,13 @@
   });
 
   async function loadCampaigns() {
-    try {
-      loading = true;
-      error = "";
-      campaigns = await energyCampaignsApi.list(organizationId);
-    } catch (err: any) {
-      error =
-        err.message || $_("energy.campaign.loadError");
-      console.error("Failed to load energy campaigns:", err);
-    } finally {
-      loading = false;
-    }
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE");
+    await withLoadingState({
+      action: () => energyCampaignsApi.list(organizationId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => campaigns = data,
+      errorMessage: $_("energy.campaign.loadError"),
+    });
   }
 
   function getEnergyTypesLabel(types: string[]): string {
@@ -59,7 +53,7 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="energy-campaign-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -79,7 +73,7 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="energy-campaign-list-loading">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       <p class="mt-2 text-sm text-gray-500">{$_("common.loading")}</p>
     </div>
@@ -103,7 +97,7 @@
   {:else}
     <ul class="divide-y divide-gray-200">
       {#each campaigns as campaign}
-        <li class="hover:bg-gray-50">
+        <li class="hover:bg-gray-50" data-testid="energy-campaign-row">
           <a
             href="/energy-campaigns/detail?id={campaign.id}"
             class="block px-4 py-4 sm:px-6"
@@ -129,7 +123,7 @@
                 </div>
                 <div class="mt-2 flex items-center text-xs text-gray-400">
                   <span>
-                    {$_("energy.campaign.participationUntil")} {formatDate(campaign.deadline_participation)}
+                    {$_("energy.campaign.participationUntil")} {formatDateShort(campaign.deadline_participation)}
                   </span>
                   {#if campaign.offers_received.length > 0}
                     <span class="mx-2">•</span>
