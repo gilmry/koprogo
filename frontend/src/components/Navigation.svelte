@@ -495,6 +495,7 @@
                       ? 'bg-primary-50 text-primary-700 font-semibold'
                       : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'}"
                   aria-current={isActive(item.href) ? 'page' : undefined}
+                  data-testid="nav-link-{item.label.toLowerCase().replace(/\s+/g, '-')}"
                 >
                   <span class="text-base shrink-0 w-5 text-center">{item.icon}</span>
                   <span>{item.label}</span>

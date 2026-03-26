@@ -10,12 +10,17 @@
   } from "../../lib/api/polls";
   import { formatDateTime } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
+  import { authStore } from "../../stores/auth";
+  import { UserRole } from "../../lib/types";
   import PollStatusBadge from "./PollStatusBadge.svelte";
   import PollTypeBadge from "./PollTypeBadge.svelte";
   import PollResults from "./PollResults.svelte";
 
   export let pollId: string;
   export let isAdmin = false;
+
+  // Reactively compute isAdmin from auth store if not explicitly set via prop
+  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
 
   let poll: Poll | null = null;
   let results: PollResultsType | null = null;

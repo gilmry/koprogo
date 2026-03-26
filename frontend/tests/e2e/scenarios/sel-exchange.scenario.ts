@@ -191,12 +191,16 @@ test.describe("Scenario: Marketplace du SEL (Systeme d'Echange Local)", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 3 : Selectionner l'immeuble
+    // ETAPE 3 : Selectionner l'immeuble (ou attendre auto-selection)
     // ============================================================
     await waitForSpinner(page);
 
+    // Wait for building selection to be ready
+    const buildingReady = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+    await expect(buildingReady).toBeVisible({ timeout: 15000 });
+
     const buildingSelect = page.getByTestId("building-selector");
-    if (await buildingSelect.isVisible({ timeout: 5000 })) {
+    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();

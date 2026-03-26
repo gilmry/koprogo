@@ -91,6 +91,7 @@
 
       <!-- Method Type -->
       <FormSelect
+        id="method-type"
         label={$_('payments.methodType')}
         bind:value={formData.method_type}
         on:change={handleMethodTypeChange}
@@ -105,6 +106,7 @@
 
       <!-- Display Label -->
       <FormInput
+        id="display-label"
         label={$_('payments.displayName')}
         bind:value={formData.display_label}
         error={errors.display_label}
@@ -116,6 +118,7 @@
       <!-- Stripe-specific fields for Card and SEPA -->
       {#if formData.method_type === PaymentMethodType.Card || formData.method_type === PaymentMethodType.SepaDebit}
         <FormInput
+          id="stripe-id"
           label={$_('payments.stripeMethodId')}
           bind:value={formData.stripe_payment_method_id}
           error={errors.stripe_payment_method_id}
@@ -127,12 +130,14 @@
         {#if formData.method_type === PaymentMethodType.Card}
           <div class="grid grid-cols-2 gap-4">
             <FormInput
+              id="brand"
               label={$_('payments.cardBrand')}
               bind:value={formData.brand}
               placeholder={$_('payments.cardBrandPlaceholder')}
               data-testid="brand-input"
             />
             <FormInput
+              id="last4"
               label={$_('payments.last4')}
               bind:value={formData.last4}
               placeholder="1234"
@@ -142,6 +147,7 @@
           </div>
         {:else}
           <FormInput
+            id="last4-iban"
             label={$_('payments.last4Iban')}
             bind:value={formData.last4}
             placeholder="1234"

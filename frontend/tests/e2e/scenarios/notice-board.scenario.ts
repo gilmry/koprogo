@@ -162,12 +162,16 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 3 : Sélectionner l'immeuble
+    // ÉTAPE 3 : Sélectionner l'immeuble (ou attendre auto-sélection)
     // ============================================================
     await waitForSpinner(page);
 
+    // Wait for building selection to be ready (either selector or auto-selected single building)
+    const buildingReady = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+    await expect(buildingReady).toBeVisible({ timeout: 15000 });
+
     const buildingSelect = page.getByTestId("building-selector");
-    if (await buildingSelect.isVisible({ timeout: 5000 })) {
+    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
@@ -231,10 +235,13 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Re-sélectionner l'immeuble après navigation
+    // Re-sélectionner l'immeuble après navigation (ou attendre auto-sélection)
     await waitForSpinner(page);
+    const buildingReady2 = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+    await expect(buildingReady2).toBeVisible({ timeout: 15000 });
+
     const buildingSelect2 = page.getByTestId("building-selector");
-    if (await buildingSelect2.isVisible({ timeout: 5000 })) {
+    if (await buildingSelect2.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect2.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect2.locator("option").all();

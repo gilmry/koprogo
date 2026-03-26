@@ -144,7 +144,7 @@
   };
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="quote-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
@@ -290,7 +290,7 @@
       {/if}
     </div>
   {:else}
-    <ul class="divide-y divide-gray-200" data-testid="quote-list">
+    <ul class="divide-y divide-gray-200">
       {#each filteredQuotes as quote (quote.id)}
         <li class="hover:bg-gray-50" data-testid="quote-row">
           <div class="px-4 py-4 sm:px-6">

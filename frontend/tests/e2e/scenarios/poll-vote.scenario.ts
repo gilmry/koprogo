@@ -108,12 +108,16 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 3 : Selectionner l'immeuble
+    // ETAPE 3 : Selectionner l'immeuble (ou attendre auto-selection)
     // ============================================================
     await waitForSpinner(page);
 
+    // Wait for building selection to be ready
+    const buildingReady = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+    await expect(buildingReady).toBeVisible({ timeout: 15000 });
+
     const buildingSelect = page.getByTestId("building-selector");
-    if (await buildingSelect.isVisible({ timeout: 5000 })) {
+    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
@@ -146,12 +150,16 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
     await page.waitForTimeout(PACE.BETWEEN_STEPS);
 
     // ============================================================
-    // ETAPE 5 : Selectionner l'immeuble dans le formulaire
+    // ETAPE 5 : Selectionner l'immeuble dans le formulaire (ou attendre auto-selection)
     // ============================================================
     await waitForSpinner(page);
 
+    // Wait for building selection to be ready in the form
+    const formBuildingReady = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+    await expect(formBuildingReady).toBeVisible({ timeout: 15000 });
+
     const formBuildingSelect = page.getByTestId("building-selector");
-    if (await formBuildingSelect.isVisible({ timeout: 5000 })) {
+    if (await formBuildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await formBuildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const formOptions = await formBuildingSelect.locator("option").all();

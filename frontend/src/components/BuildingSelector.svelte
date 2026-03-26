@@ -76,7 +76,7 @@
     </p>
   </div>
 {:else if buildings.length === 1}
-  <div>
+  <div data-testid="building-selected">
     <label class="block text-sm font-medium text-gray-700">{label}</label>
     <div class="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
       {buildings[0].name} — {buildings[0].address}{#if buildings[0].city}, {buildings[0].postal_code} {buildings[0].city}{/if}
