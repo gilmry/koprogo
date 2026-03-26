@@ -90,7 +90,7 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg">
+<div class="bg-white shadow rounded-lg" data-testid="ticket-list">
   <!-- Header with filters -->
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between mb-4">
@@ -108,6 +108,7 @@
       </h2>
       <button
         on:click={loadTickets}
+        data-testid="ticket-refresh-btn"
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
         {$_("common.refresh")}
@@ -124,6 +125,7 @@
           type="text"
           bind:value={searchQuery}
           placeholder={$_("tickets.search_tickets")}
+          data-testid="ticket-search-input"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
@@ -132,6 +134,7 @@
       <div>
         <select
           bind:value={statusFilter}
+          data-testid="ticket-status-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">{$_("tickets.all_statuses")}</option>
@@ -147,6 +150,7 @@
       <div>
         <select
           bind:value={priorityFilter}
+          data-testid="ticket-priority-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">{$_("tickets.all_priorities")}</option>
@@ -162,6 +166,7 @@
       <div>
         <select
           bind:value={categoryFilter}
+          data-testid="ticket-category-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">{$_("tickets.all_categories")}</option>
@@ -180,11 +185,11 @@
   <!-- Tickets list -->
   <div class="divide-y divide-gray-200">
     {#if loading}
-      <div class="px-6 py-12 text-center text-gray-500">{$_("tickets.loading")}</div>
+      <div class="px-6 py-12 text-center text-gray-500" data-testid="loading-spinner">{$_("tickets.loading")}</div>
     {:else if error}
-      <div class="px-6 py-12 text-center text-red-600">{error}</div>
+      <div class="px-6 py-12 text-center text-red-600" data-testid="ticket-list-error">{error}</div>
     {:else if filteredTickets.length === 0}
-      <div class="px-6 py-12 text-center text-gray-500">
+      <div class="px-6 py-12 text-center text-gray-500" data-testid="ticket-list-empty">
         {$_("tickets.no_tickets_found")}
       </div>
     {:else}
@@ -192,6 +197,7 @@
         <a
           href={getTicketUrl(ticket.id)}
           class="block px-6 py-4 hover:bg-gray-50 transition-colors"
+          data-testid="ticket-row"
         >
           <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">

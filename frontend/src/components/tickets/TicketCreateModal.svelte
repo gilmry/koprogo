@@ -33,7 +33,7 @@
     priority: TicketPriority.Medium,
     category: TicketCategory.General,
     requester_id: requesterId,
-    unit_id: unitId,
+    unit_id: unitId || undefined,
   };
 
   let submitting = false;
@@ -90,6 +90,7 @@
       const ticket = await ticketsApi.create({
         ...formData,
         requester_id: requesterId,
+        unit_id: formData.unit_id || undefined,
       });
 
       toast.success($_('tickets.createSuccess'));
@@ -119,8 +120,8 @@
   }
 </script>
 
-<Modal {open} on:close={handleClose} title={$_('tickets.createTitle')}>
-  <form on:submit|preventDefault={handleSubmit}>
+<Modal isOpen={open} on:close={handleClose} title={$_('tickets.createTitle')}>
+  <form on:submit|preventDefault={handleSubmit} data-testid="ticket-create-form">
     <div class="space-y-4">
       <!-- Sélecteur d'immeuble -->
       {#if !buildingId}
@@ -129,12 +130,13 @@
             {$_('buildings.building')} *
           </label>
           {#if loadingBuildings}
-            <p class="text-sm text-gray-500">{$_('buildings.loading')}</p>
+            <p class="text-sm text-gray-500" data-testid="loading-spinner">{$_('buildings.loading')}</p>
           {:else}
             <select
               id="building-select"
               bind:value={formData.building_id}
               required
+              data-testid="ticket-building-select"
               class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               class:border-red-500={errors.building_id}
               class:border-gray-300={!errors.building_id}
@@ -155,67 +157,79 @@
 
       <!-- Titre -->
       <FormInput
+        id="ticket-title"
         label={$_('common.title')}
         bind:value={formData.title}
         error={errors.title}
         required
         placeholder={$_('tickets.titlePlaceholder')}
+        data-testid="ticket-title-input"
       />
 
       <!-- Description -->
       <FormTextarea
+        id="ticket-description"
         label={$_('common.description')}
         bind:value={formData.description}
         error={errors.description}
         required
         rows={4}
         placeholder={$_('tickets.descriptionPlaceholder')}
+        data-testid="ticket-description-input"
       />
 
       <!-- Priorité -->
       <FormSelect
+        id="ticket-priority"
         label={$_('tickets.priority')}
         bind:value={formData.priority}
         required
-      >
-        <option value={TicketPriority.Low}>{$_('tickets.priorities.low')}</option>
-        <option value={TicketPriority.Medium}>{$_('tickets.priorities.medium')}</option>
-        <option value={TicketPriority.High}>{$_('tickets.priorities.high')}</option>
-        <option value={TicketPriority.Urgent}>{$_('tickets.priorities.urgent')}</option>
-        <option value={TicketPriority.Critical}>{$_('tickets.priorities.critical')}</option>
-      </FormSelect>
+        data-testid="ticket-priority-select"
+        options={[
+          { value: TicketPriority.Low, label: $_('tickets.priorities.low') },
+          { value: TicketPriority.Medium, label: $_('tickets.priorities.medium') },
+          { value: TicketPriority.High, label: $_('tickets.priorities.high') },
+          { value: TicketPriority.Urgent, label: $_('tickets.priorities.urgent') },
+          { value: TicketPriority.Critical, label: $_('tickets.priorities.critical') },
+        ]}
+      />
 
       <!-- Catégorie -->
       <FormSelect
+        id="ticket-category"
         label={$_('tickets.category')}
         bind:value={formData.category}
         required
-      >
-        <option value={TicketCategory.General}>{$_('tickets.categories.general')}</option>
-        <option value={TicketCategory.Plumbing}>{$_('tickets.categories.plumbing')}</option>
-        <option value={TicketCategory.Electrical}>{$_('tickets.categories.electrical')}</option>
-        <option value={TicketCategory.Heating}>{$_('tickets.categories.heating')}</option>
-        <option value={TicketCategory.Cleaning}>{$_('tickets.categories.cleaning')}</option>
-        <option value={TicketCategory.Security}>{$_('tickets.categories.security')}</option>
-        <option value={TicketCategory.Emergency}>{$_('tickets.categories.emergency')}</option>
-      </FormSelect>
+        data-testid="ticket-category-select"
+        options={[
+          { value: TicketCategory.General, label: $_('tickets.categories.general') },
+          { value: TicketCategory.Plumbing, label: $_('tickets.categories.plumbing') },
+          { value: TicketCategory.Electrical, label: $_('tickets.categories.electrical') },
+          { value: TicketCategory.Heating, label: $_('tickets.categories.heating') },
+          { value: TicketCategory.Cleaning, label: $_('tickets.categories.cleaning') },
+          { value: TicketCategory.Security, label: $_('tickets.categories.security') },
+          { value: TicketCategory.Emergency, label: $_('tickets.categories.emergency') },
+        ]}
+      />
 
       <!-- Lot (optionnel) -->
       {#if !unitId}
         <FormInput
+          id="ticket-unit"
           label={$_('tickets.unitOptional')}
           bind:value={formData.unit_id}
           placeholder={$_('tickets.unitPlaceholder')}
+          data-testid="ticket-unit-input"
         />
       {/if}
     </div>
 
     <!-- Actions -->
     <div class="mt-6 flex justify-end space-x-3">
-      <Button type="button" variant="outline" on:click={handleClose}>
+      <Button type="button" variant="outline" on:click={handleClose} data-testid="ticket-cancel-btn">
         {$_('common.cancel')}
       </Button>
-      <Button type="submit" loading={submitting}>
+      <Button type="submit" loading={submitting} data-testid="ticket-submit-btn">
         {$_('tickets.create')}
       </Button>
     </div>

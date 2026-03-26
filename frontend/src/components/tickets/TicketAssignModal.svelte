@@ -37,7 +37,7 @@
   }
 </script>
 
-<Modal {open} on:close={handleClose} title="Assign Ticket to Contractor">
+<Modal isOpen={open} on:close={handleClose} title="Assign Ticket to Contractor">
   <form on:submit|preventDefault={handleSubmit}>
     <div class="space-y-4">
       <p class="text-sm text-gray-600">

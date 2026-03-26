@@ -98,7 +98,7 @@
   }
 </script>
 
-<Modal {open} on:close={handleClose} title="Add Payment Method">
+<Modal isOpen={open} on:close={handleClose} title="Add Payment Method">
   <form on:submit|preventDefault={handleSubmit}>
     <div class="space-y-4">
       <!-- Info Banner -->

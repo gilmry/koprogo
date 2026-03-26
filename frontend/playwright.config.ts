@@ -63,6 +63,30 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 720 },
       },
+      testIgnore: /scenarios\//,
+    },
+
+    /**
+     * "Documentation Vivante" scenarios — human-paced UI tests
+     * whose videos are meant to be uploaded to YouTube as living docs.
+     *
+     * Run only scenarios:  npx playwright test --project=scenarios
+     * Run only smoke tests: npx playwright test --project=chromium
+     */
+    {
+      name: "scenarios",
+      testDir: "./tests/e2e/scenarios",
+      testMatch: /\.scenario\.ts$/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        // Slow down EVERY Playwright action by 50ms on top of explicit pauses
+        launchOptions: { slowMo: 50 },
+        video: {
+          mode: "on",
+          size: { width: 1280, height: 720 },
+        },
+      },
     },
 
     // Uncomment for cross-browser testing

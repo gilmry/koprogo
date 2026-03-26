@@ -151,7 +151,8 @@ import Layout from "../layouts/Layout.astro";
     // Handle create button click
     createButton?.addEventListener("click", () => {
       const buildingId = selectedBuildingId;
-      const userId = localStorage.getItem("koprogo_user_id") || "";
+      const userJson = localStorage.getItem("koprogo_user");
+      const userId = userJson ? (JSON.parse(userJson).id || "") : "";
 
       if (!buildingId) {
         showPageToast("Veuillez d'abord sélectionner un immeuble.", "warning");

@@ -133,13 +133,13 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="ticket-detail">
   <!-- Header -->
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-start justify-between">
       <div class="flex-1">
         <div class="flex items-center space-x-3 mb-2">
-          <h1 class="text-2xl font-bold text-gray-900">{ticket.title}</h1>
+          <h1 class="text-2xl font-bold text-gray-900" data-testid="ticket-detail-title">{ticket.title}</h1>
           {#if isOverdue()}
             <span
               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800"
@@ -160,25 +160,25 @@
       <!-- Actions -->
       <div class="flex flex-col space-y-2">
         {#if canManage && ticket.status === TicketStatus.Open}
-          <Button on:click={() => (showAssignModal = true)} size="sm">
+          <Button on:click={() => (showAssignModal = true)} size="sm" data-testid="ticket-assign-btn">
             {$_("tickets.assign_to_contractor")}
           </Button>
         {/if}
 
         {#if isContractor && ticket.status === TicketStatus.Assigned}
-          <Button on:click={handleStart} loading={actionLoading} size="sm">
+          <Button on:click={handleStart} loading={actionLoading} size="sm" data-testid="ticket-start-btn">
             {$_("tickets.start_work")}
           </Button>
         {/if}
 
         {#if isContractor && ticket.status === TicketStatus.InProgress}
-          <Button on:click={handleResolve} loading={actionLoading} size="sm">
+          <Button on:click={handleResolve} loading={actionLoading} size="sm" data-testid="ticket-resolve-btn">
             {$_("tickets.mark_resolved")}
           </Button>
         {/if}
 
         {#if canManage && ticket.status === TicketStatus.Resolved}
-          <Button on:click={handleClose} loading={actionLoading} size="sm">
+          <Button on:click={handleClose} loading={actionLoading} size="sm" data-testid="ticket-close-btn">
             {$_("tickets.close_ticket")}
           </Button>
         {/if}
@@ -189,6 +189,7 @@
             loading={actionLoading}
             variant="outline"
             size="sm"
+            data-testid="ticket-cancel-btn"
           >
             {$_("common.cancel")}
           </Button>
@@ -200,6 +201,7 @@
             loading={actionLoading}
             variant="outline"
             size="sm"
+            data-testid="ticket-reopen-btn"
           >
             {$_("tickets.reopen")}
           </Button>
@@ -210,6 +212,7 @@
             on:click={() => (showDeleteConfirm = true)}
             variant="outline"
             size="sm"
+            data-testid="ticket-delete-btn"
             class="text-red-600 hover:text-red-700"
           >
             {$_("common.delete")}

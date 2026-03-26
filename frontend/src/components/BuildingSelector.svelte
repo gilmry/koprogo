@@ -73,7 +73,7 @@
 </script>
 
 {#if loading}
-  <div class="text-sm text-gray-500 py-2">{$_('buildings.loading')}</div>
+  <div class="text-sm text-gray-500 py-2" data-testid="loading-spinner">{$_('buildings.loading')}</div>
 {:else if error}
   <div class="p-3 bg-red-50 border border-red-200 rounded-md">
     <p class="text-sm text-red-800">{error}</p>
@@ -105,6 +105,7 @@
     <select
       id="building-selector"
       bind:value={selectedBuildingId}
+      data-testid="building-selector"
       on:change={() => {
         if (selectedBuildingId) {
           if (onSelect) onSelect(selectedBuildingId);
