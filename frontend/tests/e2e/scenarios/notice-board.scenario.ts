@@ -95,7 +95,7 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
     const building = await buildingResp.json();
 
     // 6. Create a few notices via API
-    await request.post(`${API_BASE}/notices`, {
+    const notice1Resp = await request.post(`${API_BASE}/notices`, {
       data: {
         building_id: building.id,
         notice_type: "Announcement",
@@ -107,8 +107,13 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
       },
       headers: syndicHeaders,
     });
+    const notice1 = await notice1Resp.json();
+    // Publish notice so it appears in the default "Published" filter
+    await request.post(`${API_BASE}/notices/${notice1.id}/publish`, {
+      headers: syndicHeaders,
+    });
 
-    await request.post(`${API_BASE}/notices`, {
+    const notice2Resp = await request.post(`${API_BASE}/notices`, {
       data: {
         building_id: building.id,
         notice_type: "Event",
@@ -125,8 +130,12 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
       },
       headers: syndicHeaders,
     });
+    const notice2 = await notice2Resp.json();
+    await request.post(`${API_BASE}/notices/${notice2.id}/publish`, {
+      headers: syndicHeaders,
+    });
 
-    await request.post(`${API_BASE}/notices`, {
+    const notice3Resp = await request.post(`${API_BASE}/notices`, {
       data: {
         building_id: building.id,
         notice_type: "LostAndFound",
@@ -137,6 +146,10 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
           "Contactez la loge du concierge pour la récupérer.",
         contact_info: "Loge du concierge, RDC",
       },
+      headers: syndicHeaders,
+    });
+    const notice3 = await notice3Resp.json();
+    await request.post(`${API_BASE}/notices/${notice3.id}/publish`, {
       headers: syndicHeaders,
     });
   });

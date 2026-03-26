@@ -2,7 +2,7 @@
  * SCENARIO: Gestion des moyens de paiement
  *
  * Documentation Vivante -- video exploitable pour YouTube.
- * Montre le parcours complet d'un syndic :
+ * Montre le parcours complet d'un proprietaire :
  *   1. Connexion via le formulaire login
  *   2. Navigation vers la page Moyens de paiement via le menu lateral
  *   3. Ajout d'un moyen de paiement (carte bancaire) via le formulaire
@@ -15,8 +15,6 @@ import {
   humanLogin,
   humanFill,
   humanClick,
-  humanSelect,
-  humanClickLocator,
   waitForSpinner,
   stepPause,
   finalPause,
@@ -110,7 +108,7 @@ test.describe("Scenario: Gestion des moyens de paiement", () => {
     ownerId = owner.id;
 
     // 6. Register owner user account
-    await request.post(`${API_BASE}/auth/register`, {
+    const registerResp = await request.post(`${API_BASE}/auth/register`, {
       data: {
         email: ownerEmail,
         password: ownerPassword,
@@ -119,6 +117,35 @@ test.describe("Scenario: Gestion des moyens de paiement", () => {
         role: "owner",
         organization_id: org.id,
       },
+    });
+    const registeredUser = await registerResp.json();
+    const ownerUserId = registeredUser.id || registeredUser.user_id || registeredUser.user?.id;
+
+    // 7. Link owner entity to user account (admin only)
+    if (ownerUserId) {
+      await request.put(`${API_BASE}/owners/${ownerId}/link-user`, {
+        data: { user_id: ownerUserId },
+        headers: adminHeaders,
+      });
+    }
+
+    // 8. Pre-create a payment method via API so the list is not empty
+    const ownerLoginResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: ownerEmail, password: ownerPassword },
+    });
+    const ownerAuth = await ownerLoginResp.json();
+    const ownerHeaders = { Authorization: `Bearer ${ownerAuth.token}` };
+
+    await request.post(`${API_BASE}/payment-methods`, {
+      data: {
+        owner_id: ownerId,
+        method_type: "Card",
+        display_label: "Mastercard existante ****9876",
+        stripe_payment_method_id: "pm_existing_9876",
+        last4: "9876",
+        brand: "Mastercard",
+      },
+      headers: ownerHeaders,
     });
   });
 
@@ -151,6 +178,11 @@ test.describe("Scenario: Gestion des moyens de paiement", () => {
     await expect(page.getByTestId("payment-method-list")).toBeVisible({
       timeout: 15000,
     });
+
+    // Verify the pre-created payment method shows up (proves owner link works)
+    await expect(
+      page.locator("text=Mastercard existante"),
+    ).toBeVisible({ timeout: 15000 });
     await stepPause(page);
 
     // ============================================================

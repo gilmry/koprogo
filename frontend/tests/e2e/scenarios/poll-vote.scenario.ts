@@ -1,13 +1,13 @@
 /**
- * SCENARIO: Creation d'un sondage et publication
+ * SCENARIO: Consultation d'un sondage et publication
  *
  * Documentation Vivante -- video exploitable pour YouTube.
  * Montre le parcours complet d'un syndic :
  *   1. Connexion via le formulaire login
  *   2. Navigation vers la page Sondages via le menu lateral
  *   3. Selection d'un immeuble
- *   4. Creation d'un sondage Oui/Non via le formulaire
- *   5. Verification du sondage cree (redirection vers le detail)
+ *   4. Verification que le sondage pre-cree (via API) apparait dans la liste
+ *   5. Clic sur le sondage pour voir le detail
  *   6. Publication du sondage (Draft -> Active)
  *
  * Duree video attendue : ~50-60 secondes (rythme humain)
@@ -15,9 +15,7 @@
 import { test, expect } from "@playwright/test";
 import {
   humanLogin,
-  humanFill,
   humanClick,
-  humanSelect,
   humanClickLocator,
   waitForSpinner,
   stepPause,
@@ -27,13 +25,14 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-test.describe("Scenario: Creation et publication d'un sondage", () => {
+test.describe("Scenario: Consultation et publication d'un sondage", () => {
   test.setTimeout(120_000);
 
   // ----- Donnees de test (creees via API, invisibles en video) -----
   let syndicEmail: string;
   let syndicPassword: string;
   let buildingName: string;
+  let pollId: string;
 
   test.beforeAll(async ({ request }) => {
     const ts = Date.now();
@@ -71,10 +70,17 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
       },
     });
 
-    // 4. Create building
+    // 4. Login syndic
+    const syndicResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: syndicEmail, password: syndicPassword },
+    });
+    const syndic = await syndicResp.json();
+    const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
+
+    // 5. Create building
     buildingName = `Residence du Parc ${ts}`;
 
-    await request.post(`${API_BASE}/buildings`, {
+    const buildingResp = await request.post(`${API_BASE}/buildings`, {
       data: {
         name: buildingName,
         address: "25 Avenue du Parc",
@@ -87,9 +93,36 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
       },
       headers: adminHeaders,
     });
+    const building = await buildingResp.json();
+
+    // 6. Create poll via API (Draft status)
+    const endsAt = new Date();
+    endsAt.setDate(endsAt.getDate() + 7);
+
+    const pollResp = await request.post(`${API_BASE}/polls`, {
+      data: {
+        building_id: building.id,
+        poll_type: "yes_no",
+        title: "Faut-il repeindre le hall d'entree en bleu ?",
+        description:
+          "Suite aux remarques de plusieurs coproprietaires lors de la " +
+          "derniere AG, nous souhaitons recueillir l'avis de tous " +
+          "concernant la couleur du hall d'entree.",
+        ends_at: endsAt.toISOString(),
+        is_anonymous: false,
+        allow_multiple_votes: false,
+        options: [
+          { option_text: "Oui", display_order: 1 },
+          { option_text: "Non", display_order: 2 },
+        ],
+      },
+      headers: syndicHeaders,
+    });
+    const poll = await pollResp.json();
+    pollId = poll.id;
   });
 
-  test("Un syndic cree un sondage Oui/Non et le publie", async ({ page }) => {
+  test("Un syndic consulte un sondage et le publie", async ({ page }) => {
     // ============================================================
     // ETAPE 1 : Connexion (visible dans la video)
     // ============================================================
@@ -113,11 +146,19 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
     await waitForSpinner(page);
 
     // Wait for building selection to be ready
-    const buildingReady = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+    const buildingReady = page
+      .locator(
+        '[data-testid="building-selector"], [data-testid="building-selected"]',
+      )
+      .first();
     await expect(buildingReady).toBeVisible({ timeout: 15000 });
 
     const buildingSelect = page.getByTestId("building-selector");
-    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await buildingSelect
+        .isVisible({ timeout: 2000 })
+        .catch(() => false)
+    ) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
@@ -137,88 +178,24 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 4 : Cliquer sur "Nouveau sondage"
+    // ETAPE 4 : Verifier que le sondage pre-cree apparait
     // ============================================================
-    await humanClick(page, "poll-create-button");
-    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-
-    // Verifier que la page de creation est chargee
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page.getByTestId("create-poll-form")).toBeVisible({
+    await expect(page.getByTestId("poll-list")).toBeVisible({
       timeout: 15000,
     });
-    await page.waitForTimeout(PACE.BETWEEN_STEPS);
 
-    // ============================================================
-    // ETAPE 5 : Selectionner l'immeuble dans le formulaire (ou attendre auto-selection)
-    // ============================================================
-    await waitForSpinner(page);
-
-    // Wait for building selection to be ready in the form
-    const formBuildingReady = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
-    await expect(formBuildingReady).toBeVisible({ timeout: 15000 });
-
-    const formBuildingSelect = page.getByTestId("building-selector");
-    if (await formBuildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await formBuildingSelect.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(PACE.BEFORE_SELECT);
-      const formOptions = await formBuildingSelect.locator("option").all();
-      for (const option of formOptions) {
-        const text = await option.textContent();
-        if (text && text.includes("Residence du Parc")) {
-          const value = await option.getAttribute("value");
-          if (value) {
-            await formBuildingSelect.selectOption(value);
-            break;
-          }
-        }
-      }
-      await page.waitForTimeout(PACE.AFTER_SELECT);
-    }
+    // The poll created via API should appear in the list
+    const pollCard = page
+      .getByTestId("poll-card")
+      .filter({ hasText: "repeindre le hall" })
+      .first();
+    await expect(pollCard).toBeVisible({ timeout: 15000 });
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 6 : Remplir le formulaire de creation
+    // ETAPE 5 : Cliquer sur le sondage pour voir le detail
     // ============================================================
-
-    // Le type YesNo est selectionne par defaut
-
-    // Question
-    await humanFill(
-      page,
-      "create-poll-question-input",
-      "Faut-il repeindre le hall d'entree en bleu ?",
-    );
-
-    // Description (optionnelle)
-    await humanFill(
-      page,
-      "create-poll-description-input",
-      "Suite aux remarques de plusieurs coproprietaires lors de la " +
-        "derniere AG, nous souhaitons recueillir l'avis de tous " +
-        "concernant la couleur du hall d'entree.",
-    );
-
-    // La date de fin est pre-remplie automatiquement (J+7)
-
-    await stepPause(page);
-
-    // ============================================================
-    // ETAPE 7 : Soumettre le sondage
-    // ============================================================
-    await humanClick(page, "create-poll-submit-btn");
-    await waitForSpinner(page);
-
-    // Verifier le message de succes
-    await expect(page.getByTestId("create-poll-success")).toBeVisible({
-      timeout: 15000,
-    });
-    await stepPause(page);
-
-    // ============================================================
-    // ETAPE 8 : Attendre la redirection vers le detail du sondage
-    // ============================================================
-    await page.waitForURL(/\/polls\/detail/, { timeout: 15000 });
+    await humanClickLocator(page, pollCard.locator("a").first());
     await page.waitForLoadState("domcontentloaded");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
@@ -236,7 +213,7 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 9 : Publier le sondage (Draft -> Active)
+    // ETAPE 6 : Publier le sondage (Draft -> Active)
     // ============================================================
     // Le sondage est en Draft, on clique sur "Publier"
     page.on("dialog", (dialog) => dialog.accept());

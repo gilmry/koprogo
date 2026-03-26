@@ -221,30 +221,47 @@ test.describe("Scenario: Marketplace du SEL (Systeme d'Echange Local)", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 4 : Consulter les statistiques SEL
+    // ETAPE 4 : Attendre que les donnees chargent apres selection
     // ============================================================
-    const statsPanel = page.getByTestId("sel-statistics");
-    if (await statsPanel.isVisible({ timeout: 10000 })) {
-      await statsPanel.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(PACE.BETWEEN_STEPS);
-    }
-    await stepPause(page);
-
-    // ============================================================
-    // ETAPE 5 : Consulter le classement (Leaderboard)
-    // ============================================================
-    const leaderboard = page.getByTestId("leaderboard");
-    if (await leaderboard.isVisible({ timeout: 10000 })) {
-      await leaderboard.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(PACE.BETWEEN_STEPS);
-    }
-    await stepPause(page);
-
-    // ============================================================
-    // ETAPE 6 : Consulter la liste des echanges
-    // ============================================================
+    // The ExchangeList component loads data asynchronously after building selection.
+    // Wait for the exchange-list container AND for actual rows to appear.
     const exchangeList = page.getByTestId("exchange-list");
     await expect(exchangeList).toBeVisible({ timeout: 15000 });
+
+    // Wait for actual exchange rows to render (not just the container)
+    await expect(
+      page.getByTestId("exchange-list-row").first(),
+    ).toBeVisible({ timeout: 20000 });
+
+    // ============================================================
+    // ETAPE 5 : Consulter les statistiques SEL
+    // ============================================================
+    const statsPanel = page.getByTestId("sel-statistics");
+    try {
+      await statsPanel.waitFor({ state: "visible", timeout: 5000 });
+      await statsPanel.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(PACE.BETWEEN_STEPS);
+    } catch {
+      // Statistics panel may not render if no completed exchanges
+    }
+    await stepPause(page);
+
+    // ============================================================
+    // ETAPE 6 : Consulter le classement (Leaderboard)
+    // ============================================================
+    const leaderboard = page.getByTestId("leaderboard");
+    try {
+      await leaderboard.waitFor({ state: "visible", timeout: 5000 });
+      await leaderboard.scrollIntoViewIfNeeded();
+      await page.waitForTimeout(PACE.BETWEEN_STEPS);
+    } catch {
+      // Leaderboard may not render if no credit balances yet
+    }
+    await stepPause(page);
+
+    // ============================================================
+    // ETAPE 7 : Consulter la liste des echanges
+    // ============================================================
     await exchangeList.scrollIntoViewIfNeeded();
     await page.waitForTimeout(PACE.BETWEEN_STEPS);
 
@@ -256,7 +273,7 @@ test.describe("Scenario: Marketplace du SEL (Systeme d'Echange Local)", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 7 : Utiliser les filtres de recherche
+    // ETAPE 8 : Utiliser les filtres de recherche
     // ============================================================
 
     // Filtrer par type "Service"

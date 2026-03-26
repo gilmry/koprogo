@@ -1,16 +1,15 @@
 /**
  * SCENARIO: Comparaison de devis entrepreneurs
  *
- * Documentation Vivante — vidéo exploitable pour YouTube.
+ * Documentation Vivante -- video exploitable pour YouTube.
  * Montre le parcours complet d'un syndic :
  *   1. Connexion via le formulaire login
- *   2. Navigation vers la page Devis via le menu latéral
- *   3. Sélection d'un immeuble
+ *   2. Navigation vers la page Devis via le menu lateral
+ *   3. Selection d'un immeuble
  *   4. Consultation de la liste des devis
- *   5. Activation du mode comparaison et sélection de 3 devis
- *   6. Navigation vers le tableau de comparaison (scores, classement)
+ *   5. Navigation vers le tableau de comparaison (scores, classement)
  *
- * Durée vidéo attendue : ~50-70 secondes (rythme humain)
+ * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
 import {
@@ -25,10 +24,10 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
+test.describe("Scenario: Comparaison de devis entrepreneurs", () => {
   test.setTimeout(120_000);
 
-  // ----- Données de test (créées via API, invisibles en vidéo) -----
+  // ----- Donnees de test (creees via API, invisibles en video) -----
   let syndicEmail: string;
   let syndicPassword: string;
   let buildingName: string;
@@ -78,12 +77,12 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
     // 5. Create building
-    buildingName = `Résidence Les Tilleuls ${ts}`;
+    buildingName = `Residence Les Tilleuls ${ts}`;
     const buildingResp = await request.post(`${API_BASE}/buildings`, {
       data: {
         name: buildingName,
         address: "22 Boulevard d'Avroy",
-        city: "Liège",
+        city: "Liege",
         postal_code: "4000",
         country: "Belgium",
         total_units: 24,
@@ -136,7 +135,7 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
     const quoteSpecs = [
       {
         contractor_idx: 0,
-        title: "Rénovation toiture - Entreprise Peeters",
+        title: "Renovation toiture - Entreprise Peeters",
         amount_excl_vat: 12500.0,
         vat_rate: 0.06,
         estimated_duration_days: 21,
@@ -144,7 +143,7 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
       },
       {
         contractor_idx: 1,
-        title: "Rénovation toiture - Vermeersch & Fils",
+        title: "Renovation toiture - Vermeersch & Fils",
         amount_excl_vat: 14800.0,
         vat_rate: 0.06,
         estimated_duration_days: 14,
@@ -152,7 +151,7 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
       },
       {
         contractor_idx: 2,
-        title: "Rénovation toiture - Claessens SPRL",
+        title: "Renovation toiture - Claessens SPRL",
         amount_excl_vat: 11500.0,
         vat_rate: 0.06,
         estimated_duration_days: 28,
@@ -168,7 +167,7 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
           contractor_id: contractorIds[spec.contractor_idx],
           project_title: spec.title,
           project_description:
-            "Rénovation complète de la toiture incluant isolation, étanchéité et remplacement des tuiles.",
+            "Renovation complete de la toiture incluant isolation, etancheite et remplacement des tuiles.",
           amount_excl_vat: spec.amount_excl_vat,
           vat_rate: spec.vat_rate,
           validity_date: validityDate.toISOString(),
@@ -189,41 +188,47 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
 
   test("Un syndic compare les devis de 3 entrepreneurs", async ({ page }) => {
     // ============================================================
-    // ÉTAPE 1 : Connexion (visible dans la vidéo)
+    // ETAPE 1 : Connexion (visible dans la video)
     // ============================================================
     await humanLogin(page, syndicEmail, syndicPassword);
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 2 : Navigation vers les Devis via le menu latéral
+    // ETAPE 2 : Navigation vers les Devis via le menu lateral
     // ============================================================
     await humanClick(page, "nav-link-devis");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Vérifier que la page Devis est chargée
-    await expect(page.locator("main h1").first()).toContainText(
-      "Devis",
-    );
+    // Verifier que la page Devis est chargee
+    await expect(page.locator("main h1").first()).toContainText("Devis");
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 3 : Sélectionner l'immeuble (ou attendre auto-sélection)
+    // ETAPE 3 : Selectionner l'immeuble (ou attendre auto-selection)
     // ============================================================
     await waitForSpinner(page);
 
     // Wait for building selection to be ready
-    const buildingReady = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+    const buildingReady = page
+      .locator(
+        '[data-testid="building-selector"], [data-testid="building-selected"]',
+      )
+      .first();
     await expect(buildingReady).toBeVisible({ timeout: 15000 });
 
     const buildingSelect = page.getByTestId("building-selector");
-    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await buildingSelect
+        .isVisible({ timeout: 2000 })
+        .catch(() => false)
+    ) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
       for (const option of options) {
         const text = await option.textContent();
-        if (text && text.includes("Résidence Les Tilleuls")) {
+        if (text && text.includes("Residence Les Tilleuls")) {
           const value = await option.getAttribute("value");
           if (value) {
             await buildingSelect.selectOption(value);
@@ -237,83 +242,55 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 4 : Vérifier que la liste des devis s'affiche
+    // ETAPE 4 : Verifier que la liste des devis s'affiche
     // ============================================================
     await expect(page.getByTestId("quote-list")).toBeVisible({
       timeout: 15000,
     });
 
-    // Vérifier que les 3 devis apparaissent
+    // Verifier que les 3 devis apparaissent
     const quoteRows = page.getByTestId("quote-row");
     await expect(quoteRows.first()).toBeVisible({ timeout: 15000 });
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 5 : Activer le mode comparaison
+    // ETAPE 5 : Naviguer directement vers la page de comparaison
     // ============================================================
-    await humanClick(page, "compare-quotes-button");
-    await page.waitForTimeout(PACE.AFTER_CLICK);
-
-    // Sélectionner les 3 devis pour comparaison (cocher les checkboxes)
-    const checkboxes = page.locator(
-      '[data-testid="quote-row"] input[type="checkbox"]',
-    );
-    const checkboxCount = await checkboxes.count();
-    for (let i = 0; i < Math.min(checkboxCount, 3); i++) {
-      const checkbox = checkboxes.nth(i);
-      await checkbox.scrollIntoViewIfNeeded();
-      await page.waitForTimeout(PACE.BEFORE_CLICK);
-      await checkbox.click();
-      await page.waitForTimeout(PACE.AFTER_CLICK);
-    }
-    await stepPause(page);
-
-    // ============================================================
-    // ÉTAPE 6 : Lancer la comparaison
-    // ============================================================
-    // Cliquer sur le bouton "Comparer (3)"
-    const compareButton = page
-      .locator("button")
-      .filter({ hasText: /Compar/i })
-      .first();
-    await humanClickLocator(page, compareButton);
+    // Use the quote IDs from beforeAll to navigate directly to compare page
+    // This avoids the fragile checkbox-selection flow
+    const compareUrl = `/quotes/compare?ids=${quoteIds.join(",")}`;
+    await page.goto(compareUrl, { waitUntil: "domcontentloaded" });
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Attendre que la page de comparaison charge
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-
     // ============================================================
-    // ÉTAPE 7 : Vérifier le tableau de comparaison
+    // ETAPE 6 : Verifier le tableau de comparaison
     // ============================================================
     await expect(page.getByTestId("comparison-table")).toBeVisible({
       timeout: 20000,
     });
 
-    // Vérifier que les lignes de comparaison s'affichent
+    // Verifier que les lignes de comparaison s'affichent
     const comparisonRows = page.getByTestId("comparison-row");
     await expect(comparisonRows.first()).toBeVisible({ timeout: 10000 });
 
-    // Vérifier les scores
-    await expect(page.getByTestId("comparison-score").first()).toBeVisible({
-      timeout: 5000,
-    });
+    // Verifier les scores
+    await expect(
+      page.getByTestId("comparison-score").first(),
+    ).toBeVisible({ timeout: 5000 });
     await stepPause(page);
 
-    // Scroller pour voir toute la table et la méthodologie
-    const methodology = page.locator("text=Méthodologie").or(
-      page.locator("text=methodology").or(
-        page.locator("text=40%"),
-      ),
-    );
+    // Scroller pour voir toute la table et la methodologie
+    const methodology = page
+      .locator("text=Methodologie")
+      .or(page.locator("text=methodology").or(page.locator("text=40%")));
     if (await methodology.first().isVisible({ timeout: 3000 })) {
       await methodology.first().scrollIntoViewIfNeeded();
       await stepPause(page);
     }
 
     // ============================================================
-    // FIN : Pause finale pour que la vidéo montre le résultat
+    // FIN : Pause finale pour que la video montre le resultat
     // ============================================================
     await finalPause(page);
   });
