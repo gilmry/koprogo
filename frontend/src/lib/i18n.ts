@@ -51,6 +51,7 @@ export function setupI18n() {
 }
 
 // Auto-init when imported as side-effect (for backward compat)
+// i18n translations updated 2026-03-26
 setupI18n();
 
 // Export language options for selector
