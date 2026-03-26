@@ -105,10 +105,9 @@ test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
     await request.post(`${API_BASE}/meetings`, {
       data: {
         building_id: building.id,
+        organization_id: org.id,
         meeting_type: "Ordinary",
         title: meetingTitle,
-        description:
-          "Assemblee generale ordinaire annuelle pour approbation du budget et des travaux de facade.",
         scheduled_date: meetingDate.toISOString(),
         location: "Salle communale, 15 Rue de la Loi, 1000 Bruxelles",
       },

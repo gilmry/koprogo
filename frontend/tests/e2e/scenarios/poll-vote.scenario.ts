@@ -73,11 +73,6 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
 
     // 4. Create building
     buildingName = `Residence du Parc ${ts}`;
-    const syndicLoginResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: syndicEmail, password: syndicPassword },
-    });
-    const syndic = await syndicLoginResp.json();
-    const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
     await request.post(`${API_BASE}/buildings`, {
       data: {
@@ -90,7 +85,7 @@ test.describe("Scenario: Creation et publication d'un sondage", () => {
         construction_year: 1975,
         organization_id: org.id,
       },
-      headers: syndicHeaders,
+      headers: adminHeaders,
     });
   });
 

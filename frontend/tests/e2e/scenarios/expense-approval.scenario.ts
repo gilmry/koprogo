@@ -78,7 +78,7 @@ test.describe("Scenario: Workflow d'approbation d'une facture", () => {
     const syndic = await syndicLoginResp.json();
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
-    // 5. Create building
+    // 5. Create building (admin creates, syndic cannot)
     const buildingResp = await request.post(`${API_BASE}/buildings`, {
       data: {
         name: `Residence Bellevue ${ts}`,
@@ -90,23 +90,19 @@ test.describe("Scenario: Workflow d'approbation d'une facture", () => {
         construction_year: 1985,
         organization_id: org.id,
       },
-      headers: syndicHeaders,
+      headers: adminHeaders,
     });
     const building = await buildingResp.json();
     buildingId = building.id;
 
     // 6. Create expense (Draft status, amount 1250.00, Maintenance)
-    const today = new Date().toISOString().split("T")[0];
     const expenseResp = await request.post(`${API_BASE}/expenses`, {
       data: {
         building_id: buildingId,
-        organization_id: org.id,
         category: "Maintenance",
         description: "Reparation toiture - infiltrations eau",
         amount: 1250.0,
-        expense_date: today,
-        supplier: "Toitures Belges SPRL",
-        invoice_number: `INV-${ts}`,
+        expense_date: new Date().toISOString(),
       },
       headers: syndicHeaders,
     });

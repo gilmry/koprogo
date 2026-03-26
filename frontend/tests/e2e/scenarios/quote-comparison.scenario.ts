@@ -129,42 +129,39 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
       contractorIds.push(user.id || user.user_id || user.user?.id);
     }
 
-    // Create 3 quote requests and submit them with different pricing
+    // Create 3 quotes with full pricing, then submit them
+    const validityDate = new Date();
+    validityDate.setMonth(validityDate.getMonth() + 3);
+
     const quoteSpecs = [
       {
         contractor_idx: 0,
         title: "Rénovation toiture - Entreprise Peeters",
-        category: "roofing",
-        amount_excl_vat_cents: 1250000, // 12,500 EUR
-        vat_rate: 6.0,
+        amount_excl_vat: 12500.0,
+        vat_rate: 0.06,
         estimated_duration_days: 21,
         warranty_years: 10,
       },
       {
         contractor_idx: 1,
         title: "Rénovation toiture - Vermeersch & Fils",
-        category: "roofing",
-        amount_excl_vat_cents: 1480000, // 14,800 EUR
-        vat_rate: 6.0,
+        amount_excl_vat: 14800.0,
+        vat_rate: 0.06,
         estimated_duration_days: 14,
         warranty_years: 10,
       },
       {
         contractor_idx: 2,
         title: "Rénovation toiture - Claessens SPRL",
-        category: "roofing",
-        amount_excl_vat_cents: 1150000, // 11,500 EUR
-        vat_rate: 6.0,
+        amount_excl_vat: 11500.0,
+        vat_rate: 0.06,
         estimated_duration_days: 28,
         warranty_years: 5,
       },
     ];
 
-    const validityDate = new Date();
-    validityDate.setMonth(validityDate.getMonth() + 3);
-
     for (const spec of quoteSpecs) {
-      // Create quote request
+      // Create quote with all required fields
       const createResp = await request.post(`${API_BASE}/quotes`, {
         data: {
           building_id: building.id,
@@ -172,22 +169,19 @@ test.describe("Scénario: Comparaison de devis entrepreneurs", () => {
           project_title: spec.title,
           project_description:
             "Rénovation complète de la toiture incluant isolation, étanchéité et remplacement des tuiles.",
-          work_category: spec.category,
+          amount_excl_vat: spec.amount_excl_vat,
+          vat_rate: spec.vat_rate,
+          validity_date: validityDate.toISOString(),
+          estimated_duration_days: spec.estimated_duration_days,
+          warranty_years: spec.warranty_years,
         },
         headers: syndicHeaders,
       });
       const quote = await createResp.json();
       quoteIds.push(quote.id);
 
-      // Submit quote with pricing (contractor submits)
+      // Submit quote (status transition: Requested -> Received)
       await request.post(`${API_BASE}/quotes/${quote.id}/submit`, {
-        data: {
-          amount_excl_vat_cents: spec.amount_excl_vat_cents,
-          vat_rate: spec.vat_rate,
-          validity_date: validityDate.toISOString().split("T")[0],
-          estimated_duration_days: spec.estimated_duration_days,
-          warranty_years: spec.warranty_years,
-        },
         headers: syndicHeaders,
       });
     }

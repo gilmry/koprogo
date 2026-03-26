@@ -62,6 +62,7 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 720 },
+        locale: "fr-BE",
       },
       testIgnore: /scenarios\//,
     },
@@ -80,6 +81,8 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 720 },
+        // Force French locale so nav testids match hardcoded expectations
+        locale: "fr-BE",
         // Slow down EVERY Playwright action by 50ms on top of explicit pauses
         launchOptions: { slowMo: 50 },
         video: {

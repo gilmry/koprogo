@@ -91,7 +91,7 @@ test.describe("Scenario: Marketplace du SEL (Systeme d'Echange Local)", () => {
         construction_year: 2000,
         organization_id: org.id,
       },
-      headers: syndicHeaders,
+      headers: adminHeaders,
     });
     const building = await buildingResp.json();
 

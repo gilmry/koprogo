@@ -99,10 +99,11 @@ test.describe("Scénario: Envoi d'une convocation d'AG", () => {
     const meetingResp = await request.post(`${API_BASE}/meetings`, {
       data: {
         building_id: building.id,
-        date: meetingDate.toISOString(),
-        agenda: "Assemblée Générale Ordinaire annuelle",
-        meeting_type: "Ordinary",
         organization_id: org.id,
+        title: "Assemblée Générale Ordinaire annuelle",
+        scheduled_date: meetingDate.toISOString(),
+        meeting_type: "Ordinary",
+        location: "Salle communale, 15 Rue de la Loi",
       },
       headers: syndicHeaders,
     });

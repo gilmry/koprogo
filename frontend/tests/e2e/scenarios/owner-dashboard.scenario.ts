@@ -129,8 +129,7 @@ test.describe("Scenario: Le coproprietaire consulte son tableau de bord", () => 
           description: expense.description,
           amount: expense.amount,
           category: expense.category,
-          date: new Date().toISOString().split("T")[0],
-          organization_id: org.id,
+          expense_date: new Date().toISOString(),
         },
         headers: syndicHeaders,
       });

@@ -89,7 +89,7 @@ test.describe("Scenario: Gestion des moyens de paiement", () => {
         construction_year: 1990,
         organization_id: org.id,
       },
-      headers: syndicHeaders,
+      headers: adminHeaders,
     });
 
     // 5. Create owner
