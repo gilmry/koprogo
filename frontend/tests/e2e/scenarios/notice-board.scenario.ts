@@ -1,16 +1,12 @@
 /**
- * SCENARIO: Tableau d'affichage communautaire
+ * SCENARIO: Tableau d'affichage communautaire (MULTI-ROLE)
  *
- * Documentation Vivante — vidéo exploitable pour YouTube.
- * Montre le parcours complet d'un syndic :
- *   1. Connexion via le formulaire login
- *   2. Navigation vers la page Annonces via le menu latéral
- *   3. Sélection d'un immeuble
- *   4. Consultation de la liste des annonces existantes
- *   5. Clic sur une annonce pour voir le détail
- *   6. Retour à la liste et création d'une nouvelle annonce
+ * Documentation Vivante — video exploitable pour YouTube.
+ * Montre le parcours multi-acteur d'une copropriete belge :
+ *   1. Le syndic se connecte, navigue vers les annonces, et cree une nouvelle annonce
+ *   2. Un coproprietaire se connecte, consulte la liste des annonces, et lit le detail
  *
- * Durée vidéo attendue : ~50-70 secondes (rythme humain)
+ * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
 import {
@@ -26,18 +22,22 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-test.describe("Scénario: Tableau d'affichage communautaire", () => {
-  test.setTimeout(120_000);
+test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => {
+  test.setTimeout(180_000);
 
-  // ----- Données de test (créées via API, invisibles en vidéo) -----
+  // ----- Donnees de test (creees via API, invisibles en video) -----
   let syndicEmail: string;
   let syndicPassword: string;
+  let ownerEmail: string;
+  let ownerPassword: string;
   let buildingName: string;
 
   test.beforeAll(async ({ request }) => {
     const ts = Date.now();
-    syndicEmail = `scenario-notice-${ts}@koprogo.test`;
+    syndicEmail = `scenario-notice-syndic-${ts}@koprogo.test`;
     syndicPassword = "test123456";
+    ownerEmail = `scenario-notice-owner-${ts}@koprogo.test`;
+    ownerPassword = "test123456";
 
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
@@ -77,13 +77,28 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
     const syndic = await syndicResp.json();
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
-    // 5. Create building
-    buildingName = `Résidence des Érables ${ts}`;
+    // 5. Register owner user account
+    const ownerRegResp = await request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: ownerEmail,
+        password: ownerPassword,
+        first_name: "Thomas",
+        last_name: "Leclercq",
+        role: "owner",
+        organization_id: org.id,
+      },
+    });
+    const ownerUser = await ownerRegResp.json();
+    const ownerUserId =
+      ownerUser.user?.id || ownerUser.id || ownerUser.user_id || "";
+
+    // 6. Create building
+    buildingName = `Residence des Erables ${ts}`;
     const buildingResp = await request.post(`${API_BASE}/buildings`, {
       data: {
         name: buildingName,
         address: "8 Avenue des Arts",
-        city: "Liège",
+        city: "Liege",
         postal_code: "4000",
         country: "Belgium",
         total_units: 16,
@@ -94,7 +109,23 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
     });
     const building = await buildingResp.json();
 
-    // 6. Create a few notices via API
+    // 7. Create owner record linked to user
+    await request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: org.id,
+        first_name: "Thomas",
+        last_name: "Leclercq",
+        email: ownerEmail,
+        address: "8 Avenue des Arts, Apt 5B",
+        city: "Liege",
+        postal_code: "4000",
+        country: "Belgium",
+        user_id: ownerUserId,
+      },
+      headers: syndicHeaders,
+    });
+
+    // 8. Pre-create and publish some notices via API
     const notice1Resp = await request.post(`${API_BASE}/notices`, {
       data: {
         building_id: building.id,
@@ -102,13 +133,12 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
         category: "General",
         title: "Nettoyage des communs ce samedi",
         content:
-          "Un nettoyage complet des parties communes est prévu ce samedi de 9h à 12h. " +
+          "Un nettoyage complet des parties communes est prevu ce samedi de 9h a 12h. " +
           "Merci de ne pas laisser d'objets dans les couloirs.",
       },
       headers: syndicHeaders,
     });
     const notice1 = await notice1Resp.json();
-    // Publish notice so it appears in the default "Published" filter
     await request.post(`${API_BASE}/notices/${notice1.id}/publish`, {
       headers: syndicHeaders,
     });
@@ -118,14 +148,14 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
         building_id: building.id,
         notice_type: "Event",
         category: "Social",
-        title: "Barbecue de quartier - Fête des voisins",
+        title: "Barbecue de quartier - Fete des voisins",
         content:
-          "À l'occasion de la fête des voisins, un barbecue est organisé dans le " +
-          "jardin commun. Chacun apporte un plat à partager. Ambiance conviviale garantie !",
+          "A l'occasion de la fete des voisins, un barbecue est organise dans le " +
+          "jardin commun. Chacun apporte un plat a partager.",
         event_date: new Date(
           Date.now() + 14 * 24 * 60 * 60 * 1000,
         ).toISOString(),
-        event_location: "Jardin commun, rez-de-chaussée",
+        event_location: "Jardin commun, rez-de-chaussee",
         contact_info: "Claire Janssens - syndic@residence-erables.be",
       },
       headers: syndicHeaders,
@@ -134,63 +164,50 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
     await request.post(`${API_BASE}/notices/${notice2.id}/publish`, {
       headers: syndicHeaders,
     });
-
-    const notice3Resp = await request.post(`${API_BASE}/notices`, {
-      data: {
-        building_id: building.id,
-        notice_type: "LostAndFound",
-        category: "General",
-        title: "Trouvé : clé avec porte-clé bleu",
-        content:
-          "Une clé avec un porte-clé bleu a été trouvée dans le hall d'entrée ce matin. " +
-          "Contactez la loge du concierge pour la récupérer.",
-        contact_info: "Loge du concierge, RDC",
-      },
-      headers: syndicHeaders,
-    });
-    const notice3 = await notice3Resp.json();
-    await request.post(`${API_BASE}/notices/${notice3.id}/publish`, {
-      headers: syndicHeaders,
-    });
   });
 
-  test("Un syndic consulte les annonces et en crée une nouvelle", async ({
+  test("Syndic cree une annonce, coproprietaire la consulte", async ({
     page,
   }) => {
     // ============================================================
-    // ÉTAPE 1 : Connexion (visible dans la vidéo)
+    // ETAPE 1 : Le syndic se connecte et navigue vers les annonces
     // ============================================================
     await humanLogin(page, syndicEmail, syndicPassword);
     await stepPause(page);
 
-    // ============================================================
-    // ÉTAPE 2 : Navigation vers les Annonces via le menu latéral
-    // ============================================================
     await humanClick(page, "nav-link-annonces");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Vérifier que la page Annonces est chargée
     await expect(page.locator("main h1").first()).toContainText("Annonces");
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 3 : Sélectionner l'immeuble (ou attendre auto-sélection)
+    // ETAPE 2 : Attendre la selection automatique de l'immeuble
     // ============================================================
     await waitForSpinner(page);
 
-    // Wait for building selection to be ready (either selector or auto-selected single building)
-    const buildingReady = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+    // With a single building in the org, BuildingSelector auto-selects
+    const buildingReady = page
+      .locator(
+        '[data-testid="building-selector"], [data-testid="building-selected"]',
+      )
+      .first();
     await expect(buildingReady).toBeVisible({ timeout: 15000 });
 
+    // If there is a dropdown (multiple buildings case), select the right one
     const buildingSelect = page.getByTestId("building-selector");
-    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await buildingSelect
+        .isVisible({ timeout: 2000 })
+        .catch(() => false)
+    ) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
       for (const option of options) {
         const text = await option.textContent();
-        if (text && text.includes("Résidence des Érables")) {
+        if (text && text.includes("Residence des Erables")) {
           const value = await option.getAttribute("value");
           if (value) {
             await buildingSelect.selectOption(value);
@@ -204,63 +221,80 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 4 : Vérifier que la liste des annonces s'affiche
+    // ETAPE 3 : Le syndic cree une nouvelle annonce via le formulaire
     // ============================================================
-    await expect(page.getByTestId("notice-list")).toBeVisible({
-      timeout: 15000,
+    await humanClick(page, "notices-create-btn");
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    await expect(page.getByTestId("notice-create-modal")).toBeVisible({
+      timeout: 10000,
     });
+    await page.waitForTimeout(PACE.BETWEEN_STEPS);
 
-    // Vérifier qu'au moins une annonce apparaît
-    await expect(
-      page.getByTestId("notice-list-row").first(),
-    ).toBeVisible({ timeout: 15000 });
+    await humanFill(
+      page,
+      "notice-title-input",
+      "Travaux ascenseur - Interruption prevue",
+    );
 
-    // Vérifier que les annonces créées en beforeAll sont visibles
-    await expect(
-      page.locator("text=Nettoyage des communs"),
-    ).toBeVisible({ timeout: 10000 });
+    await humanFill(
+      page,
+      "notice-content-input",
+      "L'ascenseur sera hors service du lundi au mercredi de la semaine " +
+        "prochaine pour une maintenance preventive obligatoire. " +
+        "Nous vous prions d'utiliser les escaliers durant cette periode.",
+    );
+
     await stepPause(page);
 
-    // ============================================================
-    // ÉTAPE 5 : Cliquer sur une annonce pour voir le détail
-    // ============================================================
-    const noticeRow = page
-      .getByTestId("notice-list-row")
-      .filter({ hasText: "Barbecue de quartier" })
-      .first();
-    await humanClickLocator(page, noticeRow.locator("a"));
+    // Soumettre l'annonce
+    await humanClick(page, "notice-submit-btn");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Vérifier que la page de détail est chargée
-    await expect(page.getByTestId("notice-detail")).toBeVisible({
-      timeout: 15000,
-    });
-
-    // Vérifier le titre de l'annonce
-    await expect(page.locator("h1")).toContainText("Barbecue de quartier");
+    // La page recharge apres creation reussie
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 6 : Retour à la liste des annonces
+    // ETAPE 4 : Le coproprietaire se connecte et consulte les annonces
     // ============================================================
+    await humanLogin(page, ownerEmail, ownerPassword);
+    await stepPause(page);
+
+    // Naviguer vers les annonces (community section, shared nav)
     await humanClick(page, "nav-link-annonces");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Re-sélectionner l'immeuble après navigation (ou attendre auto-sélection)
+    await expect(page.locator("main h1").first()).toContainText("Annonces");
+    await stepPause(page);
+
+    // ============================================================
+    // ETAPE 5 : Attendre la selection de l'immeuble et la liste
+    // ============================================================
     await waitForSpinner(page);
-    const buildingReady2 = page.locator('[data-testid="building-selector"], [data-testid="building-selected"]').first();
+
+    const buildingReady2 = page
+      .locator(
+        '[data-testid="building-selector"], [data-testid="building-selected"]',
+      )
+      .first();
     await expect(buildingReady2).toBeVisible({ timeout: 15000 });
 
     const buildingSelect2 = page.getByTestId("building-selector");
-    if (await buildingSelect2.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (
+      await buildingSelect2
+        .isVisible({ timeout: 2000 })
+        .catch(() => false)
+    ) {
       await buildingSelect2.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect2.locator("option").all();
       for (const option of options) {
         const text = await option.textContent();
-        if (text && text.includes("Résidence des Érables")) {
+        if (text && text.includes("Residence des Erables")) {
           const value = await option.getAttribute("value");
           if (value) {
             await buildingSelect2.selectOption(value);
@@ -272,52 +306,44 @@ test.describe("Scénario: Tableau d'affichage communautaire", () => {
     }
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-    await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 7 : Créer une nouvelle annonce
+    // ETAPE 6 : Le coproprietaire consulte la liste des annonces
     // ============================================================
-    await humanClick(page, "notices-create-btn");
-    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-
-    // Vérifier que le modal de création est ouvert
-    await expect(page.getByTestId("notice-create-modal")).toBeVisible({
-      timeout: 10000,
+    await expect(page.getByTestId("notice-list")).toBeVisible({
+      timeout: 15000,
     });
-    await page.waitForTimeout(PACE.BETWEEN_STEPS);
 
-    // Remplir le formulaire
-    await humanFill(
-      page,
-      "notice-title-input",
-      "Travaux ascenseur - Interruption prévue",
-    );
+    await expect(
+      page.getByTestId("notice-list-row").first(),
+    ).toBeVisible({ timeout: 15000 });
 
-    await humanFill(
-      page,
-      "notice-content-input",
-      "L'ascenseur sera hors service du lundi au mercredi de la semaine " +
-        "prochaine pour une maintenance préventive obligatoire. " +
-        "Nous vous prions d'utiliser les escaliers durant cette période. " +
-        "Merci de votre compréhension.",
-    );
-
+    // Verifier qu'une annonce pre-creee est visible
+    await expect(
+      page.locator("text=Nettoyage des communs"),
+    ).toBeVisible({ timeout: 10000 });
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 8 : Soumettre l'annonce
+    // ETAPE 7 : Le coproprietaire clique sur une annonce pour le detail
     // ============================================================
-    await humanClick(page, "notice-submit-btn");
+    const noticeRow = page
+      .getByTestId("notice-list-row")
+      .filter({ hasText: "Barbecue de quartier" })
+      .first();
+    await humanClickLocator(page, noticeRow.locator("a"));
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // La page recharge après création réussie
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+    await expect(page.getByTestId("notice-detail")).toBeVisible({
+      timeout: 15000,
+    });
+
+    await expect(page.locator("h1")).toContainText("Barbecue de quartier");
     await stepPause(page);
 
     // ============================================================
-    // FIN : Pause finale pour que la vidéo montre le résultat
+    // FIN : Pause finale pour que la video montre le resultat
     // ============================================================
     await finalPause(page);
   });

@@ -1,18 +1,13 @@
 /**
- * SCENARIO: Vote sur une resolution en assemblee generale
+ * SCENARIO: Vote sur une resolution en assemblee generale (MULTI-ROLE)
  *
  * Documentation Vivante — video exploitable pour YouTube.
- * Montre le parcours complet d'un syndic :
- *   1. Connexion via le formulaire login
- *   2. Navigation vers la page Assemblees via le menu lateral
- *   3. Clic sur une assemblee pour afficher le detail
- *   4. Visualisation de la section Resolutions (resolution pre-creee via API)
- *   5. Vote "Pour" avec pouvoir de vote (tantiemes)
- *   6. Verification que le vote est enregistre
- *   7. Cloture du scrutin
- *   8. Verification du statut final (Adoptee/Rejetee)
+ * Montre le parcours multi-acteur d'une copropriete belge :
+ *   1. Le syndic se connecte et consulte l'AG avec sa resolution
+ *   2. Un coproprietaire se connecte, trouve l'AG et vote "Pour"
+ *   3. Le syndic revient, cloture le scrutin et verifie le resultat
  *
- * Duree video attendue : ~60-90 secondes (rythme humain)
+ * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
 import {
@@ -27,19 +22,23 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
-  test.setTimeout(120_000);
+test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
+  test.setTimeout(180_000);
 
   // ----- Donnees de test (creees via API, invisibles en video) -----
   let syndicEmail: string;
   let syndicPassword: string;
+  let ownerEmail: string;
+  let ownerPassword: string;
   let meetingTitle: string;
   let resolutionTitle: string;
 
   test.beforeAll(async ({ request }) => {
     const ts = Date.now();
-    syndicEmail = `scenario-vote-${ts}@koprogo.test`;
+    syndicEmail = `scenario-vote-syndic-${ts}@koprogo.test`;
     syndicPassword = "test123456";
+    ownerEmail = `scenario-vote-owner-${ts}@koprogo.test`;
+    ownerPassword = "test123456";
     resolutionTitle = `Approbation travaux facade ${ts}`;
 
     // 1. Login admin
@@ -73,14 +72,29 @@ test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
       },
     });
 
-    // 4. Login as syndic to get syndic token
+    // 4. Login as syndic
     const syndicResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: syndicEmail, password: syndicPassword },
     });
     const syndic = await syndicResp.json();
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
-    // 5. Create building
+    // 5. Register owner user account
+    const ownerRegResp = await request.post(`${API_BASE}/auth/register`, {
+      data: {
+        email: ownerEmail,
+        password: ownerPassword,
+        first_name: "Marie",
+        last_name: "Dubois",
+        role: "owner",
+        organization_id: org.id,
+      },
+    });
+    const ownerUser = await ownerRegResp.json();
+    const ownerUserId =
+      ownerUser.user?.id || ownerUser.id || ownerUser.user_id || "";
+
+    // 6. Create building
     const buildingResp = await request.post(`${API_BASE}/buildings`, {
       data: {
         name: `Residence du Parc ${ts}`,
@@ -96,7 +110,23 @@ test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
     });
     const building = await buildingResp.json();
 
-    // 6. Create a meeting (Ordinary, scheduled 30 days from now)
+    // 7. Create owner record linked to user
+    await request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: org.id,
+        first_name: "Marie",
+        last_name: "Dubois",
+        email: ownerEmail,
+        address: "15 Rue de la Loi, Apt 3A",
+        city: "Bruxelles",
+        postal_code: "1000",
+        country: "Belgium",
+        user_id: ownerUserId,
+      },
+      headers: syndicHeaders,
+    });
+
+    // 8. Create meeting (Ordinary, scheduled 30 days from now)
     const meetingDate = new Date();
     meetingDate.setDate(meetingDate.getDate() + 30);
     meetingTitle = `AG Ordinaire - Budget ${ts}`;
@@ -114,7 +144,7 @@ test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
     });
     const meeting = await meetingResp.json();
 
-    // 7. Create a resolution via API so it is guaranteed to exist
+    // 9. Create resolution via API
     await request.post(`${API_BASE}/meetings/${meeting.id}/resolutions`, {
       data: {
         meeting_id: meeting.id,
@@ -130,36 +160,29 @@ test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
     });
   });
 
-  test("Un syndic vote sur une resolution et cloture le scrutin", async ({
+  test("Syndic prepare l'AG, coproprietaire vote, syndic cloture", async ({
     page,
   }) => {
     // ============================================================
-    // ETAPE 1 : Connexion (visible dans la video)
+    // ETAPE 1 : Le syndic se connecte et consulte l'AG
     // ============================================================
     await humanLogin(page, syndicEmail, syndicPassword);
     await stepPause(page);
 
-    // ============================================================
-    // ETAPE 2 : Navigation vers les Assemblees via le menu lateral
-    // ============================================================
+    // Navigation vers les Assemblees
     await humanClick(page, "nav-link-assemblées");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Verifier que la page Assemblees est chargee
     await expect(page.locator("main h1").first()).toContainText("Assemblées");
     await stepPause(page);
 
-    // ============================================================
-    // ETAPE 3 : Cliquer sur l'assemblee pour ouvrir le detail
-    // ============================================================
-    // Attendre que la liste des reunions charge
+    // Cliquer sur l'assemblee pour voir le detail
     await expect(
       page.getByTestId("meeting-list-container"),
     ).toBeVisible({ timeout: 15000 });
     await waitForSpinner(page);
 
-    // Trouver la carte de la reunion et cliquer sur "Details"
     const meetingCard = page
       .getByTestId("meeting-card")
       .filter({ hasText: "AG Ordinaire" })
@@ -170,47 +193,67 @@ test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
     await humanClickLocator(page, detailsLink);
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-
-    // Verifier que le detail de la reunion est affiche
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-    await stepPause(page);
 
-    // ============================================================
-    // ETAPE 4 : Verifier la section Resolutions
-    // ============================================================
-    // Faire defiler jusqu'a la section Resolutions
+    // Verifier la section Resolutions
     const resolutionSection = page.getByTestId("resolution-list");
     await expect(resolutionSection).toBeVisible({ timeout: 15000 });
     await resolutionSection.scrollIntoViewIfNeeded();
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-    await stepPause(page);
 
-    // ============================================================
-    // ETAPE 5 : Trouver la resolution pre-creee
-    // ============================================================
-    const resolutionItem = page
-      .getByTestId("resolution-item")
-      .first();
+    const resolutionItem = page.getByTestId("resolution-item").first();
     await expect(resolutionItem).toBeVisible({ timeout: 15000 });
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 6 : Voter "Pour" avec pouvoir de vote (tantiemes)
+    // ETAPE 2 : Le coproprietaire se connecte et vote
     // ============================================================
-    // Trouver le panneau de vote dans la resolution
-    const voteBtnPour = resolutionItem.locator(
+    await humanLogin(page, ownerEmail, ownerPassword);
+    await stepPause(page);
+
+    // L'owner navigue vers les assemblees (community section)
+    await humanClick(page, "nav-link-assemblées");
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    // Trouver et ouvrir l'AG
+    await expect(
+      page.getByTestId("meeting-list-container"),
+    ).toBeVisible({ timeout: 15000 });
+    await waitForSpinner(page);
+
+    const meetingCard2 = page
+      .getByTestId("meeting-card")
+      .filter({ hasText: "AG Ordinaire" })
+      .first();
+    await expect(meetingCard2).toBeVisible({ timeout: 15000 });
+
+    const detailsLink2 = meetingCard2.locator("a").first();
+    await humanClickLocator(page, detailsLink2);
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    // Trouver la resolution et voter "Pour"
+    const resolutionSection2 = page.getByTestId("resolution-list");
+    await expect(resolutionSection2).toBeVisible({ timeout: 15000 });
+    await resolutionSection2.scrollIntoViewIfNeeded();
+
+    const resolutionItem2 = page.getByTestId("resolution-item").first();
+    await expect(resolutionItem2).toBeVisible({ timeout: 15000 });
+
+    const voteBtnPour = resolutionItem2.locator(
       '[data-testid="vote-btn-pour"]',
     );
     await voteBtnPour.scrollIntoViewIfNeeded();
     await page.waitForTimeout(PACE.BEFORE_CLICK);
-
-    // Selectionner "Pour"
     await humanClickLocator(page, voteBtnPour);
     await page.waitForTimeout(PACE.AFTER_CLICK);
 
     // Saisir le pouvoir de vote (tantiemes/milliemes)
-    const votingPowerInput = resolutionItem.locator(
+    const votingPowerInput = resolutionItem2.locator(
       '[data-testid="vote-voting-power"]',
     );
     await votingPowerInput.scrollIntoViewIfNeeded();
@@ -219,32 +262,61 @@ test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
     await votingPowerInput.fill("150");
     await page.waitForTimeout(PACE.AFTER_TYPE);
 
-    await stepPause(page);
-
-    // Soumettre le vote (cliquer sur le bouton contenant "vote")
-    const submitVoteBtn = resolutionItem.locator(
-      'button',
-    ).filter({ hasText: /vote/i }).last();
+    // Soumettre le vote
+    const submitVoteBtn = resolutionItem2
+      .locator("button")
+      .filter({ hasText: /vote/i })
+      .last();
     await humanClickLocator(page, submitVoteBtn);
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // ============================================================
-    // ETAPE 7 : Verifier que le vote est enregistre
-    // ============================================================
-    // Les barres de progression devraient montrer le vote
-    const progressPour = resolutionItem.locator(
+    // Verifier que le vote est enregistre
+    const progressPour = resolutionItem2.locator(
       '[data-testid="vote-progress-pour"]',
     );
     await progressPour.scrollIntoViewIfNeeded();
     await expect(progressPour).toBeVisible({ timeout: 10000 });
-
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 8 : Cloturer le scrutin
+    // ETAPE 3 : Le syndic revient, cloture le scrutin, verifie
     // ============================================================
-    const closeBtn = resolutionItem.locator(
+    await humanLogin(page, syndicEmail, syndicPassword);
+    await stepPause(page);
+
+    // Re-naviguer vers l'AG
+    await humanClick(page, "nav-link-assemblées");
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    await expect(
+      page.getByTestId("meeting-list-container"),
+    ).toBeVisible({ timeout: 15000 });
+    await waitForSpinner(page);
+
+    const meetingCard3 = page
+      .getByTestId("meeting-card")
+      .filter({ hasText: "AG Ordinaire" })
+      .first();
+    await expect(meetingCard3).toBeVisible({ timeout: 15000 });
+
+    const detailsLink3 = meetingCard3.locator("a").first();
+    await humanClickLocator(page, detailsLink3);
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    // Trouver la resolution et cloturer le scrutin
+    const resolutionSection3 = page.getByTestId("resolution-list");
+    await expect(resolutionSection3).toBeVisible({ timeout: 15000 });
+    await resolutionSection3.scrollIntoViewIfNeeded();
+
+    const resolutionItem3 = page.getByTestId("resolution-item").first();
+    await expect(resolutionItem3).toBeVisible({ timeout: 15000 });
+
+    const closeBtn = resolutionItem3.locator(
       '[data-testid="vote-close-btn"]',
     );
     await closeBtn.scrollIntoViewIfNeeded();
@@ -257,16 +329,11 @@ test.describe("Scenario: Vote sur une resolution en assemblee generale", () => {
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // ============================================================
-    // ETAPE 9 : Verifier le statut final de la resolution
-    // ============================================================
-    // Apres cloture, le statut devrait etre "Adoptee" (vote Pour majoritaire)
-    // Le badge de statut est dans le ResolutionStatusBadge
-    const statusBadge = resolutionItem.locator("span").filter({
+    // Verifier le statut final (Adoptee car vote Pour majoritaire)
+    const statusBadge = resolutionItem3.locator("span").filter({
       hasText: /Adoptée|Rejetée|adoptée|rejetée/,
     });
     await expect(statusBadge).toBeVisible({ timeout: 15000 });
-
     await stepPause(page);
 
     // ============================================================

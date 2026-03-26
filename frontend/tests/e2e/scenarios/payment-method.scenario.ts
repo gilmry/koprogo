@@ -1,12 +1,13 @@
 /**
- * SCENARIO: Gestion des moyens de paiement
+ * SCENARIO: Gestion des moyens de paiement (SINGLE ROLE - owner)
  *
- * Documentation Vivante -- video exploitable pour YouTube.
- * Montre le parcours complet d'un proprietaire :
+ * Documentation Vivante — video exploitable pour YouTube.
+ * Montre le parcours complet d'un coproprietaire :
  *   1. Connexion via le formulaire login
  *   2. Navigation vers la page Moyens de paiement via le menu lateral
- *   3. Ajout d'un moyen de paiement (carte bancaire) via le formulaire
- *   4. Verification que le moyen de paiement apparait dans la liste
+ *   3. Verification qu'un moyen de paiement pre-cree apparait
+ *   4. Ajout d'un nouveau moyen de paiement (carte bancaire) via le formulaire
+ *   5. Verification que le nouveau moyen de paiement apparait dans la liste
  *
  * Duree video attendue : ~40-50 secondes (rythme humain)
  */
@@ -23,7 +24,7 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-test.describe("Scenario: Gestion des moyens de paiement", () => {
+test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () => {
   test.setTimeout(120_000);
 
   // ----- Donnees de test (creees via API, invisibles en video) -----
@@ -55,7 +56,7 @@ test.describe("Scenario: Gestion des moyens de paiement", () => {
     });
     const org = await orgResp.json();
 
-    // 3. Register syndic (to create building + owner)
+    // 3. Register syndic (needed to create building + owner)
     const syndicEmail = `scenario-syndic-pm-${ts}@koprogo.test`;
     await request.post(`${API_BASE}/auth/register`, {
       data: {
@@ -90,24 +91,7 @@ test.describe("Scenario: Gestion des moyens de paiement", () => {
       headers: adminHeaders,
     });
 
-    // 5. Create owner
-    const ownerResp = await request.post(`${API_BASE}/owners`, {
-      data: {
-        organization_id: org.id,
-        first_name: "Pierre",
-        last_name: `Dupont${ts}`,
-        email: ownerEmail,
-        address: "10 Rue du Commerce",
-        city: "Bruxelles",
-        postal_code: "1000",
-        country: "Belgium",
-      },
-      headers: syndicHeaders,
-    });
-    const owner = await ownerResp.json();
-    ownerId = owner.id;
-
-    // 6. Register owner user account
+    // 5. Register owner user account
     const registerResp = await request.post(`${API_BASE}/auth/register`, {
       data: {
         email: ownerEmail,
@@ -119,17 +103,31 @@ test.describe("Scenario: Gestion des moyens de paiement", () => {
       },
     });
     const registeredUser = await registerResp.json();
-    const ownerUserId = registeredUser.id || registeredUser.user_id || registeredUser.user?.id;
+    const ownerUserId =
+      registeredUser.user?.id ||
+      registeredUser.id ||
+      registeredUser.user_id ||
+      "";
 
-    // 7. Link owner entity to user account (admin only)
-    if (ownerUserId) {
-      await request.put(`${API_BASE}/owners/${ownerId}/link-user`, {
-        data: { user_id: ownerUserId },
-        headers: adminHeaders,
-      });
-    }
+    // 6. Create owner record linked to user account
+    const ownerResp = await request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: org.id,
+        first_name: "Pierre",
+        last_name: `Dupont${ts}`,
+        email: ownerEmail,
+        address: "10 Rue du Commerce",
+        city: "Bruxelles",
+        postal_code: "1000",
+        country: "Belgium",
+        user_id: ownerUserId,
+      },
+      headers: syndicHeaders,
+    });
+    const owner = await ownerResp.json();
+    ownerId = owner.id;
 
-    // 8. Pre-create a payment method via API so the list is not empty
+    // 7. Pre-create a payment method via API so the list is not empty
     const ownerLoginResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: ownerEmail, password: ownerPassword },
     });
@@ -149,7 +147,7 @@ test.describe("Scenario: Gestion des moyens de paiement", () => {
     });
   });
 
-  test("Un proprietaire ajoute un moyen de paiement via l'interface", async ({
+  test("Un coproprietaire ajoute un moyen de paiement via l'interface", async ({
     page,
   }) => {
     // ============================================================

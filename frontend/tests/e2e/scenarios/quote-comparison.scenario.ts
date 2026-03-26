@@ -1,14 +1,16 @@
 /**
- * SCENARIO: Comparaison de devis entrepreneurs
+ * SCENARIO: Comparaison de devis entrepreneurs (SINGLE ROLE - syndic)
  *
- * Documentation Vivante -- video exploitable pour YouTube.
+ * Documentation Vivante — video exploitable pour YouTube.
  * Montre le parcours complet d'un syndic :
  *   1. Connexion via le formulaire login
  *   2. Navigation vers la page Devis via le menu lateral
  *   3. Selection d'un immeuble
- *   4. Consultation de la liste des devis
+ *   4. Consultation de la liste des devis (3 devis pre-crees)
  *   5. Navigation vers le tableau de comparaison (scores, classement)
+ *   6. Verification de la methodologie de scoring belge
  *
+ * Conformite belge: 3 devis obligatoires pour travaux > 5000 EUR
  * Duree video attendue : ~50-70 secondes (rythme humain)
  */
 import { test, expect } from "@playwright/test";
@@ -24,7 +26,7 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-test.describe("Scenario: Comparaison de devis entrepreneurs", () => {
+test.describe("Scenario: Comparaison de devis entrepreneurs (syndic)", () => {
   test.setTimeout(120_000);
 
   // ----- Donnees de test (creees via API, invisibles en video) -----
@@ -160,7 +162,6 @@ test.describe("Scenario: Comparaison de devis entrepreneurs", () => {
     ];
 
     for (const spec of quoteSpecs) {
-      // Create quote with all required fields
       const createResp = await request.post(`${API_BASE}/quotes`, {
         data: {
           building_id: building.id,
@@ -257,7 +258,6 @@ test.describe("Scenario: Comparaison de devis entrepreneurs", () => {
     // ETAPE 5 : Naviguer directement vers la page de comparaison
     // ============================================================
     // Use the quote IDs from beforeAll to navigate directly to compare page
-    // This avoids the fragile checkbox-selection flow
     const compareUrl = `/quotes/compare?ids=${quoteIds.join(",")}`;
     await page.goto(compareUrl, { waitUntil: "domcontentloaded" });
     await waitForSpinner(page);
