@@ -112,7 +112,7 @@ test.describe("Scenario: Sondage multi-role (syndic lance, owner vote)", () => {
     const building = await buildingResp.json();
 
     // 7. Create owner record linked to user
-    await request.post(`${API_BASE}/owners`, {
+    const ownerResp = await request.post(`${API_BASE}/owners`, {
       data: {
         organization_id: org.id,
         first_name: "Luc",
@@ -123,6 +123,31 @@ test.describe("Scenario: Sondage multi-role (syndic lance, owner vote)", () => {
         postal_code: "1060",
         country: "Belgium",
         user_id: ownerUserId,
+      },
+      headers: syndicHeaders,
+    });
+    const owner = await ownerResp.json();
+
+    // 7b. Create unit + unit_owner so building has eligible voters (required by poll validation)
+    const unitResp = await request.post(`${API_BASE}/units`, {
+      data: {
+        organization_id: org.id,
+        building_id: building.id,
+        unit_number: "7C",
+        floor: 7,
+        surface_area: 85.0,
+        unit_type: "Apartment",
+        quota: 100.0,
+      },
+      headers: adminHeaders,
+    });
+    const unit = await unitResp.json();
+
+    await request.post(`${API_BASE}/units/${unit.id}/owners`, {
+      data: {
+        owner_id: owner.id,
+        ownership_percentage: 1.0,
+        start_date: new Date().toISOString(),
       },
       headers: syndicHeaders,
     });

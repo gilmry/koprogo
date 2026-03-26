@@ -137,11 +137,11 @@ test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () =>
     await request.post(`${API_BASE}/payment-methods`, {
       data: {
         owner_id: ownerId,
-        method_type: "Card",
+        method_type: "card",
         display_label: "Mastercard existante ****9876",
         stripe_payment_method_id: "pm_existing_9876",
-        last4: "9876",
-        brand: "Mastercard",
+        stripe_customer_id: "cus_test_9876",
+        is_default: true,
       },
       headers: ownerHeaders,
     });

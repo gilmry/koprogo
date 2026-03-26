@@ -153,8 +153,8 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
           "Resolution pour approuver les travaux de ravalement de facade " +
           "du batiment, incluant la reparation des fissures et " +
           "la peinture exterieure. Devis retenu: 45.000 EUR HTVA.",
-        resolution_type: "works",
-        majority_required: "Simple",
+        resolution_type: "ordinary",
+        majority_required: "simple",
       },
       headers: syndicHeaders,
     });

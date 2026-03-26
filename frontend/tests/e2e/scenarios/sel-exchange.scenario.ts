@@ -160,11 +160,23 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     });
     const bobOwner = await bob.json();
 
-    // 7. Create exchange offers by Alice via API
+    // 7. Login as Alice and Bob to create exchanges (provider_id resolved from auth)
+    const aliceLoginResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: aliceEmail, password: alicePassword },
+    });
+    const aliceAuth = await aliceLoginResp.json();
+    const aliceHeaders = { Authorization: `Bearer ${aliceAuth.token}` };
+
+    const bobLoginResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: bobEmail, password: bobPassword },
+    });
+    const bobAuth = await bobLoginResp.json();
+    const bobHeaders = { Authorization: `Bearer ${bobAuth.token}` };
+
+    // Create exchange offers by Alice via API (provider resolved from Alice's JWT)
     await request.post(`${API_BASE}/exchanges`, {
       data: {
         building_id: building.id,
-        provider_id: aliceOwner.id,
         exchange_type: "Service",
         title: "Cours de jardinage",
         description:
@@ -172,13 +184,12 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
           "Entretien des plantes, plantation de legumes, compostage.",
         credits: 2,
       },
-      headers: syndicHeaders,
+      headers: aliceHeaders,
     });
 
     await request.post(`${API_BASE}/exchanges`, {
       data: {
         building_id: building.id,
-        provider_id: aliceOwner.id,
         exchange_type: "ObjectLoan",
         title: "Pret de perceuse-visseuse",
         description:
@@ -186,13 +197,13 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
           "Incluant jeu de meches et embouts.",
         credits: 1,
       },
-      headers: syndicHeaders,
+      headers: aliceHeaders,
     });
 
+    // Create exchange offer by Bob via API (provider resolved from Bob's JWT)
     await request.post(`${API_BASE}/exchanges`, {
       data: {
         building_id: building.id,
-        provider_id: bobOwner.id,
         exchange_type: "SharedPurchase",
         title: "Achat groupe pellets chauffage",
         description:
@@ -200,7 +211,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
           "Economie estimee de 15% sur le prix individuel.",
         credits: 3,
       },
-      headers: syndicHeaders,
+      headers: bobHeaders,
     });
   });
 
