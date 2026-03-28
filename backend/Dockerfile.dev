@@ -7,16 +7,17 @@ WORKDIR /app
 # Install rustfmt and clippy for the nightly toolchain
 RUN rustup component add rustfmt clippy
 
-# Install cargo-watch for hot reload
-RUN cargo install cargo-watch
-
-# Install system dependencies (aligned with production)
+# Install system dependencies FIRST (needed for sqlx-cli build)
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install dev tools (after system deps so openssl-sys can build)
+RUN cargo install cargo-watch && \
+    cargo install sqlx-cli --no-default-features --features native-tls,postgres
 
 # Copy Cargo files for dependency caching
 COPY Cargo.toml Cargo.lock ./

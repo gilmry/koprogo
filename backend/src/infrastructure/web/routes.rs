@@ -516,10 +516,12 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(cancel_reminder) // PUT /payment-reminders/{id}/cancel
             .service(escalate_reminder) // POST /payment-reminders/{id}/escalate
             .service(add_tracking_number) // PUT /payment-reminders/{id}/tracking-number
-            // Seed (SuperAdmin only) - ONE seed only
+            // Seed (SuperAdmin only)
             .service(seed_demo_data)
-            // .service(seed_realistic_data) // Disabled: we only use ONE seed
             .service(clear_demo_data)
+            // Scenario-based seeds for E2E testing (Issue #347)
+            .service(seed_scenario_world)
+            .service(clear_scenario_world)
             // Stats (SuperAdmin only)
             .service(get_dashboard_stats)
             .service(get_seed_data_stats)
