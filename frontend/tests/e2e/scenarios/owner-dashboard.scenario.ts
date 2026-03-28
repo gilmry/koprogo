@@ -58,9 +58,7 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
     });
   });
 
-  test("Alice se connecte et explore son tableau de bord", async ({
-    page,
-  }) => {
+  test("Alice se connecte et explore son tableau de bord", async ({ page }) => {
     // ============================================================
     // ETAPE 1 : Connexion (visible dans la video)
     // ============================================================
@@ -79,9 +77,7 @@ test.describe("Scenario: Alice consulte son tableau de bord", () => {
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     // Le dashboard affiche le message de bienvenue
-    await expect(
-      page.locator("h1").first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("h1").first()).toBeVisible({ timeout: 10000 });
 
     await stepPause(page);
 

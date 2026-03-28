@@ -132,9 +132,9 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     await waitForSpinner(page);
     await page.waitForTimeout(3000);
 
-    await expect(
-      page.locator("text=Fuite d'eau dans le hall"),
-    ).toBeVisible({ timeout: 20000 });
+    await expect(page.locator("text=Fuite d'eau dans le hall")).toBeVisible({
+      timeout: 20000,
+    });
 
     await stepPause(page);
 
@@ -174,9 +174,9 @@ test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
     await stepPause(page);
 
     // Verifier que le ticket de Charlie apparait
-    await expect(
-      page.locator("text=Fuite d'eau dans le hall"),
-    ).toBeVisible({ timeout: 20000 });
+    await expect(page.locator("text=Fuite d'eau dans le hall")).toBeVisible({
+      timeout: 20000,
+    });
 
     await stepPause(page);
 

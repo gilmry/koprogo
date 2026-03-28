@@ -19,10 +19,7 @@ export {
   decimalToPercentage,
 } from "./finance.utils";
 
-export {
-  withErrorHandling,
-  withLoadingState,
-} from "./error.utils";
+export { withErrorHandling, withLoadingState } from "./error.utils";
 export type { ErrorHandlingOptions } from "./error.utils";
 
 export {
@@ -31,7 +28,4 @@ export {
   filterAndSearch,
 } from "./filter.utils";
 
-export {
-  extractArray,
-  extractPaginated,
-} from "./response.utils";
+export { extractArray, extractPaginated } from "./response.utils";

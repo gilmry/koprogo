@@ -71,9 +71,21 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
       const ts = Date.now();
       const contractorIds: string[] = [];
       const contractors = [
-        { email: `contractor-a-${ts}@koprogo.test`, first_name: "Jean", last_name: "Peeters" },
-        { email: `contractor-b-${ts}@koprogo.test`, first_name: "Luc", last_name: "Vermeersch" },
-        { email: `contractor-c-${ts}@koprogo.test`, first_name: "Pierre", last_name: "Claessens" },
+        {
+          email: `contractor-a-${ts}@koprogo.test`,
+          first_name: "Jean",
+          last_name: "Peeters",
+        },
+        {
+          email: `contractor-b-${ts}@koprogo.test`,
+          first_name: "Luc",
+          last_name: "Vermeersch",
+        },
+        {
+          email: `contractor-c-${ts}@koprogo.test`,
+          first_name: "Pierre",
+          last_name: "Claessens",
+        },
       ];
 
       for (const c of contractors) {
@@ -188,11 +200,7 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     await expect(buildingReady).toBeVisible({ timeout: 15000 });
 
     const buildingSelect = page.getByTestId("building-selector");
-    if (
-      await buildingSelect
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
+    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
@@ -240,9 +248,9 @@ test.describe("Scenario: Comparaison de devis entrepreneurs (Francois)", () => {
     const comparisonRows = page.getByTestId("comparison-row");
     await expect(comparisonRows.first()).toBeVisible({ timeout: 10000 });
 
-    await expect(
-      page.getByTestId("comparison-score").first(),
-    ).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("comparison-score").first()).toBeVisible({
+      timeout: 5000,
+    });
     await stepPause(page);
 
     // Scroller pour voir la methodologie

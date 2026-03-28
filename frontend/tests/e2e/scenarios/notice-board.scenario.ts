@@ -114,9 +114,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     });
   });
 
-  test("Francois cree une annonce, Alice la consulte", async ({
-    page,
-  }) => {
+  test("Francois cree une annonce, Alice la consulte", async ({ page }) => {
     // ============================================================
     // ETAPE 1 : Francois se connecte et navigue vers les annonces
     // ============================================================
@@ -143,11 +141,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await expect(buildingReady).toBeVisible({ timeout: 15000 });
 
     const buildingSelect = page.getByTestId("building-selector");
-    if (
-      await buildingSelect
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
+    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
@@ -229,11 +223,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await expect(buildingReady2).toBeVisible({ timeout: 15000 });
 
     const buildingSelect2 = page.getByTestId("building-selector");
-    if (
-      await buildingSelect2
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
+    if (await buildingSelect2.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect2.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect2.locator("option").all();
@@ -259,14 +249,14 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
       timeout: 15000,
     });
 
-    await expect(
-      page.getByTestId("notice-list-row").first(),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("notice-list-row").first()).toBeVisible({
+      timeout: 15000,
+    });
 
     // Verifier qu'une annonce pre-creee est visible
-    await expect(
-      page.locator("text=Nettoyage des communs"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Nettoyage des communs")).toBeVisible({
+      timeout: 10000,
+    });
     await stepPause(page);
 
     // ============================================================

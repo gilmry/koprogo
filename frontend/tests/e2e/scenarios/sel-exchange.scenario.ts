@@ -150,11 +150,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     await expect(buildingReady).toBeVisible({ timeout: 15000 });
 
     const buildingSelect = page.getByTestId("building-selector");
-    if (
-      await buildingSelect
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
+    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
@@ -177,14 +173,14 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     const exchangeList = page.getByTestId("exchange-list");
     await expect(exchangeList).toBeVisible({ timeout: 15000 });
 
-    await expect(
-      page.getByTestId("exchange-list-row").first(),
-    ).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("exchange-list-row").first()).toBeVisible({
+      timeout: 20000,
+    });
 
     // Alice voit ses propres offres
-    await expect(
-      page.locator("text=Cours de jardinage"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("text=Cours de jardinage")).toBeVisible({
+      timeout: 15000,
+    });
 
     await stepPause(page);
 
@@ -211,11 +207,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     await expect(buildingReady2).toBeVisible({ timeout: 15000 });
 
     const buildingSelect2 = page.getByTestId("building-selector");
-    if (
-      await buildingSelect2
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
+    if (await buildingSelect2.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect2.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect2.locator("option").all();
@@ -238,17 +230,17 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     const exchangeList2 = page.getByTestId("exchange-list");
     await expect(exchangeList2).toBeVisible({ timeout: 15000 });
 
-    await expect(
-      page.getByTestId("exchange-list-row").first(),
-    ).toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("exchange-list-row").first()).toBeVisible({
+      timeout: 20000,
+    });
 
     // Bob voit les offres d'Alice dans la marketplace
-    await expect(
-      page.locator("text=Cours de jardinage"),
-    ).toBeVisible({ timeout: 15000 });
-    await expect(
-      page.locator("text=Pret de perceuse-visseuse"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=Cours de jardinage")).toBeVisible({
+      timeout: 15000,
+    });
+    await expect(page.locator("text=Pret de perceuse-visseuse")).toBeVisible({
+      timeout: 10000,
+    });
 
     await stepPause(page);
 
@@ -281,9 +273,9 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
       await humanFill(page, "exchange-search-input", "perceuse");
       await page.waitForTimeout(PACE.BETWEEN_STEPS);
 
-      await expect(
-        page.locator("text=perceuse-visseuse"),
-      ).toBeVisible({ timeout: 10000 });
+      await expect(page.locator("text=perceuse-visseuse")).toBeVisible({
+        timeout: 10000,
+      });
 
       // Effacer la recherche
       await humanFill(page, "exchange-search-input", "");

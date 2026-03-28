@@ -122,9 +122,7 @@ test.describe("Scenario: Francois consulte une convocation d'AG", () => {
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    await expect(page.locator("main h1").first()).toContainText(
-      "Convocations",
-    );
+    await expect(page.locator("main h1").first()).toContainText("Convocations");
     await stepPause(page);
 
     // ============================================================
@@ -183,9 +181,7 @@ test.describe("Scenario: Francois consulte une convocation d'AG", () => {
     // ============================================================
     // ETAPE 6 : Verifier les informations de delai legal
     // ============================================================
-    const legalDeadline = page.getByTestId(
-      "convocation-detail-legal-deadline",
-    );
+    const legalDeadline = page.getByTestId("convocation-detail-legal-deadline");
     await legalDeadline.scrollIntoViewIfNeeded();
     await expect(legalDeadline).toBeVisible({ timeout: 5000 });
     await stepPause(page);

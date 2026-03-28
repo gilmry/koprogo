@@ -1,6 +1,11 @@
 import type { CreatePaymentMethodDto } from "../api/payments";
 import { PaymentMethodType } from "../api/payments";
-import { minLength, startsWithPrefix, collectErrors, type ValidationResult } from "./common.validators";
+import {
+  minLength,
+  startsWithPrefix,
+  collectErrors,
+  type ValidationResult,
+} from "./common.validators";
 
 /**
  * Validate a payment method creation form.
@@ -25,7 +30,8 @@ export function validatePaymentMethod(
     errors.stripe_payment_method_id = startsWithPrefix(
       data.stripe_payment_method_id,
       "pm_",
-      messages?.stripeIdRequired ?? "Valid Stripe Payment Method ID required (starts with pm_)",
+      messages?.stripeIdRequired ??
+        "Valid Stripe Payment Method ID required (starts with pm_)",
     );
   }
 

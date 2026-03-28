@@ -164,13 +164,11 @@ test.describe("Scenario: Francois cree et soumet un budget annuel", () => {
     // ============================================================
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    await expect(
-      page.getByTestId("budget-row").first(),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("budget-row").first()).toBeVisible({
+      timeout: 15000,
+    });
 
-    await expect(
-      page.locator("text=2026"),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.locator("text=2026")).toBeVisible({ timeout: 10000 });
 
     await stepPause(page);
 

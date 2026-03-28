@@ -135,11 +135,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await expect(buildingReady).toBeVisible({ timeout: 15000 });
 
     const buildingSelect = page.getByTestId("building-selector");
-    if (
-      await buildingSelect
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
+    if (await buildingSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect.locator("option").all();
@@ -193,11 +189,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await expect(buildingReady2).toBeVisible({ timeout: 15000 });
 
     const buildingSelect2 = page.getByTestId("building-selector");
-    if (
-      await buildingSelect2
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
+    if (await buildingSelect2.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect2.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect2.locator("option").all();
@@ -241,10 +233,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     });
 
     // Voter "Oui"
-    const voteOui = page
-      .locator("button")
-      .filter({ hasText: /Oui/i })
-      .first();
+    const voteOui = page.locator("button").filter({ hasText: /Oui/i }).first();
     await humanClickLocator(page, voteOui);
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
@@ -272,11 +261,7 @@ test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () =>
     await expect(buildingReady3).toBeVisible({ timeout: 15000 });
 
     const buildingSelect3 = page.getByTestId("building-selector");
-    if (
-      await buildingSelect3
-        .isVisible({ timeout: 2000 })
-        .catch(() => false)
-    ) {
+    if (await buildingSelect3.isVisible({ timeout: 2000 }).catch(() => false)) {
       await buildingSelect3.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
       const options = await buildingSelect3.locator("option").all();

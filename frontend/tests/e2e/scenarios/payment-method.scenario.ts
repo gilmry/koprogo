@@ -133,9 +133,9 @@ test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
       timeout: 15000,
     });
 
-    await expect(
-      page.locator("text=Visa Alice"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("text=Visa Alice")).toBeVisible({
+      timeout: 15000,
+    });
 
     await stepPause(page);
 

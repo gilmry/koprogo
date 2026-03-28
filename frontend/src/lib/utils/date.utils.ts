@@ -49,16 +49,12 @@ export function formatDate(
 }
 
 /** Short date: "25/03/2026" */
-export function formatDateShort(
-  dateString: string | null | undefined,
-): string {
+export function formatDateShort(dateString: string | null | undefined): string {
   return formatDate(dateString, "short");
 }
 
 /** Long date with time: "25 maart 2026, 14:30" */
-export function formatDateTime(
-  dateString: string | null | undefined,
-): string {
+export function formatDateTime(dateString: string | null | undefined): string {
   return formatDate(dateString, "datetime");
 }
 

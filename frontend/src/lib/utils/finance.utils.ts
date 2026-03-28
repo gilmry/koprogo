@@ -9,7 +9,8 @@ export function calculateVAT(
   amountExclVat: number,
   vatRatePercent: number,
 ): { vatAmount: number; amountInclVat: number } {
-  const vatAmount = Math.round((amountExclVat * vatRatePercent) / 100 * 100) / 100;
+  const vatAmount =
+    Math.round(((amountExclVat * vatRatePercent) / 100) * 100) / 100;
   const amountInclVat = Math.round((amountExclVat + vatAmount) * 100) / 100;
   return { vatAmount, amountInclVat };
 }
@@ -23,7 +24,10 @@ export function calculateLineItem(
   vatRatePercent: number,
 ): { amountExclVat: number; vatAmount: number; amountInclVat: number } {
   const amountExclVat = Math.round(quantity * unitPrice * 100) / 100;
-  const { vatAmount, amountInclVat } = calculateVAT(amountExclVat, vatRatePercent);
+  const { vatAmount, amountInclVat } = calculateVAT(
+    amountExclVat,
+    vatRatePercent,
+  );
   return { amountExclVat, vatAmount, amountInclVat };
 }
 

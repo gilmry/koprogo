@@ -79,14 +79,14 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     // Verifier que la page Organisations est chargee
-    await expect(
-      page.getByTestId("organizations-table-body"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("organizations-table-body")).toBeVisible({
+      timeout: 15000,
+    });
 
     // Verifier qu'au moins une organisation apparait
-    await expect(
-      page.getByTestId("organization-row").first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("organization-row").first()).toBeVisible({
+      timeout: 10000,
+    });
 
     await stepPause(page);
 
@@ -112,14 +112,14 @@ test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     // Verifier que la page Utilisateurs est chargee
-    await expect(
-      page.getByTestId("users-table-body"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("users-table-body")).toBeVisible({
+      timeout: 15000,
+    });
 
     // Verifier qu'au moins un utilisateur apparait
-    await expect(
-      page.getByTestId("user-row").first(),
-    ).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("user-row").first()).toBeVisible({
+      timeout: 10000,
+    });
 
     await stepPause(page);
 

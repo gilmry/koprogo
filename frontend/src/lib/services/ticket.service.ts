@@ -78,7 +78,8 @@ export async function transitionTicket(
 ): Promise<Ticket> {
   switch (action) {
     case "assign":
-      if (!payload?.contractorId) throw new Error("contractorId required for assign");
+      if (!payload?.contractorId)
+        throw new Error("contractorId required for assign");
       return ticketsApi.assign(ticketId, payload.contractorId);
     case "start":
       return ticketsApi.start(ticketId);

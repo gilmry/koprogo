@@ -65,10 +65,7 @@ export async function humanFill(
 /**
  * Click an element identified by data-testid at human pace.
  */
-export async function humanClick(
-  page: Page,
-  testId: string,
-): Promise<void> {
+export async function humanClick(page: Page, testId: string): Promise<void> {
   const locator = page.getByTestId(testId);
   await locator.scrollIntoViewIfNeeded();
   await page.waitForTimeout(PACE.BEFORE_CLICK);
@@ -107,10 +104,7 @@ export async function humanSelect(
 /**
  * Navigate to a URL and wait for the page to settle visually.
  */
-export async function humanGoto(
-  page: Page,
-  url: string,
-): Promise<void> {
+export async function humanGoto(page: Page, url: string): Promise<void> {
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 }

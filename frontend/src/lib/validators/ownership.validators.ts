@@ -24,7 +24,10 @@ export function validateOwnershipPercentage(
 
   const availablePercentage = (1 - currentTotal) * 100;
   if (newPercentage > availablePercentage + tolerance) {
-    return errorMessage ?? `Ownership percentage exceeds available (${availablePercentage.toFixed(2)}%)`;
+    return (
+      errorMessage ??
+      `Ownership percentage exceeds available (${availablePercentage.toFixed(2)}%)`
+    );
   }
 
   return null;

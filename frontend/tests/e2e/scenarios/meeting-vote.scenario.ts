@@ -76,9 +76,9 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await stepPause(page);
 
     // Cliquer sur l'assemblee pour voir le detail
-    await expect(
-      page.getByTestId("meeting-list-container"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("meeting-list-container")).toBeVisible({
+      timeout: 15000,
+    });
     await waitForSpinner(page);
 
     const meetingCard = page
@@ -116,9 +116,9 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     // Trouver et ouvrir l'AG
-    await expect(
-      page.getByTestId("meeting-list-container"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("meeting-list-container")).toBeVisible({
+      timeout: 15000,
+    });
     await waitForSpinner(page);
 
     const meetingCard2 = page
@@ -188,9 +188,9 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    await expect(
-      page.getByTestId("meeting-list-container"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(page.getByTestId("meeting-list-container")).toBeVisible({
+      timeout: 15000,
+    });
     await waitForSpinner(page);
 
     const meetingCard3 = page
@@ -214,9 +214,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     const resolutionItem3 = page.getByTestId("resolution-item").first();
     await expect(resolutionItem3).toBeVisible({ timeout: 15000 });
 
-    const closeBtn = resolutionItem3.locator(
-      '[data-testid="vote-close-btn"]',
-    );
+    const closeBtn = resolutionItem3.locator('[data-testid="vote-close-btn"]');
     await closeBtn.scrollIntoViewIfNeeded();
     await expect(closeBtn).toBeVisible({ timeout: 10000 });
 
