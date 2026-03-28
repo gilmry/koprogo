@@ -18,8 +18,10 @@ use uuid::Uuid;
 /// Setup function shared across all resolution E2E tests
 async fn setup_app() -> (
     actix_web::web::Data<AppState>,
-    testcontainers_modules::testcontainers::ContainerAsync<
-        testcontainers_modules::postgres::Postgres,
+    Option<
+        testcontainers_modules::testcontainers::ContainerAsync<
+            testcontainers_modules::postgres::Postgres,
+        >,
     >,
     Uuid,
 ) {

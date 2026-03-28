@@ -385,6 +385,10 @@ async fn setup_test_db() -> (
         ag_session_use_cases,
         age_request_use_cases,
         contractor_report_use_cases,
+        koprogo_api::application::use_cases::consent_use_cases::ConsentUseCases::new(
+            std::sync::Arc::new(koprogo_api::infrastructure::database::repositories::PostgresConsentRepository::new(pool.clone())),
+            std::sync::Arc::new(koprogo_api::infrastructure::database::repositories::PostgresAuditLogRepository::new(pool.clone())),
+        ),
         audit_logger,
         EmailService::from_env().expect("email service"),
         pool.clone(),
