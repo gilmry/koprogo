@@ -2,12 +2,11 @@
  * SCENARIO: Gestion des moyens de paiement (SINGLE ROLE - owner)
  *
  * Documentation Vivante — video exploitable pour YouTube.
- * Montre le parcours complet d'un coproprietaire :
+ * Montre le parcours complet d'Alice (coproprietaire) :
  *   1. Connexion via le formulaire login
  *   2. Navigation vers la page Moyens de paiement via le menu lateral
- *   3. Verification qu'un moyen de paiement pre-cree apparait
- *   4. Ajout d'un nouveau moyen de paiement (carte bancaire) via le formulaire
- *   5. Verification que le nouveau moyen de paiement apparait dans la liste
+ *   3. Ajout d'un nouveau moyen de paiement (carte bancaire) via le formulaire
+ *   4. Verification que le nouveau moyen de paiement apparait dans la liste
  *
  * Duree video attendue : ~40-50 secondes (rythme humain)
  */
@@ -24,19 +23,12 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () => {
+test.describe("Scenario: Gestion des moyens de paiement (Alice)", () => {
   test.setTimeout(120_000);
 
-  // ----- Donnees de test (creees via API, invisibles en video) -----
-  let ownerEmail: string;
-  let ownerPassword: string;
-  let ownerId: string;
+  let seedData: any;
 
   test.beforeAll(async ({ request }) => {
-    const ts = Date.now();
-    ownerEmail = `scenario-owner-pm-${ts}@koprogo.test`;
-    ownerPassword = "test123456";
-
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
@@ -44,116 +36,35 @@ test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () =>
     const admin = await adminResp.json();
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
-    // 2. Create org
-    const orgResp = await request.post(`${API_BASE}/organizations`, {
-      data: {
-        name: `Scenario PM Org ${ts}`,
-        slug: `scenario-pm-${ts}`,
-        contact_email: `org-pm-${ts}@koprogo.test`,
-        subscription_plan: "professional",
-      },
+    // 2. Seed the world
+    const seedResp = await request.post(`${API_BASE}/seed/scenario/world`, {
       headers: adminHeaders,
     });
-    const org = await orgResp.json();
+    if (!seedResp.ok()) {
+      console.log("Seed world already exists, continuing...");
+    } else {
+      seedData = await seedResp.json();
+      seedData = seedData.data;
+    }
+  });
 
-    // 3. Register syndic (needed to create building + owner)
-    const syndicEmail = `scenario-syndic-pm-${ts}@koprogo.test`;
-    await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: syndicEmail,
-        password: "test123456",
-        first_name: "Syndic",
-        last_name: "Paiement",
-        role: "syndic",
-        organization_id: org.id,
-      },
+  test.afterAll(async ({ request }) => {
+    const adminResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
     });
-
-    // Login as syndic
-    const syndicLoginResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: syndicEmail, password: "test123456" },
-    });
-    const syndic = await syndicLoginResp.json();
-    const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
-
-    // 4. Create building
-    await request.post(`${API_BASE}/buildings`, {
-      data: {
-        name: `Residence Paiement ${ts}`,
-        address: "10 Rue du Commerce",
-        city: "Bruxelles",
-        postal_code: "1000",
-        country: "Belgium",
-        total_units: 8,
-        construction_year: 1990,
-        organization_id: org.id,
-      },
-      headers: adminHeaders,
-    });
-
-    // 5. Register owner user account
-    const registerResp = await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: ownerEmail,
-        password: ownerPassword,
-        first_name: "Pierre",
-        last_name: `Dupont${ts}`,
-        role: "owner",
-        organization_id: org.id,
-      },
-    });
-    const registeredUser = await registerResp.json();
-    const ownerUserId =
-      registeredUser.user?.id ||
-      registeredUser.id ||
-      registeredUser.user_id ||
-      "";
-
-    // 6. Create owner record linked to user account
-    const ownerResp = await request.post(`${API_BASE}/owners`, {
-      data: {
-        organization_id: org.id,
-        first_name: "Pierre",
-        last_name: `Dupont${ts}`,
-        email: ownerEmail,
-        address: "10 Rue du Commerce",
-        city: "Bruxelles",
-        postal_code: "1000",
-        country: "Belgium",
-        user_id: ownerUserId,
-      },
-      headers: syndicHeaders,
-    });
-    const owner = await ownerResp.json();
-    ownerId = owner.id;
-
-    // 7. Pre-create a payment method via API so the list is not empty
-    const ownerLoginResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: ownerEmail, password: ownerPassword },
-    });
-    const ownerAuth = await ownerLoginResp.json();
-    const ownerHeaders = { Authorization: `Bearer ${ownerAuth.token}` };
-
-    await request.post(`${API_BASE}/payment-methods`, {
-      data: {
-        owner_id: ownerId,
-        method_type: "card",
-        display_label: "Mastercard existante ****9876",
-        stripe_payment_method_id: "pm_existing_9876",
-        stripe_customer_id: "cus_test_9876",
-        is_default: true,
-      },
-      headers: ownerHeaders,
+    const admin = await adminResp.json();
+    await request.delete(`${API_BASE}/seed/scenario/world`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
     });
   });
 
-  test("Un coproprietaire ajoute un moyen de paiement via l'interface", async ({
+  test("Alice ajoute un moyen de paiement via l'interface", async ({
     page,
   }) => {
     // ============================================================
     // ETAPE 1 : Connexion (visible dans la video)
     // ============================================================
-    await humanLogin(page, ownerEmail, ownerPassword);
+    await humanLogin(page, "alice@residence-parc.be", "alice123");
     await stepPause(page);
 
     // ============================================================
@@ -163,7 +74,6 @@ test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () =>
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Verifier que la page Moyens de paiement est chargee
     await expect(page.locator("main h1").first()).toContainText(
       "Moyens de Paiement",
     );
@@ -176,11 +86,6 @@ test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () =>
     await expect(page.getByTestId("payment-method-list")).toBeVisible({
       timeout: 15000,
     });
-
-    // Verify the pre-created payment method shows up (proves owner link works)
-    await expect(
-      page.locator("text=Mastercard existante"),
-    ).toBeVisible({ timeout: 15000 });
     await stepPause(page);
 
     // ============================================================
@@ -189,7 +94,6 @@ test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () =>
     await humanClick(page, "add-payment-method-btn");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Verifier que le modal est ouvert
     await expect(page.getByTestId("method-type-select")).toBeVisible({
       timeout: 10000,
     });
@@ -198,14 +102,11 @@ test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () =>
     // ============================================================
     // ETAPE 5 : Remplir le formulaire d'ajout
     // ============================================================
-
-    // Le type "Card" est selectionne par defaut, pas besoin de changer
-
     // Display Label
-    await humanFill(page, "display-label-input", "Visa Pierre ****4242");
+    await humanFill(page, "display-label-input", "Visa Alice ****4242");
 
     // Stripe Payment Method ID
-    await humanFill(page, "stripe-id-input", "pm_test_scenario_4242");
+    await humanFill(page, "stripe-id-input", "pm_test_alice_4242");
 
     // Card Brand
     await humanFill(page, "brand-input", "Visa");
@@ -228,13 +129,12 @@ test.describe("Scenario: Gestion des moyens de paiement (coproprietaire)", () =>
     await waitForSpinner(page);
     await page.waitForTimeout(2000);
 
-    // La liste devrait maintenant contenir le moyen de paiement ajoute
     await expect(page.getByTestId("payment-method-list")).toBeVisible({
       timeout: 15000,
     });
 
     await expect(
-      page.locator("text=Visa Pierre"),
+      page.locator("text=Visa Alice"),
     ).toBeVisible({ timeout: 15000 });
 
     await stepPause(page);

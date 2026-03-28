@@ -30,57 +30,35 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 test.describe("Scenario: Le SuperAdmin explore la plateforme", () => {
   test.setTimeout(120_000);
 
-  // ----- Donnees de test (creees via API, invisibles en video) -----
-  let adminToken: string;
+  let seedData: any;
 
   test.beforeAll(async ({ request }) => {
-    // 1. Login admin — only need to verify the admin account exists
+    // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
     });
     const admin = await adminResp.json();
-    adminToken = admin.token;
+    const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
-    const adminHeaders = { Authorization: `Bearer ${adminToken}` };
-
-    // 2. Ensure at least one organization exists for the demo
-    const ts = Date.now();
-    const orgResp = await request.post(`${API_BASE}/organizations`, {
-      data: {
-        name: `Demo Copropriete ASBL ${ts}`,
-        slug: `demo-copro-${ts}`,
-        contact_email: `demo-${ts}@koprogo.test`,
-        subscription_plan: "professional",
-      },
+    // 2. Seed the world (creates orgs, buildings, users — rich data for admin to explore)
+    const seedResp = await request.post(`${API_BASE}/seed/scenario/world`, {
       headers: adminHeaders,
     });
-    const org = await orgResp.json();
+    if (!seedResp.ok()) {
+      console.log("Seed world already exists, continuing...");
+    } else {
+      seedData = await seedResp.json();
+      seedData = seedData.data;
+    }
+  });
 
-    // 3. Ensure at least one building exists
-    await request.post(`${API_BASE}/buildings`, {
-      data: {
-        name: `Residence du Parc ${ts}`,
-        address: "15 Rue de la Loi",
-        city: "Bruxelles",
-        postal_code: "1000",
-        country: "Belgium",
-        total_units: 24,
-        construction_year: 1998,
-        organization_id: org.id,
-      },
-      headers: adminHeaders,
+  test.afterAll(async ({ request }) => {
+    const adminResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
     });
-
-    // 4. Ensure at least one extra user exists
-    await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: `demo-syndic-${ts}@koprogo.test`,
-        password: "test123456",
-        first_name: "Jean",
-        last_name: "Martin",
-        role: "syndic",
-        organization_id: org.id,
-      },
+    const admin = await adminResp.json();
+    await request.delete(`${API_BASE}/seed/scenario/world`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
     });
   });
 

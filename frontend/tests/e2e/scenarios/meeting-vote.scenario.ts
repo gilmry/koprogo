@@ -3,10 +3,11 @@
  *
  * Documentation Vivante — video exploitable pour YouTube.
  * Montre le parcours multi-acteur d'une copropriete belge :
- *   1. Le syndic se connecte et consulte l'AG avec sa resolution
- *   2. Un coproprietaire se connecte, trouve l'AG et vote "Pour"
- *   3. Le syndic revient, cloture le scrutin et verifie le resultat
+ *   1. Francois (syndic) se connecte et consulte l'AG avec sa resolution
+ *   2. Alice (coproprietaire, CdC presidente) se connecte et vote "Pour"
+ *   3. Francois revient, cloture le scrutin et verifie le resultat
  *
+ * Le seed cree deja un meeting (2eme convocation) + resolution (Pending)
  * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
@@ -25,22 +26,9 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
   test.setTimeout(180_000);
 
-  // ----- Donnees de test (creees via API, invisibles en video) -----
-  let syndicEmail: string;
-  let syndicPassword: string;
-  let ownerEmail: string;
-  let ownerPassword: string;
-  let meetingTitle: string;
-  let resolutionTitle: string;
+  let seedData: any;
 
   test.beforeAll(async ({ request }) => {
-    const ts = Date.now();
-    syndicEmail = `scenario-vote-syndic-${ts}@koprogo.test`;
-    syndicPassword = "test123456";
-    ownerEmail = `scenario-vote-owner-${ts}@koprogo.test`;
-    ownerPassword = "test123456";
-    resolutionTitle = `Approbation travaux facade ${ts}`;
-
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
@@ -48,125 +36,35 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     const admin = await adminResp.json();
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
-    // 2. Create org
-    const orgResp = await request.post(`${API_BASE}/organizations`, {
-      data: {
-        name: `Scenario Vote Org ${ts}`,
-        slug: `scenario-vote-${ts}`,
-        contact_email: syndicEmail,
-        subscription_plan: "professional",
-      },
+    // 2. Seed the world (creates meeting + resolution)
+    const seedResp = await request.post(`${API_BASE}/seed/scenario/world`, {
       headers: adminHeaders,
     });
-    const org = await orgResp.json();
+    if (!seedResp.ok()) {
+      console.log("Seed world already exists, continuing...");
+    } else {
+      seedData = await seedResp.json();
+      seedData = seedData.data;
+    }
+  });
 
-    // 3. Register syndic
-    await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: syndicEmail,
-        password: syndicPassword,
-        first_name: "Jean",
-        last_name: "Syndic",
-        role: "syndic",
-        organization_id: org.id,
-      },
+  test.afterAll(async ({ request }) => {
+    const adminResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
     });
-
-    // 4. Login as syndic
-    const syndicResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: syndicEmail, password: syndicPassword },
-    });
-    const syndic = await syndicResp.json();
-    const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
-
-    // 5. Register owner user account
-    const ownerRegResp = await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: ownerEmail,
-        password: ownerPassword,
-        first_name: "Marie",
-        last_name: "Dubois",
-        role: "owner",
-        organization_id: org.id,
-      },
-    });
-    const ownerUser = await ownerRegResp.json();
-    const ownerUserId =
-      ownerUser.user?.id || ownerUser.id || ownerUser.user_id || "";
-
-    // 6. Create building
-    const buildingResp = await request.post(`${API_BASE}/buildings`, {
-      data: {
-        name: `Residence du Parc ${ts}`,
-        address: "15 Rue de la Loi",
-        city: "Bruxelles",
-        postal_code: "1000",
-        country: "Belgium",
-        total_units: 20,
-        construction_year: 1998,
-        organization_id: org.id,
-      },
-      headers: adminHeaders,
-    });
-    const building = await buildingResp.json();
-
-    // 7. Create owner record linked to user
-    await request.post(`${API_BASE}/owners`, {
-      data: {
-        organization_id: org.id,
-        first_name: "Marie",
-        last_name: "Dubois",
-        email: ownerEmail,
-        address: "15 Rue de la Loi, Apt 3A",
-        city: "Bruxelles",
-        postal_code: "1000",
-        country: "Belgium",
-        user_id: ownerUserId,
-      },
-      headers: syndicHeaders,
-    });
-
-    // 8. Create meeting (Ordinary, scheduled 30 days from now)
-    const meetingDate = new Date();
-    meetingDate.setDate(meetingDate.getDate() + 30);
-    meetingTitle = `AG Ordinaire - Budget ${ts}`;
-
-    const meetingResp = await request.post(`${API_BASE}/meetings`, {
-      data: {
-        building_id: building.id,
-        organization_id: org.id,
-        meeting_type: "Ordinary",
-        title: meetingTitle,
-        scheduled_date: meetingDate.toISOString(),
-        location: "Salle communale, 15 Rue de la Loi, 1000 Bruxelles",
-      },
-      headers: syndicHeaders,
-    });
-    const meeting = await meetingResp.json();
-
-    // 9. Create resolution via API
-    await request.post(`${API_BASE}/meetings/${meeting.id}/resolutions`, {
-      data: {
-        meeting_id: meeting.id,
-        title: resolutionTitle,
-        description:
-          "Resolution pour approuver les travaux de ravalement de facade " +
-          "du batiment, incluant la reparation des fissures et " +
-          "la peinture exterieure. Devis retenu: 45.000 EUR HTVA.",
-        resolution_type: "ordinary",
-        majority_required: "simple",
-      },
-      headers: syndicHeaders,
+    const admin = await adminResp.json();
+    await request.delete(`${API_BASE}/seed/scenario/world`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
     });
   });
 
-  test("Syndic prepare l'AG, coproprietaire vote, syndic cloture", async ({
+  test("Francois prepare l'AG, Alice vote, Francois cloture", async ({
     page,
   }) => {
     // ============================================================
-    // ETAPE 1 : Le syndic se connecte et consulte l'AG
+    // ETAPE 1 : Francois (syndic) se connecte et consulte l'AG
     // ============================================================
-    await humanLogin(page, syndicEmail, syndicPassword);
+    await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
     // Navigation vers les Assemblees
@@ -185,7 +83,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
 
     const meetingCard = page
       .getByTestId("meeting-card")
-      .filter({ hasText: "AG Ordinaire" })
+      .filter({ hasText: "AG" })
       .first();
     await expect(meetingCard).toBeVisible({ timeout: 15000 });
 
@@ -207,12 +105,12 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 2 : Le coproprietaire se connecte et vote
+    // ETAPE 2 : Alice (coproprietaire) se connecte et vote
     // ============================================================
-    await humanLogin(page, ownerEmail, ownerPassword);
+    await humanLogin(page, "alice@residence-parc.be", "alice123");
     await stepPause(page);
 
-    // L'owner navigue vers les assemblees (community section)
+    // Alice navigue vers les assemblees
     await humanClick(page, "nav-link-assemblées");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
@@ -225,7 +123,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
 
     const meetingCard2 = page
       .getByTestId("meeting-card")
-      .filter({ hasText: "AG Ordinaire" })
+      .filter({ hasText: "AG" })
       .first();
     await expect(meetingCard2).toBeVisible({ timeout: 15000 });
 
@@ -280,9 +178,9 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 3 : Le syndic revient, cloture le scrutin, verifie
+    // ETAPE 3 : Francois revient, cloture le scrutin, verifie
     // ============================================================
-    await humanLogin(page, syndicEmail, syndicPassword);
+    await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
     // Re-naviguer vers l'AG
@@ -297,7 +195,7 @@ test.describe("Scenario: Vote multi-role sur une resolution en AG", () => {
 
     const meetingCard3 = page
       .getByTestId("meeting-card")
-      .filter({ hasText: "AG Ordinaire" })
+      .filter({ hasText: "AG" })
       .first();
     await expect(meetingCard3).toBeVisible({ timeout: 15000 });
 

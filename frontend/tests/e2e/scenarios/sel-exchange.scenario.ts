@@ -3,7 +3,7 @@
  *
  * Documentation Vivante — video exploitable pour YouTube.
  * Montre le parcours multi-acteur d'une copropriete belge :
- *   1. Alice (coproprietaire) se connecte, navigue vers le SEL, consulte ses offres
+ *   1. Alice (coproprietaire) se connecte, navigue vers le SEL, consulte les offres
  *   2. Bob (coproprietaire) se connecte, parcourt la marketplace, consulte l'offre d'Alice
  *   3. Bob consulte le leaderboard et les statistiques communautaires
  *
@@ -26,20 +26,9 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
   test.setTimeout(180_000);
 
-  // ----- Donnees de test (creees via API, invisibles en video) -----
-  let aliceEmail: string;
-  let alicePassword: string;
-  let bobEmail: string;
-  let bobPassword: string;
-  let buildingName: string;
+  let seedData: any;
 
   test.beforeAll(async ({ request }) => {
-    const ts = Date.now();
-    aliceEmail = `scenario-sel-alice-${ts}@koprogo.test`;
-    alicePassword = "test123456";
-    bobEmail = `scenario-sel-bob-${ts}@koprogo.test`;
-    bobPassword = "test123456";
-
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
@@ -47,171 +36,90 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     const admin = await adminResp.json();
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
-    // 2. Create org
-    const orgResp = await request.post(`${API_BASE}/organizations`, {
-      data: {
-        name: `Scenario SEL Org ${ts}`,
-        slug: `scenario-sel-${ts}`,
-        contact_email: `org-sel-${ts}@koprogo.test`,
-        subscription_plan: "professional",
-      },
+    // 2. Seed the world
+    const seedResp = await request.post(`${API_BASE}/seed/scenario/world`, {
       headers: adminHeaders,
     });
-    const org = await orgResp.json();
+    if (!seedResp.ok()) {
+      console.log("Seed world already exists, continuing...");
+    } else {
+      seedData = await seedResp.json();
+      seedData = seedData.data;
+    }
 
-    // 3. Register syndic (needed to create building + owners)
-    const syndicEmail = `scenario-sel-syndic-${ts}@koprogo.test`;
-    await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: syndicEmail,
-        password: "test123456",
-        first_name: "Marc",
-        last_name: "Lecomte",
-        role: "syndic",
-        organization_id: org.id,
-      },
+    // 3. Create exchange offers via Alice and Bob
+    const aliceResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "alice@residence-parc.be", password: "alice123" },
     });
+    const alice = await aliceResp.json();
+    const aliceHeaders = { Authorization: `Bearer ${alice.token}` };
 
-    // Login as syndic
-    const syndicLoginResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: syndicEmail, password: "test123456" },
+    const bobResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "bob@residence-parc.be", password: "bob123" },
     });
-    const syndic = await syndicLoginResp.json();
-    const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
+    const bob = await bobResp.json();
+    const bobHeaders = { Authorization: `Bearer ${bob.token}` };
 
-    // 4. Create building
-    buildingName = `Residence Solidaire ${ts}`;
-    const buildingResp = await request.post(`${API_BASE}/buildings`, {
-      data: {
-        name: buildingName,
-        address: "15 Place Communale",
-        city: "Ixelles",
-        postal_code: "1050",
-        country: "Belgium",
-        total_units: 16,
-        construction_year: 2000,
-        organization_id: org.id,
-      },
-      headers: adminHeaders,
-    });
-    const building = await buildingResp.json();
-
-    // 5. Register Alice (owner user account)
-    const aliceRegResp = await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: aliceEmail,
-        password: alicePassword,
-        first_name: "Alice",
-        last_name: `Janssen${ts}`,
-        role: "owner",
-        organization_id: org.id,
-      },
-    });
-    const aliceUser = await aliceRegResp.json();
-    const aliceUserId =
-      aliceUser.user?.id || aliceUser.id || aliceUser.user_id || "";
-
-    // Create Alice's owner record linked to user
-    const alice = await request.post(`${API_BASE}/owners`, {
-      data: {
-        organization_id: org.id,
-        first_name: "Alice",
-        last_name: `Janssen${ts}`,
-        email: aliceEmail,
-        address: "15 Place Communale, Apt 1",
-        city: "Ixelles",
-        postal_code: "1050",
-        country: "Belgium",
-        user_id: aliceUserId,
-      },
-      headers: syndicHeaders,
-    });
-    const aliceOwner = await alice.json();
-
-    // 6. Register Bob (owner user account)
-    const bobRegResp = await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: bobEmail,
-        password: bobPassword,
-        first_name: "Bob",
-        last_name: `Peeters${ts}`,
-        role: "owner",
-        organization_id: org.id,
-      },
-    });
-    const bobUser = await bobRegResp.json();
-    const bobUserId =
-      bobUser.user?.id || bobUser.id || bobUser.user_id || "";
-
-    // Create Bob's owner record linked to user
-    const bob = await request.post(`${API_BASE}/owners`, {
-      data: {
-        organization_id: org.id,
-        first_name: "Bob",
-        last_name: `Peeters${ts}`,
-        email: bobEmail,
-        address: "15 Place Communale, Apt 2",
-        city: "Ixelles",
-        postal_code: "1050",
-        country: "Belgium",
-        user_id: bobUserId,
-      },
-      headers: syndicHeaders,
-    });
-    const bobOwner = await bob.json();
-
-    // 7. Login as Alice and Bob to create exchanges (provider_id resolved from auth)
-    const aliceLoginResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: aliceEmail, password: alicePassword },
-    });
-    const aliceAuth = await aliceLoginResp.json();
-    const aliceHeaders = { Authorization: `Bearer ${aliceAuth.token}` };
-
-    const bobLoginResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: bobEmail, password: bobPassword },
-    });
-    const bobAuth = await bobLoginResp.json();
-    const bobHeaders = { Authorization: `Bearer ${bobAuth.token}` };
-
-    // Create exchange offers by Alice via API (provider resolved from Alice's JWT)
-    await request.post(`${API_BASE}/exchanges`, {
-      data: {
-        building_id: building.id,
-        exchange_type: "Service",
-        title: "Cours de jardinage",
-        description:
-          "Je propose de vous apprendre les bases du jardinage urbain sur balcon. " +
-          "Entretien des plantes, plantation de legumes, compostage.",
-        credits: 2,
-      },
+    // Get building ID for Residence du Parc
+    const buildingsResp = await request.get(`${API_BASE}/buildings`, {
       headers: aliceHeaders,
     });
+    const buildings = await buildingsResp.json();
+    const building = Array.isArray(buildings)
+      ? buildings.find((b: any) => b.name?.includes("Residence du Parc"))
+      : null;
 
-    await request.post(`${API_BASE}/exchanges`, {
-      data: {
-        building_id: building.id,
-        exchange_type: "ObjectLoan",
-        title: "Pret de perceuse-visseuse",
-        description:
-          "Perceuse-visseuse sans fil Bosch disponible pour vos travaux. " +
-          "Incluant jeu de meches et embouts.",
-        credits: 1,
-      },
-      headers: aliceHeaders,
+    if (building) {
+      // Alice creates exchange offers
+      await request.post(`${API_BASE}/exchanges`, {
+        data: {
+          building_id: building.id,
+          exchange_type: "Service",
+          title: "Cours de jardinage",
+          description:
+            "Je propose de vous apprendre les bases du jardinage urbain sur balcon. " +
+            "Entretien des plantes, plantation de legumes, compostage.",
+          credits: 2,
+        },
+        headers: aliceHeaders,
+      });
+
+      await request.post(`${API_BASE}/exchanges`, {
+        data: {
+          building_id: building.id,
+          exchange_type: "ObjectLoan",
+          title: "Pret de perceuse-visseuse",
+          description:
+            "Perceuse-visseuse sans fil Bosch disponible pour vos travaux. " +
+            "Incluant jeu de meches et embouts.",
+          credits: 1,
+        },
+        headers: aliceHeaders,
+      });
+
+      // Bob creates an exchange offer
+      await request.post(`${API_BASE}/exchanges`, {
+        data: {
+          building_id: building.id,
+          exchange_type: "SharedPurchase",
+          title: "Achat groupe pellets chauffage",
+          description:
+            "Organisation d'un achat groupe de pellets pour la saison hivernale. " +
+            "Economie estimee de 15% sur le prix individuel.",
+          credits: 3,
+        },
+        headers: bobHeaders,
+      });
+    }
+  });
+
+  test.afterAll(async ({ request }) => {
+    const adminResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
     });
-
-    // Create exchange offer by Bob via API (provider resolved from Bob's JWT)
-    await request.post(`${API_BASE}/exchanges`, {
-      data: {
-        building_id: building.id,
-        exchange_type: "SharedPurchase",
-        title: "Achat groupe pellets chauffage",
-        description:
-          "Organisation d'un achat groupe de pellets pour la saison hivernale. " +
-          "Economie estimee de 15% sur le prix individuel.",
-        credits: 3,
-      },
-      headers: bobHeaders,
+    const admin = await adminResp.json();
+    await request.delete(`${API_BASE}/seed/scenario/world`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
     });
   });
 
@@ -221,7 +129,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     // ============================================================
     // ETAPE 1 : Alice se connecte et consulte ses offres SEL
     // ============================================================
-    await humanLogin(page, aliceEmail, alicePassword);
+    await humanLogin(page, "alice@residence-parc.be", "alice123");
     await stepPause(page);
 
     // Naviguer vers le SEL (community section)
@@ -252,7 +160,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
       const options = await buildingSelect.locator("option").all();
       for (const option of options) {
         const text = await option.textContent();
-        if (text && text.includes("Residence Solidaire")) {
+        if (text && text.includes("Residence du Parc")) {
           const value = await option.getAttribute("value");
           if (value) {
             await buildingSelect.selectOption(value);
@@ -283,7 +191,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     // ============================================================
     // ETAPE 2 : Bob se connecte et parcourt la marketplace
     // ============================================================
-    await humanLogin(page, bobEmail, bobPassword);
+    await humanLogin(page, "bob@residence-parc.be", "bob123");
     await stepPause(page);
 
     // Naviguer vers le SEL
@@ -313,7 +221,7 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
       const options = await buildingSelect2.locator("option").all();
       for (const option of options) {
         const text = await option.textContent();
-        if (text && text.includes("Residence Solidaire")) {
+        if (text && text.includes("Residence du Parc")) {
           const value = await option.getAttribute("value");
           if (value) {
             await buildingSelect2.selectOption(value);
@@ -347,7 +255,6 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
     // ============================================================
     // ETAPE 3 : Bob consulte le leaderboard et les statistiques
     // ============================================================
-    // Consulter les statistiques SEL
     const statsPanel = page.getByTestId("sel-statistics");
     try {
       await statsPanel.waitFor({ state: "visible", timeout: 5000 });
@@ -357,7 +264,6 @@ test.describe("Scenario: SEL multi-role (Alice offre, Bob parcourt)", () => {
       // Statistics panel may not render if no completed exchanges
     }
 
-    // Consulter le classement (Leaderboard)
     const leaderboard = page.getByTestId("leaderboard");
     try {
       await leaderboard.waitFor({ state: "visible", timeout: 5000 });

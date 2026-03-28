@@ -3,8 +3,8 @@
  *
  * Documentation Vivante — video exploitable pour YouTube.
  * Montre le parcours multi-acteur d'une copropriete belge :
- *   1. Le syndic se connecte, navigue vers les annonces, et cree une nouvelle annonce
- *   2. Un coproprietaire se connecte, consulte la liste des annonces, et lit le detail
+ *   1. Francois (syndic) se connecte, navigue vers les annonces, et cree une nouvelle annonce
+ *   2. Alice (coproprietaire) se connecte, consulte la liste des annonces, et lit le detail
  *
  * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
@@ -25,20 +25,9 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => {
   test.setTimeout(180_000);
 
-  // ----- Donnees de test (creees via API, invisibles en video) -----
-  let syndicEmail: string;
-  let syndicPassword: string;
-  let ownerEmail: string;
-  let ownerPassword: string;
-  let buildingName: string;
+  let seedData: any;
 
   test.beforeAll(async ({ request }) => {
-    const ts = Date.now();
-    syndicEmail = `scenario-notice-syndic-${ts}@koprogo.test`;
-    syndicPassword = "test123456";
-    ownerEmail = `scenario-notice-owner-${ts}@koprogo.test`;
-    ownerPassword = "test123456";
-
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
@@ -46,133 +35,92 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     const admin = await adminResp.json();
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
-    // 2. Create org
-    const orgResp = await request.post(`${API_BASE}/organizations`, {
-      data: {
-        name: `Notice Org ${ts}`,
-        slug: `notice-${ts}`,
-        contact_email: syndicEmail,
-        subscription_plan: "professional",
-      },
+    // 2. Seed the world
+    const seedResp = await request.post(`${API_BASE}/seed/scenario/world`, {
       headers: adminHeaders,
     });
-    const org = await orgResp.json();
+    if (!seedResp.ok()) {
+      console.log("Seed world already exists, continuing...");
+    } else {
+      seedData = await seedResp.json();
+      seedData = seedData.data;
+    }
 
-    // 3. Register syndic
-    await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: syndicEmail,
-        password: syndicPassword,
-        first_name: "Claire",
-        last_name: "Janssens",
-        role: "syndic",
-        organization_id: org.id,
-      },
-    });
-
-    // 4. Login syndic for authed requests
+    // 3. Pre-create and publish some notices via Francois
     const syndicResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: syndicEmail, password: syndicPassword },
+      data: { email: "francois@syndic-leroy.be", password: "francois123" },
     });
     const syndic = await syndicResp.json();
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
-    // 5. Register owner user account
-    const ownerRegResp = await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: ownerEmail,
-        password: ownerPassword,
-        first_name: "Thomas",
-        last_name: "Leclercq",
-        role: "owner",
-        organization_id: org.id,
-      },
+    // Get building ID for Residence du Parc
+    const buildingsResp = await request.get(`${API_BASE}/buildings`, {
+      headers: syndicHeaders,
     });
-    const ownerUser = await ownerRegResp.json();
-    const ownerUserId =
-      ownerUser.user?.id || ownerUser.id || ownerUser.user_id || "";
+    const buildings = await buildingsResp.json();
+    const building = Array.isArray(buildings)
+      ? buildings.find((b: any) => b.name?.includes("Residence du Parc"))
+      : null;
 
-    // 6. Create building
-    buildingName = `Residence des Erables ${ts}`;
-    const buildingResp = await request.post(`${API_BASE}/buildings`, {
-      data: {
-        name: buildingName,
-        address: "8 Avenue des Arts",
-        city: "Liege",
-        postal_code: "4000",
-        country: "Belgium",
-        total_units: 16,
-        construction_year: 2005,
-        organization_id: org.id,
-      },
-      headers: adminHeaders,
-    });
-    const building = await buildingResp.json();
+    if (building) {
+      const notice1Resp = await request.post(`${API_BASE}/notices`, {
+        data: {
+          building_id: building.id,
+          notice_type: "Announcement",
+          category: "General",
+          title: "Nettoyage des communs ce samedi",
+          content:
+            "Un nettoyage complet des parties communes est prevu ce samedi de 9h a 12h. " +
+            "Merci de ne pas laisser d'objets dans les couloirs.",
+        },
+        headers: syndicHeaders,
+      });
+      const notice1 = await notice1Resp.json();
+      await request.post(`${API_BASE}/notices/${notice1.id}/publish`, {
+        headers: syndicHeaders,
+      });
 
-    // 7. Create owner record linked to user
-    await request.post(`${API_BASE}/owners`, {
-      data: {
-        organization_id: org.id,
-        first_name: "Thomas",
-        last_name: "Leclercq",
-        email: ownerEmail,
-        address: "8 Avenue des Arts, Apt 5B",
-        city: "Liege",
-        postal_code: "4000",
-        country: "Belgium",
-        user_id: ownerUserId,
-      },
-      headers: syndicHeaders,
-    });
+      const notice2Resp = await request.post(`${API_BASE}/notices`, {
+        data: {
+          building_id: building.id,
+          notice_type: "Event",
+          category: "Social",
+          title: "Barbecue de quartier - Fete des voisins",
+          content:
+            "A l'occasion de la fete des voisins, un barbecue est organise dans le " +
+            "jardin commun. Chacun apporte un plat a partager.",
+          event_date: new Date(
+            Date.now() + 14 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+          event_location: "Jardin commun, rez-de-chaussee",
+          contact_info: "Francois Leroy - francois@syndic-leroy.be",
+        },
+        headers: syndicHeaders,
+      });
+      const notice2 = await notice2Resp.json();
+      await request.post(`${API_BASE}/notices/${notice2.id}/publish`, {
+        headers: syndicHeaders,
+      });
+    }
+  });
 
-    // 8. Pre-create and publish some notices via API
-    const notice1Resp = await request.post(`${API_BASE}/notices`, {
-      data: {
-        building_id: building.id,
-        notice_type: "Announcement",
-        category: "General",
-        title: "Nettoyage des communs ce samedi",
-        content:
-          "Un nettoyage complet des parties communes est prevu ce samedi de 9h a 12h. " +
-          "Merci de ne pas laisser d'objets dans les couloirs.",
-      },
-      headers: syndicHeaders,
+  test.afterAll(async ({ request }) => {
+    const adminResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
     });
-    const notice1 = await notice1Resp.json();
-    await request.post(`${API_BASE}/notices/${notice1.id}/publish`, {
-      headers: syndicHeaders,
-    });
-
-    const notice2Resp = await request.post(`${API_BASE}/notices`, {
-      data: {
-        building_id: building.id,
-        notice_type: "Event",
-        category: "Social",
-        title: "Barbecue de quartier - Fete des voisins",
-        content:
-          "A l'occasion de la fete des voisins, un barbecue est organise dans le " +
-          "jardin commun. Chacun apporte un plat a partager.",
-        event_date: new Date(
-          Date.now() + 14 * 24 * 60 * 60 * 1000,
-        ).toISOString(),
-        event_location: "Jardin commun, rez-de-chaussee",
-        contact_info: "Claire Janssens - syndic@residence-erables.be",
-      },
-      headers: syndicHeaders,
-    });
-    const notice2 = await notice2Resp.json();
-    await request.post(`${API_BASE}/notices/${notice2.id}/publish`, {
-      headers: syndicHeaders,
+    const admin = await adminResp.json();
+    await request.delete(`${API_BASE}/seed/scenario/world`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
     });
   });
 
-  test("Syndic cree une annonce, coproprietaire la consulte", async ({
+  test("Francois cree une annonce, Alice la consulte", async ({
     page,
   }) => {
     // ============================================================
-    // ETAPE 1 : Le syndic se connecte et navigue vers les annonces
+    // ETAPE 1 : Francois se connecte et navigue vers les annonces
     // ============================================================
-    await humanLogin(page, syndicEmail, syndicPassword);
+    await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
     await humanClick(page, "nav-link-annonces");
@@ -187,7 +135,6 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     // ============================================================
     await waitForSpinner(page);
 
-    // With a single building in the org, BuildingSelector auto-selects
     const buildingReady = page
       .locator(
         '[data-testid="building-selector"], [data-testid="building-selected"]',
@@ -195,7 +142,6 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
       .first();
     await expect(buildingReady).toBeVisible({ timeout: 15000 });
 
-    // If there is a dropdown (multiple buildings case), select the right one
     const buildingSelect = page.getByTestId("building-selector");
     if (
       await buildingSelect
@@ -207,7 +153,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
       const options = await buildingSelect.locator("option").all();
       for (const option of options) {
         const text = await option.textContent();
-        if (text && text.includes("Residence des Erables")) {
+        if (text && text.includes("Residence du Parc")) {
           const value = await option.getAttribute("value");
           if (value) {
             await buildingSelect.selectOption(value);
@@ -221,7 +167,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 3 : Le syndic cree une nouvelle annonce via le formulaire
+    // ETAPE 3 : Francois cree une nouvelle annonce via le formulaire
     // ============================================================
     await humanClick(page, "notices-create-btn");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
@@ -252,15 +198,14 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // La page recharge apres creation reussie
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 4 : Le coproprietaire se connecte et consulte les annonces
+    // ETAPE 4 : Alice se connecte et consulte les annonces
     // ============================================================
-    await humanLogin(page, ownerEmail, ownerPassword);
+    await humanLogin(page, "alice@residence-parc.be", "alice123");
     await stepPause(page);
 
     // Naviguer vers les annonces (community section, shared nav)
@@ -294,7 +239,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
       const options = await buildingSelect2.locator("option").all();
       for (const option of options) {
         const text = await option.textContent();
-        if (text && text.includes("Residence des Erables")) {
+        if (text && text.includes("Residence du Parc")) {
           const value = await option.getAttribute("value");
           if (value) {
             await buildingSelect2.selectOption(value);
@@ -308,7 +253,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
     // ============================================================
-    // ETAPE 6 : Le coproprietaire consulte la liste des annonces
+    // ETAPE 6 : Alice consulte la liste des annonces
     // ============================================================
     await expect(page.getByTestId("notice-list")).toBeVisible({
       timeout: 15000,
@@ -325,7 +270,7 @@ test.describe("Scenario: Tableau d'affichage communautaire (multi-role)", () => 
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 7 : Le coproprietaire clique sur une annonce pour le detail
+    // ETAPE 7 : Alice clique sur une annonce pour le detail
     // ============================================================
     const noticeRow = page
       .getByTestId("notice-list-row")

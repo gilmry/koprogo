@@ -3,9 +3,9 @@
  *
  * Documentation Vivante — video exploitable pour YouTube.
  * Montre le parcours multi-acteur d'une copropriete belge :
- *   1. Le syndic se connecte, navigue vers les sondages, consulte le sondage actif
- *   2. Un coproprietaire se connecte, trouve le sondage et vote
- *   3. Le syndic revient, cloture le sondage et consulte les resultats
+ *   1. Francois (syndic) se connecte, cree un sondage et le publie
+ *   2. Alice (coproprietaire) se connecte, trouve le sondage et vote
+ *   3. Francois revient, cloture le sondage et consulte les resultats
  *
  * Cadre legal: Article 577-8/4 §4 du Code Civil Belge
  * Duree video attendue : ~90-120 secondes (rythme humain, multi-role)
@@ -23,24 +23,13 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-test.describe("Scenario: Sondage multi-role (syndic lance, owner vote)", () => {
+test.describe("Scenario: Sondage multi-role (Francois lance, Alice vote)", () => {
   test.setTimeout(180_000);
 
-  // ----- Donnees de test (creees via API, invisibles en video) -----
-  let syndicEmail: string;
-  let syndicPassword: string;
-  let ownerEmail: string;
-  let ownerPassword: string;
-  let buildingName: string;
+  let seedData: any;
   let pollId: string;
 
   test.beforeAll(async ({ request }) => {
-    const ts = Date.now();
-    syndicEmail = `scenario-poll-syndic-${ts}@koprogo.test`;
-    syndicPassword = "test123456";
-    ownerEmail = `scenario-poll-owner-${ts}@koprogo.test`;
-    ownerPassword = "test123456";
-
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
@@ -48,151 +37,85 @@ test.describe("Scenario: Sondage multi-role (syndic lance, owner vote)", () => {
     const admin = await adminResp.json();
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
-    // 2. Create org
-    const orgResp = await request.post(`${API_BASE}/organizations`, {
-      data: {
-        name: `Scenario Poll Org ${ts}`,
-        slug: `scenario-poll-${ts}`,
-        contact_email: syndicEmail,
-        subscription_plan: "professional",
-      },
+    // 2. Seed the world
+    const seedResp = await request.post(`${API_BASE}/seed/scenario/world`, {
       headers: adminHeaders,
     });
-    const org = await orgResp.json();
+    if (!seedResp.ok()) {
+      console.log("Seed world already exists, continuing...");
+    } else {
+      seedData = await seedResp.json();
+      seedData = seedData.data;
+    }
 
-    // 3. Register syndic
-    await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: syndicEmail,
-        password: syndicPassword,
-        first_name: "Sophie",
-        last_name: "Martin",
-        role: "syndic",
-        organization_id: org.id,
-      },
-    });
-
-    // 4. Login syndic
+    // 3. Create and publish a poll via Francois
     const syndicResp = await request.post(`${API_BASE}/auth/login`, {
-      data: { email: syndicEmail, password: syndicPassword },
+      data: { email: "francois@syndic-leroy.be", password: "francois123" },
     });
     const syndic = await syndicResp.json();
     const syndicHeaders = { Authorization: `Bearer ${syndic.token}` };
 
-    // 5. Register owner user account
-    const ownerRegResp = await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: ownerEmail,
-        password: ownerPassword,
-        first_name: "Luc",
-        last_name: "Verhoeven",
-        role: "owner",
-        organization_id: org.id,
-      },
-    });
-    const ownerUser = await ownerRegResp.json();
-    const ownerUserId =
-      ownerUser.user?.id || ownerUser.id || ownerUser.user_id || "";
-
-    // 6. Create building
-    buildingName = `Residence du Parc ${ts}`;
-    const buildingResp = await request.post(`${API_BASE}/buildings`, {
-      data: {
-        name: buildingName,
-        address: "25 Avenue du Parc",
-        city: "Bruxelles",
-        postal_code: "1060",
-        country: "Belgium",
-        total_units: 20,
-        construction_year: 1975,
-        organization_id: org.id,
-      },
-      headers: adminHeaders,
-    });
-    const building = await buildingResp.json();
-
-    // 7. Create owner record linked to user
-    const ownerResp = await request.post(`${API_BASE}/owners`, {
-      data: {
-        organization_id: org.id,
-        first_name: "Luc",
-        last_name: "Verhoeven",
-        email: ownerEmail,
-        address: "25 Avenue du Parc, Apt 7C",
-        city: "Bruxelles",
-        postal_code: "1060",
-        country: "Belgium",
-        user_id: ownerUserId,
-      },
+    // Get buildings to find Residence du Parc
+    const buildingsResp = await request.get(`${API_BASE}/buildings`, {
       headers: syndicHeaders,
     });
-    const owner = await ownerResp.json();
+    const buildings = await buildingsResp.json();
+    const building = Array.isArray(buildings)
+      ? buildings.find((b: any) => b.name?.includes("Residence du Parc"))
+      : null;
 
-    // 7b. Create unit + unit_owner so building has eligible voters (required by poll validation)
-    const unitResp = await request.post(`${API_BASE}/units`, {
-      data: {
-        organization_id: org.id,
-        building_id: building.id,
-        unit_number: "7C",
-        floor: 7,
-        surface_area: 85.0,
-        unit_type: "Apartment",
-        quota: 100.0,
-      },
-      headers: adminHeaders,
+    if (building) {
+      const startsAt = new Date();
+      const endsAt = new Date();
+      endsAt.setDate(endsAt.getDate() + 7);
+
+      const pollResp = await request.post(`${API_BASE}/polls`, {
+        data: {
+          building_id: building.id,
+          poll_type: "yes_no",
+          title: "Faut-il repeindre le hall d'entree en bleu ?",
+          description:
+            "Suite aux remarques de plusieurs coproprietaires lors de la " +
+            "derniere AG, nous souhaitons recueillir l'avis de tous " +
+            "concernant la couleur du hall d'entree.",
+          starts_at: startsAt.toISOString(),
+          ends_at: endsAt.toISOString(),
+          is_anonymous: false,
+          allow_multiple_votes: false,
+          options: [
+            { option_text: "Oui", display_order: 1 },
+            { option_text: "Non", display_order: 2 },
+          ],
+        },
+        headers: syndicHeaders,
+      });
+      const poll = await pollResp.json();
+      pollId = poll.id;
+
+      // Publish the poll (Draft -> Active)
+      await request.put(`${API_BASE}/polls/${pollId}/publish`, {
+        headers: syndicHeaders,
+      });
+    }
+  });
+
+  test.afterAll(async ({ request }) => {
+    const adminResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
     });
-    const unit = await unitResp.json();
-
-    await request.post(`${API_BASE}/units/${unit.id}/owners`, {
-      data: {
-        owner_id: owner.id,
-        ownership_percentage: 1.0,
-        start_date: new Date().toISOString(),
-      },
-      headers: syndicHeaders,
-    });
-
-    // 8. Create poll via API (already Active so owner can vote immediately)
-    const startsAt = new Date();
-    const endsAt = new Date();
-    endsAt.setDate(endsAt.getDate() + 7);
-
-    const pollResp = await request.post(`${API_BASE}/polls`, {
-      data: {
-        building_id: building.id,
-        poll_type: "yes_no",
-        title: "Faut-il repeindre le hall d'entree en bleu ?",
-        description:
-          "Suite aux remarques de plusieurs coproprietaires lors de la " +
-          "derniere AG, nous souhaitons recueillir l'avis de tous " +
-          "concernant la couleur du hall d'entree.",
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        is_anonymous: false,
-        allow_multiple_votes: false,
-        options: [
-          { option_text: "Oui", display_order: 1 },
-          { option_text: "Non", display_order: 2 },
-        ],
-      },
-      headers: syndicHeaders,
-    });
-    const poll = await pollResp.json();
-    pollId = poll.id;
-
-    // Publish the poll so it is Active (Draft -> Active)
-    await request.put(`${API_BASE}/polls/${pollId}/publish`, {
-      headers: syndicHeaders,
+    const admin = await adminResp.json();
+    await request.delete(`${API_BASE}/seed/scenario/world`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
     });
   });
 
-  test("Syndic consulte, coproprietaire vote, syndic cloture et voit les resultats", async ({
+  test("Francois consulte, Alice vote, Francois cloture et voit les resultats", async ({
     page,
   }) => {
     // ============================================================
-    // ETAPE 1 : Le syndic se connecte et consulte le sondage actif
+    // ETAPE 1 : Francois se connecte et consulte le sondage actif
     // ============================================================
-    await humanLogin(page, syndicEmail, syndicPassword);
+    await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
     await humanClick(page, "nav-link-sondages");
@@ -248,9 +171,9 @@ test.describe("Scenario: Sondage multi-role (syndic lance, owner vote)", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 2 : Le coproprietaire se connecte et vote sur le sondage
+    // ETAPE 2 : Alice se connecte et vote sur le sondage
     // ============================================================
-    await humanLogin(page, ownerEmail, ownerPassword);
+    await humanLogin(page, "alice@residence-parc.be", "alice123");
     await stepPause(page);
 
     // Naviguer vers les sondages (community section)
@@ -329,9 +252,9 @@ test.describe("Scenario: Sondage multi-role (syndic lance, owner vote)", () => {
     await stepPause(page);
 
     // ============================================================
-    // ETAPE 3 : Le syndic revient, cloture le sondage et consulte les resultats
+    // ETAPE 3 : Francois revient, cloture le sondage et consulte les resultats
     // ============================================================
-    await humanLogin(page, syndicEmail, syndicPassword);
+    await humanLogin(page, "francois@syndic-leroy.be", "francois123");
     await stepPause(page);
 
     // Naviguer vers les sondages

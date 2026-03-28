@@ -1,16 +1,13 @@
 /**
- * SCENARIO: Cycle de vie d'un ticket de maintenance
+ * SCENARIO: Cycle de vie d'un ticket de maintenance (MULTI-ROLE)
  *
- * Documentation Vivante — vidéo exploitable pour YouTube.
- * Montre le parcours complet d'un syndic :
- *   1. Connexion via le formulaire login
- *   2. Navigation vers la page Tickets via le menu latéral
- *   3. Sélection d'un immeuble
- *   4. Création d'un ticket via le formulaire UI
- *   5. Vérification que le ticket apparaît dans la liste
- *   6. Navigation vers le détail du ticket
+ * Documentation Vivante — video exploitable pour YouTube.
+ * Montre le parcours multi-acteur d'une copropriete belge :
+ *   1. Charlie (coproprietaire) se connecte et signale une fuite
+ *   2. Francois (syndic) se connecte, assigne le ticket
+ *   3. Verification que le ticket apparait dans la liste
  *
- * Durée vidéo attendue : ~45-60 secondes (rythme humain)
+ * Duree video attendue : ~70-90 secondes (rythme humain, multi-role)
  */
 import { test, expect } from "@playwright/test";
 import {
@@ -27,19 +24,12 @@ import {
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-// Scenarios are human-paced — allow 2 minutes per test
-test.describe("Scénario: Cycle de vie d'un ticket de maintenance", () => {
-  test.setTimeout(120_000);
-  // ----- Données de test (créées via API, invisibles en vidéo) -----
-  let syndicEmail: string;
-  let syndicPassword: string;
-  let buildingName: string;
+test.describe("Scenario: Cycle de vie d'un ticket de maintenance", () => {
+  test.setTimeout(180_000);
+
+  let seedData: any;
 
   test.beforeAll(async ({ request }) => {
-    const ts = Date.now();
-    syndicEmail = `scenario-syndic-${ts}@koprogo.test`;
-    syndicPassword = "test123456";
-
     // 1. Login admin
     const adminResp = await request.post(`${API_BASE}/auth/login`, {
       data: { email: "admin@koprogo.com", password: "admin123" },
@@ -47,83 +37,130 @@ test.describe("Scénario: Cycle de vie d'un ticket de maintenance", () => {
     const admin = await adminResp.json();
     const adminHeaders = { Authorization: `Bearer ${admin.token}` };
 
-    // 2. Create org
-    const orgResp = await request.post(`${API_BASE}/organizations`, {
-      data: {
-        name: `Scenario Org ${ts}`,
-        slug: `scenario-${ts}`,
-        contact_email: syndicEmail,
-        subscription_plan: "professional",
-      },
+    // 2. Seed the world
+    const seedResp = await request.post(`${API_BASE}/seed/scenario/world`, {
       headers: adminHeaders,
     });
-    const org = await orgResp.json();
+    if (!seedResp.ok()) {
+      console.log("Seed world already exists, continuing...");
+    } else {
+      seedData = await seedResp.json();
+      seedData = seedData.data;
+    }
+  });
 
-    // 3. Register syndic
-    await request.post(`${API_BASE}/auth/register`, {
-      data: {
-        email: syndicEmail,
-        password: syndicPassword,
-        first_name: "Marie",
-        last_name: "Dupont",
-        role: "syndic",
-        organization_id: org.id,
-      },
+  test.afterAll(async ({ request }) => {
+    const adminResp = await request.post(`${API_BASE}/auth/login`, {
+      data: { email: "admin@koprogo.com", password: "admin123" },
     });
-
-    // 4. Create building
-    buildingName = `Résidence Bellevue ${ts}`;
-    await request.post(`${API_BASE}/buildings`, {
-      data: {
-        name: buildingName,
-        address: "42 Avenue Louise",
-        city: "Bruxelles",
-        postal_code: "1050",
-        country: "Belgium",
-        total_units: 12,
-        construction_year: 1985,
-        organization_id: org.id,
-      },
-      headers: adminHeaders,
+    const admin = await adminResp.json();
+    await request.delete(`${API_BASE}/seed/scenario/world`, {
+      headers: { Authorization: `Bearer ${admin.token}` },
     });
   });
 
-  test("Un syndic crée un ticket de maintenance via l'interface", async ({
+  test("Charlie signale une fuite, Francois assigne le ticket", async ({
     page,
   }) => {
     // ============================================================
-    // ÉTAPE 1 : Connexion (visible dans la vidéo)
+    // ETAPE 1 : Charlie (coproprietaire) se connecte
     // ============================================================
-    await humanLogin(page, syndicEmail, syndicPassword);
+    await humanLogin(page, "charlie@residence-parc.be", "charlie123");
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 2 : Navigation vers les Tickets via le menu latéral
+    // ETAPE 2 : Navigation vers Mes Tickets via le menu lateral
     // ============================================================
-    await humanClick(page, "nav-link-tickets");
+    await humanClick(page, "nav-link-mes-tickets");
     await waitForSpinner(page);
     await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Vérifier que la page Tickets est chargée
     await expect(page.locator("main h1").first()).toContainText("Tickets");
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 3 : Sélectionner l'immeuble
+    // ETAPE 3 : Ouvrir le formulaire de creation de ticket
     // ============================================================
-    // Attendre que le BuildingSelector charge les données
-    await waitForSpinner(page);
+    await humanClick(page, "tickets-create-btn");
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
 
-    // Sélectionner l'immeuble dans le dropdown
+    await expect(page.getByTestId("ticket-create-form")).toBeVisible({
+      timeout: 10000,
+    });
+    await page.waitForTimeout(PACE.BETWEEN_STEPS);
+
+    // ============================================================
+    // ETAPE 4 : Remplir le formulaire de creation
+    // ============================================================
+    await humanFill(
+      page,
+      "ticket-title-input",
+      "Fuite d'eau dans le hall du 2eme etage",
+    );
+
+    await humanFill(
+      page,
+      "ticket-description-input",
+      "Une fuite d'eau importante a ete constatee au plafond du hall " +
+        "d'entree du 2eme etage. L'eau s'infiltre depuis l'appartement " +
+        "du 3eme etage. Intervention urgente necessaire.",
+    );
+
+    await humanSelect(page, "ticket-priority-select", "High");
+
+    await humanSelect(page, "ticket-category-select", "Plumbing");
+
+    await stepPause(page);
+
+    // ============================================================
+    // ETAPE 5 : Soumettre le ticket
+    // ============================================================
+    await humanClick(page, "ticket-submit-btn");
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    // ============================================================
+    // ETAPE 6 : Verifier que le ticket apparait dans la liste
+    // ============================================================
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    await humanClick(page, "nav-link-mes-tickets");
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    await waitForSpinner(page);
+    await page.waitForTimeout(3000);
+
+    await expect(
+      page.locator("text=Fuite d'eau dans le hall"),
+    ).toBeVisible({ timeout: 20000 });
+
+    await stepPause(page);
+
+    // ============================================================
+    // ETAPE 7 : Francois (syndic) se connecte et consulte les tickets
+    // ============================================================
+    await humanLogin(page, "francois@syndic-leroy.be", "francois123");
+    await stepPause(page);
+
+    await humanClick(page, "nav-link-tickets");
+    await waitForSpinner(page);
+    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
+
+    await expect(page.locator("main h1").first()).toContainText("Tickets");
+    await stepPause(page);
+
+    // Selectionner l'immeuble Residence du Parc
+    await waitForSpinner(page);
     const buildingSelect = page.getByTestId("building-selector");
     if (await buildingSelect.isVisible({ timeout: 5000 })) {
       await buildingSelect.scrollIntoViewIfNeeded();
       await page.waitForTimeout(PACE.BEFORE_SELECT);
-      // Sélectionner par texte partiel (le nom contient le timestamp)
       const options = await buildingSelect.locator("option").all();
       for (const option of options) {
         const text = await option.textContent();
-        if (text && text.includes("Résidence Bellevue")) {
+        if (text && text.includes("Residence du Parc")) {
           const value = await option.getAttribute("value");
           if (value) {
             await buildingSelect.selectOption(value);
@@ -136,68 +173,7 @@ test.describe("Scénario: Cycle de vie d'un ticket de maintenance", () => {
     await waitForSpinner(page);
     await stepPause(page);
 
-    // ============================================================
-    // ÉTAPE 4 : Ouvrir le formulaire de création de ticket
-    // ============================================================
-    await humanClick(page, "tickets-create-btn");
-    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-
-    // Vérifier que le modal/formulaire est ouvert
-    await expect(page.getByTestId("ticket-create-form")).toBeVisible({
-      timeout: 10000,
-    });
-    await page.waitForTimeout(PACE.BETWEEN_STEPS);
-
-    // ============================================================
-    // ÉTAPE 5 : Remplir le formulaire de création
-    // ============================================================
-    await humanFill(
-      page,
-      "ticket-title-input",
-      "Fuite d'eau dans le hall du 2ème étage",
-    );
-
-    await humanFill(
-      page,
-      "ticket-description-input",
-      "Une fuite d'eau importante a été constatée au plafond du hall " +
-        "d'entrée du 2ème étage. L'eau s'infiltre depuis l'appartement " +
-        "du 3ème étage. Intervention urgente nécessaire.",
-    );
-
-    await humanSelect(page, "ticket-priority-select", "High");
-
-    await humanSelect(page, "ticket-category-select", "Plumbing");
-
-    await stepPause(page);
-
-    // ============================================================
-    // ÉTAPE 6 : Soumettre le ticket
-    // ============================================================
-    await humanClick(page, "ticket-submit-btn");
-    await waitForSpinner(page);
-
-    // La page devrait recharger et afficher le ticket dans la liste
-    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-
-    // ============================================================
-    // ÉTAPE 7 : Vérifier que le ticket apparaît dans la liste
-    // ============================================================
-    // Après la soumission, la page recharge (window.location.reload)
-    // Le building_id est perdu → on attend puis re-navigue via le menu
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-
-    // Re-cliquer sur Tickets dans le menu pour forcer le rechargement
-    await humanClick(page, "nav-link-tickets");
-    await waitForSpinner(page);
-    await page.waitForTimeout(PACE.AFTER_NAVIGATION);
-
-    // Attendre que le BuildingSelector auto-sélectionne et recharge la liste
-    await waitForSpinner(page);
-    await page.waitForTimeout(3000); // Laisser le temps au composant de recharger
-
-    // Chercher le ticket créé
+    // Verifier que le ticket de Charlie apparait
     await expect(
       page.locator("text=Fuite d'eau dans le hall"),
     ).toBeVisible({ timeout: 20000 });
@@ -205,7 +181,7 @@ test.describe("Scénario: Cycle de vie d'un ticket de maintenance", () => {
     await stepPause(page);
 
     // ============================================================
-    // ÉTAPE 8 : Cliquer sur le ticket pour voir le détail
+    // ETAPE 8 : Cliquer sur le ticket pour voir le detail
     // ============================================================
     const ticketRow = page
       .locator('[data-testid="ticket-row"]')
@@ -213,7 +189,6 @@ test.describe("Scénario: Cycle de vie d'un ticket de maintenance", () => {
       .first();
     await humanClickLocator(page, ticketRow);
 
-    // Vérifier que la page de détail est affichée
     await expect(page.getByTestId("ticket-detail-title")).toContainText(
       "Fuite d'eau",
       { timeout: 10000 },
@@ -222,7 +197,7 @@ test.describe("Scénario: Cycle de vie d'un ticket de maintenance", () => {
     await stepPause(page);
 
     // ============================================================
-    // FIN : Pause finale pour que la vidéo montre le résultat
+    // FIN : Pause finale pour que la video montre le resultat
     // ============================================================
     await finalPause(page);
   });
