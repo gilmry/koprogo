@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **📅 For the complete development roadmap, see [ROADMAP_PAR_CAPACITES.rst](docs/ROADMAP_PAR_CAPACITES.rst)**
 
 The roadmap follows a **capacity-based progression** (not fixed dates):
-- **Jalon 0 ✅**: Fondations Techniques (COMPLÉTÉ - Architecture, 511 endpoints API, 57 entités domaine, 64 migrations, 110k+ LOC Rust)
+- **Jalon 0 ✅**: Fondations Techniques (COMPLÉTÉ - Architecture, 559 endpoints API, 59 entités domaine, 80 migrations, 137k+ LOC Rust)
 - **Jalon 1 🔒**: Sécurité & GDPR → Débloque 50-100 copros (beta publique)
 - **Jalon 2 📋**: Conformité Légale Belge → Débloque 200-500 copros (production)
 - **Jalon 3 🎯**: Features Différenciantes (Voting, SEL, Contractor) → Débloque 500-1,000 copros
@@ -24,6 +24,12 @@ All issues tracked in [GitHub Projects](https://github.com/users/gilmry/projects
 KoproGo is a SaaS property management platform built with **Hexagonal Architecture** (Ports & Adapters) and **Domain-Driven Design (DDD)**. The system emphasizes performance (P99 < 5ms latency), testability, security (GDPR compliant), and ecological sustainability (< 0.5g CO2/request target).
 
 **Stack**: Rust + Actix-web (backend), Astro + Svelte (frontend), PostgreSQL 15
+
+**Frontend Architecture**: 178 composants Svelte (islands), 22 API clients, 13 shared utils/validators/services (hexagonal light)
+
+**Testing**: 819 BDD scenarios (69 features), 49 E2E smoke tests, 12 Documentation Vivante scenarios
+
+**i18n**: 4 langues (FR/NL/EN/DE), ~2000 clés par locale, 73% couverture
 
 ## Security & Monitoring
 
