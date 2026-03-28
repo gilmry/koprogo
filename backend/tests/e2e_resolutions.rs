@@ -262,7 +262,7 @@ async fn test_create_resolution_success() {
             "title": "Approve Annual Budget",
             "description": "Vote to approve the budget for next fiscal year",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 
@@ -299,7 +299,7 @@ async fn test_create_resolution_without_auth_fails() {
             "title": "Test Resolution",
             "description": "Should fail without auth",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 
@@ -404,7 +404,7 @@ async fn test_list_meeting_resolutions() {
                 "title": format!("Resolution #{}", i),
                 "description": format!("Description for resolution {}", i),
                 "resolution_type": "ordinary",
-                "majority_required": "simple"
+                "majority_required": "absolute"
             }))
             .to_request();
 
@@ -453,7 +453,7 @@ async fn test_delete_resolution_success() {
             "title": "Resolution to Delete",
             "description": "This resolution will be deleted",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 
@@ -505,7 +505,7 @@ async fn test_cast_vote_pour_success() {
             "title": "Resolution for Voting",
             "description": "Test vote casting",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 
@@ -560,7 +560,7 @@ async fn test_cast_vote_contre_and_abstention() {
             "title": "Resolution with Mixed Votes",
             "description": "Testing Contre and Abstention",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 
@@ -629,7 +629,7 @@ async fn test_list_resolution_votes() {
             "title": "Resolution with Multiple Votes",
             "description": "Test vote listing",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 
@@ -693,7 +693,7 @@ async fn test_change_vote_success() {
             "title": "Resolution for Vote Change",
             "description": "Test changing vote",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 
@@ -762,7 +762,7 @@ async fn test_close_voting_simple_majority() {
             "title": "Resolution with Simple Majority",
             "description": "50% + 1 of votes cast",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 
@@ -903,18 +903,16 @@ async fn test_close_voting_qualified_majority() {
     // Create unit 2
     let unit2_id = create_extra_unit(&app_state, org_id, building_id, owner2_id, "A107").await;
 
-    // Create resolution with Qualified majority (2/3 = 66.67%)
+    // Create resolution with TwoThirds majority (Art. 3.88 §1, 1°)
     let create_req = test::TestRequest::post()
         .uri(&format!("/api/v1/meetings/{}/resolutions", meeting_id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .set_json(json!({
             "meeting_id": meeting_id.to_string(),
-            "title": "Resolution with Qualified Majority",
-            "description": "Requires 2/3 majority (66.67%)",
+            "title": "Resolution with TwoThirds Majority",
+            "description": "Requires 2/3 majority (Art. 3.88 §1, 1°)",
             "resolution_type": "extraordinary",
-            "majority_required": {
-                "qualified": 0.6667
-            }
+            "majority_required": "two_thirds"
         }))
         .to_request();
 
@@ -922,7 +920,7 @@ async fn test_close_voting_qualified_majority() {
     let resolution: serde_json::Value = test::read_body_json(create_resp).await;
     let resolution_id = resolution["id"].as_str().unwrap();
 
-    // Cast votes: 40% Contre, 60% Pour (60% < 66.67% threshold)
+    // Cast votes: 40% Contre, 60% Pour (60% < 2/3 = 66.67% threshold)
     let vote1_req = test::TestRequest::post()
         .uri(&format!("/api/v1/resolutions/{}/vote", resolution_id))
         .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
@@ -964,7 +962,7 @@ async fn test_close_voting_qualified_majority() {
     let closed_resolution: serde_json::Value = test::read_body_json(close_resp).await;
     assert_eq!(
         closed_resolution["status"], "rejected",
-        "Should be Rejected (60% < 66.67% threshold)"
+        "Should be Rejected (60% < 2/3 threshold per Art. 3.88 §1, 1°)"
     );
 }
 
@@ -995,7 +993,7 @@ async fn test_get_meeting_vote_summary() {
                 "title": format!("Resolution #{}", i),
                 "description": format!("Description {}", i),
                 "resolution_type": "ordinary",
-                "majority_required": "simple"
+                "majority_required": "absolute"
             }))
             .to_request();
 
@@ -1083,7 +1081,7 @@ async fn test_complete_voting_lifecycle() {
             "title": "Complete Lifecycle Resolution",
             "description": "Testing full voting workflow",
             "resolution_type": "ordinary",
-            "majority_required": "simple"
+            "majority_required": "absolute"
         }))
         .to_request();
 

@@ -729,7 +729,7 @@ mod tests {
                 "Test Resolution".to_string(),
                 "Description".to_string(),
                 ResolutionType::Ordinary,
-                MajorityType::Simple,
+                MajorityType::Absolute,
                 None,
             )
             .await;
@@ -774,7 +774,7 @@ mod tests {
                 "Test Resolution".to_string(),
                 "Description".to_string(),
                 ResolutionType::Ordinary,
-                MajorityType::Simple,
+                MajorityType::Absolute,
                 None,
             )
             .await;
@@ -821,7 +821,7 @@ mod tests {
                 "Test Resolution".to_string(),
                 "Description".to_string(),
                 ResolutionType::Ordinary,
-                MajorityType::Simple,
+                MajorityType::Absolute,
                 None,
             )
             .await
@@ -887,7 +887,7 @@ mod tests {
                 "Test".to_string(),
                 "Desc".to_string(),
                 ResolutionType::Ordinary,
-                MajorityType::Simple,
+                MajorityType::Absolute,
                 None,
             )
             .await
@@ -961,7 +961,7 @@ mod tests {
                 "Test procurations".to_string(),
                 "Description".to_string(),
                 ResolutionType::Ordinary,
-                MajorityType::Simple,
+                MajorityType::Absolute,
                 None,
             )
             .await
@@ -1048,7 +1048,7 @@ mod tests {
                 "Test exception 10%".to_string(),
                 "Description".to_string(),
                 ResolutionType::Ordinary,
-                MajorityType::Simple,
+                MajorityType::Absolute,
                 None,
             )
             .await

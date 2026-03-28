@@ -97,7 +97,7 @@ async fn test_create_resolution_with_agenda_item_index() {
             "title": "Approve Renovation Budget",
             "description": "Vote on the facade renovation budget for 2026",
             "resolution_type": "ordinary",
-            "majority_required": "simple",
+            "majority_required": "absolute",
             "agenda_item_index": 3
         }))
         .to_request();
@@ -178,7 +178,7 @@ async fn test_create_resolution_with_zero_agenda_item_index() {
             "title": "Opening Resolution",
             "description": "First agenda item resolution",
             "resolution_type": "ordinary",
-            "majority_required": "simple",
+            "majority_required": "absolute",
             "agenda_item_index": 0
         }))
         .to_request();
@@ -212,7 +212,7 @@ async fn test_create_multiple_resolutions_with_different_agenda_indices() {
             "title": "Budget Approval",
             "description": "First agenda item",
             "resolution_type": "ordinary",
-            "majority_required": "simple",
+            "majority_required": "absolute",
             "agenda_item_index": 1
         }))
         .to_request();
@@ -280,7 +280,7 @@ async fn test_create_resolution_agenda_item_persists_on_get() {
             "title": "Facade Renovation",
             "description": "Vote on facade renovation project",
             "resolution_type": "extraordinary",
-            "majority_required": "qualified",
+            "majority_required": "two_thirds",
             "agenda_item_index": 5
         }))
         .to_request();
@@ -306,5 +306,5 @@ async fn test_create_resolution_agenda_item_persists_on_get() {
         "agenda_item_index should persist on GET"
     );
     assert_eq!(resolution["resolution_type"], "extraordinary");
-    assert_eq!(resolution["majority_required"], "qualified");
+    assert_eq!(resolution["majority_required"], "two_thirds");
 }

@@ -234,10 +234,17 @@ impl MeetingMinutesExporter {
 
             // Majority type
             let majority_label = match &resolution.majority_required {
-                crate::domain::entities::MajorityType::Simple => "Majorité simple",
-                crate::domain::entities::MajorityType::Absolute => "Majorité absolue",
-                crate::domain::entities::MajorityType::Qualified(threshold) => {
-                    &format!("Majorité qualifiée ({:.0}%)", threshold * 100.0)
+                crate::domain::entities::MajorityType::Absolute => {
+                    "Majorité absolue (Art. 3.88 §1)"
+                }
+                crate::domain::entities::MajorityType::TwoThirds => {
+                    "Majorité des 2/3 (Art. 3.88 §1, 1°)"
+                }
+                crate::domain::entities::MajorityType::FourFifths => {
+                    "Majorité des 4/5 (Art. 3.88 §1, 2°)"
+                }
+                crate::domain::entities::MajorityType::Unanimity => {
+                    "Unanimité (Art. 3.88 §1, 3°)"
                 }
             };
 
@@ -401,7 +408,7 @@ mod tests {
             title: "Approbation du budget 2025".to_string(),
             description: "Le budget prévisionnel pour l'exercice 2025 est approuvé.".to_string(),
             resolution_type: ResolutionType::Ordinary,
-            majority_required: MajorityType::Simple,
+            majority_required: MajorityType::Absolute,
             vote_count_pour: 2,
             vote_count_contre: 0,
             vote_count_abstention: 0,

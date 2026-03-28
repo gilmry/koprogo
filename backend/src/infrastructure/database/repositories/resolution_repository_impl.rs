@@ -16,25 +16,22 @@ impl PostgresResolutionRepository {
 
     /// Parse MajorityType from database string format
     fn parse_majority_type(s: &str) -> MajorityType {
-        if s.starts_with("Qualified:") {
-            let threshold = s
-                .strip_prefix("Qualified:")
-                .and_then(|t| t.parse::<f64>().ok())
-                .unwrap_or(0.67);
-            MajorityType::Qualified(threshold)
-        } else if s == "Absolute" {
-            MajorityType::Absolute
-        } else {
-            MajorityType::Simple
+        match s {
+            "TwoThirds" => MajorityType::TwoThirds,
+            "FourFifths" => MajorityType::FourFifths,
+            "Unanimity" => MajorityType::Unanimity,
+            // "Absolute" and any legacy "Simple" values map to Absolute
+            _ => MajorityType::Absolute,
         }
     }
 
     /// Convert MajorityType to database string format
     fn majority_type_to_string(majority: &MajorityType) -> String {
         match majority {
-            MajorityType::Simple => "Simple".to_string(),
             MajorityType::Absolute => "Absolute".to_string(),
-            MajorityType::Qualified(threshold) => format!("Qualified:{}", threshold),
+            MajorityType::TwoThirds => "TwoThirds".to_string(),
+            MajorityType::FourFifths => "FourFifths".to_string(),
+            MajorityType::Unanimity => "Unanimity".to_string(),
         }
     }
 }

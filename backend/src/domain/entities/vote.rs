@@ -38,8 +38,8 @@ impl Vote {
         if voting_power <= 0.0 {
             return Err("Voting power must be positive".to_string());
         }
-        if voting_power > 1000.0 {
-            return Err("Voting power exceeds maximum (1000 millièmes)".to_string());
+        if voting_power > 10000.0 {
+            return Err("Voting power exceeds maximum (10000 dix-millièmes)".to_string());
         }
 
         // Validation de la procuration
@@ -184,7 +184,7 @@ mod tests {
             owner_id,
             unit_id,
             VoteChoice::Pour,
-            1500.0, // Exceeds max
+            15000.0, // Exceeds max
             None,
         );
 

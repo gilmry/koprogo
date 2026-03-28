@@ -699,7 +699,7 @@ async fn given_owner_with_voting_power(
 #[given(regex = r#"^a pending resolution "([^"]*)" exists$"#)]
 async fn given_pending_resolution(world: &mut GovernanceWorld, title: String) {
     world
-        .create_resolution_helper(&title, MajorityType::Simple)
+        .create_resolution_helper(&title, MajorityType::Absolute)
         .await;
     assert!(world.operation_success, "Failed to create resolution");
 }
@@ -714,7 +714,7 @@ async fn given_owner_has_voted(world: &mut GovernanceWorld, name: String, choice
 #[given(regex = r#"^a pending resolution "([^"]*)" with simple majority$"#)]
 async fn given_resolution_simple_majority(world: &mut GovernanceWorld, title: String) {
     world
-        .create_resolution_helper(&title, MajorityType::Simple)
+        .create_resolution_helper(&title, MajorityType::Absolute)
         .await;
     assert!(world.operation_success, "Failed to create resolution");
 }
@@ -733,8 +733,16 @@ async fn given_resolution_qualified_majority(
     title: String,
     threshold: f64,
 ) {
+    // Map legacy threshold values to Belgian law majority types
+    let majority = if (threshold - 1.0).abs() < 0.01 {
+        MajorityType::Unanimity
+    } else if threshold >= 0.79 {
+        MajorityType::FourFifths
+    } else {
+        MajorityType::TwoThirds
+    };
     world
-        .create_resolution_helper(&title, MajorityType::Qualified(threshold))
+        .create_resolution_helper(&title, majority)
         .await;
     assert!(world.operation_success, "Failed to create resolution");
 }
@@ -759,7 +767,7 @@ async fn given_owner_voted_with_power(
 async fn given_closed_resolution(world: &mut GovernanceWorld, title: String) {
     // Create resolution
     world
-        .create_resolution_helper(&title, MajorityType::Simple)
+        .create_resolution_helper(&title, MajorityType::Absolute)
         .await;
     assert!(world.operation_success, "Failed to create resolution");
 
@@ -782,7 +790,7 @@ async fn given_closed_resolution(world: &mut GovernanceWorld, title: String) {
 #[given(regex = r#"^a pending resolution "([^"]*)" with votes$"#)]
 async fn given_resolution_with_votes(world: &mut GovernanceWorld, title: String) {
     world
-        .create_resolution_helper(&title, MajorityType::Simple)
+        .create_resolution_helper(&title, MajorityType::Absolute)
         .await;
     assert!(world.operation_success, "Failed to create resolution");
     world
@@ -795,7 +803,7 @@ async fn given_resolution_with_votes(world: &mut GovernanceWorld, title: String)
 async fn given_n_resolutions(world: &mut GovernanceWorld, count: usize) {
     for i in 0..count {
         world
-            .create_resolution_helper(&format!("Resolution {}", i + 1), MajorityType::Simple)
+            .create_resolution_helper(&format!("Resolution {}", i + 1), MajorityType::Absolute)
             .await;
         assert!(
             world.operation_success,
@@ -809,7 +817,7 @@ async fn given_n_resolutions(world: &mut GovernanceWorld, count: usize) {
 async fn given_resolutions_with_votes(world: &mut GovernanceWorld) {
     // Create 2 resolutions with votes
     world
-        .create_resolution_helper("Resolution A", MajorityType::Simple)
+        .create_resolution_helper("Resolution A", MajorityType::Absolute)
         .await;
     assert!(world.operation_success);
     world
@@ -818,7 +826,7 @@ async fn given_resolutions_with_votes(world: &mut GovernanceWorld) {
     assert!(world.operation_success);
 
     world
-        .create_resolution_helper("Resolution B", MajorityType::Simple)
+        .create_resolution_helper("Resolution B", MajorityType::Absolute)
         .await;
     assert!(world.operation_success);
     world
@@ -852,9 +860,21 @@ async fn when_create_resolution(world: &mut GovernanceWorld, step: &Step) {
     }
 
     let majority = match majority_str.as_str() {
-        "Simple" => MajorityType::Simple,
-        "Absolute" => MajorityType::Absolute,
-        "Qualified" => MajorityType::Qualified(threshold.unwrap_or(0.6667)),
+        "Simple" | "Absolute" => MajorityType::Absolute,
+        "TwoThirds" => MajorityType::TwoThirds,
+        "FourFifths" => MajorityType::FourFifths,
+        "Unanimity" => MajorityType::Unanimity,
+        "Qualified" => {
+            // Legacy mapping: convert threshold to named Belgian majority type
+            let t = threshold.unwrap_or(0.6667);
+            if (t - 1.0).abs() < 0.01 {
+                MajorityType::Unanimity
+            } else if t >= 0.79 {
+                MajorityType::FourFifths
+            } else {
+                MajorityType::TwoThirds
+            }
+        }
         _ => panic!("Unknown majority type: {}", majority_str),
     };
 

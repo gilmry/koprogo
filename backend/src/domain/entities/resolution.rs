@@ -10,13 +10,22 @@ pub enum ResolutionType {
     Extraordinary, // Résolution extraordinaire (majorité qualifiée)
 }
 
-/// Type de majorité requise pour adoption
+/// Type de majorité requise pour adoption — Art. 3.88 §1 Code Civil belge
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum MajorityType {
-    Simple,         // Majorité simple: 50% + 1 des votes exprimés
-    Absolute,       // Majorité absolue: 50% + 1 de tous les votes possibles
-    Qualified(f64), // Majorité qualifiée: seuil personnalisé (ex: 0.67 pour 2/3)
+    /// >50% des présents/représentés, abstentions EXCLUES — Art. 3.88 §1 (DÉFAUT)
+    /// Comptes, budget, syndic, commissaire, entretien courant, travaux imposés par la loi
+    Absolute,
+    /// ≥2/3 des présents/représentés, abstentions EXCLUES — Art. 3.88 §1, 1°
+    /// Modification statuts (jouissance/usage), travaux parties communes, mise en concurrence
+    TwoThirds,
+    /// ≥4/5 des présents/représentés, abstentions EXCLUES — Art. 3.88 §1, 2°
+    /// Modification répartition charges, destination, reconstruction partielle, aliénation
+    FourFifths,
+    /// 100% de TOUS les tantièmes (y compris absents) — Art. 3.88 §1, 3°
+    /// Modification quotités de copropriété, reconstruction totale
+    Unanimity,
 }
 
 /// Statut d'une résolution
@@ -68,13 +77,6 @@ impl Resolution {
             return Err("Resolution description cannot be empty".to_string());
         }
 
-        // Validate qualified majority threshold
-        if let MajorityType::Qualified(threshold) = &majority_required {
-            if *threshold <= 0.0 || *threshold > 1.0 {
-                return Err("Qualified majority threshold must be between 0 and 1".to_string());
-            }
-        }
-
         let now = Utc::now();
         Ok(Self {
             id: Uuid::new_v4(),
@@ -114,35 +116,41 @@ impl Resolution {
         self.total_voting_power_abstention += voting_power;
     }
 
-    /// Calcule le résultat du vote en fonction du type de majorité
+    /// Calcule le résultat du vote en fonction du type de majorité — Art. 3.88 §1 Code Civil belge
     pub fn calculate_result(&self, total_voting_power: f64) -> ResolutionStatus {
+        let expressed = self.total_voting_power_pour + self.total_voting_power_contre;
+
         match &self.majority_required {
-            MajorityType::Simple => {
-                // Majorité simple: plus de voix "Pour" que "Contre" + "Abstention"
-                if self.total_voting_power_pour
-                    > self.total_voting_power_contre + self.total_voting_power_abstention
-                {
-                    ResolutionStatus::Adopted
-                } else {
-                    ResolutionStatus::Rejected
-                }
-            }
             MajorityType::Absolute => {
-                // Majorité absolue: plus de 50% du pouvoir de vote total
-                if self.total_voting_power_pour > total_voting_power / 2.0 {
+                // Art. 3.88 §1: >50% des voix exprimées (hors abstentions)
+                if expressed > 0.0 && self.total_voting_power_pour > expressed / 2.0 {
                     ResolutionStatus::Adopted
                 } else {
                     ResolutionStatus::Rejected
                 }
             }
-            MajorityType::Qualified(threshold) => {
-                // Majorité qualifiée: ratio >= seuil défini
-                let pour_ratio = if total_voting_power > 0.0 {
-                    self.total_voting_power_pour / total_voting_power
+            MajorityType::TwoThirds => {
+                // Art. 3.88 §1, 1°: ≥2/3 des voix exprimées
+                if expressed > 0.0 && self.total_voting_power_pour / expressed >= 2.0 / 3.0 {
+                    ResolutionStatus::Adopted
                 } else {
-                    0.0
-                };
-                if pour_ratio >= *threshold {
+                    ResolutionStatus::Rejected
+                }
+            }
+            MajorityType::FourFifths => {
+                // Art. 3.88 §1, 2°: ≥4/5 des voix exprimées
+                if expressed > 0.0 && self.total_voting_power_pour / expressed >= 4.0 / 5.0 {
+                    ResolutionStatus::Adopted
+                } else {
+                    ResolutionStatus::Rejected
+                }
+            }
+            MajorityType::Unanimity => {
+                // Art. 3.88 §1, 3°: 100% de TOUS les tantièmes (pas juste les présents)
+                // total_voting_power = total building tantièmes (e.g. 10000)
+                if total_voting_power > 0.0
+                    && (self.total_voting_power_pour - total_voting_power).abs() < 0.01
+                {
                     ResolutionStatus::Adopted
                 } else {
                     ResolutionStatus::Rejected
@@ -210,7 +218,7 @@ mod tests {
             "Approbation des comptes 2024".to_string(),
             "Vote pour approuver les comptes annuels de l'exercice 2024".to_string(),
             ResolutionType::Ordinary,
-            MajorityType::Simple,
+            MajorityType::Absolute,
             Some(0),
         );
 
@@ -230,7 +238,7 @@ mod tests {
             "Approbation des comptes 2024".to_string(),
             "Vote pour approuver les comptes annuels de l'exercice 2024".to_string(),
             ResolutionType::Ordinary,
-            MajorityType::Simple,
+            MajorityType::Absolute,
             None,
         );
 
@@ -247,30 +255,12 @@ mod tests {
             "".to_string(),
             "Description".to_string(),
             ResolutionType::Ordinary,
-            MajorityType::Simple,
+            MajorityType::Absolute,
             Some(0),
         );
 
         assert!(resolution.is_err());
         assert_eq!(resolution.unwrap_err(), "Resolution title cannot be empty");
-    }
-
-    #[test]
-    fn test_create_resolution_invalid_qualified_threshold_fails() {
-        let meeting_id = Uuid::new_v4();
-        let resolution = Resolution::new(
-            meeting_id,
-            "Test".to_string(),
-            "Description".to_string(),
-            ResolutionType::Extraordinary,
-            MajorityType::Qualified(1.5), // Invalid: > 1.0
-            Some(0),
-        );
-
-        assert!(resolution.is_err());
-        assert!(resolution
-            .unwrap_err()
-            .contains("threshold must be between 0 and 1"));
     }
 
     #[test]
@@ -281,7 +271,7 @@ mod tests {
             "Test Resolution".to_string(),
             "Description".to_string(),
             ResolutionType::Ordinary,
-            MajorityType::Simple,
+            MajorityType::Absolute,
             Some(0),
         )
         .unwrap();
@@ -300,47 +290,7 @@ mod tests {
         assert_eq!(resolution.total_votes(), 4);
     }
 
-    #[test]
-    fn test_calculate_result_simple_majority_adopted() {
-        let meeting_id = Uuid::new_v4();
-        let mut resolution = Resolution::new(
-            meeting_id,
-            "Test Resolution".to_string(),
-            "Description".to_string(),
-            ResolutionType::Ordinary,
-            MajorityType::Simple,
-            Some(0),
-        )
-        .unwrap();
-
-        resolution.record_vote_pour(300.0); // Pour > Contre + Abstention
-        resolution.record_vote_contre(150.0);
-        resolution.record_abstention(50.0);
-
-        let result = resolution.calculate_result(1000.0);
-        assert_eq!(result, ResolutionStatus::Adopted);
-    }
-
-    #[test]
-    fn test_calculate_result_simple_majority_rejected() {
-        let meeting_id = Uuid::new_v4();
-        let mut resolution = Resolution::new(
-            meeting_id,
-            "Test Resolution".to_string(),
-            "Description".to_string(),
-            ResolutionType::Ordinary,
-            MajorityType::Simple,
-            Some(0),
-        )
-        .unwrap();
-
-        resolution.record_vote_pour(150.0);
-        resolution.record_vote_contre(300.0); // Contre + Abstention > Pour
-        resolution.record_abstention(50.0);
-
-        let result = resolution.calculate_result(1000.0);
-        assert_eq!(result, ResolutionStatus::Rejected);
-    }
+    // ===== Absolute majority (Art. 3.88 §1) — abstentions excluded =====
 
     #[test]
     fn test_calculate_result_absolute_majority_adopted() {
@@ -355,9 +305,10 @@ mod tests {
         )
         .unwrap();
 
-        resolution.record_vote_pour(600.0); // > 50% of 1000
-        resolution.record_vote_contre(200.0);
-        resolution.record_abstention(100.0);
+        // Pour=300, Contre=150 → expressed=450, 300 > 225 → Adopted
+        resolution.record_vote_pour(300.0);
+        resolution.record_vote_contre(150.0);
+        resolution.record_abstention(50.0);
 
         let result = resolution.calculate_result(1000.0);
         assert_eq!(result, ResolutionStatus::Adopted);
@@ -376,28 +327,55 @@ mod tests {
         )
         .unwrap();
 
-        resolution.record_vote_pour(400.0); // < 50% of 1000
+        // Pour=150, Contre=300 → expressed=450, 150 < 225 → Rejected
+        resolution.record_vote_pour(150.0);
         resolution.record_vote_contre(300.0);
-        resolution.record_abstention(100.0);
+        resolution.record_abstention(50.0);
 
         let result = resolution.calculate_result(1000.0);
         assert_eq!(result, ResolutionStatus::Rejected);
     }
 
     #[test]
-    fn test_calculate_result_qualified_majority_adopted() {
+    fn test_absolute_majority_abstentions_excluded() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Ordinary,
+            MajorityType::Absolute,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=300, Contre=200, Abstention=500 → expressed=500, 300 > 250 → Adopted
+        // Abstentions are excluded: 300 is more than half of (300+200)
+        resolution.record_vote_pour(300.0);
+        resolution.record_vote_contre(200.0);
+        resolution.record_abstention(500.0);
+
+        let result = resolution.calculate_result(1000.0);
+        assert_eq!(result, ResolutionStatus::Adopted);
+    }
+
+    // ===== Two-thirds majority (Art. 3.88 §1, 1°) — abstentions excluded =====
+
+    #[test]
+    fn test_calculate_result_two_thirds_majority_adopted() {
         let meeting_id = Uuid::new_v4();
         let mut resolution = Resolution::new(
             meeting_id,
             "Test Resolution".to_string(),
             "Description".to_string(),
             ResolutionType::Extraordinary,
-            MajorityType::Qualified(0.67), // 2/3 required
+            MajorityType::TwoThirds,
             Some(0),
         )
         .unwrap();
 
-        resolution.record_vote_pour(700.0); // 70% > 67%
+        // Pour=700, Contre=200 → expressed=900, 700/900 = 77.8% >= 66.7% → Adopted
+        resolution.record_vote_pour(700.0);
         resolution.record_vote_contre(200.0);
         resolution.record_abstention(100.0);
 
@@ -406,25 +384,225 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_result_qualified_majority_rejected() {
+    fn test_calculate_result_two_thirds_majority_rejected() {
         let meeting_id = Uuid::new_v4();
         let mut resolution = Resolution::new(
             meeting_id,
             "Test Resolution".to_string(),
             "Description".to_string(),
             ResolutionType::Extraordinary,
-            MajorityType::Qualified(0.67), // 2/3 required
+            MajorityType::TwoThirds,
             Some(0),
         )
         .unwrap();
 
-        resolution.record_vote_pour(600.0); // 60% < 67%
+        // Pour=600, Contre=300 → expressed=900, 600/900 = 66.7% >= 66.7% → Adopted (boundary)
+        // Actually 600/900 = 0.6667 which is >= 2/3 = 0.6667 → Adopted
+        resolution.record_vote_pour(600.0);
         resolution.record_vote_contre(300.0);
+        resolution.record_abstention(100.0);
+
+        let result = resolution.calculate_result(1000.0);
+        assert_eq!(result, ResolutionStatus::Adopted);
+    }
+
+    #[test]
+    fn test_two_thirds_majority_barely_rejected() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::TwoThirds,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=500, Contre=300 → expressed=800, 500/800 = 62.5% < 66.7% → Rejected
+        resolution.record_vote_pour(500.0);
+        resolution.record_vote_contre(300.0);
+        resolution.record_abstention(200.0);
+
+        let result = resolution.calculate_result(1000.0);
+        assert_eq!(result, ResolutionStatus::Rejected);
+    }
+
+    #[test]
+    fn test_two_thirds_abstentions_excluded() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::TwoThirds,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=400, Contre=100, Abstention=500 → expressed=500, 400/500 = 80% >= 66.7% → Adopted
+        resolution.record_vote_pour(400.0);
+        resolution.record_vote_contre(100.0);
+        resolution.record_abstention(500.0);
+
+        let result = resolution.calculate_result(1000.0);
+        assert_eq!(result, ResolutionStatus::Adopted);
+    }
+
+    // ===== Four-fifths majority (Art. 3.88 §1, 2°) — abstentions excluded =====
+
+    #[test]
+    fn test_calculate_result_four_fifths_majority_adopted() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::FourFifths,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=800, Contre=100 → expressed=900, 800/900 = 88.9% >= 80% → Adopted
+        resolution.record_vote_pour(800.0);
+        resolution.record_vote_contre(100.0);
+        resolution.record_abstention(100.0);
+
+        let result = resolution.calculate_result(1000.0);
+        assert_eq!(result, ResolutionStatus::Adopted);
+    }
+
+    #[test]
+    fn test_calculate_result_four_fifths_majority_rejected() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::FourFifths,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=700, Contre=200 → expressed=900, 700/900 = 77.8% < 80% → Rejected
+        resolution.record_vote_pour(700.0);
+        resolution.record_vote_contre(200.0);
         resolution.record_abstention(100.0);
 
         let result = resolution.calculate_result(1000.0);
         assert_eq!(result, ResolutionStatus::Rejected);
     }
+
+    #[test]
+    fn test_four_fifths_abstentions_excluded() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::FourFifths,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=400, Contre=50, Abstention=550 → expressed=450, 400/450 = 88.9% >= 80% → Adopted
+        resolution.record_vote_pour(400.0);
+        resolution.record_vote_contre(50.0);
+        resolution.record_abstention(550.0);
+
+        let result = resolution.calculate_result(1000.0);
+        assert_eq!(result, ResolutionStatus::Adopted);
+    }
+
+    // ===== Unanimity (Art. 3.88 §1, 3°) — requires ALL tantièmes =====
+
+    #[test]
+    fn test_calculate_result_unanimity_adopted() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::Unanimity,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=10000 == total_voting_power → Adopted
+        resolution.record_vote_pour(10000.0);
+
+        let result = resolution.calculate_result(10000.0);
+        assert_eq!(result, ResolutionStatus::Adopted);
+    }
+
+    #[test]
+    fn test_calculate_result_unanimity_rejected_missing_votes() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::Unanimity,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=9000 < total_voting_power=10000 (absent owners not accounted for) → Rejected
+        resolution.record_vote_pour(9000.0);
+
+        let result = resolution.calculate_result(10000.0);
+        assert_eq!(result, ResolutionStatus::Rejected);
+    }
+
+    #[test]
+    fn test_unanimity_requires_all_tantiemes_not_just_present() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::Unanimity,
+            Some(0),
+        )
+        .unwrap();
+
+        // All present vote Pour but some owners are absent
+        // Pour=8000, Contre=0, Abstention=0, but total building = 10000 → Rejected
+        resolution.record_vote_pour(8000.0);
+
+        let result = resolution.calculate_result(10000.0);
+        assert_eq!(result, ResolutionStatus::Rejected);
+    }
+
+    #[test]
+    fn test_unanimity_rejected_with_abstention() {
+        let meeting_id = Uuid::new_v4();
+        let mut resolution = Resolution::new(
+            meeting_id,
+            "Test Resolution".to_string(),
+            "Description".to_string(),
+            ResolutionType::Extraordinary,
+            MajorityType::Unanimity,
+            Some(0),
+        )
+        .unwrap();
+
+        // Pour=9500, Abstention=500 → Pour != total → Rejected (abstentions count as NOT pour)
+        resolution.record_vote_pour(9500.0);
+        resolution.record_abstention(500.0);
+
+        let result = resolution.calculate_result(10000.0);
+        assert_eq!(result, ResolutionStatus::Rejected);
+    }
+
+    // ===== Close voting =====
 
     #[test]
     fn test_close_voting_success() {
@@ -434,7 +612,7 @@ mod tests {
             "Test Resolution".to_string(),
             "Description".to_string(),
             ResolutionType::Ordinary,
-            MajorityType::Simple,
+            MajorityType::Absolute,
             Some(0),
         )
         .unwrap();
@@ -456,7 +634,7 @@ mod tests {
             "Test Resolution".to_string(),
             "Description".to_string(),
             ResolutionType::Ordinary,
-            MajorityType::Simple,
+            MajorityType::Absolute,
             Some(0),
         )
         .unwrap();
@@ -480,7 +658,7 @@ mod tests {
             "Test Resolution".to_string(),
             "Description".to_string(),
             ResolutionType::Ordinary,
-            MajorityType::Simple,
+            MajorityType::Absolute,
             Some(0),
         )
         .unwrap();
