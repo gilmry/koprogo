@@ -6,6 +6,7 @@
     type UploadEnergyBillDto,
     EnergyType,
   } from "../../lib/api/energy-campaigns";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let campaignId: string;
   export let unitId: string;
@@ -37,61 +38,43 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    loading = true;
     error = "";
     success = false;
 
-    try {
-      // Validate
-      if (!gdprConsent) {
-        throw new Error($_("energy.upload.gdprRequired"));
-      }
-      if (!formData.energy_type) {
-        throw new Error($_("energy.upload.typeRequired"));
-      }
-      if (!formData.total_kwh || formData.total_kwh <= 0) {
-        throw new Error($_("energy.upload.consumptionRequired"));
-      }
-      if (!formData.billing_period_start || !formData.billing_period_end) {
-        throw new Error($_("energy.upload.datesRequired"));
-      }
-      if (formData.billing_period_end! <= formData.billing_period_start!) {
-        throw new Error($_("energy.upload.dateInvalid"));
-      }
+    if (!gdprConsent) { error = $_("energy.upload.gdprRequired"); return; }
+    if (!formData.energy_type) { error = $_("energy.upload.typeRequired"); return; }
+    if (!formData.total_kwh || formData.total_kwh <= 0) { error = $_("energy.upload.consumptionRequired"); return; }
+    if (!formData.billing_period_start || !formData.billing_period_end) { error = $_("energy.upload.datesRequired"); return; }
+    if (formData.billing_period_end! <= formData.billing_period_start!) { error = $_("energy.upload.dateInvalid"); return; }
 
-      // Generate GDPR consent signature
-      formData.consent_signature = generateConsentSignature();
+    formData.consent_signature = generateConsentSignature();
 
-      const upload = await energyBillsApi.upload(
-        formData as UploadEnergyBillDto,
-      );
-      success = true;
-      dispatch("uploaded", upload);
-
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        formData = {
-          campaign_id: campaignId,
-          unit_id: unitId,
-          billing_period_start: "",
-          billing_period_end: "",
-          energy_type: undefined,
-          total_kwh: 0,
-          consent_signature: "",
-        };
-        gdprConsent = false;
-        success = false;
-      }, 2000);
-    } catch (err: any) {
-      error = err.message || $_("energy.upload.uploadError");
-      console.error("Failed to upload energy bill:", err);
-    } finally {
-      loading = false;
-    }
+    await withErrorHandling({
+      action: () => energyBillsApi.upload(formData as UploadEnergyBillDto),
+      setLoading: (v) => loading = v,
+      errorMessage: $_("energy.upload.uploadError"),
+      onSuccess: (upload) => {
+        success = true;
+        dispatch("uploaded", upload);
+        setTimeout(() => {
+          formData = {
+            campaign_id: campaignId,
+            unit_id: unitId,
+            billing_period_start: "",
+            billing_period_end: "",
+            energy_type: undefined,
+            total_kwh: 0,
+            consent_signature: "",
+          };
+          gdprConsent = false;
+          success = false;
+        }, 2000);
+      },
+    });
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg p-6">
+<div class="bg-white shadow-md rounded-lg p-6" data-testid="energy-bill-upload">
   <h3 class="text-lg font-medium text-gray-900 mb-4">
     📄 {$_("energy.upload.title")}
   </h3>
@@ -114,7 +97,7 @@
     </div>
   {/if}
 
-  <form on:submit={handleSubmit} class="space-y-6">
+  <form on:submit={handleSubmit} class="space-y-6" data-testid="energy-bill-upload-form">
     <!-- Energy Type -->
     <div>
       <label for="energy_type" class="block text-sm font-medium text-gray-700">
@@ -256,6 +239,7 @@
       <button
         type="submit"
         disabled={loading || !gdprConsent}
+        data-testid="energy-bill-submit-btn"
         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {#if loading}

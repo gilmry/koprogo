@@ -1,6 +1,6 @@
 <script lang="ts">
-  export let id: string;
-  export let label: string;
+  export let id: string = '';
+  export let label: string = '';
   export let value: string | number = '';
   export let options: Array<{ value: string | number; label: string }> = [];
   export let placeholder = 'Sélectionner...';
@@ -28,17 +28,22 @@
     {...$$restProps}
     on:blur
     on:focus
+    on:change
     aria-invalid={error ? 'true' : undefined}
     aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
     class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition
       {error ? 'border-red-500' : 'border-gray-300'}"
   >
-    {#if placeholder}
+    {#if placeholder && options.length > 0}
       <option value="" disabled selected={!value}>{placeholder}</option>
     {/if}
-    {#each options as option}
-      <option value={option.value}>{option.label}</option>
-    {/each}
+    {#if options.length > 0}
+      {#each options as option}
+        <option value={option.value}>{option.label}</option>
+      {/each}
+    {:else}
+      <slot />
+    {/if}
   </select>
 
   {#if error}

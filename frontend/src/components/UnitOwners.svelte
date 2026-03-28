@@ -7,6 +7,8 @@
   import UnitOwnerEditModal from './UnitOwnerEditModal.svelte';
   import UnitOwnerAddModal from './UnitOwnerAddModal.svelte';
   import Button from './ui/Button.svelte';
+  import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
+  import { formatDate } from '../lib/utils/date.utils';
 
   export let unitId: string;
   export let showHistory = false;
@@ -17,7 +19,6 @@
   let loading = true;
   let error = '';
 
-  // Modal state
   let showEditModal = false;
   let showAddModal = false;
   let selectedUnitOwner: (UnitOwner & { owner?: Owner }) | null = null;
@@ -29,47 +30,34 @@
   });
 
   async function loadUnitOwners() {
-    try {
-      loading = true;
-      const endpoint = showHistory
-        ? `/units/${unitId}/owners/history`
-        : `/units/${unitId}/owners`;
+    const endpoint = showHistory
+      ? `/units/${unitId}/owners/history`
+      : `/units/${unitId}/owners`;
 
-      const response = await api.get<UnitOwner[]>(endpoint);
-
-      // Fetch owner details for each unit_owner
-      unitOwners = await Promise.all(
-        response.map(async (uo) => {
-          try {
-            const owner = await api.get<Owner>(`/owners/${uo.owner_id}`);
-            return { ...uo, owner };
-          } catch (e) {
-            console.error(`Failed to load owner ${uo.owner_id}:`, e);
-            return uo;
-          }
-        })
-      );
-
-      error = '';
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('common.error_loading');
-      console.error('Error loading unit owners:', e);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: async () => {
+        const response = await api.get<UnitOwner[]>(endpoint);
+        return Promise.all(
+          response.map(async (uo) => {
+            try {
+              const owner = await api.get<Owner>(`/owners/${uo.owner_id}`);
+              return { ...uo, owner };
+            } catch (e) {
+              console.error(`Failed to load owner ${uo.owner_id}:`, e);
+              return uo;
+            }
+          })
+        );
+      },
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_('common.error_loading'),
+      onSuccess: (result) => { unitOwners = result; },
+    });
   }
 
   function formatPercentage(percentage: number): string {
     return `${(percentage * 100).toFixed(2)}%`;
-  }
-
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
   }
 
   $: activeOwners = unitOwners.filter(uo => uo.is_active);
@@ -89,16 +77,15 @@
   async function confirmDelete() {
     if (!unitOwnerToDelete) return;
 
-    try {
-      await api.delete(`/units/${unitId}/owners/${unitOwnerToDelete.owner_id}`);
-      showDeleteConfirm = false;
-      unitOwnerToDelete = null;
-      await loadUnitOwners();
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('units.error_deleting_owner');
-      console.error('Error deleting unit owner:', e);
-      showDeleteConfirm = false;
-    }
+    await withErrorHandling({
+      action: () => api.delete(`/units/${unitId}/owners/${unitOwnerToDelete!.owner_id}`),
+      errorMessage: $_('units.error_deleting_owner'),
+      onSuccess: async () => {
+        showDeleteConfirm = false;
+        unitOwnerToDelete = null;
+        await loadUnitOwners();
+      },
+    });
   }
 
   function cancelDelete() {
@@ -119,7 +106,7 @@
   {:else}
     <!-- Active Owners -->
     {#if activeOwners.length > 0}
-      <div class="space-y-2">
+      <div class="space-y-2" data-testid="owner-list">
         <div class="flex justify-between items-center">
           <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
             {$_('units.current_owners')}
@@ -128,6 +115,7 @@
             <button
               on:click={() => showAddModal = true}
               class="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
+              data-testid="add-owner-button"
             >
               + {$_('common.add')}
             </button>
@@ -135,7 +123,7 @@
         </div>
 
         {#each activeOwners as unitOwner (unitOwner.id)}
-          <div class="bg-white border border-gray-200 rounded-lg p-3">
+          <div class="bg-white border border-gray-200 rounded-lg p-3" data-testid="owner-row">
             <div class="flex justify-between items-start">
               <div class="flex-1">
                 {#if unitOwner.owner}
@@ -177,6 +165,7 @@
                     on:click={() => handleEditUnitOwner(unitOwner)}
                     class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition"
                     title={$_('units.edit_quota')}
+                    data-testid="edit-owner-button"
                   >
                     ✏️
                   </button>
@@ -184,6 +173,7 @@
                     on:click={() => handleDeleteClick(unitOwner)}
                     class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition"
                     title={$_('units.remove_owner')}
+                    data-testid="remove-owner-button"
                   >
                     🗑️
                   </button>
@@ -217,6 +207,7 @@
           <button
             on:click={() => showAddModal = true}
             class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
+            data-testid="add-owner-button-empty"
           >
             + {$_('units.add_owner')}
           </button>

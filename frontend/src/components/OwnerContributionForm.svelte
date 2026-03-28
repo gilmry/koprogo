@@ -1,6 +1,7 @@
 <script lang="ts">
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
+  import { withErrorHandling } from '../lib/utils/error.utils';
 
   export let organizationId: string;
   export let onSuccess: () => void = () => {};
@@ -20,26 +21,26 @@
   let loading = false;
   let error = '';
 
-  // Load owners and units on mount
   async function loadData() {
-    try {
-      const [ownersData, unitsData] = await Promise.all([
-        api.get('/owners'),
-        api.get('/units')
-      ]);
-      owners = ownersData;
-      units = unitsData;
-    } catch (err: any) {
-      error = err.message;
-    }
+    await withErrorHandling({
+      action: async () => {
+        const [ownersData, unitsData] = await Promise.all([
+          api.get('/owners'),
+          api.get('/units')
+        ]);
+        return { ownersData, unitsData };
+      },
+      onSuccess: (result) => {
+        owners = result.ownersData;
+        units = result.unitsData;
+      },
+    });
   }
 
-  // Load data on component mount
   $: if (organizationId) {
     loadData();
   }
 
-  // Update account code when contribution type changes
   $: if (formData.contribution_type === 'regular') {
     formData.account_code = '7000';
   } else if (formData.contribution_type === 'extraordinary') {
@@ -48,40 +49,36 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    loading = true;
     error = '';
 
-    try {
-      // Convert form data to API format
-      const payload = {
-        owner_id: formData.owner_id,
-        unit_id: formData.unit_id || null,
-        description: formData.description,
-        amount: parseFloat(formData.amount),
-        contribution_type: formData.contribution_type,
-        contribution_date: new Date(formData.contribution_date).toISOString(),
-        account_code: formData.account_code
-      };
-
-      await api.post('/owner-contributions', payload);
-
-      // Reset form
-      formData = {
-        owner_id: '',
-        unit_id: '',
-        description: '',
-        amount: '',
-        contribution_type: 'regular',
-        contribution_date: new Date().toISOString().split('T')[0],
-        account_code: '7000'
-      };
-
-      onSuccess();
-    } catch (err: any) {
-      error = err.message || $_('contributions.createError');
-    } finally {
-      loading = false;
-    }
+    await withErrorHandling({
+      action: async () => {
+        const payload = {
+          owner_id: formData.owner_id,
+          unit_id: formData.unit_id || null,
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          contribution_type: formData.contribution_type,
+          contribution_date: new Date(formData.contribution_date).toISOString(),
+          account_code: formData.account_code
+        };
+        return api.post('/owner-contributions', payload);
+      },
+      setLoading: (v) => loading = v,
+      errorMessage: $_('contributions.createError'),
+      onSuccess: () => {
+        formData = {
+          owner_id: '',
+          unit_id: '',
+          description: '',
+          amount: '',
+          contribution_type: 'regular',
+          contribution_date: new Date().toISOString().split('T')[0],
+          account_code: '7000'
+        };
+        onSuccess();
+      },
+    });
   }
 </script>
 
@@ -106,6 +103,7 @@
         id="owner_id"
         bind:value={formData.owner_id}
         required
+        data-testid="contribution-owner-select"
         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">{$_('contributions.selectOwner')}</option>
@@ -125,6 +123,7 @@
       <select
         id="unit_id"
         bind:value={formData.unit_id}
+        data-testid="contribution-unit-select"
         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">{$_('contributions.noSpecificUnit')}</option>
@@ -145,6 +144,7 @@
         id="contribution_type"
         bind:value={formData.contribution_type}
         required
+        data-testid="contribution-type-select"
         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="regular">{$_('contributions.typeRegular')}</option>
@@ -165,6 +165,7 @@
         required
         rows="3"
         placeholder="Ex: Appel de fonds T4 2025 - Charges courantes"
+        data-testid="contribution-description"
         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       ></textarea>
     </div>
@@ -182,6 +183,7 @@
         min="0"
         step="0.01"
         placeholder="0.00"
+        data-testid="contribution-amount"
         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
@@ -219,6 +221,7 @@
       <button
         type="submit"
         disabled={loading}
+        data-testid="contribution-submit-button"
         class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? $_('common.creating') : $_('contributions.create')}

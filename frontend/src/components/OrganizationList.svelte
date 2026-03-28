@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
+  import { formatDate } from "../lib/utils/date.utils";
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import { authStore } from '../stores/auth';
@@ -54,15 +55,6 @@
       enterprise: 'bg-purple-100 text-purple-800',
     };
     return classes[plan as keyof typeof classes] || 'bg-gray-100 text-gray-800';
-  }
-
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   }
 
   const handleCreate = () => {

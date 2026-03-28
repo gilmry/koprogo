@@ -6,6 +6,9 @@
   import { WorkType, WarrantyType } from "../../lib/api/work-reports";
   import { toast } from "../../stores/toast";
   import WorkReportDetail from "./WorkReportDetail.svelte";
+  import { formatDate } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let buildingId: string;
   export let organizationId: string = "";
@@ -39,13 +42,16 @@
   async function loadReports() {
     loading = true;
     error = "";
-    try {
-      reports = await workReportsApi.listByBuilding(buildingId);
-    } catch (e: any) {
-      error = e.message || $_("workReports.loadError");
-    } finally {
-      loading = false;
+    const result = await withErrorHandling({
+      action: () => workReportsApi.listByBuilding(buildingId),
+      errorMessage: $_("workReports.loadError"),
+    });
+    if (result) {
+      reports = result;
+    } else {
+      error = $_("workReports.loadError");
     }
+    loading = false;
   }
 
   async function createReport() {
@@ -53,40 +59,40 @@
       toast.error($_("workReports.titleAndContractorRequired"));
       return;
     }
-    try {
-      const data: CreateWorkReportDto = {
-        organization_id: organizationId,
-        building_id: buildingId,
-        title: form.title!,
-        description: form.description || "",
-        work_type: form.work_type || WorkType.Maintenance,
-        contractor_name: form.contractor_name!,
-        contractor_contact: form.contractor_contact || undefined,
-        work_date: new Date(form.work_date!).toISOString(),
-        cost: form.cost || 0,
-        invoice_number: form.invoice_number || undefined,
-        notes: form.notes || undefined,
-        warranty_type: form.warranty_type || WarrantyType.Standard,
-      };
-      await workReportsApi.create(data);
-      toast.success($_("workReports.createSuccess"));
-      form = resetForm();
-      showCreateForm = false;
-      await loadReports();
-    } catch (e: any) {
-      toast.error(e.message || $_("common.createError"));
-    }
+    const data: CreateWorkReportDto = {
+      organization_id: organizationId,
+      building_id: buildingId,
+      title: form.title!,
+      description: form.description || "",
+      work_type: form.work_type || WorkType.Maintenance,
+      contractor_name: form.contractor_name!,
+      contractor_contact: form.contractor_contact || undefined,
+      work_date: new Date(form.work_date!).toISOString(),
+      cost: form.cost || 0,
+      invoice_number: form.invoice_number || undefined,
+      notes: form.notes || undefined,
+      warranty_type: form.warranty_type || WarrantyType.Standard,
+    };
+    const result = await withErrorHandling({
+      action: () => workReportsApi.create(data),
+      successMessage: $_("workReports.createSuccess"),
+      errorMessage: $_("common.createError"),
+      onSuccess: () => {
+        form = resetForm();
+        showCreateForm = false;
+      },
+    });
+    if (result) await loadReports();
   }
 
   async function deleteReport(id: string) {
     if (!confirm($_("workReports.deleteConfirm"))) return;
-    try {
-      await workReportsApi.delete(id);
-      toast.success($_("workReports.deleteSuccess"));
-      await loadReports();
-    } catch (e: any) {
-      toast.error(e.message || $_("workReports.deleteError"));
-    }
+    const result = await withErrorHandling({
+      action: () => workReportsApi.delete(id),
+      successMessage: $_("workReports.deleteSuccess"),
+      errorMessage: $_("workReports.deleteError"),
+    });
+    if (result !== undefined) await loadReports();
   }
 
   function openDetail(report: WorkReport) {
@@ -104,18 +110,6 @@
     detailOpen = false;
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(amount);
-  }
-
   $: filteredReports = filterType === "all"
     ? reports
     : reports.filter((r) => r.work_type === filterType);
@@ -128,7 +122,7 @@
   onMount(loadReports);
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="work-report-list">
   <!-- Header -->
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold text-gray-800">{$_("workReports.title")}</h2>
@@ -218,7 +212,7 @@
   <!-- Loading / Error / Empty -->
   {#if loading}
     <div class="text-center py-8 text-gray-500">
-      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" data-testid="work-report-list-spinner"></div>
       <p class="mt-2 text-sm">{$_("common.loading")}</p>
     </div>
   {:else if error}
@@ -234,6 +228,7 @@
       {#each filteredReports as report}
         <div
           class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer"
+          data-testid="work-report-row"
           on:click={() => openDetail(report)}
           on:keydown={(e) => e.key === "Enter" && openDetail(report)}
           role="button"

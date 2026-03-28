@@ -134,7 +134,7 @@
 	}
 </script>
 
-<div class="max-w-6xl mx-auto">
+<div class="max-w-6xl mx-auto" data-testid="seed-manager">
 	<div class="bg-white rounded-lg shadow-lg p-6">
 		<h1 class="text-3xl font-bold mb-6 text-gray-800">
 			🌱 {$_('admin.seed.title')}

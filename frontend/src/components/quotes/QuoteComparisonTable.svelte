@@ -2,45 +2,34 @@
   import { onMount } from "svelte";
   import { _ } from '../../lib/i18n';
   import { quotesApi, type QuoteComparison } from "../../lib/api/quotes";
-  import { toast } from "../../stores/toast";
   import QuoteStatusBadge from "./QuoteStatusBadge.svelte";
+  import { withLoadingState } from '../../lib/utils/error.utils';
+  import { formatDateShort } from '../../lib/utils/date.utils';
+  import { formatAmount } from '../../lib/utils/finance.utils';
 
   export let quoteIds: string[];
 
   let comparison: QuoteComparison | null = null;
   let loading = true;
+  let error = '';
 
   onMount(async () => {
     await loadComparison();
   });
 
   async function loadComparison() {
-    try {
-      loading = true;
-      comparison = await quotesApi.compare(quoteIds);
-    } catch (err: any) {
-      toast.error(err.message || $_("quotes.comparison.loadError"));
-    } finally {
-      loading = false;
-    }
-  }
-
-  function formatAmount(amountCents: number | undefined): string {
-    if (!amountCents) return "N/A";
-    const amount = amountCents / 100;
-    return new Intl.NumberFormat("nl-BE", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  }
-
-  function formatDate(dateString: string | undefined): string {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("nl-BE", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+    await withLoadingState({
+      action: () => quotesApi.compare(quoteIds),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_("quotes.comparison.loadError"),
+      onSuccess: (data) => { comparison = data; },
     });
+  }
+
+  function formatComparisonAmount(amountCents: number | undefined): string {
+    if (!amountCents) return "N/A";
+    return formatAmount(amountCents);
   }
 
   function getScoreClass(score: number): string {
@@ -120,7 +109,7 @@
 
       <!-- Comparison Table -->
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+        <table class="min-w-full divide-y divide-gray-200" data-testid="comparison-table">
           <thead class="bg-gray-50">
             <tr>
               <th
@@ -157,7 +146,7 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             {#each comparison.quotes as item, index (item.quote.id)}
-              <tr class={index === 0 ? "bg-green-50" : ""}>
+              <tr class={index === 0 ? "bg-green-50" : ""} data-testid="comparison-row">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="flex items-center">
                     {#if index === 0}
@@ -175,7 +164,7 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <div class="text-sm font-medium text-gray-900">
-                    {formatAmount(item.quote.amount_incl_vat_cents)}
+                    {formatComparisonAmount(item.quote.amount_incl_vat_cents)}
                   </div>
                   <div class="text-xs text-gray-500">
                     Score: {item.price_score.toFixed(1)}/40
@@ -201,11 +190,11 @@
                   <QuoteStatusBadge status={item.quote.status} />
                   {#if item.quote.validity_date}
                     <div class="text-xs text-gray-500 mt-1">
-                      {$_("quotes.comparison.validUntil")}: {formatDate(item.quote.validity_date)}
+                      {$_("quotes.comparison.validUntil")}: {formatDateShort(item.quote.validity_date)}
                     </div>
                   {/if}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-center">
+                <td class="px-6 py-4 whitespace-nowrap text-center" data-testid="comparison-score">
                   <div class="text-2xl font-bold {getScoreClass(item.score)}">
                     {item.score.toFixed(1)}
                   </div>

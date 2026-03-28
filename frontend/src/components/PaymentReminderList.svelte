@@ -3,6 +3,9 @@
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { formatCurrency } from "../lib/utils/finance.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   export let ownerId: string | null = null;
   export let expenseId: string | null = null;
@@ -23,34 +26,32 @@
   });
 
   async function loadReminders() {
-    try {
-      loading = true;
-      error = '';
-
-      let endpoint = '/payment-reminders';
-      if (ownerId) {
-        endpoint = `/owners/${ownerId}/payment-reminders`;
-      } else if (expenseId) {
-        endpoint = `/expenses/${expenseId}/payment-reminders`;
-      }
-
-      reminders = await api.get(endpoint);
-    } catch (err: any) {
-      error = err.message || $_('paymentReminders.loadError');
-      console.error('Error loading reminders:', err);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    let endpoint = '/payment-reminders';
+    if (ownerId) {
+      endpoint = `/owners/${ownerId}/payment-reminders`;
+    } else if (expenseId) {
+      endpoint = `/expenses/${expenseId}/payment-reminders`;
     }
+    const result = await withErrorHandling({
+      action: () => api.get(endpoint),
+      errorMessage: $_('paymentReminders.loadError'),
+    });
+    if (result) {
+      reminders = result;
+    } else {
+      error = $_('paymentReminders.loadError');
+    }
+    loading = false;
   }
 
   async function loadStats() {
-    if (ownerId || expenseId) return; // Stats only for organization view
-
-    try {
-      stats = await api.get('/payment-reminders/stats');
-    } catch (err: any) {
-      console.error('Error loading stats:', err);
-    }
+    if (ownerId || expenseId) return;
+    const result = await withErrorHandling({
+      action: () => api.get('/payment-reminders/stats'),
+    });
+    if (result) stats = result;
   }
 
   function getLevelBadge(level: string): { class: string; label: string; emoji: string } {
@@ -73,19 +74,6 @@
       'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('paymentReminders.cancelled') }
     };
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
-  function formatDate(dateString: string | null): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   }
 
   $: filteredReminders = reminders.filter(r => {
@@ -117,7 +105,7 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-testid="payment-reminder-list">
   <!-- Stats Cards (only for organization view) -->
   {#if stats && !ownerId && !expenseId}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

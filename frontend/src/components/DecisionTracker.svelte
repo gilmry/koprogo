@@ -4,6 +4,8 @@
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import type { BoardDecisionResponse } from '../lib/types';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   export let buildingId: string = '';
   export let filterStatus: string = '';
@@ -32,45 +34,40 @@
   });
 
   async function loadDecisions() {
-    try {
-      loading = true;
-      error = '';
-
-      let endpoint = `/board-decisions/building/${buildingId}`;
-      if (statusFilter !== 'all') {
-        endpoint = `/board-decisions/building/${buildingId}/status/${statusFilter}`;
-      }
-
-      decisions = await api.get<BoardDecisionResponse[]>(endpoint);
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('board.error.loadDecisions');
-      console.error('Error loading decisions:', e);
-      toast.error(error);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    let endpoint = `/board-decisions/building/${buildingId}`;
+    if (statusFilter !== 'all') {
+      endpoint = `/board-decisions/building/${buildingId}/status/${statusFilter}`;
     }
+    const result = await withErrorHandling({
+      action: () => api.get<BoardDecisionResponse[]>(endpoint),
+      errorMessage: $_('board.error.loadDecisions'),
+    });
+    if (result) {
+      decisions = result;
+    } else {
+      error = $_('board.error.loadDecisions');
+    }
+    loading = false;
   }
 
   async function updateDecisionStatus(decisionId: string, newStatus: string) {
-    try {
-      await api.put(`/board-decisions/${decisionId}/status`, { status: newStatus });
-      toast.success($_('board.success.statusUpdated'));
-      loadDecisions();
-    } catch (e) {
-      toast.error($_('board.error.updateStatus'));
-      console.error('Error updating status:', e);
-    }
+    await withErrorHandling({
+      action: () => api.put(`/board-decisions/${decisionId}/status`, { status: newStatus }),
+      successMessage: $_('board.success.statusUpdated'),
+      errorMessage: $_('board.error.updateStatus'),
+      onSuccess: () => loadDecisions(),
+    });
   }
 
   async function completeDecision(decisionId: string) {
-    try {
-      await api.put(`/board-decisions/${decisionId}/complete`, {});
-      toast.success($_('board.success.decisionCompleted'));
-      loadDecisions();
-    } catch (e) {
-      toast.error($_('board.error.completeDecision'));
-      console.error('Error completing decision:', e);
-    }
+    await withErrorHandling({
+      action: () => api.put(`/board-decisions/${decisionId}/complete`, {}),
+      successMessage: $_('board.success.decisionCompleted'),
+      errorMessage: $_('board.error.completeDecision'),
+      onSuccess: () => loadDecisions(),
+    });
   }
 
   function getStatusColor(status: string): string {
@@ -106,14 +103,6 @@
     return icons[status] || '📋';
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
-
   function isOverdue(decision: BoardDecisionResponse): boolean {
     if (!decision.deadline) return false;
     const deadline = new Date(decision.deadline);
@@ -132,7 +121,7 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="decision-tracker">
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between">
       <div>

@@ -12,6 +12,8 @@
     formatRating,
   } from '../../lib/api/local-exchanges';
   import { toast } from '../../stores/toast';
+  import { formatDateTime } from "../../lib/utils/date.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let exchange: LocalExchange;
   export let currentUserId: string = '';
@@ -26,53 +28,37 @@
   $: isRequester = exchange.requester_id === currentUserId;
   $: statusColors = exchangeStatusColors[exchange.status];
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
   async function handleRequest() {
     if (!confirm($_('exchanges.confirm_request'))) return;
-    actionLoading = true;
-    try {
-      exchange = await localExchangesApi.request(exchange.id);
-      toast.success($_('exchanges.request_success'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.request_error'));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.request(exchange.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('exchanges.request_success'),
+      errorMessage: $_('exchanges.request_error'),
+    });
+    if (result) exchange = result;
   }
 
   async function handleStart() {
     if (!confirm($_('exchanges.confirm_start'))) return;
-    actionLoading = true;
-    try {
-      exchange = await localExchangesApi.start(exchange.id);
-      toast.success($_('exchanges.start_success'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.start_error'));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.start(exchange.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('exchanges.start_success'),
+      errorMessage: $_('exchanges.start_error'),
+    });
+    if (result) exchange = result;
   }
 
   async function handleComplete() {
     if (!confirm($_('exchanges.confirm_complete'))) return;
-    actionLoading = true;
-    try {
-      exchange = await localExchangesApi.complete(exchange.id);
-      toast.success($_('exchanges.complete_success'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.complete_error'));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.complete(exchange.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('exchanges.complete_success'),
+      errorMessage: $_('exchanges.complete_error'),
+    });
+    if (result) exchange = result;
   }
 
   async function handleCancel() {
@@ -80,15 +66,15 @@
       toast.error($_('exchanges.reason_required'));
       return;
     }
-    actionLoading = true;
-    try {
-      exchange = await localExchangesApi.cancel(exchange.id, { reason: cancelReason });
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.cancel(exchange.id, { reason: cancelReason }),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('exchanges.cancel_success'),
+      errorMessage: $_('exchanges.cancel_error'),
+    });
+    if (result) {
+      exchange = result;
       showCancelForm = false;
-      toast.success($_('exchanges.cancel_success'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.cancel_error'));
-    } finally {
-      actionLoading = false;
     }
   }
 
@@ -97,37 +83,34 @@
       toast.error($_('exchanges.rating_required'));
       return;
     }
-    actionLoading = true;
-    try {
+    const result = await withErrorHandling({
+      action: () => asProvider
+        ? localExchangesApi.rateRequester(exchange.id, { rating: ratingValue })
+        : localExchangesApi.rateProvider(exchange.id, { rating: ratingValue }),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('exchanges.rating_saved'),
+      errorMessage: $_('exchanges.rating_error'),
+    });
+    if (result) {
       if (asProvider) {
-        await localExchangesApi.rateRequester(exchange.id, { rating: ratingValue });
         exchange.requester_rating = ratingValue;
       } else {
-        await localExchangesApi.rateProvider(exchange.id, { rating: ratingValue });
         exchange.provider_rating = ratingValue;
       }
       showRatingForm = false;
       ratingValue = 0;
-      toast.success($_('exchanges.rating_saved'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.rating_error'));
-    } finally {
-      actionLoading = false;
     }
   }
 
   async function handleDelete() {
     if (!confirm($_('exchanges.confirm_delete'))) return;
-    actionLoading = true;
-    try {
-      await localExchangesApi.delete(exchange.id);
-      toast.success($_('exchanges.delete_success'));
-      window.location.href = '/exchanges';
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.delete_error'));
-    } finally {
-      actionLoading = false;
-    }
+    await withErrorHandling({
+      action: () => localExchangesApi.delete(exchange.id),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('exchanges.delete_success'),
+      errorMessage: $_('exchanges.delete_error'),
+      onSuccess: () => { window.location.href = '/exchanges'; },
+    });
   }
 
   function canRate(): { canRateProvider: boolean; canRateRequester: boolean } {
@@ -139,9 +122,9 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-testid="exchange-detail">
   <!-- Header Card -->
-  <div class="bg-white shadow-md rounded-lg p-6">
+  <div class="bg-white shadow-md rounded-lg p-6" data-testid="exchange-detail-header">
     <div class="flex items-start justify-between">
       <div class="flex items-start gap-4">
         <span class="text-4xl">{exchangeTypeIcons[exchange.exchange_type]}</span>
@@ -185,7 +168,7 @@
       </div>
       <div class="p-3 bg-purple-50 rounded-lg">
         <div class="text-xs text-purple-600 font-medium">{$_('exchanges.created_at')}</div>
-        <div class="text-sm text-purple-900">{formatDate(exchange.created_at)}</div>
+        <div class="text-sm text-purple-900">{formatDateTime(exchange.created_at)}</div>
       </div>
     </div>
 
@@ -230,7 +213,7 @@
 
   <!-- Ratings Card (if completed) -->
   {#if exchange.status === ExchangeStatus.Completed}
-    <div class="bg-white shadow-md rounded-lg p-6">
+    <div class="bg-white shadow-md rounded-lg p-6" data-testid="exchange-ratings-card">
       <h3 class="text-lg font-medium text-gray-900 mb-4">{$_('exchanges.ratings')}</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="p-4 bg-gray-50 rounded-lg">
@@ -289,13 +272,14 @@
   {/if}
 
   <!-- Actions Card -->
-  <div class="bg-white shadow-md rounded-lg p-6">
+  <div class="bg-white shadow-md rounded-lg p-6" data-testid="exchange-actions-card">
     <h3 class="text-lg font-medium text-gray-900 mb-4">{$_('common.actions')}</h3>
     <div class="flex flex-wrap gap-3">
       {#if exchange.status === ExchangeStatus.Offered && !isProvider}
         <button
           on:click={handleRequest}
           disabled={actionLoading}
+          data-testid="exchange-request-btn"
           class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
         >
           {$_('exchanges.request_exchange')}
@@ -306,6 +290,7 @@
         <button
           on:click={handleStart}
           disabled={actionLoading}
+          data-testid="exchange-start-btn"
           class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
         >
           {$_('exchanges.accept_and_start')}
@@ -316,6 +301,7 @@
         <button
           on:click={handleComplete}
           disabled={actionLoading}
+          data-testid="exchange-complete-btn"
           class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
         >
           {$_('exchanges.mark_completed')}
@@ -326,6 +312,7 @@
         {#if !showCancelForm}
           <button
             on:click={() => showCancelForm = true}
+            data-testid="exchange-cancel-btn"
             class="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-md hover:bg-red-200"
           >
             {$_('common.cancel')}
@@ -362,6 +349,7 @@
         <button
           on:click={handleDelete}
           disabled={actionLoading}
+          data-testid="exchange-delete-btn"
           class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200"
         >
           {$_('exchanges.delete_offer')}

@@ -2,15 +2,14 @@
   import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
   import { authStore } from '../stores/auth';
   import type { Building, PageResponse } from '../lib/types';
   import BuildingForm from './admin/BuildingForm.svelte';
   import ConfirmDialog from './ui/ConfirmDialog.svelte';
   import Button from './ui/Button.svelte';
   import Pagination from './Pagination.svelte';
+  import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
 
-  // Seul le superadmin peut créer/modifier/supprimer des immeubles (données structurelles)
   $: isSuperAdmin = $authStore.user?.role === 'superadmin';
 
   let buildings: Building[] = [];
@@ -23,7 +22,6 @@
   let actionLoading = false;
   let searchTerm = '';
 
-  // Pagination state
   let currentPage = 1;
   let perPage = 20;
   let totalItems = 0;
@@ -34,24 +32,21 @@
   });
 
   async function loadBuildings() {
-    try {
-      loading = true;
-      error = '';
-      const response = await api.get<PageResponse<Building>>(
+    await withLoadingState({
+      action: () => api.get<PageResponse<Building>>(
         `/buildings?page=${currentPage}&per_page=${perPage}`
-      );
-
-      buildings = response.data;
-      totalItems = response.pagination.total_items;
-      totalPages = response.pagination.total_pages;
-      currentPage = response.pagination.current_page;
-      perPage = response.pagination.per_page;
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('buildings.errorLoading');
-      console.error('Error loading buildings:', e);
-    } finally {
-      loading = false;
-    }
+      ),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_('buildings.errorLoading'),
+      onSuccess: (response) => {
+        buildings = response.data;
+        totalItems = response.pagination.total_items;
+        totalPages = response.pagination.total_pages;
+        currentPage = response.pagination.current_page;
+        perPage = response.pagination.per_page;
+      },
+    });
   }
 
   async function handlePageChange(page: number) {
@@ -79,19 +74,17 @@
   const handleDeleteConfirm = async () => {
     if (!selectedBuilding) return;
 
-    actionLoading = true;
-    try {
-      await api.delete(`/buildings/${selectedBuilding.id}`);
-      toast.show($_('buildings.deletedSuccess'), 'success');
-      showConfirmDialog = false;
-      selectedBuilding = null;
-      await loadBuildings();
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : $_('common.error');
-      toast.show(errorMessage, 'error');
-    } finally {
-      actionLoading = false;
-    }
+    await withErrorHandling({
+      action: () => api.delete(`/buildings/${selectedBuilding!.id}`),
+      setLoading: (v) => actionLoading = v,
+      successMessage: $_('buildings.deletedSuccess'),
+      errorMessage: $_('common.error'),
+      onSuccess: async () => {
+        showConfirmDialog = false;
+        selectedBuilding = null;
+        await loadBuildings();
+      },
+    });
   };
 
   const handleFormSuccess = async () => {

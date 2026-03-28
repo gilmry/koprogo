@@ -7,6 +7,7 @@
     exchangeTypeLabels,
     exchangeTypeIcons,
   } from "../../lib/api/local-exchanges";
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
   export let buildingId: string;
 
@@ -15,16 +16,13 @@
   let error: string | null = null;
 
   async function loadStatistics() {
-    try {
-      loading = true;
-      error = null;
-      stats = await localExchangesApi.getStatistics(buildingId);
-    } catch (err: any) {
-      error = err.message || $_('exchanges.stats_load_error');
-      console.error("Error loading statistics:", err);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => localExchangesApi.getStatistics(buildingId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => stats = data,
+      errorMessage: $_('exchanges.stats_load_error'),
+    });
   }
 
   onMount(() => {
@@ -32,19 +30,19 @@
   });
 </script>
 
-<div class="bg-white shadow rounded-lg p-6">
+<div class="bg-white shadow rounded-lg p-6" data-testid="sel-statistics">
   <h3 class="text-lg font-semibold text-gray-900 mb-4">
     📊 {$_('exchanges.statistics_title')}
   </h3>
 
   {#if loading}
-    <div class="text-center py-8">
+    <div class="text-center py-8" data-testid="sel-statistics-loading">
       <div
         class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"
       ></div>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="sel-statistics-error">
       <p class="text-red-800">❌ {error}</p>
     </div>
   {:else if stats}

@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
   import { _ } from '../../lib/i18n';
   import { budgetsApi, type CreateBudgetDto } from '../../lib/api/budgets';
   import { api } from '../../lib/api';
   import type { Building } from '../../lib/types';
+  import { withErrorHandling } from '../../lib/utils/error.utils';
+  import { formatCurrency } from '../../lib/utils/finance.utils';
 
   const dispatch = createEventDispatcher();
 
@@ -20,8 +22,6 @@
   $: totalBudget = ordinaryBudget + extraordinaryBudget;
   $: monthlyProvision = totalBudget > 0 ? totalBudget / 12 : 0;
 
-  import { onMount } from 'svelte';
-
   onMount(async () => {
     try {
       const response = await api.get<{ data: Building[] }>('/buildings?page=1&per_page=100');
@@ -30,10 +30,6 @@
       console.error('Error loading buildings:', err);
     }
   });
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
 
   async function handleSubmit() {
     if (!buildingId) {
@@ -45,23 +41,22 @@
       return;
     }
 
-    try {
-      loading = true;
-      error = '';
-      const data: CreateBudgetDto = {
-        building_id: buildingId,
-        fiscal_year: fiscalYear,
-        ordinary_budget: ordinaryBudget,
-        extraordinary_budget: extraordinaryBudget,
-        notes: notes || undefined,
-      };
-      const budget = await budgetsApi.create(data);
-      dispatch('created', budget);
-    } catch (err: any) {
-      error = err.message || $_('budgets.errors.creationFailed');
-    } finally {
-      loading = false;
-    }
+    error = '';
+    await withErrorHandling({
+      action: () => {
+        const data: CreateBudgetDto = {
+          building_id: buildingId,
+          fiscal_year: fiscalYear,
+          ordinary_budget: ordinaryBudget,
+          extraordinary_budget: extraordinaryBudget,
+          notes: notes || undefined,
+        };
+        return budgetsApi.create(data);
+      },
+      setLoading: (v) => loading = v,
+      errorMessage: $_('budgets.errors.creationFailed'),
+      onSuccess: (budget) => dispatch('created', budget),
+    });
   }
 </script>
 
@@ -77,6 +72,7 @@
     <select
       id="building"
       bind:value={buildingId}
+      data-testid="budget-building-select"
       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       required
     >
@@ -95,6 +91,7 @@
       min="2000"
       max="2100"
       bind:value={fiscalYear}
+      data-testid="budget-fiscal-year"
       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       required
     />
@@ -111,6 +108,7 @@
         step="0.01"
         min="0"
         bind:value={ordinaryBudget}
+        data-testid="budget-ordinary-amount"
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         required
       />
@@ -127,6 +125,7 @@
         step="0.01"
         min="0"
         bind:value={extraordinaryBudget}
+        data-testid="budget-extraordinary-amount"
         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         required
       />
@@ -135,7 +134,7 @@
   </div>
 
   <!-- Summary -->
-  <div class="bg-gray-50 rounded-lg p-4 space-y-2">
+  <div class="bg-gray-50 rounded-lg p-4 space-y-2" data-testid="budget-summary">
     <div class="flex justify-between text-sm">
       <span class="text-gray-600">{$_('budgets.totalBudget')}</span>
       <span class="font-bold text-gray-900">{formatCurrency(totalBudget)}</span>
@@ -161,6 +160,7 @@
     <button
       type="button"
       on:click={() => dispatch('cancel')}
+      data-testid="budget-cancel-button"
       class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
     >
       {$_('common.cancel')}
@@ -168,6 +168,7 @@
     <button
       type="submit"
       disabled={loading}
+      data-testid="budget-submit-button"
       class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
     >
       {loading ? $_('common.creating') : $_('budgets.createBudget')}

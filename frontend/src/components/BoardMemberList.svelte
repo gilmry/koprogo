@@ -4,6 +4,8 @@
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import type { BoardMemberResponse } from '../lib/types';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   export let buildingId: string = '';
   export let showInactive: boolean = false;
@@ -22,22 +24,21 @@
   });
 
   async function loadMembers() {
-    try {
-      loading = true;
-      error = '';
-
-      const endpoint = showInactive
-        ? `/board-members/building/${buildingId}/all`
-        : `/board-members/building/${buildingId}`;
-
-      members = await api.get<BoardMemberResponse[]>(endpoint);
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('board.error.loadMembers');
-      console.error('Error loading board members:', e);
-      toast.error(error);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    const endpoint = showInactive
+      ? `/board-members/building/${buildingId}/all`
+      : `/board-members/building/${buildingId}`;
+    const result = await withErrorHandling({
+      action: () => api.get<BoardMemberResponse[]>(endpoint),
+      errorMessage: $_('board.error.loadMembers'),
+    });
+    if (result) {
+      members = result;
+    } else {
+      error = $_('board.error.loadMembers');
     }
+    loading = false;
   }
 
   function getPositionLabel(position: string): string {
@@ -60,14 +61,6 @@
     return icons[position] || '👤';
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
-
   function getMandateStatusColor(member: BoardMemberResponse): string {
     if (!member.is_active) return 'bg-gray-100 text-gray-800 border-gray-300';
     if (member.expires_soon) return 'bg-orange-100 text-orange-800 border-orange-300';
@@ -81,7 +74,7 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="board-member-list">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-xl font-semibold text-gray-900">
       {$_('board.membersTitle')}

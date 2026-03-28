@@ -2,15 +2,18 @@
   import { onMount } from "svelte";
   import { _ } from '../../lib/i18n';
   import {
-    ticketsApi,
     TicketStatus,
     TicketPriority,
     TicketCategory,
     type Ticket,
   } from "../../lib/api/tickets";
+  import { formatDateTime } from "../../lib/utils/date.utils";
+  import { isOverdue } from "../../lib/utils/date.utils";
+  import { filterAndSearch } from "../../lib/utils/filter.utils";
+  import { withLoadingState } from "../../lib/utils/error.utils";
+  import { loadTickets as loadTicketsService } from "../../lib/services/ticket.service";
   import TicketStatusBadge from "./TicketStatusBadge.svelte";
   import TicketPriorityBadge from "./TicketPriorityBadge.svelte";
-  import { toast } from "../../stores/toast";
 
   export let buildingId: string | undefined = undefined;
   export let view: "all" | "my" | "assigned" = "all";
@@ -19,74 +22,33 @@
   let loading = true;
   let error = "";
 
-  // Filters
   let statusFilter: TicketStatus | "all" = "all";
   let priorityFilter: TicketPriority | "all" = "all";
   let categoryFilter: TicketCategory | "all" = "all";
   let searchQuery = "";
 
   onMount(async () => {
-    await loadTickets();
+    await doLoadTickets();
   });
 
-  async function loadTickets() {
-    try {
-      loading = true;
-      error = "";
-
-      if (view === "my") {
-        tickets = await ticketsApi.listMy();
-      } else if (view === "assigned") {
-        tickets = await ticketsApi.listAssigned();
-      } else if (buildingId) {
-        tickets = await ticketsApi.listByBuilding(buildingId);
-      } else {
-        // This would need organization_id from context
-        tickets = [];
-      }
-    } catch (err: any) {
-      error = err.message || $_("tickets.load_failed");
-      toast.error(error);
-    } finally {
-      loading = false;
-    }
+  async function doLoadTickets() {
+    await withLoadingState({
+      action: () => loadTicketsService(view, buildingId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => tickets = data,
+      errorMessage: $_("tickets.load_failed"),
+    });
   }
 
-  $: filteredTickets = tickets.filter((ticket) => {
-    if (statusFilter !== "all" && ticket.status !== statusFilter) return false;
-    if (priorityFilter !== "all" && ticket.priority !== priorityFilter)
-      return false;
-    if (categoryFilter !== "all" && ticket.category !== categoryFilter)
-      return false;
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        ticket.title.toLowerCase().includes(query) ||
-        ticket.description.toLowerCase().includes(query) ||
-        ticket.requester_name?.toLowerCase().includes(query) ||
-        ticket.assigned_contractor_name?.toLowerCase().includes(query)
-      );
-    }
-    return true;
+  $: filteredTickets = filterAndSearch(tickets, searchQuery, ['title', 'description', 'requester_name', 'assigned_contractor_name'], {
+    status: statusFilter,
+    priority: priorityFilter,
+    category: categoryFilter,
   });
 
   function getTicketUrl(ticketId: string): string {
     return `/ticket-detail?id=${ticketId}`;
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString("nl-BE", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-
-  function isOverdue(ticket: Ticket): boolean {
-    if (!ticket.due_date || ticket.status === TicketStatus.Closed) return false;
-    return new Date(ticket.due_date) < new Date();
   }
 </script>
 
@@ -107,7 +69,7 @@
         </span>
       </h2>
       <button
-        on:click={loadTickets}
+        on:click={doLoadTickets}
         data-testid="ticket-refresh-btn"
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
@@ -183,7 +145,7 @@
   </div>
 
   <!-- Tickets list -->
-  <div class="divide-y divide-gray-200">
+  <div class="divide-y divide-gray-200" data-testid="ticket-list-container">
     {#if loading}
       <div class="px-6 py-12 text-center text-gray-500" data-testid="loading-spinner">{$_("tickets.loading")}</div>
     {:else if error}
@@ -205,9 +167,10 @@
                 <h3 class="text-lg font-medium text-gray-900 truncate">
                   {ticket.title}
                 </h3>
-                {#if isOverdue(ticket)}
+                {#if isOverdue(ticket.due_date, ticket.status)}
                   <span
                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800"
+                    data-testid="ticket-overdue-badge"
                   >
                     ⚠️ {$_("tickets.overdue")}
                   </span>
@@ -231,7 +194,7 @@
                 {/if}
                 <span>{$_("tickets.category")}: {ticket.category}</span>
                 {#if ticket.due_date}
-                  <span>{$_("tickets.due")}: {formatDate(ticket.due_date)}</span>
+                  <span>{$_("tickets.due")}: {formatDateTime(ticket.due_date)}</span>
                 {/if}
               </div>
             </div>
@@ -240,7 +203,7 @@
               <TicketStatusBadge status={ticket.status} />
               <TicketPriorityBadge priority={ticket.priority} />
               <span class="text-xs text-gray-500">
-                {formatDate(ticket.created_at)}
+                {formatDateTime(ticket.created_at)}
               </span>
             </div>
           </div>

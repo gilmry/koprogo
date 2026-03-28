@@ -3,6 +3,9 @@
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
   import { api } from '../../lib/api';
+  import { formatDate } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   $: user = $authStore.user;
 
@@ -14,46 +17,30 @@
 
   // Load dashboard data
   async function loadDashboardData() {
-    try {
-      loading = true;
-      error = '';
-
-      // Load stats and transactions in parallel
-      const [statsData, transactionsData] = await Promise.all([
-        api.get('/dashboard/accountant/stats'),
-        api.get('/dashboard/accountant/transactions?limit=5')
-      ]);
-
-      stats = statsData;
-      transactions = transactionsData;
-    } catch (err: any) {
-      error = err.message || $_('common.error.loadData');
-      console.error('Dashboard loading error:', err);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    const result = await withErrorHandling({
+      action: async () => {
+        const [statsData, transactionsData] = await Promise.all([
+          api.get('/dashboard/accountant/stats'),
+          api.get('/dashboard/accountant/transactions?limit=5')
+        ]);
+        return { statsData, transactionsData };
+      },
+      errorMessage: $_('common.error.loadData'),
+    });
+    if (result) {
+      stats = result.statsData;
+      transactions = result.transactionsData;
+    } else {
+      error = $_('common.error.loadData');
     }
+    loading = false;
   }
 
   onMount(() => {
     loadDashboardData();
   });
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
 
   function getTransactionIcon(type: string): string {
     return type === 'paymentreceived' ? '✅' : '💸';
@@ -68,7 +55,7 @@
   }
 </script>
 
-<div>
+<div data-testid="accountant-dashboard">
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
       {$_('common.welcome')}, {user?.first_name} 👋

@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
+  import { formatDate } from "../lib/utils/date.utils";
   import Pagination from './Pagination.svelte';
   import DocumentUploadModal from './DocumentUploadModal.svelte';
   import {
@@ -120,14 +121,6 @@
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  }
-
   function getDocumentLabel(type: string): string {
     const match = DOCUMENT_TYPES.find((opt) => opt.value === type);
     return match ? match.label : type;
@@ -204,7 +197,7 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-testid="document-list">
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
       <p class="text-gray-600">

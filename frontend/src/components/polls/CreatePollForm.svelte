@@ -7,6 +7,7 @@
     type CreatePollOptionDto,
     PollType,
   } from "../../lib/api/polls";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
   import BuildingSelector from "../BuildingSelector.svelte";
 
   const dispatch = createEventDispatcher();
@@ -29,14 +30,12 @@
 
   $: formData.building_id = selectedBuildingId;
 
-  // UI-only fields (not sent to backend)
   let startsAt = new Date().toISOString().split("T")[0];
 
   let loading = false;
   let error = "";
   let success = false;
 
-  // For multiple choice options
   let newOptionText = "";
 
   let endsAtDate = "";
@@ -44,7 +43,7 @@
   function setDefaultEndDate() {
     if (startsAt) {
       const startDate = new Date(startsAt);
-      startDate.setDate(startDate.getDate() + 7); // 7 days by default
+      startDate.setDate(startDate.getDate() + 7);
       endsAtDate = startDate.toISOString().split("T")[0];
     }
   }
@@ -52,7 +51,6 @@
   function onPollTypeChange() {
     formData.options = [];
     if (formData.poll_type === PollType.YesNo) {
-      // Auto-create Yes/No options
       formData.options = [
         { option_text: "Oui", display_order: 1 },
         { option_text: "Non", display_order: 2 },
@@ -74,7 +72,6 @@
 
   function removeOption(index: number) {
     formData.options = formData.options.filter((_, i) => i !== index);
-    // Reorder
     formData.options = formData.options.map((opt, i) => ({
       ...opt,
       display_order: i + 1,
@@ -83,51 +80,52 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    loading = true;
     error = "";
     success = false;
 
-    try {
-      // Validate
-      if (!formData.building_id) {
-        throw new Error($_("polls.createForm.errors.selectBuilding"));
-      }
-      if (!formData.title.trim()) {
-        throw new Error($_("polls.createForm.errors.titleRequired"));
-      }
-      if (!endsAtDate) {
-        throw new Error($_("polls.createForm.errors.endDateRequired"));
-      }
-      if (endsAtDate <= startsAt) {
-        throw new Error($_("polls.createForm.errors.endDateAfterStart"));
-      }
-      // Convert date to ISO 8601 for backend
-      formData.ends_at = new Date(endsAtDate + "T23:59:59Z").toISOString();
-      if (
-        (formData.poll_type === PollType.YesNo ||
-          formData.poll_type === PollType.MultipleChoice) &&
-        formData.options.length === 0
-      ) {
-        throw new Error($_("polls.createForm.errors.optionRequired"));
-      }
+    if (!formData.building_id) {
+      error = $_("polls.createForm.errors.selectBuilding");
+      return;
+    }
+    if (!formData.title.trim()) {
+      error = $_("polls.createForm.errors.titleRequired");
+      return;
+    }
+    if (!endsAtDate) {
+      error = $_("polls.createForm.errors.endDateRequired");
+      return;
+    }
+    if (endsAtDate <= startsAt) {
+      error = $_("polls.createForm.errors.endDateAfterStart");
+      return;
+    }
+    formData.ends_at = new Date(endsAtDate + "T23:59:59Z").toISOString();
+    if (
+      (formData.poll_type === PollType.YesNo ||
+        formData.poll_type === PollType.MultipleChoice) &&
+      formData.options.length === 0
+    ) {
+      error = $_("polls.createForm.errors.optionRequired");
+      return;
+    }
 
-      const poll = await pollsApi.create(formData);
-      success = true;
-      dispatch("created", poll);
-
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        window.location.href = `/polls/detail?id=${poll.id}`;
-      }, 1500);
-    } catch (err: any) {
-      error = err.message || $_("polls.createForm.errors.creationFailed");
-      console.error("Failed to create poll:", err);
-    } finally {
-      loading = false;
+    const poll = await withErrorHandling({
+      action: () => pollsApi.create(formData),
+      setLoading: (v) => loading = v,
+      errorMessage: $_("polls.createForm.errors.creationFailed"),
+      onSuccess: (created) => {
+        success = true;
+        dispatch("created", created);
+        setTimeout(() => {
+          window.location.href = `/polls/detail?id=${created.id}`;
+        }, 1500);
+      },
+    });
+    if (!poll) {
+      error = error || $_("polls.createForm.errors.creationFailed");
     }
   }
 
-  // Initialize default end date
   setDefaultEndDate();
 </script>
 
@@ -142,7 +140,7 @@
   </p>
 
   {#if success}
-    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md" data-testid="create-poll-success">
       <p class="text-sm text-green-800">
         ✅ {$_("polls.createForm.successMessage")}
       </p>
@@ -150,7 +148,7 @@
   {/if}
 
   {#if error}
-    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md" data-testid="create-poll-error">
       <p class="text-sm text-red-800">❌ {error}</p>
     </div>
   {/if}

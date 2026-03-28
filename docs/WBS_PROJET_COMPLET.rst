@@ -11,6 +11,18 @@ KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
 
 .. note::
 
+   **Mise a jour 2026-03-28** : Refactoring frontend + Documentation Vivante.
+   Issue #343 : Architecture hexagonale light frontend (13 fichiers utils/validators/services),
+   105 composants migres (-821 lignes nettes), ~300 data-testid ajoutes (11%->90%).
+   i18n : 776->2378 cles, 4 locales en parite (FR/NL/EN/DE), couverture 11%->73%.
+   12 scenarios Documentation Vivante ecrits (6 passent), multi-roles metier.
+   Diagnostic multi-roles : docs/MULTIROLE_SPECIFICATIONS.rst (9 postulats non conformes).
+   Issues #343-#350 creees : strategie Test-Driven Emergence (specs, seeds, BDD aligne, E2E aligne, gaps legaux).
+   RFC #344 : RACE Adoption Framework (Privacy-First, Graph Social).
+   Chiffres actualises : 559 endpoints, 59 entites, 80 migrations, 137k+ LOC Rust.
+
+.. note::
+
    **Mise a jour 2026-03-25** : Audit croise code vs GitHub issues.
    7 issues creees (#335-#341) pour stubs non implementes, bugs silencieux et RBAC manquant.
    #331 (Playwright E2E) assignee au Jalon 1.

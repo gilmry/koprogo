@@ -6,6 +6,9 @@
   import { InspectionType, InspectionStatus } from "../../lib/api/inspections";
   import { toast } from "../../stores/toast";
   import InspectionDetail from "./InspectionDetail.svelte";
+  import { formatDate, formatDateShort } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let buildingId: string;
   export let organizationId: string = "";
@@ -37,19 +40,24 @@
   async function loadInspections() {
     loading = true;
     error = "";
-    try {
-      if (activeTab === "overdue") {
-        inspections = await inspectionsApi.getOverdue(buildingId);
-      } else if (activeTab === "upcoming") {
-        inspections = await inspectionsApi.getUpcoming(buildingId, 90);
-      } else {
-        inspections = await inspectionsApi.listByBuilding(buildingId);
-      }
-    } catch (e: any) {
-      error = e.message || $_("common.loadError");
-    } finally {
-      loading = false;
+    const result = await withErrorHandling({
+      action: async () => {
+        if (activeTab === "overdue") {
+          return inspectionsApi.getOverdue(buildingId);
+        } else if (activeTab === "upcoming") {
+          return inspectionsApi.getUpcoming(buildingId, 90);
+        } else {
+          return inspectionsApi.listByBuilding(buildingId);
+        }
+      },
+      errorMessage: $_("common.loadError"),
+    });
+    if (result) {
+      inspections = result;
+    } else {
+      error = $_("common.loadError");
     }
+    loading = false;
   }
 
   async function createInspection() {
@@ -57,38 +65,38 @@
       toast.error($_("inspections.titleAndInspectorRequired"));
       return;
     }
-    try {
-      const data: CreateInspectionDto = {
-        organization_id: organizationId,
-        building_id: buildingId,
-        title: form.title!,
-        description: form.description || undefined,
-        inspection_type: form.inspection_type || InspectionType.Elevator,
-        inspector_name: form.inspector_name!,
-        inspector_company: form.inspector_company || undefined,
-        inspection_date: new Date(form.inspection_date!).toISOString(),
-        cost: form.cost || undefined,
-        notes: form.notes || undefined,
-      };
-      await inspectionsApi.create(data);
-      toast.success($_("inspections.createSuccess"));
-      form = resetForm();
-      showCreateForm = false;
-      await loadInspections();
-    } catch (e: any) {
-      toast.error(e.message || $_("inspections.createError"));
-    }
+    const data: CreateInspectionDto = {
+      organization_id: organizationId,
+      building_id: buildingId,
+      title: form.title!,
+      description: form.description || undefined,
+      inspection_type: form.inspection_type || InspectionType.Elevator,
+      inspector_name: form.inspector_name!,
+      inspector_company: form.inspector_company || undefined,
+      inspection_date: new Date(form.inspection_date!).toISOString(),
+      cost: form.cost || undefined,
+      notes: form.notes || undefined,
+    };
+    const result = await withErrorHandling({
+      action: () => inspectionsApi.create(data),
+      successMessage: $_("inspections.createSuccess"),
+      errorMessage: $_("inspections.createError"),
+      onSuccess: () => {
+        form = resetForm();
+        showCreateForm = false;
+      },
+    });
+    if (result) await loadInspections();
   }
 
   async function deleteInspection(id: string) {
     if (!confirm($_("inspections.deleteConfirm"))) return;
-    try {
-      await inspectionsApi.delete(id);
-      toast.success($_("inspections.deleteSuccess"));
-      await loadInspections();
-    } catch (e: any) {
-      toast.error(e.message || $_("inspections.deleteError"));
-    }
+    const result = await withErrorHandling({
+      action: () => inspectionsApi.delete(id),
+      successMessage: $_("inspections.deleteSuccess"),
+      errorMessage: $_("inspections.deleteError"),
+    });
+    if (result !== undefined) await loadInspections();
   }
 
   function openDetail(inspection: TechnicalInspection) {
@@ -104,14 +112,6 @@
   function handleDetailDeleted(event: CustomEvent<string>) {
     inspections = inspections.filter((i) => i.id !== event.detail);
     detailOpen = false;
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
   }
 
   function statusColor(status: string): string {
@@ -133,13 +133,14 @@
   onMount(loadInspections);
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="inspection-list">
   <!-- Header -->
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold text-gray-800">{$_("inspections.title")}</h2>
     <button
       on:click={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+      data-testid="create-inspection-button"
     >
       {showCreateForm ? $_("common.cancel") : "+ " + $_("inspections.newInspection")}
     </button>
@@ -184,7 +185,7 @@
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button on:click={createInspection} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">{$_("common.create")}</button>
+        <button on:click={createInspection} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700" data-testid="submit-inspection-button">{$_("common.create")}</button>
         <button on:click={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
       </div>
     </div>
@@ -209,7 +210,7 @@
   <!-- Loading / Error / Empty -->
   {#if loading}
     <div class="text-center py-8 text-gray-500">
-      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" data-testid="inspection-list-spinner"></div>
       <p class="mt-2 text-sm">{$_("common.loading")}</p>
     </div>
   {:else if error}
@@ -229,6 +230,7 @@
       {#each inspections as inspection}
         <div
           class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer {inspection.is_overdue ? 'border-l-4 border-l-red-500' : ''}"
+          data-testid="inspection-row"
           on:click={() => openDetail(inspection)}
           on:keydown={(e) => e.key === "Enter" && openDetail(inspection)}
           role="button"
@@ -267,7 +269,7 @@
                   </span>
                 {/if}
                 {#if inspection.cost}
-                  <span>{new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(inspection.cost)}</span>
+                  <span>{formatCurrency(inspection.cost)}</span>
                 {/if}
               </div>
               {#if inspection.defects_found}
@@ -280,6 +282,7 @@
               on:click|stopPropagation={() => deleteInspection(inspection.id)}
               class="text-red-400 hover:text-red-600 p-1"
               title={$_("common.delete")}
+              data-testid="delete-inspection-button"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>

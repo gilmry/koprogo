@@ -9,6 +9,8 @@
     ChallengeType,
   } from '../../lib/api/gamification';
   import { authStore } from '../../stores/auth';
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
   export let organizationId: string = '';
   export let buildingId: string = '';
@@ -28,50 +30,45 @@
       loading = false;
       return;
     }
-    try {
-      loading = true;
-      error = '';
+    let challengePromise: Promise<Challenge[]>;
+    if (buildingId) {
+      challengePromise = gamificationApi.listBuildingChallenges(buildingId);
+    } else if (statusFilter === 'active') {
+      challengePromise = gamificationApi.getActiveChallenges(organizationId);
+    } else if (statusFilter === 'completed') {
+      challengePromise = gamificationApi.listByStatus(organizationId, ChallengeStatus.Completed);
+    } else {
+      challengePromise = gamificationApi.listChallenges(organizationId);
+    }
 
-      // Use building-scoped endpoint when available, org-scoped as fallback
-      let challengePromise: Promise<Challenge[]>;
-      if (buildingId) {
-        challengePromise = gamificationApi.listBuildingChallenges(buildingId);
-      } else if (statusFilter === 'active') {
-        challengePromise = gamificationApi.getActiveChallenges(organizationId);
-      } else if (statusFilter === 'completed') {
-        challengePromise = gamificationApi.listByStatus(organizationId, ChallengeStatus.Completed);
-      } else {
-        challengePromise = gamificationApi.listChallenges(organizationId);
-      }
-
-      const [challengeList, userChallenges] = await Promise.all([
+    await withLoadingState({
+      action: () => Promise.all([
         challengePromise,
         $authStore.user?.id
           ? gamificationApi.getUserActiveChallenges($authStore.user.id)
           : Promise.resolve([]),
-      ]);
-
-      // Client-side filtering when using building endpoint (returns all statuses)
-      if (buildingId && statusFilter !== 'all') {
-        const now = new Date();
-        challenges = challengeList.filter(c => {
-          if (statusFilter === 'active') {
-            return c.status === ChallengeStatus.Active && new Date(c.end_date) > now;
-          }
-          if (statusFilter === 'completed') {
-            return c.status === ChallengeStatus.Completed;
-          }
-          return true;
-        });
-      } else {
-        challenges = challengeList;
-      }
-      userProgress = new Map(userChallenges.map(p => [p.challenge_id, p]));
-    } catch (err: any) {
-      error = err.message || $_('gamification.load_error');
-    } finally {
-      loading = false;
-    }
+      ]),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: ([challengeList, userChallenges]) => {
+        if (buildingId && statusFilter !== 'all') {
+          const now = new Date();
+          challenges = challengeList.filter(c => {
+            if (statusFilter === 'active') {
+              return c.status === ChallengeStatus.Active && new Date(c.end_date) > now;
+            }
+            if (statusFilter === 'completed') {
+              return c.status === ChallengeStatus.Completed;
+            }
+            return true;
+          });
+        } else {
+          challenges = challengeList;
+        }
+        userProgress = new Map(userChallenges.map(p => [p.challenge_id, p]));
+      },
+      errorMessage: $_('gamification.load_error'),
+    });
   }
 
   $: if (statusFilter) loadData();
@@ -95,14 +92,6 @@
     }
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  }
-
   function getDaysRemaining(endDate: string): number {
     const end = new Date(endDate);
     const now = new Date();
@@ -115,7 +104,7 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="challenge-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.challenges_title')}</h3>
     <p class="mt-1 text-sm text-gray-500">
@@ -141,12 +130,12 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="challenge-list-loading">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
-    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
+    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md" data-testid="challenge-list-error">
       <p class="text-sm text-red-800">{error}</p>
       <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
@@ -161,7 +150,7 @@
         {@const progress = userProgress.get(challenge.id)}
         {@const progressPct = getProgressPercent(progress, challenge.target_value)}
         {@const daysLeft = getDaysRemaining(challenge.end_date)}
-        <li class="px-4 py-4 sm:px-6">
+        <li class="px-4 py-4 sm:px-6" data-testid="challenge-list-row">
           <div class="flex items-start gap-3">
             <span class="text-2xl flex-shrink-0">{challenge.icon || '🎯'}</span>
             <div class="flex-1 min-w-0">
@@ -192,7 +181,7 @@
 
               <div class="flex items-center gap-3 text-xs text-gray-500">
                 <span>{challenge.reward_points} pts</span>
-                <span>{formatDate(challenge.start_date)} - {formatDate(challenge.end_date)}</span>
+                <span>{formatDateShort(challenge.start_date)} - {formatDateShort(challenge.end_date)}</span>
                 {#if challenge.status === ChallengeStatus.Active && daysLeft > 0}
                   <span class="font-medium {daysLeft <= 3 ? 'text-red-600' : 'text-gray-600'}">
                     {$_('gamification.days_remaining', { days: daysLeft })}

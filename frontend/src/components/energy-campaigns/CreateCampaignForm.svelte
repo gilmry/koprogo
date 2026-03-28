@@ -6,6 +6,7 @@
     EnergyType,
   } from "../../lib/api/energy-campaigns";
   import BuildingSelector from "../BuildingSelector.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let organizationId: string;
   export let onCreated: ((campaign: any) => void) | undefined = undefined;
@@ -44,50 +45,40 @@
     error = "";
     success = false;
 
-    try {
-      if (!formData.campaign_name.trim()) {
-        throw new Error($_("energy.campaign.nameRequired"));
-      }
-      if (formData.energy_types.length === 0) {
-        throw new Error($_("energy.campaign.typeRequired"));
-      }
-      if (!formData.deadline_participation) {
-        throw new Error($_("energy.campaign.deadlineRequired"));
-      }
-      const today = new Date().toISOString().split("T")[0];
-      if (formData.deadline_participation <= today) {
-        throw new Error($_("energy.campaign.deadlineMustBeFuture"));
-      }
+    if (!formData.campaign_name.trim()) { error = $_("energy.campaign.nameRequired"); return; }
+    if (formData.energy_types.length === 0) { error = $_("energy.campaign.typeRequired"); return; }
+    if (!formData.deadline_participation) { error = $_("energy.campaign.deadlineRequired"); return; }
+    const today = new Date().toISOString().split("T")[0];
+    if (formData.deadline_participation <= today) { error = $_("energy.campaign.deadlineMustBeFuture"); return; }
 
-      // Send as ISO datetime for backend DateTime<Utc>
-      const payload = {
-        ...formData,
-        deadline_participation: new Date(formData.deadline_participation).toISOString(),
-      };
+    const payload = {
+      ...formData,
+      deadline_participation: new Date(formData.deadline_participation).toISOString(),
+    };
 
-      const campaign = await energyCampaignsApi.create(payload as any);
-      success = true;
-      if (onCreated) onCreated(campaign);
-
-      setTimeout(() => {
-        formData = {
-          building_id: selectedBuildingId || undefined,
-          campaign_name: "",
-          deadline_participation: defaultDeadline.toISOString().split("T")[0],
-          energy_types: [],
-        };
-        success = false;
-      }, 2000);
-    } catch (err: any) {
-      error = err.message || $_("energy.campaign.createError");
-      console.error("Failed to create campaign:", err);
-    } finally {
-      loading = false;
-    }
+    await withErrorHandling({
+      action: () => energyCampaignsApi.create(payload as any),
+      setLoading: (v) => loading = v,
+      errorMessage: $_("energy.campaign.createError"),
+      onSuccess: (campaign) => {
+        error = "";
+        success = true;
+        if (onCreated) onCreated(campaign);
+        setTimeout(() => {
+          formData = {
+            building_id: selectedBuildingId || undefined,
+            campaign_name: "",
+            deadline_participation: defaultDeadline.toISOString().split("T")[0],
+            energy_types: [],
+          };
+          success = false;
+        }, 2000);
+      },
+    });
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg p-6">
+<div class="bg-white shadow-md rounded-lg p-6" data-testid="create-campaign-form">
   <h3 class="text-lg font-medium text-gray-900 mb-4">
     ➕ {$_("energy.campaign.create")}
   </h3>
@@ -129,6 +120,7 @@
         bind:value={formData.campaign_name}
         required
         placeholder={$_("energy.campaign.nameExample")}
+        data-testid="campaign-name-input"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
       />
       <p class="mt-1 text-xs text-gray-500">
@@ -235,6 +227,7 @@
       <button
         type="submit"
         disabled={loading}
+        data-testid="campaign-submit-btn"
         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {#if loading}

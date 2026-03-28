@@ -8,6 +8,7 @@
   import { toast } from "../../stores/toast";
   import SkillCategoryBadge from "./SkillCategoryBadge.svelte";
   import ProficiencyBadge from "./ProficiencyBadge.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let offerId: string;
   export let currentUserId: string;
@@ -20,20 +21,19 @@
   });
 
   async function loadOfferDetails() {
-    try {
-      loading = true;
-      offer = await skillsApi.getOfferById(offerId);
-    } catch (err: any) {
-      toast.error(err.message || $_("skills.detail.loadingError"));
-    } finally {
-      loading = false;
-    }
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => skillsApi.getOfferById(offerId),
+      errorMessage: $_("skills.detail.loadingError"),
+    });
+    if (result) offer = result;
+    loading = false;
   }
 
   $: isOwner = offer && offer.owner_id === currentUserId;
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="skill-offer-detail">
   {#if loading}
     <div class="text-center py-12 text-gray-500">{$_("common.loading")}</div>
   {:else if offer}

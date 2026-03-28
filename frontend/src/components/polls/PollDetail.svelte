@@ -8,20 +8,25 @@
     PollType,
     PollStatus,
   } from "../../lib/api/polls";
+  import { formatDateTime } from "../../lib/utils/date.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
+  import { authStore } from "../../stores/auth";
+  import { UserRole } from "../../lib/types";
   import PollStatusBadge from "./PollStatusBadge.svelte";
   import PollTypeBadge from "./PollTypeBadge.svelte";
   import PollResults from "./PollResults.svelte";
-  import { toast } from "../../stores/toast";
 
   export let pollId: string;
   export let isAdmin = false;
+
+  // Reactively compute isAdmin from auth store if not explicitly set via prop
+  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
 
   let poll: Poll | null = null;
   let results: PollResultsType | null = null;
   let loading = true;
   let error = "";
 
-  // Voting state
   let selectedOptionId: string | null = null;
   let selectedOptions: Set<string> = new Set();
   let ratingValue: number | null = null;
@@ -36,12 +41,14 @@
   });
 
   async function loadPoll() {
-    try {
-      loading = true;
-      error = "";
-      poll = await pollsApi.getById(pollId);
-
-      // Load results if closed or active (to show live results)
+    loading = true;
+    error = "";
+    const loaded = await withErrorHandling({
+      action: () => pollsApi.getById(pollId),
+      errorMessage: $_("polls.detail.loadingError"),
+    });
+    if (loaded) {
+      poll = loaded;
       if (poll.status === PollStatus.Closed || poll.status === PollStatus.Active) {
         try {
           results = await pollsApi.getResults(pollId);
@@ -49,12 +56,10 @@
           // Results may not be available yet
         }
       }
-    } catch (err: any) {
-      error = err.message || $_("polls.detail.loadingError");
-      console.error("Failed to load poll:", err);
-    } finally {
-      loading = false;
+    } else {
+      error = $_("polls.detail.loadingError");
     }
+    loading = false;
   }
 
   async function handleVote() {
@@ -65,7 +70,6 @@
     votingSuccess = false;
 
     try {
-      // Build vote data based on poll type
       let voteData: any = { poll_id: poll.id };
 
       if (poll.poll_type === PollType.YesNo || poll.poll_type === PollType.MultipleChoice) {
@@ -96,10 +100,8 @@
       votingSuccess = true;
       hasVoted = true;
 
-      // Reload poll to update vote counts
       await loadPoll();
 
-      // Reset form after 3 seconds
       setTimeout(() => {
         votingSuccess = false;
       }, 3000);
@@ -111,7 +113,6 @@
       } else {
         votingError = msg || $_("polls.detail.votingError");
       }
-      console.error("Failed to vote:", err);
     } finally {
       votingInProgress = false;
     }
@@ -122,14 +123,16 @@
       return;
     }
 
-    try {
-      poll = await pollsApi.publish(poll.id, {
-        starts_at: poll.starts_at,
-        ends_at: poll.ends_at,
-      });
-      toast.success($_("polls.detail.publishSuccess"));
-    } catch (err: any) {
-      toast.error($_("polls.detail.publishError") + ": " + err.message);
+    const result = await withErrorHandling({
+      action: () => pollsApi.publish(poll!.id, {
+        starts_at: poll!.starts_at,
+        ends_at: poll!.ends_at,
+      }),
+      successMessage: $_("polls.detail.publishSuccess"),
+      errorMessage: $_("polls.detail.publishError"),
+    });
+    if (result) {
+      poll = result;
     }
   }
 
@@ -138,12 +141,14 @@
       return;
     }
 
-    try {
-      poll = await pollsApi.close(poll.id);
-      await loadPoll(); // Reload to get results
-      toast.success($_("polls.detail.closeSuccess"));
-    } catch (err: any) {
-      toast.error($_("polls.detail.closeError") + ": " + err.message);
+    const result = await withErrorHandling({
+      action: () => pollsApi.close(poll!.id),
+      successMessage: $_("polls.detail.closeSuccess"),
+      errorMessage: $_("polls.detail.closeError"),
+    });
+    if (result) {
+      poll = result;
+      await loadPoll();
     }
   }
 
@@ -152,11 +157,13 @@
       return;
     }
 
-    try {
-      poll = await pollsApi.cancel(poll.id);
-      toast.success($_("polls.detail.cancelSuccess"));
-    } catch (err: any) {
-      toast.error($_("polls.detail.cancelError") + ": " + err.message);
+    const result = await withErrorHandling({
+      action: () => pollsApi.cancel(poll!.id),
+      successMessage: $_("polls.detail.cancelSuccess"),
+      errorMessage: $_("polls.detail.cancelError"),
+    });
+    if (result) {
+      poll = result;
     }
   }
 
@@ -167,16 +174,6 @@
       selectedOptions.add(optionId);
     }
     selectedOptions = selectedOptions;
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   }
 
   function calculateParticipationRate(p: Poll): number {
@@ -207,7 +204,7 @@
     </button>
   </div>
 {:else if poll}
-  <div class="space-y-6">
+  <div class="space-y-6" data-testid="poll-detail">
     <!-- Header -->
     <div class="bg-white shadow-md rounded-lg p-6">
       <div class="flex items-start justify-between">
@@ -236,7 +233,7 @@
               <div class="text-xs text-blue-600 font-medium">{$_("polls.detail.period")}</div>
               <div class="text-sm text-blue-900">
                 {#if poll.starts_at && poll.ends_at}
-                  {formatDate(poll.starts_at)} → {formatDate(poll.ends_at)}
+                  {formatDateTime(poll.starts_at)} → {formatDateTime(poll.ends_at)}
                 {:else}
                   {$_("polls.detail.notDefined")}
                 {/if}
@@ -252,7 +249,7 @@
             <div class="p-3 bg-purple-50 rounded-lg">
               <div class="text-xs text-purple-600 font-medium">{$_("common.created")}</div>
               <div class="text-sm text-purple-900">
-                {formatDate(poll.created_at)}
+                {formatDateTime(poll.created_at)}
               </div>
             </div>
           </div>
@@ -272,6 +269,7 @@
             <button
               on:click={handlePublish}
               class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700"
+              data-testid="poll-publish-button"
             >
               🚀 {$_("polls.detail.publish")}
             </button>
@@ -280,6 +278,7 @@
             <button
               on:click={handleClose}
               class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
+              data-testid="poll-close-button"
             >
               ✅ {$_("polls.detail.close")}
             </button>
@@ -288,6 +287,7 @@
             <button
               on:click={handleCancel}
               class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700"
+              data-testid="poll-cancel-button"
             >
               ❌ {$_("common.cancel")}
             </button>
@@ -298,7 +298,7 @@
 
     <!-- Voting Section -->
     {#if canVote()}
-      <div class="bg-white shadow-md rounded-lg p-6">
+      <div class="bg-white shadow-md rounded-lg p-6" data-testid="poll-voting-section">
         <h3 class="text-lg font-medium text-gray-900 mb-4">🗳️ {$_("polls.detail.yourVote")}</h3>
 
         {#if votingSuccess}
@@ -378,6 +378,7 @@
           on:click={handleVote}
           disabled={votingInProgress}
           class="mt-4 w-full px-4 py-3 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid="poll-vote-button"
         >
           {#if votingInProgress}
             <span class="inline-block animate-spin mr-2">⏳</span>
@@ -421,7 +422,9 @@
 
     <!-- Results Section (only if closed) -->
     {#if poll.status === PollStatus.Closed && results}
-      <PollResults {poll} {results} />
+      <div data-testid="poll-results-section">
+        <PollResults {poll} {results} />
+      </div>
     {/if}
   </div>
 {/if}

@@ -3,6 +3,7 @@
   import { bookingsApi, type BookableResource, ResourceType } from "../../lib/api/bookings";
   import { toast } from "../../stores/toast";
   import ResourceCard from "./ResourceCard.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let buildingId: string;
   export let showFilters = true;
@@ -19,19 +20,18 @@
   });
 
   async function loadResources() {
-    try {
-      loading = true;
-      if (selectedAvailability === "available-only") {
-        resources = await bookingsApi.listAvailableResources(buildingId);
-      } else {
-        resources = await bookingsApi.listResourcesByBuilding(buildingId);
-      }
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => selectedAvailability === "available-only"
+        ? bookingsApi.listAvailableResources(buildingId)
+        : bookingsApi.listResourcesByBuilding(buildingId),
+      errorMessage: "Failed to load resources",
+    });
+    if (result) {
+      resources = result;
       applyFilters();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load resources");
-    } finally {
-      loading = false;
     }
+    loading = false;
   }
 
   function applyFilters() {
@@ -60,7 +60,7 @@
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="resource-list">
   {#if showFilters}
     <!-- Filters -->
     <div class="bg-white shadow rounded-lg p-4">

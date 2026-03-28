@@ -4,6 +4,7 @@
   import { sharingApi, type SharedObject } from "../../lib/api/sharing";
   import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let isOpen = false;
   export let object: SharedObject;
@@ -54,22 +55,21 @@
   async function handleSubmit() {
     if (!validate()) return;
 
-    try {
-      submitting = true;
-      const loan = await sharingApi.createLoan({
+    const loan = await withErrorHandling({
+      action: () => sharingApi.createLoan({
         shared_object_id: object.id,
         borrower_id: borrowerId,
         loan_start_date: loanStartDate,
         loan_end_date: loanEndDate,
         notes: notes || undefined,
-      });
-      toast.success($_('sharing.success.loanRequestSent'));
+      }),
+      setLoading: (v) => submitting = v,
+      successMessage: $_('sharing.success.loanRequestSent'),
+      errorMessage: $_('sharing.error.loanRequestFailed'),
+    });
+    if (loan) {
       dispatch("created", loan);
       handleClose();
-    } catch (err: any) {
-      toast.error(err.message || $_('sharing.error.loanRequestFailed'));
-    } finally {
-      submitting = false;
     }
   }
 
@@ -96,7 +96,7 @@
       {/if}
     </div>
 
-    <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+    <form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="loan-request-form">
       <!-- Dates -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -161,6 +161,7 @@
           type="submit"
           disabled={submitting}
           class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
+          data-testid="submit-loan-button"
         >
           {submitting ? "Envoi…" : "Envoyer la demande"}
         </button>

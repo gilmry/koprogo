@@ -5,6 +5,8 @@
     energyCampaignsApi,
     type ProviderOffer,
   } from "../../lib/api/energy-campaigns";
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
   export let campaignId: string;
   export let selectedOfferId: string | undefined = undefined;
@@ -20,33 +22,24 @@
   });
 
   async function loadOffers() {
-    try {
-      loading = true;
-      error = "";
-      offers = await energyCampaignsApi.listOffers(campaignId);
-
-      // Calculate best offer (highest savings percentage)
-      if (offers.length > 0) {
-        bestOffer = offers.reduce((best, current) => {
-          return current.estimated_savings_pct > best.estimated_savings_pct
-            ? current
-            : best;
-        });
-      }
-    } catch (err: any) {
-      error = err.message || $_("energy.offer.loadError");
-      console.error("Failed to load offers:", err);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => energyCampaignsApi.listOffers(campaignId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => {
+        offers = data;
+        if (offers.length > 0) {
+          bestOffer = offers.reduce((best, current) =>
+            current.estimated_savings_pct > best.estimated_savings_pct ? current : best
+          );
+        }
+      },
+      errorMessage: $_("energy.offer.loadError"),
+    });
   }
 
   function formatPrice(euros: number): string {
-    return euros.toFixed(4) + " €";
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE");
+    return euros.toFixed(4) + " \u20AC";
   }
 
   function getGreenBadge(percentage: number): {
@@ -82,7 +75,7 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="provider-offers-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <h3 class="text-lg leading-6 font-medium text-gray-900">
       💼 {$_("energy.offer.providerOffers")}
@@ -93,7 +86,7 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="provider-offers-loading">
       <div
         class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"
       ></div>
@@ -121,6 +114,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
       {#each offers as offer}
         <div
+          data-testid="provider-offer-card"
           class="border rounded-lg p-4 hover:shadow-lg transition-shadow {offer.id ===
           selectedOfferId
             ? 'border-green-500 bg-green-50'
@@ -198,7 +192,7 @@
 
           <!-- Valid Until -->
           <div class="text-xs text-gray-500 mb-3">
-            {$_("energy.offer.validUntil")} {formatDate(offer.offer_valid_until)}
+            {$_("energy.offer.validUntil")} {formatDateShort(offer.offer_valid_until)}
           </div>
 
           <!-- Selection Button (Admin only) -->
@@ -207,6 +201,7 @@
               on:click={() => {
                 /* Dispatch select event */
               }}
+              data-testid="select-offer-btn"
               class="mt-3 w-full px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
             >
               {$_("energy.offer.selectOffer")}

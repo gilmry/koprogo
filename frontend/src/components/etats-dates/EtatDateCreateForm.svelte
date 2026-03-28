@@ -4,6 +4,7 @@
   import { etatsDatesApi, EtatDateLanguage, type CreateEtatDateDto } from '../../lib/api/etats-dates';
   import { api } from '../../lib/api';
   import type { Building } from '../../lib/types';
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   const dispatch = createEventDispatcher();
 
@@ -21,12 +22,10 @@
   let notaryPhone = '';
 
   onMount(async () => {
-    try {
-      const response = await api.get<{ data: Building[] }>('/buildings?page=1&per_page=100');
-      buildings = response.data || [];
-    } catch (err) {
-      console.error('Error loading buildings:', err);
-    }
+    const result = await withErrorHandling({
+      action: () => api.get<{ data: Building[] }>('/buildings?page=1&per_page=100'),
+    });
+    if (result) buildings = result.data || [];
   });
 
   async function loadUnits() {
@@ -35,13 +34,11 @@
       unitId = '';
       return;
     }
-    try {
-      units = await api.get(`/buildings/${buildingId}/units`);
-      unitId = '';
-    } catch (err) {
-      console.error('Error loading units:', err);
-      units = [];
-    }
+    const result = await withErrorHandling({
+      action: () => api.get(`/buildings/${buildingId}/units`),
+    });
+    units = result || [];
+    unitId = '';
   }
 
   $: if (buildingId) loadUnits();
@@ -56,29 +53,30 @@
       return;
     }
 
-    try {
-      loading = true;
-      error = '';
-      const data: CreateEtatDateDto = {
-        building_id: buildingId,
-        unit_id: unitId,
-        reference_date: new Date(referenceDate).toISOString(),
-        language,
-        notary_name: notaryName,
-        notary_email: notaryEmail,
-        notary_phone: notaryPhone || undefined,
-      };
-      const etatDate = await etatsDatesApi.create(data);
-      dispatch('created', etatDate);
-    } catch (err: any) {
-      error = err.message || $_('etatsDate.errors.creationFailed');
-    } finally {
-      loading = false;
+    error = '';
+    const data: CreateEtatDateDto = {
+      building_id: buildingId,
+      unit_id: unitId,
+      reference_date: new Date(referenceDate).toISOString(),
+      language,
+      notary_name: notaryName,
+      notary_email: notaryEmail,
+      notary_phone: notaryPhone || undefined,
+    };
+    const result = await withErrorHandling({
+      action: () => etatsDatesApi.create(data),
+      setLoading: (v) => loading = v,
+      errorMessage: $_('etatsDate.errors.creationFailed'),
+    });
+    if (result) {
+      dispatch('created', result);
+    } else if (!result) {
+      error = $_('etatsDate.errors.creationFailed');
     }
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-6">
+<form on:submit|preventDefault={handleSubmit} class="space-y-6" data-testid="etat-date-create-form">
   {#if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-3">
       <p class="text-sm text-red-700">{error}</p>
@@ -194,6 +192,7 @@
       type="submit"
       disabled={loading}
       class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
+      data-testid="submit-etat-date-button"
     >
       {loading ? $_('common.creating') : $_('etatsDate.createEtatDate')}
     </button>

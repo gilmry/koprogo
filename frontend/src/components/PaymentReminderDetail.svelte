@@ -3,6 +3,9 @@
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { formatDateTime } from "../lib/utils/date.utils";
+  import { formatCurrency } from "../lib/utils/finance.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   export let reminderId: string;
   export let onUpdated: ((reminder: any) => void) | null = null;
@@ -23,67 +26,62 @@
   });
 
   async function loadReminder() {
-    try {
-      loading = true;
-      error = '';
-      reminder = await api.get(`/payment-reminders/${reminderId}`);
-    } catch (err: any) {
-      error = err.message || 'Erreur lors du chargement';
-      console.error('Error loading reminder:', err);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    const result = await withErrorHandling({
+      action: () => api.get(`/payment-reminders/${reminderId}`),
+      errorMessage: 'Erreur lors du chargement',
+    });
+    if (result) {
+      reminder = result;
+    } else {
+      error = 'Erreur lors du chargement';
     }
+    loading = false;
   }
 
   async function markAsSent() {
     if (!confirm($_('paymentReminders.markSentConfirm'))) return;
-
-    try {
-      loading = true;
-      const updated = await api.put(`/payment-reminders/${reminderId}/mark-sent`, {
-        pdf_path: null
-      });
+    const updated = await withErrorHandling({
+      action: () => api.put(`/payment-reminders/${reminderId}/mark-sent`, { pdf_path: null }),
+      setLoading: (v) => loading = v,
+      successMessage: $_('paymentReminders.markSentSuccess'),
+      errorMessage: $_('paymentReminders.markSentError'),
+    });
+    if (updated) {
       reminder = updated;
       if (onUpdated) onUpdated(updated);
-      toast.success($_('paymentReminders.markSentSuccess'));
-    } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || $_('paymentReminders.markSentError')));
-    } finally {
-      loading = false;
     }
   }
 
   async function markAsPaid() {
     if (!confirm($_('paymentReminders.markPaidConfirm'))) return;
-
-    try {
-      loading = true;
-      const updated = await api.put(`/payment-reminders/${reminderId}/mark-paid`, {});
+    const updated = await withErrorHandling({
+      action: () => api.put(`/payment-reminders/${reminderId}/mark-paid`, {}),
+      setLoading: (v) => loading = v,
+      successMessage: $_('paymentReminders.markPaidSuccess'),
+      errorMessage: $_('paymentReminders.markPaidError'),
+    });
+    if (updated) {
       reminder = updated;
       if (onUpdated) onUpdated(updated);
-      toast.success($_('paymentReminders.markPaidSuccess'));
-    } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || $_('paymentReminders.markPaidError')));
-    } finally {
-      loading = false;
     }
   }
 
   async function escalate() {
     if (!confirm($_('paymentReminders.escalateConfirm'))) return;
-
-    try {
-      loading = true;
-      const updated = await api.post(`/payment-reminders/${reminderId}/escalate`, {
-        reason: null
-      });
-      reminder = await api.get(`/payment-reminders/${reminderId}`);
+    const result = await withErrorHandling({
+      action: async () => {
+        await api.post(`/payment-reminders/${reminderId}/escalate`, { reason: null });
+        return api.get(`/payment-reminders/${reminderId}`);
+      },
+      setLoading: (v) => loading = v,
+      successMessage: $_('paymentReminders.escalateSuccess'),
+      errorMessage: $_('paymentReminders.escalateError'),
+    });
+    if (result) {
+      reminder = result;
       if (onUpdated) onUpdated(reminder);
-      toast.success($_('paymentReminders.escalateSuccess'));
-    } catch (err: any) {
-      toast.error('Erreur: ' + (err.message || $_('paymentReminders.escalateError')));
-    } finally {
-      loading = false;
     }
   }
 
@@ -183,19 +181,9 @@
     return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
 
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
   function formatDate(dateString: string | null): string {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateTime(dateString);
   }
 </script>
 
@@ -217,7 +205,7 @@
   {@const levelInfo = getLevelInfo(reminder.level)}
   {@const statusBadge = getStatusBadge(reminder.status)}
 
-  <div class="space-y-6">
+  <div class="space-y-6" data-testid="payment-reminder-detail">
     <!-- Header -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
       <div class="border-l-4 {levelInfo.class} border-4 p-6">

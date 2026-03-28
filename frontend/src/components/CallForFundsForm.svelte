@@ -3,6 +3,7 @@
   import { _ } from '../lib/i18n';
   import { api, callForFundsApi } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   export let buildingId: string | undefined = undefined;
   export let onSuccess: () => void = () => {};
@@ -31,16 +32,13 @@
   });
 
   async function loadBuildings() {
-    try {
-      loading = true;
-      const response = await api.get('/buildings');
-      // API returns paginated response with { data: [...], pagination: {...} }
-      buildings = response.data || [];
-    } catch (error: any) {
-      toast.error(error.message || $_('callForFunds.loadError'));
-    } finally {
-      loading = false;
-    }
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => api.get('/buildings'),
+      errorMessage: $_('callForFunds.loadError'),
+    });
+    if (result) buildings = result.data || [];
+    loading = false;
   }
 
   async function handleSubmit(event: Event) {
@@ -66,9 +64,8 @@
       return;
     }
 
-    try {
-      submitting = true;
-      await callForFundsApi.create({
+    const result = await withErrorHandling({
+      action: () => callForFundsApi.create({
         building_id: selectedBuildingId,
         title,
         description,
@@ -77,19 +74,16 @@
         call_date: new Date(callDate).toISOString(),
         due_date: new Date(dueDate).toISOString(),
         account_code: accountCode || undefined,
-      });
-
-      toast.success($_('callForFunds.createSuccess'));
-      onSuccess();
-    } catch (error: any) {
-      toast.error(error.message || $_('callForFunds.createError'));
-    } finally {
-      submitting = false;
-    }
+      }),
+      setLoading: (v) => submitting = v,
+      successMessage: $_('callForFunds.createSuccess'),
+      errorMessage: $_('callForFunds.createError'),
+    });
+    if (result) onSuccess();
   }
 </script>
 
-<form on:submit={handleSubmit} class="space-y-6">
+<form on:submit={handleSubmit} class="space-y-6" data-testid="call-for-funds-form">
   <!-- Building Selection -->
   {#if !buildingId}
     <div>

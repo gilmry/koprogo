@@ -4,6 +4,7 @@
   import { authStore } from '../../stores/auth';
   import { apiEndpoint } from '../../lib/config';
   import { api } from '../../lib/api';
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   interface Stats {
     totalOrganizations: number;
@@ -40,10 +41,10 @@
   });
 
   async function loadStats() {
-    try {
-      loading = true;
-      statsError = '';
-      const data = await api.get<{
+    loading = true;
+    statsError = '';
+    const data = await withErrorHandling({
+      action: () => api.get<{
         total_organizations: number;
         total_users: number;
         total_buildings: number;
@@ -52,8 +53,9 @@
         total_units: number;
         total_expenses: number;
         total_meetings: number;
-      }>('/stats/dashboard');
-
+      }>('/stats/dashboard'),
+    });
+    if (data) {
       stats = {
         totalOrganizations: data.total_organizations,
         totalUsers: data.total_users,
@@ -64,12 +66,10 @@
         totalExpenses: data.total_expenses,
         totalMeetings: data.total_meetings,
       };
-    } catch (error) {
-      console.error('Failed to load stats:', error);
+    } else {
       statsError = $_('common.error.loadStats');
-    } finally {
-      loading = false;
     }
+    loading = false;
   }
 
   const handleSeedDemoData = async () => {
@@ -155,7 +155,7 @@
   };
 </script>
 
-<div>
+<div data-testid="admin-dashboard">
   <!-- Header -->
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">

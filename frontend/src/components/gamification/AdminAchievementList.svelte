@@ -9,6 +9,7 @@
   } from '../../lib/api/gamification';
   import AchievementForm from './AchievementForm.svelte';
   import { toast } from '../../stores/toast';
+  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
   export let organizationId: string;
 
@@ -33,15 +34,13 @@
       loading = false;
       return;
     }
-    try {
-      loading = true;
-      error = '';
-      achievements = await gamificationApi.listAchievements(organizationId);
-    } catch (err: any) {
-      error = err.message || $_('common.load_error');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => gamificationApi.listAchievements(organizationId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => achievements = data,
+      errorMessage: $_('common.load_error'),
+    });
   }
 
   function handleCreate() {
@@ -56,13 +55,12 @@
 
   async function handleDelete(achievement: Achievement) {
     if (!confirm($_('gamification.confirm_delete', { name: achievement.name }))) return;
-    try {
-      await gamificationApi.deleteAchievement(achievement.id);
-      toast.success($_('gamification.delete_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.delete_error'));
-    }
+    await withErrorHandling({
+      action: () => gamificationApi.deleteAchievement(achievement.id),
+      successMessage: $_('gamification.delete_success'),
+      errorMessage: $_('gamification.delete_error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   function handleSaved() {
@@ -99,7 +97,7 @@
   };
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="admin-achievement-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
@@ -107,6 +105,7 @@
         <p class="mt-1 text-sm text-gray-500">{$_('gamification.achievement_count', { count: achievements.length })}</p>
       </div>
       <button on:click={handleCreate}
+        data-testid="achievement-create-btn"
         class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700">
         + {$_('common.new')}
       </button>
@@ -149,12 +148,12 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="admin-achievement-loading">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
-    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
+    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md" data-testid="admin-achievement-error">
       <p class="text-sm text-red-800">{error}</p>
       <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
@@ -180,7 +179,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           {#each filteredAchievements as achievement (achievement.id)}
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-gray-50" data-testid="admin-achievement-row">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <span class="text-lg">{achievement.icon || '🏅'}</span>
@@ -214,10 +213,12 @@
               <td class="px-4 py-3 text-right">
                 <div class="flex justify-end gap-1">
                   <button on:click={() => handleEdit(achievement)}
+                    data-testid="achievement-edit-btn"
                     class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">
                     {$_('common.edit')}
                   </button>
                   <button on:click={() => handleDelete(achievement)}
+                    data-testid="achievement-delete-btn"
                     class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">
                     {$_('common.delete')}
                   </button>

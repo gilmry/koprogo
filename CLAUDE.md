@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **📅 For the complete development roadmap, see [ROADMAP_PAR_CAPACITES.rst](docs/ROADMAP_PAR_CAPACITES.rst)**
 
 The roadmap follows a **capacity-based progression** (not fixed dates):
-- **Jalon 0 ✅**: Fondations Techniques (COMPLÉTÉ - Architecture, 511 endpoints API, 57 entités domaine, 64 migrations, 110k+ LOC Rust)
+- **Jalon 0 ✅**: Fondations Techniques (COMPLÉTÉ - Architecture, 559 endpoints API, 59 entités domaine, 80 migrations, 137k+ LOC Rust)
 - **Jalon 1 🔒**: Sécurité & GDPR → Débloque 50-100 copros (beta publique)
 - **Jalon 2 📋**: Conformité Légale Belge → Débloque 200-500 copros (production)
 - **Jalon 3 🎯**: Features Différenciantes (Voting, SEL, Contractor) → Débloque 500-1,000 copros
@@ -24,6 +24,12 @@ All issues tracked in [GitHub Projects](https://github.com/users/gilmry/projects
 KoproGo is a SaaS property management platform built with **Hexagonal Architecture** (Ports & Adapters) and **Domain-Driven Design (DDD)**. The system emphasizes performance (P99 < 5ms latency), testability, security (GDPR compliant), and ecological sustainability (< 0.5g CO2/request target).
 
 **Stack**: Rust + Actix-web (backend), Astro + Svelte (frontend), PostgreSQL 15
+
+**Frontend Architecture**: 178 composants Svelte (islands), 22 API clients, 13 shared utils/validators/services (hexagonal light)
+
+**Testing**: 819 BDD scenarios (69 features), 49 E2E smoke tests, 12 Documentation Vivante scenarios
+
+**i18n**: 4 langues (FR/NL/EN/DE), ~2000 clés par locale, 73% couverture
 
 ## Security & Monitoring
 
@@ -1327,6 +1333,74 @@ Follow TDD (Test-Driven Development):
 **BDD Features**: Write Gherkin scenarios in `backend/tests/features/` for user-facing behaviors.
 
 **Integration Tests**: Use testcontainers for real PostgreSQL instances, ensuring tests are isolated.
+
+### Test-Driven Emergence: BDD ↔ E2E ↔ Vidéo
+
+L'application émerge des tests, pas l'inverse. Le même scénario métier est la **source de vérité unique** exprimée à 3 niveaux :
+
+```
+Scénario métier (narratif multi-rôles avec sémantique copropriété belge)
+  ↓ Gherkin
+BDD intégration (backend/tests/features/) — valide le contrat comportemental
+  ↓ même narratif
+E2E Documentation Vivante (frontend/tests/e2e/scenarios/) — prouve le parcours UI
+  ↓ vidéo générée
+Preuve visuelle (YouTube/stakeholders) — couronne la spec
+```
+
+**Alignement BDD ↔ E2E** : Pour chaque workflow, le BDD et le E2E partagent les mêmes acteurs, données et étapes :
+```
+BDD:  Given the syndic has created resolution "Travaux" / When "Alice" votes "Pour" / Then adopted
+E2E:  humanLogin(syndic) → create resolution → humanLogin(alice) → vote Pour → close → finalPause
+```
+
+Si le BDD passe mais le E2E échoue → bug frontend. Si les deux échouent → problème de spec/backend.
+
+**RACE matrix** : La plastique UI (thèmes, layouts, styling) est découplée de la fonctionnalité. Une matrice RACE (Reach, Act, Convert, Engage) mappe les segments utilisateurs aux préférences visuelles, appliquée comme couche CSS/thème au-dessus de la fonctionnalité testée.
+
+### E2E Scenarios: Sémantique Métier & Narratif Multi-Rôles
+
+Les scénarios Playwright "Documentation Vivante" (`frontend/tests/e2e/scenarios/`) servent de documentation vidéo (YouTube). Ils DOIVENT refléter la réalité métier d'une copropriété belge, pas juste exercer l'UI.
+
+**Règle fondamentale**: Toujours se demander "qui fait cette action dans une vraie copropriété ?"
+
+**Rôles et responsabilités métier**:
+- **Syndic**: Gère l'immeuble, crée les AG/résolutions, envoie les convocations, gère les devis/budgets, approuve les factures, assigne les tickets
+- **Copropriétaire (Owner)**: Signale les tickets, vote aux AG, ajoute ses moyens de paiement, participe aux échanges SEL, répond aux sondages, lit les annonces
+- **SuperAdmin**: Configuration plateforme, gestion orgs/users
+- **Comptable**: Rapports financiers, écritures comptables
+
+**Scénarios multi-rôles**: Quand un workflow implique plusieurs acteurs, le scénario doit faire `humanLogin` successivement dans le MÊME test :
+```typescript
+// Étape 1: Le syndic crée la résolution
+await humanLogin(page, syndicEmail, syndicPassword);
+// ... actions syndic ...
+await stepPause(page);
+
+// Étape 2: Le copropriétaire vote
+await page.goto("/login");
+await humanLogin(page, ownerEmail, ownerPassword);
+// ... actions copropriétaire ...
+await stepPause(page);
+
+// Étape 3: Le syndic clôture le scrutin
+await page.goto("/login");
+await humanLogin(page, syndicEmail, syndicPassword);
+// ... actions syndic ...
+await finalPause(page);
+```
+
+**Mapping fonctionnalité → rôle(s)**:
+| Feature | Qui agit |
+|---------|----------|
+| Ticket | Owner crée → Syndic assigne/gère |
+| Vote AG | Syndic crée résolution → Owner vote → Syndic clôture |
+| SEL (échanges) | Owner A offre ↔ Owner B demande (jamais le syndic) |
+| Sondages | Syndic publie → Owner répond |
+| Annonces | Syndic crée → Owner lit |
+| Convocations | Syndic envoie → Owner confirme présence |
+| Moyens paiement | Owner configure (son propre paiement) |
+| Devis/Budgets/Factures | Syndic gère (single role OK) |
 
 ## Frontend (Astro + Svelte)
 

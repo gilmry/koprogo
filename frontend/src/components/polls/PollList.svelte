@@ -7,6 +7,8 @@
     PollStatus,
     PollType,
   } from "../../lib/api/polls";
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState } from "../../lib/utils/error.utils";
   import PollStatusBadge from "./PollStatusBadge.svelte";
   import PollTypeBadge from "./PollTypeBadge.svelte";
 
@@ -24,21 +26,22 @@
   });
 
   async function loadPolls() {
-    try {
-      loading = true;
-      error = "";
-      if (showOnlyActive) {
-        polls = await pollsApi.listActive(buildingId);
-      } else {
-        polls = await pollsApi.list({ building_id: buildingId });
-      }
-      applyFilters();
-    } catch (err: any) {
-      error = err.message || $_("polls.list.loadingError");
-      console.error("Failed to load polls:", err);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: async () => {
+        if (showOnlyActive) {
+          return await pollsApi.listActive(buildingId);
+        } else {
+          return await pollsApi.list({ building_id: buildingId });
+        }
+      },
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => {
+        polls = data;
+        applyFilters();
+      },
+      errorMessage: $_("polls.list.loadingError"),
+    });
   }
 
   function applyFilters() {
@@ -49,14 +52,6 @@
   }
 
   $: if (statusFilter) applyFilters();
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  }
 
   function getParticipationColor(rate: number): string {
     if (rate >= 50) return "text-green-600";
@@ -70,7 +65,7 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="poll-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -79,6 +74,7 @@
       <a
         href="/polls/new?building={buildingId}"
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+        data-testid="poll-create-button"
       >
         <span class="mr-2">➕</span>
         {$_("polls.list.newPoll")}
@@ -97,6 +93,7 @@
         <select
           bind:value={statusFilter}
           class="text-sm rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+          data-testid="poll-status-filter"
         >
           <option value="all">{$_("common.all")}</option>
           <option value={PollStatus.Draft}>{$_("polls.list.draft")}</option>
@@ -135,7 +132,7 @@
   {:else}
     <ul class="divide-y divide-gray-200">
       {#each filteredPolls as poll}
-        <li class="hover:bg-gray-50">
+        <li class="hover:bg-gray-50" data-testid="poll-card">
           <a href="/polls/detail?id={poll.id}" class="block px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
@@ -178,7 +175,7 @@
                   {#if poll.starts_at && poll.ends_at}
                     <span class="mx-2">•</span>
                     <span>
-                      📅 {formatDate(poll.starts_at)} → {formatDate(
+                      📅 {formatDateShort(poll.starts_at)} → {formatDateShort(
                         poll.ends_at,
                       )}
                     </span>
@@ -187,7 +184,7 @@
                   <!-- Created by -->
                   <span class="mx-2">•</span>
                   <span class="text-xs text-gray-400">
-                    {$_("polls.list.createdOn")} {formatDate(poll.created_at)}
+                    {$_("polls.list.createdOn")} {formatDateShort(poll.created_at)}
                   </span>
                 </div>
 

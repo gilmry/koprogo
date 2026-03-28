@@ -8,6 +8,7 @@
     AchievementTier,
   } from '../../lib/api/gamification';
   import { toast } from '../../stores/toast';
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let organizationId: string;
   export let achievement: Achievement | null = null;
@@ -66,36 +67,31 @@
       return;
     }
 
-    try {
-      saving = true;
-      const data = {
-        organization_id: organizationId,
-        name: title.trim(),
-        description: description.trim(),
-        category,
-        tier,
-        icon: icon || '🏅',
-        points_value: pointsValue,
-        is_secret: isSecret,
-        is_repeatable: isRepeatable,
-        display_order: displayOrder,
-        requirements: '{}',
-      };
+    const data = {
+      organization_id: organizationId,
+      name: title.trim(),
+      description: description.trim(),
+      category,
+      tier,
+      icon: icon || '🏅',
+      points_value: pointsValue,
+      is_secret: isSecret,
+      is_repeatable: isRepeatable,
+      display_order: displayOrder,
+      requirements: '{}',
+    };
 
-      let result: Achievement;
-      if (achievement) {
-        result = await gamificationApi.updateAchievement(achievement.id, data);
-        toast.success($_('gamification.updateSuccess', { values: { name: title.trim() } }));
-      } else {
-        result = await gamificationApi.createAchievement(data);
-        toast.success($_('gamification.createSuccess', { values: { name: title.trim() } }));
-      }
-      dispatch('saved', result);
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.saveError'));
-    } finally {
-      saving = false;
-    }
+    await withErrorHandling({
+      action: () => achievement
+        ? gamificationApi.updateAchievement(achievement.id, data)
+        : gamificationApi.createAchievement(data),
+      setLoading: (v) => saving = v,
+      successMessage: achievement
+        ? $_('gamification.updateSuccess', { values: { name: title.trim() } })
+        : $_('gamification.createSuccess', { values: { name: title.trim() } }),
+      errorMessage: $_('gamification.saveError'),
+      onSuccess: (result) => dispatch('saved', result),
+    });
   }
 
   function handleCancel() {
@@ -103,11 +99,12 @@
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+<form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="achievement-form">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="md:col-span-2">
       <label for="ach-name" class="block text-sm font-medium text-gray-700">{$_('common.name')} *</label>
       <input id="ach-name" type="text" bind:value={title} required
+        data-testid="achievement-name-input"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
         placeholder={$_('gamification.namePlaceholder')} />
       <p class="mt-1 text-xs text-gray-500">{$_('gamification.nameHelp')}</p>
@@ -116,6 +113,7 @@
     <div class="md:col-span-2">
       <label for="ach-desc" class="block text-sm font-medium text-gray-700">{$_('common.description')} *</label>
       <textarea id="ach-desc" bind:value={description} rows="2"
+        data-testid="achievement-description-input"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
         placeholder={$_('gamification.descriptionPlaceholder')}></textarea>
       <p class="mt-1 text-xs text-gray-500">{$_('gamification.descriptionHelp')}</p>
@@ -183,6 +181,7 @@
       {$_('common.cancel')}
     </button>
     <button type="submit" disabled={saving}
+      data-testid="achievement-submit-btn"
       class="px-4 py-2 text-sm font-medium text-white bg-amber-600 border border-transparent rounded-md hover:bg-amber-700 disabled:opacity-50">
       {#if saving}
         {$_('common.saving')}

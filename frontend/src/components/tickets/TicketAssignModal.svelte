@@ -1,6 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from "svelte";
+  import { _ } from '../../lib/i18n';
   import { toast } from "../../stores/toast";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
   import Modal from "../ui/Modal.svelte";
   import FormInput from "../ui/FormInput.svelte";
   import Button from "../ui/Button.svelte";
@@ -15,19 +17,18 @@
 
   async function handleSubmit() {
     if (!contractorId || !contractorId.trim()) {
-      toast.error("Please enter a contractor ID");
+      toast.error($_("tickets.enter_contractor_id"));
       return;
     }
 
-    try {
-      submitting = true;
-      dispatch("assigned", { contractorId: contractorId.trim() });
-      handleClose();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to assign ticket");
-    } finally {
-      submitting = false;
-    }
+    await withErrorHandling({
+      action: async () => {
+        dispatch("assigned", { contractorId: contractorId.trim() });
+      },
+      setLoading: (v) => submitting = v,
+      errorMessage: $_("tickets.assign_failed"),
+    });
+    handleClose();
   }
 
   function handleClose() {
@@ -37,35 +38,34 @@
   }
 </script>
 
-<Modal isOpen={open} on:close={handleClose} title="Assign Ticket to Contractor">
-  <form on:submit|preventDefault={handleSubmit}>
+<Modal isOpen={open} on:close={handleClose} title={$_("tickets.assign_to_contractor")}>
+  <form on:submit|preventDefault={handleSubmit} data-testid="ticket-assign-form">
     <div class="space-y-4">
-      <p class="text-sm text-gray-600">
-        Enter the contractor's user ID to assign this ticket. The contractor
-        will be notified and can start work.
+      <p class="text-sm text-gray-600" data-testid="ticket-assign-description">
+        {$_("tickets.assign_description")}
       </p>
 
       <FormInput
-        label="Contractor ID"
+        label={$_("tickets.contractor_id")}
         bind:value={contractorId}
         required
-        placeholder="Enter contractor user ID"
+        placeholder={$_("tickets.contractor_id_placeholder")}
+        data-testid="ticket-contractor-input"
       />
 
       <!-- Note: In a real implementation, this would be a searchable dropdown
            showing available contractors with their names, skills, ratings, etc. -->
-      <p class="text-xs text-gray-500">
-        💡 Tip: In the future, this will be a searchable dropdown of available
-        contractors with their specialties and ratings.
+      <p class="text-xs text-gray-500" data-testid="ticket-assign-tip">
+        {$_("tickets.assign_tip")}
       </p>
     </div>
 
     <div class="mt-6 flex justify-end space-x-3">
-      <Button type="button" variant="outline" on:click={handleClose}>
-        Cancel
+      <Button type="button" variant="outline" on:click={handleClose} data-testid="ticket-assign-cancel-btn">
+        {$_("common.cancel")}
       </Button>
-      <Button type="submit" loading={submitting}>
-        Assign Ticket
+      <Button type="submit" loading={submitting} data-testid="ticket-assign-submit-btn">
+        {$_("tickets.assign_ticket")}
       </Button>
     </div>
   </form>

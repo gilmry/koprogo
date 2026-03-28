@@ -4,6 +4,9 @@
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
   import InvoiceLineItems from './InvoiceLineItems.svelte';
+  import { todayISO, defaultDueDate, toISODateNoon } from '../lib/utils/date.utils';
+  import { calculateVAT as calcVAT, formatCurrency, aggregateLineItems } from '../lib/utils/finance.utils';
+  import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
 
   export let buildingId: string = '';
   export let organizationId: string = ''; // Organization ID for multi-tenant
@@ -63,13 +66,8 @@
   ];
 
   onMount(async () => {
-    // Set default dates
-    const today = new Date().toISOString().split('T')[0];
-    invoiceDate = today;
-
-    const nextMonth = new Date();
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    dueDate = nextMonth.toISOString().split('T')[0];
+    invoiceDate = todayISO();
+    dueDate = defaultDueDate();
 
     // Load buildings if no buildingId provided
     if (!buildingId || buildingId === '') {
@@ -87,69 +85,65 @@
   });
 
   async function loadBuildings() {
-    try {
-      const response = await api.get('/buildings');
-      const data = Array.isArray(response) ? response : [];
-      buildings = data;
-      if (buildings.length > 0 && !selectedBuildingId) {
-        selectedBuildingId = buildings[0].id;
-      }
-    } catch (err: any) {
-      console.error('Failed to load buildings:', err);
-    }
+    await withErrorHandling({
+      action: async () => {
+        const response = await api.get('/buildings');
+        const data = Array.isArray(response) ? response : [];
+        buildings = data;
+        if (buildings.length > 0 && !selectedBuildingId) {
+          selectedBuildingId = buildings[0].id;
+        }
+      },
+      errorMessage: 'Failed to load buildings',
+    });
   }
 
   async function loadAccounts() {
-    try {
-      // Load expense accounts (class 6 - Charges)
-      const response = await api.get('/accounts');
-      const data = Array.isArray(response) ? response : [];
-      accounts = data
-        .filter((acc: any) => acc.code.startsWith('6')) // Only class 6 accounts
-        .sort((a: any, b: any) => a.code.localeCompare(b.code));
-    } catch (err: any) {
-      console.error('Failed to load accounts:', err);
-      // Non-blocking error - the field will just be empty
-    }
+    await withErrorHandling({
+      action: async () => {
+        const response = await api.get('/accounts');
+        const data = Array.isArray(response) ? response : [];
+        accounts = data
+          .filter((acc: any) => acc.code.startsWith('6'))
+          .sort((a: any, b: any) => a.code.localeCompare(b.code));
+      },
+      errorMessage: 'Failed to load accounts',
+    });
   }
 
   async function loadInvoice() {
-    try {
-      loading = true;
-      error = '';
-      const invoice = await api.get(`/invoices/${invoiceId}`);
-
-      // Populate form
-      description = invoice.description;
-      category = invoice.category;
-      amountExclVat = invoice.amount_excl_vat?.toString() || '';
-      vatRate = invoice.vat_rate?.toString() || '21.00';
-      invoiceDate = invoice.invoice_date?.split('T')[0] || '';
-      dueDate = invoice.due_date?.split('T')[0] || '';
-      supplier = invoice.supplier || '';
-      invoiceNumber = invoice.invoice_number || '';
-      accountCode = invoice.account_code || '';
-
-      calculateVAT();
-    } catch (err: any) {
-      error = err.message || $_('invoices.load_error');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => api.get(`/invoices/${invoiceId}`),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      errorMessage: $_('invoices.load_error'),
+      onSuccess: (invoice: any) => {
+        description = invoice.description;
+        category = invoice.category;
+        amountExclVat = invoice.amount_excl_vat?.toString() || '';
+        vatRate = invoice.vat_rate?.toString() || '21.00';
+        invoiceDate = invoice.invoice_date?.split('T')[0] || '';
+        dueDate = invoice.due_date?.split('T')[0] || '';
+        supplier = invoice.supplier || '';
+        invoiceNumber = invoice.invoice_number || '';
+        accountCode = invoice.account_code || '';
+        recalculateVAT();
+      },
+    });
   }
 
-  function calculateVAT() {
+  function recalculateVAT() {
     const ht = parseFloat(amountExclVat) || 0;
     const rate = parseFloat(vatRate) || 0;
-
-    vatAmount = Math.round((ht * rate) / 100 * 100) / 100;
-    amountInclVat = Math.round((ht + vatAmount) * 100) / 100;
+    const result = calcVAT(ht, rate);
+    vatAmount = result.vatAmount;
+    amountInclVat = result.amountInclVat;
   }
 
   // Recalculate VAT when amount or rate changes
   $: {
     if (amountExclVat || vatRate) {
-      calculateVAT();
+      recalculateVAT();
     }
   }
 
@@ -167,87 +161,89 @@
   }
 
   async function handleSubmit() {
-    try {
-      loading = true;
-      error = '';
+    loading = true;
+    error = '';
 
-      // Validation
-      if (mode === 'simple') {
-        if (!description.trim()) {
-          error = $_('invoices.description_required');
-          return;
-        }
-        if (parseFloat(amountExclVat) <= 0) {
-          error = $_('invoices.amount_required');
-          return;
-        }
-      } else {
-        if (lineItems.length === 0) {
-          error = $_('invoices.add_line_item');
-          return;
-        }
-        for (const item of lineItems) {
-          if (!item.description.trim()) {
-            error = $_('invoices.line_description_required');
-            return;
-          }
-        }
-      }
-
-      // Get organization_id from authStore if not provided
-      const orgId = organizationId || $authStore.user?.activeRole?.organizationId || '';
-
-      if (!orgId) {
-        error = $_('common.org_id_missing');
+    // Validation
+    if (mode === 'simple') {
+      if (!description.trim()) {
+        error = $_('invoices.description_required');
+        loading = false;
         return;
       }
-
-      let dto: any = {
-        organization_id: orgId,
-        building_id: selectedBuildingId,
-        description: mode === 'simple' ? description : lineItems.map(l => l.description).join(', '),
-        category,
-        expense_date: `${invoiceDate}T12:00:00Z`,
-        supplier: supplier || null,
-        invoice_number: invoiceNumber || null,
-        account_code: accountCode || null
-      };
-
-      if (mode === 'simple') {
-        const amountHT = parseFloat(amountExclVat);
-        const vat = parseFloat(vatRate);
-        const amountTTC = amountHT * (1 + vat / 100);
-        dto.amount = amountTTC; // Backend expects TTC (amount with VAT)
-        dto.amount_excl_vat = amountHT;
-        dto.vat_rate = vat;
-      } else {
-        // Calculate totals from line items
-        const totalHT = lineItems.reduce((sum, item) => sum + item.amount_excl_vat, 0);
-        const totalVAT = lineItems.reduce((sum, item) => sum + item.vat_amount, 0);
-        const totalTTC = totalHT + totalVAT;
-        dto.amount = totalTTC; // Backend expects TTC
-        dto.amount_excl_vat = totalHT;
-        dto.vat_rate = totalHT > 0 ? (totalVAT / totalHT) * 100 : 0;
-        dto.line_items = lineItems.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          vat_rate: item.vat_rate
-        }));
+      if (parseFloat(amountExclVat) <= 0) {
+        error = $_('invoices.amount_required');
+        loading = false;
+        return;
       }
-
-      if (isEditMode && invoiceId) {
-        const updated = await api.put(`/expenses/${invoiceId}`, dto);
-        if (onSaved) onSaved(updated);
-      } else {
-        const created = await api.post('/expenses', dto);
-        if (onSaved) onSaved(created);
+    } else {
+      if (lineItems.length === 0) {
+        error = $_('invoices.add_line_item');
+        loading = false;
+        return;
       }
-    } catch (err: any) {
-      error = err.message || $_('invoices.save_error');
-    } finally {
-      loading = false;
+      for (const item of lineItems) {
+        if (!item.description.trim()) {
+          error = $_('invoices.line_description_required');
+          loading = false;
+          return;
+        }
+      }
     }
+
+    // Get organization_id from authStore if not provided
+    const orgId = organizationId || $authStore.user?.activeRole?.organizationId || '';
+
+    if (!orgId) {
+      error = $_('common.org_id_missing');
+      loading = false;
+      return;
+    }
+
+    let dto: any = {
+      organization_id: orgId,
+      building_id: selectedBuildingId,
+      description: mode === 'simple' ? description : lineItems.map(l => l.description).join(', '),
+      category,
+      expense_date: toISODateNoon(invoiceDate),
+      supplier: supplier || null,
+      invoice_number: invoiceNumber || null,
+      account_code: accountCode || null
+    };
+
+    if (mode === 'simple') {
+      const amountHT = parseFloat(amountExclVat);
+      const vat = parseFloat(vatRate);
+      const result = calcVAT(amountHT, vat);
+      dto.amount = result.amountInclVat;
+      dto.amount_excl_vat = amountHT;
+      dto.vat_rate = vat;
+    } else {
+      const totals = aggregateLineItems(lineItems);
+      dto.amount = totals.totalTTC;
+      dto.amount_excl_vat = totals.totalHT;
+      dto.vat_rate = totals.totalHT > 0 ? (totals.totalVAT / totals.totalHT) * 100 : 0;
+      dto.line_items = lineItems.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        vat_rate: item.vat_rate
+      }));
+    }
+
+    await withErrorHandling({
+      action: async () => {
+        if (isEditMode && invoiceId) {
+          const updated = await api.put(`/expenses/${invoiceId}`, dto);
+          if (onSaved) onSaved(updated);
+        } else {
+          const created = await api.post('/expenses', dto);
+          if (onSaved) onSaved(created);
+        }
+      },
+      setLoading: (v) => loading = v,
+      errorMessage: $_('invoices.save_error'),
+    });
   }
 </script>
 
@@ -255,7 +251,7 @@
   <div class="form-header">
     <h2>{isEditMode ? $_('invoices.edit') : $_('invoices.create')} {$_('invoices.invoice')}</h2>
     {#if !isEditMode}
-      <button type="button" class="btn-mode-toggle" on:click={toggleMode} disabled={loading}>
+      <button type="button" class="btn-mode-toggle" on:click={toggleMode} disabled={loading} data-testid="mode-toggle">
         {mode === 'simple' ? $_('invoices.detailed_mode') : $_('invoices.simple_mode')}
       </button>
     {/if}
@@ -272,7 +268,7 @@
       {#if (!buildingId || buildingId === '') && buildings.length > 0}
       <div class="form-group">
         <label for="buildingSelect">{$_('common.building')} *</label>
-        <select id="buildingSelect" bind:value={selectedBuildingId} disabled={loading} required>
+        <select id="buildingSelect" bind:value={selectedBuildingId} disabled={loading} required data-testid="building-select">
           <option value="">{$_('invoices.select_building')}</option>
           {#each buildings as building}
             <option value={building.id}>{building.name} - {building.address}</option>
@@ -291,13 +287,14 @@
           placeholder={$_('invoices.description_placeholder')}
           required
           disabled={loading}
+          data-testid="description-input"
         />
       </div>
 
       <!-- Category -->
       <div class="form-group">
         <label for="category">{$_('common.category')}</label>
-        <select id="category" bind:value={category} disabled={loading}>
+        <select id="category" bind:value={category} disabled={loading} data-testid="category-select">
           {#each categories as cat}
             <option value={cat.value}>{cat.label}</option>
           {/each}
@@ -331,12 +328,13 @@
             placeholder="1000.00"
             required
             disabled={loading}
+            data-testid="amount-input"
           />
         </div>
 
         <div class="form-group">
           <label for="vatRate">{$_('invoices.vat_rate')}</label>
-          <select id="vatRate" bind:value={vatRate} disabled={loading}>
+          <select id="vatRate" bind:value={vatRate} disabled={loading} data-testid="vat-rate-select">
             {#each vatRates as rate}
               <option value={rate.value}>{rate.label}</option>
             {/each}
@@ -348,15 +346,15 @@
       <div class="calculated-amounts">
         <div class="amount-row">
           <span>{$_('invoices.amount_excl_vat')}:</span>
-          <strong>{parseFloat(amountExclVat || '0').toFixed(2)} €</strong>
+          <strong>{formatCurrency(parseFloat(amountExclVat || '0'))}</strong>
         </div>
         <div class="amount-row">
           <span>{$_('invoices.vat')} ({vatRate}%):</span>
-          <strong>{vatAmount.toFixed(2)} €</strong>
+          <strong>{formatCurrency(vatAmount)}</strong>
         </div>
         <div class="amount-row total">
           <span>{$_('invoices.amount_incl_vat')}:</span>
-          <strong>{amountInclVat.toFixed(2)} €</strong>
+          <strong>{formatCurrency(amountInclVat)}</strong>
         </div>
       </div>
     {:else}
@@ -364,7 +362,7 @@
       <!-- Category -->
       <div class="form-group">
         <label for="category">{$_('common.category')}</label>
-        <select id="category" bind:value={category} disabled={loading}>
+        <select id="category" bind:value={category} disabled={loading} data-testid="category-select">
           {#each categories as cat}
             <option value={cat.value}>{cat.label}</option>
           {/each}
@@ -402,6 +400,7 @@
           bind:value={invoiceDate}
           required
           disabled={loading}
+          data-testid="invoice-date-input"
         />
       </div>
 
@@ -412,6 +411,7 @@
           id="dueDate"
           bind:value={dueDate}
           disabled={loading}
+          data-testid="due-date-input"
         />
       </div>
     </div>
@@ -444,11 +444,11 @@
     <!-- Actions -->
     <div class="form-actions">
       {#if onCancel}
-        <button type="button" class="btn btn-secondary" on:click={onCancel} disabled={loading}>
+        <button type="button" class="btn btn-secondary" on:click={onCancel} disabled={loading} data-testid="cancel-button">
           {$_('common.cancel')}
         </button>
       {/if}
-      <button type="submit" class="btn btn-primary" disabled={loading}>
+      <button type="submit" class="btn btn-primary" disabled={loading} data-testid="submit-button">
         {#if loading}
           {$_('invoices.saving')}
         {:else}

@@ -11,6 +11,7 @@
     formatRating,
     getCreditStatusColor,
   } from "../../lib/api/local-exchanges";
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
   export let ownerId: string;
   export let buildingId: string;
@@ -20,16 +21,13 @@
   let error: string | null = null;
 
   async function loadBalance() {
-    try {
-      loading = true;
-      error = null;
-      balance = await localExchangesApi.getCreditBalance(ownerId, buildingId);
-    } catch (err: any) {
-      error = err.message || $_("exchanges.loadBalanceError");
-      console.error("Error loading credit balance:", err);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => localExchangesApi.getCreditBalance(ownerId, buildingId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => balance = data,
+      errorMessage: $_("exchanges.loadBalanceError"),
+    });
   }
 
   onMount(() => {
@@ -45,15 +43,15 @@
   $: balanceColor = balance ? getCreditStatusColor(balance.credit_status) : "";
 </script>
 
-<div class="bg-white shadow rounded-lg p-6">
+<div class="bg-white shadow rounded-lg p-6" data-testid="credit-balance">
   {#if loading}
-    <div class="text-center py-4">
+    <div class="text-center py-4" data-testid="credit-balance-loading">
       <div
         class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"
       ></div>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="credit-balance-error">
       <p class="text-red-800">❌ {error}</p>
     </div>
   {:else if balance}
@@ -71,7 +69,7 @@
       </div>
 
       <!-- Balance Display -->
-      <div class="text-center py-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
+      <div class="text-center py-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg" data-testid="credit-balance-display">
         <p class="text-sm font-medium text-gray-600 mb-1">{$_("exchanges.currentBalance")}</p>
         <p class="text-4xl font-bold {balanceColor}">
           {balance.balance > 0 ? "+" : ""}{balance.balance}

@@ -8,6 +8,7 @@
     participationLevelColors,
     getCreditStatusColor,
   } from "../../lib/api/local-exchanges";
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
   export let buildingId: string;
   export let limit: number = 10;
@@ -17,16 +18,13 @@
   let error: string | null = null;
 
   async function loadLeaderboard() {
-    try {
-      loading = true;
-      error = null;
-      leaderboard = await localExchangesApi.getLeaderboard(buildingId, limit);
-    } catch (err: any) {
-      error = err.message || $_('exchanges.leaderboard_error');
-      console.error("Error loading leaderboard:", err);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => localExchangesApi.getLeaderboard(buildingId, limit),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => leaderboard = data,
+      errorMessage: $_('exchanges.leaderboard_error'),
+    });
   }
 
   onMount(() => {
@@ -34,19 +32,19 @@
   });
 </script>
 
-<div class="bg-white shadow rounded-lg p-6">
+<div class="bg-white shadow rounded-lg p-6" data-testid="leaderboard">
   <h3 class="text-lg font-semibold text-gray-900 mb-4">
     🏆 {$_('exchanges.leaderboard_title')}
   </h3>
 
   {#if loading}
-    <div class="text-center py-8">
+    <div class="text-center py-8" data-testid="leaderboard-loading">
       <div
         class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"
       ></div>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="leaderboard-error">
       <p class="text-red-800">❌ {error}</p>
     </div>
   {:else if leaderboard.length === 0}
@@ -62,6 +60,7 @@
         {@const balanceColor = getCreditStatusColor(owner.credit_status)}
 
         <div
+          data-testid="leaderboard-row"
           class="flex items-center gap-4 p-4 rounded-lg {isTopThree
             ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200'
             : 'bg-gray-50'}"

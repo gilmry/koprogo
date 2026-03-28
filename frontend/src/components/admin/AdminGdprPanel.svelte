@@ -2,8 +2,9 @@
   import { onMount } from 'svelte';
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
-  import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
+  import { formatDateTime } from '../../lib/utils/date.utils';
+  import { withErrorHandling } from '../../lib/utils/error.utils';
   import { UserRole } from '../../lib/types';
   import type {
     GdprExport,
@@ -27,7 +28,6 @@
   let auditLogsTotalPages = 1;
 
   onMount(async () => {
-    // Ensure auth store is initialized before loading users
     await authStore.init();
     await loadUsers();
   });
@@ -46,86 +46,67 @@
   }
 
   async function loadUsers() {
-    loading = true;
-    try {
-      const responseData = await api.get<{ data: User[] }>('/users');
+    const responseData = await withErrorHandling({
+      action: () => api.get<{ data: User[] }>('/users'),
+      setLoading: (v) => loading = v,
+      errorMessage: $_('admin.errors.failedToLoadUsers'),
+    });
+    if (responseData) {
       users = responseData.data || [];
       filteredUsers = users;
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : $_('admin.errors.failedToLoadUsers'),
-      );
-    } finally {
-      loading = false;
     }
   }
 
   async function handleAdminExport(userId: string, userEmail: string) {
-    loading = true;
     selectedUserId = userId;
     selectedUserEmail = userEmail;
 
-    try {
-      exportData = await api.get<GdprExport>(`/admin/gdpr/users/${userId}/export`);
+    const data = await withErrorHandling({
+      action: () => api.get<GdprExport>(`/admin/gdpr/users/${userId}/export`),
+      setLoading: (v) => loading = v,
+      successMessage: `Data exported for ${userEmail} - User will be notified`,
+      errorMessage: 'Failed to export data',
+    });
+    if (data) {
+      exportData = data;
       showExportModal = true;
-      toast.success(
-        `Data exported for ${userEmail} - User will be notified`,
-      );
-
-      // Reload audit logs after operation
       await loadAuditLogs();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to export data',
-      );
-    } finally {
-      loading = false;
     }
   }
 
   async function handleAdminErase(userId: string, userEmail: string) {
-    loading = true;
     selectedUserId = userId;
     selectedUserEmail = userEmail;
 
-    try {
-      erasureResult = await api.delete<GdprEraseResponse>(`/admin/gdpr/users/${userId}/erase`);
-      showEraseConfirmation = false;
-      toast.success(
-        `Data erased for ${userEmail} - User will be notified`,
-      );
-
-      // Reload users and audit logs
+    const result = await withErrorHandling({
+      action: () => api.delete<GdprEraseResponse>(`/admin/gdpr/users/${userId}/erase`),
+      setLoading: (v) => loading = v,
+      successMessage: `Data erased for ${userEmail} - User will be notified`,
+      errorMessage: 'Failed to erase data',
+    });
+    showEraseConfirmation = false;
+    if (result) {
+      erasureResult = result;
       await Promise.all([loadUsers(), loadAuditLogs()]);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to erase data',
-      );
-      showEraseConfirmation = false;
-    } finally {
-      loading = false;
     }
   }
 
   async function loadAuditLogs(page = 1) {
-    loading = true;
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        per_page: '20',
-        event_type: 'Gdpr',
-      });
+    const params = new URLSearchParams({
+      page: page.toString(),
+      per_page: '20',
+      event_type: 'Gdpr',
+    });
 
-      const data = await api.get<{ logs: any[]; total: number }>(`/admin/gdpr/audit-logs?${params}`);
+    const data = await withErrorHandling({
+      action: () => api.get<{ logs: any[]; total: number }>(`/admin/gdpr/audit-logs?${params}`),
+      setLoading: (v) => loading = v,
+      errorMessage: 'Failed to load audit logs',
+    });
+    if (data) {
       auditLogs = data.logs || [];
       auditLogsPage = page;
       auditLogsTotalPages = Math.ceil((data.total || 0) / 20);
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to load audit logs',
-      );
-    } finally {
-      loading = false;
     }
   }
 
@@ -401,7 +382,7 @@
               {#each auditLogs as log (log.id)}
                 <tr data-testid="admin-gdpr-audit-log-row">
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(log.timestamp).toLocaleString()}
+                    {formatDateTime(log.timestamp)}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="text-sm font-medium text-gray-900">
@@ -509,7 +490,7 @@
           <div class="mt-2 text-sm text-green-700">
             <p>{$_('admin.gdpr.user')}: {erasureResult.user_email}</p>
             <p>{$_('admin.gdpr.ownersAnonymized')}: {erasureResult.owners_anonymized}</p>
-            <p>{$_('common.timestamp')}: {new Date(erasureResult.anonymized_at).toLocaleString()}</p>
+            <p>{$_('common.timestamp')}: {formatDateTime(erasureResult.anonymized_at)}</p>
           </div>
           <button
             on:click={() => (erasureResult = null)}
@@ -544,7 +525,7 @@
                 <div>
                   <h4 class="font-semibold text-gray-700">{$_('admin.gdpr.exportDate')}:</h4>
                   <p class="text-sm text-gray-600">
-                    {new Date(exportData.export_date).toLocaleString()}
+                    {formatDateTime(exportData.export_date)}
                   </p>
                 </div>
 

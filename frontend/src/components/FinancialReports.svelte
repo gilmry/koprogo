@@ -3,6 +3,9 @@
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { formatCurrency } from "../lib/utils/finance.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   // Report type selection
   let reportType: 'balance-sheet' | 'income-statement' = 'balance-sheet';
@@ -28,16 +31,18 @@
   });
 
   async function loadBalanceSheet() {
-    try {
-      loading = true;
-      error = '';
-      balanceSheet = await api.get('/reports/balance-sheet');
-    } catch (err: any) {
-      error = err.message || $_('reports.balance_sheet_error');
-      console.error('Error loading balance sheet:', err);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    const result = await withErrorHandling({
+      action: () => api.get('/reports/balance-sheet'),
+      errorMessage: $_('reports.balance_sheet_error'),
+    });
+    if (result) {
+      balanceSheet = result;
+    } else {
+      error = $_('reports.balance_sheet_error');
     }
+    loading = false;
   }
 
   async function loadIncomeStatement() {
@@ -45,45 +50,28 @@
       error = $_('reports.select_period');
       return;
     }
-
-    try {
-      loading = true;
-      error = '';
-      // Convert YYYY-MM-DD to ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
-      const startISO = `${periodStart}T00:00:00Z`;
-      const endISO = `${periodEnd}T23:59:59Z`;
-      incomeStatement = await api.get(
+    loading = true;
+    error = '';
+    const startISO = `${periodStart}T00:00:00Z`;
+    const endISO = `${periodEnd}T23:59:59Z`;
+    const result = await withErrorHandling({
+      action: () => api.get(
         `/reports/income-statement?period_start=${startISO}&period_end=${endISO}`
-      );
-    } catch (err: any) {
-      error = err.message || $_('reports.income_statement_error');
-      console.error('Error loading income statement:', err);
-    } finally {
-      loading = false;
+      ),
+      errorMessage: $_('reports.income_statement_error'),
+    });
+    if (result) {
+      incomeStatement = result;
+    } else {
+      error = $_('reports.income_statement_error');
     }
+    loading = false;
   }
 
   function handleReportTypeChange() {
     error = '';
     balanceSheet = null;
     incomeStatement = null;
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
   }
 
   function exportToPDF() {
@@ -145,7 +133,7 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-testid="financial-reports">
   <!-- Report Type Selection -->
   <div class="bg-white rounded-lg shadow p-6">
     <h2 class="text-xl font-semibold text-gray-900 mb-4">{$_('reports.report_type')}</h2>

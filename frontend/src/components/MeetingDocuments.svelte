@@ -5,6 +5,8 @@
   import type { Document } from '../lib/types';
   import Button from './ui/Button.svelte';
   import { toast } from '../stores/toast';
+  import { formatDate } from '../lib/utils/date.utils';
+  import { withErrorHandling, withLoadingState } from '../lib/utils/error.utils';
 
   export let meetingId: string;
   export let meetingStatus: string;
@@ -14,7 +16,6 @@
   let error = '';
   let uploading = false;
 
-  // Upload form state
   let showUploadForm = false;
   let uploadFile: File | null = null;
   let uploadTitle = '';
@@ -26,16 +27,13 @@
   });
 
   async function loadDocuments() {
-    try {
-      loading = true;
-      error = '';
-      documents = await api.get<Document[]>(`/meetings/${meetingId}/documents`);
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('common.error_loading');
-      console.error('Error loading documents:', e);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => api.get<Document[]>(`/meetings/${meetingId}/documents`),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => { documents = data; },
+      errorMessage: $_('common.error_loading'),
+    });
   }
 
   function handleFileChange(event: Event) {
@@ -51,81 +49,67 @@
       return;
     }
 
-    try {
-      uploading = true;
-      error = '';
+    const file = uploadFile;
 
-      // Get user info and meeting details
-      const userInfo = await api.get<any>('/auth/me');
-      const buildingResponse = await api.get<any>(`/meetings/${meetingId}`);
-      const buildingId = buildingResponse.building_id;
+    await withErrorHandling({
+      action: async () => {
+        const userInfo = await api.get<any>('/auth/me');
+        const buildingResponse = await api.get<any>(`/meetings/${meetingId}`);
+        const buildingId = buildingResponse.building_id;
 
-      // Step 1: Upload document using api helper
-      const uploadedDoc = await api.uploadDocument({
-        file: uploadFile,
-        buildingId: buildingId,
-        documentType: uploadDocumentType as any,
-        title: uploadTitle,
-        description: uploadDescription || undefined,
-        uploadedBy: userInfo.id
-      });
+        const uploadedDoc = await api.uploadDocument({
+          file,
+          buildingId: buildingId,
+          documentType: uploadDocumentType as any,
+          title: uploadTitle,
+          description: uploadDescription || undefined,
+          uploadedBy: userInfo.id
+        });
 
-      // Step 2: Link document to meeting
-      await api.put(`/documents/${uploadedDoc.id}/link-meeting`, {
-        meeting_id: meetingId
-      });
+        await api.put(`/documents/${uploadedDoc.id}/link-meeting`, {
+          meeting_id: meetingId
+        });
 
-      // Reset form
-      uploadFile = null;
-      uploadTitle = '';
-      uploadDescription = '';
-      uploadDocumentType = 'MeetingMinutes';
-      showUploadForm = false;
-
-      // Reload documents
-      await loadDocuments();
-      toast.success($_('meetings.document_added'));
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('meetings.error_uploading');
-      console.error('Error uploading document:', e);
-      toast.error(`Erreur: ${error}`);
-    } finally {
-      uploading = false;
-    }
+        return uploadedDoc;
+      },
+      setLoading: (v) => uploading = v,
+      successMessage: $_('meetings.document_added'),
+      errorMessage: $_('meetings.error_uploading'),
+      onSuccess: () => {
+        uploadFile = null;
+        uploadTitle = '';
+        uploadDescription = '';
+        uploadDocumentType = 'MeetingMinutes';
+        showUploadForm = false;
+        loadDocuments();
+      },
+    });
   }
 
   async function handleDownload(documentId: string, title: string) {
-    try {
-      const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/documents/${documentId}/download`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+    await withErrorHandling({
+      action: async () => {
+        const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/documents/${documentId}/download`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error($_('meetings.error_downloading'));
-      }
+        if (!response.ok) {
+          throw new Error($_('meetings.error_downloading'));
+        }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = title;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (e) {
-      toast.error($_('meetings.error_downloading_document'));
-      console.error('Error downloading document:', e);
-    }
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = title;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      },
+      errorMessage: $_('meetings.error_downloading_document'),
     });
   }
 
@@ -165,7 +149,6 @@
     </div>
   {/if}
 
-  <!-- Upload Form -->
   {#if showUploadForm}
     <div class="bg-gray-50 rounded-lg p-4 mb-6">
       <h4 class="font-medium text-gray-900 mb-4">{$_('meetings.add_document')}</h4>
@@ -177,6 +160,7 @@
           <select
             bind:value={uploadDocumentType}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            data-testid="upload-document-type"
           >
             <option value="MeetingMinutes">{$_('meetings.doc_type_minutes')}</option>
             <option value="FinancialStatement">{$_('meetings.doc_type_financial')}</option>
@@ -197,6 +181,7 @@
             bind:value={uploadTitle}
             placeholder={$_('meetings.title_example')}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            data-testid="upload-title"
           />
         </div>
 
@@ -209,6 +194,7 @@
             rows="3"
             placeholder={$_('meetings.document_description')}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            data-testid="upload-description"
           />
         </div>
 
@@ -221,6 +207,7 @@
             on:change={handleFileChange}
             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            data-testid="upload-file"
           />
           {#if uploadFile}
             <p class="text-sm text-gray-500 mt-1">
@@ -241,9 +228,8 @@
     </div>
   {/if}
 
-  <!-- Documents List -->
   {#if loading}
-    <div class="text-center text-gray-500 py-8">
+    <div class="text-center text-gray-500 py-8" data-testid="meeting-documents-loading">
       <p>{$_('meetings.loading_documents')}</p>
     </div>
   {:else if documents.length === 0}
@@ -252,7 +238,7 @@
       <p class="text-sm mt-2">{$_('meetings.add_documents_help')}</p>
     </div>
   {:else}
-    <div class="space-y-3">
+    <div class="space-y-3" data-testid="document-list">
       {#each documents as doc (doc.id)}
         <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
           <div class="flex items-start justify-between">
@@ -272,7 +258,7 @@
                 <span>💾 {formatFileSize(doc.file_size)}</span>
               </div>
             </div>
-            <Button variant="outline" on:click={() => handleDownload(doc.id, doc.title)}>
+            <Button variant="outline" on:click={() => handleDownload(doc.id, doc.title)} data-testid="document-download-btn">
               {$_('common.download')}
             </Button>
           </div>

@@ -8,6 +8,8 @@
   import ResolutionList from './resolutions/ResolutionList.svelte';
   import ConvocationPanel from './convocations/ConvocationPanel.svelte';
   import { toast } from '../stores/toast';
+  import { formatDateTime } from '../lib/utils/date.utils';
+  import { withErrorHandling, withLoadingState } from '../lib/utils/error.utils';
 
   let meeting: Meeting | null = null;
   let building: Building | null = null;
@@ -29,25 +31,27 @@
   });
 
   async function loadMeeting() {
-    try {
-      loading = true;
-      error = '';
-      meeting = await api.get<Meeting>(`/meetings/${meetingId}`);
-
-      // Load building info
-      if (meeting && meeting.building_id) {
-        try {
-          building = await api.get<Building>(`/buildings/${meeting.building_id}`);
-        } catch (e) {
-          console.error('Error loading building:', e);
+    await withLoadingState({
+      action: async () => {
+        const m = await api.get<Meeting>(`/meetings/${meetingId}`);
+        let b: Building | null = null;
+        if (m && m.building_id) {
+          try {
+            b = await api.get<Building>(`/buildings/${m.building_id}`);
+          } catch (e) {
+            console.error('Error loading building:', e);
+          }
         }
-      }
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('meetings.error_loading_meeting');
-      console.error('Error loading meeting:', e);
-    } finally {
-      loading = false;
-    }
+        return { meeting: m, building: b };
+      },
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (result) => {
+        meeting = result.meeting;
+        building = result.building;
+      },
+      errorMessage: $_('meetings.error_loading_meeting'),
+    });
   }
 
   const handleGoBack = () => {
@@ -66,15 +70,12 @@
       return;
     }
 
-    try {
-      await api.post(`/meetings/${meeting.id}/complete`, { attendees_count: attendeesCount });
-      await loadMeeting();
-      toast.success($_('meetings.marked_completed'));
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : $_('common.error_updating');
-      toast.error(`Erreur: ${errorMsg}`);
-      console.error('Error completing meeting:', e);
-    }
+    await withErrorHandling({
+      action: () => api.post(`/meetings/${meeting!.id}/complete`, { attendees_count: attendeesCount }),
+      successMessage: $_('meetings.marked_completed'),
+      errorMessage: $_('common.error_updating'),
+      onSuccess: () => { loadMeeting(); },
+    });
   };
 
   const handleCancel = async () => {
@@ -84,15 +85,12 @@
       return;
     }
 
-    try {
-      await api.post(`/meetings/${meeting.id}/cancel`, {});
-      await loadMeeting();
-      toast.success($_('meetings.cancelled_success'));
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : $_('meetings.error_cancelling');
-      toast.error(`Erreur: ${errorMsg}`);
-      console.error('Error cancelling meeting:', e);
-    }
+    await withErrorHandling({
+      action: () => api.post(`/meetings/${meeting!.id}/cancel`, {}),
+      successMessage: $_('meetings.cancelled_success'),
+      errorMessage: $_('meetings.error_cancelling'),
+      onSuccess: () => { loadMeeting(); },
+    });
   };
 
   const handleReschedule = async () => {
@@ -101,35 +99,19 @@
     const newDate = prompt($_('meetings.prompt_new_date'));
     if (!newDate) return;
 
-    try {
-      // Parse and format the date as ISO 8601
-      const date = new Date(newDate);
-      if (isNaN(date.getTime())) {
-        toast.error($_('meetings.invalid_date_format'));
-        return;
-      }
-
-      await api.post(`/meetings/${meeting.id}/reschedule`, {
-        scheduled_date: date.toISOString()
-      });
-      await loadMeeting();
-      toast.success($_('meetings.rescheduled_success'));
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : $_('meetings.error_rescheduling');
-      toast.error(`Erreur: ${errorMsg}`);
-      console.error('Error rescheduling meeting:', e);
+    const date = new Date(newDate);
+    if (isNaN(date.getTime())) {
+      toast.error($_('meetings.invalid_date_format'));
+      return;
     }
-  };
 
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    await withErrorHandling({
+      action: () => api.post(`/meetings/${meeting!.id}/reschedule`, { scheduled_date: date.toISOString() }),
+      successMessage: $_('meetings.rescheduled_success'),
+      errorMessage: $_('meetings.error_rescheduling'),
+      onSuccess: () => { loadMeeting(); },
     });
-  }
+  };
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
@@ -155,7 +137,7 @@
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   {#if loading}
-    <div class="flex items-center justify-center min-h-screen">
+    <div class="flex items-center justify-center min-h-screen" data-testid="meeting-detail-loading">
       <div class="text-center">
         <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         <p class="mt-4 text-gray-600">{$_('common.loading')}</p>
@@ -171,7 +153,6 @@
       </Button>
     </div>
   {:else if meeting}
-    <!-- Header -->
     <div class="mb-8">
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-4">
@@ -185,17 +166,17 @@
         </div>
         <div class="flex gap-2">
           {#if meeting.status === 'Scheduled'}
-            <Button variant="primary" on:click={handleComplete}>
+            <Button variant="primary" on:click={handleComplete} data-testid="meeting-complete-btn">
               {$_('meetings.mark_completed')}
             </Button>
-            <Button variant="outline" on:click={handleCancel}>
+            <Button variant="outline" on:click={handleCancel} data-testid="meeting-cancel-btn">
               {$_('common.cancel')}
             </Button>
-            <Button variant="outline" on:click={handleReschedule}>
+            <Button variant="outline" on:click={handleReschedule} data-testid="meeting-reschedule-btn">
               {$_('meetings.reschedule')}
             </Button>
           {:else if meeting.status === 'Cancelled'}
-            <Button variant="primary" on:click={handleReschedule}>
+            <Button variant="primary" on:click={handleReschedule} data-testid="meeting-reschedule-btn">
               {$_('meetings.reschedule')}
             </Button>
           {/if}
@@ -203,28 +184,25 @@
       </div>
     </div>
 
-    <!-- Main Info Card -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
       <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-semibold text-white">{$_('meetings.general_info')}</h2>
-          <span class="px-3 py-1 rounded-full text-sm font-medium {getStatusBadge(meeting.status).class}">
+          <span class="px-3 py-1 rounded-full text-sm font-medium {getStatusBadge(meeting.status).class}" data-testid="meeting-status-badge">
             {getStatusBadge(meeting.status).label}
           </span>
         </div>
       </div>
       <div class="p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <!-- Type -->
-          <div>
+          <div data-testid="meeting-info-type">
             <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('meetings.meeting_type')}</h3>
             <p class="text-lg text-gray-900">{getMeetingTypeLabel(meeting.meeting_type)}</p>
           </div>
 
-          <!-- Date -->
-          <div>
+          <div data-testid="meeting-info-date">
             <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('meetings.date_time')}</h3>
-            <p class="text-lg text-gray-900">{formatDate(meeting.scheduled_date)}</p>
+            <p class="text-lg text-gray-900">{formatDateTime(meeting.scheduled_date)}</p>
             {#if isUpcoming(meeting.scheduled_date) && meeting.status === 'Scheduled'}
               <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full mt-1">
                 {$_('meetings.upcoming')}
@@ -232,15 +210,13 @@
             {/if}
           </div>
 
-          <!-- Location -->
-          <div>
+          <div data-testid="meeting-info-location">
             <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('meetings.location')}</h3>
             <p class="text-lg text-gray-900">{meeting.location}</p>
           </div>
 
-          <!-- Building -->
           {#if building}
-            <div>
+            <div data-testid="meeting-info-building">
               <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('meetings.building')}</h3>
               <a href="/building-detail?id={building.id}" class="text-lg text-primary-600 hover:text-primary-700 hover:underline">
                 {building.name}
@@ -250,23 +226,21 @@
           {/if}
 
           {#if meeting.attendees_count !== undefined && meeting.attendees_count !== null}
-            <div>
+            <div data-testid="meeting-info-attendees">
               <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('meetings.participants')}</h3>
               <p class="text-lg text-gray-900">{$_('meetings.participants_count', { values: { count: meeting.attendees_count } })}</p>
             </div>
           {/if}
 
-          <!-- Description -->
           {#if meeting.description}
-            <div class="md:col-span-2">
+            <div class="md:col-span-2" data-testid="meeting-info-description">
               <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('common.description')}</h3>
               <p class="text-gray-900 whitespace-pre-line">{meeting.description}</p>
             </div>
           {/if}
 
-          <!-- Agenda -->
           {#if meeting.agenda && meeting.agenda.length > 0}
-            <div class="md:col-span-2">
+            <div class="md:col-span-2" data-testid="meeting-info-agenda">
               <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">{$_('meetings.agenda')}</h3>
               <div class="bg-gray-50 rounded-lg p-4">
                 <ol class="list-decimal list-inside space-y-2">
@@ -283,17 +257,14 @@
       </div>
     </div>
 
-    <!-- Convocation Section -->
     <div class="mb-8">
       <ConvocationPanel meetingId={meetingId} meetingStatus={meeting.status} buildingId={meeting.building_id} />
     </div>
 
-    <!-- Resolutions & Votes Section -->
     <div class="mb-8">
       <ResolutionList meetingId={meetingId} meetingStatus={meeting.status} />
     </div>
 
-    <!-- Documents Section -->
     <div class="mb-8">
       <MeetingDocuments meetingId={meetingId} meetingStatus={meeting.status} />
     </div>

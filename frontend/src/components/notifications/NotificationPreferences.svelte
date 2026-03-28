@@ -7,6 +7,7 @@
     type NotificationPreference,
   } from "../../lib/api/notifications";
   import { toast } from "../../stores/toast";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let userId: string;
 
@@ -44,43 +45,38 @@
   });
 
   async function loadPreferences() {
-    try {
-      loading = true;
-      preferences = await notificationsApi.getPreferences(userId);
-    } catch (err: any) {
-      toast.error(err.message || $_("notifications.load_preferences_failed"));
-    } finally {
-      loading = false;
-    }
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => notificationsApi.getPreferences(userId),
+      errorMessage: $_("notifications.load_preferences_failed"),
+    });
+    if (result) preferences = result;
+    loading = false;
   }
 
   async function handleToggle(
     preference: NotificationPreference,
     field: "enabled" | "email_enabled" | "sms_enabled" | "push_enabled",
   ) {
-    try {
-      saving = true;
-      const updated = await notificationsApi.updatePreference(
+    const updated = await withErrorHandling({
+      action: () => notificationsApi.updatePreference(
         userId,
         preference.notification_type,
         { [field]: !(preference as any)[field] },
-      );
-
-      // Update local state
+      ),
+      setLoading: (v) => saving = v,
+      successMessage: $_("notifications.preference_updated"),
+      errorMessage: $_("notifications.update_preference_failed"),
+    });
+    if (updated) {
       preferences = preferences.map((p) =>
         p.id === preference.id ? updated : p,
       );
-
-      toast.success($_("notifications.preference_updated"));
-    } catch (err: any) {
-      toast.error(err.message || $_("notifications.update_preference_failed"));
-    } finally {
-      saving = false;
     }
   }
 </script>
 
-<div class="bg-white shadow rounded-lg">
+<div class="bg-white shadow rounded-lg" data-testid="notification-preferences">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-xl font-semibold text-gray-900">
       {$_("notifications.preferences")}

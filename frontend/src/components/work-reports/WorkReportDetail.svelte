@@ -11,6 +11,9 @@
   } from "../../lib/api/work-reports";
   import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
+  import { formatDate } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let isOpen = false;
   export let report: WorkReport;
@@ -66,9 +69,8 @@
       toast.error($_("workReports.titleAndContractorRequired"));
       return;
     }
-    try {
-      submitting = true;
-      const updated = await workReportsApi.update(report.id, {
+    const updated = await withErrorHandling({
+      action: () => workReportsApi.update(report.id, {
         title: form.title,
         description: form.description || undefined,
         work_type: form.work_type,
@@ -80,27 +82,28 @@
         invoice_number: form.invoice_number || undefined,
         warranty_type: form.warranty_type,
         notes: form.notes || undefined,
-      });
-      toast.success($_("workReports.updateSuccess"));
+      }),
+      setLoading: (v) => submitting = v,
+      successMessage: $_("workReports.updateSuccess"),
+      errorMessage: $_("common.updateError"),
+    });
+    if (updated) {
       report = updated;
       editMode = false;
       dispatch("updated", updated);
-    } catch (err: any) {
-      toast.error(err.message || $_("common.updateError"));
-    } finally {
-      submitting = false;
     }
   }
 
   async function handleDelete() {
     if (!confirm($_("workReports.deleteConfirm"))) return;
-    try {
-      await workReportsApi.delete(report.id);
-      toast.success($_("workReports.deleteSuccess"));
+    const result = await withErrorHandling({
+      action: () => workReportsApi.delete(report.id),
+      successMessage: $_("workReports.deleteSuccess"),
+      errorMessage: $_("workReports.deleteError"),
+    });
+    if (result !== undefined) {
       dispatch("deleted", report.id);
       handleClose();
-    } catch (err: any) {
-      toast.error(err.message || $_("workReports.deleteError"));
     }
   }
 
@@ -109,20 +112,7 @@
     dispatch("close");
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  }
 
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("fr-BE", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  }
 </script>
 
 <Modal {isOpen} title={editMode ? $_("workReports.editTitle") : $_("workReports.detailTitle")} size="lg" on:close={handleClose}>
@@ -147,12 +137,14 @@
             <button
               on:click={enterEditMode}
               class="px-3 py-1.5 text-sm text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition"
+              data-testid="edit-work-report-button"
             >
               {$_("common.edit")}
             </button>
             <button
               on:click={handleDelete}
               class="px-3 py-1.5 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition"
+              data-testid="delete-work-report-button"
             >
               {$_("common.delete")}
             </button>

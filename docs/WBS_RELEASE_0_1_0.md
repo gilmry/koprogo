@@ -5,6 +5,10 @@
 Première release officielle. Branche `release/0.1.0`, main stable pour GitOps.
 Avant d'écrire du code ou des tests, on fait un **audit sémantique** : chaque promesse métier des Jalons 0-3 est-elle spécifiée (BDD), implémentée (backend), câblée (frontend) et testée (E2E) ?
 
+> **Mise à jour 2026-03-28** : 12 scénarios Documentation Vivante écrits (6 passent).
+> Architecture hexagonale frontend (#343). Diagnostic multi-rôles (#345).
+> Stratégie Test-Driven Emergence (#346-#350). RFC RACE (#344).
+
 ---
 
 ## Stratégie de Test — Pyramide KoproGo
@@ -45,12 +49,13 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #78 | 2FA TOTP + rate limiting | two_factor_use_cases | ✅ two_factor | ✅ e2e_two_factor | ✅ settings | ✅ (api.ts) | ❌ |
 | #90 | GDPR Art 16,18,21 (rectify, restrict, marketing) | gdpr_use_cases | ✅ gdpr | ✅ e2e_gdpr | ✅ settings/gdpr | ✅ (api.ts) | ⚠️ Gdpr (partiel) |
 | #271 ✅ | Quorum 50%+ AG (Art 3.87§5) | meeting_use_cases | ✅ meetings | ✅ e2e_meetings | ✅ meetings | ✅ | ❌ |
-| #272 ✅ | 2e convocation si quorum non atteint | convocation_use_cases | ✅ convocations | ✅ e2e_convocations | ✅ convocations | ✅ | ❌ |
+| #272 ✅ | 2e convocation si quorum non atteint | convocation_use_cases | ✅ convocations | ✅ e2e_convocations | ✅ convocations | ✅ | ⚠️ Scen |
 | #273 ✅ | Réduction vote mandataire (Art 3.87§7) | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
 | #326 ✅ | GDPR Consent (Art. 7) | consent_use_cases | ✅ consent | ✅ e2e_consent | ✅ ConsentModal | ✅ Consent | ❌ |
 | #327 ✅ | Security Incidents (Art. 33) | security_incident_use_cases | ✅ | ✅ e2e_security_incidents | ⚠️ | ✅ SecurityIncidents | ❌ |
 | #328 ✅ | API Key Management | api_key_use_cases | ✅ | ✅ e2e_api_keys | ⚠️ | ✅ ApiKeys | ❌ |
 | #329 ✅ | GDPR Art. 30 Register | gdpr_art30_use_cases | ✅ | ✅ e2e_gdpr_art30 | ⚠️ | ⚠️ | ❌ |
+| #343 ✅ | Hexa frontend + testids + i18n | n/a | n/a | n/a | ✅ 105 composants | ✅ 22 clients | ⚠️ 6/12 |
 
 ### JALON 2 — Conformité Légale Belge 📋 (Milestone #7) — Tout fermé
 
@@ -73,6 +78,12 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #201 | Appels de fonds | call_for_funds_use_cases | ✅ call_for_funds | ✅ e2e_call_for_funds | ✅ call-for-funds | ✅ (api.ts) | ❌ |
 | #202 | Suivi versements propriétaires | owner_contribution_use_cases | ✅ owner_contributions | ✅ e2e_owner_contributions | ✅ owner-contributions | ✅ (api.ts) | ❌ |
 | #205 | Répartition charges | charge_distribution_use_cases | ✅ charge_distribution | ✅ e2e_charge_distribution | ⚠️ (API only) | ✅ charge-dist | ❌ |
+| #345 | Diagnostic multi-rôles | n/a | n/a | n/a | n/a | n/a | n/a |
+| #346 | Specs multi-rôles (8 workflows) | À faire | À faire | n/a | n/a | n/a | n/a |
+| #347 | Seeds faker + teardown | À faire | n/a | À faire | n/a | n/a | n/a |
+| #348 | BDD alignés multi-rôles | n/a | À faire | n/a | n/a | n/a | n/a |
+| #349 | E2E alignés multi-rôles | n/a | n/a | n/a | n/a | n/a | À faire |
+| #350 | Gaps légaux (procurations, 50%) | À faire | À faire | À faire | n/a | n/a | n/a |
 
 ### JALON 3 — Features Différenciantes 🎯 (Milestone #8)
 

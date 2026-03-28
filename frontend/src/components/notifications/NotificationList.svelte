@@ -7,6 +7,7 @@
   import { notificationStore } from "../../stores/notifications";
   import NotificationItem from "./NotificationItem.svelte";
   import { toast } from "../../stores/toast";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   let notifications: Notification[] = [];
   let loading = true;
@@ -17,28 +18,24 @@
   });
 
   async function loadNotifications() {
-    try {
-      loading = true;
-      if (filter === "unread") {
-        notifications = await notificationsApi.getUnread();
-      } else {
-        notifications = await notificationsApi.listMy();
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load notifications");
-    } finally {
-      loading = false;
-    }
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => filter === "unread"
+        ? notificationsApi.getUnread()
+        : notificationsApi.listMy(),
+      errorMessage: "Failed to load notifications",
+    });
+    if (result) notifications = result;
+    loading = false;
   }
 
   async function handleMarkAllRead() {
-    try {
-      await notificationStore.markAllAsRead();
-      toast.success("All notifications marked as read");
-      await loadNotifications();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to mark all as read");
-    }
+    await withErrorHandling({
+      action: () => notificationStore.markAllAsRead(),
+      successMessage: "All notifications marked as read",
+      errorMessage: "Failed to mark all as read",
+      onSuccess: () => loadNotifications(),
+    });
   }
 
   $: {
@@ -48,7 +45,7 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg">
+<div class="bg-white shadow rounded-lg" data-testid="notification-list">
   <!-- Header -->
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between mb-4">
@@ -63,6 +60,7 @@
           <button
             on:click={handleMarkAllRead}
             class="text-sm text-blue-600 hover:text-blue-700 font-medium"
+            data-testid="mark-all-read-button"
           >
             Mark all read
           </button>
@@ -103,6 +101,7 @@
       <div class="px-6 py-12 text-center text-gray-500">
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
+          data-testid="notification-list-spinner"
         ></div>
         <p class="mt-4">Loading notifications...</p>
       </div>

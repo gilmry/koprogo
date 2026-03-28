@@ -3,6 +3,7 @@
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import type { UnitOwner, Unit } from '../lib/types';
+  import { formatDate } from "../lib/utils/date.utils";
 
   export let ownerId: string;
   export let showHistory = false;
@@ -50,15 +51,6 @@
     return `${(percentage * 100).toFixed(2)}%`;
   }
 
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
-  }
-
   function getUnitTypeLabel(type: string): string {
     const labels: Record<string, string> = {
       'Apartment': $_('common.unit_type.apartment'),
@@ -81,7 +73,7 @@
   $: inactiveUnits = ownerUnits.filter(uo => !uo.is_active);
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="owner-units">
   {#if error}
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
       {error}

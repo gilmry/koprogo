@@ -4,6 +4,8 @@
   import { api } from '../../lib/api';
   import { toast } from '../../stores/toast';
   import type { Building, Owner, BoardMemberResponse } from '../../lib/types';
+  import { formatDate } from "../../lib/utils/date.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   interface Meeting {
     id: string;
@@ -37,67 +39,57 @@
   });
 
   async function loadBuildings() {
-    try {
-      loading = true;
-      const response = await api.get<{ data: Building[] }>('/buildings?per_page=100');
-      buildings = response.data;
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => api.get<{ data: Building[] }>('/buildings?per_page=100'),
+      errorMessage: $_('admin.errors.failedToLoadBuildings'),
+    });
+    if (result) {
+      buildings = result.data;
       if (buildings.length > 0) {
         selectedBuildingId = buildings[0].id;
         await loadBoardMembers();
       }
-      loading = false;
-    } catch (err) {
-      console.error('Error loading buildings:', err);
-      toast.error($_('admin.errors.failedToLoadBuildings'));
-      loading = false;
     }
+    loading = false;
   }
 
   async function loadBoardMembers() {
     if (!selectedBuildingId) return;
-
-    try {
-      loadingMembers = true;
-      boardMembers = await api.get<BoardMemberResponse[]>(
+    loadingMembers = true;
+    const result = await withErrorHandling({
+      action: () => api.get<BoardMemberResponse[]>(
         `/buildings/${selectedBuildingId}/board-members/active`
-      );
-      loadingMembers = false;
-    } catch (err) {
-      console.error('Error loading board members:', err);
-      toast.error($_('admin.errors.failedToLoadBoardMembers'));
-      loadingMembers = false;
-    }
+      ),
+      errorMessage: $_('admin.errors.failedToLoadBoardMembers'),
+    });
+    if (result) boardMembers = result;
+    loadingMembers = false;
   }
 
   async function loadOwners() {
-    try {
-      const response = await api.get<{ data: Owner[] }>('/owners?per_page=100');
-      owners = response.data;
-    } catch (err) {
-      console.error('Error loading owners:', err);
-      toast.error($_('admin.errors.failedToLoadOwners'));
-    }
+    const result = await withErrorHandling({
+      action: () => api.get<{ data: Owner[] }>('/owners?per_page=100'),
+      errorMessage: $_('admin.errors.failedToLoadOwners'),
+    });
+    if (result) owners = result.data;
   }
 
   async function loadMeetings() {
     if (!selectedBuildingId) return;
-
-    try {
-      const allMeetings = await api.get<Meeting[]>(
+    const allMeetings = await withErrorHandling({
+      action: () => api.get<Meeting[]>(
         `/buildings/${selectedBuildingId}/meetings?per_page=100`
-      );
-      // Filter to show only completed and scheduled meetings (not cancelled)
-      // Elections are typically recorded in completed meetings
-      // Note: API returns capitalized status values (Completed, Scheduled, Cancelled)
-      meetings = (allMeetings || []).filter(m => {
+      ),
+      errorMessage: $_('admin.errors.failedToLoadMeetings'),
+    });
+    if (allMeetings) {
+      meetings = allMeetings.filter(m => {
         const status = m.status.toLowerCase();
         return status === 'completed' || status === 'scheduled';
       });
-      // Sort by date descending (most recent first)
       meetings.sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime());
-    } catch (err) {
-      console.error('Error loading meetings:', err);
-      toast.error($_('admin.errors.failedToLoadMeetings'));
+    } else {
       meetings = [];
     }
   }
@@ -125,38 +117,33 @@
   }
 
   async function handleElect() {
-    try {
-      // Map form fields to API expected format
-      // Add time to dates (ISO 8601 format with timezone)
-      const payload = {
-        owner_id: electForm.owner_id,
-        building_id: electForm.building_id,
-        elected_by_meeting_id: electForm.meeting_id, // API expects elected_by_meeting_id
-        position: electForm.position,
-        mandate_start: `${electForm.mandate_start}T00:00:00Z`,
-        mandate_end: `${electForm.mandate_end}T23:59:59Z`,
-      };
-      await api.post('/board-members', payload);
-      toast.success($_('admin.board.memberElectedSuccessfully'));
+    const payload = {
+      owner_id: electForm.owner_id,
+      building_id: electForm.building_id,
+      elected_by_meeting_id: electForm.meeting_id,
+      position: electForm.position,
+      mandate_start: `${electForm.mandate_start}T00:00:00Z`,
+      mandate_end: `${electForm.mandate_end}T23:59:59Z`,
+    };
+    const result = await withErrorHandling({
+      action: () => api.post('/board-members', payload),
+      successMessage: $_('admin.board.memberElectedSuccessfully'),
+      errorMessage: $_('admin.board.electionError'),
+    });
+    if (result !== undefined) {
       closeElectModal();
       await loadBoardMembers();
-    } catch (err) {
-      console.error('Error electing board member:', err);
-      toast.error(err instanceof Error ? err.message : $_('admin.board.electionError'));
     }
   }
 
   async function handleRemove(memberId: string) {
     if (!confirm($_('admin.board.confirmRemove'))) return;
-
-    try {
-      await api.delete(`/board-members/${memberId}`);
-      toast.success($_('admin.board.memberRemovedSuccessfully'));
-      await loadBoardMembers();
-    } catch (err) {
-      console.error('Error removing board member:', err);
-      toast.error($_('admin.board.removalError'));
-    }
+    const result = await withErrorHandling({
+      action: () => api.delete(`/board-members/${memberId}`),
+      successMessage: $_('admin.board.memberRemovedSuccessfully'),
+      errorMessage: $_('admin.board.removalError'),
+    });
+    if (result !== undefined) await loadBoardMembers();
   }
 
   function getPositionLabel(position: string): string {
@@ -177,12 +164,10 @@
     return icons[position] || '🎯';
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR');
-  }
+
 </script>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" data-testid="board-management">
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900">{$_('admin.board.title')}</h1>
     <p class="mt-2 text-gray-600">{$_('admin.board.description')}</p>

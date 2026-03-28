@@ -3,6 +3,9 @@
   import { _ } from '../lib/i18n';
   import { callForFundsApi } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { formatCurrency } from "../lib/utils/finance.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   export let buildingId: string | undefined = undefined;
   export let statusFilter: string | undefined = undefined;
@@ -29,67 +32,43 @@
   });
 
   async function loadCalls() {
-    try {
-      loading = true;
-      calls = await callForFundsApi.list(buildingId);
-    } catch (error: any) {
-      toast.error(error.message || $_('callForFunds.loadError'));
-    } finally {
-      loading = false;
-    }
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => callForFundsApi.list(buildingId),
+      errorMessage: $_('callForFunds.loadError'),
+    });
+    if (result) calls = result;
+    loading = false;
   }
 
   async function handleSend(id: string) {
-    if (!confirm($_('callForFunds.sendConfirm'))) {
-      return;
-    }
-
-    try {
-      const result = await callForFundsApi.send(id);
-      toast.success($_('callForFunds.sendSuccess', { values: { count: result.contributions_generated } }));
-      await loadCalls();
-    } catch (error: any) {
-      toast.error(error.message || $_('callForFunds.sendError'));
-    }
+    if (!confirm($_('callForFunds.sendConfirm'))) return;
+    const result = await withErrorHandling({
+      action: () => callForFundsApi.send(id),
+      successMessage: $_('callForFunds.sendSuccess', { values: { count: 0 } }),
+      errorMessage: $_('callForFunds.sendError'),
+    });
+    if (result) await loadCalls();
   }
 
   async function handleCancel(id: string) {
-    if (!confirm($_('callForFunds.cancelConfirm'))) {
-      return;
-    }
-
-    try {
-      await callForFundsApi.cancel(id);
-      toast.success($_('callForFunds.cancelled'));
-      await loadCalls();
-    } catch (error: any) {
-      toast.error(error.message || $_('callForFunds.cancelError'));
-    }
+    if (!confirm($_('callForFunds.cancelConfirm'))) return;
+    const result = await withErrorHandling({
+      action: () => callForFundsApi.cancel(id),
+      successMessage: $_('callForFunds.cancelled'),
+      errorMessage: $_('callForFunds.cancelError'),
+    });
+    if (result !== undefined) await loadCalls();
   }
 
   async function handleDelete(id: string) {
-    if (!confirm($_('callForFunds.deleteConfirm'))) {
-      return;
-    }
-
-    try {
-      await callForFundsApi.delete(id);
-      toast.success($_('callForFunds.deleted'));
-      await loadCalls();
-    } catch (error: any) {
-      toast.error(error.message || $_('callForFunds.deleteError'));
-    }
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE');
-  }
-
-  function formatAmount(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(amount);
+    if (!confirm($_('callForFunds.deleteConfirm'))) return;
+    const result = await withErrorHandling({
+      action: () => callForFundsApi.delete(id),
+      successMessage: $_('callForFunds.deleted'),
+      errorMessage: $_('callForFunds.deleteError'),
+    });
+    if (result !== undefined) await loadCalls();
   }
 
   function getStatusBadgeClass(status: string): string {
@@ -125,7 +104,7 @@
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="call-for-funds-list">
   <div class="flex justify-between items-center">
     <h2 class="text-2xl font-bold text-gray-900">{$_('callForFunds.title')}</h2>
     <button
@@ -203,7 +182,7 @@
                 {getContributionTypeLabel(call.contribution_type)}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {formatAmount(call.total_amount)}
+                {formatCurrency(call.total_amount)}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {formatDate(call.call_date)}
