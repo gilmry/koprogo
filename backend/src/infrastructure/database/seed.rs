@@ -19,6 +19,14 @@ pub struct ScenarioWorldResult {
     pub users: Vec<ScenarioUserResult>,
     pub owners: Vec<ScenarioOwnerResult>,
     pub units: Vec<ScenarioUnitResult>,
+    pub building2_id: Uuid,
+    pub building2_name: String,
+    pub building2_owners: Vec<ScenarioOwnerResult>,
+    pub building2_units: Vec<ScenarioUnitResult>,
+    pub building3_id: Uuid,
+    pub building3_name: String,
+    pub building3_owners: Vec<ScenarioOwnerResult>,
+    pub building3_units: Vec<ScenarioUnitResult>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -3379,6 +3387,342 @@ impl DatabaseSeeder {
 
         log::info!("✅ 4 community members created");
 
+        // =====================================================================
+        // Building 2: Le Clos des Hirondelles (small, NO CdC, < 20 lots)
+        // =====================================================================
+        let building2_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#,
+            building2_id,
+            org_id,
+            "Le Clos des Hirondelles",
+            "8 Rue de la Station",
+            "Ixelles",
+            "1050",
+            "Belgique",
+            12,
+            2005,
+            "le-clos-des-hirondelles-ixelles",
+            now,
+            now
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create building 2 (Le Clos des Hirondelles): {}", e))?;
+
+        log::info!("✅ Building 2 created: Le Clos des Hirondelles (12 lots, no CdC)");
+
+        let mut building2_owners: Vec<ScenarioOwnerResult> = Vec::new();
+        let mut building2_units: Vec<ScenarioUnitResult> = Vec::new();
+
+        // Building 2 copropriétaires
+        struct Building2Persona {
+            first_name: &'static str,
+            last_name: &'static str,
+            email: &'static str,
+            password: &'static str,
+            unit_number: &'static str,
+            tantiemes: f64,
+        }
+
+        let building2_personas = vec![
+            Building2Persona {
+                first_name: "Yves",
+                last_name: "Lambert",
+                email: "yves@clos-hirondelles.be",
+                password: "yves123",
+                unit_number: "1A",
+                tantiemes: 350.0,
+            },
+            Building2Persona {
+                first_name: "Claire",
+                last_name: "Fontaine",
+                email: "claire@clos-hirondelles.be",
+                password: "claire123",
+                unit_number: "1B",
+                tantiemes: 300.0,
+            },
+            Building2Persona {
+                first_name: "Robert",
+                last_name: "Mertens",
+                email: "robert@clos-hirondelles.be",
+                password: "robert123",
+                unit_number: "2A",
+                tantiemes: 350.0,
+            },
+        ];
+
+        for persona in &building2_personas {
+            // Create user
+            let user_id = self
+                .create_demo_user(
+                    persona.email,
+                    persona.password,
+                    persona.first_name,
+                    persona.last_name,
+                    "owner",
+                    Some(org_id),
+                )
+                .await?;
+
+            users_result.push(ScenarioUserResult {
+                user_id,
+                email: persona.email.to_string(),
+                password: persona.password.to_string(),
+                role: "owner".to_string(),
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+            });
+
+            // Create owner record
+            let owner_id = self
+                .create_demo_owner(
+                    org_id,
+                    persona.first_name,
+                    persona.last_name,
+                    persona.email,
+                    "+32 400 00 00 00",
+                    "8 Rue de la Station",
+                    "Ixelles",
+                    "1050",
+                    "Belgique",
+                )
+                .await?;
+
+            // Link user to owner
+            sqlx::query("UPDATE owners SET user_id = $1 WHERE id = $2")
+                .bind(user_id)
+                .bind(owner_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| {
+                    format!(
+                        "Failed to link building2 owner {} to user: {}",
+                        persona.last_name, e
+                    )
+                })?;
+
+            building2_owners.push(ScenarioOwnerResult {
+                owner_id,
+                user_id,
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+                email: persona.email.to_string(),
+            });
+
+            // Create unit
+            let unit_id = self
+                .create_demo_unit(
+                    org_id,
+                    building2_id,
+                    None,
+                    persona.unit_number,
+                    "apartment",
+                    None,
+                    70.0,
+                    persona.tantiemes,
+                )
+                .await?;
+
+            // Create unit_owner relationship
+            self.create_demo_unit_owner(
+                unit_id,
+                owner_id,
+                1.0,  // 100% ownership
+                true, // primary contact
+                None, // active (no end_date)
+            )
+            .await?;
+
+            building2_units.push(ScenarioUnitResult {
+                unit_id,
+                unit_number: persona.unit_number.to_string(),
+                owner_id,
+                tantièmes: persona.tantiemes,
+            });
+        }
+
+        log::info!(
+            "✅ Building 2: {} copropriétaires created with {} units",
+            building2_personas.len(),
+            building2_units.len()
+        );
+
+        // =====================================================================
+        // Building 3: Les Terrasses de Flagey (medium, CdC obligatoire, >= 20 lots)
+        // =====================================================================
+        let building3_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#,
+            building3_id,
+            org_id,
+            "Les Terrasses de Flagey",
+            "25 Place Flagey",
+            "Ixelles",
+            "1050",
+            "Belgique",
+            48,
+            1990,
+            "les-terrasses-de-flagey-ixelles",
+            now,
+            now
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create building 3 (Les Terrasses de Flagey): {}", e))?;
+
+        log::info!("✅ Building 3 created: Les Terrasses de Flagey (48 lots, CdC obligatoire)");
+
+        let mut building3_owners: Vec<ScenarioOwnerResult> = Vec::new();
+        let mut building3_units: Vec<ScenarioUnitResult> = Vec::new();
+
+        // Building 3 copropriétaires
+        struct Building3Persona {
+            first_name: &'static str,
+            last_name: &'static str,
+            email: &'static str,
+            password: &'static str,
+            unit_number: &'static str,
+            tantiemes: f64,
+        }
+
+        let building3_personas = vec![
+            Building3Persona {
+                first_name: "Isabelle",
+                last_name: "Renard",
+                email: "isabelle@terrasses-flagey.be",
+                password: "isabelle123",
+                unit_number: "1A",
+                tantiemes: 450.0,
+            },
+            Building3Persona {
+                first_name: "Thomas",
+                last_name: "Berger",
+                email: "thomas@terrasses-flagey.be",
+                password: "thomas123",
+                unit_number: "2A",
+                tantiemes: 380.0,
+            },
+            Building3Persona {
+                first_name: "Aminata",
+                last_name: "Diallo",
+                email: "aminata@terrasses-flagey.be",
+                password: "aminata123",
+                unit_number: "3A",
+                tantiemes: 520.0,
+            },
+            Building3Persona {
+                first_name: "Victor",
+                last_name: "Claessens",
+                email: "victor@terrasses-flagey.be",
+                password: "victor123",
+                unit_number: "4A",
+                tantiemes: 400.0,
+            },
+        ];
+
+        for persona in &building3_personas {
+            // Create user
+            let user_id = self
+                .create_demo_user(
+                    persona.email,
+                    persona.password,
+                    persona.first_name,
+                    persona.last_name,
+                    "owner",
+                    Some(org_id),
+                )
+                .await?;
+
+            users_result.push(ScenarioUserResult {
+                user_id,
+                email: persona.email.to_string(),
+                password: persona.password.to_string(),
+                role: "owner".to_string(),
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+            });
+
+            // Create owner record
+            let owner_id = self
+                .create_demo_owner(
+                    org_id,
+                    persona.first_name,
+                    persona.last_name,
+                    persona.email,
+                    "+32 400 00 00 00",
+                    "25 Place Flagey",
+                    "Ixelles",
+                    "1050",
+                    "Belgique",
+                )
+                .await?;
+
+            // Link user to owner
+            sqlx::query("UPDATE owners SET user_id = $1 WHERE id = $2")
+                .bind(user_id)
+                .bind(owner_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| {
+                    format!(
+                        "Failed to link building3 owner {} to user: {}",
+                        persona.last_name, e
+                    )
+                })?;
+
+            building3_owners.push(ScenarioOwnerResult {
+                owner_id,
+                user_id,
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+                email: persona.email.to_string(),
+            });
+
+            // Create unit
+            let unit_id = self
+                .create_demo_unit(
+                    org_id,
+                    building3_id,
+                    None,
+                    persona.unit_number,
+                    "apartment",
+                    None,
+                    70.0,
+                    persona.tantiemes,
+                )
+                .await?;
+
+            // Create unit_owner relationship
+            self.create_demo_unit_owner(
+                unit_id,
+                owner_id,
+                1.0,  // 100% ownership
+                true, // primary contact
+                None, // active (no end_date)
+            )
+            .await?;
+
+            building3_units.push(ScenarioUnitResult {
+                unit_id,
+                unit_number: persona.unit_number.to_string(),
+                owner_id,
+                tantièmes: persona.tantiemes,
+            });
+        }
+
+        log::info!(
+            "✅ Building 3: {} copropriétaires created with {} units",
+            building3_personas.len(),
+            building3_units.len()
+        );
+
         // --- Meeting: AG Ordinaire 2026 — 2e convocation ---
         let meeting_date = (now + chrono::Duration::days(30))
             .format("%Y-%m-%d")
@@ -3434,6 +3778,14 @@ impl DatabaseSeeder {
             users: users_result,
             owners: owners_result,
             units: units_result,
+            building2_id,
+            building2_name: "Le Clos des Hirondelles".to_string(),
+            building2_owners,
+            building2_units,
+            building3_id,
+            building3_name: "Les Terrasses de Flagey".to_string(),
+            building3_owners,
+            building3_units,
         };
 
         log::info!("✅ Scenario world seeded successfully (Résidence du Parc Royal)");
