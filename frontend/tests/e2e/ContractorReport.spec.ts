@@ -6,7 +6,10 @@ import { test, expect } from "@playwright/test";
  * Tests the contractor report page accessible via magic link token.
  * This page does NOT require authentication — contractors access it
  * via a time-limited magic link (72h JWT).
- * Uses Traefik on http://localhost.
+ *
+ * The pages use query parameters (?token=xxx), not path segments.
+ * - /contractor-report/?token=xxx  (vanilla HTML/JS page)
+ * - /contractor/?token=xxx         (Astro+Svelte PWA page)
  */
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
@@ -15,13 +18,12 @@ test.describe("Contractor Report - Magic Link PWA", () => {
   test("should show error state for invalid magic link token", async ({
     page,
   }) => {
-    // Access contractor report with an invalid token
-    await page.goto("/contractor-report/invalid-token-12345");
+    // Access contractor report with an invalid token (query param format)
+    await page.goto("/contractor-report/?token=invalid-token-12345");
 
     // Should show the page (not a login redirect) with an error
     await expect(page.locator("body")).toBeVisible();
 
-    // The old-style page shows an error message for invalid tokens
     // Wait for the loading to complete and error to appear
     await page.waitForTimeout(3000);
 
@@ -39,14 +41,17 @@ test.describe("Contractor Report - Magic Link PWA", () => {
   test("should display the contractor report form elements", async ({
     page,
   }) => {
-    // Navigate to the form page (even with invalid token, the form HTML is rendered)
-    await page.goto("/contractor-report/test-token");
+    // Navigate to the form page with a token (form HTML is rendered server-side)
+    await page.goto("/contractor-report/?token=test-token");
 
     // The page should load without requiring authentication
     await expect(page.locator("body")).toBeVisible();
 
+    // Wait for the JS to run (loadReport() is called on page load)
+    await page.waitForTimeout(2000);
+
     // Check that the form elements exist in the DOM
-    // (they may be hidden until the report loads successfully)
+    // (they may be hidden via display:none until the report loads successfully)
     const formExists = await page.getByTestId("contractor-report-form").count();
     const dateInputExists = await page
       .getByTestId("contractor-report-date-input")
@@ -61,7 +66,7 @@ test.describe("Contractor Report - Magic Link PWA", () => {
       .getByTestId("contractor-report-submit-btn")
       .count();
 
-    // Form elements should exist in the DOM (present in HTML)
+    // Form elements should exist in the DOM (present in HTML even if hidden)
     expect(formExists + dateInputExists + nameInputExists).toBeGreaterThan(0);
   });
 
@@ -69,7 +74,7 @@ test.describe("Contractor Report - Magic Link PWA", () => {
     page,
   }) => {
     // Contractor report pages are public (magic link access)
-    await page.goto("/contractor-report/some-token");
+    await page.goto("/contractor-report/?token=some-token");
 
     // Wait for page to settle
     await page.waitForTimeout(2000);
@@ -83,7 +88,7 @@ test.describe("Contractor Report - Magic Link PWA", () => {
     page,
   }) => {
     // The /contractor/ page is the PWA-style contractor report form
-    await page.goto("/contractor/test-token-123");
+    await page.goto("/contractor/?token=test-token-123");
 
     await expect(page.locator("body")).toBeVisible();
 

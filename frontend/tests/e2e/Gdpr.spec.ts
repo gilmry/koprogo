@@ -11,7 +11,7 @@ import type { Page } from "@playwright/test";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-// Helper: Register and login a new user
+// Helper: Register and login a new user (with organization for proper auth)
 async function registerAndLogin(
   page: Page,
   role: string = "owner",
@@ -20,7 +20,26 @@ async function registerAndLogin(
   const email = `gdpr-test-${timestamp}@example.com`;
   const password = "test123456";
 
-  // Register via API
+  // Login as admin first to create an organization
+  const adminLoginResp = await page.request.post(`${API_BASE}/auth/login`, {
+    data: { email: "admin@koprogo.com", password: "admin123" },
+  });
+  const adminData = await adminLoginResp.json();
+  const adminToken = adminData.token;
+
+  // Create org for the user
+  const orgResp = await page.request.post(`${API_BASE}/organizations`, {
+    data: {
+      name: `GDPR Org ${timestamp}`,
+      slug: `gdpr-${timestamp}`,
+      contact_email: email,
+      subscription_plan: "professional",
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const org = await orgResp.json();
+
+  // Register via API with organization_id
   const response = await page.request.post(`${API_BASE}/auth/register`, {
     data: {
       email,
@@ -28,6 +47,7 @@ async function registerAndLogin(
       first_name: "GDPR",
       last_name: `Test${timestamp}`,
       role,
+      organization_id: org.id,
     },
   });
 
@@ -38,7 +58,7 @@ async function registerAndLogin(
     email,
     password,
     token: data.token,
-    userId: data.user.id,
+    userId: data.user?.id || data.id || data.user_id || "",
   };
 }
 

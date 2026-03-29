@@ -51,3 +51,6 @@ docs/_build/
 backend/uploads/*
 
 podcasts
+
+# Méthode Maury (livrables internes)
+Maury/
