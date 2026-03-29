@@ -135,8 +135,7 @@ mod tests {
             let records = self.records.lock().unwrap();
             Ok(records
                 .iter()
-                .filter(|r| r.user_id == user_id && r.consent_type == consent_type)
-                .last()
+                .rfind(|r| r.user_id == user_id && r.consent_type == consent_type)
                 .cloned())
         }
 
@@ -160,13 +159,11 @@ mod tests {
             let records = self.records.lock().unwrap();
             let privacy = records
                 .iter()
-                .filter(|r| r.user_id == user_id && r.consent_type == "privacy_policy")
-                .last()
+                .rfind(|r| r.user_id == user_id && r.consent_type == "privacy_policy")
                 .cloned();
             let terms = records
                 .iter()
-                .filter(|r| r.user_id == user_id && r.consent_type == "terms")
-                .last()
+                .rfind(|r| r.user_id == user_id && r.consent_type == "terms")
                 .cloned();
 
             Ok(ConsentStatus {

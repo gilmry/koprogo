@@ -313,8 +313,7 @@ mod tests {
         BuildingRepository, EnergyBillUploadRepository, EnergyCampaignRepository,
     };
     use crate::domain::entities::{
-        Building, CampaignStatus, CampaignType, ContractType, EnergyBillUpload, EnergyCampaign,
-        EnergyType, ProviderOffer,
+        Building, CampaignStatus, EnergyBillUpload, EnergyCampaign, EnergyType, ProviderOffer,
     };
     use async_trait::async_trait;
     use chrono::Utc;

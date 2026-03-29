@@ -764,7 +764,7 @@ mod tests {
     };
     use crate::domain::entities::{
         Achievement, AchievementCategory, AchievementTier, Challenge, ChallengeProgress,
-        ChallengeStatus, ChallengeType, User, UserAchievement, UserRole,
+        ChallengeStatus, ChallengeType, User, UserAchievement,
     };
     use async_trait::async_trait;
     use chrono::{Duration, Utc};
@@ -919,7 +919,7 @@ mod tests {
                 .filter(|u| u.user_id == user_id)
                 .cloned()
                 .collect();
-            v.sort_by(|a, b| b.earned_at.cmp(&a.earned_at));
+            v.sort_by_key(|a| std::cmp::Reverse(a.earned_at));
             v.truncate(limit as usize);
             Ok(v)
         }

@@ -497,7 +497,7 @@ mod tests {
     };
     use crate::domain::entities::{
         AttendanceStatus, Building, Convocation, ConvocationRecipient, ConvocationStatus,
-        ConvocationType, Meeting, MeetingType, Owner,
+        ConvocationType, Meeting, Owner,
     };
     use async_trait::async_trait;
     use chrono::{Duration, Utc};

@@ -891,7 +891,7 @@ mod tests {
         let building_id = Uuid::new_v4();
 
         // Create 3 tickets, transition them to different states
-        let t1 = create_ticket_helper(&use_cases, org_id, building_id).await; // stays Open
+        let _t1 = create_ticket_helper(&use_cases, org_id, building_id).await; // stays Open
         let t2 = create_ticket_helper(&use_cases, org_id, building_id).await;
         let t3 = create_ticket_helper(&use_cases, org_id, building_id).await;
 

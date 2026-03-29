@@ -193,7 +193,7 @@ mod tests {
     impl GridParticipationPort for MockGridPort {
         async fn check_consent(&self, owner_id: Uuid) -> Result<bool, GridError> {
             let map = self.consents.lock().unwrap();
-            Ok(map.get(&owner_id).map_or(false, |c| c.granted))
+            Ok(map.get(&owner_id).is_some_and(|c| c.granted))
         }
 
         async fn get_consent(&self, owner_id: Uuid) -> Result<Option<BoincConsent>, GridError> {

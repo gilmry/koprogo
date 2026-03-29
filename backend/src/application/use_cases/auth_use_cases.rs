@@ -486,7 +486,7 @@ impl AuthUseCases {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::ports::{RefreshTokenRepository, UserRepository, UserRoleRepository};
+    use crate::application::ports::{RefreshTokenRepository, UserRoleRepository};
     use crate::domain::entities::{RefreshToken, User, UserRole, UserRoleAssignment};
     use async_trait::async_trait;
     use mockall::mock;
@@ -565,7 +565,7 @@ mod tests {
         let org_id = Some(Uuid::new_v4());
         let user = make_user("login@example.com", "password123", org_id);
         let user_clone = user.clone();
-        let user_for_update = user.clone();
+        let _user_for_update = user.clone();
         let role = make_primary_role(user.id, org_id);
         let role_clone = role.clone();
 

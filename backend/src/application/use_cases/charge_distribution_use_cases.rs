@@ -303,9 +303,12 @@ mod tests {
 
     // ========== Mock UnitOwnerRepository ==========
 
+    /// (unit_id, owner_id, percentage) tuples grouped by building_id
+    type BuildingOwnerships = HashMap<Uuid, Vec<(Uuid, Uuid, f64)>>;
+
     struct MockUnitOwnerRepository {
         /// Stores active building ownerships: building_id -> Vec<(unit_id, owner_id, percentage)>
-        building_ownerships: Mutex<HashMap<Uuid, Vec<(Uuid, Uuid, f64)>>>,
+        building_ownerships: Mutex<BuildingOwnerships>,
     }
 
     impl MockUnitOwnerRepository {

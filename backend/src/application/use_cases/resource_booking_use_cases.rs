@@ -632,7 +632,7 @@ mod tests {
                         && matches!(b.status, BookingStatus::Pending | BookingStatus::Confirmed)
                         && b.start_time < end_time
                         && start_time < b.end_time
-                        && exclude_booking_id.map_or(true, |id| b.id != id)
+                        && exclude_booking_id.is_none_or(|id| b.id != id)
                 })
                 .cloned()
                 .collect())

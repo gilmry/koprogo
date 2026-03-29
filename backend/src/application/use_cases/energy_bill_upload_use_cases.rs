@@ -207,8 +207,7 @@ mod tests {
     use super::*;
     use crate::application::ports::{EnergyBillUploadRepository, EnergyCampaignRepository};
     use crate::domain::entities::{
-        CampaignStatus, CampaignType, ContractType, EnergyBillUpload, EnergyCampaign, EnergyType,
-        ProviderOffer,
+        CampaignStatus, EnergyBillUpload, EnergyCampaign, EnergyType, ProviderOffer,
     };
     use async_trait::async_trait;
     use chrono::Utc;

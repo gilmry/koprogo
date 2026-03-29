@@ -1063,7 +1063,7 @@ mod tests {
                 .filter(|b| b.building_id == building_id)
                 .cloned()
                 .collect();
-            balances.sort_by(|a, b| b.balance.cmp(&a.balance));
+            balances.sort_by_key(|a| std::cmp::Reverse(a.balance));
             balances.truncate(limit as usize);
             Ok(balances)
         }
