@@ -368,6 +368,10 @@ async fn main() -> std::io::Result<()> {
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone())
         .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone());
 
+    // Marketplace (Issue #276)
+    let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
+    let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
+
     // Consent (GDPR Art. 7)
     let consent_repo = Arc::new(PostgresConsentRepository::new(pool.clone()));
     let consent_use_cases =
@@ -434,6 +438,7 @@ async fn main() -> std::io::Result<()> {
         ag_session_use_cases,
         age_request_use_cases,
         contractor_report_use_cases,
+        service_provider_use_cases,
         consent_use_cases,
         audit_logger,
         email_service,

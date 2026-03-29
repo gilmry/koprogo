@@ -27,11 +27,11 @@ use koprogo_api::infrastructure::database::{
     PostgresOwnerRepository, PostgresPaymentMethodRepository, PostgresPaymentReminderRepository,
     PostgresPaymentRepository, PostgresPollRepository, PostgresPollVoteRepository,
     PostgresQuoteRepository, PostgresRefreshTokenRepository, PostgresResolutionRepository,
-    PostgresResourceBookingRepository, PostgresSharedObjectRepository, PostgresSkillRepository,
-    PostgresTechnicalInspectionRepository, PostgresTicketRepository, PostgresTwoFactorRepository,
-    PostgresUnitOwnerRepository, PostgresUnitRepository, PostgresUserAchievementRepository,
-    PostgresUserRepository, PostgresUserRoleRepository, PostgresVoteRepository,
-    PostgresWorkReportRepository,
+    PostgresResourceBookingRepository, PostgresServiceProviderRepository,
+    PostgresSharedObjectRepository, PostgresSkillRepository, PostgresTechnicalInspectionRepository,
+    PostgresTicketRepository, PostgresTwoFactorRepository, PostgresUnitOwnerRepository,
+    PostgresUnitRepository, PostgresUserAchievementRepository, PostgresUserRepository,
+    PostgresUserRoleRepository, PostgresVoteRepository, PostgresWorkReportRepository,
 };
 use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::grid::BoincGridAdapter;
@@ -373,6 +373,8 @@ pub async fn setup_test_db() -> (
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo);
     let contractor_report_repo = Arc::new(PostgresContractorReportRepository::new(pool.clone()));
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo);
+    let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
+    let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
 
     let mqtt_energy_adapter: Arc<dyn MqttEnergyPort> = Arc::new(NoopMqttAdapter);
     let boinc_iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
@@ -429,6 +431,7 @@ pub async fn setup_test_db() -> (
         ag_session_use_cases,
         age_request_use_cases,
         contractor_report_use_cases,
+        service_provider_use_cases,
         koprogo_api::application::use_cases::consent_use_cases::ConsentUseCases::new(
             std::sync::Arc::new(koprogo_api::infrastructure::database::repositories::PostgresConsentRepository::new(pool.clone())),
             std::sync::Arc::new(koprogo_api::infrastructure::database::repositories::PostgresAuditLogRepository::new(pool.clone())),

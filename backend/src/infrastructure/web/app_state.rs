@@ -11,9 +11,9 @@ use crate::application::use_cases::{
     JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases, MeetingUseCases, NoticeUseCases,
     NotificationUseCases, OwnerContributionUseCases, OwnerUseCases, PaymentMethodUseCases,
     PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases, QuoteUseCases,
-    ResolutionUseCases, ResourceBookingUseCases, SharedObjectUseCases, SkillUseCases,
-    TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases,
-    UnitUseCases, WorkReportUseCases,
+    ResolutionUseCases, ResourceBookingUseCases, ServiceProviderUseCases, SharedObjectUseCases,
+    SkillUseCases, TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases,
+    UnitOwnerUseCases, UnitUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -70,6 +70,7 @@ pub struct AppState {
     pub ag_session_use_cases: Arc<AgSessionUseCases>,
     pub age_request_use_cases: Arc<AgeRequestUseCases>,
     pub contractor_report_use_cases: Arc<ContractorReportUseCases>,
+    pub service_provider_use_cases: Arc<ServiceProviderUseCases>,
     pub consent_use_cases: Arc<ConsentUseCases>,
     pub audit_logger: Arc<AuditLogger>,
     pub email_service: Arc<EmailService>,
@@ -131,6 +132,7 @@ impl AppState {
         ag_session_use_cases: AgSessionUseCases,
         age_request_use_cases: AgeRequestUseCases,
         contractor_report_use_cases: ContractorReportUseCases,
+        service_provider_use_cases: ServiceProviderUseCases,
         consent_use_cases: ConsentUseCases,
         audit_logger: AuditLogger,
         email_service: EmailService,
@@ -188,6 +190,7 @@ impl AppState {
             ag_session_use_cases: Arc::new(ag_session_use_cases),
             age_request_use_cases: Arc::new(age_request_use_cases),
             contractor_report_use_cases: Arc::new(contractor_report_use_cases),
+            service_provider_use_cases: Arc::new(service_provider_use_cases),
             consent_use_cases: Arc::new(consent_use_cases),
             audit_logger: Arc::new(audit_logger),
             email_service: Arc::new(email_service),
