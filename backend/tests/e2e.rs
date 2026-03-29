@@ -331,6 +331,12 @@ async fn setup_test_db() -> (
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo);
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
     let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
+    let individual_member_repo = Arc::new(
+        koprogo_api::infrastructure::database::PostgresIndividualMemberRepository::new(
+            pool.clone(),
+        ),
+    );
+    let individual_member_use_cases = IndividualMemberUseCases::new(individual_member_repo);
 
     let mqtt_energy_adapter: Arc<dyn MqttEnergyPort> = Arc::new(NoopMqttAdapter);
     let boinc_iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
@@ -388,6 +394,7 @@ async fn setup_test_db() -> (
         age_request_use_cases,
         contractor_report_use_cases,
         service_provider_use_cases,
+        individual_member_use_cases,
         koprogo_api::application::use_cases::consent_use_cases::ConsentUseCases::new(
             std::sync::Arc::new(koprogo_api::infrastructure::database::repositories::PostgresConsentRepository::new(pool.clone())),
             std::sync::Arc::new(koprogo_api::infrastructure::database::repositories::PostgresAuditLogRepository::new(pool.clone())),

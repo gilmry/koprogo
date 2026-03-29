@@ -372,6 +372,10 @@ async fn main() -> std::io::Result<()> {
     let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
     let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
 
+    // Individual Members (Energy group buying extensions)
+    let individual_member_repo = Arc::new(PostgresIndividualMemberRepository::new(pool.clone()));
+    let individual_member_use_cases = IndividualMemberUseCases::new(individual_member_repo);
+
     // Consent (GDPR Art. 7)
     let consent_repo = Arc::new(PostgresConsentRepository::new(pool.clone()));
     let consent_use_cases =
@@ -439,6 +443,7 @@ async fn main() -> std::io::Result<()> {
         age_request_use_cases,
         contractor_report_use_cases,
         service_provider_use_cases,
+        individual_member_use_cases,
         consent_use_cases,
         audit_logger,
         email_service,
