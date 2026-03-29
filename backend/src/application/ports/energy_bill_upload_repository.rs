@@ -26,10 +26,8 @@ pub trait EnergyBillUploadRepository: Send + Sync {
     ) -> Result<Option<EnergyBillUpload>, String>;
 
     /// Find all uploads by the user who uploaded them
-    async fn find_by_uploaded_by(
-        &self,
-        uploaded_by: Uuid,
-    ) -> Result<Vec<EnergyBillUpload>, String>;
+    async fn find_by_uploaded_by(&self, uploaded_by: Uuid)
+        -> Result<Vec<EnergyBillUpload>, String>;
 
     /// Find uploads by building
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<EnergyBillUpload>, String>;
