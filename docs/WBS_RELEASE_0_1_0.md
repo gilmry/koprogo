@@ -5,7 +5,12 @@
 Première release officielle. Branche `release/0.1.0`, main stable pour GitOps.
 Avant d'écrire du code ou des tests, on fait un **audit sémantique** : chaque promesse métier des Jalons 0-3 est-elle spécifiée (BDD), implémentée (backend), câblée (frontend) et testée (E2E) ?
 
-> **Mise à jour 2026-03-28** : 12 scénarios Documentation Vivante écrits (6 passent).
+> **Mise à jour 2026-03-29** : Chaîne Test-Driven Emergence complète (#346-#350).
+> Specs multi-rôles (21 personas, 3 immeubles, 5014 lignes). Seeds faker+teardown.
+> 146 BDD workflow scenarios. 12 E2E avec seed+teardown. MajorityType Art. 3.88 (4 types).
+> CI: 1160 unit tests OK, clippy clean, npm audit 0 vulns. Issue #353 crowdlending R&D.
+>
+> **2026-03-28** : 12 scénarios Documentation Vivante écrits.
 > Architecture hexagonale frontend (#343). Diagnostic multi-rôles (#345).
 > Stratégie Test-Driven Emergence (#346-#350). RFC RACE (#344).
 

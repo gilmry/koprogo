@@ -2,12 +2,42 @@
 KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
 =========================================================
 
-:Version: 2.1
-:Date: 25 mars 2026
+:Version: 3.0
+:Date: 29 mars 2026
 :Methode: Domain-Driven Design + Behavior-Driven Development + Test-Driven Development + SOLID
 :Auteur: Claude Code (Audit automatise)
 :Statut: Document de reference technique
 :Couverture: Jalon 0 (complete) -> Jalon 7 (vision long terme)
+
+.. note::
+
+   **Mise a jour 2026-03-29** : Chaine Test-Driven Emergence complete (#346-#350).
+
+   **Specifications multi-roles** (#346, 5014 lignes) :
+   - Texte fondateur sociologie de la copropriete (dynamiques humaines, fatigue collective)
+   - 21 personas sur 3 immeubles (10 CP + 4 communaute + 3 pro + admin)
+   - 8 workflows multi-roles alignes sur le droit belge (Art. 3.87-3.92)
+   - Base legale : 4 majorites (Art. 3.88), veille juridique, sequence AGO/AGE
+
+   **Seeds backend** (#347) : 21 personas avec faker + teardown (POST/DELETE /seed/scenario/world)
+   3 immeubles : Residence du Parc Royal (182 lots, CdC), Le Clos des Hirondelles (12 lots, pas CdC),
+   Les Terrasses de Flagey (48 lots, CdC recent). Francois (syndic) + Gisele (comptable) gerent les 3.
+
+   **BDD workflow** (#348) : 146 scenarios multi-roles dans 8 feature files.
+   vote_ag_workflow (23 scenarios, 4 majorites), ticket_workflow (10), sel_workflow (14),
+   poll_workflow (11), notice_board_workflow (18). Enrichis : age_requests (+8), expenses (+7), convocations (+12).
+
+   **E2E scenarios** (#349) : 12 scenarios reecrits avec seed+teardown (-686 lignes de setup duplique).
+
+   **Gaps legaux** (#350) : MajorityType corrige (Absolute/TwoThirds/FourFifths/Unanimity),
+   abstentions exclues du calcul (sauf unanimite), voting_power 1000->10000 dix-milliemes.
+   28 tests unitaires resolution passent. Migration SQL pour renommer les valeurs existantes.
+
+   **CI fixes** : cargo fmt + clippy + prettier + npm audit 0 vulnerabilites.
+   Compilation --tests fixee (setup_test_db signature + ConsentUseCases manquant).
+
+   **Chiffres** : 1160 unit tests, 965+ BDD scenarios (819+146), 12 E2E scenarios,
+   559 endpoints, 59 entites, 80+ migrations, 137k+ LOC Rust.
 
 .. note::
 
