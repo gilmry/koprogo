@@ -243,9 +243,7 @@ impl MeetingMinutesExporter {
                 crate::domain::entities::MajorityType::FourFifths => {
                     "Majorité des 4/5 (Art. 3.88 §1, 2°)"
                 }
-                crate::domain::entities::MajorityType::Unanimity => {
-                    "Unanimité (Art. 3.88 §1, 3°)"
-                }
+                crate::domain::entities::MajorityType::Unanimity => "Unanimité (Art. 3.88 §1, 3°)",
             };
 
             current_layer.use_text(

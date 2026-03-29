@@ -59,6 +59,7 @@
     },
     "lodash": "4.17.23",
     "serialize-javascript": ">=7.0.3",
+    "yaml": ">=2.8.3",
     "devalue": ">=5.6.4",
     "vite": "^7.0.0",
     "@vite-pwa/astro": {

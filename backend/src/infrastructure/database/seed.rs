@@ -3221,10 +3221,7 @@ impl DatabaseSeeder {
                 .execute(&self.pool)
                 .await
                 .map_err(|e| {
-                    format!(
-                        "Failed to link owner {} to user: {}",
-                        persona.last_name, e
-                    )
+                    format!("Failed to link owner {} to user: {}", persona.last_name, e)
                 })?;
 
             owners_result.push(ScenarioOwnerResult {
@@ -3251,9 +3248,7 @@ impl DatabaseSeeder {
                     .await?;
 
                 self.create_demo_unit_owner(
-                    unit_id,
-                    owner_id,
-                    1.0,  // 100% ownership per unit
+                    unit_id, owner_id, 1.0,  // 100% ownership per unit
                     true, // primary contact
                     None, // active (no end_date)
                 )
@@ -3529,9 +3524,7 @@ impl DatabaseSeeder {
 
             // Create unit_owner relationship
             self.create_demo_unit_owner(
-                unit_id,
-                owner_id,
-                1.0,  // 100% ownership
+                unit_id, owner_id, 1.0,  // 100% ownership
                 true, // primary contact
                 None, // active (no end_date)
             )
@@ -3701,9 +3694,7 @@ impl DatabaseSeeder {
 
             // Create unit_owner relationship
             self.create_demo_unit_owner(
-                unit_id,
-                owner_id,
-                1.0,  // 100% ownership
+                unit_id, owner_id, 1.0,  // 100% ownership
                 true, // primary contact
                 None, // active (no end_date)
             )
@@ -3807,20 +3798,16 @@ impl DatabaseSeeder {
         .await
         .map_err(|e| format!("Failed to find scenario organization: {}", e))?;
 
-        let org_id = match org_id {
-            Some(id) => id,
-            None => {
-                return Ok(
+        let org_id =
+            match org_id {
+                Some(id) => id,
+                None => return Ok(
                     "ℹ️  No scenario world found to clear (residence-parc-royal-test not found)."
                         .to_string(),
-                )
-            }
-        };
+                ),
+            };
 
-        log::info!(
-            "Found scenario organization: {} — clearing data...",
-            org_id
-        );
+        log::info!("Found scenario organization: {} — clearing data...", org_id);
 
         // Delete in reverse FK order
 

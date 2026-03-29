@@ -14,8 +14,8 @@ pub enum ResolutionType {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum MajorityType {
-    /// >50% des présents/représentés, abstentions EXCLUES — Art. 3.88 §1 (DÉFAUT)
-    /// Comptes, budget, syndic, commissaire, entretien courant, travaux imposés par la loi
+    /// Plus de 50% des présents/représentés, abstentions EXCLUES — Art. 3.88 §1 (DÉFAUT).
+    /// Comptes, budget, syndic, commissaire, entretien courant, travaux imposés par la loi.
     Absolute,
     /// ≥2/3 des présents/représentés, abstentions EXCLUES — Art. 3.88 §1, 1°
     /// Modification statuts (jouissance/usage), travaux parties communes, mise en concurrence

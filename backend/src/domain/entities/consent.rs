@@ -94,8 +94,6 @@ pub struct ConsentStatus {
     pub terms_version: Option<String>,
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;

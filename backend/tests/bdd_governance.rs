@@ -741,9 +741,7 @@ async fn given_resolution_qualified_majority(
     } else {
         MajorityType::TwoThirds
     };
-    world
-        .create_resolution_helper(&title, majority)
-        .await;
+    world.create_resolution_helper(&title, majority).await;
     assert!(world.operation_success, "Failed to create resolution");
 }
 
