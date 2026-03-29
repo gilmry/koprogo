@@ -23,12 +23,25 @@ async function setupSyndicWithMeeting(page: import("@playwright/test").Page) {
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });
+  if (!meetingResp.ok()) {
+    // Fallback: if 2nd convocation creation fails, use original meeting
+    // (may fail on quorum check for resolution creation)
+    console.log(
+      `2nd convocation creation failed (${meetingResp.status()}), using original meeting`,
+    );
+    return {
+      token: ctx.token,
+      buildingId: ctx.buildingId,
+      meetingId: ctx.meetingId,
+      orgId: ctx.orgId,
+    };
+  }
   const meeting = await meetingResp.json();
 
   return {
     token: ctx.token,
     buildingId: ctx.buildingId,
-    meetingId: meeting.id || ctx.meetingId,
+    meetingId: meeting.id,
     orgId: ctx.orgId,
   };
 }

@@ -86,10 +86,10 @@ impl MeetingRepository for PostgresMeetingRepository {
                 id, organization_id, building_id, meeting_type, title, description,
                 scheduled_date, location, status, agenda, attendees_count,
                 quorum_validated, quorum_percentage, total_quotas, present_quotas,
-                created_at, updated_at
+                is_second_convocation, created_at, updated_at
             )
             VALUES ($1, $2, $3, CAST($4 AS meeting_type), $5, $6, $7, $8, CAST($9 AS meeting_status),
-                    $10, $11, $12, $13, $14, $15, $16, $17)
+                    $10, $11, $12, $13, $14, $15, $16, $17, $18)
             "#,
         )
         .bind(meeting.id)
@@ -107,6 +107,7 @@ impl MeetingRepository for PostgresMeetingRepository {
         .bind(meeting.quorum_percentage)
         .bind(meeting.total_quotas)
         .bind(meeting.present_quotas)
+        .bind(meeting.is_second_convocation)
         .bind(meeting.created_at)
         .bind(meeting.updated_at)
         .execute(&self.pool)
@@ -165,7 +166,8 @@ impl MeetingRepository for PostgresMeetingRepository {
                 quorum_percentage = $10,
                 total_quotas = $11,
                 present_quotas = $12,
-                updated_at = $13
+                is_second_convocation = $13,
+                updated_at = $14
             WHERE id = $1
             "#,
         )
@@ -181,6 +183,7 @@ impl MeetingRepository for PostgresMeetingRepository {
         .bind(meeting.quorum_percentage)
         .bind(meeting.total_quotas)
         .bind(meeting.present_quotas)
+        .bind(meeting.is_second_convocation)
         .bind(meeting.updated_at)
         .execute(&self.pool)
         .await
