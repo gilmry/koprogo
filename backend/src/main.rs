@@ -272,9 +272,12 @@ async fn main() -> std::io::Result<()> {
     let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client, oauth_redirect_uri);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
-    let payment_use_cases = PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
+    let payment_use_cases_arc = Arc::new(PaymentUseCases::new(
+        payment_repo.clone(),
+        payment_method_repo.clone(),
+    ));
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
-    let quote_use_cases = QuoteUseCases::new(quote_repo);
+    let quote_use_cases = QuoteUseCases::new(quote_repo.clone());
     let local_exchange_use_cases = LocalExchangeUseCases::new(
         local_exchange_repo,
         owner_credit_balance_repo.clone(),
@@ -362,7 +365,8 @@ async fn main() -> std::io::Result<()> {
     let ag_session_use_cases =
         AgSessionUseCases::new(ag_session_repo.clone(), meeting_repo.clone());
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo.clone());
-    let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone());
+    let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone())
+        .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone());
 
     // Consent (GDPR Art. 7)
     let consent_repo = Arc::new(PostgresConsentRepository::new(pool.clone()));
@@ -396,7 +400,7 @@ async fn main() -> std::io::Result<()> {
         ticket_use_cases,
         two_factor_use_cases,
         notification_use_cases,
-        payment_use_cases,
+        payment_use_cases_arc,
         payment_method_use_cases,
         poll_use_cases,
         quote_use_cases,

@@ -351,7 +351,7 @@ async fn setup_test_db() -> (
         ticket_use_cases,
         two_factor_use_cases,
         notification_use_cases,
-        payment_use_cases,
+        Arc::new(payment_use_cases),
         payment_method_use_cases,
         poll_use_cases,
         quote_use_cases,

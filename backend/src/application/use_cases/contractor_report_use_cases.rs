@@ -2,8 +2,12 @@ use crate::application::dto::contractor_report_dto::{
     ContractorReportResponseDto, CreateContractorReportDto, MagicLinkResponseDto, RejectReportDto,
     RequestCorrectionsDto, UpdateContractorReportDto,
 };
+use crate::application::dto::payment_dto::CreatePaymentRequest;
 use crate::application::ports::contractor_report_repository::ContractorReportRepository;
+use crate::application::ports::quote_repository::QuoteRepository;
+use crate::application::use_cases::PaymentUseCases;
 use crate::domain::entities::contractor_report::{ContractorReport, ContractorReportStatus};
+use crate::domain::entities::PaymentMethodType;
 use chrono::{Duration, Utc};
 use std::sync::Arc;
 use uuid::Uuid;
@@ -13,11 +17,27 @@ const MAGIC_LINK_VALIDITY_HOURS: i64 = 72;
 
 pub struct ContractorReportUseCases {
     pub repo: Arc<dyn ContractorReportRepository>,
+    pub quote_repo: Option<Arc<dyn QuoteRepository>>,
+    pub payment_use_cases: Option<Arc<PaymentUseCases>>,
 }
 
 impl ContractorReportUseCases {
     pub fn new(repo: Arc<dyn ContractorReportRepository>) -> Self {
-        Self { repo }
+        Self {
+            repo,
+            quote_repo: None,
+            payment_use_cases: None,
+        }
+    }
+
+    pub fn with_payment_support(
+        mut self,
+        quote_repo: Arc<dyn QuoteRepository>,
+        payment_use_cases: Arc<PaymentUseCases>,
+    ) -> Self {
+        self.quote_repo = Some(quote_repo);
+        self.payment_use_cases = Some(payment_use_cases);
+        self
     }
 
     /// Crée un nouveau rapport de travaux (B16-1)
@@ -208,8 +228,45 @@ impl ContractorReportUseCases {
         report.validate(validated_by)?;
         let saved = self.repo.update(&report).await?;
 
-        // TODO (B16-6) : déclencher paiement automatique si quote_id présent
-        // payment_use_cases.trigger_contractor_payment(saved.quote_id, saved.id).await?;
+        // B16-6: Trigger automatic payment if quote_id is present
+        if let Some(quote_id) = saved.quote_id {
+            if let (Some(quote_repo), Some(payment_uc)) =
+                (&self.quote_repo, &self.payment_use_cases)
+            {
+                if let Ok(Some(quote)) = quote_repo.find_by_id(quote_id).await {
+                    let amount_cents = (quote.amount_incl_vat * rust_decimal::Decimal::from(100))
+                        .to_string()
+                        .parse::<i64>()
+                        .unwrap_or(0);
+
+                    if amount_cents > 0 {
+                        let payment_req = CreatePaymentRequest {
+                            building_id: quote.building_id,
+                            owner_id: quote.contractor_id,
+                            expense_id: None,
+                            amount_cents,
+                            payment_method_type: PaymentMethodType::BankTransfer,
+                            payment_method_id: None,
+                            description: Some(format!(
+                                "Paiement prestataire — Rapport #{} validé (Devis {})",
+                                saved.id, quote.project_title
+                            )),
+                            metadata: Some(
+                                serde_json::json!({
+                                    "contractor_report_id": saved.id,
+                                    "quote_id": quote_id,
+                                })
+                                .to_string(),
+                            ),
+                        };
+                        // Fire-and-forget: payment creation failure should not block report validation
+                        let _ = payment_uc
+                            .create_payment(organization_id, payment_req)
+                            .await;
+                    }
+                }
+            }
+        }
 
         Ok(ContractorReportResponseDto::from(&saved))
     }
