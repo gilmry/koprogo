@@ -36,7 +36,7 @@ impl MeetingUseCases {
         &self,
         request: CreateMeetingRequest,
     ) -> Result<MeetingResponse, String> {
-        let meeting = Meeting::new(
+        let mut meeting = Meeting::new(
             request.organization_id,
             request.building_id,
             request.meeting_type,
@@ -45,6 +45,11 @@ impl MeetingUseCases {
             request.scheduled_date,
             request.location,
         )?;
+
+        // Art. 3.87 §5 CC: 2nd convocation skips quorum requirement
+        if request.is_second_convocation {
+            meeting.is_second_convocation = true;
+        }
 
         let created = self.repository.create(&meeting).await?;
         Ok(MeetingResponse::from(created))
@@ -313,6 +318,7 @@ mod tests {
             description: Some("Annual assembly".to_string()),
             scheduled_date: Utc::now() + Duration::days(30),
             location: "Salle communale".to_string(),
+            is_second_convocation: false,
         };
 
         let result = use_cases.create_meeting(request).await;
@@ -338,6 +344,7 @@ mod tests {
             description: None,
             scheduled_date: Utc::now() + Duration::days(30),
             location: "Salle communale".to_string(),
+            is_second_convocation: false,
         };
 
         let result = use_cases.create_meeting(request).await;
@@ -361,6 +368,7 @@ mod tests {
             description: None,
             scheduled_date: Utc::now() + Duration::days(15),
             location: "".to_string(),
+            is_second_convocation: false,
         };
 
         let result = use_cases.create_meeting(request).await;

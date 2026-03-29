@@ -422,6 +422,7 @@ pub async fn schedule_second_convocation(
         description: Some("Second convocation after quorum not reached".to_string()),
         scheduled_date: req.new_meeting_date,
         location: "Same as first meeting".to_string(),
+        is_second_convocation: true,
     };
 
     // Create the new meeting

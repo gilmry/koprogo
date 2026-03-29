@@ -59,9 +59,9 @@ impl EnergyBillUploadUseCases {
         self.upload_repo.find_by_campaign(campaign_id).await
     }
 
-    /// Get my uploads (for a specific unit)
-    pub async fn get_my_uploads(&self, unit_id: Uuid) -> Result<Vec<EnergyBillUpload>, String> {
-        self.upload_repo.find_by_unit(unit_id).await
+    /// Get my uploads (by the user who uploaded them)
+    pub async fn get_my_uploads(&self, uploaded_by: Uuid) -> Result<Vec<EnergyBillUpload>, String> {
+        self.upload_repo.find_by_uploaded_by(uploaded_by).await
     }
 
     /// Verify upload (manual verification by admin)
@@ -281,6 +281,18 @@ mod tests {
                 .values()
                 .find(|u| u.campaign_id == campaign_id && u.unit_id == unit_id)
                 .cloned())
+        }
+
+        async fn find_by_uploaded_by(
+            &self,
+            uploaded_by: Uuid,
+        ) -> Result<Vec<EnergyBillUpload>, String> {
+            let store = self.uploads.lock().unwrap();
+            Ok(store
+                .values()
+                .filter(|u| u.uploaded_by == uploaded_by)
+                .cloned()
+                .collect())
         }
 
         async fn find_by_building(

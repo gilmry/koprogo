@@ -93,6 +93,7 @@ async fn create_test_fixtures(
         description: Some("Testing resolution voting".to_string()),
         scheduled_date: Utc::now() + Duration::days(7),
         location: "Main Hall".to_string(),
+        is_second_convocation: false,
     };
 
     let meeting = app_state

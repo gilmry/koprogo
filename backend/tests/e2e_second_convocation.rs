@@ -66,6 +66,7 @@ async fn create_test_meeting(
         description: Some("Annual general assembly".to_string()),
         scheduled_date: Utc::now() + Duration::days(days_from_now),
         location: "Building Main Hall".to_string(),
+        is_second_convocation: true,
     };
 
     let meeting = app_state

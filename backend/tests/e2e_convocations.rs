@@ -54,6 +54,7 @@ async fn create_test_meeting(
         description: Some("Annual general assembly".to_string()),
         scheduled_date: meeting_date,
         location: "Building main hall".to_string(),
+        is_second_convocation: false,
     };
     let meeting = app_state
         .meeting_use_cases

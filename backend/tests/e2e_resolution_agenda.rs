@@ -65,6 +65,7 @@ async fn create_meeting_fixtures(
         description: Some("Testing agenda_item_index on resolutions".to_string()),
         scheduled_date: Utc::now() + Duration::days(14),
         location: "Conference Room".to_string(),
+        is_second_convocation: false,
     };
 
     let meeting = app_state

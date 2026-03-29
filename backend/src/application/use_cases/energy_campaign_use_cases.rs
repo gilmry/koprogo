@@ -510,6 +510,18 @@ mod tests {
                 .cloned())
         }
 
+        async fn find_by_uploaded_by(
+            &self,
+            uploaded_by: Uuid,
+        ) -> Result<Vec<EnergyBillUpload>, String> {
+            let store = self.uploads.lock().unwrap();
+            Ok(store
+                .values()
+                .filter(|u| u.uploaded_by == uploaded_by)
+                .cloned()
+                .collect())
+        }
+
         async fn find_by_building(
             &self,
             building_id: Uuid,

@@ -287,6 +287,66 @@ impl EnergyBillUploadRepository for PostgresEnergyBillUploadRepository {
         }))
     }
 
+    async fn find_by_uploaded_by(
+        &self,
+        uploaded_by: Uuid,
+    ) -> Result<Vec<EnergyBillUpload>, String> {
+        let rows = sqlx::query!(
+            r#"
+            SELECT
+                id, campaign_id, unit_id, building_id, organization_id,
+                bill_period_start, bill_period_end, total_kwh_encrypted, energy_type, provider, postal_code,
+                file_hash, file_path_encrypted, ocr_confidence, manually_verified,
+                uploaded_by, uploaded_at, verified_at, verified_by,
+                consent_timestamp, consent_ip, consent_user_agent, consent_signature_hash,
+                anonymized, retention_until, deleted_at, created_at, updated_at
+            FROM energy_bill_uploads
+            WHERE uploaded_by = $1
+            ORDER BY uploaded_at DESC
+            "#,
+            uploaded_by
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to find uploads by user: {}", e))?;
+
+        let uploads = rows
+            .into_iter()
+            .map(|r| EnergyBillUpload {
+                id: r.id,
+                campaign_id: r.campaign_id,
+                unit_id: r.unit_id,
+                building_id: r.building_id,
+                organization_id: r.organization_id,
+                bill_period_start: r.bill_period_start,
+                bill_period_end: r.bill_period_end,
+                total_kwh_encrypted: r.total_kwh_encrypted,
+                energy_type: r.energy_type.parse().unwrap_or(EnergyType::Electricity),
+                provider: r.provider,
+                postal_code: r.postal_code,
+                file_hash: r.file_hash,
+                file_path_encrypted: r.file_path_encrypted,
+                ocr_confidence: r.ocr_confidence,
+                manually_verified: r.manually_verified,
+                uploaded_by: r.uploaded_by,
+                uploaded_at: r.uploaded_at,
+                verified_at: r.verified_at,
+                verified_by: r.verified_by,
+                consent_timestamp: r.consent_timestamp,
+                consent_ip: r.consent_ip,
+                consent_user_agent: r.consent_user_agent,
+                consent_signature_hash: r.consent_signature_hash,
+                anonymized: r.anonymized,
+                retention_until: r.retention_until,
+                deleted_at: r.deleted_at,
+                created_at: r.created_at,
+                updated_at: r.updated_at,
+            })
+            .collect();
+
+        Ok(uploads)
+    }
+
     async fn find_by_building(&self, building_id: Uuid) -> Result<Vec<EnergyBillUpload>, String> {
         let rows = sqlx::query!(
             r#"
