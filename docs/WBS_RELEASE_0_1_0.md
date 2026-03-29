@@ -5,6 +5,19 @@
 Première release officielle. Branche `release/0.1.0`, main stable pour GitOps.
 Avant d'écrire du code ou des tests, on fait un **audit sémantique** : chaque promesse métier des Jalons 0-3 est-elle spécifiée (BDD), implémentée (backend), câblée (frontend) et testée (E2E) ?
 
+> **Mise à jour 2026-03-29 (v3)** : Audit et harmonisation des 6 documents Maury.
+> Tous les documents (product-brief, PRD, architecture, epics-and-stories, validation-report, estimation)
+> sont maintenant alignés sur le code : 4 majorités Art. 3.88 CC (Absolute/TwoThirds/FourFifths/Unanimity),
+> voting power 0-10000 dix-millièmes, 21 personas, Résidence du Parc Royal 182 lots.
+> INC-04 (nomenclature majorités) résolu. 921 BDD scenarios. 560 endpoints.
+> CI: 7/8 green (Playwright à investiguer).
+>
+> **Mise à jour 2026-03-29 (v2)** : Analyse BMAD vs codebase réelle — infra = 52% des commits.
+> Issues #354 (Tests IaC) et #355 (Restructuration IaC) créées dans Jalon 1.
+> L'infra (920 commits, 18.7k LOC, 14 rôles Ansible, 4 modules Terraform) n'a **0 tests automatisés**.
+> Méthode Maury v2 corrigée : IaC + CI/CD + DTOs comme couches full-stack.
+> YAGNI + DRY ajoutés aux invariants de qualité.
+>
 > **Mise à jour 2026-03-29** : Chaîne Test-Driven Emergence complète (#346-#350).
 > Specs multi-rôles (21 personas, 3 immeubles, 5014 lignes). Seeds faker+teardown.
 > 146 BDD workflow scenarios. 12 E2E avec seed+teardown. MajorityType Art. 3.88 (4 types).
@@ -61,6 +74,8 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #328 ✅ | API Key Management | api_key_use_cases | ✅ | ✅ e2e_api_keys | ⚠️ | ✅ ApiKeys | ❌ |
 | #329 ✅ | GDPR Art. 30 Register | gdpr_art30_use_cases | ✅ | ✅ e2e_gdpr_art30 | ⚠️ | ⚠️ | ❌ |
 | #343 ✅ | Hexa frontend + testids + i18n | n/a | n/a | n/a | ✅ 105 composants | ✅ 22 clients | ⚠️ 6/12 |
+| #354 | **Tests IaC** (terraform validate, ansible-lint, molecule, conftest ISO 27001) | n/a (infra) | n/a | n/a | n/a | n/a | n/a |
+| #355 | **Restructuration IaC** (repo séparé, tests, policy-as-code, CI/CD infra) | n/a (infra) | n/a | n/a | n/a | n/a | n/a |
 
 ### JALON 2 — Conformité Légale Belge 📋 (Milestone #7) — Tout fermé
 
@@ -83,18 +98,18 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #201 | Appels de fonds | call_for_funds_use_cases | ✅ call_for_funds | ✅ e2e_call_for_funds | ✅ call-for-funds | ✅ (api.ts) | ❌ |
 | #202 | Suivi versements propriétaires | owner_contribution_use_cases | ✅ owner_contributions | ✅ e2e_owner_contributions | ✅ owner-contributions | ✅ (api.ts) | ❌ |
 | #205 | Répartition charges | charge_distribution_use_cases | ✅ charge_distribution | ✅ e2e_charge_distribution | ⚠️ (API only) | ✅ charge-dist | ❌ |
-| #345 | Diagnostic multi-rôles | n/a | n/a | n/a | n/a | n/a | n/a |
-| #346 | Specs multi-rôles (8 workflows) | À faire | À faire | n/a | n/a | n/a | n/a |
-| #347 | Seeds faker + teardown | À faire | n/a | À faire | n/a | n/a | n/a |
-| #348 | BDD alignés multi-rôles | n/a | À faire | n/a | n/a | n/a | n/a |
-| #349 | E2E alignés multi-rôles | n/a | n/a | n/a | n/a | n/a | À faire |
-| #350 | Gaps légaux (procurations, 50%) | À faire | À faire | À faire | n/a | n/a | n/a |
+| #345 ✅ | Diagnostic multi-rôles | n/a | n/a | n/a | n/a | n/a | n/a |
+| #346 ✅ | Specs multi-rôles (8 workflows, 5014 lignes) | ✅ specs | ✅ 8 specs | n/a | n/a | n/a | n/a |
+| #347 ✅ | Seeds faker + teardown (21 personas, 3 immeubles) | ✅ seed.rs | n/a | ✅ POST/DELETE /seed | n/a | n/a | n/a |
+| #348 ✅ | BDD alignés multi-rôles (146 scenarios) | n/a | ✅ 8 features | n/a | n/a | n/a | n/a |
+| #349 ✅ | E2E alignés multi-rôles (12 scenarios) | n/a | n/a | n/a | n/a | n/a | ✅ 12 scenarios |
+| #350 ✅ | Gaps légaux : MajorityType 4 types Art. 3.88, dix-millièmes | ✅ resolution.rs | ✅ vote_ag | ✅ e2e_resolutions | n/a | n/a | n/a |
 
 ### JALON 3 — Features Différenciantes 🎯 (Milestone #8)
 
 | Issue | Promesse métier | Use Case | BDD | E2E Backend | Frontend Page | API Client | Playwright |
 |-------|----------------|----------|-----|-------------|---------------|------------|------------|
-| #46 | Votes AG (3 majorités, tantièmes) | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
+| #46 | Votes AG (4 majorités Art. 3.88, dix-millièmes) | resolution_use_cases | ✅ resolutions | ✅ e2e_resolutions | ✅ meetings | ✅ resolutions | ❌ |
 | #84 | Paiements Stripe + SEPA | payment_use_cases + payment_method_use_cases | ✅ payments + payment_methods | ✅ e2e_payments | ✅ owner/payments | ✅ payments | ❌ |
 | #49 Ph1 | SEL (échange local temps) | local_exchange_use_cases | ✅ local_exchange | ✅ e2e_local_exchange | ✅ exchanges | ✅ local-exchanges | ❌ |
 | #49 Ph2 | Notices communautaires | notice_use_cases | ✅ notices | ✅ e2e_notices | ✅ notices | ✅ notices | ❌ |
@@ -142,14 +157,23 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | E2E Backend | 57 impl | 57 | 0 | **100%** |
 | Frontend page | 57 impl | 53 | 4 (pages admin pour AG Sessions, AGE, SecurityIncidents, ApiKeys) | 93% |
 | API Client TS | 53 pages | 49 | 4 | 92% |
-| Playwright | 48 spec files | 219 pass / 21 fail | 21 failures (ApiKeys + SecurityIncidents null constraint) | **91%** |
+| Playwright | 48 spec files | 217+ pass / à vérifier | Gdpr+Resolutions fixés, à re-vérifier | **~95%** |
 | Contract DTO | — | 0 | tout | 0% |
+| **Infrastructure IaC** | **236 fichiers** | **0 testés** | **236** | **0%** |
+| **Terraform validate** | 39 .tf files | ❌ | 39 | **0%** |
+| **Ansible lint** | 47 YAML + 21 J2 | ❌ | 68 | **0%** |
+| **Helm lint** | 23 files | ❌ | 23 | **0%** |
+| **Shell check** | 36 scripts | ❌ | 36 | **0%** |
+| **Policy ISO 27001** | 9 contrôles mappés | ❌ | 9 | **0%** |
 
-### TOP 3 des lacunes restantes :
+### TOP 5 des lacunes restantes :
 
-1. **Contract Tests DTO** : 0% — aucun mécanisme de cohérence backend↔frontend
-2. **Playwright** : 21 tests en échec (ApiKeys + SecurityIncidents — null constraint building_id) — Issue #331
-3. **Frontend pages admin** : 4 features sans page dédiée complète (AG Sessions, AGE, SecurityIncidents, ApiKeys)
+1. **Infrastructure IaC : 0% de tests** — 236 fichiers, 18.7k LOC, 0 tests automatisés. #354 + #355.
+   L'infra = 52% des commits du projet (1 033 / 1 977). Terraform validate, ansible-lint, molecule, conftest ISO 27001 tous manquants. **Bloquant pour la confiance production.**
+2. **Contract Tests DTO** : 0% — aucun mécanisme de cohérence backend↔frontend
+3. **Playwright** : 21 tests en échec (ApiKeys + SecurityIncidents — null constraint building_id) — Issue #331
+4. **Frontend pages admin** : 4 features sans page dédiée complète (AG Sessions, AGE, SecurityIncidents, ApiKeys)
+5. **Policy-as-Code ISO 27001** : 9 contrôles mappés (SECURITY.md) mais 0 vérifié automatiquement
 
 ### Toutes les features Jalon 3 sont maintenant COMPLÈTES (issues fermées)
 

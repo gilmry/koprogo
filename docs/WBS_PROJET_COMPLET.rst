@@ -2,12 +2,44 @@
 KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
 =========================================================
 
-:Version: 3.0
+:Version: 3.2
 :Date: 29 mars 2026
-:Methode: Domain-Driven Design + Behavior-Driven Development + Test-Driven Development + SOLID
+:Methode: Domain-Driven Design + Behavior-Driven Development + Test-Driven Development + SOLID + YAGNI + DRY
 :Auteur: Claude Code (Audit automatise)
 :Statut: Document de reference technique
 :Couverture: Jalon 0 (complete) -> Jalon 7 (vision long terme)
+
+.. note::
+
+   **Mise a jour 2026-03-29 (v3.2)** : Harmonisation documents Maury.
+
+   6 documents Maury audites et corriges :
+   product-brief, PRD, architecture, epics-and-stories, validation-report, estimation.
+   Tous alignes sur le code : 4 majorites Art. 3.88 CC (Absolute/TwoThirds/FourFifths/Unanimity),
+   voting power 0-10000 dix-milliemes, 21 personas, Residence du Parc Royal 182 lots.
+   INC-04 (nomenclature majorites) resolu. 921 BDD scenarios. 560 endpoints.
+
+   **Mise a jour 2026-03-29 (v3.1)** : Analyse BMAD vs codebase reelle + infra.
+
+   **Infrastructure = 52% des commits** (1 033 / 1 977 total).
+   Repo ``koprogo-infra-restructure`` : 920 commits, 18.7k LOC IaC.
+   236 fichiers (39 Terraform, 47 Ansible, 21 J2, 23 Helm, 23 Kustomize, 36 scripts, 6 workflows, 16 monitoring).
+   14 roles Ansible, 4 modules Terraform, 4 Helm charts.
+   **0 tests automatises** (dette technique critique).
+
+   **Issues creees** :
+   - #354 : Tests IaC (terraform validate, ansible-lint, molecule, conftest ISO 27001)
+   - #355 : Restructuration IaC (repo separe, tests, policy-as-code, CI/CD infra)
+
+   **Methode Maury v2** : YAGNI + DRY ajoutes aux invariants.
+   IaC + CI/CD + DTOs traites comme couches full-stack (pas appendices Sprint 0).
+   Coefficients velocite IA : backend /3-5, frontend /1.5, infra x3-5, E2E x2.
+   Reserve emergence 20% par sprint.
+   Frontend hexagonale light : API clients / stores / validators / services.
+
+   **Livrables Maury** (6 fichiers dans ``Maury/``) :
+   product-brief, PRD, architecture, epics-and-stories, validation-report,
+   analyse-bmad-vs-codebase, analyse-temporelle-bmad-vs-reel.
 
 .. note::
 
@@ -36,7 +68,7 @@ KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
    **CI fixes** : cargo fmt + clippy + prettier + npm audit 0 vulnerabilites.
    Compilation --tests fixee (setup_test_db signature + ConsentUseCases manquant).
 
-   **Chiffres** : 1160 unit tests, 965+ BDD scenarios (819+146), 12 E2E scenarios,
+   **Chiffres** : 1160 unit tests, 921 BDD scenarios (74 features), 12 E2E scenarios,
    559 endpoints, 59 entites, 80+ migrations, 137k+ LOC Rust.
 
 .. note::
@@ -384,19 +416,32 @@ PARTIE II : ETAT DES LIEUX (BASELINE)
 
 .. code-block:: text
 
-   Backend Rust   : ~125,000 LOC (domain+application+infrastructure+tests) [+14,700 tests use cases]
+   Backend Rust   : ~138,000 LOC (domain+application+infrastructure+tests)
    Frontend Svelte: ~18,000 LOC (pages+components+lib)
-   Migrations SQL : ~8,500 LOC (64 migrations)
+   Migrations SQL : ~8,500 LOC (86 migrations)
    Documentation  : ~28,000 LOC (50+ RST/MD files)
-   Infrastructure : ~5,000 LOC (Ansible, Docker, CI)
-   TOTAL          : ~184,500 LOC
+   Infrastructure : ~18,770 LOC (Terraform 989, Ansible 3033, Helm 949, Scripts 4902, CI/CD 841, Monitoring 1085, Kustomize 352, Docker+divers ~6619)
+   TOTAL          : ~211,270 LOC
 
+   Commits totaux     : ~1,977 (1,057 repo app + 920 repo infra)
    Bounded Contexts   : 17 (BC1-BC17)
-   Entites domaine    : 57
-   Endpoints API REST : 511+
-   Tests unitaires    : ~900+ (777 domain + ~120 use case mocks)
-   Tests BDD          : 454+ scenarios (5 fichiers bdd_*.rs, 0 failures, 0 skips)
-   GitHub Issues      : 126 total (102 fermees, 24 ouvertes)
+   Entites domaine    : 60
+   Endpoints API REST : 560
+   Tests unitaires    : ~1,160+
+   Tests BDD          : 921 scenarios (74 features)
+   Tests E2E Playwright: 49 spec files (12 Documentation Vivante)
+   Tests IaC          : **0** (dette critique — #354)
+   GitHub Issues      : 355+ (320+ fermees, 35+ ouvertes)
+
+   Infrastructure (repo koprogo-infra-restructure) :
+   - 920 commits, 236 fichiers
+   - 14 roles Ansible (security, monitoring, backup, k3s, argocd, vault, velero, pgo, dns, common, docker, gitops, hardening)
+   - 4 modules Terraform (ovh-vps, ovh-k3s, ovh-k8s, networking)
+   - 4 Helm charts (koprogo, monitoring, vault, velero)
+   - 4 env (dev, integration, staging, production) x 2 archi (VPS monosite, K3s/K8s multisite)
+   - 4 workflows CI/CD (ci, security, docker-build, docs)
+   - Monitoring: Prometheus, Grafana, Loki, Alertmanager, Elasticsearch, Kibana, Filebeat, Elastalert
+   - Securite: LUKS, Suricata, CrowdSec, fail2ban, SSH hardening, kernel hardening, Lynis, rkhunter, AIDE
 
 7. Dette Technique Identifiee
 -------------------------------
@@ -513,7 +558,7 @@ load tests (287 req/s), documentation Sphinx.
 
 **Release cible** : v0.1.0 (bugs legal + RBAC + Playwright) / v0.2.0 (#48 itsme)
 
-**Issues ouvertes** : #331, #337, #340
+**Issues ouvertes** : #331, #337, #340, **#354** (Tests IaC), **#355** (Restructuration IaC)
 
 .. note::
 
@@ -574,7 +619,71 @@ load tests (287 req/s), documentation Sphinx.
      - All FE
      - Playwright test suite
 
-**Total Jalon 1 restant** : ~40h
+9.2 WP-INFRA-J1 : Tests Infrastructure (NOUVEAU — #354, #355)
+--------------------------------------------------------------
+
+.. note::
+
+   **Ajout 2026-03-29** : L'analyse BMAD vs codebase revele que l'infra
+   represente 52% des commits (1 033 / 1 977) mais 0% de tests automatises.
+   Cette dette bloque la confiance pour le passage en production (beta publique).
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 40 10 10 10 20
+
+   * - WP
+     - Description
+     - Issue
+     - Heures
+     - Couche
+     - Cycle TDD
+   * - WP-INFRA-J1.1
+     - **Linting IaC** : terraform fmt + validate (39 .tf),
+       ansible-lint (47 YAML + 21 J2), helm lint (23), yamllint, shellcheck (36 scripts)
+     - #354
+     - 8h
+     - IaC
+     - CI: infra-lint.yml
+   * - WP-INFRA-J1.2
+     - **Policy-as-Code ISO 27001** : conftest + OPA policies pour
+       9 controles (A.5 politiques, A.8.7 malware, A.8.9 config,
+       A.8.15 logs, A.8.16 IDS, A.8.24 crypto, A.8.25 dev securise,
+       A.8.28 codage, A.8.32 changements)
+     - #354
+     - 16h
+     - IaC/Securite
+     - Policy tests OPA
+   * - WP-INFRA-J1.3
+     - **Molecule tests Ansible** : tester au minimum roles security,
+       monitoring, common (3 roles / 14 total)
+     - #354
+     - 12h
+     - IaC
+     - Molecule + Docker
+   * - WP-INFRA-J1.4
+     - **Terraform plan CI** : terraform plan automatise sur PR
+       pour les 4 modules (ovh-vps, ovh-k3s, ovh-k8s, networking)
+     - #355
+     - 8h
+     - IaC
+     - CI: infra-plan.yml
+   * - WP-INFRA-J1.5
+     - **Backup/restore test** : test automatise backup GPG + S3
+       + restore dans container ephemere
+     - #355
+     - 8h
+     - IaC
+     - Integration test
+   * - WP-INFRA-J1.6
+     - **Documentation infra** : README repo infra actualise,
+       mapping ISO 27001 -> tests, runbooks ITIL
+     - #355
+     - 4h
+     - Docs
+     - n/a
+
+**Total Jalon 1 restant** : ~40h (features) + **~56h (infra)** = **~96h**
 
 =========================================================
 10. Jalon 2 : Conformite Legale Belge [COMPLETE]

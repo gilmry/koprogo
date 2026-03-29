@@ -5,10 +5,30 @@ const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
 async function setupSyndicWithMeeting(page: import("@playwright/test").Page) {
   const ctx = await loginAsSyndicWithMeeting(page, "resolution");
+
+  // Create a 2nd convocation meeting (no quorum required per Art. 3.87 §5 CC)
+  // The default meeting from helper has no quorum validated, so resolution
+  // creation would be blocked. Using is_second_convocation bypasses this.
+  const meetingDate = new Date();
+  meetingDate.setDate(meetingDate.getDate() + 30);
+  const meetingResp = await page.request.post(`${API_BASE}/meetings`, {
+    data: {
+      building_id: ctx.buildingId,
+      organization_id: ctx.orgId,
+      title: `AG 2e convocation ${Date.now()}`,
+      scheduled_date: meetingDate.toISOString(),
+      meeting_type: "Ordinary",
+      location: "Salle communale",
+      is_second_convocation: true,
+    },
+    headers: { Authorization: `Bearer ${ctx.token}` },
+  });
+  const meeting = await meetingResp.json();
+
   return {
     token: ctx.token,
     buildingId: ctx.buildingId,
-    meetingId: ctx.meetingId,
+    meetingId: meeting.id || ctx.meetingId,
     orgId: ctx.orgId,
   };
 }
