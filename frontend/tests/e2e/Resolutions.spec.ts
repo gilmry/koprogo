@@ -36,7 +36,7 @@ test.describe("Resolutions - AG Voting System", () => {
           title: `Résolution ${timestamp}`,
           description: "Approbation du budget annuel 2026",
           resolution_type: "ordinary",
-          majority_required: "simple",
+          majority_required: "absolute",
         },
         headers: { Authorization: `Bearer ${token}` },
       },

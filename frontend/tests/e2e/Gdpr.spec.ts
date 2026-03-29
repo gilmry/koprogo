@@ -146,7 +146,7 @@ test.describe("GDPR - Complete User Journey (Idempotent)", () => {
     await page.getByTestId("gdpr-erase-confirm-button").click();
 
     // Wait for success and auto-logout
-    await expect(page.locator("text=/success|anonymi[sz]ed/i")).toBeVisible({
+    await expect(page.locator("text=/success|anonymi[sz]ed/i").first()).toBeVisible({
       timeout: 10000,
     });
     await page.waitForURL("/login", { timeout: 10000 });
