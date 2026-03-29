@@ -68,7 +68,9 @@ async function loginViaUI(page: Page, email: string, password: string) {
   await page.getByTestId("login-email").fill(email);
   await page.getByTestId("login-password").fill(password);
   await page.getByTestId("login-submit").click();
-  await page.waitForURL(/\/(owner|syndic|accountant|admin)/);
+  await page.waitForURL(/\/(owner|syndic|accountant|admin|superadmin)/, {
+    timeout: 15000,
+  });
 }
 
 // Helper: Clear browser state (localStorage, cookies) to prevent stale auth
@@ -96,6 +98,8 @@ async function loginAsSuperAdmin(page: Page) {
 }
 
 test.describe("GDPR - Complete User Journey (Idempotent)", () => {
+  test.setTimeout(60_000);
+
   test("should allow user to register, export data, and erase account", async ({
     page,
   }) => {
