@@ -186,7 +186,7 @@
             { href: '/payment-reminders', label: 'Relances', icon: '📧' },
             { href: '/budgets', label: 'Budgets', icon: '📊' },
             { href: '/etats-dates', label: 'Etats dates', icon: '📋' },
-            { href: '/admin/gamification', label: 'Gamification', icon: '🏆' },
+            { href: '/gamification', label: 'Gamification', icon: '🏆' },
           ],
         },
         {

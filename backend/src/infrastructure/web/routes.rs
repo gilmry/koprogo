@@ -120,6 +120,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(reschedule_meeting)
             .service(delete_meeting)
             .service(attach_minutes)
+            .service(validate_meeting_quorum) // POST /meetings/{id}/validate-quorum (Art. 3.87 §5 CC — #271/#272)
             .service(export_meeting_minutes_pdf)
             // Convocations (Automatic AG Invitations - Issue #88 - Phase 2)
             // Specific routes MUST come before parameterized /convocations/{id}

@@ -1,11 +1,62 @@
 use crate::application::dto::{
     AddAgendaItemRequest, AttachMinutesRequest, CompleteMeetingRequest, CreateMeetingRequest,
     PageRequest, PageResponse, RescheduleMeetingRequest, UpdateMeetingRequest,
+    ValidateQuorumRequest,
 };
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use uuid::Uuid;
+
+/// POST /meetings/{id}/validate-quorum — Art. 3.87 §5 CC
+/// Validates quorum (>50% millièmes présents + procurations).
+/// If quorum not reached, automatically schedules a 2nd convocation 15 days later.
+#[post("/meetings/{id}/validate-quorum")]
+pub async fn validate_meeting_quorum(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+    id: web::Path<Uuid>,
+    request: web::Json<ValidateQuorumRequest>,
+) -> impl Responder {
+    let meeting_id = id.into_inner();
+    let req = request.into_inner();
+
+    match state
+        .meeting_use_cases
+        .validate_quorum(meeting_id, req.present_quotas, req.total_quotas)
+        .await
+    {
+        Ok((quorum_reached, meeting)) => {
+            AuditLogEntry::new(
+                AuditEventType::MeetingQuorumValidated,
+                Some(user.user_id),
+                user.organization_id,
+            )
+            .with_resource("Meeting", meeting_id)
+            .with_metadata(serde_json::json!({
+                "quorum_reached": quorum_reached,
+                "present_quotas": req.present_quotas,
+                "total_quotas": req.total_quotas,
+                "quorum_percentage": meeting.quorum_percentage,
+                "auto_second_convocation": !quorum_reached,
+            }))
+            .log();
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "quorum_reached": quorum_reached,
+                "meeting": meeting,
+                "message": if quorum_reached {
+                    "Quorum atteint (Art. 3.87 §5 CC). Les votes peuvent commencer."
+                } else {
+                    "Quorum non atteint. Une 2ème convocation a été planifiée automatiquement (Art. 3.87 §5 CC)."
+                }
+            }))
+        }
+        Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
+            "error": err
+        })),
+    }
+}
 
 #[post("/meetings")]
 pub async fn create_meeting(

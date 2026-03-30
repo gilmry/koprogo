@@ -35,6 +35,7 @@ pub enum AuditEventType {
     InvoiceRejected,
     MeetingCreated,
     MeetingCompleted,
+    MeetingQuorumValidated,
     MeetingMinutesSent,
     DocumentUploaded,
     DocumentDeleted,
