@@ -258,13 +258,15 @@ Par priorité — features avec logique métier complexe d'abord :
 - [x] 4.2 E2E Backend — 48 fichiers, ~320 tests, 0 failures — Phase 3 complete
 
 ### Phase 5 — Playwright manquants (32 trous, mêmes workflows que E2E backend)
+
 Tier 1 — Critiques :
-- [ ] 5.1 Payments.spec.ts
-- [ ] 5.2 Invoices.spec.ts
-- [ ] 5.3 Convocations.spec.ts
-- [ ] 5.4 Resolutions.spec.ts
-- [ ] 5.5 Quotes.spec.ts
-- [ ] 5.6 TwoFactor.spec.ts
+
+- [x] 5.1 Payments.spec.ts — 8 tests (create+retrieve, list, processing transition, payment-methods, stats, auth)
+- [x] 5.2 Invoices.spec.ts — 6 tests (Draft→PendingApproval→Approved, detail page, building list)
+- [x] 5.3 Convocations.spec.ts — 6 tests (create+list, detail, deadline légale 15j, meeting lookup, auth)
+- [x] 5.4 Resolutions.spec.ts — 7 tests (create+retrieve, list, detail page, vote, list votes, close, auth)
+- [x] 5.5 Quotes.spec.ts — 7 tests (create+retrieve, list, count, submit Received, comparison page, auth)
+- [x] 5.6 TwoFactor.spec.ts — 6 tests (status disabled, setup QR+backup, idempotent, invalid TOTP, auth)
 
 Tier 2 — Admin/syndic :
 - [ ] 5.7 Budgets.spec.ts
