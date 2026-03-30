@@ -34,7 +34,7 @@ test.describe("Polls - Board Decision Polling", () => {
     const pollResp = await page.request.post(`${API_BASE}/polls`, {
       data: {
         building_id: buildingId,
-        poll_type: "YesNo",
+        poll_type: "yes_no", // PollType uses serde snake_case
         question,
         description: "Sondage avant AG sur la rénovation du hall d'entrée",
         starts_at: startDate.toISOString(),
@@ -54,7 +54,7 @@ test.describe("Polls - Board Decision Polling", () => {
       const poll = await pollResp.json();
       expect(poll.id).toBeTruthy();
       expect(poll.building_id).toBe(buildingId);
-      expect(poll.status).toBe("Draft");
+      expect(poll.status).toBe("draft"); // PollStatus uses serde snake_case
 
       // Retrieve by ID
       const getResp = await page.request.get(`${API_BASE}/polls/${poll.id}`, {
@@ -76,7 +76,7 @@ test.describe("Polls - Board Decision Polling", () => {
     const pollResp = await page.request.post(`${API_BASE}/polls`, {
       data: {
         building_id: buildingId,
-        poll_type: "YesNo",
+        poll_type: "yes_no", // PollType uses serde snake_case
         question: `Sondage activation ${timestamp}`,
         starts_at: startDate.toISOString(),
         ends_at: endDate.toISOString(),
@@ -101,7 +101,7 @@ test.describe("Polls - Board Decision Polling", () => {
 
       if (publishResp.ok()) {
         const published = await publishResp.json();
-        expect(published.status).toBe("Active");
+        expect(published.status).toBe("active"); // PollStatus uses serde snake_case
       }
     }
   });
@@ -140,7 +140,7 @@ test.describe("Polls - Board Decision Polling", () => {
     const pollResp = await page.request.post(`${API_BASE}/polls`, {
       data: {
         building_id: buildingId,
-        poll_type: "Rating",
+        poll_type: "rating", // PollType uses serde snake_case
         question: `Satisfaction services ${timestamp}`,
         starts_at: startDate.toISOString(),
         ends_at: endDate.toISOString(),

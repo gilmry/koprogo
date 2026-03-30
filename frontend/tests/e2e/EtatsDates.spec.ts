@@ -85,7 +85,7 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       const etat = await etatResp.json();
       expect(etat.id).toBeTruthy();
       expect(etat.unit_id).toBe(unitId);
-      expect(etat.status).toBe("Requested");
+      expect(etat.status).toBe("requested"); // EtatDateStatus uses serde snake_case
 
       // Retrieve by ID
       const getResp = await page.request.get(
@@ -141,7 +141,7 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
 
       if (progressResp.ok()) {
         const updated = await progressResp.json();
-        expect(updated.status).toBe("InProgress");
+        expect(updated.status).toBe("in_progress"); // EtatDateStatus uses serde snake_case
       }
     }
   });
