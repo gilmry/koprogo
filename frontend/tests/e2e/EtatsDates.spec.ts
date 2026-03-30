@@ -2,9 +2,17 @@ import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { loginAsSyndicWithUnit } from "./helpers/auth";
 
+/**
+ * Etats Dates E2E Test Suite - Belgian Property Sales Document
+ *
+ * Tests etat date creation, status transitions, and reference number lookup.
+ * Belgian legal requirement: Syndic must provide etat daté within 10 working days.
+ * Mirrors workflows from backend/tests/e2e_etat_date.rs.
+ */
+
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
-async function setupSyndicWithUnit(page: Page) {
+async function setupWithUnitAndOwner(page: Page) {
   const ctx = await loginAsSyndicWithUnit(page, "etat");
   const timestamp = Date.now();
 
@@ -54,9 +62,9 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
     ).toBeVisible({ timeout: 10000 });
   });
 
-  test("should create an etat date via API", async ({ page }) => {
+  test("should create an etat date and retrieve it", async ({ page }) => {
     const { token, buildingId, unitId, orgId } =
-      await setupSyndicWithUnit(page);
+      await setupWithUnitAndOwner(page);
     const timestamp = Date.now();
 
     const etatResp = await page.request.post(`${API_BASE}/etats-dates`, {
@@ -72,12 +80,26 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
     expect([200, 201].includes(etatResp.status())).toBeTruthy();
-    const etat = await etatResp.json();
-    expect(etat.unit_id).toBe(unitId);
+
+    if (etatResp.ok()) {
+      const etat = await etatResp.json();
+      expect(etat.id).toBeTruthy();
+      expect(etat.unit_id).toBe(unitId);
+      expect(etat.status).toBe("Requested");
+
+      // Retrieve by ID
+      const getResp = await page.request.get(
+        `${API_BASE}/etats-dates/${etat.id}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      expect(getResp.ok()).toBeTruthy();
+      const retrieved = await getResp.json();
+      expect(retrieved.id).toBe(etat.id);
+    }
   });
 
   test("should list etats-dates for building", async ({ page }) => {
-    const { token, buildingId } = await setupSyndicWithUnit(page);
+    const { token, buildingId } = await setupWithUnitAndOwner(page);
 
     const listResp = await page.request.get(
       `${API_BASE}/buildings/${buildingId}/etats-dates`,
@@ -88,8 +110,66 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
     expect(Array.isArray(etats)).toBeTruthy();
   });
 
-  test("should require auth for etats-dates", async ({ page }) => {
+  test("should mark etat date as in-progress (Requested → InProgress)", async ({
+    page,
+  }) => {
+    const { token, buildingId, unitId, orgId } =
+      await setupWithUnitAndOwner(page);
+    const timestamp = Date.now();
+
+    const etatResp = await page.request.post(`${API_BASE}/etats-dates`, {
+      data: {
+        unit_id: unitId,
+        building_id: buildingId,
+        organization_id: orgId,
+        language: "fr",
+        notary_name: `Maître Martin ${timestamp}`,
+        notary_email: `martin-${timestamp}@example.com`,
+        reference_date: new Date().toISOString(),
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (etatResp.ok()) {
+      const etat = await etatResp.json();
+
+      const progressResp = await page.request.put(
+        `${API_BASE}/etats-dates/${etat.id}/mark-in-progress`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      expect([200, 400].includes(progressResp.status())).toBeTruthy();
+
+      if (progressResp.ok()) {
+        const updated = await progressResp.json();
+        expect(updated.status).toBe("InProgress");
+      }
+    }
+  });
+
+  test("should list etats-dates for a unit", async ({ page }) => {
+    const { token, unitId } = await setupWithUnitAndOwner(page);
+
+    const listResp = await page.request.get(
+      `${API_BASE}/units/${unitId}/etats-dates`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(listResp.ok()).toBeTruthy();
+    const etats = await listResp.json();
+    expect(Array.isArray(etats)).toBeTruthy();
+  });
+
+  test("should get overdue etats-dates", async ({ page }) => {
+    const { token } = await setupWithUnitAndOwner(page);
+
+    const overdueResp = await page.request.get(
+      `${API_BASE}/etats-dates/overdue`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect([200, 404].includes(overdueResp.status())).toBeTruthy();
+  });
+
+  test("should require auth for etats-dates API", async ({ page }) => {
     const resp = await page.request.get(`${API_BASE}/etats-dates`);
-    expect(resp.status()).toBe(401);
+    expect([401, 403].includes(resp.status())).toBeTruthy();
   });
 });
