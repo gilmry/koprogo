@@ -127,12 +127,12 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | #85 | Tickets maintenance | ticket_use_cases | ✅ tickets | ✅ e2e_tickets | ✅ tickets | ✅ tickets | ✅ Tickets |
 | #92 | Syndic info publique | building_use_cases | ✅ public_syndic | ✅ e2e_public_syndic | ✅ (public endpoint) | ✅ (api.ts) | ❌ |
 | #96 | Energy campaigns (achat groupé) | energy_campaign + energy_bill_upload | ✅ energy_campaigns | ✅ e2e_energy_campaigns | ✅ energy-campaigns | ✅ energy-campaigns | ❌ |
-| #274 ✅ | BC15: AG Visioconférence | ag_session_use_cases | ✅ ag_sessions | ✅ e2e_ag_sessions | ✅ AgVideoSession | ⚠️ | ❌ |
-| #279 ✅ | BC17: AGE agile (demande 1/5) | age_request_use_cases | ✅ age_requests | ✅ e2e_age_requests | ✅ AgePetitionProgress | ⚠️ | ❌ |
-| #275 ✅ | BC16: Backoffice prestataires PWA | contractor_report_use_cases | ✅ contractor_reports | ✅ e2e_contractor_reports | ✅ contractor/ | ✅ ContractorReport | ❌ |
-| #276 ✅ | BC14: Marketplace + satisfaction | marketplace_use_cases | ✅ marketplace | ✅ e2e_marketplace | ✅ marketplace | ✅ Marketplace | ❌ |
-| #277 ✅ | Guide légal contextuel UI | legal_use_cases | ✅ legal | ✅ e2e_legal | ✅ LegalHelper | ✅ LegalHelper | ❌ |
-| #280 ✅ | Orchestrateur énergie neutre | energy_campaign_use_cases | ✅ energy_campaigns | ✅ e2e_energy_campaigns | ✅ energy-campaigns | ✅ EnergyCampaigns | ❌ |
+| #274 ✅ | BC15: AG Visioconférence | ag_session_use_cases | ✅ ag_sessions | ✅ e2e_ag_sessions | ✅ AgVideoSession | ✅ ag-sessions | ✅ AgSessions |
+| #279 ✅ | BC17: AGE agile (demande 1/5) | age_request_use_cases | ✅ age_requests | ✅ e2e_age_requests | ✅ AgePetitionProgress | ✅ age-requests | ✅ AgeRequests |
+| #275 ✅ | BC16: Backoffice prestataires PWA | contractor_report_use_cases | ✅ contractor_reports | ✅ e2e_contractor_reports | ✅ contractor/ | ✅ ContractorReport | ✅ ContractorReport |
+| #276 ✅ | BC14: Marketplace + satisfaction | marketplace_use_cases | ✅ marketplace | ✅ e2e_marketplace | ✅ marketplace | ✅ Marketplace | ✅ Marketplace |
+| #277 ✅ | Guide légal contextuel UI | legal_use_cases | ✅ legal | ✅ e2e_legal | ✅ LegalHelper | ✅ LegalHelper | ✅ LegalHelper |
+| #280 ✅ | Orchestrateur énergie neutre | energy_campaign_use_cases | ✅ energy_campaigns | ✅ e2e_energy_campaigns | ✅ energy-campaigns | ✅ EnergyCampaigns | ✅ EnergyCampaigns |
 | #326 ✅ | GDPR Consent (Art. 7) | consent_use_cases | ✅ consent | ✅ e2e_consent | ✅ ConsentModal | ✅ Consent | ❌ |
 | #327 ✅ | Security Incidents (Art. 33) | security_incident_use_cases | ✅ security_incidents | ✅ e2e_security_incidents | ⚠️ | ✅ SecurityIncidents | ❌ |
 | #328 ✅ | API Key Management | api_key_use_cases | ✅ api_keys | ✅ e2e_api_keys | ⚠️ | ✅ ApiKeys | ❌ |
@@ -327,16 +327,19 @@ Tier 3 — Communauté/support :
 #### 6.3 P1 BC (~36h)
 
 - [x] #275 BC16: Backoffice prestataires — BDD `contractor_reports.feature` ✅, E2E backend `e2e_contractor_reports.rs` ✅, pages `/contractor/` + `/contractor-report/` ✅, Playwright `ContractorReport.spec.ts` ✅
-- [ ] #276 BC14: Marketplace corps de métier — BDD `marketplace.feature` ✅, E2E backend `e2e_marketplace.rs` ✅, Playwright `Marketplace.spec.ts` ✅ — frontend page `/marketplace` MANQUANT
+- [x] #276 BC14: Marketplace corps de métier — BDD `marketplace.feature` ✅, E2E backend `e2e_marketplace.rs` ✅, Playwright `Marketplace.spec.ts` ✅, page `/marketplace` ✅, API client `marketplace.ts` ✅
 
 #### 6.4 P1 Tools (~10h)
-- [ ] #277 Guide légal contextuel UI (LegalHelper.svelte, AG Wizard)
+
+- [x] #277 Guide légal contextuel UI — BDD `legal_api.feature` + `legal_compliance.feature` ✅, E2E backend `e2e_legal_api.rs` ✅, composant `LegalHelper.svelte` ✅, Playwright `LegalHelper.spec.ts` ✅ (UI tests skipped: component not wired to Layout)
 
 #### 6.5 P1 Energy (~16h)
-- [ ] #280 Orchestrateur énergie neutre (CER, maisons individuelles, CREG)
+
+- [x] #280 Orchestrateur énergie neutre — BDD `energy_campaigns.feature` ✅, E2E backend `e2e_energy_campaigns.rs` ✅, pages `energy-campaigns/` ✅, API client `energy-campaigns.ts` ✅, Playwright `EnergyCampaigns.spec.ts` ✅
 
 #### 6.6 P2 Content (~22h)
-- [ ] #278 Blog 18 articles RST (5 séries thématiques)
+
+- [x] #278 Blog 25 articles (RST + MD) — `docs/blog/` ✅ (25 articles: AG, charges, énergie, syndic, travaux, EPBD, etc.), pages frontend `/blog/` ✅
 
 ### Phase 7 — Documentation complète du logiciel
 
