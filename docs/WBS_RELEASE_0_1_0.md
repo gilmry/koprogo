@@ -315,16 +315,19 @@ Tier 3 — Communauté/support :
 **CI** : Chaque push sur `release/0.1.0` déclenche GitHub Actions — **tous les jobs doivent être verts** avant de continuer.
 
 #### 6.1 P0 Legal (~4h)
-- [ ] #271 Quorum 50%+ validation AG — vérifier wiring migration + tests
-- [ ] #272 2e convocation si quorum non atteint — vérifier wiring + tests
+
+- [x] #271 Quorum 50%+ validation AG — wiring vérifié : `validate_quorum()` domain, `e2e_second_convocation.rs`, BDD `second_convocation.feature` + `vote_ag_workflow.feature` ✅
+- [x] #272 2e convocation si quorum non atteint — wiring vérifié : `new_second_convocation()` domain, `schedule_second_convocation()` use case, BDD `convocations.feature` (210-218) ✅
 
 #### 6.2 P0 BC (~26h)
-- [ ] #274 BC15: AG Visioconférence — BDD → E2E backend → frontend (pages + API client + composants) → Playwright
-- [ ] #279 BC17: AGE agile — BDD → E2E backend → frontend → Playwright
+
+- [x] #274 BC15: AG Visioconférence — BDD `ag_sessions.feature` ✅, E2E backend `e2e_ag_sessions.rs` ✅, composant `AgVideoSession.svelte` ✅, page `/ag-sessions` ✅, API client `ag-sessions.ts` ✅, Playwright `AgSessions.spec.ts` (6 tests) ✅
+- [x] #279 BC17: AGE agile — BDD `age_requests.feature` ✅, E2E backend `e2e_age_requests.rs` ✅, composant `AgePetitionProgress.svelte` ✅, pages `/age-requests` + `/age-requests/new` ✅, API client `age-requests.ts` ✅, Playwright `AgeRequests.spec.ts` (7 tests) ✅
 
 #### 6.3 P1 BC (~36h)
-- [ ] #275 BC16: Backoffice prestataires — BDD → E2E backend (frontend page existe déjà)
-- [ ] #276 BC14: Marketplace corps de métier — domain → use cases → repo → handlers → BDD → E2E → frontend → Playwright
+
+- [x] #275 BC16: Backoffice prestataires — BDD `contractor_reports.feature` ✅, E2E backend `e2e_contractor_reports.rs` ✅, pages `/contractor/` + `/contractor-report/` ✅, Playwright `ContractorReport.spec.ts` ✅
+- [ ] #276 BC14: Marketplace corps de métier — BDD `marketplace.feature` ✅, E2E backend `e2e_marketplace.rs` ✅, Playwright `Marketplace.spec.ts` ✅ — frontend page `/marketplace` MANQUANT
 
 #### 6.4 P1 Tools (~10h)
 - [ ] #277 Guide légal contextuel UI (LegalHelper.svelte, AG Wizard)
