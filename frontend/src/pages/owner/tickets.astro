@@ -17,7 +17,8 @@ import Layout from "../../layouts/Layout.astro";
     <div class="mb-6">
       <button
         id="create-ticket-btn"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        disabled
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <svg
           class="-ml-1 mr-2 h-5 w-5"
@@ -69,6 +70,8 @@ import Layout from "../../layouts/Layout.astro";
 
   function mountList(buildingId: string) {
     currentBuildingId = buildingId;
+    const btn = document.getElementById("create-ticket-btn") as HTMLButtonElement | null;
+    if (btn) btn.disabled = !buildingId;
     if (!listContainer) return;
     if (listComponent) {
       try { unmount(listComponent); } catch {}

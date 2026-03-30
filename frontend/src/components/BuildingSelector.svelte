@@ -38,13 +38,14 @@
       onSuccess: (response) => {
         buildings = extractArray<Building>(response, 'buildings');
 
-        if (buildings.length === 1 && !selectedBuildingId) {
+        if (buildings.length > 0 && !selectedBuildingId) {
+          // Auto-select first building to ensure content loads immediately
           selectedBuildingId = buildings[0].id;
           setTimeout(() => {
             if (onSelect) onSelect(selectedBuildingId);
             if (onSelectBuilding) onSelectBuilding(buildings[0]);
           }, 0);
-        } else if (buildings.length > 1 && selectedBuildingId) {
+        } else if (buildings.length > 0 && selectedBuildingId) {
           const selected = buildings.find(b => b.id === selectedBuildingId);
           setTimeout(() => {
             if (onSelect) onSelect(selectedBuildingId);
