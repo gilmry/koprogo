@@ -51,7 +51,7 @@ pub async fn list_legal_rules(
 ) -> impl Responder {
     match serde_json::from_str::<Value>(LEGAL_INDEX) {
         Ok(index) => {
-            if let Some(rules) = index.get("rules").and_then(|r| r.as_array()) {
+            if let Some(rules) = index.get("legal_rules").and_then(|r| r.as_array()) {
                 let role_filter = query.get("role").map(|r| r.as_str());
                 let category_filter = query.get("category").map(|c| c.as_str());
 
@@ -90,7 +90,7 @@ pub async fn list_legal_rules(
                 HttpResponse::Ok().json(filtered)
             } else {
                 HttpResponse::InternalServerError().json(json!({
-                    "error": "Malformed legal index: missing 'rules' array"
+                    "error": "Malformed legal index: missing 'legal_rules' array"
                 }))
             }
         }
@@ -145,7 +145,7 @@ pub async fn get_legal_rule(code: web::Path<String>) -> impl Responder {
 
     match serde_json::from_str::<Value>(LEGAL_INDEX) {
         Ok(index) => {
-            if let Some(rules) = index.get("rules").and_then(|r| r.as_array()) {
+            if let Some(rules) = index.get("legal_rules").and_then(|r| r.as_array()) {
                 if let Some(rule) = rules.iter().find(|r| {
                     r.get("code")
                         .and_then(|c| c.as_str())
@@ -160,7 +160,7 @@ pub async fn get_legal_rule(code: web::Path<String>) -> impl Responder {
                 }
             } else {
                 HttpResponse::InternalServerError().json(json!({
-                    "error": "Malformed legal index: missing 'rules' array"
+                    "error": "Malformed legal index: missing 'legal_rules' array"
                 }))
             }
         }
