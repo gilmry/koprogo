@@ -269,34 +269,36 @@ Tier 1 — Critiques :
 - [x] 5.6 TwoFactor.spec.ts — 6 tests (status disabled, setup QR+backup, idempotent, invalid TOTP, auth)
 
 Tier 2 — Admin/syndic :
-- [ ] 5.7 Budgets.spec.ts
-- [ ] 5.8 EtatsDates.spec.ts
-- [ ] 5.9 EnergyCampaigns.spec.ts
-- [ ] 5.10 LocalExchanges.spec.ts
-- [ ] 5.11 Gamification.spec.ts
-- [ ] 5.12 Polls.spec.ts
-- [ ] 5.13 PaymentRecovery.spec.ts
+
+- [x] 5.7 Budgets.spec.ts — 6 tests (create+retrieve Draft, Draft→Submitted, variance, auth)
+- [x] 5.8 EtatsDates.spec.ts — 6 tests (create+retrieve Requested, mark-in-progress, list by unit/building, auth)
+- [x] 5.9 EnergyCampaigns.spec.ts — 6 tests (create+retrieve, add/list offers, auth)
+- [x] 5.10 LocalExchanges.spec.ts — 7 tests (create+retrieve Offered, SEL stats, credit balance, leaderboard)
+- [x] 5.11 Gamification.spec.ts — 7 tests (achievement Bronze, challenge Draft→Active, org leaderboard, auth)
+- [x] 5.12 Polls.spec.ts — 7 tests (YesNo create Draft, Draft→Active publish, list active/all, results, auth)
+- [x] 5.13 PaymentRecovery.spec.ts — 6 tests (stats, create Gentle reminder, escalate Gentle→Formal, auth)
 
 Tier 3 — Communauté/support :
-- [ ] 5.14 Documents.spec.ts
-- [ ] 5.15 JournalEntries.spec.ts
-- [ ] 5.16 CallForFunds.spec.ts
-- [ ] 5.17 OwnerContributions.spec.ts
-- [ ] 5.18 WorkReports.spec.ts
-- [ ] 5.19 TechnicalInspections.spec.ts
-- [ ] 5.20 Notices.spec.ts
-- [ ] 5.21 Skills.spec.ts
-- [ ] 5.22 Sharing.spec.ts
-- [ ] 5.23 Bookings.spec.ts
-- [ ] 5.24 UnitOwners.spec.ts
-- [ ] 5.25 BoardManagement.spec.ts
-- [ ] 5.26 ChargeDistribution.spec.ts
-- [ ] 5.27 PublicSyndic.spec.ts
-- [ ] 5.28 Accounts.spec.ts
-- [ ] 5.29 FinancialReports.spec.ts
-- [ ] 5.30 Organizations.spec.ts
-- [ ] 5.31 Dashboard.spec.ts
-- [ ] 5.32 I18n.spec.ts
+
+- [x] 5.14 Documents.spec.ts — 4 tests (list documents, auth; multipart upload not tested in E2E)
+- [x] 5.15 JournalEntries.spec.ts — 4 tests (balanced entry, reject unbalanced, list, page display)
+- [x] 5.16 CallForFunds.spec.ts — 5 tests (create+list, get by ID, auth guard)
+- [x] 5.17 OwnerContributions.spec.ts — 6 tests (create, list, outstanding, mark-paid, auth guard)
+- [x] 5.18 WorkReports.spec.ts — 4 tests (create, list building, active warranties)
+- [x] 5.19 TechnicalInspections.spec.ts — 4 tests (create, list upcoming, list overdue)
+- [x] 5.20 Notices.spec.ts — 4 tests (create, detail nav, list building)
+- [x] 5.21 Skills.spec.ts — 4 tests (create skill offer, list building skills)
+- [x] 5.22 Sharing.spec.ts — 4 tests (create shared object, list available)
+- [x] 5.23 Bookings.spec.ts — 4 tests (create booking, list building bookings)
+- [x] 5.24 UnitOwners.spec.ts — 4 tests (create owner+assign unit, list owners, total percentage)
+- [x] 5.25 BoardManagement.spec.ts — 6 tests (elect member, list active, create decision, decision list, stats, auth)
+- [x] 5.26 ChargeDistribution.spec.ts — 4 tests (calculate distribution, get distribution, owner distributions)
+- [x] 5.27 PublicSyndic.spec.ts — 4 tests (404 non-existent, expose without auth, page display)
+- [x] 5.28 Accounts.spec.ts — 4 tests (seed PCMN, list accounts, get by code)
+- [x] 5.29 FinancialReports.spec.ts — 4 tests (balance sheet, income statement, auth guard)
+- [x] 5.30 Organizations.spec.ts — 4 tests (list, create, suspend, auth guard)
+- [x] 5.31 Dashboard.spec.ts — 5 tests (admin, syndic, owner dashboard, accountant stats)
+- [x] 5.32 I18n.spec.ts — 5 tests (login FR, homepage, legal mentions, 404, language switching)
 
 ### Phase 6 — Développement features manquantes Jalon 3 (TDD/BDD Red-Green-Commit)
 

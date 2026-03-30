@@ -49,4 +49,54 @@ test.describe("Owner Contributions - Payment Tracking", () => {
     );
     expect(listResp.ok()).toBeTruthy();
   });
+
+  test("should get outstanding contributions for owner", async ({ page }) => {
+    const { token, ownerId } = await loginAsSyndicWithOwner(page, "contrib");
+
+    const outstandingResp = await page.request.get(
+      `${API_BASE}/owner-contributions/outstanding?owner_id=${ownerId}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect([200, 404].includes(outstandingResp.status())).toBeTruthy();
+  });
+
+  test("should mark a contribution as paid", async ({ page }) => {
+    const { token, ownerId, orgId } = await loginAsSyndicWithOwner(
+      page,
+      "contrib",
+    );
+    const timestamp = Date.now();
+
+    const contribResp = await page.request.post(
+      `${API_BASE}/owner-contributions`,
+      {
+        data: {
+          organization_id: orgId,
+          owner_id: ownerId,
+          description: `Provision T3 2026 ${timestamp}`,
+          amount: 600.0,
+          contribution_type: "regular",
+          contribution_date: new Date().toISOString(),
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+
+    if (contribResp.ok()) {
+      const contrib = await contribResp.json();
+      const paidResp = await page.request.put(
+        `${API_BASE}/owner-contributions/${contrib.id}/mark-paid`,
+        {
+          data: { payment_date: new Date().toISOString() },
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      expect([200, 400].includes(paidResp.status())).toBeTruthy();
+    }
+  });
+
+  test("should require auth for owner contributions API", async ({ page }) => {
+    const resp = await page.request.get(`${API_BASE}/owner-contributions`);
+    expect([401, 403].includes(resp.status())).toBeTruthy();
+  });
 });

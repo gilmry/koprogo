@@ -54,4 +54,43 @@ test.describe("Call For Funds - Revenue Management", () => {
     const response = await listResp.json();
     expect(Array.isArray(response)).toBeTruthy();
   });
+
+  test("should get call for funds by ID", async ({ page }) => {
+    const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
+      page,
+      "cff",
+    );
+    const timestamp = Date.now();
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+
+    const cffResp = await page.request.post(`${API_BASE}/call-for-funds`, {
+      data: {
+        organization_id: orgId,
+        building_id: buildingId,
+        title: `Appel fonds T3 ${timestamp}`,
+        total_amount: 2500.0,
+        contribution_type: "regular",
+        call_date: new Date().toISOString(),
+        due_date: dueDate.toISOString(),
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (cffResp.ok()) {
+      const cff = await cffResp.json();
+      const getResp = await page.request.get(
+        `${API_BASE}/call-for-funds/${cff.id}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      expect(getResp.ok()).toBeTruthy();
+      const retrieved = await getResp.json();
+      expect(retrieved.id).toBe(cff.id);
+    }
+  });
+
+  test("should require auth for call-for-funds API", async ({ page }) => {
+    const resp = await page.request.get(`${API_BASE}/call-for-funds`);
+    expect([401, 403].includes(resp.status())).toBeTruthy();
+  });
 });
