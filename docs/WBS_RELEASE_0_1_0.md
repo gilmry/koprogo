@@ -5,6 +5,10 @@
 Première release officielle. Branche `release/0.1.0`, main stable pour GitOps.
 Avant d'écrire du code ou des tests, on fait un **audit sémantique** : chaque promesse métier des Jalons 0-3 est-elle spécifiée (BDD), implémentée (backend), câblée (frontend) et testée (E2E) ?
 
+> **Mise à jour 2026-03-30 (v4)** : Migration frontend vers versions latest stable —
+> Astro 6.1.2, Svelte 5.55.1, @astrojs/svelte 8.0.4, Vite 7.3.1, Playwright 1.58.2, Node 22 LTS.
+> Package-lock.json régénéré. Rebase + push 8 commits Phase 5-7 sur origin/main.
+>
 > **Mise à jour 2026-03-29 (v3)** : Audit et harmonisation des 6 documents Maury.
 > Tous les documents (product-brief, PRD, architecture, epics-and-stories, validation-report, estimation)
 > sont maintenant alignés sur le code : 4 majorités Art. 3.88 CC (Absolute/TwoThirds/FourFifths/Unanimity),
@@ -407,6 +411,10 @@ Les tests Playwright enregistrent des vidéos (déjà configuré : 1280x720). Ce
 
 - [x] WBS final documenté dans `docs/WBS_RELEASE_0_1_0.md` ✅
 - [x] Matrice de traçabilité incluse (Issue → BDD → E2E Backend → Frontend Page → API Client → Playwright) ✅
+- [x] Migration stack frontend latest stable (2026-03-30) :
+  - Astro **6.1.2** (was 6.0.8), @astrojs/svelte **8.0.4**, @astrojs/node **10.0.4**
+  - Svelte **5.55.1** (was 5.55.0), Vite **7.3.1** (was 7.0.0), Playwright **1.58.2**
+  - Node.js **22 LTS** (Dockerfiles + CI + .nvmrc), TypeScript 5.9.3 (latest 5.x)
 - [x] Métriques finales (2026-03-30) :
   - Backend Rust : **138 428 LOC** (`backend/src/`)
   - Frontend : **82 437 LOC** (`frontend/src/`)
