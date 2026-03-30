@@ -220,8 +220,12 @@ pub async fn list_expense_payments(
 #[get("/organizations/{organization_id}/payments")]
 pub async fn list_organization_payments(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match state
         .payment_use_cases
         .list_organization_payments(*organization_id)

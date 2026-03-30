@@ -85,9 +85,12 @@ pub async fn get_achievement(
 #[get("/organizations/{organization_id}/achievements")]
 pub async fn list_achievements(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = auth.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match data
         .achievement_use_cases
         .list_achievements(organization_id.into_inner())
@@ -107,10 +110,13 @@ pub async fn list_achievements(
 #[get("/organizations/{organization_id}/achievements/category/{category}")]
 pub async fn list_achievements_by_category(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
     let (organization_id, category_str) = path.into_inner();
+    if let Err(e) = auth.verify_org_access(organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
 
     // Parse category
     let category: AchievementCategory = match serde_json::from_str(&format!("\"{}\"", category_str))
@@ -144,6 +150,9 @@ pub async fn list_visible_achievements(
     auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = auth.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match data
         .achievement_use_cases
         .list_visible_achievements(organization_id.into_inner(), auth.user_id)
@@ -382,9 +391,12 @@ pub async fn get_challenge(
 #[get("/organizations/{organization_id}/challenges")]
 pub async fn list_challenges(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = auth.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match data
         .challenge_use_cases
         .list_challenges(organization_id.into_inner())
@@ -404,10 +416,13 @@ pub async fn list_challenges(
 #[get("/organizations/{organization_id}/challenges/status/{status}")]
 pub async fn list_challenges_by_status(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     path: web::Path<(Uuid, String)>,
 ) -> impl Responder {
     let (organization_id, status_str) = path.into_inner();
+    if let Err(e) = auth.verify_org_access(organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
 
     // Parse status
     let status: ChallengeStatus = match serde_json::from_str(&format!("\"{}\"", status_str)) {
@@ -458,9 +473,12 @@ pub async fn list_building_challenges(
 #[get("/organizations/{organization_id}/challenges/active")]
 pub async fn list_active_challenges(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = auth.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match data
         .challenge_use_cases
         .list_active_challenges(organization_id.into_inner())
@@ -750,6 +768,9 @@ pub async fn get_gamification_user_stats(
     auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = auth.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match data
         .gamification_stats_use_cases
         .get_user_stats(auth.user_id, organization_id.into_inner())
@@ -773,10 +794,13 @@ pub async fn get_gamification_user_stats(
 #[get("/organizations/{organization_id}/gamification/leaderboard")]
 pub async fn get_gamification_leaderboard(
     data: web::Data<AppState>,
-    _auth: AuthenticatedUser,
+    auth: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
     query: web::Query<serde_json::Value>,
 ) -> impl Responder {
+    if let Err(e) = auth.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     let building_id = query
         .get("building_id")
         .and_then(|v| v.as_str())

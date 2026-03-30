@@ -113,8 +113,12 @@ pub async fn list_building_work_reports(
 #[get("/organizations/{organization_id}/work-reports")]
 pub async fn list_organization_work_reports(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match state
         .work_report_use_cases
         .list_work_reports_by_organization(*organization_id)

@@ -140,8 +140,12 @@ pub async fn get_default_payment_method(
 #[get("/organizations/{organization_id}/payment-methods")]
 pub async fn list_organization_payment_methods(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match state
         .payment_method_use_cases
         .list_organization_payment_methods(*organization_id)

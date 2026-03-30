@@ -152,8 +152,12 @@ pub async fn list_building_tickets(
 #[get("/organizations/{organization_id}/tickets")]
 pub async fn list_organization_tickets(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match state
         .ticket_use_cases
         .list_tickets_by_organization(*organization_id)

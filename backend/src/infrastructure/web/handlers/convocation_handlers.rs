@@ -108,8 +108,12 @@ pub async fn list_building_convocations(
 #[get("/organizations/{organization_id}/convocations")]
 pub async fn list_organization_convocations(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match state
         .convocation_use_cases
         .list_organization_convocations(*organization_id)
