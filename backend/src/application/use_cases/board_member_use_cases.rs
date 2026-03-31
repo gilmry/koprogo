@@ -4,8 +4,23 @@ use crate::application::dto::{
 use crate::application::ports::{BoardMemberRepository, BuildingRepository};
 use crate::domain::entities::{BoardMember, BoardPosition};
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 use std::sync::Arc;
 use uuid::Uuid;
+
+/// Active board mandate enriched with building info (for the "my-mandates" endpoint).
+#[derive(Serialize)]
+pub struct ActiveMandateWithBuilding {
+    pub id: Uuid,
+    pub building_id: Uuid,
+    pub building_name: String,
+    pub building_address: String,
+    pub position: String,
+    pub mandate_start: String,
+    pub mandate_end: String,
+    pub days_remaining: i64,
+    pub expires_soon: bool,
+}
 
 pub struct BoardMemberUseCases {
     repository: Arc<dyn BoardMemberRepository>,
@@ -159,6 +174,43 @@ impl BoardMemberUseCases {
             has_president,
             has_treasurer,
         })
+    }
+
+    /// Get all active mandates for a given owner in a given organization, enriched with building info.
+    pub async fn get_active_mandates_for_owner(
+        &self,
+        owner_id: Uuid,
+        organization_id: Uuid,
+    ) -> Result<Vec<ActiveMandateWithBuilding>, String> {
+        let all_mandates = self.repository.find_by_owner(owner_id).await?;
+        let now = Utc::now();
+        let mut result = Vec::new();
+
+        for member in all_mandates {
+            if !member.is_active() {
+                continue;
+            }
+            let building = match self.building_repository.find_by_id(member.building_id).await? {
+                Some(b) => b,
+                None => continue,
+            };
+            if building.organization_id != organization_id {
+                continue;
+            }
+            let days_remaining = (member.mandate_end - now).num_days();
+            result.push(ActiveMandateWithBuilding {
+                id: member.id,
+                building_id: member.building_id,
+                building_name: building.name.clone(),
+                building_address: building.address.clone(),
+                position: member.position.to_string(),
+                mandate_start: member.mandate_start.format("%Y-%m-%d").to_string(),
+                mandate_end: member.mandate_end.format("%Y-%m-%d").to_string(),
+                days_remaining,
+                expires_soon: days_remaining > 0 && days_remaining <= 90,
+            });
+        }
+        Ok(result)
     }
 
     /// Vérifie si un propriétaire a un mandat actif pour un immeuble

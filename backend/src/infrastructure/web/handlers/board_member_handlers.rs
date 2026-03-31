@@ -315,16 +315,11 @@ pub async fn get_board_dashboard(
     };
 
     // Get owner_id from user->owner link
-    let owner_id_result =
-        sqlx::query_scalar::<_, Uuid>("SELECT id FROM owners WHERE user_id = $1 LIMIT 1")
-            .bind(user.user_id)
-            .fetch_optional(&state.pool)
-            .await;
-
-    let owner_id = match owner_id_result {
-        Ok(Some(oid)) => oid,
+    let owner_id = match state.owner_use_cases.find_owner_by_user_id(user.user_id).await {
+        Ok(Some(owner_dto)) => {
+            uuid::Uuid::parse_str(&owner_dto.id).unwrap_or(user.user_id)
+        }
         Ok(None) => {
-            // User is not linked to an owner
             return HttpResponse::Forbidden().json(serde_json::json!({
                 "error": "User is not linked to an owner. Board dashboard is only accessible to board members."
             }));
@@ -388,20 +383,21 @@ pub async fn get_my_mandates(
     };
 
     // Get the owner ID for this user
-    let owner_id = match sqlx::query_scalar::<_, Uuid>(
-        "SELECT id FROM owners WHERE user_id = $1 AND organization_id = $2 AND is_anonymized = false"
-    )
-    .bind(user.user_id)
-    .bind(organization_id)
-    .fetch_optional(&state.pool)
-    .await
+    let owner_id = match state
+        .owner_use_cases
+        .find_owner_by_user_id_and_organization(user.user_id, organization_id)
+        .await
     {
-        Ok(Some(id)) => id,
+        Ok(Some(owner_dto)) => match uuid::Uuid::parse_str(&owner_dto.id) {
+            Ok(id) => id,
+            Err(_) => {
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "error": "Invalid owner id"
+                }))
+            }
+        },
         Ok(None) => {
-            // User is not linked to an owner - return empty list
-            return HttpResponse::Ok().json(serde_json::json!({
-                "mandates": []
-            }));
+            return HttpResponse::Ok().json(serde_json::json!({ "mandates": [] }));
         }
         Err(err) => {
             return HttpResponse::InternalServerError().json(serde_json::json!({
@@ -410,77 +406,13 @@ pub async fn get_my_mandates(
         }
     };
 
-    // Get all active board member mandates for this owner
-    match sqlx::query_as::<
-        _,
-        (
-            Uuid,
-            Uuid,
-            String,
-            String,
-            chrono::DateTime<chrono::Utc>,
-            chrono::DateTime<chrono::Utc>,
-            String,
-        ),
-    >(
-        r#"
-        SELECT
-            bm.id,
-            bm.building_id,
-            bm.position::TEXT,
-            b.name as building_name,
-            bm.mandate_start,
-            bm.mandate_end,
-            b.address
-        FROM board_members bm
-        JOIN buildings b ON b.id = bm.building_id
-        WHERE bm.owner_id = $1
-          AND bm.organization_id = $2
-          AND bm.is_active = true
-        ORDER BY bm.mandate_end DESC
-        "#,
-    )
-    .bind(owner_id)
-    .bind(organization_id)
-    .fetch_all(&state.pool)
-    .await
+    // Get all active board member mandates for this owner (with building info)
+    match state
+        .board_member_use_cases
+        .get_active_mandates_for_owner(owner_id, organization_id)
+        .await
     {
-        Ok(rows) => {
-            let mandates: Vec<serde_json::Value> = rows
-                .into_iter()
-                .map(
-                    |(
-                        id,
-                        building_id,
-                        position,
-                        building_name,
-                        mandate_start,
-                        mandate_end,
-                        address,
-                    )| {
-                        let now = chrono::Utc::now();
-                        let days_remaining = (mandate_end - now).num_days();
-                        let expires_soon = days_remaining > 0 && days_remaining <= 90;
-
-                        serde_json::json!({
-                            "id": id,
-                            "building_id": building_id,
-                            "building_name": building_name,
-                            "building_address": address,
-                            "position": position,
-                            "mandate_start": mandate_start.format("%Y-%m-%d").to_string(),
-                            "mandate_end": mandate_end.format("%Y-%m-%d").to_string(),
-                            "days_remaining": days_remaining,
-                            "expires_soon": expires_soon,
-                        })
-                    },
-                )
-                .collect();
-
-            HttpResponse::Ok().json(serde_json::json!({
-                "mandates": mandates
-            }))
-        }
+        Ok(mandates) => HttpResponse::Ok().json(serde_json::json!({ "mandates": mandates })),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to fetch mandates: {}", err)
         })),

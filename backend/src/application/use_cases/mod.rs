@@ -62,7 +62,7 @@ pub use age_request_use_cases::AgeRequestUseCases;
 pub use auth_use_cases::AuthUseCases;
 pub use board_dashboard_use_cases::{BoardDashboardResponse, BoardDashboardUseCases};
 pub use board_decision_use_cases::BoardDecisionUseCases;
-pub use board_member_use_cases::BoardMemberUseCases;
+pub use board_member_use_cases::{ActiveMandateWithBuilding, BoardMemberUseCases};
 pub use boinc_use_cases::{BoincUseCases, GridTaskResponseDto, SubmitOptimisationTaskDto};
 pub use budget_use_cases::BudgetUseCases;
 pub use building_use_cases::BuildingUseCases;
