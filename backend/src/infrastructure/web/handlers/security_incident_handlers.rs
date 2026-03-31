@@ -224,8 +224,9 @@ pub async fn list_overdue_incidents(
                 total,
             })
         }
-        Err(e) => HttpResponse::InternalServerError()
-            .json(serde_json::json!({ "error": format!("Failed to fetch overdue incidents: {}", e) })),
+        Err(e) => HttpResponse::InternalServerError().json(
+            serde_json::json!({ "error": format!("Failed to fetch overdue incidents: {}", e) }),
+        ),
     }
 }
 
@@ -271,10 +272,7 @@ pub async fn report_incident_to_apd(
     }
 
     let incident_id = path.into_inner();
-    let apd_ref = body
-        .apd_reference_number
-        .clone()
-        .unwrap_or_default();
+    let apd_ref = body.apd_reference_number.clone().unwrap_or_default();
 
     match data
         .security_incident_use_cases

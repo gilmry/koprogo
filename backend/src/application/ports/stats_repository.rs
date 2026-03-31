@@ -11,10 +11,8 @@ pub trait StatsRepository: Send + Sync {
     async fn get_seed_data_stats(&self) -> Result<SeedDataStats, String>;
 
     /// Returns stats for all buildings in the given organization.
-    async fn get_syndic_stats(
-        &self,
-        organization_id: Uuid,
-    ) -> Result<SyndicDashboardStats, String>;
+    async fn get_syndic_stats(&self, organization_id: Uuid)
+        -> Result<SyndicDashboardStats, String>;
 
     /// Returns stats for buildings where the given owner has active units.
     async fn get_owner_stats(&self, owner_id: Uuid) -> Result<SyndicDashboardStats, String>;

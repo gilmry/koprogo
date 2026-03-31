@@ -183,14 +183,13 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn update_password(&self, id: Uuid, password_hash: &str) -> Result<bool, String> {
-        let result = sqlx::query(
-            "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
-        )
-        .bind(password_hash)
-        .bind(id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| format!("Failed to update password: {}", e))?;
+        let result =
+            sqlx::query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2")
+                .bind(password_hash)
+                .bind(id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to update password: {}", e))?;
 
         Ok(result.rows_affected() > 0)
     }

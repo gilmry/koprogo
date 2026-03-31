@@ -260,7 +260,11 @@ mod tests {
             Ok(items.remove(&id).is_some())
         }
 
-        async fn set_user_link(&self, owner_id: Uuid, user_id: Option<Uuid>) -> Result<bool, String> {
+        async fn set_user_link(
+            &self,
+            owner_id: Uuid,
+            user_id: Option<Uuid>,
+        ) -> Result<bool, String> {
             let mut items = self.items.lock().unwrap();
             if let Some(owner) = items.get_mut(&owner_id) {
                 owner.user_id = user_id;

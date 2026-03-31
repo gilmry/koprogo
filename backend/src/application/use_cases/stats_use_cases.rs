@@ -115,10 +115,7 @@ mod tests {
                 next_meeting: None,
             })
         }
-        async fn find_owner_id_by_user_id(
-            &self,
-            _user_id: Uuid,
-        ) -> Result<Option<Uuid>, String> {
+        async fn find_owner_id_by_user_id(&self, _user_id: Uuid) -> Result<Option<Uuid>, String> {
             Ok(self.owner_id)
         }
         async fn get_syndic_urgent_tasks(

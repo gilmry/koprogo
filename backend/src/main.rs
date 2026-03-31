@@ -385,8 +385,7 @@ async fn main() -> std::io::Result<()> {
     let individual_member_use_cases = IndividualMemberUseCases::new(individual_member_repo);
 
     // Security Incidents (GDPR Art. 33 — APD notification within 72h)
-    let security_incident_repo =
-        Arc::new(PostgresSecurityIncidentRepository::new(pool.clone()));
+    let security_incident_repo = Arc::new(PostgresSecurityIncidentRepository::new(pool.clone()));
     let security_incident_use_cases = SecurityIncidentUseCases::new(security_incident_repo);
 
     // Consent (GDPR Art. 7)

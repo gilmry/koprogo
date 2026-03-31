@@ -81,7 +81,12 @@ impl SecurityIncidentUseCases {
             }
             Some(_) => {
                 self.repository
-                    .report_to_apd(id, organization_id, apd_reference_number, investigation_notes)
+                    .report_to_apd(
+                        id,
+                        organization_id,
+                        apd_reference_number,
+                        investigation_notes,
+                    )
                     .await
             }
         }
@@ -140,10 +145,7 @@ mod tests {
             Ok(None)
         }
 
-        async fn find_overdue(
-            &self,
-            _org: Option<Uuid>,
-        ) -> Result<Vec<SecurityIncident>, String> {
+        async fn find_overdue(&self, _org: Option<Uuid>) -> Result<Vec<SecurityIncident>, String> {
             Ok(vec![])
         }
     }

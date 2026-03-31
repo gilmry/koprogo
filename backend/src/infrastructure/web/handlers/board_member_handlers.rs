@@ -315,10 +315,12 @@ pub async fn get_board_dashboard(
     };
 
     // Get owner_id from user->owner link
-    let owner_id = match state.owner_use_cases.find_owner_by_user_id(user.user_id).await {
-        Ok(Some(owner_dto)) => {
-            uuid::Uuid::parse_str(&owner_dto.id).unwrap_or(user.user_id)
-        }
+    let owner_id = match state
+        .owner_use_cases
+        .find_owner_by_user_id(user.user_id)
+        .await
+    {
+        Ok(Some(owner_dto)) => uuid::Uuid::parse_str(&owner_dto.id).unwrap_or(user.user_id),
         Ok(None) => {
             return HttpResponse::Forbidden().json(serde_json::json!({
                 "error": "User is not linked to an owner. Board dashboard is only accessible to board members."

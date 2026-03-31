@@ -109,11 +109,10 @@ pub async fn create_organization(
                 "error": e.trim_start_matches("validation_error:")
             }))
         }
-        Err(e) if e.contains("unique") || e.contains("duplicate") => {
-            HttpResponse::BadRequest().json(serde_json::json!({
+        Err(e) if e.contains("unique") || e.contains("duplicate") => HttpResponse::BadRequest()
+            .json(serde_json::json!({
                 "error": "Slug already exists"
-            }))
-        }
+            })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to create organization: {}", e)
         })),
@@ -161,11 +160,10 @@ pub async fn update_organization(
                 "error": e.trim_start_matches("validation_error:")
             }))
         }
-        Err(e) if e.contains("unique") || e.contains("duplicate") => {
-            HttpResponse::BadRequest().json(serde_json::json!({
+        Err(e) if e.contains("unique") || e.contains("duplicate") => HttpResponse::BadRequest()
+            .json(serde_json::json!({
                 "error": "Slug already exists"
-            }))
-        }
+            })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Failed to update organization: {}", e)
         })),

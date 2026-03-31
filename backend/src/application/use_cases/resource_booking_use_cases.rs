@@ -784,9 +784,18 @@ mod tests {
             Ok(map.remove(&id).is_some())
         }
 
-        async fn set_user_link(&self, owner_id: Uuid, user_id: Option<Uuid>) -> Result<bool, String> {
+        async fn set_user_link(
+            &self,
+            owner_id: Uuid,
+            user_id: Option<Uuid>,
+        ) -> Result<bool, String> {
             let mut map = self.owners.lock().unwrap();
-            if let Some(o) = map.get_mut(&owner_id) { o.user_id = user_id; Ok(true) } else { Ok(false) }
+            if let Some(o) = map.get_mut(&owner_id) {
+                o.user_id = user_id;
+                Ok(true)
+            } else {
+                Ok(false)
+            }
         }
     }
 

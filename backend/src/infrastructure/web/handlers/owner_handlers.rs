@@ -7,7 +7,6 @@ use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
 
-
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpdateOwnerDto {
     #[validate(length(min = 1, message = "First name is required"))]
@@ -331,7 +330,11 @@ pub async fn link_owner_to_user(
 
     // If linking to a user, verify the user exists and has 'owner' role
     if let Some(uid) = user_id_to_link {
-        match state.user_use_cases.validate_user_has_role(uid, "owner").await {
+        match state
+            .user_use_cases
+            .validate_user_has_role(uid, "owner")
+            .await
+        {
             Ok(()) => {}
             Err(e) if e == "User not found" => {
                 return HttpResponse::NotFound().json(serde_json::json!({ "error": e }));
@@ -375,7 +378,11 @@ pub async fn link_owner_to_user(
             .with_resource("Owner", owner_id)
             .log();
 
-            let action = if user_id_to_link.is_some() { "linked" } else { "unlinked" };
+            let action = if user_id_to_link.is_some() {
+                "linked"
+            } else {
+                "unlinked"
+            };
 
             HttpResponse::Ok().json(serde_json::json!({
                 "message": format!("Owner successfully {} to user", action),

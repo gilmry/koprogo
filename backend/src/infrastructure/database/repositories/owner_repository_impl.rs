@@ -379,14 +379,13 @@ impl OwnerRepository for PostgresOwnerRepository {
     }
 
     async fn set_user_link(&self, owner_id: Uuid, user_id: Option<Uuid>) -> Result<bool, String> {
-        let result = sqlx::query(
-            "UPDATE owners SET user_id = $1, updated_at = NOW() WHERE id = $2",
-        )
-        .bind(user_id)
-        .bind(owner_id)
-        .execute(&self.pool)
-        .await
-        .map_err(|e| format!("Database error: {}", e))?;
+        let result =
+            sqlx::query("UPDATE owners SET user_id = $1, updated_at = NOW() WHERE id = $2")
+                .bind(user_id)
+                .bind(owner_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| format!("Database error: {}", e))?;
 
         Ok(result.rows_affected() > 0)
     }

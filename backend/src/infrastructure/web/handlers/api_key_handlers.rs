@@ -209,10 +209,7 @@ pub async fn create_api_key(
 
 /// List API keys for organization (key bodies hidden)
 #[get("/api-keys")]
-pub async fn list_api_keys(
-    claims: AuthenticatedUser,
-    state: web::Data<AppState>,
-) -> HttpResponse {
+pub async fn list_api_keys(claims: AuthenticatedUser, state: web::Data<AppState>) -> HttpResponse {
     let org_id = match claims.organization_id {
         Some(id) => id,
         None => {

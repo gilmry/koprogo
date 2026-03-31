@@ -50,12 +50,8 @@ struct NormalizedRole {
 impl NormalizedRole {
     fn to_assignment(&self, user_id: Uuid) -> UserRoleAssignment {
         let domain_role = self.role.parse::<UserRole>().expect("already validated");
-        let mut a = UserRoleAssignment::new(
-            user_id,
-            domain_role,
-            self.organization_id,
-            self.is_primary,
-        );
+        let mut a =
+            UserRoleAssignment::new(user_id, domain_role, self.organization_id, self.is_primary);
         a.id = self.id;
         a
     }
@@ -130,10 +126,7 @@ pub async fn create_user(
         .map(|r| r.to_assignment(Uuid::nil())) // user_id filled by use case
         .collect();
 
-    let primary_role = primary
-        .role
-        .parse::<UserRole>()
-        .expect("already validated");
+    let primary_role = primary.role.parse::<UserRole>().expect("already validated");
 
     match state
         .user_use_cases
@@ -218,15 +211,10 @@ pub async fn update_user(
         None
     };
 
-    let assignments: Vec<UserRoleAssignment> = roles
-        .iter()
-        .map(|r| r.to_assignment(user_id))
-        .collect();
+    let assignments: Vec<UserRoleAssignment> =
+        roles.iter().map(|r| r.to_assignment(user_id)).collect();
 
-    let primary_role = primary
-        .role
-        .parse::<UserRole>()
-        .expect("already validated");
+    let primary_role = primary.role.parse::<UserRole>().expect("already validated");
 
     match state
         .user_use_cases

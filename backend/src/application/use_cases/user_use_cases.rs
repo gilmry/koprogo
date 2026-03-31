@@ -34,10 +34,7 @@ pub struct UserUseCases {
 }
 
 impl UserUseCases {
-    pub fn new(
-        user_repo: Arc<dyn UserRepository>,
-        role_repo: Arc<dyn UserRoleRepository>,
-    ) -> Self {
+    pub fn new(user_repo: Arc<dyn UserRepository>, role_repo: Arc<dyn UserRoleRepository>) -> Self {
         Self {
             user_repo,
             role_repo,
@@ -62,7 +59,7 @@ impl UserUseCases {
         }
     }
 
-    fn ensure_primary(roles: &mut Vec<RoleResponse>) {
+    fn ensure_primary(roles: &mut [RoleResponse]) {
         if roles.is_empty() {
             return;
         }
@@ -74,7 +71,10 @@ impl UserUseCases {
 
     fn build_response(user: User, assignments: Vec<UserRoleAssignment>) -> UserResponse {
         let mut roles: Vec<RoleResponse> = if assignments.is_empty() {
-            vec![Self::fallback_role(&user.role.to_string(), user.organization_id)]
+            vec![Self::fallback_role(
+                &user.role.to_string(),
+                user.organization_id,
+            )]
         } else {
             assignments.iter().map(Self::to_role_response).collect()
         };
@@ -134,8 +134,14 @@ impl UserUseCases {
         primary_org: Option<Uuid>,
         role_assignments: Vec<UserRoleAssignment>,
     ) -> Result<UserResponse, String> {
-        let user =
-            User::new(email, password_hash, first_name, last_name, primary_role, primary_org)?;
+        let user = User::new(
+            email,
+            password_hash,
+            first_name,
+            last_name,
+            primary_role,
+            primary_org,
+        )?;
         let created = self.user_repo.create(&user).await?;
 
         // Build assignments with the real user_id
@@ -290,9 +296,7 @@ mod tests {
     #[tokio::test]
     async fn test_activate_not_found() {
         let mut mock_user = MockUserRepo::new();
-        mock_user
-            .expect_activate()
-            .returning(|_| Ok(None));
+        mock_user.expect_activate().returning(|_| Ok(None));
 
         let mock_role = MockUserRoleRepo::new();
         let uc = UserUseCases::new(Arc::new(mock_user), Arc::new(mock_role));

@@ -190,7 +190,11 @@ impl BoardMemberUseCases {
             if !member.is_active() {
                 continue;
             }
-            let building = match self.building_repository.find_by_id(member.building_id).await? {
+            let building = match self
+                .building_repository
+                .find_by_id(member.building_id)
+                .await?
+            {
                 Some(b) => b,
                 None => continue,
             };

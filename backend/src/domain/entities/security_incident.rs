@@ -41,7 +41,7 @@ pub enum IncidentStatus {
     Detected,
     Investigating,
     Contained,
-    Reported,  // Notifié à l'APD (Art. 33 GDPR — délai 72h)
+    Reported, // Notifié à l'APD (Art. 33 GDPR — délai 72h)
     Closed,
 }
 

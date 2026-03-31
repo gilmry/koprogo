@@ -17,10 +17,8 @@ impl PostgresSecurityIncidentRepository {
     }
 
     fn row_to_incident(row: &sqlx::postgres::PgRow) -> SecurityIncident {
-        let data_categories: Option<Vec<String>> = row
-            .try_get("data_categories_affected")
-            .ok()
-            .unwrap_or(None);
+        let data_categories: Option<Vec<String>> =
+            row.try_get("data_categories_affected").ok().unwrap_or(None);
 
         SecurityIncident {
             id: row.get("id"),
@@ -232,13 +230,11 @@ impl SecurityIncidentRepository for PostgresSecurityIncidentRepository {
         .map_err(|e| format!("Failed to list security incidents: {}", e))?;
 
         let total: i64 = if let Some(org_id) = organization_id {
-            sqlx::query_scalar(
-                "SELECT COUNT(*) FROM security_incidents WHERE organization_id = $1",
-            )
-            .bind(org_id)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| format!("Failed to count incidents: {}", e))?
+            sqlx::query_scalar("SELECT COUNT(*) FROM security_incidents WHERE organization_id = $1")
+                .bind(org_id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|e| format!("Failed to count incidents: {}", e))?
         } else {
             sqlx::query_scalar("SELECT COUNT(*) FROM security_incidents")
                 .fetch_one(&self.pool)
