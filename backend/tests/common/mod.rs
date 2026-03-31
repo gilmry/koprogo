@@ -174,9 +174,10 @@ pub async fn setup_test_db() -> (
     let auth_use_cases = AuthUseCases::new(
         user_repo.clone(),
         refresh_token_repo,
-        user_role_repo,
+        user_role_repo.clone(),
         jwt_secret,
     );
+    let user_use_cases = UserUseCases::new(user_repo.clone(), user_role_repo);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -470,6 +471,7 @@ pub async fn setup_test_db() -> (
         pool.clone(),
         mqtt_energy_adapter,
         boinc_use_cases,
+        user_use_cases,
     ));
 
     (app_state, container, org_id)

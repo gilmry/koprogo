@@ -720,6 +720,28 @@ mod tests {
             Ok(user.clone())
         }
 
+        async fn update_password(&self, _id: Uuid, _h: &str) -> Result<bool, String> {
+            Ok(true)
+        }
+
+        async fn activate(&self, id: Uuid) -> Result<Option<User>, String> {
+            let mut store = self.users.lock().unwrap();
+            if let Some(u) = store.get_mut(&id) {
+                u.is_active = true;
+                return Ok(Some(u.clone()));
+            }
+            Ok(None)
+        }
+
+        async fn deactivate(&self, id: Uuid) -> Result<Option<User>, String> {
+            let mut store = self.users.lock().unwrap();
+            if let Some(u) = store.get_mut(&id) {
+                u.is_active = false;
+                return Ok(Some(u.clone()));
+            }
+            Ok(None)
+        }
+
         async fn delete(&self, id: Uuid) -> Result<bool, String> {
             let mut store = self.users.lock().unwrap();
             Ok(store.remove(&id).is_some())

@@ -1139,6 +1139,15 @@ mod tests {
         async fn update(&self, _u: &User) -> Result<User, String> {
             Err("not impl".to_string())
         }
+        async fn update_password(&self, _id: Uuid, _h: &str) -> Result<bool, String> {
+            Ok(false)
+        }
+        async fn activate(&self, _id: Uuid) -> Result<Option<User>, String> {
+            Ok(None)
+        }
+        async fn deactivate(&self, _id: Uuid) -> Result<Option<User>, String> {
+            Ok(None)
+        }
         async fn delete(&self, _id: Uuid) -> Result<bool, String> {
             Ok(false)
         }

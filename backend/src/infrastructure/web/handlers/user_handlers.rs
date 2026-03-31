@@ -1,36 +1,14 @@
+use crate::domain::entities::UserRole;
+use crate::domain::entities::UserRoleAssignment;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use bcrypt::{hash, DEFAULT_COST};
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
-use sqlx::{Executor, Postgres, Transaction};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use uuid::Uuid;
 
 const ALLOWED_ROLES: [&str; 4] = ["superadmin", "syndic", "accountant", "owner"];
-
-#[derive(Serialize, Clone)]
-pub struct RoleResponse {
-    pub id: String,
-    pub role: String,
-    pub organization_id: Option<String>,
-    pub is_primary: bool,
-}
-
-#[derive(Serialize, Clone)]
-pub struct UserResponse {
-    pub id: String,
-    pub email: String,
-    pub first_name: String,
-    pub last_name: String,
-    pub role: String,
-    pub organization_id: Option<String>,
-    pub is_active: bool,
-    pub created_at: DateTime<Utc>,
-    pub roles: Vec<RoleResponse>,
-    pub active_role: Option<RoleResponse>,
-}
 
 #[derive(Deserialize, Clone)]
 pub struct RoleAssignmentRequest {
@@ -62,14 +40,28 @@ pub struct UpdateUserRequest {
 }
 
 #[derive(Clone, Debug)]
-struct NormalizedRoleAssignment {
+struct NormalizedRole {
     id: Uuid,
     role: String,
     organization_id: Option<Uuid>,
     is_primary: bool,
 }
 
-/// List all users (SuperAdmin only)
+impl NormalizedRole {
+    fn to_assignment(&self, user_id: Uuid) -> UserRoleAssignment {
+        let domain_role = self.role.parse::<UserRole>().expect("already validated");
+        let mut a = UserRoleAssignment::new(
+            user_id,
+            domain_role,
+            self.organization_id,
+            self.is_primary,
+        );
+        a.id = self.id;
+        a
+    }
+}
+
+/// GET /api/v1/users — list all users (SuperAdmin only)
 #[get("/users")]
 pub async fn list_users(state: web::Data<AppState>, user: AuthenticatedUser) -> impl Responder {
     if user.role != "superadmin" {
@@ -78,74 +70,15 @@ pub async fn list_users(state: web::Data<AppState>, user: AuthenticatedUser) -> 
         }));
     }
 
-    let rows = match sqlx::query!(
-        r#"
-        SELECT id, email, first_name, last_name, role, organization_id, is_active, created_at
-        FROM users
-        ORDER BY created_at DESC
-        "#
-    )
-    .fetch_all(&state.pool)
-    .await
-    {
-        Ok(rows) => rows,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to fetch users: {}", e)
-            }))
-        }
-    };
-
-    let user_ids: Vec<Uuid> = rows.iter().map(|row| row.id).collect();
-    let roles_map = match load_roles_for_users(&state.pool, &user_ids).await {
-        Ok(map) => map,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to fetch user roles: {}", e)
-            }))
-        }
-    };
-
-    let mut users: Vec<UserResponse> = Vec::with_capacity(user_ids.len());
-    for row in rows {
-        let fallback_role = row.role.clone();
-        let fallback_org = row.organization_id;
-        let mut roles = roles_map
-            .get(&row.id)
-            .cloned()
-            .unwrap_or_else(|| vec![fallback_role_response(fallback_role.clone(), fallback_org)]);
-
-        normalize_primary_role(&mut roles);
-        let active_role = roles
-            .iter()
-            .find(|role| role.is_primary)
-            .cloned()
-            .or_else(|| roles.first().cloned());
-
-        users.push(UserResponse {
-            id: row.id.to_string(),
-            email: row.email,
-            first_name: row.first_name,
-            last_name: row.last_name,
-            role: active_role
-                .as_ref()
-                .map(|r| r.role.clone())
-                .unwrap_or(fallback_role),
-            organization_id: active_role
-                .as_ref()
-                .and_then(|r| r.organization_id.clone())
-                .or_else(|| fallback_org.map(|id| id.to_string())),
-            is_active: row.is_active,
-            created_at: row.created_at,
-            roles,
-            active_role,
-        });
+    match state.user_use_cases.list_all().await {
+        Ok(users) => HttpResponse::Ok().json(json!({ "data": users })),
+        Err(e) => HttpResponse::InternalServerError().json(json!({
+            "error": format!("Failed to fetch users: {}", e)
+        })),
     }
-
-    HttpResponse::Ok().json(json!({ "data": users }))
 }
 
-/// Create user (SuperAdmin only)
+/// POST /api/v1/users — create user (SuperAdmin only)
 #[post("/users")]
 pub async fn create_user(
     state: web::Data<AppState>,
@@ -159,17 +92,13 @@ pub async fn create_user(
     }
 
     if !req.email.contains('@') {
-        return HttpResponse::BadRequest().json(json!({
-            "error": "Invalid email format"
-        }));
+        return HttpResponse::BadRequest().json(json!({ "error": "Invalid email format" }));
     }
-
     if req.first_name.trim().len() < 2 || req.last_name.trim().len() < 2 {
         return HttpResponse::BadRequest().json(json!({
             "error": "First and last names must be at least 2 characters"
         }));
     }
-
     if req.password.trim().len() < 6 {
         return HttpResponse::BadRequest().json(json!({
             "error": "Password must be at least 6 characters"
@@ -177,18 +106,18 @@ pub async fn create_user(
     }
 
     let roles = match normalize_roles(req.roles.clone(), req.role.clone(), req.organization_id) {
-        Ok(roles) => roles,
+        Ok(r) => r,
         Err(resp) => return resp,
     };
 
-    let primary_role = roles
+    let primary = roles
         .iter()
-        .find(|role| role.is_primary)
+        .find(|r| r.is_primary)
         .cloned()
-        .expect("normalized roles always have a primary role");
+        .expect("normalized roles always have a primary");
 
     let hashed_password = match hash(req.password.trim(), DEFAULT_COST) {
-        Ok(hash) => hash,
+        Ok(h) => h,
         Err(e) => {
             return HttpResponse::InternalServerError().json(json!({
                 "error": format!("Failed to hash password: {}", e)
@@ -196,66 +125,40 @@ pub async fn create_user(
         }
     };
 
-    let mut tx = match state.pool.begin().await {
-        Ok(tx) => tx,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to begin transaction: {}", e)
-            }))
-        }
-    };
+    let assignments: Vec<UserRoleAssignment> = roles
+        .iter()
+        .map(|r| r.to_assignment(Uuid::nil())) // user_id filled by use case
+        .collect();
 
-    let user_row = match sqlx::query!(
-        r#"
-        INSERT INTO users (id, email, password_hash, first_name, last_name, role, organization_id, is_active, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true, NOW(), NOW())
-        RETURNING id
-        "#,
-        Uuid::new_v4(),
-        req.email.trim().to_lowercase(),
-        hashed_password,
-        req.first_name.trim(),
-        req.last_name.trim(),
-        primary_role.role.clone(),
-        primary_role.organization_id
-    )
-    .fetch_one(&mut *tx)
-    .await
+    let primary_role = primary
+        .role
+        .parse::<UserRole>()
+        .expect("already validated");
+
+    match state
+        .user_use_cases
+        .create(
+            req.email.trim().to_lowercase(),
+            hashed_password,
+            req.first_name.trim().to_string(),
+            req.last_name.trim().to_string(),
+            primary_role,
+            primary.organization_id,
+            assignments,
+        )
+        .await
     {
-        Ok(row) => row,
-        Err(sqlx::Error::Database(db_err)) if db_err.is_unique_violation() => {
-            return HttpResponse::BadRequest().json(json!({
-                "error": "Email already exists"
-            }))
-        }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to create user: {}", e)
-            }))
-        }
-    };
-
-    if let Err(e) = replace_user_roles(&mut tx, user_row.id, &roles).await {
-        return HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to assign roles: {}", e)
-        }));
-    }
-
-    if let Err(e) = tx.commit().await {
-        return HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to commit transaction: {}", e)
-        }));
-    }
-
-    match load_user_response(&state.pool, user_row.id).await {
-        Ok(response) => HttpResponse::Created().json(response),
+        Ok(resp) => HttpResponse::Created().json(resp),
+        Err(e) if e == "email_exists" => HttpResponse::BadRequest().json(json!({
+            "error": "Email already exists"
+        })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to load created user: {}", e)
+            "error": format!("Failed to create user: {}", e)
         })),
     }
 }
 
-/// Update user (SuperAdmin only)
+/// PUT /api/v1/users/{id} — update user (SuperAdmin only)
 #[put("/users/{id}")]
 pub async fn update_user(
     state: web::Data<AppState>,
@@ -270,17 +173,13 @@ pub async fn update_user(
     }
 
     if !req.email.contains('@') {
-        return HttpResponse::BadRequest().json(json!({
-            "error": "Invalid email format"
-        }));
+        return HttpResponse::BadRequest().json(json!({ "error": "Invalid email format" }));
     }
-
     if req.first_name.trim().len() < 2 || req.last_name.trim().len() < 2 {
         return HttpResponse::BadRequest().json(json!({
             "error": "First and last names must be at least 2 characters"
         }));
     }
-
     if let Some(password) = &req.password {
         if !password.trim().is_empty() && password.trim().len() < 6 {
             return HttpResponse::BadRequest().json(json!({
@@ -290,119 +189,71 @@ pub async fn update_user(
     }
 
     let roles = match normalize_roles(req.roles.clone(), req.role.clone(), req.organization_id) {
-        Ok(roles) => roles,
+        Ok(r) => r,
         Err(resp) => return resp,
     };
 
-    let primary_role = roles
+    let primary = roles
         .iter()
-        .find(|role| role.is_primary)
+        .find(|r| r.is_primary)
         .cloned()
-        .expect("normalized roles always have a primary role");
+        .expect("normalized roles always have a primary");
 
     let user_id = path.into_inner();
 
-    let mut tx = match state.pool.begin().await {
-        Ok(tx) => tx,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to begin transaction: {}", e)
-            }))
-        }
-    };
-
-    if let Some(password) = &req.password {
-        if !password.trim().is_empty() {
-            let hashed = match hash(password.trim(), DEFAULT_COST) {
-                Ok(hash) => hash,
+    let password_hash = if let Some(pw) = &req.password {
+        if !pw.trim().is_empty() {
+            match hash(pw.trim(), DEFAULT_COST) {
+                Ok(h) => Some(h),
                 Err(e) => {
                     return HttpResponse::InternalServerError().json(json!({
                         "error": format!("Failed to hash password: {}", e)
-                    }));
+                    }))
                 }
-            };
-
-            if let Err(e) = tx
-                .execute(sqlx::query!(
-                    r#"
-                    UPDATE users
-                    SET password_hash = $1, updated_at = NOW()
-                    WHERE id = $2
-                    "#,
-                    hashed,
-                    user_id
-                ))
-                .await
-            {
-                return HttpResponse::InternalServerError().json(json!({
-                    "error": format!("Failed to update password: {}", e)
-                }));
             }
+        } else {
+            None
         }
-    }
-
-    let updated = match sqlx::query!(
-        r#"
-        UPDATE users
-        SET email = $1,
-            first_name = $2,
-            last_name = $3,
-            role = $4,
-            organization_id = $5,
-            updated_at = NOW()
-        WHERE id = $6
-        RETURNING id
-        "#,
-        req.email.trim().to_lowercase(),
-        req.first_name.trim(),
-        req.last_name.trim(),
-        primary_role.role.clone(),
-        primary_role.organization_id,
-        user_id
-    )
-    .fetch_optional(&mut *tx)
-    .await
-    {
-        Ok(row) => row,
-        Err(sqlx::Error::Database(db_err)) if db_err.is_unique_violation() => {
-            return HttpResponse::BadRequest().json(json!({
-                "error": "Email already exists"
-            }))
-        }
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to update user: {}", e)
-            }))
-        }
+    } else {
+        None
     };
 
-    if updated.is_none() {
-        return HttpResponse::NotFound().json(json!({
-            "error": "User not found"
-        }));
-    }
+    let assignments: Vec<UserRoleAssignment> = roles
+        .iter()
+        .map(|r| r.to_assignment(user_id))
+        .collect();
 
-    if let Err(e) = replace_user_roles(&mut tx, user_id, &roles).await {
-        return HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to update user roles: {}", e)
-        }));
-    }
+    let primary_role = primary
+        .role
+        .parse::<UserRole>()
+        .expect("already validated");
 
-    if let Err(e) = tx.commit().await {
-        return HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to commit transaction: {}", e)
-        }));
-    }
-
-    match load_user_response(&state.pool, user_id).await {
-        Ok(response) => HttpResponse::Ok().json(response),
+    match state
+        .user_use_cases
+        .update(
+            user_id,
+            req.email.trim().to_lowercase(),
+            req.first_name.trim().to_string(),
+            req.last_name.trim().to_string(),
+            primary_role,
+            primary.organization_id,
+            password_hash,
+            assignments,
+        )
+        .await
+    {
+        Ok(Some(resp)) => HttpResponse::Ok().json(resp),
+        Ok(None) => HttpResponse::NotFound().json(json!({ "error": "User not found" })),
+        Err(e) if e == "email_exists" => HttpResponse::BadRequest().json(json!({
+            "error": "Email already exists"
+        })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
-            "error": format!("Failed to load updated user: {}", e)
+            "error": format!("Failed to update user: {}", e)
         })),
     }
 }
 
-/// Activate user (SuperAdmin only)
+/// PUT /api/v1/users/{id}/activate — activate user (SuperAdmin only)
 #[put("/users/{id}/activate")]
 pub async fn activate_user(
     state: web::Data<AppState>,
@@ -416,36 +267,16 @@ pub async fn activate_user(
     }
 
     let user_id = path.into_inner();
-
-    let updated = sqlx::query!(
-        r#"
-        UPDATE users
-        SET is_active = true, updated_at = NOW()
-        WHERE id = $1
-        RETURNING id
-        "#,
-        user_id
-    )
-    .fetch_optional(&state.pool)
-    .await;
-
-    match updated {
-        Ok(Some(_)) => match load_user_response(&state.pool, user_id).await {
-            Ok(response) => HttpResponse::Ok().json(response),
-            Err(e) => HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to load user: {}", e)
-            })),
-        },
-        Ok(None) => HttpResponse::NotFound().json(json!({
-            "error": "User not found"
-        })),
+    match state.user_use_cases.activate(user_id).await {
+        Ok(Some(resp)) => HttpResponse::Ok().json(resp),
+        Ok(None) => HttpResponse::NotFound().json(json!({ "error": "User not found" })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to activate user: {}", e)
         })),
     }
 }
 
-/// Deactivate user (SuperAdmin only)
+/// PUT /api/v1/users/{id}/deactivate — deactivate user (SuperAdmin only)
 #[put("/users/{id}/deactivate")]
 pub async fn deactivate_user(
     state: web::Data<AppState>,
@@ -459,36 +290,16 @@ pub async fn deactivate_user(
     }
 
     let user_id = path.into_inner();
-
-    let updated = sqlx::query!(
-        r#"
-        UPDATE users
-        SET is_active = false, updated_at = NOW()
-        WHERE id = $1
-        RETURNING id
-        "#,
-        user_id
-    )
-    .fetch_optional(&state.pool)
-    .await;
-
-    match updated {
-        Ok(Some(_)) => match load_user_response(&state.pool, user_id).await {
-            Ok(response) => HttpResponse::Ok().json(response),
-            Err(e) => HttpResponse::InternalServerError().json(json!({
-                "error": format!("Failed to load user: {}", e)
-            })),
-        },
-        Ok(None) => HttpResponse::NotFound().json(json!({
-            "error": "User not found"
-        })),
+    match state.user_use_cases.deactivate(user_id).await {
+        Ok(Some(resp)) => HttpResponse::Ok().json(resp),
+        Ok(None) => HttpResponse::NotFound().json(json!({ "error": "User not found" })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to deactivate user: {}", e)
         })),
     }
 }
 
-/// Delete user (SuperAdmin only)
+/// DELETE /api/v1/users/{id} — delete user (SuperAdmin only)
 #[delete("/users/{id}")]
 pub async fn delete_user(
     state: web::Data<AppState>,
@@ -509,38 +320,24 @@ pub async fn delete_user(
         }));
     }
 
-    match sqlx::query!(
-        r#"
-        DELETE FROM users
-        WHERE id = $1
-        "#,
-        user_id
-    )
-    .execute(&state.pool)
-    .await
-    {
-        Ok(result) => {
-            if result.rows_affected() == 0 {
-                HttpResponse::NotFound().json(json!({
-                    "error": "User not found"
-                }))
-            } else {
-                HttpResponse::Ok().json(json!({
-                    "message": "User deleted successfully"
-                }))
-            }
-        }
+    match state.user_use_cases.delete(user_id).await {
+        Ok(true) => HttpResponse::Ok().json(json!({ "message": "User deleted successfully" })),
+        Ok(false) => HttpResponse::NotFound().json(json!({ "error": "User not found" })),
         Err(e) => HttpResponse::InternalServerError().json(json!({
             "error": format!("Failed to delete user: {}", e)
         })),
     }
 }
 
+// ---------------------------------------------------------------------------
+// Pure helper functions — no DB access, kept here because they have tests
+// ---------------------------------------------------------------------------
+
 fn normalize_roles(
     roles: Option<Vec<RoleAssignmentRequest>>,
     fallback_role: Option<String>,
     fallback_org: Option<Uuid>,
-) -> Result<Vec<NormalizedRoleAssignment>, HttpResponse> {
+) -> Result<Vec<NormalizedRole>, HttpResponse> {
     let mut entries = roles.unwrap_or_else(|| {
         fallback_role
             .map(|role| {
@@ -604,7 +401,7 @@ fn normalize_roles(
             })));
         }
 
-        normalized.push(NormalizedRoleAssignment {
+        normalized.push(NormalizedRole {
             id: Uuid::new_v4(),
             role: normalized_role,
             organization_id,
@@ -622,149 +419,21 @@ fn normalize_roles(
     Ok(normalized)
 }
 
-async fn replace_user_roles(
-    tx: &mut Transaction<'_, Postgres>,
-    user_id: Uuid,
-    roles: &[NormalizedRoleAssignment],
-) -> Result<(), sqlx::Error> {
-    tx.execute(sqlx::query!(
-        "DELETE FROM user_roles WHERE user_id = $1",
-        user_id
-    ))
-    .await?;
-
-    for assignment in roles {
-        tx.execute(sqlx::query!(
-            r#"
-            INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-            "#,
-            assignment.id,
-            user_id,
-            assignment.role,
-            assignment.organization_id,
-            assignment.is_primary
-        ))
-        .await?;
-    }
-
-    Ok(())
-}
-
-async fn load_roles_for_users(
-    pool: &crate::infrastructure::pool::DbPool,
-    user_ids: &[Uuid],
-) -> Result<HashMap<Uuid, Vec<RoleResponse>>, sqlx::Error> {
-    if user_ids.is_empty() {
-        return Ok(HashMap::new());
-    }
-
-    let rows = sqlx::query!(
-        r#"
-        SELECT id, user_id, role, organization_id, is_primary, created_at
-        FROM user_roles
-        WHERE user_id = ANY($1)
-        ORDER BY user_id, is_primary DESC, created_at ASC
-        "#,
-        user_ids
-    )
-    .fetch_all(pool)
-    .await?;
-
-    let mut map: HashMap<Uuid, Vec<RoleResponse>> = HashMap::new();
-
-    for row in rows {
-        let entry = RoleResponse {
-            id: row.id.to_string(),
-            role: row.role,
-            organization_id: row.organization_id.map(|id| id.to_string()),
-            is_primary: row.is_primary,
-        };
-        map.entry(row.user_id).or_default().push(entry);
-    }
-
-    for roles in map.values_mut() {
-        normalize_primary_role(roles);
-    }
-
-    Ok(map)
-}
-
-async fn load_user_response(
-    pool: &crate::infrastructure::pool::DbPool,
-    user_id: Uuid,
-) -> Result<UserResponse, sqlx::Error> {
-    let row = sqlx::query!(
-        r#"
-        SELECT id, email, first_name, last_name, role, organization_id, is_active, created_at
-        FROM users
-        WHERE id = $1
-        "#,
-        user_id
-    )
-    .fetch_one(pool)
-    .await?;
-
-    let roles_map = load_roles_for_users(pool, &[user_id]).await?;
-    let mut roles = roles_map.get(&user_id).cloned().unwrap_or_else(|| {
-        vec![fallback_role_response(
-            row.role.clone(),
-            row.organization_id,
-        )]
-    });
-
-    normalize_primary_role(&mut roles);
-    let active_role = roles
-        .iter()
-        .find(|role| role.is_primary)
-        .cloned()
-        .or_else(|| roles.first().cloned());
-
-    Ok(UserResponse {
-        id: row.id.to_string(),
-        email: row.email,
-        first_name: row.first_name,
-        last_name: row.last_name,
-        role: active_role
-            .as_ref()
-            .map(|r| r.role.clone())
-            .unwrap_or(row.role),
-        organization_id: active_role
-            .as_ref()
-            .and_then(|r| r.organization_id.clone())
-            .or_else(|| row.organization_id.map(|id| id.to_string())),
-        is_active: row.is_active,
-        created_at: row.created_at,
-        roles,
-        active_role,
-    })
-}
-
-fn fallback_role_response(role: String, organization_id: Option<Uuid>) -> RoleResponse {
-    RoleResponse {
-        id: Uuid::new_v4().to_string(),
-        role,
-        organization_id: organization_id.map(|id| id.to_string()),
-        is_primary: true,
-    }
-}
-
-fn normalize_primary_role(roles: &mut [RoleResponse]) {
-    if roles.is_empty() {
-        return;
-    }
-
-    if roles.iter().filter(|r| r.is_primary).count() == 0 {
-        roles[0].is_primary = true;
-    }
-
-    roles.sort_by_key(|r| std::cmp::Reverse(r.is_primary));
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::application::use_cases::user_use_cases::RoleResponse;
     use actix_web::http::StatusCode;
+
+    fn normalize_primary_role(roles: &mut [RoleResponse]) {
+        if roles.is_empty() {
+            return;
+        }
+        if roles.iter().filter(|r| r.is_primary).count() == 0 {
+            roles[0].is_primary = true;
+        }
+        roles.sort_by_key(|r| std::cmp::Reverse(r.is_primary));
+    }
 
     #[test]
     fn normalize_roles_marks_first_as_primary_when_none_provided() {
@@ -839,5 +508,25 @@ mod tests {
         assert_eq!(role.role, "syndic");
         assert_eq!(role.organization_id, Some(fallback_org));
         assert!(role.is_primary);
+    }
+
+    #[test]
+    fn normalize_primary_role_sets_first_when_none_primary() {
+        let mut roles = vec![
+            RoleResponse {
+                id: Uuid::new_v4().to_string(),
+                role: "syndic".to_string(),
+                organization_id: None,
+                is_primary: false,
+            },
+            RoleResponse {
+                id: Uuid::new_v4().to_string(),
+                role: "accountant".to_string(),
+                organization_id: None,
+                is_primary: false,
+            },
+        ];
+        normalize_primary_role(&mut roles);
+        assert!(roles[0].is_primary);
     }
 }

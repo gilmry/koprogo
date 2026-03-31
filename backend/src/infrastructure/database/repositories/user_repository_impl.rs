@@ -63,7 +63,14 @@ impl UserRepository for PostgresUserRepository {
         )
         .execute(&self.pool)
         .await
-        .map_err(|e| format!("Failed to create user: {}", e))?;
+        .map_err(|e| {
+            if let sqlx::Error::Database(ref db_err) = e {
+                if db_err.is_unique_violation() {
+                    return "email_exists".to_string();
+                }
+            }
+            format!("Failed to create user: {}", e)
+        })?;
 
         Ok(user.clone())
     }
@@ -163,9 +170,59 @@ impl UserRepository for PostgresUserRepository {
         .bind(user.updated_at)
         .execute(&self.pool)
         .await
-        .map_err(|e| format!("Failed to update user: {}", e))?;
+        .map_err(|e| {
+            if let sqlx::Error::Database(ref db_err) = e {
+                if db_err.is_unique_violation() {
+                    return "email_exists".to_string();
+                }
+            }
+            format!("Failed to update user: {}", e)
+        })?;
 
         Ok(user.clone())
+    }
+
+    async fn update_password(&self, id: Uuid, password_hash: &str) -> Result<bool, String> {
+        let result = sqlx::query(
+            "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+        )
+        .bind(password_hash)
+        .bind(id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to update password: {}", e))?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
+    async fn activate(&self, id: Uuid) -> Result<Option<User>, String> {
+        let result = sqlx::query(
+            "UPDATE users SET is_active = true, updated_at = NOW() WHERE id = $1 RETURNING id",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to activate user: {}", e))?;
+
+        if result.is_none() {
+            return Ok(None);
+        }
+        self.find_by_id(id).await
+    }
+
+    async fn deactivate(&self, id: Uuid) -> Result<Option<User>, String> {
+        let result = sqlx::query(
+            "UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1 RETURNING id",
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to deactivate user: {}", e))?;
+
+        if result.is_none() {
+            return Ok(None);
+        }
+        self.find_by_id(id).await
     }
 
     async fn delete(&self, id: Uuid) -> Result<bool, String> {
