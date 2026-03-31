@@ -163,6 +163,7 @@ pub async fn setup_test_db() -> (
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
     let journal_entry_repo = Arc::new(PostgresJournalEntryRepository::new(pool.clone()));
     let account_use_cases = AccountUseCases::new(account_repo.clone());
+    let audit_log_use_cases = AuditLogUseCases::new(audit_log_repo.clone());
     let financial_report_use_cases = FinancialReportUseCases::new(
         account_repo,
         expense_repo.clone(),
@@ -400,6 +401,7 @@ pub async fn setup_test_db() -> (
 
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
+        audit_log_use_cases,
         auth_use_cases,
         building_use_cases,
         budget_use_cases,

@@ -1,5 +1,5 @@
 use crate::application::dto::PageRequest;
-use crate::application::ports::{AuditLogFilters, AuditLogRepository};
+use crate::application::ports::AuditLogFilters;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
@@ -146,10 +146,12 @@ pub async fn list_audit_logs(
         }
     }
 
-    // Fetch audit logs from repository
-    let audit_repo =
-        crate::infrastructure::database::PostgresAuditLogRepository::new(data.pool.clone());
-    match audit_repo.find_all_paginated(&page_request, &filters).await {
+    // Fetch audit logs via use case
+    match data
+        .audit_log_use_cases
+        .find_all_paginated(&page_request, &filters)
+        .await
+    {
         Ok((logs, total)) => {
             let total_pages = (total as f64 / per_page as f64).ceil() as i64;
 
@@ -449,18 +451,52 @@ pub async fn admin_erase_user_data(
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
-    fn test_handler_structure_list_audit_logs() {
-        // Structural test - actual testing in E2E
+    fn test_audit_log_query_defaults() {
+        let query = AuditLogQuery {
+            page: None,
+            per_page: None,
+            user_id: None,
+            organization_id: None,
+            event_type: None,
+            success: None,
+            start_date: None,
+            end_date: None,
+        };
+        let page = query.page.unwrap_or(1).max(1);
+        let per_page = query.per_page.unwrap_or(20).clamp(1, 100);
+        assert_eq!(page, 1);
+        assert_eq!(per_page, 20);
     }
 
     #[test]
-    fn test_handler_structure_admin_export() {
-        // Structural test - actual testing in E2E
+    fn test_audit_log_query_per_page_clamped() {
+        let query = AuditLogQuery {
+            page: Some(2),
+            per_page: Some(500),
+            user_id: None,
+            organization_id: None,
+            event_type: None,
+            success: None,
+            start_date: None,
+            end_date: None,
+        };
+        let per_page = query.per_page.unwrap_or(20).clamp(1, 100);
+        assert_eq!(per_page, 100);
     }
 
     #[test]
-    fn test_handler_structure_admin_erase() {
-        // Structural test - actual testing in E2E
+    fn test_parse_event_type_known() {
+        assert!(parse_event_type("UserLogin").is_some());
+        assert!(parse_event_type("GdprDataExported").is_some());
+        assert!(parse_event_type("GdprDataErased").is_some());
+    }
+
+    #[test]
+    fn test_parse_event_type_unknown_returns_none() {
+        assert!(parse_event_type("UnknownEvent").is_none());
+        assert!(parse_event_type("").is_none());
     }
 }

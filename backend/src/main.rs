@@ -326,6 +326,7 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
     );
     let account_use_cases = AccountUseCases::new(account_repo.clone());
+    let audit_log_use_cases = AuditLogUseCases::new(audit_log_repo.clone());
     let financial_report_use_cases = FinancialReportUseCases::new(
         account_repo.clone(),
         expense_repo.clone(),
@@ -401,6 +402,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = web::Data::new(AppState::new(
         account_use_cases,
+        audit_log_use_cases,
         auth_use_cases,
         building_use_cases,
         budget_use_cases,

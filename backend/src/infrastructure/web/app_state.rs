@@ -2,7 +2,8 @@ use crate::application::ports::mqtt_energy_port::MqttEnergyPort;
 use crate::application::use_cases::boinc_use_cases::BoincUseCases;
 use crate::application::use_cases::consent_use_cases::ConsentUseCases;
 use crate::application::use_cases::{
-    AccountUseCases, AchievementUseCases, AgSessionUseCases, AgeRequestUseCases, AuthUseCases,
+    AccountUseCases, AchievementUseCases, AgSessionUseCases, AgeRequestUseCases, AuditLogUseCases,
+    AuthUseCases,
     BoardDashboardUseCases, BoardDecisionUseCases, BoardMemberUseCases, BudgetUseCases,
     BuildingUseCases, CallForFundsUseCases, ChallengeUseCases, ChargeDistributionUseCases,
     ContractorReportUseCases, ConvocationUseCases, DashboardUseCases, DocumentUseCases,
@@ -24,6 +25,7 @@ use std::sync::Arc;
 
 pub struct AppState {
     pub account_use_cases: Arc<AccountUseCases>,
+    pub audit_log_use_cases: Arc<AuditLogUseCases>,
     pub auth_use_cases: Arc<AuthUseCases>,
     pub building_use_cases: Arc<BuildingUseCases>,
     pub budget_use_cases: Arc<BudgetUseCases>,
@@ -89,6 +91,7 @@ impl AppState {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         account_use_cases: AccountUseCases,
+        audit_log_use_cases: AuditLogUseCases,
         auth_use_cases: AuthUseCases,
         building_use_cases: BuildingUseCases,
         budget_use_cases: BudgetUseCases,
@@ -150,6 +153,7 @@ impl AppState {
     ) -> Self {
         Self {
             account_use_cases: Arc::new(account_use_cases),
+            audit_log_use_cases: Arc::new(audit_log_use_cases),
             auth_use_cases: Arc::new(auth_use_cases),
             building_use_cases: Arc::new(building_use_cases),
             budget_use_cases: Arc::new(budget_use_cases),
