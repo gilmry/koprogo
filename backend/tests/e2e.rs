@@ -152,6 +152,10 @@ async fn setup_test_db() -> (
         owner_repo.clone(),
     );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
+    let gdpr_art30_repo = Arc::new(
+        koprogo_api::infrastructure::database::PostgresGdprArt30Repository::new(pool.clone()),
+    );
+    let gdpr_art30_use_cases = GdprArt30UseCases::new(gdpr_art30_repo);
 
     // Create an organization for FK references
     let org_id = Uuid::new_v4();
@@ -383,6 +387,7 @@ async fn setup_test_db() -> (
         etat_date_use_cases,
         pcn_use_cases,
         payment_reminder_use_cases,
+        gdpr_art30_use_cases,
         gdpr_use_cases,
         iot_use_cases,
         linky_use_cases,

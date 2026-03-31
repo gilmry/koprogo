@@ -20,6 +20,7 @@ pub mod energy_bill_upload_repository;
 pub mod energy_campaign_repository;
 pub mod etat_date_repository;
 pub mod expense_repository;
+pub mod gdpr_art30_repository;
 pub mod gdpr_repository;
 pub mod grid_participation_port;
 pub mod individual_member_repository;
@@ -82,6 +83,7 @@ pub use energy_bill_upload_repository::EnergyBillUploadRepository;
 pub use energy_campaign_repository::EnergyCampaignRepository;
 pub use etat_date_repository::EtatDateRepository;
 pub use expense_repository::ExpenseRepository;
+pub use gdpr_art30_repository::GdprArt30Repository;
 pub use gdpr_repository::GdprRepository;
 pub use grid_participation_port::{
     BoincConsent, GridError, GridParticipationPort, GridTask, GridTaskId, GridTaskKind,

@@ -19,6 +19,7 @@ pub mod energy_bill_upload;
 pub mod energy_campaign;
 pub mod etat_date;
 pub mod expense;
+pub mod gdpr_art30;
 pub mod gdpr_export;
 pub mod gdpr_objection;
 pub mod gdpr_rectification;
@@ -82,6 +83,7 @@ pub use energy_campaign::{
 };
 pub use etat_date::{EtatDate, EtatDateLanguage, EtatDateStatus};
 pub use expense::{ApprovalStatus, Expense, ExpenseCategory, PaymentStatus};
+pub use gdpr_art30::{ProcessingActivity, ProcessorAgreement};
 pub use gdpr_export::{
     DocumentData, ExpenseData, GdprExport, MeetingData, OwnerData, RelatedData, UnitOwnershipData,
     UserData,

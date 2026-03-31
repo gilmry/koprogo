@@ -21,6 +21,7 @@ pub mod etat_date_use_cases;
 pub mod expense_use_cases;
 pub mod financial_report_use_cases;
 pub mod gamification_use_cases;
+pub mod gdpr_art30_use_cases;
 pub mod gdpr_use_cases;
 pub mod individual_member_use_cases;
 pub mod iot_use_cases;
@@ -74,6 +75,7 @@ pub use financial_report_use_cases::FinancialReportUseCases;
 pub use gamification_use_cases::{
     AchievementUseCases, ChallengeUseCases, GamificationStatsUseCases,
 };
+pub use gdpr_art30_use_cases::GdprArt30UseCases;
 pub use gdpr_use_cases::GdprUseCases;
 pub use individual_member_use_cases::IndividualMemberUseCases;
 pub use iot_use_cases::{IoTUseCases, LinkyUseCases};

@@ -153,6 +153,8 @@ async fn main() -> std::io::Result<()> {
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
+    let gdpr_art30_repo = Arc::new(PostgresGdprArt30Repository::new(pool.clone()));
+    let gdpr_art30_use_cases = GdprArt30UseCases::new(gdpr_art30_repo);
     let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
     let charge_distribution_repo =
         Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
@@ -430,6 +432,7 @@ async fn main() -> std::io::Result<()> {
         etat_date_use_cases,
         pcn_use_cases,
         payment_reminder_use_cases,
+        gdpr_art30_use_cases,
         gdpr_use_cases,
         iot_use_cases,
         linky_use_cases,
