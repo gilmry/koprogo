@@ -50,6 +50,7 @@ pub mod security_incident_repository;
 pub mod service_provider_repository;
 pub mod shared_object_repository;
 pub mod skill_repository;
+pub mod stats_repository;
 pub mod technical_inspection_repository;
 pub mod ticket_repository;
 pub mod two_factor_repository;
@@ -118,6 +119,7 @@ pub use security_incident_repository::{SecurityIncidentFilters, SecurityIncident
 pub use service_provider_repository::ServiceProviderRepository;
 pub use shared_object_repository::SharedObjectRepository;
 pub use skill_repository::SkillRepository;
+pub use stats_repository::StatsRepository;
 pub use technical_inspection_repository::TechnicalInspectionRepository;
 pub use ticket_repository::TicketRepository;
 pub use two_factor_repository::TwoFactorRepository;

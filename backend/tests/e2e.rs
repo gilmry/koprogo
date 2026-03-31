@@ -22,7 +22,8 @@ use koprogo_api::infrastructure::database::{
     PostgresPaymentRepository, PostgresPollRepository, PostgresPollVoteRepository,
     PostgresQuoteRepository, PostgresRefreshTokenRepository, PostgresResolutionRepository,
     PostgresResourceBookingRepository, PostgresServiceProviderRepository,
-    PostgresSharedObjectRepository, PostgresSkillRepository, PostgresTechnicalInspectionRepository,
+    PostgresSharedObjectRepository, PostgresSkillRepository, PostgresStatsRepository,
+    PostgresTechnicalInspectionRepository,
     PostgresTicketRepository, PostgresTwoFactorRepository, PostgresUnitOwnerRepository,
     PostgresUnitRepository, PostgresUserAchievementRepository, PostgresUserRepository,
     PostgresUserRoleRepository, PostgresVoteRepository, PostgresWorkReportRepository,
@@ -265,6 +266,8 @@ async fn setup_test_db() -> (
         owner_credit_balance_repo.clone(),
     );
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
+    let stats_repo = Arc::new(PostgresStatsRepository::new(pool.clone()));
+    let stats_use_cases = StatsUseCases::new(stats_repo);
     let technical_inspection_use_cases =
         TechnicalInspectionUseCases::new(technical_inspection_repo);
     let work_report_use_cases = WorkReportUseCases::new(work_report_repo);
@@ -381,6 +384,7 @@ async fn setup_test_db() -> (
         resource_booking_use_cases,
         shared_object_use_cases,
         skill_use_cases,
+        stats_use_cases,
         technical_inspection_use_cases,
         work_report_use_cases,
         document_use_cases,
