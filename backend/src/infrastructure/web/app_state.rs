@@ -11,9 +11,10 @@ use crate::application::use_cases::{
     IoTUseCases, JournalEntryUseCases, LinkyUseCases, LocalExchangeUseCases, MeetingUseCases,
     NoticeUseCases, NotificationUseCases, OwnerContributionUseCases, OwnerUseCases,
     PaymentMethodUseCases, PaymentReminderUseCases, PaymentUseCases, PcnUseCases, PollUseCases,
-    QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases, ServiceProviderUseCases,
-    SharedObjectUseCases, SkillUseCases, TechnicalInspectionUseCases, TicketUseCases,
-    TwoFactorUseCases, UnitOwnerUseCases, UnitUseCases, WorkReportUseCases,
+    QuoteUseCases, ResolutionUseCases, ResourceBookingUseCases, SecurityIncidentUseCases,
+    ServiceProviderUseCases, SharedObjectUseCases, SkillUseCases,
+    TechnicalInspectionUseCases, TicketUseCases, TwoFactorUseCases, UnitOwnerUseCases,
+    UnitUseCases, WorkReportUseCases,
 };
 use crate::infrastructure::audit_logger::AuditLogger;
 use crate::infrastructure::email::EmailService;
@@ -70,6 +71,7 @@ pub struct AppState {
     pub ag_session_use_cases: Arc<AgSessionUseCases>,
     pub age_request_use_cases: Arc<AgeRequestUseCases>,
     pub contractor_report_use_cases: Arc<ContractorReportUseCases>,
+    pub security_incident_use_cases: Arc<SecurityIncidentUseCases>,
     pub service_provider_use_cases: Arc<ServiceProviderUseCases>,
     pub individual_member_use_cases: Arc<IndividualMemberUseCases>,
     pub consent_use_cases: Arc<ConsentUseCases>,
@@ -133,6 +135,7 @@ impl AppState {
         ag_session_use_cases: AgSessionUseCases,
         age_request_use_cases: AgeRequestUseCases,
         contractor_report_use_cases: ContractorReportUseCases,
+        security_incident_use_cases: SecurityIncidentUseCases,
         service_provider_use_cases: ServiceProviderUseCases,
         individual_member_use_cases: IndividualMemberUseCases,
         consent_use_cases: ConsentUseCases,
@@ -192,6 +195,7 @@ impl AppState {
             ag_session_use_cases: Arc::new(ag_session_use_cases),
             age_request_use_cases: Arc::new(age_request_use_cases),
             contractor_report_use_cases: Arc::new(contractor_report_use_cases),
+            security_incident_use_cases: Arc::new(security_incident_use_cases),
             service_provider_use_cases: Arc::new(service_provider_use_cases),
             individual_member_use_cases: Arc::new(individual_member_use_cases),
             consent_use_cases: Arc::new(consent_use_cases),

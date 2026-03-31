@@ -376,6 +376,11 @@ async fn main() -> std::io::Result<()> {
     let individual_member_repo = Arc::new(PostgresIndividualMemberRepository::new(pool.clone()));
     let individual_member_use_cases = IndividualMemberUseCases::new(individual_member_repo);
 
+    // Security Incidents (GDPR Art. 33 — APD notification within 72h)
+    let security_incident_repo =
+        Arc::new(PostgresSecurityIncidentRepository::new(pool.clone()));
+    let security_incident_use_cases = SecurityIncidentUseCases::new(security_incident_repo);
+
     // Consent (GDPR Art. 7)
     let consent_repo = Arc::new(PostgresConsentRepository::new(pool.clone()));
     let consent_use_cases =
@@ -442,6 +447,7 @@ async fn main() -> std::io::Result<()> {
         ag_session_use_cases,
         age_request_use_cases,
         contractor_report_use_cases,
+        security_incident_use_cases,
         service_provider_use_cases,
         individual_member_use_cases,
         consent_use_cases,

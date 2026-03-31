@@ -382,6 +382,13 @@ pub async fn setup_test_db() -> (
     );
     let individual_member_use_cases = IndividualMemberUseCases::new(individual_member_repo);
 
+    let security_incident_repo = Arc::new(
+        koprogo_api::infrastructure::database::PostgresSecurityIncidentRepository::new(
+            pool.clone(),
+        ),
+    );
+    let security_incident_use_cases = SecurityIncidentUseCases::new(security_incident_repo);
+
     let mqtt_energy_adapter: Arc<dyn MqttEnergyPort> = Arc::new(NoopMqttAdapter);
     let boinc_iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
     let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
@@ -437,6 +444,7 @@ pub async fn setup_test_db() -> (
         ag_session_use_cases,
         age_request_use_cases,
         contractor_report_use_cases,
+        security_incident_use_cases,
         service_provider_use_cases,
         individual_member_use_cases,
         koprogo_api::application::use_cases::consent_use_cases::ConsentUseCases::new(
