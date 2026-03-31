@@ -220,6 +220,24 @@ impl UserUseCases {
     pub async fn delete(&self, id: Uuid) -> Result<bool, String> {
         self.user_repo.delete(id).await
     }
+
+    /// Verify a user exists and holds the given role.
+    /// Returns `Err("User not found")` or `Err("User must have role '...' ...")`.
+    pub async fn validate_user_has_role(&self, user_id: Uuid, role: &str) -> Result<(), String> {
+        self.user_repo
+            .find_by_id(user_id)
+            .await?
+            .ok_or_else(|| "User not found".to_string())?;
+
+        let roles = self.role_repo.list_for_user(user_id).await?;
+        if !roles.iter().any(|r| r.role.to_string() == role) {
+            return Err(format!(
+                "User must have role '{}' to be linked to an owner entity",
+                role
+            ));
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]

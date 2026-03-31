@@ -132,6 +132,33 @@ impl OwnerUseCases {
         Ok(self.to_response_dto(&updated))
     }
 
+    /// Link or unlink a user account to an owner.
+    /// Returns `Err` with a human-readable message if another owner is already linked
+    /// to the same user, or if the owner was not found.
+    pub async fn link_user_to_owner(
+        &self,
+        owner_id: Uuid,
+        user_id: Option<Uuid>,
+    ) -> Result<(), String> {
+        if let Some(uid) = user_id {
+            // Conflict check: is this user already linked to a different owner?
+            if let Some(existing) = self.repository.find_by_user_id(uid).await? {
+                if existing.id != owner_id {
+                    return Err(format!(
+                        "User is already linked to owner {} {} (ID: {})",
+                        existing.first_name, existing.last_name, existing.id
+                    ));
+                }
+            }
+        }
+
+        let updated = self.repository.set_user_link(owner_id, user_id).await?;
+        if !updated {
+            return Err("Owner not found".to_string());
+        }
+        Ok(())
+    }
+
     fn to_response_dto(&self, owner: &Owner) -> OwnerResponseDto {
         OwnerResponseDto {
             id: owner.id.to_string(),
@@ -231,6 +258,16 @@ mod tests {
         async fn delete(&self, id: Uuid) -> Result<bool, String> {
             let mut items = self.items.lock().unwrap();
             Ok(items.remove(&id).is_some())
+        }
+
+        async fn set_user_link(&self, owner_id: Uuid, user_id: Option<Uuid>) -> Result<bool, String> {
+            let mut items = self.items.lock().unwrap();
+            if let Some(owner) = items.get_mut(&owner_id) {
+                owner.user_id = user_id;
+                Ok(true)
+            } else {
+                Ok(false)
+            }
         }
     }
 

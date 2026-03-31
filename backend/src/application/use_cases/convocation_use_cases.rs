@@ -566,6 +566,7 @@ mod tests {
             async fn find_all_paginated(&self, page_request: &PageRequest, filters: &OwnerFilters) -> Result<(Vec<Owner>, i64), String>;
             async fn update(&self, owner: &Owner) -> Result<Owner, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
+            async fn set_user_link(&self, owner_id: Uuid, user_id: Option<Uuid>) -> Result<bool, String>;
         }
     }
 

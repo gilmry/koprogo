@@ -7,6 +7,7 @@ use serde::Deserialize;
 use uuid::Uuid;
 use validator::Validate;
 
+
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpdateOwnerDto {
     #[validate(length(min = 1, message = "First name is required"))]
@@ -328,68 +329,29 @@ pub async fn link_owner_to_user(
         }
     };
 
-    // If linking to a user, verify the user exists and has role=owner
+    // If linking to a user, verify the user exists and has 'owner' role
     if let Some(uid) = user_id_to_link {
-        // Check if user exists
-        let user_check = sqlx::query!("SELECT id FROM users WHERE id = $1", uid)
-            .fetch_optional(&state.pool)
-            .await;
-
-        match user_check {
-            Ok(Some(_user_record)) => {
-                // Check if user has 'owner' role in user_roles table
-                let role_check = sqlx::query!(
-                    "SELECT COUNT(*) as count FROM user_roles WHERE user_id = $1 AND role = $2",
-                    uid,
-                    "owner"
-                )
-                .fetch_one(&state.pool)
-                .await;
-
-                match role_check {
-                    Ok(record) => {
-                        if record.count.unwrap_or(0) == 0 {
-                            return HttpResponse::BadRequest().json(serde_json::json!({
-                                "error": "User must have role 'owner' to be linked to an owner entity"
-                            }));
-                        }
-                    }
-                    Err(err) => {
-                        return HttpResponse::InternalServerError().json(serde_json::json!({
-                            "error": format!("Database error checking roles: {}", err)
-                        }));
-                    }
-                }
+        match state.user_use_cases.validate_user_has_role(uid, "owner").await {
+            Ok(()) => {}
+            Err(e) if e == "User not found" => {
+                return HttpResponse::NotFound().json(serde_json::json!({ "error": e }));
             }
-            Ok(None) => {
-                return HttpResponse::NotFound().json(serde_json::json!({
-                    "error": "User not found"
-                }));
-            }
-            Err(err) => {
-                return HttpResponse::InternalServerError().json(serde_json::json!({
-                    "error": format!("Database error: {}", err)
-                }));
+            Err(e) => {
+                return HttpResponse::BadRequest().json(serde_json::json!({ "error": e }));
             }
         }
 
-        // Check if this user is already linked to another owner
-        let existing_link = sqlx::query!(
-            "SELECT id, first_name, last_name FROM owners WHERE user_id = $1 AND id != $2",
-            uid,
-            owner_id
-        )
-        .fetch_optional(&state.pool)
-        .await;
-
-        match existing_link {
-            Ok(Some(existing)) => {
+        // Conflict check: is this user already linked to a different owner?
+        match state.owner_use_cases.find_owner_by_user_id(uid).await {
+            Ok(Some(existing)) if existing.id != owner_id.to_string() => {
                 return HttpResponse::Conflict().json(serde_json::json!({
-                    "error": format!("User is already linked to owner {} {} (ID: {})",
-                        existing.first_name, existing.last_name, existing.id)
+                    "error": format!(
+                        "User is already linked to owner {} {} (ID: {})",
+                        existing.first_name, existing.last_name, existing.id
+                    )
                 }));
             }
-            Ok(None) => {} // OK, no conflict
+            Ok(_) => {} // no conflict
             Err(err) => {
                 return HttpResponse::InternalServerError().json(serde_json::json!({
                     "error": format!("Database error: {}", err)
@@ -398,18 +360,13 @@ pub async fn link_owner_to_user(
         }
     }
 
-    // Update the owner's user_id
-    let update_result = sqlx::query!(
-        "UPDATE owners SET user_id = $1, updated_at = NOW() WHERE id = $2",
-        user_id_to_link,
-        owner_id
-    )
-    .execute(&state.pool)
-    .await;
-
-    match update_result {
-        Ok(_) => {
-            // Audit log
+    // Perform the link/unlink
+    match state
+        .owner_use_cases
+        .link_user_to_owner(owner_id, user_id_to_link)
+        .await
+    {
+        Ok(()) => {
             AuditLogEntry::new(
                 AuditEventType::OwnerUpdated,
                 Some(user.user_id),
@@ -418,11 +375,7 @@ pub async fn link_owner_to_user(
             .with_resource("Owner", owner_id)
             .log();
 
-            let action = if user_id_to_link.is_some() {
-                "linked"
-            } else {
-                "unlinked"
-            };
+            let action = if user_id_to_link.is_some() { "linked" } else { "unlinked" };
 
             HttpResponse::Ok().json(serde_json::json!({
                 "message": format!("Owner successfully {} to user", action),
@@ -431,18 +384,15 @@ pub async fn link_owner_to_user(
             }))
         }
         Err(err) => {
-            // Audit log
             AuditLogEntry::new(
                 AuditEventType::OwnerUpdated,
                 Some(user.user_id),
                 user.organization_id,
             )
-            .with_error(err.to_string())
+            .with_error(err.clone())
             .log();
 
-            HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database error: {}", err)
-            }))
+            HttpResponse::InternalServerError().json(serde_json::json!({ "error": err }))
         }
     }
 }
