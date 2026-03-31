@@ -329,6 +329,8 @@ async fn main() -> std::io::Result<()> {
     );
     let account_use_cases = AccountUseCases::new(account_repo.clone());
     let audit_log_use_cases = AuditLogUseCases::new(audit_log_repo.clone());
+    let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
+    let organization_use_cases = OrganizationUseCases::new(organization_repo);
     let financial_report_use_cases = FinancialReportUseCases::new(
         account_repo.clone(),
         expense_repo.clone(),
@@ -425,6 +427,7 @@ async fn main() -> std::io::Result<()> {
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
+        organization_use_cases,
         resource_booking_use_cases,
         shared_object_use_cases,
         skill_use_cases,

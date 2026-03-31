@@ -17,8 +17,8 @@ use koprogo_api::infrastructure::database::{
     PostgresGdprRepository, PostgresIoTRepository, PostgresJournalEntryRepository,
     PostgresLocalExchangeRepository, PostgresNoticeRepository,
     PostgresNotificationPreferenceRepository, PostgresNotificationRepository,
-    PostgresOwnerContributionRepository, PostgresOwnerCreditBalanceRepository,
-    PostgresOwnerRepository, PostgresPaymentMethodRepository, PostgresPaymentReminderRepository,
+    PostgresOrganizationRepository, PostgresOwnerContributionRepository,
+    PostgresOwnerCreditBalanceRepository, PostgresOwnerRepository, PostgresPaymentMethodRepository, PostgresPaymentReminderRepository,
     PostgresPaymentRepository, PostgresPollRepository, PostgresPollVoteRepository,
     PostgresQuoteRepository, PostgresRefreshTokenRepository, PostgresResolutionRepository,
     PostgresResourceBookingRepository, PostgresServiceProviderRepository,
@@ -258,6 +258,8 @@ async fn setup_test_db() -> (
         owner_repo.clone(),
     );
     let notice_use_cases = NoticeUseCases::new(notice_repo, user_repo.clone());
+    let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
+    let organization_use_cases = OrganizationUseCases::new(organization_repo);
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases = SharedObjectUseCases::new(
@@ -381,6 +383,7 @@ async fn setup_test_db() -> (
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
+        organization_use_cases,
         resource_booking_use_cases,
         shared_object_use_cases,
         skill_use_cases,
