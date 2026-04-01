@@ -10,7 +10,12 @@ export const roleGuards: Record<string, UserRole[]> = {
   "/admin/*": [UserRole.SUPERADMIN],
 
   // Gamification page - accessible to all authenticated roles (user-facing)
-  "/gamification": [UserRole.SUPERADMIN, UserRole.SYNDIC, UserRole.ACCOUNTANT, UserRole.OWNER],
+  "/gamification": [
+    UserRole.SUPERADMIN,
+    UserRole.SYNDIC,
+    UserRole.ACCOUNTANT,
+    UserRole.OWNER,
+  ],
 
   // Syndic routes - SYNDIC only
   "/syndic": [UserRole.SYNDIC],
