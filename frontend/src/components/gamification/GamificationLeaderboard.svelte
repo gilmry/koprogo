@@ -86,8 +86,8 @@
               {/if}
             </p>
             <div class="flex items-center gap-3 text-xs text-gray-500">
-              <span>{$_('gamification.achievement_count', { count: entry.achievements_count })}</span>
-              <span>{$_('gamification.challenge_count_completed', { count: entry.challenges_completed })}</span>
+              <span>{$_('gamification.achievement_count', { values: { count: entry.achievements_count } })}</span>
+              <span>{$_('gamification.challenge_count_completed', { values: { count: entry.challenges_completed } })}</span>
             </div>
           </div>
 

@@ -98,7 +98,7 @@
               <span class="font-medium {balanceColor}">
                 {owner.balance > 0 ? "+" : ""}{owner.balance}h
               </span>
-              <span>📊 {$_('exchanges.exchange_count', { count: owner.total_exchanges })}</span>
+              <span>📊 {$_('exchanges.exchange_count', { values: { count: owner.total_exchanges } })}</span>
               {#if owner.average_rating}
                 <span>
                   ⭐ {owner.average_rating.toFixed(1)}

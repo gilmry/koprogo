@@ -47,9 +47,9 @@
     const days = Math.floor(diff / 86400000);
 
     if (minutes < 1) return $_("notifications.just_now");
-    if (minutes < 60) return `${minutes}${$_("notifications.m_ago")}`;
-    if (hours < 24) return `${hours}${$_("notifications.h_ago")}`;
-    if (days < 7) return `${days}${$_("notifications.d_ago")}`;
+    if (minutes < 60) return $_("notifications.m_ago", { values: { count: minutes } });
+    if (hours < 24) return $_("notifications.h_ago", { values: { count: hours } });
+    if (days < 7) return $_("notifications.d_ago", { values: { count: days } });
     return date.toLocaleDateString("nl-BE", {
       month: "short",
       day: "numeric",

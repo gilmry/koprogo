@@ -290,7 +290,7 @@
 
     <!-- Results Count -->
     <p class="text-sm text-gray-600 text-center">
-      {$_('exchanges.results_count', { count: filteredExchanges.length })}
+      {$_('exchanges.results_count', { values: { count: filteredExchanges.length } })}
     </p>
   {/if}
 </div>

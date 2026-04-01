@@ -341,7 +341,7 @@
   {#if quotes.length > 0 && quotes.length < 3}
     <div class="px-4 py-3 bg-yellow-50 border-t border-yellow-200">
       <p class="text-xs text-yellow-800">
-        <strong>{$_("quotes.list.bestPracticeTitle")}:</strong> {$_("quotes.list.bestPracticeMessage", { count: quotes.length })}
+        <strong>{$_("quotes.list.bestPracticeTitle")}:</strong> {$_("quotes.list.bestPracticeMessage", { values: { count: quotes.length } })}
       </p>
     </div>
   {/if}

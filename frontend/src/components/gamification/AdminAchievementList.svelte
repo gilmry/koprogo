@@ -102,7 +102,7 @@
     <div class="flex items-center justify-between">
       <div>
         <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.management_title')}</h3>
-        <p class="mt-1 text-sm text-gray-500">{$_('gamification.achievement_count', { count: achievements.length })}</p>
+        <p class="mt-1 text-sm text-gray-500">{$_('gamification.achievement_count', { values: { count: achievements.length } })}</p>
       </div>
       <button on:click={handleCreate}
         data-testid="achievement-create-btn"

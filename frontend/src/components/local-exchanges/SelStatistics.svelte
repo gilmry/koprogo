@@ -118,7 +118,7 @@
     <!-- Impact Message -->
     <div class="mt-6 p-4 bg-green-50 border-l-4 border-green-400 text-sm text-green-800">
       <p>
-        🌱 <strong>{$_('exchanges.impact_title')}</strong> {$_('exchanges.impact_message', { hours: stats.total_credits_exchanged })}
+        🌱 <strong>{$_('exchanges.impact_title')}</strong> {$_('exchanges.impact_message', { values: { hours: stats.total_credits_exchanged } })}
       </p>
     </div>
   {/if}

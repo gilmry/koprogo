@@ -112,7 +112,7 @@
     <div class="flex items-center justify-between">
       <div>
         <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.challenges_management')}</h3>
-        <p class="mt-1 text-sm text-gray-500">{$_('gamification.challenge_count', { count: challenges.length })}</p>
+        <p class="mt-1 text-sm text-gray-500">{$_('gamification.challenge_count', { values: { count: challenges.length } })}</p>
       </div>
       <button on:click={() => showForm = !showForm}
         data-testid="challenge-create-btn"
