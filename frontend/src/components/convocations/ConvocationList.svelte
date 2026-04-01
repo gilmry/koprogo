@@ -9,6 +9,7 @@
   } from '../../lib/api/convocations';
   import { formatDate } from '../../lib/utils/date.utils';
   import { withLoadingState } from '../../lib/utils/error.utils';
+  import { extractArray } from '../../lib/utils/response.utils';
 
   export let buildingId: string;
 
@@ -19,15 +20,18 @@
   let statusFilter: ConvocationStatus | 'all' = 'all';
 
   onMount(async () => {
-    await loadConvocations();
+    if (buildingId) await loadConvocations();
   });
+
+  // Recharger quand le buildingId change
+  $: if (buildingId) loadConvocations();
 
   async function loadConvocations() {
     await withLoadingState({
       action: () => convocationsApi.listByBuilding(buildingId),
       setLoading: (v) => loading = v,
       setError: (v) => error = v,
-      onSuccess: (data) => { convocations = data; applyFilters(); },
+      onSuccess: (data) => { convocations = extractArray<Convocation>(data, 'convocations'); applyFilters(); },
       errorMessage: $_('convocations.errors.loadingFailed'),
     });
   }
@@ -132,12 +136,12 @@
 
                 <div class="mt-2 flex items-center text-sm text-gray-500 flex-wrap gap-x-4 gap-y-1">
                   <span>📅 {$_('convocations.meetingOn', { values: { date: formatDate(convocation.meeting_date) } })}</span>
-                  <span>📧 {convocation.total_recipients} {$_('common.recipient', { count: convocation.total_recipients })}</span>
+                  <span>📧 {convocation.total_recipients} {$_('common.recipient', { values: { count: convocation.total_recipients } })}</span>
                   {#if convocation.opened_count > 0}
-                    <span>👁️ {convocation.opened_count} {$_('common.opened', { count: convocation.opened_count })}</span>
+                    <span>👁️ {convocation.opened_count} {$_('common.opened', { values: { count: convocation.opened_count } })}</span>
                   {/if}
                   {#if convocation.will_attend_count > 0}
-                    <span>✅ {convocation.will_attend_count} {$_('common.present', { count: convocation.will_attend_count })}</span>
+                    <span>✅ {convocation.will_attend_count} {$_('common.present', { values: { count: convocation.will_attend_count } })}</span>
                   {/if}
                   <span class="text-xs text-gray-400">{$_('common.createdOn')} {formatDate(convocation.created_at)}</span>
                 </div>

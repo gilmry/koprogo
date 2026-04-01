@@ -258,7 +258,7 @@
     </div>
 
     <div class="mb-8">
-      <ConvocationPanel meetingId={meetingId} meetingStatus={meeting.status} buildingId={meeting.building_id} />
+      <ConvocationPanel meetingId={meetingId} meetingStatus={meeting.status} buildingId={meeting.building_id} meetingDate={meeting.scheduled_date} meetingType={meeting.meeting_type} />
     </div>
 
     <div class="mb-8">

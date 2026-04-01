@@ -17,6 +17,8 @@
   export let meetingId: string;
   export let meetingStatus: string = 'Scheduled';
   export let buildingId: string = '';
+  export let meetingDate: string = '';
+  export let meetingType: string = 'Ordinary';
 
   let convocation: Convocation | null = null;
   let loading = true;
@@ -51,8 +53,8 @@
       action: () => convocationsApi.create({
         meeting_id: meetingId,
         building_id: buildingId,
-        meeting_type: MeetingType.Ordinary,
-        meeting_date: '',
+        meeting_type: (meetingType as MeetingType) || MeetingType.Ordinary,
+        meeting_date: meetingDate || new Date().toISOString(),
         language: 'fr',
       }),
       setLoading: (v) => actionLoading = v,
@@ -208,12 +210,12 @@
         </div>
 
         <div class="flex items-center gap-4 text-sm text-gray-600">
-          <span>📧 {convocation.total_recipients} {$_('common.recipient', { count: convocation.total_recipients })}</span>
+          <span>📧 {convocation.total_recipients} {$_('common.recipient', { values: { count: convocation.total_recipients } })}</span>
           {#if convocation.opened_count > 0}
-            <span>👁️ {convocation.opened_count} {$_('common.opened', { count: convocation.opened_count })}</span>
+            <span>👁️ {convocation.opened_count} {$_('common.opened', { values: { count: convocation.opened_count } })}</span>
           {/if}
           {#if convocation.will_attend_count > 0}
-            <span>✅ {convocation.will_attend_count} {$_('common.present', { count: convocation.will_attend_count })}</span>
+            <span>✅ {convocation.will_attend_count} {$_('common.present', { values: { count: convocation.will_attend_count } })}</span>
           {/if}
         </div>
 

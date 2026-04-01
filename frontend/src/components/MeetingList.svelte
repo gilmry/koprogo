@@ -2,12 +2,26 @@
   import { onMount, onDestroy } from 'svelte';
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import type { PageResponse } from '../lib/types';
+  import { toast } from '../stores/toast';
+  import { type PageResponse, UserRole } from '../lib/types';
   import Pagination from './Pagination.svelte';
+  import MeetingCreateModal from './MeetingCreateModal.svelte';
   import { formatDateTime } from '../lib/utils/date.utils';
   import { withLoadingState } from '../lib/utils/error.utils';
+  import { authStore } from '../stores/auth';
 
   export let buildingId: string | null = null;
+
+  let showCreateModal = false;
+
+  // Vérifie si le rôle actif est syndic ou superadmin (seuls à pouvoir créer des AG)
+  $: canCreate = $authStore?.user?.role === UserRole.SYNDIC || $authStore?.user?.role === UserRole.SUPERADMIN;
+
+  function handleMeetingCreated() {
+    showCreateModal = false;
+    toast.success('Assemblée créée avec succès');
+    loadMeetings();
+  }
 
   interface Meeting {
     id: string;
@@ -112,6 +126,18 @@
     <p class="text-gray-600">
       {$_('meetings.count', { values: { count: totalItems } })}
     </p>
+    {#if canCreate}
+      <button
+        on:click={() => showCreateModal = true}
+        class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+        data-testid="btn-new-meeting"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nouvelle réunion
+      </button>
+    {/if}
   </div>
 
   {#if error}
@@ -171,3 +197,10 @@
     {/if}
   {/if}
 </div>
+
+{#if showCreateModal}
+  <MeetingCreateModal
+    on:created={handleMeetingCreated}
+    on:close={() => showCreateModal = false}
+  />
+{/if}
