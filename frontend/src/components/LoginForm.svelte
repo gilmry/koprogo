@@ -40,15 +40,26 @@
         await authStore.login(mappedUser, token, refresh_token);
 
         // Redirect based on role
-        const redirectMap = {
+        const redirectMap: Record<string, string> = {
           [UserRole.SUPERADMIN]: '/admin',
           [UserRole.SYNDIC]: '/syndic',
           [UserRole.ACCOUNTANT]: '/accountant',
           [UserRole.OWNER]: '/owner',
         };
-        window.location.href = redirectMap[mappedUser.role] || '/';
+
+        // Check for ?redirect= query param (set by RouteGuard)
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams.get('redirect');
+        const targetUrl = redirectTo || redirectMap[mappedUser.role] || '/';
+
+        // Petit délai pour laisser localStorage se propager avant navigation
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 100);
+      } else if (response.status === 429) {
+        error = $_('auth.tooManyAttempts') || 'Trop de tentatives de connexion. Réessayez dans 15 minutes.';
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         error = errorData.error || $_('auth.loginError');
       }
     } catch (e) {

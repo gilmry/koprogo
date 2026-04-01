@@ -1,5 +1,6 @@
 import { get } from "svelte/store";
 import { locale } from "svelte-i18n";
+import { toast } from "../stores/toast";
 import type { Document, DocumentUploadPayload } from "./types";
 
 /**
@@ -76,13 +77,29 @@ export async function apiFetch<T = any>(
       const errorText = await response.text();
       try {
         const errorData = JSON.parse(errorText);
-        errorMessage = errorData.error || errorMessage;
+        errorMessage = errorData.error || errorData.message || errorMessage;
       } catch {
         if (errorText) errorMessage = errorText;
       }
     } catch {
       // Body unreadable, keep default message
     }
+
+    // Toast automatique selon le code HTTP
+    if (response.status === 429) {
+      toast.error("Trop de tentatives. Réessayez dans 15 minutes.");
+    } else if (response.status >= 500) {
+      toast.error("Erreur serveur. Veuillez réessayer.");
+    } else if (response.status === 401) {
+      toast.warning("Session expirée. Veuillez vous reconnecter.");
+    } else if (response.status === 403) {
+      toast.warning(
+        "Accès refusé. Vous n'avez pas les permissions nécessaires.",
+      );
+    } else if (response.status >= 400) {
+      toast.error(errorMessage);
+    }
+
     throw new Error(errorMessage);
   }
 
