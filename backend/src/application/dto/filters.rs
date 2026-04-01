@@ -11,6 +11,8 @@ pub struct BuildingFilters {
     pub construction_year: Option<i32>,
     pub min_units: Option<i32>,
     pub max_units: Option<i32>,
+    /// BUG-WF14-2: Si défini, filtre les buildings où cet user possède un lot (via owners.user_id → unit_owners → units)
+    pub owner_user_id: Option<Uuid>,
 }
 
 /// Filters for expense list queries

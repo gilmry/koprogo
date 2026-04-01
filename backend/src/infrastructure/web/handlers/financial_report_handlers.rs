@@ -12,7 +12,21 @@
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, web, HttpResponse, Responder};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::Deserialize;
+
+/// Parse a date string flexibly: accepts both "2026-01-01T00:00:00Z" (RFC 3339) and "2026-01-01" (date only)
+pub fn parse_date_flexible(input: &str) -> Option<DateTime<Utc>> {
+    // Try RFC 3339 first (e.g., "2026-01-01T00:00:00Z")
+    if let Ok(dt) = DateTime::parse_from_rfc3339(input) {
+        return Some(dt.with_timezone(&Utc));
+    }
+    // Fallback: try date-only format (e.g., "2026-01-01") → start of day UTC
+    if let Ok(nd) = NaiveDate::parse_from_str(input, "%Y-%m-%d") {
+        return nd.and_hms_opt(0, 0, 0).map(|ndt| ndt.and_utc());
+    }
+    None
+}
 
 #[derive(Debug, Deserialize)]
 pub struct IncomeStatementQuery {
@@ -134,20 +148,19 @@ pub async fn generate_income_statement(
         }
     };
 
-    // Parse dates
-    let period_start =
-        match chrono::DateTime::parse_from_rfc3339(&query.period_start) {
-            Ok(dt) => dt.with_timezone(&chrono::Utc),
-            Err(_) => return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Invalid period_start format. Use ISO 8601 (e.g., 2024-01-01T00:00:00Z)"
-            })),
-        };
+    // Parse dates (accepts both "2026-01-01T00:00:00Z" and "2026-01-01")
+    let period_start = match parse_date_flexible(&query.period_start) {
+        Some(dt) => dt,
+        None => return HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "Invalid period_start format. Use ISO 8601 (e.g., 2024-01-01 or 2024-01-01T00:00:00Z)"
+        })),
+    };
 
-    let period_end = match chrono::DateTime::parse_from_rfc3339(&query.period_end) {
-        Ok(dt) => dt.with_timezone(&chrono::Utc),
-        Err(_) => {
+    let period_end = match parse_date_flexible(&query.period_end) {
+        Some(dt) => dt,
+        None => {
             return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Invalid period_end format. Use ISO 8601 (e.g., 2024-12-31T23:59:59Z)"
+                "error": "Invalid period_end format. Use ISO 8601 (e.g., 2024-12-31 or 2024-12-31T23:59:59Z)"
             }))
         }
     };

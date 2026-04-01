@@ -162,6 +162,18 @@ impl BuildingRepository for PostgresBuildingRepository {
             where_clauses.push(format!("total_units <= ${}", param_count));
         }
 
+        // BUG-WF14-2: Filtrer par owner — ne montrer que les buildings où le user possède un lot
+        if filters.owner_user_id.is_some() {
+            param_count += 1;
+            where_clauses.push(format!(
+                "id IN (SELECT DISTINCT u.building_id FROM units u \
+                 INNER JOIN unit_owners uo ON uo.unit_id = u.id \
+                 INNER JOIN owners o ON o.id = uo.owner_id \
+                 WHERE o.user_id = ${} AND uo.end_date IS NULL)",
+                param_count
+            ));
+        }
+
         let where_clause = if where_clauses.is_empty() {
             String::new()
         } else {
@@ -201,6 +213,9 @@ impl BuildingRepository for PostgresBuildingRepository {
         if let Some(max) = filters.max_units {
             count_query = count_query.bind(max);
         }
+        if let Some(owner_id) = filters.owner_user_id {
+            count_query = count_query.bind(owner_id);
+        }
 
         let total_items = count_query
             .fetch_one(&self.pool)
@@ -239,6 +254,9 @@ impl BuildingRepository for PostgresBuildingRepository {
         }
         if let Some(max) = filters.max_units {
             data_query = data_query.bind(max);
+        }
+        if let Some(owner_id) = filters.owner_user_id {
+            data_query = data_query.bind(owner_id);
         }
 
         data_query = data_query

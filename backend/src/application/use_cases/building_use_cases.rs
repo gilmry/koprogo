@@ -67,6 +67,29 @@ impl BuildingUseCases {
         Ok((dtos, total))
     }
 
+    /// Liste paginée avec filtrage Owner (BUG-WF14-2)
+    /// Si owner_user_id est Some, filtre les buildings où le user possède un lot
+    pub async fn list_buildings_paginated_for_user(
+        &self,
+        page_request: &PageRequest,
+        organization_id: Option<Uuid>,
+        owner_user_id: Option<Uuid>,
+    ) -> Result<(Vec<BuildingResponseDto>, i64), String> {
+        let filters = BuildingFilters {
+            organization_id,
+            owner_user_id,
+            ..Default::default()
+        };
+
+        let (buildings, total) = self
+            .repository
+            .find_all_paginated(page_request, &filters)
+            .await?;
+
+        let dtos = buildings.iter().map(|b| self.to_response_dto(b)).collect();
+        Ok((dtos, total))
+    }
+
     pub async fn update_building(
         &self,
         id: Uuid,
