@@ -85,6 +85,25 @@ KoproGo - WBS Projet Complet (DDD-BDD-TDD-SOLID)
 
 .. note::
 
+   **Mise a jour 2026-04-01 (v3.3)** : Audit semantique WBS vs code reel + GitHub API.
+
+   **Jalon 1** : Passe de [90%] a [96%]. Issues #337 et #340 FERMEES (confirmees).
+   Issues restantes : #331 (Playwright — 2 bugs backend bloquants : role case UPPERCASE vs lowercase
+   dans api_key_handlers, superadmin org_id NULL dans security_incident_handlers),
+   #354 et #355 (Tests IaC — 0 tests automatises sur 236 fichiers, toujours ouverts).
+
+   **Jalon 3** : Passe de [86%] a [COMPLETE]. Issues #335, #336, #338, #341 TOUTES FERMEES.
+   Stubs marketplace implementes, individual member, energy bill Uuid::nil() et auto-payment corrigees.
+
+   **Phase 0 Contract Tests DTO** : COMPLETE — utoipa 5.3 cable, ``docs/api/openapi.yaml``
+   (22 627 lignes) genere, ``frontend/src/types/api.d.ts`` genere, CI job ``contract-types``
+   drift-check operationnel.
+
+   **Issues critiques #301-#317** : TOUTES FERMEES (confirme via GitHub API).
+   2 CRITIQUES (#302 multi-tenant, #306 tantiemes), 5 conformite legale AG, 3 RGPD — tous resolus.
+
+.. note::
+
    **Mise a jour 2026-03-25** : Audit croise code vs GitHub issues.
    7 issues creees (#335-#341) pour stubs non implementes, bugs silencieux et RBAC manquant.
    #331 (Playwright E2E) assignee au Jalon 1.
@@ -551,14 +570,16 @@ Aucun travail restant. Toutes les issues fermees.
 load tests (287 req/s), documentation Sphinx.
 
 =========================================================
-9. Jalon 1 : Securite & GDPR [90%]
+9. Jalon 1 : Securite & GDPR [96%]
 =========================================================
 
 **Debloque** : 50-100 coproprietes (beta publique)
 
-**Release cible** : v0.1.0 (bugs legal + RBAC + Playwright) / v0.2.0 (#48 itsme)
+**Release cible** : v0.1.0 (Playwright bugs) / v0.2.0 (#48 itsme)
 
-**Issues ouvertes** : #331, #337, #340, **#354** (Tests IaC), **#355** (Restructuration IaC)
+**Issues ouvertes** : #331 (Playwright — 2 bugs backend), **#354** (Tests IaC), **#355** (Restructuration IaC)
+
+**Issues fermees (2026-04-01)** : ~~#337~~ (consent stubs), ~~#340~~ (RBAC gamification)
 
 .. note::
 
@@ -683,7 +704,8 @@ load tests (287 req/s), documentation Sphinx.
      - Docs
      - n/a
 
-**Total Jalon 1 restant** : ~40h (features) + **~56h (infra)** = **~96h**
+**Total Jalon 1 restant** : ~4h (Playwright bugs backend) + **~56h (infra IaC tests)** = **~60h**
+(#337 et #340 resolus — economise ~8h)
 
 =========================================================
 10. Jalon 2 : Conformite Legale Belge [COMPLETE]
@@ -733,22 +755,28 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
 **Total Jalon 2 dette** : 25h (inclus dans budget v0.5.0)
 
 =========================================================
-11. Jalon 3 : Features Differenciantes [86%]
+11. Jalon 3 : Features Differenciantes [COMPLETE]
 =========================================================
 
 **Debloque** : 500-1,000 coproprietes (differenciation marche)
 
 **Release cible** : v0.1.0
 
-**Issues ouvertes** : #335, #336, #338, #341
+**Issues ouvertes** : aucune — toutes les 28 issues fermees ✅
+
+.. note::
+
+   **Mise a jour 2026-04-01** : Jalon 3 passe a COMPLETE.
+   Issues #335, #336, #338, #341 TOUTES FERMEES (confirme via GitHub API).
+   Stubs marketplace implementes, Uuid::nil() energy bill corrige,
+   paiement auto contractor post-validation implemente.
 
 .. note::
 
    **Mise a jour 2026-03-25** : 24/28 issues fermees. #274-280 fermees.
    4 nouvelles issues detectees par audit code : #335 (marketplace stubs),
    #336 (individual member stubs), #338 (Uuid::nil energy bill),
-   #341 (auto-payment contractor). Ce sont des implementations manquantes
-   derriere des issues precedemment fermees.
+   #341 (auto-payment contractor). Toutes resolues en 2026-04-01.
 
 11.1 WP-FEAT-J3 : Issues restantes (4 ouvertes, 7 fermees)
 ------------------------------------------------------------
@@ -828,7 +856,7 @@ Aucun travail fonctionnel restant. Toutes les 17 issues fermees.
      - ~~Docs~~
      - ✅
 
-**Total Jalon 3 restant** : ~46h (stubs + bug + auto-payment)
+**Total Jalon 3 restant** : 0h — COMPLETE ✅ (issues #335, #336, #338, #341 toutes fermees 2026-04-01)
 
 =========================================================
 12. Jalon 4 : Automation & Integrations [91%]

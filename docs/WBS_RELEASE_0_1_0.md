@@ -5,6 +5,13 @@
 Première release officielle. Branche `release/0.1.0`, main stable pour GitOps.
 Avant d'écrire du code ou des tests, on fait un **audit sémantique** : chaque promesse métier des Jalons 0-3 est-elle spécifiée (BDD), implémentée (backend), câblée (frontend) et testée (E2E) ?
 
+> **Mise à jour 2026-04-01 (v5)** : Audit sémantique WBS ↔ code réel.
+> Phase 0 (Contract Tests DTO) : ✅ COMPLÈTE — utoipa 5.3 câblé sur tous les DTOs, `docs/api/openapi.yaml` (22 627 lignes) auto-généré, `frontend/src/types/api.d.ts` généré, CI job `contract-types` avec drift-check opérationnel.
+> Issues #301-#317 : toutes **FERMÉES** (confirmé via GitHub API — ces bugs/conformités avaient déjà été résolus).
+> Phase 9.3 CI : ✅ COMPLÈTE — jobs `security-audit`, `test-bdd`, `test-e2e`, `playwright`, `contract-types`, `api-breaking-changes` tous présents dans `.github/workflows/`.
+> #331 Playwright : reste ouvert — 2 bugs backend bloquants identifiés : (1) `api_key_handlers.rs` compare les rôles en MAJUSCULES alors que le JWT retourne des minuscules → 403 sur tous les endpoints ; (2) `security_incident_handlers.rs` requiert `superadmin` mais celui-ci a `organization_id = NULL` → violation NOT NULL. Tests en `test.skip`.
+> Lacunes réelles restantes : IaC 0% (#354, #355), API key rotation 501 (#339, Jalon 4).
+>
 > **Mise à jour 2026-03-30 (v4)** : Migration frontend vers versions latest stable —
 > Astro 6.1.2, Svelte 5.55.1, @astrojs/svelte 8.0.4, Vite 7.3.1, Playwright 1.58.2, Node 22 LTS.
 > Package-lock.json régénéré. Rebase + push 8 commits Phase 5-7 sur origin/main.
@@ -162,7 +169,7 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | Frontend page | 57 impl | 53 | 4 (pages admin pour AG Sessions, AGE, SecurityIncidents, ApiKeys) | 93% |
 | API Client TS | 53 pages | 49 | 4 | 92% |
 | Playwright | 48 spec files | 217+ pass / à vérifier | Gdpr+Resolutions fixés, à re-vérifier | **~95%** |
-| Contract DTO | — | 0 | tout | 0% |
+| Contract DTO | — | ✅ utoipa + openapi.yaml + api.d.ts + CI drift-check | 0 | **100%** |
 | **Infrastructure IaC** | **236 fichiers** | **0 testés** | **236** | **0%** |
 | **Terraform validate** | 39 .tf files | ❌ | 39 | **0%** |
 | **Ansible lint** | 47 YAML + 21 J2 | ❌ | 68 | **0%** |
@@ -170,14 +177,19 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 | **Shell check** | 36 scripts | ❌ | 36 | **0%** |
 | **Policy ISO 27001** | 9 contrôles mappés | ❌ | 9 | **0%** |
 
-### TOP 5 des lacunes restantes :
+### TOP 5 des lacunes restantes (mis à jour 2026-04-01) :
 
-1. **Infrastructure IaC : 0% de tests** — 236 fichiers, 18.7k LOC, 0 tests automatisés. #354 + #355.
-   L'infra = 52% des commits du projet (1 033 / 1 977). Terraform validate, ansible-lint, molecule, conftest ISO 27001 tous manquants. **Bloquant pour la confiance production.**
-2. **Contract Tests DTO** : 0% — aucun mécanisme de cohérence backend↔frontend
-3. **Playwright** : 21 tests en échec (ApiKeys + SecurityIncidents — null constraint building_id) — Issue #331
-4. **Frontend pages admin** : 4 features sans page dédiée complète (AG Sessions, AGE, SecurityIncidents, ApiKeys)
+1. **Infrastructure IaC : 0% de tests** — 236 fichiers, 18.7k LOC, 0 tests automatisés. #354 + #355 (ouverts).
+   L'infra = 52% des commits du projet. Terraform validate, ansible-lint, molecule, conftest ISO 27001 tous manquants. **Bloquant pour la confiance production.**
+2. **Playwright #331** : 2 bugs backend bloquants (tests en `test.skip`) :
+   - `api_key_handlers.rs` : comparaison rôles en MAJUSCULES (`"SYNDIC"`) vs JWT en minuscules (`"syndic"`) → 403 sur tous les endpoints
+   - `security_incident_handlers.rs` : superadmin a `organization_id = NULL` → violation NOT NULL en DB
+3. **Phase 8 (revue humaine UI/UX)** : bloque le GO/NO-GO — aucune checklist dans `docs/release/`
+4. **Phase 9.2 (traçabilité GitHub)** : milestones 5-8 à vérifier, labels, GitHub Project board
 5. **Policy-as-Code ISO 27001** : 9 contrôles mappés (SECURITY.md) mais 0 vérifié automatiquement
+
+~~2. **Contract Tests DTO** : ✅ RÉSOLU — utoipa + openapi.yaml + api.d.ts + CI drift-check (vérifié 2026-04-01)~~
+~~3. **Issues critiques #301-#317** : ✅ TOUTES FERMÉES (vérifiées via GitHub API 2026-04-01)~~
 
 ### Toutes les features Jalon 3 sont maintenant COMPLÈTES (issues fermées)
 
@@ -210,10 +222,10 @@ Légende : ✅ = OK | ❌ = Manquant | ⚠️ = Partiel | n/a = Non applicable
 
 ## PLAN D'ACTION (par priorité)
 
-### Phase 0 — Contract Tests DTO (fondation)
-- [ ] 0.1 utoipa sur tous les DTOs backend → openapi.json
-- [ ] 0.2 openapi-typescript → `frontend/src/types/api.d.ts`
-- [ ] 0.3 CI : diff check types générés
+### Phase 0 — Contract Tests DTO (fondation) ✅ COMPLETE
+- [x] 0.1 utoipa 5.3 câblé sur tous les DTOs backend → `docs/api/openapi.yaml` (22 627 lignes) — vérifié 2026-04-01
+- [x] 0.2 openapi-typescript → `frontend/src/types/api.d.ts` généré — vérifié 2026-04-01
+- [x] 0.3 CI job `contract-types` : drift-check `npm run types:generate` — vérifié dans `.github/workflows/ci.yml` lignes 250-271
 
 ### Phase 1 — Nettoyage
 - [x] 1.1 Supprimer .bak et .disabled — commit `a9100b7`
@@ -401,7 +413,8 @@ Les tests Playwright enregistrent des vidéos (déjà configuré : 1280x720). Ce
 - [ ] La valeur livrée est conforme à la vision du projet
 
 #### 8.3 Validation finale
-- [ ] Checklist de revue signée (document dans `docs/release/`)
+- [ ] Checklist de revue complétée → **`docs/release/REVUE_HUMAINE_0_1_0.md`** ← document complet créé 2026-04-01
+- [ ] Score conformité légale ≥ 95% (18/19 articles CC + RGPD)
 - [ ] Bugs bloquants identifiés → corrigés → re-testés
 - [ ] Décision GO/NO-GO pour la release
 
