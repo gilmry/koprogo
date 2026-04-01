@@ -11,7 +11,7 @@ export interface CreateTicketDto {
   description: string;
   priority: TicketPriority;
   category: TicketCategory;
-  requester_id: string;
+  requester_id?: string; // Ignoré par le backend (utilise le JWT), gardé pour compat frontend
   unit_id?: string;
 }
 
@@ -83,7 +83,20 @@ export const ticketsApi = {
    * Create a new ticket
    */
   async create(data: CreateTicketDto): Promise<Ticket> {
-    return api.post("/tickets", data);
+    // Envoyer uniquement les champs attendus par le backend (CreateTicketRequest)
+    // Le backend ignore requester_id et utilise le user_id du JWT
+    const payload: Record<string, any> = {
+      building_id: data.building_id,
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      category: data.category,
+    };
+    // unit_id seulement si c'est un UUID valide (pas vide)
+    if (data.unit_id && data.unit_id.trim() !== "") {
+      payload.unit_id = data.unit_id;
+    }
+    return api.post("/tickets", payload);
   },
 
   /**
@@ -132,7 +145,7 @@ export const ticketsApi = {
    * Assign ticket to contractor
    */
   async assign(id: string, contractorId: string): Promise<Ticket> {
-    return api.put(`/tickets/${id}/assign`, { contractor_id: contractorId });
+    return api.put(`/tickets/${id}/assign`, { assigned_to: contractorId });
   },
 
   /**
