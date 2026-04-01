@@ -30,7 +30,12 @@
 
   $: canVote = resolution.status === ResolutionStatus.Pending && meetingStatus === 'Scheduled';
   $: isClosed = resolution.status !== ResolutionStatus.Pending;
-  $: totalVotes = resolution.votes_pour + resolution.votes_contre + resolution.votes_abstention;
+  // Utiliser les champs backend (vote_count_*) avec fallback sur les anciens noms
+  $: votesPour = resolution.vote_count_pour ?? votesPour ?? 0;
+  $: votesContre = resolution.vote_count_contre ?? votesContre ?? 0;
+  $: votesAbstention = resolution.vote_count_abstention ?? votesAbstention ?? 0;
+  $: totalVotes = resolution.total_votes ?? (votesPour + votesContre + votesAbstention);
+  $: totalVotingPower = (resolution.total_voting_power_pour ?? 0) + (resolution.total_voting_power_contre ?? 0) + (resolution.total_voting_power_abstention ?? 0);
 
   function getMajorityLabel(type: MajorityType): string {
     switch (type) {
@@ -93,7 +98,7 @@
       onSuccess: async (result) => {
         resolution = result;
         const status = resolution.status === ResolutionStatus.Adopted ? $_("resolutions.vote.adopted") : $_("resolutions.vote.rejected");
-        toast.success($_("resolutions.vote.closedMessage", { status }));
+        toast.success($_("resolutions.vote.closedMessage", { values: { status } }));
         if (showVotes) await loadVotes();
       },
     });
@@ -138,37 +143,37 @@
     <div data-testid="vote-progress-pour">
       <div class="flex items-center justify-between text-sm mb-1">
         <span class="text-green-700 font-medium">{$_("resolutions.vote.for")}</span>
-        <span class="text-gray-600">{resolution.votes_pour} {$_("resolutions.vote.votes", { count: resolution.votes_pour })} ({getVotePercentage(resolution.votes_pour).toFixed(1)}%)</span>
+        <span class="text-gray-600">{votesPour} {$_("resolutions.vote.votes", { values: { count: votesPour } })} ({getVotePercentage(votesPour).toFixed(1)}%)</span>
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
-        <div class="bg-green-500 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(resolution.votes_pour)}%"></div>
+        <div class="bg-green-500 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(votesPour)}%"></div>
       </div>
     </div>
 
     <div data-testid="vote-progress-contre">
       <div class="flex items-center justify-between text-sm mb-1">
         <span class="text-red-700 font-medium">{$_("resolutions.vote.against")}</span>
-        <span class="text-gray-600">{resolution.votes_contre} {$_("resolutions.vote.votes", { count: resolution.votes_contre })} ({getVotePercentage(resolution.votes_contre).toFixed(1)}%)</span>
+        <span class="text-gray-600">{votesContre} {$_("resolutions.vote.votes", { values: { count: votesContre } })} ({getVotePercentage(votesContre).toFixed(1)}%)</span>
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
-        <div class="bg-red-500 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(resolution.votes_contre)}%"></div>
+        <div class="bg-red-500 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(votesContre)}%"></div>
       </div>
     </div>
 
     <div data-testid="vote-progress-abstention">
       <div class="flex items-center justify-between text-sm mb-1">
         <span class="text-gray-700 font-medium">{$_("resolutions.vote.abstain")}</span>
-        <span class="text-gray-600">{resolution.votes_abstention} {$_("resolutions.vote.votes", { count: resolution.votes_abstention })} ({getVotePercentage(resolution.votes_abstention).toFixed(1)}%)</span>
+        <span class="text-gray-600">{votesAbstention} {$_("resolutions.vote.votes", { values: { count: votesAbstention } })} ({getVotePercentage(votesAbstention).toFixed(1)}%)</span>
       </div>
       <div class="w-full bg-gray-100 rounded-full h-2.5">
-        <div class="bg-gray-400 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(resolution.votes_abstention)}%"></div>
+        <div class="bg-gray-400 h-2.5 rounded-full transition-all" style="width: {getVotePercentage(votesAbstention)}%"></div>
       </div>
     </div>
 
     <p class="text-xs text-gray-500 mt-1">
-      {$_("resolutions.vote.total")}: {totalVotes} {$_("resolutions.vote.votes", { count: totalVotes })}
-      {#if resolution.total_voting_power > 0}
-        &middot; {$_("resolutions.vote.votingPower")}: {resolution.total_voting_power} {$_("resolutions.vote.thousandths")}
+      {$_("resolutions.vote.total")}: {totalVotes} {$_("resolutions.vote.votes", { values: { count: totalVotes } })}
+      {#if totalVotingPower > 0}
+        &middot; {$_("resolutions.vote.votingPower")}: {totalVotingPower} {$_("resolutions.vote.thousandths")}
       {/if}
     </p>
   </div>
@@ -223,7 +228,7 @@
             type="number"
             bind:value={votingPower}
             min="1"
-            max="1000"
+            max="10000"
             class="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             data-testid="vote-voting-power"
           />
@@ -268,7 +273,7 @@
       {:else if showVotes}
         {$_("resolutions.vote.hideVotes")}
       {:else}
-        {$_("resolutions.vote.viewVotes", { count: totalVotes })}
+        {$_("resolutions.vote.viewVotes", { values: { count: totalVotes } })}
       {/if}
     </button>
 

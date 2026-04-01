@@ -68,15 +68,15 @@
         <h2 class="text-xl font-semibold text-white">{$_("resolutions.list.title")}</h2>
         {#if resolutions.length > 0}
           <p class="text-indigo-200 text-sm mt-1">
-            {resolutions.length} {$_("resolutions.list.resolution", { count: resolutions.length })}
+            {resolutions.length} {$_("resolutions.list.resolution", { values: { count: resolutions.length } })}
             {#if pendingCount > 0}
               &middot; <span data-testid="resolution-pending-count">{pendingCount} {$_("resolutions.list.pending")}</span>
             {/if}
             {#if adoptedCount > 0}
-              &middot; <span data-testid="resolution-adopted-count">{adoptedCount} {$_("resolutions.list.adopted", { count: adoptedCount })}</span>
+              &middot; <span data-testid="resolution-adopted-count">{adoptedCount} {$_("resolutions.list.adopted", { values: { count: adoptedCount } })}</span>
             {/if}
             {#if rejectedCount > 0}
-              &middot; <span data-testid="resolution-rejected-count">{rejectedCount} {$_("resolutions.list.rejected", { count: rejectedCount })}</span>
+              &middot; <span data-testid="resolution-rejected-count">{rejectedCount} {$_("resolutions.list.rejected", { values: { count: rejectedCount } })}</span>
             {/if}
           </p>
         {/if}
