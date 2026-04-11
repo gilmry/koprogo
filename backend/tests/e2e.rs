@@ -359,6 +359,7 @@ async fn setup_test_db() -> (
     let boinc_iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
     let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
     let boinc_use_cases = BoincUseCases::new(boinc_grid_adapter, boinc_iot_repo);
+    let user_use_cases = UserUseCases::new(user_repo.clone(), user_role_repo.clone());
 
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
@@ -426,6 +427,7 @@ async fn setup_test_db() -> (
         pool.clone(),
         mqtt_energy_adapter,
         boinc_use_cases,
+        user_use_cases,
     ));
 
     (app_state, postgres_container, org_id)
