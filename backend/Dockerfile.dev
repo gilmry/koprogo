@@ -17,7 +17,8 @@ RUN apt-get update && apt-get install -y \
 
 # Install dev tools (after system deps so openssl-sys can build)
 RUN cargo install cargo-watch && \
-    cargo install sqlx-cli --no-default-features --features native-tls,postgres
+    cargo install sqlx-cli --no-default-features --features native-tls,postgres && \
+    cargo install cargo-audit
 
 # Copy Cargo files for dependency caching
 COPY Cargo.toml Cargo.lock ./

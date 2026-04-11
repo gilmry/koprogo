@@ -125,7 +125,7 @@ async fn setup_test_db() -> (
     let auth_use_cases = AuthUseCases::new(
         user_repo.clone(),
         refresh_token_repo,
-        user_role_repo,
+        user_role_repo.clone(),
         jwt_secret,
     );
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
