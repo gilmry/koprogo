@@ -44,7 +44,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "^1.58.2",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.6.0",
     "@vite-pwa/astro": "^1.2.0",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.1",
