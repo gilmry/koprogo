@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithMeeting } from "./helpers/auth";
+import { loginAsSyndicWithMeeting } from "../helpers/auth";
 
 /**
  * AG Sessions E2E Test Suite - Video Conference (Art. 3.87 §1 CC)

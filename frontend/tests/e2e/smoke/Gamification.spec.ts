@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndic } from "./helpers/auth";
+import { loginAsSyndic } from "../helpers/auth";
 
 /**
  * Gamification E2E Test Suite - Achievements & Challenges

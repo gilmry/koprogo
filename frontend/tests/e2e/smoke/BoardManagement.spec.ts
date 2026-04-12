@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithOwner } from "./helpers/auth";
+import { loginAsSyndicWithOwner } from "../helpers/auth";
 
 /**
  * Board Management E2E Test Suite - Conseil de Copropriété

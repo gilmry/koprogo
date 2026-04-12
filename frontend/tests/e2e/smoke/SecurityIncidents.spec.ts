@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsAdmin, loginAsSyndic } from "./helpers/auth";
+import { loginAsAdmin, loginAsSyndic } from "../helpers/auth";
 
 /**
  * Security Incidents E2E Test Suite - GDPR Article 33

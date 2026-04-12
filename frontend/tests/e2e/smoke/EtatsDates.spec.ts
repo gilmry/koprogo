@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { loginAsSyndicWithUnit } from "./helpers/auth";
+import { loginAsSyndicWithUnit } from "../helpers/auth";
 
 /**
  * Etats Dates E2E Test Suite - Belgian Property Sales Document
