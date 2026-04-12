@@ -101,7 +101,7 @@ test.describe("Board Management - Conseil de Copropriété", () => {
       const decision = await decisionResp.json();
       expect(decision.id).toBeTruthy();
       expect(decision.building_id).toBe(buildingId);
-      expect(decision.status).toBe("Pending");
+      expect(decision.status).toBe("pending");
 
       // Retrieve by ID
       const getResp = await page.request.get(

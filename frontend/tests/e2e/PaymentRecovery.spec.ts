@@ -5,7 +5,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Payment Recovery E2E Test Suite - Automated Reminder Workflow
  *
  * Tests payment reminder creation and escalation workflow.
- * 4 levels: Gentle (J+15) → Formal (J+30) → FinalNotice (J+45) → LegalAction (J+60)
+ * 3 levels: FirstReminder (J+15) → SecondReminder (J+30) → FormalNotice (J+60)
  * Late penalty: Belgian legal rate 8% annually.
  * Mirrors workflows from backend/tests/e2e_payment_recovery.rs.
  */
@@ -76,7 +76,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
           organization_id: orgId,
           expense_id: expense.id,
           owner_id: owner.id,
-          level: "Gentle",
+          level: "FirstReminder",
           due_date: new Date(Date.now() - 15 * 86400000).toISOString(),
           amount_owed: 250.0,
           days_overdue: 15,
@@ -89,7 +89,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     if (reminderResp.ok()) {
       const reminder = await reminderResp.json();
       expect(reminder.id).toBeTruthy();
-      expect(reminder.level).toBe("Gentle");
+      expect(reminder.level).toBe("FirstReminder");
 
       // Retrieve by ID
       const getResp = await page.request.get(
@@ -130,7 +130,9 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     expect(Array.isArray(reminders)).toBeTruthy();
   });
 
-  test("should escalate a reminder (Gentle → Formal)", async ({ page }) => {
+  test("should escalate a reminder (FirstReminder → SecondReminder)", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "recovery",
@@ -171,7 +173,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
           organization_id: orgId,
           expense_id: expense.id,
           owner_id: owner.id,
-          level: "Gentle",
+          level: "FirstReminder",
           due_date: new Date(Date.now() - 30 * 86400000).toISOString(),
           amount_owed: 400.0,
           days_overdue: 30,
@@ -191,7 +193,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
 
       if (escalateResp.ok()) {
         const escalated = await escalateResp.json();
-        expect(escalated.level).toBe("Formal");
+        expect(escalated.level).toBe("SecondReminder");
       }
     }
   });

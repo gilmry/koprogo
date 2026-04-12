@@ -47,7 +47,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
     if (sessionResp.ok()) {
       const session = await sessionResp.json();
       expect(session.id).toBeTruthy();
-      expect(session.status).toBe("Scheduled");
+      expect(session.status).toBe("scheduled");
 
       // Retrieve by ID
       const getResp = await page.request.get(
@@ -87,7 +87,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
 
       if (startResp.ok()) {
         const started = await startResp.json();
-        expect(started.status).toBe("Live");
+        expect(started.status).toBe("live");
       }
     }
   });

@@ -121,7 +121,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
 
     if (submitResp.ok()) {
       const updated = await submitResp.json();
-      expect(updated.status).toBe("PendingApproval");
+      expect(updated.status).toBe("pending_approval");
     }
   });
 
@@ -162,7 +162,7 @@ test.describe("Invoices - Expense Approval Workflow", () => {
 
     if (approveResp.ok()) {
       const approved = await approveResp.json();
-      expect(approved.status).toBe("Approved");
+      expect(approved.status).toBe("approved");
     }
   });
 

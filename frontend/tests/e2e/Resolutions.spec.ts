@@ -51,7 +51,7 @@ test.describe("Resolutions - AG Voting System", () => {
       const resolution = await resolutionResp.json();
       expect(resolution.id).toBeTruthy();
       expect(resolution.title).toBe(title);
-      expect(resolution.status).toBe("Pending");
+      expect(resolution.status).toBe("pending");
 
       // Retrieve by ID
       const getResp = await page.request.get(
@@ -193,7 +193,7 @@ test.describe("Resolutions - AG Voting System", () => {
 
       if (closeResp.ok()) {
         const closed = await closeResp.json();
-        expect(["Adopted", "Rejected"].includes(closed.status)).toBeTruthy();
+        expect(["adopted", "rejected"].includes(closed.status)).toBeTruthy();
       }
     }
   });

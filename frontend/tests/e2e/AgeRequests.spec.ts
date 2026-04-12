@@ -51,7 +51,7 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
       const ageRequest = await ageResp.json();
       expect(ageRequest.id).toBeTruthy();
       expect(ageRequest.building_id).toBe(buildingId);
-      expect(ageRequest.status).toBe("Draft");
+      expect(ageRequest.status).toBe("draft");
 
       // Retrieve by ID
       const getResp = await page.request.get(
@@ -97,7 +97,7 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
 
       if (openResp.ok()) {
         const opened = await openResp.json();
-        expect(opened.status).toBe("Open");
+        expect(opened.status).toBe("open");
       }
     }
   });
