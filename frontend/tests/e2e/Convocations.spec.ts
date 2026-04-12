@@ -159,7 +159,7 @@ test.describe("Convocations - AG Automatic Invitations", () => {
     });
 
     const getResp = await page.request.get(
-      `${API_BASE}/convocations/meeting/${meetingId}`,
+      `${API_BASE}/meetings/${meetingId}/convocation`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     expect(getResp.status()).toBe(200);

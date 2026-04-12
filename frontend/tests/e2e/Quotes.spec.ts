@@ -53,7 +53,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
         project_title: projectTitle,
         project_description: "Remplacement tuiles et isolation thermique",
         amount_excl_vat: 8500.0,
-        vat_rate: 6.0,
+        vat_rate: 0.06,
         validity_date: validityDate.toISOString(),
         estimated_duration_days: 5,
         warranty_years: 10,
@@ -130,7 +130,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
         project_title: `Devis électricité ${timestamp}`,
         project_description: "Mise aux normes tableau électrique",
         amount_excl_vat: 3200.0,
-        vat_rate: 21.0,
+        vat_rate: 0.21,
         validity_date: validityDate.toISOString(),
         estimated_duration_days: 2,
         warranty_years: 2,
@@ -144,13 +144,6 @@ test.describe("Quotes - Contractor Quote Management", () => {
     const submitResp = await page.request.post(
       `${API_BASE}/quotes/${quote.id}/submit`,
       {
-        data: {
-          amount_excl_vat: 3200.0,
-          vat_rate: 21.0,
-          validity_date: validityDate.toISOString(),
-          estimated_duration_days: 2,
-          warranty_years: 2,
-        },
         headers: { Authorization: `Bearer ${token}` },
       },
     );

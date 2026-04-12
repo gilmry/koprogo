@@ -86,11 +86,39 @@ test.describe("Resolutions - AG Voting System", () => {
   });
 
   test("should cast a vote on a resolution", async ({ page }) => {
-    const { token, meetingId } = await loginAsSyndicWithMeeting(
-      page,
-      "resolution",
-    );
+    const { token, meetingId, buildingId, orgId, adminToken } =
+      await loginAsSyndicWithMeeting(page, "resolution");
     const timestamp = Date.now();
+
+    // Create unit + owner for voting
+    const unitResp = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        organization_id: orgId,
+        building_id: buildingId,
+        unit_number: `V${timestamp}`,
+        floor: 1,
+        surface_area: 80.0,
+        unit_type: "Apartment",
+        quota: 100.0,
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const unit = await unitResp.json();
+
+    const ownerResp = await page.request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: orgId,
+        first_name: "Vote",
+        last_name: `Owner${timestamp}`,
+        email: `vote-owner-${timestamp}@test.com`,
+        address: "1 Rue Vote",
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const owner = await ownerResp.json();
 
     // Create resolution
     const resolutionResp = await page.request.post(
@@ -115,7 +143,9 @@ test.describe("Resolutions - AG Voting System", () => {
       `${API_BASE}/resolutions/${resolution.id}/vote`,
       {
         data: {
-          choice: "Pour",
+          owner_id: owner.id,
+          unit_id: unit.id,
+          vote_choice: "pour",
           voting_power: 100,
         },
         headers: { Authorization: `Bearer ${token}` },
@@ -158,11 +188,39 @@ test.describe("Resolutions - AG Voting System", () => {
   });
 
   test("should close voting and calculate result", async ({ page }) => {
-    const { token, meetingId } = await loginAsSyndicWithMeeting(
-      page,
-      "resolution",
-    );
+    const { token, meetingId, buildingId, orgId, adminToken } =
+      await loginAsSyndicWithMeeting(page, "resolution");
     const timestamp = Date.now();
+
+    // Create unit + owner for voting
+    const unitResp = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        organization_id: orgId,
+        building_id: buildingId,
+        unit_number: `C${timestamp}`,
+        floor: 1,
+        surface_area: 80.0,
+        unit_type: "Apartment",
+        quota: 100.0,
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const unit = await unitResp.json();
+
+    const ownerResp = await page.request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: orgId,
+        first_name: "Close",
+        last_name: `Owner${timestamp}`,
+        email: `close-owner-${timestamp}@test.com`,
+        address: "1 Rue Close",
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const owner = await ownerResp.json();
 
     const resolutionResp = await page.request.post(
       `${API_BASE}/meetings/${meetingId}/resolutions`,
@@ -181,9 +239,23 @@ test.describe("Resolutions - AG Voting System", () => {
     expect(resolutionResp.status()).toBe(201);
     const resolution = await resolutionResp.json();
 
+    // Cast a vote before closing (required for close to succeed)
+    await page.request.post(`${API_BASE}/resolutions/${resolution.id}/vote`, {
+      data: {
+        owner_id: owner.id,
+        unit_id: unit.id,
+        vote_choice: "pour",
+        voting_power: 100,
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
     const closeResp = await page.request.put(
       `${API_BASE}/resolutions/${resolution.id}/close`,
-      { headers: { Authorization: `Bearer ${token}` } },
+      {
+        data: { total_voting_power: 100 },
+        headers: { Authorization: `Bearer ${token}` },
+      },
     );
     expect(closeResp.status()).toBe(200);
 

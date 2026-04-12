@@ -101,6 +101,18 @@ test.describe("Energy Campaigns - Group Buying", () => {
     expect(campaignResp.status()).toBe(201);
     const campaign = await campaignResp.json();
 
+    // Transition campaign to Negotiating so offers can be added
+    await page.request.put(
+      `${API_BASE}/energy-campaigns/${campaign.id}/status`,
+      {
+        data: { status: "Negotiating" },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+
+    const offerValidUntil = new Date();
+    offerValidUntil.setDate(offerValidUntil.getDate() + 60);
+
     const offerResp = await page.request.post(
       `${API_BASE}/energy-campaigns/${campaign.id}/offers`,
       {
@@ -111,6 +123,7 @@ test.describe("Energy Campaigns - Group Buying", () => {
           green_energy_pct: 100,
           contract_duration_months: 12,
           estimated_savings_pct: 15,
+          offer_valid_until: offerValidUntil.toISOString(),
         },
         headers: { Authorization: `Bearer ${token}` },
       },

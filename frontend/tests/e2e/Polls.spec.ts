@@ -197,7 +197,13 @@ test.describe("Polls - Board Decision Polling", () => {
         ends_at: endDate.toISOString(),
         is_anonymous: true,
         allow_multiple_votes: false,
-        options: [],
+        options: [
+          { option_text: "1 étoile", display_order: 1 },
+          { option_text: "2 étoiles", display_order: 2 },
+          { option_text: "3 étoiles", display_order: 3 },
+          { option_text: "4 étoiles", display_order: 4 },
+          { option_text: "5 étoiles", display_order: 5 },
+        ],
       },
       headers: { Authorization: `Bearer ${token}` },
     });

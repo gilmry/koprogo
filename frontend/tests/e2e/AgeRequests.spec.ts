@@ -144,7 +144,7 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect(cosignResp.status()).toBe(201);
+    expect(cosignResp.status()).toBe(200);
   });
 
   test("should navigate to new age-request page", async ({ page }) => {
