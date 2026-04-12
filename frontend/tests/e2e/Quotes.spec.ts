@@ -53,39 +53,37 @@ test.describe("Quotes - Contractor Quote Management", () => {
         project_title: projectTitle,
         project_description: "Remplacement tuiles et isolation thermique",
         amount_excl_vat: 8500.0,
-        vat_rate: 6.0,
+        vat_rate: 0.06,
         validity_date: validityDate.toISOString(),
         estimated_duration_days: 5,
         warranty_years: 10,
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([201, 400, 422].includes(quoteResp.status())).toBeTruthy();
+    expect(quoteResp.status()).toBe(201);
 
-    if (quoteResp.status() === 201) {
-      const quote = await quoteResp.json();
-      expect(quote.id).toBeTruthy();
-      expect(quote.project_title).toBe(projectTitle);
-      expect(quote.status).toBe("Requested");
+    const quote = await quoteResp.json();
+    expect(quote.id).toBeTruthy();
+    expect(quote.project_title).toBe(projectTitle);
+    expect(quote.status).toBe("Requested");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(`${API_BASE}/quotes/${quote.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(quote.id);
+    // Retrieve by ID
+    const getResp = await page.request.get(`${API_BASE}/quotes/${quote.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(quote.id);
 
-      // Verify it appears in building quotes list
-      const listResp = await page.request.get(
-        `${API_BASE}/buildings/${buildingId}/quotes`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(listResp.ok()).toBeTruthy();
-      const quotes = await listResp.json();
-      expect(Array.isArray(quotes)).toBeTruthy();
-      expect(quotes.some((q: { id: string }) => q.id === quote.id)).toBe(true);
-    }
+    // Verify it appears in building quotes list
+    const listResp = await page.request.get(
+      `${API_BASE}/buildings/${buildingId}/quotes`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(listResp.status()).toBe(200);
+    const quotes = await listResp.json();
+    expect(Array.isArray(quotes)).toBeTruthy();
+    expect(quotes.some((q: { id: string }) => q.id === quote.id)).toBe(true);
   });
 
   test("should list quotes for a building", async ({ page }) => {
@@ -132,7 +130,7 @@ test.describe("Quotes - Contractor Quote Management", () => {
         project_title: `Devis électricité ${timestamp}`,
         project_description: "Mise aux normes tableau électrique",
         amount_excl_vat: 3200.0,
-        vat_rate: 21.0,
+        vat_rate: 0.21,
         validity_date: validityDate.toISOString(),
         estimated_duration_days: 2,
         warranty_years: 2,
@@ -140,29 +138,19 @@ test.describe("Quotes - Contractor Quote Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (quoteResp.status() === 201) {
-      const quote = await quoteResp.json();
+    expect(quoteResp.status()).toBe(201);
+    const quote = await quoteResp.json();
 
-      const submitResp = await page.request.post(
-        `${API_BASE}/quotes/${quote.id}/submit`,
-        {
-          data: {
-            amount_excl_vat: 3200.0,
-            vat_rate: 21.0,
-            validity_date: validityDate.toISOString(),
-            estimated_duration_days: 2,
-            warranty_years: 2,
-          },
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      expect([200, 400].includes(submitResp.status())).toBeTruthy();
+    const submitResp = await page.request.post(
+      `${API_BASE}/quotes/${quote.id}/submit`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(submitResp.status()).toBe(200);
 
-      if (submitResp.ok()) {
-        const submitted = await submitResp.json();
-        expect(submitted.status).toBe("Received");
-      }
-    }
+    const submitted = await submitResp.json();
+    expect(submitted.status).toBe("Received");
   });
 
   test("should require auth to access quotes API", async ({ page }) => {

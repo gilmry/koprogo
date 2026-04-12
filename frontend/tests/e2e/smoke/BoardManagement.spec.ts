@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithOwner } from "./helpers/auth";
+import { loginAsSyndicWithOwner } from "../helpers/auth";
 
 /**
  * Board Management E2E Test Suite - Conseil de Copropriété
@@ -21,41 +21,69 @@ test.describe("Board Management - Conseil de Copropriété", () => {
   });
 
   test("should elect a board member and retrieve it", async ({ page }) => {
-    const { token, buildingId, orgId, ownerId } = await loginAsSyndicWithOwner(
-      page,
-      "boardmgmt",
-    );
+    const { token, buildingId, orgId, ownerId, adminToken } =
+      await loginAsSyndicWithOwner(page, "boardmgmt");
     const mandateStart = new Date();
     const mandateEnd = new Date();
-    mandateEnd.setFullYear(mandateEnd.getFullYear() + 2);
+    mandateEnd.setDate(mandateEnd.getDate() + 365);
 
-    const electResp = await page.request.post(`${API_BASE}/board-members`, {
+    // Create a building with >20 units (required by Belgian law for conseil)
+    const lgBuildingResp = await page.request.post(`${API_BASE}/buildings`, {
       data: {
-        building_id: buildingId,
-        owner_id: ownerId,
+        name: `Board Building ${Date.now()}`,
+        address: "1 Rue du Conseil",
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+        total_units: 25,
+        construction_year: 2010,
         organization_id: orgId,
-        position: "President",
-        mandate_start: mandateStart.toISOString(),
-        mandate_end: mandateEnd.toISOString(),
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const lgBuilding = await lgBuildingResp.json();
+
+    // Create a meeting for this building (needed for elected_by_meeting_id)
+    const meetingDate = new Date();
+    meetingDate.setDate(meetingDate.getDate() + 30);
+    const meetingResp = await page.request.post(`${API_BASE}/meetings`, {
+      data: {
+        building_id: lgBuilding.id,
+        organization_id: orgId,
+        title: `AG Board Election ${Date.now()}`,
+        scheduled_date: meetingDate.toISOString(),
+        meeting_type: "Ordinary",
+        location: "Salle communale",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(electResp.status())).toBeTruthy();
+    const meeting = await meetingResp.json();
 
-    if (electResp.ok()) {
-      const member = await electResp.json();
-      expect(member.id).toBeTruthy();
-      expect(member.position).toBe("President");
+    const electResp = await page.request.post(`${API_BASE}/board-members`, {
+      data: {
+        building_id: lgBuilding.id,
+        owner_id: ownerId,
+        position: "President",
+        mandate_start: mandateStart.toISOString(),
+        mandate_end: mandateEnd.toISOString(),
+        elected_by_meeting_id: meeting.id,
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(electResp.status()).toBe(201);
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/board-members/${member.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(member.id);
-    }
+    const member = await electResp.json();
+    expect(member.id).toBeTruthy();
+    expect(member.position).toBe("president");
+
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/board-members/${member.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(member.id);
   });
 
   test("should list active board members for building", async ({ page }) => {
@@ -82,34 +110,49 @@ test.describe("Board Management - Conseil de Copropriété", () => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30);
 
+    // Create a meeting first (needed for meeting_id field)
+    const meetingDate = new Date();
+    meetingDate.setDate(meetingDate.getDate() + 30);
+    const meetingResp = await page.request.post(`${API_BASE}/meetings`, {
+      data: {
+        building_id: buildingId,
+        organization_id: orgId,
+        title: `AG Decision ${timestamp}`,
+        scheduled_date: meetingDate.toISOString(),
+        meeting_type: "Ordinary",
+        location: "Salle communale",
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const meeting = await meetingResp.json();
+
     const decisionResp = await page.request.post(
       `${API_BASE}/board-decisions`,
       {
         data: {
           building_id: buildingId,
-          organization_id: orgId,
-          title: `Remplacement chaudière ${timestamp}`,
-          description: "Suite à l'AG du 15 mars, remplacement de la chaudière",
-          due_date: dueDate.toISOString(),
+          meeting_id: meeting.id,
+          subject: `Remplacement chaudière ${timestamp}`,
+          decision_text:
+            "Suite à l'AG du 15 mars, remplacement de la chaudière",
+          deadline: dueDate.toISOString(),
         },
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(decisionResp.status())).toBeTruthy();
+    expect(decisionResp.status()).toBe(201);
 
-    if (decisionResp.ok()) {
-      const decision = await decisionResp.json();
-      expect(decision.id).toBeTruthy();
-      expect(decision.building_id).toBe(buildingId);
-      expect(decision.status).toBe("Pending");
+    const decision = await decisionResp.json();
+    expect(decision.id).toBeTruthy();
+    expect(decision.building_id).toBe(buildingId);
+    expect(decision.status).toBe("pending");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/board-decisions/${decision.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/board-decisions/${decision.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
   });
 
   test("should list board decisions for building", async ({ page }) => {
@@ -137,7 +180,7 @@ test.describe("Board Management - Conseil de Copropriété", () => {
       `${API_BASE}/buildings/${buildingId}/board-members/stats`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(statsResp.status())).toBeTruthy();
+    expect(statsResp.status()).toBe(200);
   });
 
   test("should require auth for board management API", async ({ page }) => {

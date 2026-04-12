@@ -58,7 +58,6 @@ impl StatsUseCases {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::dto::NextMeetingInfo;
     use async_trait::async_trait;
 
     struct MockStatsRepository {

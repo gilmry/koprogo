@@ -363,7 +363,19 @@ jobs:
           sqlx migrate run
           cargo build
           cargo run &
-          sleep 15
+          # Wait for backend to be ready (health check instead of fixed sleep)
+          echo "Waiting for backend to start..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+              echo "Backend is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Backend failed to start within 60s"
+              exit 1
+            fi
+            sleep 5
+          done
 
       - name: Start frontend dev server
         env:
@@ -372,7 +384,19 @@ jobs:
           cd frontend
           node scripts/generate-config.js
           npx astro dev --port 3000 &
-          sleep 10
+          # Wait for frontend to be ready
+          echo "Waiting for frontend to start..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Frontend failed to start within 30s"
+              exit 1
+            fi
+            sleep 2
+          done
 
       - name: Run Playwright smoke tests
         env:

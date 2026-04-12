@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithUnit } from "./helpers/auth";
+import { loginAsSyndicWithUnit } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -47,7 +47,7 @@ test.describe("Unit Owners - Multi-Owner Support", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(assignResp.status())).toBeTruthy();
+    expect(assignResp.status()).toBe(201);
   });
 
   test("should list owners for a unit", async ({ page }) => {

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndic } from "./helpers/auth";
+import { loginAsSyndic } from "../helpers/auth";
 
 /**
  * Two-Factor Authentication E2E Test Suite - TOTP 2FA
@@ -60,6 +60,7 @@ test.describe("Two-Factor Authentication (2FA)", () => {
   test("should allow calling setup multiple times (idempotent)", async ({
     page,
   }) => {
+    test.setTimeout(60_000); // 2FA setup involves bcrypt, can be slow
     const { token } = await loginAsSyndic(page, "2fa");
 
     // First setup
@@ -78,6 +79,7 @@ test.describe("Two-Factor Authentication (2FA)", () => {
   });
 
   test("should reject invalid TOTP code during enable", async ({ page }) => {
+    test.setTimeout(60_000);
     const { token } = await loginAsSyndic(page, "2fa");
 
     // Setup first

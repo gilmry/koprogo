@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndic } from "./helpers/auth";
+import { loginAsSyndic } from "../helpers/auth";
 
 /**
  * Gamification E2E Test Suite - Achievements & Challenges
@@ -43,23 +43,21 @@ test.describe("Gamification - Achievements & Challenges", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(achResp.status())).toBeTruthy();
+    expect(achResp.status()).toBe(201);
 
-    if (achResp.ok()) {
-      const achievement = await achResp.json();
-      expect(achievement.id).toBeTruthy();
-      expect(achievement.organization_id).toBe(orgId);
-      expect(achievement.tier).toBe("Bronze");
+    const achievement = await achResp.json();
+    expect(achievement.id).toBeTruthy();
+    expect(achievement.organization_id).toBe(orgId);
+    expect(achievement.tier).toBe("Bronze");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/achievements/${achievement.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(achievement.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/achievements/${achievement.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(achievement.id);
   });
 
   test("should list achievements for organization", async ({ page }) => {
@@ -90,6 +88,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
     const { token, orgId } = await loginAsSyndic(page, "gamif");
     const timestamp = Date.now();
     const startDate = new Date();
+    startDate.setDate(startDate.getDate() + 1); // Must be in the future
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 30);
 
@@ -108,25 +107,21 @@ test.describe("Gamification - Achievements & Challenges", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(challengeResp.status())).toBeTruthy();
+    expect(challengeResp.status()).toBe(201);
 
-    if (challengeResp.ok()) {
-      const challenge = await challengeResp.json();
-      expect(challenge.id).toBeTruthy();
-      expect(challenge.status).toBe("Draft");
+    const challenge = await challengeResp.json();
+    expect(challenge.id).toBeTruthy();
+    expect(challenge.status).toBe("Draft");
 
-      // Activate the challenge
-      const activateResp = await page.request.put(
-        `${API_BASE}/challenges/${challenge.id}/activate`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(activateResp.status())).toBeTruthy();
+    // Activate the challenge
+    const activateResp = await page.request.put(
+      `${API_BASE}/challenges/${challenge.id}/activate`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(activateResp.status()).toBe(200);
 
-      if (activateResp.ok()) {
-        const activated = await activateResp.json();
-        expect(activated.status).toBe("Active");
-      }
-    }
+    const activated = await activateResp.json();
+    expect(activated.status).toBe("Active");
   });
 
   test("should list challenges for organization", async ({ page }) => {
@@ -148,7 +143,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
       `${API_BASE}/organizations/${orgId}/gamification/leaderboard`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(leaderboardResp.status())).toBeTruthy();
+    expect(leaderboardResp.status()).toBe(200);
   });
 
   test("should require auth for gamification API", async ({ page }) => {

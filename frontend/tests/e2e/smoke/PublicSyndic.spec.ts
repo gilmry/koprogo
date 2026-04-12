@@ -51,8 +51,7 @@ test.describe("Public Syndic Info - Belgian Legal Requirement", () => {
       const resp = await page.request.get(
         `${API_BASE}/public/buildings/${slug}/syndic`,
       );
-      // 200 if syndic info exists, 404 if not set yet
-      expect([200, 404].includes(resp.status())).toBeTruthy();
+      expect(resp.status()).toBe(200);
     } else {
       // Building has no slug yet (syndic info not configured)
       expect(true).toBeTruthy();

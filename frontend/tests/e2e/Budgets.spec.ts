@@ -38,23 +38,20 @@ test.describe("Budgets - Annual Budget Management", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(budgetResp.status())).toBeTruthy();
+    expect(budgetResp.status()).toBe(201);
 
-    if (budgetResp.ok()) {
-      const budget = await budgetResp.json();
-      expect(budget.id).toBeTruthy();
-      expect(budget.fiscal_year).toBe(2026);
-      expect(budget.status).toBe("Draft");
+    const budget = await budgetResp.json();
+    expect(budget.id).toBeTruthy();
+    expect(budget.fiscal_year).toBe(2026);
+    expect(budget.status).toBe("Draft");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/budgets/${budget.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(budget.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(`${API_BASE}/budgets/${budget.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(budget.id);
   });
 
   test("should list budgets for a building", async ({ page }) => {
@@ -89,11 +86,10 @@ test.describe("Budgets - Annual Budget Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (budgetResp.ok()) {
-      const budget = await budgetResp.json();
-      await page.goto(`/budget-detail?id=${budget.id}`);
-      await expect(page.locator("body")).toBeVisible();
-    }
+    expect(budgetResp.status()).toBe(201);
+    const budget = await budgetResp.json();
+    await page.goto(`/budget-detail?id=${budget.id}`);
+    await expect(page.locator("body")).toBeVisible();
   });
 
   test("should submit budget for approval (Draft → Submitted)", async ({
@@ -115,20 +111,17 @@ test.describe("Budgets - Annual Budget Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (budgetResp.ok()) {
-      const budget = await budgetResp.json();
+    expect(budgetResp.status()).toBe(201);
+    const budget = await budgetResp.json();
 
-      const submitResp = await page.request.put(
-        `${API_BASE}/budgets/${budget.id}/submit`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(submitResp.status())).toBeTruthy();
+    const submitResp = await page.request.put(
+      `${API_BASE}/budgets/${budget.id}/submit`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(submitResp.status()).toBe(200);
 
-      if (submitResp.ok()) {
-        const submitted = await submitResp.json();
-        expect(submitted.status).toBe("Submitted");
-      }
-    }
+    const submitted = await submitResp.json();
+    expect(submitted.status).toBe("Submitted");
   });
 
   test("should get variance analysis for a budget", async ({ page }) => {
@@ -148,14 +141,13 @@ test.describe("Budgets - Annual Budget Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (budgetResp.ok()) {
-      const budget = await budgetResp.json();
-      const varianceResp = await page.request.get(
-        `${API_BASE}/budgets/${budget.id}/variance`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 404].includes(varianceResp.status())).toBeTruthy();
-    }
+    expect(budgetResp.status()).toBe(201);
+    const budget = await budgetResp.json();
+    const varianceResp = await page.request.get(
+      `${API_BASE}/budgets/${budget.id}/variance`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(varianceResp.status()).toBe(200);
   });
 
   test("should require auth for budgets API", async ({ page }) => {

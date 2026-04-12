@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { loginAsSyndicWithBuilding } from "./helpers/auth";
+import { loginAsSyndicWithBuilding } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -35,8 +35,8 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
         headers: { Authorization: `Bearer ${adminToken}` },
       },
     );
-    // 201 if first seed, 200 or 409 if already seeded
-    expect([200, 201, 409].includes(seedResp.status())).toBeTruthy();
+    // 200 if first seed, 409 if already seeded
+    expect([200, 409].includes(seedResp.status())).toBeTruthy();
   });
 
   test("should list accounts via API", async ({ page }) => {
@@ -67,6 +67,6 @@ test.describe("Accounts - PCMN Belgian Chart of Accounts", () => {
     const findResp = await page.request.get(`${API_BASE}/accounts/code/612`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 404].includes(findResp.status())).toBeTruthy();
+    expect(findResp.status()).toBe(200);
   });
 });

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithOwner } from "./helpers/auth";
+import { loginAsSyndicWithOwner } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -37,7 +37,7 @@ test.describe("Owner Contributions - Payment Tracking", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(contribResp.status())).toBeTruthy();
+    expect(contribResp.status()).toBe(201);
   });
 
   test("should list contributions for owner", async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe("Owner Contributions - Payment Tracking", () => {
       `${API_BASE}/owner-contributions/outstanding?owner_id=${ownerId}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(outstandingResp.status())).toBeTruthy();
+    expect(outstandingResp.status()).toBe(200);
   });
 
   test("should mark a contribution as paid", async ({ page }) => {
@@ -82,17 +82,19 @@ test.describe("Owner Contributions - Payment Tracking", () => {
       },
     );
 
-    if (contribResp.ok()) {
-      const contrib = await contribResp.json();
-      const paidResp = await page.request.put(
-        `${API_BASE}/owner-contributions/${contrib.id}/mark-paid`,
-        {
-          data: { payment_date: new Date().toISOString() },
-          headers: { Authorization: `Bearer ${token}` },
+    expect(contribResp.status()).toBe(201);
+    const contrib = await contribResp.json();
+    const paidResp = await page.request.put(
+      `${API_BASE}/owner-contributions/${contrib.id}/mark-paid`,
+      {
+        data: {
+          payment_date: new Date().toISOString(),
+          payment_method: "bank_transfer",
         },
-      );
-      expect([200, 400].includes(paidResp.status())).toBeTruthy();
-    }
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(paidResp.status()).toBe(200);
   });
 
   test("should require auth for owner contributions API", async ({ page }) => {

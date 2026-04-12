@@ -5,7 +5,7 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
  * Payment Recovery E2E Test Suite - Automated Reminder Workflow
  *
  * Tests payment reminder creation and escalation workflow.
- * 4 levels: Gentle (J+15) → Formal (J+30) → FinalNotice (J+45) → LegalAction (J+60)
+ * 3 levels: FirstReminder (J+15) → SecondReminder (J+30) → FormalNotice (J+60)
  * Late penalty: Belgian legal rate 8% annually.
  * Mirrors workflows from backend/tests/e2e_payment_recovery.rs.
  */
@@ -76,7 +76,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
           organization_id: orgId,
           expense_id: expense.id,
           owner_id: owner.id,
-          level: "Gentle",
+          level: "FirstReminder",
           due_date: new Date(Date.now() - 15 * 86400000).toISOString(),
           amount_owed: 250.0,
           days_overdue: 15,
@@ -84,22 +84,20 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(reminderResp.status())).toBeTruthy();
+    expect(reminderResp.status()).toBe(201);
 
-    if (reminderResp.ok()) {
-      const reminder = await reminderResp.json();
-      expect(reminder.id).toBeTruthy();
-      expect(reminder.level).toBe("Gentle");
+    const reminder = await reminderResp.json();
+    expect(reminder.id).toBeTruthy();
+    expect(reminder.level).toBe("FirstReminder");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/payment-reminders/${reminder.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(reminder.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/payment-reminders/${reminder.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(reminder.id);
   });
 
   test("should list reminders for an expense", async ({ page }) => {
@@ -130,7 +128,9 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     expect(Array.isArray(reminders)).toBeTruthy();
   });
 
-  test("should escalate a reminder (Gentle → Formal)", async ({ page }) => {
+  test("should escalate a reminder (FirstReminder → SecondReminder)", async ({
+    page,
+  }) => {
     const { token, buildingId, orgId } = await loginAsSyndicWithBuilding(
       page,
       "recovery",
@@ -171,7 +171,7 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
           organization_id: orgId,
           expense_id: expense.id,
           owner_id: owner.id,
-          level: "Gentle",
+          level: "FirstReminder",
           due_date: new Date(Date.now() - 30 * 86400000).toISOString(),
           amount_owed: 400.0,
           days_overdue: 30,
@@ -180,20 +180,20 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
       },
     );
 
-    if (reminderResp.ok()) {
-      const reminder = await reminderResp.json();
+    expect(reminderResp.status()).toBe(201);
+    const reminder = await reminderResp.json();
 
-      const escalateResp = await page.request.put(
-        `${API_BASE}/payment-reminders/${reminder.id}/escalate`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(escalateResp.status())).toBeTruthy();
+    const escalateResp = await page.request.post(
+      `${API_BASE}/payment-reminders/${reminder.id}/escalate`,
+      {
+        data: { reason: "Paiement toujours en attente après relance" },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(escalateResp.status()).toBe(200);
 
-      if (escalateResp.ok()) {
-        const escalated = await escalateResp.json();
-        expect(escalated.level).toBe("Formal");
-      }
-    }
+    const escalated = await escalateResp.json();
+    expect(escalated.level).toBe("SecondReminder");
   });
 
   test("should navigate to payment reminder detail page", async ({ page }) => {

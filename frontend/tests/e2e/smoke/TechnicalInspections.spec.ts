@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithBuilding } from "./helpers/auth";
+import { loginAsSyndicWithBuilding } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -41,7 +41,7 @@ test.describe("Technical Inspections - Mandatory Compliance", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(inspResp.status())).toBeTruthy();
+    expect(inspResp.status()).toBe(201);
     const inspection = await inspResp.json();
     expect(inspection.building_id).toBe(buildingId);
   });

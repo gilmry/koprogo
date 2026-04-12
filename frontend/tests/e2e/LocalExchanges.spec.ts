@@ -40,23 +40,21 @@ test.describe("Local Exchanges - SEL Community System", () => {
       },
       headers: { Authorization: `Bearer ${ownerToken}` },
     });
-    expect([200, 201].includes(exchangeResp.status())).toBeTruthy();
+    expect(exchangeResp.status()).toBe(201);
 
-    if (exchangeResp.ok()) {
-      const exchange = await exchangeResp.json();
-      expect(exchange.id).toBeTruthy();
-      expect(exchange.building_id).toBe(buildingId);
-      expect(exchange.status).toBe("Offered");
+    const exchange = await exchangeResp.json();
+    expect(exchange.id).toBeTruthy();
+    expect(exchange.building_id).toBe(buildingId);
+    expect(exchange.status).toBe("Offered");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/exchanges/${exchange.id}`,
-        { headers: { Authorization: `Bearer ${ownerToken}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(exchange.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/exchanges/${exchange.id}`,
+      { headers: { Authorization: `Bearer ${ownerToken}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(exchange.id);
   });
 
   test("should list available exchanges for building", async ({ page }) => {
@@ -99,7 +97,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
       `${API_BASE}/buildings/${buildingId}/sel-statistics`,
       { headers: { Authorization: `Bearer ${ownerToken}` } },
     );
-    expect([200, 404].includes(statsResp.status())).toBeTruthy();
+    expect(statsResp.status()).toBe(200);
   });
 
   test("should get owner credit balance", async ({ page }) => {
@@ -110,7 +108,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
       `${API_BASE}/owners/${ownerId}/buildings/${buildingId}/credit-balance`,
       { headers: { Authorization: `Bearer ${ownerToken}` } },
     );
-    expect([200, 404].includes(balanceResp.status())).toBeTruthy();
+    expect(balanceResp.status()).toBe(200);
   });
 
   test("should get building leaderboard", async ({ page }) => {
@@ -123,7 +121,7 @@ test.describe("Local Exchanges - SEL Community System", () => {
       `${API_BASE}/buildings/${buildingId}/leaderboard`,
       { headers: { Authorization: `Bearer ${ownerToken}` } },
     );
-    expect([200, 404].includes(leaderboardResp.status())).toBeTruthy();
+    expect(leaderboardResp.status()).toBe(200);
   });
 
   test("should navigate to new exchange page", async ({ page }) => {

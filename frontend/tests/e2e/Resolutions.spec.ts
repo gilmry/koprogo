@@ -45,23 +45,21 @@ test.describe("Resolutions - AG Voting System", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(resolutionResp.status())).toBeTruthy();
+    expect(resolutionResp.status()).toBe(201);
 
-    if (resolutionResp.ok()) {
-      const resolution = await resolutionResp.json();
-      expect(resolution.id).toBeTruthy();
-      expect(resolution.title).toBe(title);
-      expect(resolution.status).toBe("Pending");
+    const resolution = await resolutionResp.json();
+    expect(resolution.id).toBeTruthy();
+    expect(resolution.title).toBe(title);
+    expect(resolution.status).toBe("pending");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/resolutions/${resolution.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(resolution.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/resolutions/${resolution.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(resolution.id);
   });
 
   test("should list resolutions for a meeting", async ({ page }) => {
@@ -88,11 +86,39 @@ test.describe("Resolutions - AG Voting System", () => {
   });
 
   test("should cast a vote on a resolution", async ({ page }) => {
-    const { token, meetingId } = await loginAsSyndicWithMeeting(
-      page,
-      "resolution",
-    );
+    const { token, meetingId, buildingId, orgId, adminToken } =
+      await loginAsSyndicWithMeeting(page, "resolution");
     const timestamp = Date.now();
+
+    // Create unit + owner for voting
+    const unitResp = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        organization_id: orgId,
+        building_id: buildingId,
+        unit_number: `V${timestamp}`,
+        floor: 1,
+        surface_area: 80.0,
+        unit_type: "Apartment",
+        quota: 100.0,
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const unit = await unitResp.json();
+
+    const ownerResp = await page.request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: orgId,
+        first_name: "Vote",
+        last_name: `Owner${timestamp}`,
+        email: `vote-owner-${timestamp}@test.com`,
+        address: "1 Rue Vote",
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const owner = await ownerResp.json();
 
     // Create resolution
     const resolutionResp = await page.request.post(
@@ -109,22 +135,23 @@ test.describe("Resolutions - AG Voting System", () => {
       },
     );
 
-    if (resolutionResp.ok()) {
-      const resolution = await resolutionResp.json();
+    expect(resolutionResp.status()).toBe(201);
+    const resolution = await resolutionResp.json();
 
-      // Cast a vote
-      const voteResp = await page.request.post(
-        `${API_BASE}/resolutions/${resolution.id}/vote`,
-        {
-          data: {
-            choice: "Pour",
-            voting_power: 100,
-          },
-          headers: { Authorization: `Bearer ${token}` },
+    // Cast a vote
+    const voteResp = await page.request.post(
+      `${API_BASE}/resolutions/${resolution.id}/vote`,
+      {
+        data: {
+          owner_id: owner.id,
+          unit_id: unit.id,
+          vote_choice: "pour",
+          voting_power: 100,
         },
-      );
-      expect([201, 400, 409].includes(voteResp.status())).toBeTruthy();
-    }
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(voteResp.status()).toBe(201);
   });
 
   test("should list votes for a resolution", async ({ page }) => {
@@ -148,25 +175,52 @@ test.describe("Resolutions - AG Voting System", () => {
       },
     );
 
-    if (resolutionResp.ok()) {
-      const resolution = await resolutionResp.json();
+    expect(resolutionResp.status()).toBe(201);
+    const resolution = await resolutionResp.json();
 
-      const listResp = await page.request.get(
-        `${API_BASE}/resolutions/${resolution.id}/votes`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(listResp.ok()).toBeTruthy();
-      const votes = await listResp.json();
-      expect(Array.isArray(votes)).toBeTruthy();
-    }
+    const listResp = await page.request.get(
+      `${API_BASE}/resolutions/${resolution.id}/votes`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(listResp.status()).toBe(200);
+    const votes = await listResp.json();
+    expect(Array.isArray(votes)).toBeTruthy();
   });
 
   test("should close voting and calculate result", async ({ page }) => {
-    const { token, meetingId } = await loginAsSyndicWithMeeting(
-      page,
-      "resolution",
-    );
+    const { token, meetingId, buildingId, orgId, adminToken } =
+      await loginAsSyndicWithMeeting(page, "resolution");
     const timestamp = Date.now();
+
+    // Create unit + owner for voting
+    const unitResp = await page.request.post(`${API_BASE}/units`, {
+      data: {
+        organization_id: orgId,
+        building_id: buildingId,
+        unit_number: `C${timestamp}`,
+        floor: 1,
+        surface_area: 80.0,
+        unit_type: "Apartment",
+        quota: 100.0,
+      },
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    const unit = await unitResp.json();
+
+    const ownerResp = await page.request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: orgId,
+        first_name: "Close",
+        last_name: `Owner${timestamp}`,
+        email: `close-owner-${timestamp}@test.com`,
+        address: "1 Rue Close",
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const owner = await ownerResp.json();
 
     const resolutionResp = await page.request.post(
       `${API_BASE}/meetings/${meetingId}/resolutions`,
@@ -182,20 +236,31 @@ test.describe("Resolutions - AG Voting System", () => {
       },
     );
 
-    if (resolutionResp.ok()) {
-      const resolution = await resolutionResp.json();
+    expect(resolutionResp.status()).toBe(201);
+    const resolution = await resolutionResp.json();
 
-      const closeResp = await page.request.put(
-        `${API_BASE}/resolutions/${resolution.id}/close`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(closeResp.status())).toBeTruthy();
+    // Cast a vote before closing (required for close to succeed)
+    await page.request.post(`${API_BASE}/resolutions/${resolution.id}/vote`, {
+      data: {
+        owner_id: owner.id,
+        unit_id: unit.id,
+        vote_choice: "pour",
+        voting_power: 100,
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      if (closeResp.ok()) {
-        const closed = await closeResp.json();
-        expect(["Adopted", "Rejected"].includes(closed.status)).toBeTruthy();
-      }
-    }
+    const closeResp = await page.request.put(
+      `${API_BASE}/resolutions/${resolution.id}/close`,
+      {
+        data: { total_voting_power: 100 },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(closeResp.status()).toBe(200);
+
+    const closed = await closeResp.json();
+    expect(["adopted", "rejected"].includes(closed.status)).toBeTruthy();
   });
 
   test("should require auth for resolutions API", async ({ page }) => {

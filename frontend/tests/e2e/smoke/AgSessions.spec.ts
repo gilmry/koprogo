@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndicWithMeeting } from "./helpers/auth";
+import { loginAsSyndicWithMeeting } from "../helpers/auth";
 
 /**
  * AG Sessions E2E Test Suite - Video Conference (Art. 3.87 §1 CC)
@@ -34,30 +34,30 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       {
         data: {
-          platform: "Jitsi",
+          meeting_id: meetingId,
+          platform: "jitsi",
           video_url: "https://meet.jit.si/ag-test-room",
+          scheduled_start: "2026-06-15T10:00:00Z",
           waiting_room_enabled: false,
           recording_enabled: false,
         },
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(sessionResp.status())).toBeTruthy();
+    expect(sessionResp.status()).toBe(201);
 
-    if (sessionResp.ok()) {
-      const session = await sessionResp.json();
-      expect(session.id).toBeTruthy();
-      expect(session.status).toBe("Scheduled");
+    const session = await sessionResp.json();
+    expect(session.id).toBeTruthy();
+    expect(session.status).toBe("scheduled");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/ag-sessions/${session.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(session.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/ag-sessions/${session.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(session.id);
   });
 
   test("should start an AG session (Scheduled → Live)", async ({ page }) => {
@@ -67,8 +67,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       {
         data: {
-          platform: "Zoom",
+          meeting_id: meetingId,
+          platform: "zoom",
           video_url: "https://zoom.us/j/test-meeting",
+          scheduled_start: "2026-06-15T10:00:00Z",
           waiting_room_enabled: true,
           recording_enabled: true,
         },
@@ -76,20 +78,17 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    if (sessionResp.ok()) {
-      const session = await sessionResp.json();
+    expect(sessionResp.status()).toBe(201);
+    const session = await sessionResp.json();
 
-      const startResp = await page.request.put(
-        `${API_BASE}/ag-sessions/${session.id}/start`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(startResp.status())).toBeTruthy();
+    const startResp = await page.request.put(
+      `${API_BASE}/ag-sessions/${session.id}/start`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(startResp.status()).toBe(200);
 
-      if (startResp.ok()) {
-        const started = await startResp.json();
-        expect(started.status).toBe("Live");
-      }
-    }
+    const started = await startResp.json();
+    expect(started.status).toBe("live");
   });
 
   test("should record remote participant joining", async ({ page }) => {
@@ -99,8 +98,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       {
         data: {
-          platform: "GoogleMeet",
+          meeting_id: meetingId,
+          platform: "google_meet",
           video_url: "https://meet.google.com/test-code",
+          scheduled_start: "2026-06-15T10:00:00Z",
           waiting_room_enabled: false,
           recording_enabled: false,
         },
@@ -108,18 +109,24 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    if (sessionResp.ok()) {
-      const session = await sessionResp.json();
+    expect(sessionResp.status()).toBe(201);
+    const session = await sessionResp.json();
 
-      const joinResp = await page.request.put(
-        `${API_BASE}/ag-sessions/${session.id}/record-join`,
-        {
-          data: { remote_voting_power: 50.0 },
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      expect([200, 400].includes(joinResp.status())).toBeTruthy();
-    }
+    // Session must be Live before recording a remote join
+    const startResp = await page.request.put(
+      `${API_BASE}/ag-sessions/${session.id}/start`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(startResp.status()).toBe(200);
+
+    const joinResp = await page.request.post(
+      `${API_BASE}/ag-sessions/${session.id}/join`,
+      {
+        data: { voting_power: 50.0, total_building_quotas: 1000.0 },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(joinResp.status()).toBe(200);
   });
 
   test("should get combined quorum for AG session", async ({ page }) => {
@@ -129,8 +136,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       {
         data: {
-          platform: "Whereby",
+          meeting_id: meetingId,
+          platform: "whereby",
           video_url: "https://whereby.com/test-room",
+          scheduled_start: "2026-06-15T10:00:00Z",
           waiting_room_enabled: false,
           recording_enabled: false,
         },
@@ -138,15 +147,27 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    if (sessionResp.ok()) {
-      const session = await sessionResp.json();
+    expect(sessionResp.status()).toBe(201);
+    const session = await sessionResp.json();
 
-      const quorumResp = await page.request.get(
-        `${API_BASE}/ag-sessions/${session.id}/combined-quorum`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 404].includes(quorumResp.status())).toBeTruthy();
-    }
+    // Start session and add a remote participant so quorum has data
+    const startResp = await page.request.put(
+      `${API_BASE}/ag-sessions/${session.id}/start`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(startResp.status()).toBe(200);
+
+    await page.request.post(`${API_BASE}/ag-sessions/${session.id}/join`, {
+      data: { voting_power: 150.0, total_building_quotas: 1000.0 },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Endpoint is /ag-sessions/:id/quorum with query params
+    const quorumResp = await page.request.get(
+      `${API_BASE}/ag-sessions/${session.id}/quorum?physical_quotas=300&total_building_quotas=1000`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(quorumResp.status()).toBe(200);
   });
 
   test("should get AG session by meeting ID", async ({ page }) => {
@@ -154,8 +175,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
 
     await page.request.post(`${API_BASE}/meetings/${meetingId}/ag-session`, {
       data: {
-        platform: "Jitsi",
+        meeting_id: meetingId,
+        platform: "jitsi",
         video_url: "https://meet.jit.si/room-test",
+        scheduled_start: "2026-06-15T10:00:00Z",
         waiting_room_enabled: false,
         recording_enabled: false,
       },
@@ -166,7 +189,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(byMeetingResp.status())).toBeTruthy();
+    expect(byMeetingResp.status()).toBe(200);
   });
 
   test("should require auth for AG sessions API", async ({ page }) => {

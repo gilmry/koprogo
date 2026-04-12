@@ -45,23 +45,21 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(ageResp.status())).toBeTruthy();
+    expect(ageResp.status()).toBe(201);
 
-    if (ageResp.ok()) {
-      const ageRequest = await ageResp.json();
-      expect(ageRequest.id).toBeTruthy();
-      expect(ageRequest.building_id).toBe(buildingId);
-      expect(ageRequest.status).toBe("Draft");
+    const ageRequest = await ageResp.json();
+    expect(ageRequest.id).toBeTruthy();
+    expect(ageRequest.building_id).toBe(buildingId);
+    expect(ageRequest.status).toBe("draft");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/age-requests/${ageRequest.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(ageRequest.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/age-requests/${ageRequest.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(ageRequest.id);
   });
 
   test("should open an AGE request for signatures (Draft → Open)", async ({
@@ -86,20 +84,17 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
       },
     );
 
-    if (ageResp.ok()) {
-      const ageRequest = await ageResp.json();
+    expect(ageResp.status()).toBe(201);
+    const ageRequest = await ageResp.json();
 
-      const openResp = await page.request.put(
-        `${API_BASE}/age-requests/${ageRequest.id}/open`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(openResp.status())).toBeTruthy();
+    const openResp = await page.request.put(
+      `${API_BASE}/age-requests/${ageRequest.id}/open`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(openResp.status()).toBe(200);
 
-      if (openResp.ok()) {
-        const opened = await openResp.json();
-        expect(opened.status).toBe("Open");
-      }
-    }
+    const opened = await openResp.json();
+    expect(opened.status).toBe("open");
   });
 
   test("should list AGE requests for building", async ({ page }) => {
@@ -134,23 +129,22 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
       },
     );
 
-    if (ageResp.ok()) {
-      const ageRequest = await ageResp.json();
+    expect(ageResp.status()).toBe(201);
+    const ageRequest = await ageResp.json();
 
-      // Open first (required to cosign)
-      await page.request.put(`${API_BASE}/age-requests/${ageRequest.id}/open`, {
+    // Open first (required to cosign)
+    await page.request.put(`${API_BASE}/age-requests/${ageRequest.id}/open`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const cosignResp = await page.request.post(
+      `${API_BASE}/age-requests/${ageRequest.id}/cosignatories`,
+      {
+        data: { owner_id: ownerId, shares_pct: 0.1 },
         headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const cosignResp = await page.request.post(
-        `${API_BASE}/age-requests/${ageRequest.id}/cosign`,
-        {
-          data: { owner_id: ownerId, shares_pct: 10.0 },
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      expect([200, 201, 400].includes(cosignResp.status())).toBeTruthy();
-    }
+      },
+    );
+    expect(cosignResp.status()).toBe(200);
   });
 
   test("should navigate to new age-request page", async ({ page }) => {

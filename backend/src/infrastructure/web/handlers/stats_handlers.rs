@@ -124,8 +124,6 @@ pub async fn get_seed_data_stats(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_role_check_superadmin_passes() {
         let allowed_roles = ["superadmin"];

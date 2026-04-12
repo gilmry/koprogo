@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsSyndic } from "./helpers/auth";
+import { loginAsSyndic } from "../helpers/auth";
 
 /**
  * Marketplace E2E Test Suite - Service Provider Directory
@@ -23,16 +23,37 @@ test.describe("Marketplace - Service Provider Directory", () => {
   });
 
   test("should filter providers by trade category", async ({ page }) => {
+    // Create a provider first so we have data to filter
+    const { token } = await loginAsSyndic(page, "mkfilter");
+    const timestamp = Date.now();
+
+    const createResp = await page.request.post(
+      `${API_BASE}/service-providers`,
+      {
+        data: {
+          company_name: `Plomberie Filter ${timestamp}`,
+          trade_category: "Plombier",
+          bce_number: `0${timestamp.toString().slice(-9)}`,
+          contact_email: `filter-${timestamp}@test.com`,
+          phone: "+32 2 999 99 99",
+          description: "Plumber for filter test",
+          postal_code: "1000",
+          city: "Brussels",
+        },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(createResp.status()).toBe(201);
+
+    // Now filter — must return 200 with results
     const resp = await page.request.get(
-      `${API_BASE}/marketplace/providers?trade_category=Plumber`,
+      `${API_BASE}/marketplace/providers?trade_category=Plombier`,
     );
 
-    // Backend filtering not fully implemented yet — accepts 200 or 400
-    expect([200, 400].includes(resp.status())).toBeTruthy();
-    if (resp.ok()) {
-      const providers = await resp.json();
-      expect(Array.isArray(providers)).toBeTruthy();
-    }
+    expect(resp.status()).toBe(200);
+    const providers = await resp.json();
+    expect(Array.isArray(providers)).toBeTruthy();
+    expect(providers.length).toBeGreaterThanOrEqual(1);
   });
 
   test("should return 404 for non-existent provider slug", async ({ page }) => {
@@ -52,7 +73,7 @@ test.describe("Marketplace - Service Provider Directory", () => {
       {
         data: {
           company_name: `Plomberie Express ${timestamp}`,
-          trade_category: "Plumber",
+          trade_category: "Plombier",
           bce_number: `0${timestamp.toString().slice(-9)}`,
           contact_email: `plumber-${timestamp}@test.com`,
           phone: "+32 2 123 45 67",
@@ -64,8 +85,7 @@ test.describe("Marketplace - Service Provider Directory", () => {
       },
     );
 
-    // 201 Created or 400/422 if validation fails
-    expect([200, 201, 400, 422].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
   });
 
   test("should not require auth for marketplace search endpoint", async ({

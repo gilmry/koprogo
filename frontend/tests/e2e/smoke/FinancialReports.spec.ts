@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { loginAsSyndicWithBuilding } from "./helpers/auth";
+import { loginAsSyndicWithBuilding } from "../helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
@@ -48,17 +48,17 @@ test.describe("Financial Reports - Balance Sheet & Income Statement", () => {
       `${API_BASE}/reports/balance-sheet?building_id=${buildingId}`,
       { headers: { Authorization: `Bearer ${accountantToken}` } },
     );
-    expect([200, 400].includes(bsResp.status())).toBeTruthy();
+    expect(bsResp.status()).toBe(200);
   });
 
   test("should get income statement via API", async ({ page }) => {
-    const { accountantToken, buildingId } = await setupAccountant(page);
+    const { accountantToken } = await setupAccountant(page);
 
     const isResp = await page.request.get(
-      `${API_BASE}/reports/income-statement?building_id=${buildingId}`,
+      `${API_BASE}/reports/income-statement?period_start=2026-01-01T00:00:00Z&period_end=2026-12-31T23:59:59Z`,
       { headers: { Authorization: `Bearer ${accountantToken}` } },
     );
-    expect([200, 400].includes(isResp.status())).toBeTruthy();
+    expect(isResp.status()).toBe(200);
   });
 
   test("should require auth for financial reports", async ({ page }) => {

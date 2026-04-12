@@ -40,7 +40,7 @@ test.describe("Sharing - Object Sharing Library", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(objectResp.status())).toBeTruthy();
+    expect(objectResp.status()).toBe(201);
   });
 
   test("should list shared objects for building", async ({ page }) => {
@@ -68,13 +68,9 @@ test.describe("Sharing - Object Sharing Library", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (objectResp.status() === 201) {
-      const obj = await objectResp.json();
-      await page.goto(`/sharing-detail?id=${obj.id}`);
-      await expect(page.locator("body")).toBeVisible();
-    } else {
-      await page.goto("/sharing");
-      await expect(page.locator("body")).toBeVisible();
-    }
+    expect(objectResp.status()).toBe(201);
+    const obj = await objectResp.json();
+    await page.goto(`/sharing-detail?id=${obj.id}`);
+    await expect(page.locator("body")).toBeVisible();
   });
 });

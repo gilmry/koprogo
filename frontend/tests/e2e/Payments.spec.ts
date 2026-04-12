@@ -32,40 +32,51 @@ test.describe("Payments - Stripe & SEPA", () => {
   });
 
   test("should create a payment via API and retrieve it", async ({ page }) => {
-    const { token, expenseId } = await loginAsSyndicWithExpense(
-      page,
-      "payment",
-    );
+    const { token, expenseId, buildingId, orgId } =
+      await loginAsSyndicWithExpense(page, "payment");
     const timestamp = Date.now();
 
-    const paymentResp = await page.request.post(`${API_BASE}/payments`, {
+    // Create an owner for the payment
+    const ownerResp = await page.request.post(`${API_BASE}/owners`, {
       data: {
-        expense_id: expenseId,
-        amount_cents: 50000,
-        currency: "EUR",
-        payment_method_type: "BankTransfer",
-        idempotency_key: `test-payment-${timestamp}`,
+        organization_id: orgId,
+        first_name: "Pay",
+        last_name: `Owner${timestamp}`,
+        email: `pay-owner-${timestamp}@test.com`,
+        address: "1 Rue Test",
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([201, 400, 422].includes(paymentResp.status())).toBeTruthy();
+    const owner = await ownerResp.json();
 
-    if (paymentResp.status() === 201) {
-      const payment = await paymentResp.json();
-      expect(payment.id).toBeTruthy();
-      expect(payment.amount_cents).toBe(50000);
-      expect(payment.currency).toBe("EUR");
-      expect(payment.status).toBe("Pending");
+    const paymentResp = await page.request.post(`${API_BASE}/payments`, {
+      data: {
+        building_id: buildingId,
+        owner_id: owner.id,
+        expense_id: expenseId,
+        amount_cents: 50000,
+        payment_method_type: "bank_transfer",
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(paymentResp.status()).toBe(201);
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/payments/${payment.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(payment.id);
-    }
+    const payment = await paymentResp.json();
+    expect(payment.id).toBeTruthy();
+    expect(payment.amount_cents).toBe(50000);
+    expect(payment.status).toBe("pending");
+
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/payments/${payment.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(payment.id);
   });
 
   test("should list payments for an expense", async ({ page }) => {
@@ -84,37 +95,48 @@ test.describe("Payments - Stripe & SEPA", () => {
   });
 
   test("should transition payment pending → processing", async ({ page }) => {
-    const { token, expenseId } = await loginAsSyndicWithExpense(
-      page,
-      "payment",
-    );
+    const { token, expenseId, buildingId, orgId } =
+      await loginAsSyndicWithExpense(page, "payment");
     const timestamp = Date.now();
+
+    // Create an owner for the payment
+    const ownerResp = await page.request.post(`${API_BASE}/owners`, {
+      data: {
+        organization_id: orgId,
+        first_name: "Trans",
+        last_name: `Owner${timestamp}`,
+        email: `trans-owner-${timestamp}@test.com`,
+        address: "1 Rue Test",
+        city: "Brussels",
+        postal_code: "1000",
+        country: "Belgium",
+      },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const owner = await ownerResp.json();
 
     const createResp = await page.request.post(`${API_BASE}/payments`, {
       data: {
+        building_id: buildingId,
+        owner_id: owner.id,
         expense_id: expenseId,
         amount_cents: 10000,
-        currency: "EUR",
-        payment_method_type: "BankTransfer",
-        idempotency_key: `test-processing-${timestamp}`,
+        payment_method_type: "bank_transfer",
       },
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (createResp.status() === 201) {
-      const payment = await createResp.json();
+    expect(createResp.status()).toBe(201);
+    const payment = await createResp.json();
 
-      const processResp = await page.request.put(
-        `${API_BASE}/payments/${payment.id}/processing`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(processResp.status())).toBeTruthy();
+    const processResp = await page.request.put(
+      `${API_BASE}/payments/${payment.id}/processing`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(processResp.status()).toBe(200);
 
-      if (processResp.ok()) {
-        const updated = await processResp.json();
-        expect(updated.status).toBe("Processing");
-      }
-    }
+    const updated = await processResp.json();
+    expect(updated.status).toBe("processing");
   });
 
   test("should create and list payment methods for an owner", async ({
@@ -126,31 +148,29 @@ test.describe("Payments - Stripe & SEPA", () => {
     const methodResp = await page.request.post(`${API_BASE}/payment-methods`, {
       data: {
         owner_id: ownerId,
-        method_type: "BankTransfer",
-        display_label: `Virement ${timestamp}`,
+        method_type: "sepa_debit",
+        stripe_payment_method_id: `pm_test_${timestamp}`,
+        stripe_customer_id: `cus_test_${timestamp}`,
+        display_label: `SEPA Virement ${timestamp}`,
         is_default: true,
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([201, 400, 422].includes(methodResp.status())).toBeTruthy();
+    expect(methodResp.status()).toBe(201);
 
-    if (methodResp.status() === 201) {
-      const method = await methodResp.json();
-      expect(method.id).toBeTruthy();
-      expect(method.method_type).toBe("BankTransfer");
+    const method = await methodResp.json();
+    expect(method.id).toBeTruthy();
+    expect(method.method_type).toBe("sepa_debit");
 
-      // Verify it appears in owner's payment methods list
-      const listResp = await page.request.get(
-        `${API_BASE}/owners/${ownerId}/payment-methods`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(listResp.ok()).toBeTruthy();
-      const methods = await listResp.json();
-      expect(Array.isArray(methods)).toBeTruthy();
-      expect(methods.some((m: { id: string }) => m.id === method.id)).toBe(
-        true,
-      );
-    }
+    // Verify it appears in owner's payment methods list
+    const listResp = await page.request.get(
+      `${API_BASE}/owners/${ownerId}/payment-methods`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(listResp.status()).toBe(200);
+    const methods = await listResp.json();
+    expect(Array.isArray(methods)).toBeTruthy();
+    expect(methods.some((m: { id: string }) => m.id === method.id)).toBe(true);
   });
 
   test("should get owner payment statistics", async ({ page }) => {
@@ -160,7 +180,7 @@ test.describe("Payments - Stripe & SEPA", () => {
       `${API_BASE}/owners/${ownerId}/payments/stats`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(statsResp.status())).toBeTruthy();
+    expect(statsResp.status()).toBe(200);
   });
 
   test("should require auth to access payments API", async ({ page }) => {

@@ -114,15 +114,13 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     const expense = await expenseResp.json();
 
     const submitResp = await page.request.put(
-      `${API_BASE}/expenses/${expense.id}/submit-for-approval`,
+      `${API_BASE}/invoices/${expense.id}/submit`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 400].includes(submitResp.status())).toBeTruthy();
+    expect(submitResp.status()).toBe(200);
 
-    if (submitResp.ok()) {
-      const updated = await submitResp.json();
-      expect(updated.status).toBe("PendingApproval");
-    }
+    const updated = await submitResp.json();
+    expect(updated.approval_status).toBe("pending_approval");
   });
 
   test("should approve an expense (PendingApproval → Approved)", async ({
@@ -148,22 +146,19 @@ test.describe("Invoices - Expense Approval Workflow", () => {
     const expense = await expenseResp.json();
 
     // Submit for approval
-    await page.request.put(
-      `${API_BASE}/expenses/${expense.id}/submit-for-approval`,
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
+    await page.request.put(`${API_BASE}/invoices/${expense.id}/submit`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     // Approve
     const approveResp = await page.request.put(
-      `${API_BASE}/expenses/${expense.id}/approve`,
+      `${API_BASE}/invoices/${expense.id}/approve`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 400].includes(approveResp.status())).toBeTruthy();
+    expect(approveResp.status()).toBe(200);
 
-    if (approveResp.ok()) {
-      const approved = await approveResp.json();
-      expect(approved.status).toBe("Approved");
-    }
+    const approved = await approveResp.json();
+    expect(approved.approval_status).toBe("approved");
   });
 
   test("should list building expenses", async ({ page }) => {

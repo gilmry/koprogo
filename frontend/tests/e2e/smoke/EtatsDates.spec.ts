@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
-import { loginAsSyndicWithUnit } from "./helpers/auth";
+import { loginAsSyndicWithUnit } from "../helpers/auth";
 
 /**
  * Etats Dates E2E Test Suite - Belgian Property Sales Document
@@ -79,23 +79,21 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(etatResp.status())).toBeTruthy();
+    expect(etatResp.status()).toBe(201);
 
-    if (etatResp.ok()) {
-      const etat = await etatResp.json();
-      expect(etat.id).toBeTruthy();
-      expect(etat.unit_id).toBe(unitId);
-      expect(etat.status).toBe("requested"); // EtatDateStatus uses serde snake_case
+    const etat = await etatResp.json();
+    expect(etat.id).toBeTruthy();
+    expect(etat.unit_id).toBe(unitId);
+    expect(etat.status).toBe("requested"); // EtatDateStatus uses serde snake_case
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/etats-dates/${etat.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(etat.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/etats-dates/${etat.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(etat.id);
   });
 
   test("should list etats-dates for building", async ({ page }) => {
@@ -130,20 +128,17 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (etatResp.ok()) {
-      const etat = await etatResp.json();
+    expect(etatResp.status()).toBe(201);
+    const etat = await etatResp.json();
 
-      const progressResp = await page.request.put(
-        `${API_BASE}/etats-dates/${etat.id}/mark-in-progress`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(progressResp.status())).toBeTruthy();
+    const progressResp = await page.request.put(
+      `${API_BASE}/etats-dates/${etat.id}/mark-in-progress`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(progressResp.status()).toBe(200);
 
-      if (progressResp.ok()) {
-        const updated = await progressResp.json();
-        expect(updated.status).toBe("in_progress"); // EtatDateStatus uses serde snake_case
-      }
-    }
+    const updated = await progressResp.json();
+    expect(updated.status).toBe("in_progress"); // EtatDateStatus uses serde snake_case
   });
 
   test("should list etats-dates for a unit", async ({ page }) => {
@@ -165,7 +160,7 @@ test.describe("Etats Dates - Belgian Property Sales Document", () => {
       `${API_BASE}/etats-dates/overdue`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(overdueResp.status())).toBeTruthy();
+    expect(overdueResp.status()).toBe(200);
   });
 
   test("should require auth for etats-dates API", async ({ page }) => {
