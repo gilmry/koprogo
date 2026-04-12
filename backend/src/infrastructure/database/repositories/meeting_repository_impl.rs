@@ -61,7 +61,7 @@ const SELECT_COLUMNS: &str = "id, organization_id, building_id, \
     meeting_type::text AS meeting_type, title, description, scheduled_date, \
     location, status::text AS status, agenda, attendees_count, \
     quorum_validated, quorum_percentage, total_quotas, present_quotas, \
-    created_at, updated_at";
+    is_second_convocation, created_at, updated_at";
 
 #[async_trait]
 impl MeetingRepository for PostgresMeetingRepository {

@@ -12,6 +12,61 @@ import { loginAsSyndicWithBuilding } from "./helpers/auth";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE || "http://localhost/api/v1";
 
+/**
+ * Helper: create a unit + owner + assignment in the building so that
+ * total_eligible_voters > 0 (required by Poll domain validation).
+ */
+async function ensureBuildingHasOwner(
+  page: import("@playwright/test").Page,
+  token: string,
+  adminToken: string,
+  orgId: string,
+  buildingId: string,
+) {
+  const ts = Date.now();
+
+  // Create a unit in the building
+  const unitResp = await page.request.post(`${API_BASE}/units`, {
+    data: {
+      organization_id: orgId,
+      building_id: buildingId,
+      unit_number: `P${ts}`,
+      floor: 1,
+      surface_area: 80.0,
+      unit_type: "Apartment",
+      quota: 100.0,
+    },
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
+  const unit = await unitResp.json();
+
+  // Create an owner
+  const ownerResp = await page.request.post(`${API_BASE}/owners`, {
+    data: {
+      organization_id: orgId,
+      first_name: "Poll",
+      last_name: `Owner${ts}`,
+      email: `poll-owner-${ts}@test.com`,
+      address: "1 Rue du Sondage",
+      city: "Brussels",
+      postal_code: "1000",
+      country: "Belgium",
+    },
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const owner = await ownerResp.json();
+
+  // Assign owner to unit (100% ownership)
+  await page.request.post(`${API_BASE}/units/${unit.id}/owners`, {
+    data: {
+      owner_id: owner.id,
+      ownership_percentage: 1.0,
+      is_primary_contact: true,
+    },
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 test.describe("Polls - Board Decision Polling", () => {
   test("should display polls page", async ({ page }) => {
     await loginAsSyndicWithBuilding(page, "poll");
@@ -24,10 +79,11 @@ test.describe("Polls - Board Decision Polling", () => {
   });
 
   test("should create a YesNo poll and retrieve it", async ({ page }) => {
-    const { token, buildingId } = await loginAsSyndicWithBuilding(page, "poll");
+    const { token, buildingId, adminToken, orgId } =
+      await loginAsSyndicWithBuilding(page, "poll");
+    await ensureBuildingHasOwner(page, token, adminToken, orgId, buildingId);
     const timestamp = Date.now();
-    const question = `Repeindre le hall ${timestamp}`;
-    const startDate = new Date();
+    const title = `Repeindre le hall ${timestamp}`;
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 7);
 
@@ -35,9 +91,8 @@ test.describe("Polls - Board Decision Polling", () => {
       data: {
         building_id: buildingId,
         poll_type: "yes_no", // PollType uses serde snake_case
-        question,
+        title,
         description: "Sondage avant AG sur la rénovation du hall d'entrée",
-        starts_at: startDate.toISOString(),
         ends_at: endDate.toISOString(),
         is_anonymous: false,
         allow_multiple_votes: false,
@@ -48,7 +103,7 @@ test.describe("Polls - Board Decision Polling", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(pollResp.status())).toBeTruthy();
+    expect(pollResp.status()).toBe(201);
 
     if (pollResp.ok()) {
       const poll = await pollResp.json();
@@ -67,9 +122,10 @@ test.describe("Polls - Board Decision Polling", () => {
   });
 
   test("should publish a poll (Draft → Active)", async ({ page }) => {
-    const { token, buildingId } = await loginAsSyndicWithBuilding(page, "poll");
+    const { token, buildingId, adminToken, orgId } =
+      await loginAsSyndicWithBuilding(page, "poll");
+    await ensureBuildingHasOwner(page, token, adminToken, orgId, buildingId);
     const timestamp = Date.now();
-    const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 7);
 
@@ -77,8 +133,7 @@ test.describe("Polls - Board Decision Polling", () => {
       data: {
         building_id: buildingId,
         poll_type: "yes_no", // PollType uses serde snake_case
-        question: `Sondage activation ${timestamp}`,
-        starts_at: startDate.toISOString(),
+        title: `Sondage activation ${timestamp}`,
         ends_at: endDate.toISOString(),
         is_anonymous: false,
         allow_multiple_votes: false,
@@ -90,20 +145,17 @@ test.describe("Polls - Board Decision Polling", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (pollResp.ok()) {
-      const poll = await pollResp.json();
+    expect(pollResp.status()).toBe(201);
+    const poll = await pollResp.json();
 
-      const publishResp = await page.request.put(
-        `${API_BASE}/polls/${poll.id}/publish`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(publishResp.status())).toBeTruthy();
+    const publishResp = await page.request.post(
+      `${API_BASE}/polls/${poll.id}/publish`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(publishResp.status()).toBe(200);
 
-      if (publishResp.ok()) {
-        const published = await publishResp.json();
-        expect(published.status).toBe("active"); // PollStatus uses serde snake_case
-      }
-    }
+    const published = await publishResp.json();
+    expect(published.status).toBe("active");
   });
 
   test("should list active polls for building", async ({ page }) => {
@@ -122,18 +174,20 @@ test.describe("Polls - Board Decision Polling", () => {
     const { token, buildingId } = await loginAsSyndicWithBuilding(page, "poll");
 
     const listResp = await page.request.get(
-      `${API_BASE}/buildings/${buildingId}/polls`,
+      `${API_BASE}/polls?building_id=${buildingId}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect(listResp.ok()).toBeTruthy();
-    const polls = await listResp.json();
-    expect(Array.isArray(polls)).toBeTruthy();
+    expect(listResp.status()).toBe(200);
+    const data = await listResp.json();
+    expect(data.polls).toBeDefined();
+    expect(Array.isArray(data.polls)).toBeTruthy();
   });
 
   test("should get poll results", async ({ page }) => {
-    const { token, buildingId } = await loginAsSyndicWithBuilding(page, "poll");
+    const { token, buildingId, adminToken, orgId } =
+      await loginAsSyndicWithBuilding(page, "poll");
+    await ensureBuildingHasOwner(page, token, adminToken, orgId, buildingId);
     const timestamp = Date.now();
-    const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 7);
 
@@ -141,13 +195,11 @@ test.describe("Polls - Board Decision Polling", () => {
       data: {
         building_id: buildingId,
         poll_type: "rating", // PollType uses serde snake_case
-        question: `Satisfaction services ${timestamp}`,
-        starts_at: startDate.toISOString(),
+        title: `Satisfaction services ${timestamp}`,
         ends_at: endDate.toISOString(),
         is_anonymous: true,
         allow_multiple_votes: false,
-        min_rating: 1,
-        max_rating: 5,
+        options: [],
       },
       headers: { Authorization: `Bearer ${token}` },
     });

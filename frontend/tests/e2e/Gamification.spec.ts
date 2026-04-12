@@ -90,6 +90,7 @@ test.describe("Gamification - Achievements & Challenges", () => {
     const { token, orgId } = await loginAsSyndic(page, "gamif");
     const timestamp = Date.now();
     const startDate = new Date();
+    startDate.setDate(startDate.getDate() + 1); // Must be in the future
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + 30);
 

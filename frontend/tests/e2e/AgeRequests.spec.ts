@@ -143,9 +143,9 @@ test.describe("AGE Requests - Demandes d'AGE (Art. 3.87 §2 CC)", () => {
       });
 
       const cosignResp = await page.request.post(
-        `${API_BASE}/age-requests/${ageRequest.id}/cosign`,
+        `${API_BASE}/age-requests/${ageRequest.id}/cosignatories`,
         {
-          data: { owner_id: ownerId, shares_pct: 10.0 },
+          data: { owner_id: ownerId, shares_pct: 0.1 },
           headers: { Authorization: `Bearer ${token}` },
         },
       );

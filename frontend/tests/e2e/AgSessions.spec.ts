@@ -34,8 +34,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       {
         data: {
-          platform: "Jitsi",
+          meeting_id: meetingId,
+          platform: "jitsi",
           video_url: "https://meet.jit.si/ag-test-room",
+          scheduled_start: "2026-06-15T10:00:00Z",
           waiting_room_enabled: false,
           recording_enabled: false,
         },
@@ -67,8 +69,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       {
         data: {
-          platform: "Zoom",
+          meeting_id: meetingId,
+          platform: "zoom",
           video_url: "https://zoom.us/j/test-meeting",
+          scheduled_start: "2026-06-15T10:00:00Z",
           waiting_room_enabled: true,
           recording_enabled: true,
         },
@@ -99,8 +103,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       {
         data: {
-          platform: "GoogleMeet",
+          meeting_id: meetingId,
+          platform: "google_meet",
           video_url: "https://meet.google.com/test-code",
+          scheduled_start: "2026-06-15T10:00:00Z",
           waiting_room_enabled: false,
           recording_enabled: false,
         },
@@ -111,10 +117,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
     if (sessionResp.ok()) {
       const session = await sessionResp.json();
 
-      const joinResp = await page.request.put(
-        `${API_BASE}/ag-sessions/${session.id}/record-join`,
+      const joinResp = await page.request.post(
+        `${API_BASE}/ag-sessions/${session.id}/join`,
         {
-          data: { remote_voting_power: 50.0 },
+          data: { voting_power: 50.0, total_building_quotas: 1000.0 },
           headers: { Authorization: `Bearer ${token}` },
         },
       );
@@ -129,8 +135,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       {
         data: {
-          platform: "Whereby",
+          meeting_id: meetingId,
+          platform: "whereby",
           video_url: "https://whereby.com/test-room",
+          scheduled_start: "2026-06-15T10:00:00Z",
           waiting_room_enabled: false,
           recording_enabled: false,
         },
@@ -154,8 +162,10 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
 
     await page.request.post(`${API_BASE}/meetings/${meetingId}/ag-session`, {
       data: {
-        platform: "Jitsi",
+        meeting_id: meetingId,
+        platform: "jitsi",
         video_url: "https://meet.jit.si/room-test",
+        scheduled_start: "2026-06-15T10:00:00Z",
         waiting_room_enabled: false,
         recording_enabled: false,
       },

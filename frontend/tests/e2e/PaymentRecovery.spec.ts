@@ -185,9 +185,12 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
     if (reminderResp.ok()) {
       const reminder = await reminderResp.json();
 
-      const escalateResp = await page.request.put(
+      const escalateResp = await page.request.post(
         `${API_BASE}/payment-reminders/${reminder.id}/escalate`,
-        { headers: { Authorization: `Bearer ${token}` } },
+        {
+          data: { reason: "Paiement toujours en attente après relance" },
+          headers: { Authorization: `Bearer ${token}` },
+        },
       );
       expect([200, 400].includes(escalateResp.status())).toBeTruthy();
 
