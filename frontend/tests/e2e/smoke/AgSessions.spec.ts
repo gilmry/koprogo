@@ -44,22 +44,20 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(sessionResp.status())).toBeTruthy();
+    expect(sessionResp.status()).toBe(201);
 
-    if (sessionResp.ok()) {
-      const session = await sessionResp.json();
-      expect(session.id).toBeTruthy();
-      expect(session.status).toBe("scheduled");
+    const session = await sessionResp.json();
+    expect(session.id).toBeTruthy();
+    expect(session.status).toBe("scheduled");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/ag-sessions/${session.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(session.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/ag-sessions/${session.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(session.id);
   });
 
   test("should start an AG session (Scheduled → Live)", async ({ page }) => {
@@ -80,20 +78,17 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    if (sessionResp.ok()) {
-      const session = await sessionResp.json();
+    expect(sessionResp.status()).toBe(201);
+    const session = await sessionResp.json();
 
-      const startResp = await page.request.put(
-        `${API_BASE}/ag-sessions/${session.id}/start`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(startResp.status())).toBeTruthy();
+    const startResp = await page.request.put(
+      `${API_BASE}/ag-sessions/${session.id}/start`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(startResp.status()).toBe(200);
 
-      if (startResp.ok()) {
-        const started = await startResp.json();
-        expect(started.status).toBe("live");
-      }
-    }
+    const started = await startResp.json();
+    expect(started.status).toBe("live");
   });
 
   test("should record remote participant joining", async ({ page }) => {
@@ -114,18 +109,24 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    if (sessionResp.ok()) {
-      const session = await sessionResp.json();
+    expect(sessionResp.status()).toBe(201);
+    const session = await sessionResp.json();
 
-      const joinResp = await page.request.post(
-        `${API_BASE}/ag-sessions/${session.id}/join`,
-        {
-          data: { voting_power: 50.0, total_building_quotas: 1000.0 },
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      expect([200, 400].includes(joinResp.status())).toBeTruthy();
-    }
+    // Session must be Live before recording a remote join
+    const startResp = await page.request.put(
+      `${API_BASE}/ag-sessions/${session.id}/start`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(startResp.status()).toBe(200);
+
+    const joinResp = await page.request.post(
+      `${API_BASE}/ag-sessions/${session.id}/join`,
+      {
+        data: { voting_power: 50.0, total_building_quotas: 1000.0 },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(joinResp.status()).toBe(200);
   });
 
   test("should get combined quorum for AG session", async ({ page }) => {
@@ -146,15 +147,27 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       },
     );
 
-    if (sessionResp.ok()) {
-      const session = await sessionResp.json();
+    expect(sessionResp.status()).toBe(201);
+    const session = await sessionResp.json();
 
-      const quorumResp = await page.request.get(
-        `${API_BASE}/ag-sessions/${session.id}/combined-quorum`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 404].includes(quorumResp.status())).toBeTruthy();
-    }
+    // Start session and add a remote participant so quorum has data
+    const startResp = await page.request.put(
+      `${API_BASE}/ag-sessions/${session.id}/start`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(startResp.status()).toBe(200);
+
+    await page.request.post(`${API_BASE}/ag-sessions/${session.id}/join`, {
+      data: { voting_power: 150.0, total_building_quotas: 1000.0 },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    // Endpoint is /ag-sessions/:id/quorum with query params
+    const quorumResp = await page.request.get(
+      `${API_BASE}/ag-sessions/${session.id}/quorum?physical_quotas=300&total_building_quotas=1000`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(quorumResp.status()).toBe(200);
   });
 
   test("should get AG session by meeting ID", async ({ page }) => {
@@ -176,7 +189,7 @@ test.describe("AG Sessions - Video Conference (Art. 3.87 §1 CC)", () => {
       `${API_BASE}/meetings/${meetingId}/ag-session`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(byMeetingResp.status())).toBeTruthy();
+    expect(byMeetingResp.status()).toBe(200);
   });
 
   test("should require auth for AG sessions API", async ({ page }) => {

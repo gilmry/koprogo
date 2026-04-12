@@ -40,7 +40,7 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
       },
     );
 
-    expect([200, 201].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
     const incident = await createResp.json();
     expect(incident.title).toBe(`Test Breach ${timestamp}`);
     expect(incident.severity).toBe("high");
@@ -80,7 +80,7 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
       },
     );
 
-    expect([200, 201].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
     const created = await createResp.json();
 
     const getResp = await page.request.get(
@@ -147,7 +147,7 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
       },
     );
 
-    expect([200, 201].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
     const created = await createResp.json();
 
     const reportResp = await page.request.put(
@@ -162,6 +162,6 @@ test.describe("Security Incidents - GDPR Art. 33 Breach Notification", () => {
       },
     );
 
-    expect([200, 201, 204].includes(reportResp.status())).toBeTruthy();
+    expect(reportResp.status()).toBe(200);
   });
 });

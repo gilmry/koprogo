@@ -33,7 +33,7 @@ test.describe("Notices - Community Board", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(noticeResp.status())).toBeTruthy();
+    expect(noticeResp.status()).toBe(201);
     const notice = await noticeResp.json();
     expect(notice.building_id).toBe(buildingId);
   });

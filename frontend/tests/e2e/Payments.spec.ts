@@ -48,24 +48,22 @@ test.describe("Payments - Stripe & SEPA", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([201, 400, 422].includes(paymentResp.status())).toBeTruthy();
+    expect(paymentResp.status()).toBe(201);
 
-    if (paymentResp.status() === 201) {
-      const payment = await paymentResp.json();
-      expect(payment.id).toBeTruthy();
-      expect(payment.amount_cents).toBe(50000);
-      expect(payment.currency).toBe("EUR");
-      expect(payment.status).toBe("Pending");
+    const payment = await paymentResp.json();
+    expect(payment.id).toBeTruthy();
+    expect(payment.amount_cents).toBe(50000);
+    expect(payment.currency).toBe("EUR");
+    expect(payment.status).toBe("Pending");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/payments/${payment.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(payment.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/payments/${payment.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(payment.id);
   });
 
   test("should list payments for an expense", async ({ page }) => {
@@ -101,20 +99,17 @@ test.describe("Payments - Stripe & SEPA", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (createResp.status() === 201) {
-      const payment = await createResp.json();
+    expect(createResp.status()).toBe(201);
+    const payment = await createResp.json();
 
-      const processResp = await page.request.put(
-        `${API_BASE}/payments/${payment.id}/processing`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(processResp.status())).toBeTruthy();
+    const processResp = await page.request.put(
+      `${API_BASE}/payments/${payment.id}/processing`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(processResp.status()).toBe(200);
 
-      if (processResp.ok()) {
-        const updated = await processResp.json();
-        expect(updated.status).toBe("Processing");
-      }
-    }
+    const updated = await processResp.json();
+    expect(updated.status).toBe("Processing");
   });
 
   test("should create and list payment methods for an owner", async ({
@@ -132,25 +127,21 @@ test.describe("Payments - Stripe & SEPA", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([201, 400, 422].includes(methodResp.status())).toBeTruthy();
+    expect(methodResp.status()).toBe(201);
 
-    if (methodResp.status() === 201) {
-      const method = await methodResp.json();
-      expect(method.id).toBeTruthy();
-      expect(method.method_type).toBe("BankTransfer");
+    const method = await methodResp.json();
+    expect(method.id).toBeTruthy();
+    expect(method.method_type).toBe("BankTransfer");
 
-      // Verify it appears in owner's payment methods list
-      const listResp = await page.request.get(
-        `${API_BASE}/owners/${ownerId}/payment-methods`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(listResp.ok()).toBeTruthy();
-      const methods = await listResp.json();
-      expect(Array.isArray(methods)).toBeTruthy();
-      expect(methods.some((m: { id: string }) => m.id === method.id)).toBe(
-        true,
-      );
-    }
+    // Verify it appears in owner's payment methods list
+    const listResp = await page.request.get(
+      `${API_BASE}/owners/${ownerId}/payment-methods`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(listResp.status()).toBe(200);
+    const methods = await listResp.json();
+    expect(Array.isArray(methods)).toBeTruthy();
+    expect(methods.some((m: { id: string }) => m.id === method.id)).toBe(true);
   });
 
   test("should get owner payment statistics", async ({ page }) => {
@@ -160,7 +151,7 @@ test.describe("Payments - Stripe & SEPA", () => {
       `${API_BASE}/owners/${ownerId}/payments/stats`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(statsResp.status())).toBeTruthy();
+    expect(statsResp.status()).toBe(200);
   });
 
   test("should require auth to access payments API", async ({ page }) => {

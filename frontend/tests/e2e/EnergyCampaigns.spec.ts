@@ -47,22 +47,20 @@ test.describe("Energy Campaigns - Group Buying", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(campaignResp.status())).toBeTruthy();
+    expect(campaignResp.status()).toBe(201);
 
-    if (campaignResp.ok()) {
-      const campaign = await campaignResp.json();
-      expect(campaign.id).toBeTruthy();
-      expect(campaign.organization_id).toBe(orgId);
+    const campaign = await campaignResp.json();
+    expect(campaign.id).toBeTruthy();
+    expect(campaign.organization_id).toBe(orgId);
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/energy-campaigns/${campaign.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(campaign.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/energy-campaigns/${campaign.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(campaign.id);
   });
 
   test("should list energy campaigns for organization", async ({ page }) => {
@@ -100,25 +98,24 @@ test.describe("Energy Campaigns - Group Buying", () => {
       },
     );
 
-    if (campaignResp.ok()) {
-      const campaign = await campaignResp.json();
+    expect(campaignResp.status()).toBe(201);
+    const campaign = await campaignResp.json();
 
-      const offerResp = await page.request.post(
-        `${API_BASE}/energy-campaigns/${campaign.id}/offers`,
-        {
-          data: {
-            provider_name: `Luminus ${timestamp}`,
-            price_kwh_electricity: 0.28,
-            fixed_monthly_fee: 15.0,
-            green_energy_pct: 100,
-            contract_duration_months: 12,
-            estimated_savings_pct: 15,
-          },
-          headers: { Authorization: `Bearer ${token}` },
+    const offerResp = await page.request.post(
+      `${API_BASE}/energy-campaigns/${campaign.id}/offers`,
+      {
+        data: {
+          provider_name: `Luminus ${timestamp}`,
+          price_kwh_electricity: 0.28,
+          fixed_monthly_fee: 15.0,
+          green_energy_pct: 100,
+          contract_duration_months: 12,
+          estimated_savings_pct: 15,
         },
-      );
-      expect([200, 201, 400].includes(offerResp.status())).toBeTruthy();
-    }
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(offerResp.status()).toBe(201);
   });
 
   test("should list offers for a campaign", async ({ page }) => {
@@ -145,17 +142,16 @@ test.describe("Energy Campaigns - Group Buying", () => {
       },
     );
 
-    if (campaignResp.ok()) {
-      const campaign = await campaignResp.json();
+    expect(campaignResp.status()).toBe(201);
+    const campaign = await campaignResp.json();
 
-      const offersResp = await page.request.get(
-        `${API_BASE}/energy-campaigns/${campaign.id}/offers`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(offersResp.ok()).toBeTruthy();
-      const offers = await offersResp.json();
-      expect(Array.isArray(offers)).toBeTruthy();
-    }
+    const offersResp = await page.request.get(
+      `${API_BASE}/energy-campaigns/${campaign.id}/offers`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(offersResp.status()).toBe(200);
+    const offers = await offersResp.json();
+    expect(Array.isArray(offers)).toBeTruthy();
   });
 
   test("should navigate to new campaign page", async ({ page }) => {

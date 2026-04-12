@@ -84,22 +84,20 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(reminderResp.status())).toBeTruthy();
+    expect(reminderResp.status()).toBe(201);
 
-    if (reminderResp.ok()) {
-      const reminder = await reminderResp.json();
-      expect(reminder.id).toBeTruthy();
-      expect(reminder.level).toBe("FirstReminder");
+    const reminder = await reminderResp.json();
+    expect(reminder.id).toBeTruthy();
+    expect(reminder.level).toBe("FirstReminder");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/payment-reminders/${reminder.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(reminder.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/payment-reminders/${reminder.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(reminder.id);
   });
 
   test("should list reminders for an expense", async ({ page }) => {
@@ -182,23 +180,20 @@ test.describe("Payment Recovery - Reminder Workflow", () => {
       },
     );
 
-    if (reminderResp.ok()) {
-      const reminder = await reminderResp.json();
+    expect(reminderResp.status()).toBe(201);
+    const reminder = await reminderResp.json();
 
-      const escalateResp = await page.request.post(
-        `${API_BASE}/payment-reminders/${reminder.id}/escalate`,
-        {
-          data: { reason: "Paiement toujours en attente après relance" },
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      expect([200, 400].includes(escalateResp.status())).toBeTruthy();
+    const escalateResp = await page.request.post(
+      `${API_BASE}/payment-reminders/${reminder.id}/escalate`,
+      {
+        data: { reason: "Paiement toujours en attente après relance" },
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(escalateResp.status()).toBe(200);
 
-      if (escalateResp.ok()) {
-        const escalated = await escalateResp.json();
-        expect(escalated.level).toBe("SecondReminder");
-      }
-    }
+    const escalated = await escalateResp.json();
+    expect(escalated.level).toBe("SecondReminder");
   });
 
   test("should navigate to payment reminder detail page", async ({ page }) => {

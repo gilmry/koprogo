@@ -47,7 +47,7 @@ test.describe("Unit Owners - Multi-Owner Support", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(assignResp.status())).toBeTruthy();
+    expect(assignResp.status()).toBe(201);
   });
 
   test("should list owners for a unit", async ({ page }) => {

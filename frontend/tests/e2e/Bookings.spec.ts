@@ -46,7 +46,7 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(bookingResp.status())).toBeTruthy();
+    expect(bookingResp.status()).toBe(201);
   });
 
   test("should list my resource bookings", async ({ page }) => {
@@ -80,13 +80,9 @@ test.describe("Bookings - Resource Reservation Calendar", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    if (bookingResp.status() === 201) {
-      const booking = await bookingResp.json();
-      await page.goto(`/booking-detail?id=${booking.id}`);
-      await expect(page.locator("body")).toBeVisible();
-    } else {
-      await page.goto("/bookings");
-      await expect(page.locator("body")).toBeVisible();
-    }
+    expect(bookingResp.status()).toBe(201);
+    const booking = await bookingResp.json();
+    await page.goto(`/booking-detail?id=${booking.id}`);
+    await expect(page.locator("body")).toBeVisible();
   });
 });

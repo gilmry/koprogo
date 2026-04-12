@@ -48,29 +48,27 @@ test.describe("Convocations - AG Automatic Invitations", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([201, 400].includes(convocResp.status())).toBeTruthy();
+    expect(convocResp.status()).toBe(201);
 
-    if (convocResp.status() === 201) {
-      const convoc = await convocResp.json();
-      expect(convoc.id).toBeTruthy();
-      expect(convoc.status).toBe("Draft");
+    const convoc = await convocResp.json();
+    expect(convoc.id).toBeTruthy();
+    expect(convoc.status).toBe("Draft");
 
-      // Verify it appears in the building convocations list via API
-      const listResp = await page.request.get(
-        `${API_BASE}/buildings/${buildingId}/convocations`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(listResp.ok()).toBeTruthy();
-      const convocations = await listResp.json();
-      expect(Array.isArray(convocations)).toBeTruthy();
-      expect(convocations.some((c: { id: string }) => c.id === convoc.id)).toBe(
-        true,
-      );
+    // Verify it appears in the building convocations list via API
+    const listResp = await page.request.get(
+      `${API_BASE}/buildings/${buildingId}/convocations`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(listResp.status()).toBe(200);
+    const convocations = await listResp.json();
+    expect(Array.isArray(convocations)).toBeTruthy();
+    expect(convocations.some((c: { id: string }) => c.id === convoc.id)).toBe(
+      true,
+    );
 
-      // Navigate to convocations page and check body loads
-      await page.goto("/convocations");
-      await expect(page.locator("body")).toBeVisible();
-    }
+    // Navigate to convocations page and check body loads
+    await page.goto("/convocations");
+    await expect(page.locator("body")).toBeVisible();
   });
 
   test("should navigate to convocation detail page", async ({ page }) => {
@@ -93,14 +91,10 @@ test.describe("Convocations - AG Automatic Invitations", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (convocResp.status() === 201) {
-      const convoc = await convocResp.json();
-      await page.goto(`/convocation-detail?id=${convoc.id}`);
-      await expect(page.locator("body")).toBeVisible();
-    } else {
-      await page.goto("/convocations");
-      await expect(page.locator("body")).toBeVisible();
-    }
+    expect(convocResp.status()).toBe(201);
+    const convoc = await convocResp.json();
+    await page.goto(`/convocation-detail?id=${convoc.id}`);
+    await expect(page.locator("body")).toBeVisible();
   });
 
   test("should list building convocations", async ({ page }) => {
@@ -140,8 +134,8 @@ test.describe("Convocations - AG Automatic Invitations", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    // Should fail: 400 (legal deadline violation) or succeed (implementation-dependent)
-    expect([201, 400, 422].includes(convocResp.status())).toBeTruthy();
+    // Should fail: 400 (legal deadline violation) — Belgian law requires minimum 15-day notice
+    expect(convocResp.status()).toBe(400);
   });
 
   test("should get convocation by meeting ID", async ({ page }) => {
@@ -168,7 +162,7 @@ test.describe("Convocations - AG Automatic Invitations", () => {
       `${API_BASE}/convocations/meeting/${meetingId}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(getResp.status())).toBeTruthy();
+    expect(getResp.status()).toBe(200);
   });
 
   test("should require auth for convocations API", async ({ page }) => {

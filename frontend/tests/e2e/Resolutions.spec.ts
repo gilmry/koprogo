@@ -45,23 +45,21 @@ test.describe("Resolutions - AG Voting System", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(resolutionResp.status())).toBeTruthy();
+    expect(resolutionResp.status()).toBe(201);
 
-    if (resolutionResp.ok()) {
-      const resolution = await resolutionResp.json();
-      expect(resolution.id).toBeTruthy();
-      expect(resolution.title).toBe(title);
-      expect(resolution.status).toBe("pending");
+    const resolution = await resolutionResp.json();
+    expect(resolution.id).toBeTruthy();
+    expect(resolution.title).toBe(title);
+    expect(resolution.status).toBe("pending");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/resolutions/${resolution.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(resolution.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/resolutions/${resolution.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(resolution.id);
   });
 
   test("should list resolutions for a meeting", async ({ page }) => {
@@ -109,22 +107,21 @@ test.describe("Resolutions - AG Voting System", () => {
       },
     );
 
-    if (resolutionResp.ok()) {
-      const resolution = await resolutionResp.json();
+    expect(resolutionResp.status()).toBe(201);
+    const resolution = await resolutionResp.json();
 
-      // Cast a vote
-      const voteResp = await page.request.post(
-        `${API_BASE}/resolutions/${resolution.id}/vote`,
-        {
-          data: {
-            choice: "Pour",
-            voting_power: 100,
-          },
-          headers: { Authorization: `Bearer ${token}` },
+    // Cast a vote
+    const voteResp = await page.request.post(
+      `${API_BASE}/resolutions/${resolution.id}/vote`,
+      {
+        data: {
+          choice: "Pour",
+          voting_power: 100,
         },
-      );
-      expect([201, 400, 409].includes(voteResp.status())).toBeTruthy();
-    }
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    expect(voteResp.status()).toBe(201);
   });
 
   test("should list votes for a resolution", async ({ page }) => {
@@ -148,17 +145,16 @@ test.describe("Resolutions - AG Voting System", () => {
       },
     );
 
-    if (resolutionResp.ok()) {
-      const resolution = await resolutionResp.json();
+    expect(resolutionResp.status()).toBe(201);
+    const resolution = await resolutionResp.json();
 
-      const listResp = await page.request.get(
-        `${API_BASE}/resolutions/${resolution.id}/votes`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(listResp.ok()).toBeTruthy();
-      const votes = await listResp.json();
-      expect(Array.isArray(votes)).toBeTruthy();
-    }
+    const listResp = await page.request.get(
+      `${API_BASE}/resolutions/${resolution.id}/votes`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(listResp.status()).toBe(200);
+    const votes = await listResp.json();
+    expect(Array.isArray(votes)).toBeTruthy();
   });
 
   test("should close voting and calculate result", async ({ page }) => {
@@ -182,20 +178,17 @@ test.describe("Resolutions - AG Voting System", () => {
       },
     );
 
-    if (resolutionResp.ok()) {
-      const resolution = await resolutionResp.json();
+    expect(resolutionResp.status()).toBe(201);
+    const resolution = await resolutionResp.json();
 
-      const closeResp = await page.request.put(
-        `${API_BASE}/resolutions/${resolution.id}/close`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 400].includes(closeResp.status())).toBeTruthy();
+    const closeResp = await page.request.put(
+      `${API_BASE}/resolutions/${resolution.id}/close`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(closeResp.status()).toBe(200);
 
-      if (closeResp.ok()) {
-        const closed = await closeResp.json();
-        expect(["adopted", "rejected"].includes(closed.status)).toBeTruthy();
-      }
-    }
+    const closed = await closeResp.json();
+    expect(["adopted", "rejected"].includes(closed.status)).toBeTruthy();
   });
 
   test("should require auth for resolutions API", async ({ page }) => {

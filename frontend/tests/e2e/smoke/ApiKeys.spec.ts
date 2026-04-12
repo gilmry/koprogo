@@ -30,7 +30,7 @@ test.describe("API Keys - Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect([200, 201].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
     const apiKey = await createResp.json();
     expect(apiKey.name).toBe(`Integration Key ${timestamp}`);
     expect(apiKey.key).toBeTruthy(); // Full key shown only once
@@ -73,7 +73,7 @@ test.describe("API Keys - Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect([200, 201].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
     const created = await createResp.json();
 
     // Get key by ID
@@ -100,7 +100,7 @@ test.describe("API Keys - Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect([200, 201].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
     const created = await createResp.json();
 
     // Revoke key
@@ -109,7 +109,7 @@ test.describe("API Keys - Management", () => {
       { headers: { Authorization: `Bearer ${token}` } },
     );
 
-    expect([200, 204].includes(revokeResp.status())).toBeTruthy();
+    expect(revokeResp.status()).toBe(200);
   });
 
   test.skip("should reject unauthorized access to API keys endpoint", async ({
@@ -133,7 +133,7 @@ test.describe("API Keys - Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    expect([200, 201].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
     const created = await createResp.json();
 
     // Rotate key
@@ -142,7 +142,6 @@ test.describe("API Keys - Management", () => {
       { headers: { Authorization: `Bearer ${token}` } },
     );
 
-    // 200 if rotation succeeds, or appropriate error
-    expect([200, 201, 400, 404].includes(rotateResp.status())).toBeTruthy();
+    expect(rotateResp.status()).toBe(200);
   });
 });

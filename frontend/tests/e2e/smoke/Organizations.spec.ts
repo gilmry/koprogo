@@ -40,7 +40,7 @@ test.describe("Organizations - SuperAdmin Management", () => {
       },
       headers: { Authorization: `Bearer ${adminToken}` },
     });
-    expect([200, 201].includes(createResp.status())).toBeTruthy();
+    expect(createResp.status()).toBe(201);
     const org = await createResp.json();
     expect(org.name).toBe(`New Org ${timestamp}`);
   });
@@ -76,10 +76,10 @@ test.describe("Organizations - SuperAdmin Management", () => {
     });
     const userData = await regResp.json();
 
-    // Regular syndic should not see all organizations
+    // Regular syndic should NOT see all organizations (SuperAdmin only)
     const listResp = await page.request.get(`${API_BASE}/organizations`, {
       headers: { Authorization: `Bearer ${userData.token}` },
     });
-    expect([200, 403].includes(listResp.status())).toBeTruthy();
+    expect(listResp.status()).toBe(403);
   });
 });

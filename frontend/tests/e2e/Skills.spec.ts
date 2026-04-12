@@ -39,7 +39,7 @@ test.describe("Skills - Community Directory", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(skillResp.status())).toBeTruthy();
+    expect(skillResp.status()).toBe(201);
   });
 
   test("should list skills for building", async ({ page }) => {
@@ -67,13 +67,9 @@ test.describe("Skills - Community Directory", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (skillResp.status() === 201) {
-      const skill = await skillResp.json();
-      await page.goto(`/skill-detail?id=${skill.id}`);
-      await expect(page.locator("body")).toBeVisible();
-    } else {
-      await page.goto("/skills");
-      await expect(page.locator("body")).toBeVisible();
-    }
+    expect(skillResp.status()).toBe(201);
+    const skill = await skillResp.json();
+    await page.goto(`/skill-detail?id=${skill.id}`);
+    await expect(page.locator("body")).toBeVisible();
   });
 });

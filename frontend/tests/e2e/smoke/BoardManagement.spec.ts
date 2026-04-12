@@ -70,22 +70,20 @@ test.describe("Board Management - Conseil de Copropriété", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(electResp.status())).toBeTruthy();
+    expect(electResp.status()).toBe(201);
 
-    if (electResp.ok()) {
-      const member = await electResp.json();
-      expect(member.id).toBeTruthy();
-      expect(member.position).toBe("president");
+    const member = await electResp.json();
+    expect(member.id).toBeTruthy();
+    expect(member.position).toBe("president");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/board-members/${member.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(member.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/board-members/${member.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(member.id);
   });
 
   test("should list active board members for building", async ({ page }) => {
@@ -142,21 +140,19 @@ test.describe("Board Management - Conseil de Copropriété", () => {
         headers: { Authorization: `Bearer ${token}` },
       },
     );
-    expect([200, 201].includes(decisionResp.status())).toBeTruthy();
+    expect(decisionResp.status()).toBe(201);
 
-    if (decisionResp.ok()) {
-      const decision = await decisionResp.json();
-      expect(decision.id).toBeTruthy();
-      expect(decision.building_id).toBe(buildingId);
-      expect(decision.status).toBe("pending");
+    const decision = await decisionResp.json();
+    expect(decision.id).toBeTruthy();
+    expect(decision.building_id).toBe(buildingId);
+    expect(decision.status).toBe("pending");
 
-      // Retrieve by ID
-      const getResp = await page.request.get(
-        `${API_BASE}/board-decisions/${decision.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(
+      `${API_BASE}/board-decisions/${decision.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
   });
 
   test("should list board decisions for building", async ({ page }) => {
@@ -184,7 +180,7 @@ test.describe("Board Management - Conseil de Copropriété", () => {
       `${API_BASE}/buildings/${buildingId}/board-members/stats`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 404].includes(statsResp.status())).toBeTruthy();
+    expect(statsResp.status()).toBe(200);
   });
 
   test("should require auth for board management API", async ({ page }) => {

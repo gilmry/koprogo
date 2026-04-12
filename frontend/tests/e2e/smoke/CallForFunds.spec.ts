@@ -38,7 +38,7 @@ test.describe("Call For Funds - Revenue Management", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(cffResp.status())).toBeTruthy();
+    expect(cffResp.status()).toBe(201);
     const cff = await cffResp.json();
     expect(cff.building_id).toBe(buildingId);
   });
@@ -69,6 +69,7 @@ test.describe("Call For Funds - Revenue Management", () => {
         organization_id: orgId,
         building_id: buildingId,
         title: `Appel fonds T3 ${timestamp}`,
+        description: "Provision charges courantes T3",
         total_amount: 2500.0,
         contribution_type: "regular",
         call_date: new Date().toISOString(),
@@ -77,16 +78,15 @@ test.describe("Call For Funds - Revenue Management", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (cffResp.ok()) {
-      const cff = await cffResp.json();
-      const getResp = await page.request.get(
-        `${API_BASE}/call-for-funds/${cff.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(cff.id);
-    }
+    expect(cffResp.status()).toBe(201);
+    const cff = await cffResp.json();
+    const getResp = await page.request.get(
+      `${API_BASE}/call-for-funds/${cff.id}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(cff.id);
   });
 
   test("should require auth for call-for-funds API", async ({ page }) => {

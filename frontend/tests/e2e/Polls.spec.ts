@@ -105,20 +105,18 @@ test.describe("Polls - Board Decision Polling", () => {
     });
     expect(pollResp.status()).toBe(201);
 
-    if (pollResp.ok()) {
-      const poll = await pollResp.json();
-      expect(poll.id).toBeTruthy();
-      expect(poll.building_id).toBe(buildingId);
-      expect(poll.status).toBe("draft"); // PollStatus uses serde snake_case
+    const poll = await pollResp.json();
+    expect(poll.id).toBeTruthy();
+    expect(poll.building_id).toBe(buildingId);
+    expect(poll.status).toBe("draft"); // PollStatus uses serde snake_case
 
-      // Retrieve by ID
-      const getResp = await page.request.get(`${API_BASE}/polls/${poll.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      expect(getResp.ok()).toBeTruthy();
-      const retrieved = await getResp.json();
-      expect(retrieved.id).toBe(poll.id);
-    }
+    // Retrieve by ID
+    const getResp = await page.request.get(`${API_BASE}/polls/${poll.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(getResp.status()).toBe(200);
+    const retrieved = await getResp.json();
+    expect(retrieved.id).toBe(poll.id);
   });
 
   test("should publish a poll (Draft → Active)", async ({ page }) => {
@@ -204,15 +202,14 @@ test.describe("Polls - Board Decision Polling", () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (pollResp.ok()) {
-      const poll = await pollResp.json();
+    expect(pollResp.status()).toBe(201);
+    const poll = await pollResp.json();
 
-      const resultsResp = await page.request.get(
-        `${API_BASE}/polls/${poll.id}/results`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      expect([200, 404].includes(resultsResp.status())).toBeTruthy();
-    }
+    const resultsResp = await page.request.get(
+      `${API_BASE}/polls/${poll.id}/results`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    expect(resultsResp.status()).toBe(200);
   });
 
   test("should navigate to new poll page", async ({ page }) => {

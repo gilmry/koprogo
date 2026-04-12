@@ -40,7 +40,7 @@ test.describe("Work Reports - Digital Maintenance Logbook", () => {
       },
       headers: { Authorization: `Bearer ${token}` },
     });
-    expect([200, 201].includes(reportResp.status())).toBeTruthy();
+    expect(reportResp.status()).toBe(201);
     const report = await reportResp.json();
     expect(report.building_id).toBe(buildingId);
   });
