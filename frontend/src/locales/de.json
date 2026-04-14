@@ -1010,13 +1010,15 @@
       "critical": "Kritisch (1 Stunde)"
     },
     "categories": {
-      "general": "Allgemein",
       "plumbing": "Sanitär",
       "electrical": "Elektrik",
       "heating": "Heizung",
-      "cleaning": "Reinigung",
+      "commonAreas": "Gemeinschaftsbereiche",
+      "elevator": "Aufzug",
       "security": "Sicherheit",
-      "emergency": "Notfall"
+      "cleaning": "Reinigung",
+      "landscaping": "Grünanlagen",
+      "other": "Sonstiges"
     },
     "assign_ticket": "Ticket zuweisen",
     "assign_description": "Dieses Ticket einem Auftragnehmer zuweisen",
@@ -1108,6 +1110,12 @@
     "try_adjusting_filters": "Versuchen Sie, Ihre Filter anzupassen."
   },
   "polls": {
+    "status": {
+      "draft": "Entwurf",
+      "active": "Aktiv",
+      "closed": "Geschlossen",
+      "cancelled": "Abgebrochen"
+    },
     "title": "Umfragen",
     "create": "Umfrage erstellen",
     "question": "Frage",
@@ -2581,20 +2589,18 @@
       "descriptionPlaceholder": "Detaillierte Beschreibung des Beschlusses...",
       "error": "Fehler beim Erstellen des Beschlusses",
       "legalText": "Die erforderlichen Mehrheiten sind durch die Artikel 577-7 ff. des belgischen Zivilgesetzbuches festgelegt.",
-      "majorityAbsolute": "Absolute Mehrheit (50%+1 aller Stimmen)",
-      "majorityQualified": "Qualifizierte Mehrheit (benutzerdefinierte Schwelle)",
+      "majorityAbsolute": "Absolute Mehrheit (>50% der Anwesenden, Enthaltungen ausgeschlossen)",
+      "majorityTwoThirds": "Zweidrittelmehrheit (≥2/3 der Anwesenden)",
+      "majorityFourFifths": "Vierfünftelmehrheit (≥4/5 der Anwesenden)",
+      "majorityUnanimity": "Einstimmigkeit (100% aller Quoten)",
       "majorityRequired": "Erforderliche Mehrheit",
-      "majoritySimple": "Einfache Mehrheit (50%+1 der abgegebenen Stimmen)",
       "submit": "Beschluss erstellen",
       "success": "Beschluss erfolgreich erstellt",
       "title": "Beschluss erstellen",
       "titlePlaceholder": "Titel des Beschlusses...",
       "titleRequired": "Der Titel des Beschlusses ist erforderlich",
-      "typeBudget": "Budget",
-      "typeElection": "Wahl",
-      "typeRules": "Hausordnung",
-      "typeStandard": "Standard",
-      "typeWorks": "Arbeiten"
+      "typeOrdinary": "Ordentlich",
+      "typeExtraordinary": "Außerordentlich"
     },
     "list": {
       "adopted": "{count, plural, one {angenommen} other {angenommen}}",
@@ -2645,7 +2651,9 @@
       "voter": "Abstimmender",
       "votes": "{count, plural, one {Stimme} other {Stimmen}}",
       "votingPower": "Stimmrecht",
-      "votingPowerLabel": "Anteile (Tausendstel)"
+      "votingPowerLabel": "Anteile (Tausendstel)",
+      "unitLabel": "Für Einheit abstimmen",
+      "needOwnerAndUnit": "Sie müssen Eigentümer einer Einheit sein, um abzustimmen."
     },
     "adopted": "Angenommen",
     "abstain": "Enthaltung",

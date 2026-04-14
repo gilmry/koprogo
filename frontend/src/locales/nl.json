@@ -1010,13 +1010,15 @@
       "critical": "Kritiek (1 uur)"
     },
     "categories": {
-      "general": "Algemeen",
       "plumbing": "Loodgieterij",
       "electrical": "Elektriciteit",
       "heating": "Verwarming",
-      "cleaning": "Schoonmaak",
+      "commonAreas": "Gemeenschappelijke ruimten",
+      "elevator": "Lift",
       "security": "Beveiliging",
-      "emergency": "Noodgeval"
+      "cleaning": "Schoonmaak",
+      "landscaping": "Groenvoorziening",
+      "other": "Overig"
     },
     "assign_ticket": "Ticket toewijzen",
     "assign_description": "Dit ticket toewijzen aan een aannemer",
@@ -1108,6 +1110,12 @@
     "try_adjusting_filters": "Probeer uw filters aan te passen."
   },
   "polls": {
+    "status": {
+      "draft": "Concept",
+      "active": "Actief",
+      "closed": "Gesloten",
+      "cancelled": "Geannuleerd"
+    },
     "title": "Enquêtes",
     "create": "Enquête aanmaken",
     "question": "Vraag",
@@ -2581,20 +2589,18 @@
       "descriptionPlaceholder": "Gedetailleerde beschrijving van de resolutie...",
       "error": "Fout bij het aanmaken van de resolutie",
       "legalText": "De vereiste meerderheden zijn bepaald door de artikelen 577-7 en volgende van het Burgerlijk Wetboek.",
-      "majorityAbsolute": "Volstrekte meerderheid (50%+1 van alle stemmen)",
-      "majorityQualified": "Gekwalificeerde meerderheid (aangepaste drempel)",
+      "majorityAbsolute": "Volstrekte meerderheid (>50% van aanwezigen, onthoudingen uitgesloten)",
+      "majorityTwoThirds": "Tweederdemeerderheid (≥2/3 van aanwezigen)",
+      "majorityFourFifths": "Viervijfdemeerderheid (≥4/5 van aanwezigen)",
+      "majorityUnanimity": "Unanimiteit (100% van alle tantièmes)",
       "majorityRequired": "Vereiste meerderheid",
-      "majoritySimple": "Gewone meerderheid (50%+1 van uitgebrachte stemmen)",
       "submit": "Resolutie aanmaken",
       "success": "Resolutie succesvol aangemaakt",
       "title": "Resolutie aanmaken",
       "titlePlaceholder": "Titel van de resolutie...",
       "titleRequired": "De titel van de resolutie is verplicht",
-      "typeBudget": "Budget",
-      "typeElection": "Verkiezing",
-      "typeRules": "Reglement",
-      "typeStandard": "Standaard",
-      "typeWorks": "Werken"
+      "typeOrdinary": "Gewoon",
+      "typeExtraordinary": "Buitengewoon"
     },
     "list": {
       "adopted": "{count, plural, one {aangenomen} other {aangenomen}}",
@@ -2645,7 +2651,9 @@
       "voter": "Stemmer",
       "votes": "{count, plural, one {stem} other {stemmen}}",
       "votingPower": "Stemrecht",
-      "votingPowerLabel": "Aandelen (duizendsten)"
+      "votingPowerLabel": "Aandelen (duizendsten)",
+      "unitLabel": "Stemmen namens kavel",
+      "needOwnerAndUnit": "U moet eigenaar zijn van een kavel om te stemmen."
     },
     "adopted": "Aangenomen",
     "abstain": "Onthouding",

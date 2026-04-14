@@ -1010,13 +1010,15 @@
       "critical": "Critical (1 hour)"
     },
     "categories": {
-      "general": "General",
       "plumbing": "Plumbing",
       "electrical": "Electrical",
       "heating": "Heating",
-      "cleaning": "Cleaning",
+      "commonAreas": "Common areas",
+      "elevator": "Elevator",
       "security": "Security",
-      "emergency": "Emergency"
+      "cleaning": "Cleaning",
+      "landscaping": "Landscaping",
+      "other": "Other"
     },
     "assign_ticket": "Assign ticket",
     "assign_description": "Assign this ticket to a contractor",
@@ -1108,6 +1110,12 @@
     "try_adjusting_filters": "Try adjusting your filters."
   },
   "polls": {
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
     "title": "Polls",
     "create": "Create Poll",
     "question": "Question",
@@ -2580,21 +2588,19 @@
       "creating": "Creating...",
       "descriptionPlaceholder": "Detailed description of the resolution...",
       "error": "Error creating resolution",
-      "legalText": "Required majorities are defined by Articles 577-7 et seq. of the Belgian Civil Code.",
-      "majorityAbsolute": "Absolute majority (50%+1 of all votes)",
-      "majorityQualified": "Qualified majority (custom threshold)",
+      "legalText": "Required majorities are defined by Articles 3.88 et seq. of the Belgian Civil Code.",
+      "majorityAbsolute": "Absolute majority (>50% of attendees, abstentions excluded)",
+      "majorityTwoThirds": "Two-thirds majority (≥2/3 of attendees)",
+      "majorityFourFifths": "Four-fifths majority (≥4/5 of attendees)",
+      "majorityUnanimity": "Unanimity (100% of all quotas)",
       "majorityRequired": "Required majority",
-      "majoritySimple": "Simple majority (50%+1 of votes cast)",
       "submit": "Create resolution",
       "success": "Resolution created successfully",
       "title": "Create a resolution",
       "titlePlaceholder": "Resolution title...",
       "titleRequired": "Resolution title is required",
-      "typeBudget": "Budget",
-      "typeElection": "Election",
-      "typeRules": "Rules",
-      "typeStandard": "Standard",
-      "typeWorks": "Works"
+      "typeOrdinary": "Ordinary",
+      "typeExtraordinary": "Extraordinary"
     },
     "list": {
       "adopted": "{count, plural, one {adopted} other {adopted}}",
@@ -2645,7 +2651,9 @@
       "voter": "Voter",
       "votes": "{count, plural, one {vote} other {votes}}",
       "votingPower": "Voting power",
-      "votingPowerLabel": "Shares (thousandths)"
+      "votingPowerLabel": "Shares (thousandths)",
+      "unitLabel": "Vote on behalf of unit",
+      "needOwnerAndUnit": "You must be an owner of a unit to vote."
     },
     "adopted": "Adopted",
     "abstain": "Abstain",

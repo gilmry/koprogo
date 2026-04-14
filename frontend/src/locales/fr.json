@@ -1010,13 +1010,15 @@
       "critical": "Critique (1 heure)"
     },
     "categories": {
-      "general": "Général",
       "plumbing": "Plomberie",
       "electrical": "Électricité",
       "heating": "Chauffage",
-      "cleaning": "Nettoyage",
+      "commonAreas": "Parties communes",
+      "elevator": "Ascenseur",
       "security": "Sécurité",
-      "emergency": "Urgence"
+      "cleaning": "Nettoyage",
+      "landscaping": "Espaces verts",
+      "other": "Autre"
     },
     "assign_ticket": "Assigner le ticket",
     "assign_description": "Assigner ce ticket à un prestataire",
@@ -1108,6 +1110,12 @@
     "try_adjusting_filters": "Essayez d'ajuster vos filtres."
   },
   "polls": {
+    "status": {
+      "draft": "Brouillon",
+      "active": "Actif",
+      "closed": "Clôturé",
+      "cancelled": "Annulé"
+    },
     "title": "Sondages",
     "create": "Créer un sondage",
     "question": "Question",
@@ -2580,21 +2588,19 @@
       "creating": "Création...",
       "descriptionPlaceholder": "Description détaillée de la résolution...",
       "error": "Erreur lors de la création de la résolution",
-      "legalText": "Les majorités requises sont définies par les articles 577-7 et suivants du Code Civil belge.",
-      "majorityAbsolute": "Majorité absolue (50%+1 de tous les votes)",
-      "majorityQualified": "Majorité qualifiée (seuil personnalisé)",
+      "legalText": "Les majorités requises sont définies par les articles 3.88 et suivants du Code Civil belge.",
+      "majorityAbsolute": "Majorité absolue (>50% des présents, abstentions exclues)",
+      "majorityTwoThirds": "Majorité 2/3 (≥2/3 des présents)",
+      "majorityFourFifths": "Majorité 4/5 (≥4/5 des présents)",
+      "majorityUnanimity": "Unanimité (100% de tous les tantièmes)",
       "majorityRequired": "Majorité requise",
-      "majoritySimple": "Majorité simple (50%+1 des votes exprimés)",
       "submit": "Créer la résolution",
       "success": "Résolution créée avec succès",
       "title": "Créer une résolution",
       "titlePlaceholder": "Intitulé de la résolution...",
       "titleRequired": "Le titre de la résolution est obligatoire",
-      "typeBudget": "Budget",
-      "typeElection": "Élection",
-      "typeRules": "Règlement",
-      "typeStandard": "Standard",
-      "typeWorks": "Travaux"
+      "typeOrdinary": "Ordinaire",
+      "typeExtraordinary": "Extraordinaire"
     },
     "list": {
       "adopted": "{count, plural, one {adoptée} other {adoptées}}",
@@ -2645,7 +2651,9 @@
       "voter": "Votant",
       "votes": "{count, plural, one {vote} other {votes}}",
       "votingPower": "Pouvoir de vote",
-      "votingPowerLabel": "Tantièmes (millièmes)"
+      "votingPowerLabel": "Tantièmes (millièmes)",
+      "unitLabel": "Voter au nom du lot",
+      "needOwnerAndUnit": "Vous devez être copropriétaire d'un lot pour voter."
     },
     "adopted": "Adoptée",
     "abstain": "Abstention",
