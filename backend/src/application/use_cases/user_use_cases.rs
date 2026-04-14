@@ -106,6 +106,16 @@ impl UserUseCases {
         }
     }
 
+    /// Look up a user's display name by id (first_name + last_name).
+    /// Returns None if the user does not exist.
+    pub async fn find_display_name(&self, id: Uuid) -> Result<Option<String>, String> {
+        Ok(self.user_repo.find_by_id(id).await?.map(|u| {
+            format!("{} {}", u.first_name, u.last_name)
+                .trim()
+                .to_string()
+        }))
+    }
+
     /// List all users with their roles.
     pub async fn list_all(&self) -> Result<Vec<UserResponse>, String> {
         let users = self.user_repo.find_all().await?;
