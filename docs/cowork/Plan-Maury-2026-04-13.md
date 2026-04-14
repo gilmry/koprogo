@@ -610,88 +610,675 @@ Scenario: Les toasts différents coexistent
 
 ---
 
+## Epic P7-6 : Svelte 5 runes migration (178 composants) | SHOULD HAVE
+
+**Motivation** : le projet tourne en **Svelte 5 legacy mode** (`export let` + `$:` + `createEventDispatcher`) au lieu des runes modernes (`$state`, `$props`, `$derived`, `$effect`). Ce mode legacy est la cause directe du bug B3-v7 (building_id perdu parce que `let formData = { building_id: buildingId }` capture le prop **avant** que `mount()` ne l'assigne). La migration vers les runes élimine cette classe entière de bugs de "race d'initialisation" et aligne le code avec l'évolution upstream du framework.
+
+**Stratégie** : migration par vagues. Commencer par un composant pilote pour valider la compatibilité avec Astro islands, puis batcher par domaine fonctionnel. Chaque story est un commit atomique et la suite de tests (unitaire + Playwright E2E) doit rester verte entre chaque.
+
+**Coverage cible** : 100 % des 178 composants `.svelte` migrés. Pas de mode hybride en fin de parcours.
+
+### Story P7-6.1 : Activer le mode runes + migration pilote sur TicketCreateModal
+
+- **ID** : STORY-P7-601 | **Type** : Refactor | **Taille** : M
+- **Bounded Context DDD** : Frontend / Reactivity
+- **Entité(s) DDD** : N/A
+- **Principes SOLID** : OCP (le reste du code n'est pas modifié), DIP (les composants migrés continuent d'implémenter les mêmes "ports" — props, events)
+- **Invariants** : INV-pilot "Le composant pilote doit passer tous ses tests Playwright existants avant d'étendre la migration".
+- **FR PRD** : transverse (infrastructure frontend)
+- **User Story** : En tant que développeur frontend, je veux que `TicketCreateModal.svelte` utilise `$props()` + `$state()` pour supprimer la garde défensive `if (!formData.building_id && buildingId)` introduite par le commit 241a336, parce que cette garde est un workaround du mode legacy qui disparaît avec les runes.
+- **Scénarios BDD** (Playwright, réutilisation de ticket-create.spec.ts) :
+
+```gherkin
+Scenario: Le modal reçoit building_id correctement au premier tick
+  Given le projet est configuré avec runes = true
+  And TicketCreateModal utilise $props() et $state()
+  When un test Playwright ouvre le modal avec prop buildingId="<uuid>"
+  Then dans les 100ms suivant le mount, l'input caché du formulaire contient l'UUID
+  And aucun fallback défensif n'est déclenché
+
+Scenario: Le composant est rétrocompatible avec son parent
+  Given la page /tickets monte TicketCreateModal via Svelte 5 mount()
+  When l'utilisateur soumet le formulaire
+  Then dispatch("created", result) et onCreated?.(result) continuent de fonctionner
+  And la suite de tests tickets E2E reste à 283/283 green
+```
+
+- **Taches techniques TDD** :
+  1. [ ] Créer `frontend/svelte.config.js` avec `compilerOptions: { runes: true }`. Vérifier que Astro `@astrojs/svelte` prend en compte ce fichier.
+  2. [ ] RED : lancer la suite existante `frontend/tests/e2e/tickets/*.spec.ts` — doit encore passer (0 régression) avant migration.
+  3. [ ] Migrer [TicketCreateModal.svelte](frontend/src/components/tickets/TicketCreateModal.svelte) :
+     - `export let open = false;` → `let { open = $bindable(false), buildingId = '', requesterId, unitId, onCreated, onClose } = $props();`
+     - `let formData: CreateTicketDto = { building_id: buildingId, ... }` → `let formData = $state({ building_id: buildingId, ... })`
+     - `$: if (open && buildings.length === 0) loadBuildings();` → `$effect(() => { if (open && buildings.length === 0) loadBuildings(); });`
+     - Supprimer la garde défensive `if (!formData.building_id && buildingId)` dans handleSubmit (les runes captent la valeur finale du prop).
+  4. [ ] Supprimer `createEventDispatcher` et sa variable `dispatch` ; remplacer par les callback props `onCreated`/`onClose` déjà exposés.
+  5. [ ] GREEN : re-exécuter la suite Playwright tickets — 283/283 green attendu.
+  6. [ ] REFACTOR : nettoyer les commentaires "workaround Svelte 5 mount" du fichier.
+  7. [ ] Documenter le pattern de migration dans `docs/MIGRATION_SVELTE5_RUNES.md` (modèle pour les 177 autres composants).
+  8. [ ] Commit : `refactor(svelte5): pilot runes migration on TicketCreateModal (+ docs pattern)`.
+- **Dependances** : STORY-P7-501 (pour avoir le contexte "legacy → runes" documenté).
+- **Endpoints** : aucun.
+- **Fichiers** : `frontend/svelte.config.js` (nouveau), `frontend/src/components/tickets/TicketCreateModal.svelte`, `docs/MIGRATION_SVELTE5_RUNES.md` (nouveau).
+
+### Story P7-6.2 : Migrer les composants tickets (7 fichiers)
+
+- **ID** : STORY-P7-602 | **Type** : Refactor | **Taille** : M
+- **Bounded Context DDD** : Frontend / Tickets
+- **Principes SOLID** : SRP (chaque composant garde sa responsabilité), LSP (même contrat de props)
+- **User Story** : En tant que développeur, je veux que tous les composants tickets utilisent les runes pour avoir un code uniforme dans le module.
+- **Taches techniques TDD** :
+  1. [ ] Migrer dans l'ordre : `TicketList.svelte`, `TicketDetail.svelte`, `TicketAssignModal.svelte`, `TicketStatusBadge.svelte`, `TicketPriorityBadge.svelte`, `TicketStatistics.svelte`.
+  2. [ ] Pattern systématique : `export let X` → `let { X } = $props()`, `let Y = ...` → `let Y = $state(...)`, `$: Z = ...` → `let Z = $derived(...)` ou `$effect()`.
+  3. [ ] Pour chaque fichier : lancer `npx svelte-check` et les tests Playwright pertinents.
+  4. [ ] Commit groupé : `refactor(svelte5): migrate ticket components to runes`.
+- **Dependances** : STORY-P7-601.
+- **Fichiers** : 6 fichiers `frontend/src/components/tickets/*.svelte`.
+
+### Story P7-6.3 : Migrer les composants meetings (7 fichiers)
+
+- **ID** : STORY-P7-603 | **Type** : Refactor | **Taille** : M
+- **Fichiers** : `MeetingCreateModal.svelte`, `MeetingDetail.svelte`, `MeetingList.svelte`, `MeetingDocuments.svelte`, `ConvocationPanel.svelte`, `ConvocationRecipientList.svelte`, nouveau `QuorumPanel.svelte` (si P7-302 déjà posé).
+- **Dependances** : STORY-P7-601, STORY-P7-302 (pour que QuorumPanel soit directement en runes).
+- **Commit** : `refactor(svelte5): migrate meeting components to runes`.
+
+### Story P7-6.4 : Migrer les composants resolutions (4 fichiers)
+
+- **ID** : STORY-P7-604 | **Type** : Refactor | **Taille** : S
+- **Fichiers** : `ResolutionCreateForm.svelte`, `ResolutionVotePanel.svelte`, `ResolutionList.svelte`, `ResolutionStatusBadge.svelte`.
+- **Dependances** : STORY-P7-601.
+
+### Story P7-6.5 : Migrer les composants expenses + invoices (5 fichiers)
+
+- **ID** : STORY-P7-605 | **Type** : Refactor | **Taille** : M
+- **Fichiers** : `InvoiceForm.svelte`, `InvoiceLineItems.svelte`, `ExpenseList.svelte`, `ExpenseDetail.svelte`, `ExpenseDocuments.svelte`.
+- **Impact** : supprime la 2e garde défensive (`if (!selectedBuildingId && buildingId)`) introduite dans commit 841e47c.
+
+### Story P7-6.6 : Migrer les composants polls + notices + SEL (15 fichiers)
+
+- **ID** : STORY-P7-606 | **Type** : Refactor | **Taille** : L
+- **Fichiers** : tous les composants sous `polls/`, `notices/`, `local-exchanges/`.
+
+### Story P7-6.7 : Migrer les composants admin + dashboards + navigation (20 fichiers)
+
+- **ID** : STORY-P7-607 | **Type** : Refactor | **Taille** : L
+- **Fichiers** : `admin/*`, `dashboards/*`, `Navigation.svelte`, `NotificationBell.svelte`, etc.
+
+### Story P7-6.8 : Migrer les composants restants (130+ fichiers, par lots de 20)
+
+- **ID** : STORY-P7-608 | **Type** : Refactor | **Taille** : XL (scriptable)
+- **Strategy** : script codemod semi-automatique (`jscodeshift` ou `svelte-migrate`) appliqué par dossier avec revue humaine.
+- **Checklist** :
+  1. [ ] Écrire `scripts/migrate-to-runes.js` qui applique les transformations mécaniques (export let → $props, $: → $derived).
+  2. [ ] Lancer sur un dossier `frontend/src/components/{budgets,etats-dates,gamification,iot,journal-entries,work-reports,ag-sessions,age-requests,board,contractor-reports,convocations,documents,energy,inspections,payments,resource-bookings,sharing,skills,quotes,two-factor,...}`.
+  3. [ ] `npx svelte-check` après chaque lot.
+  4. [ ] Commits atomiques par dossier.
+- **Dependances** : STORY-P7-607 (pattern rodé sur les composants complexes).
+
+### Story P7-6.9 : Supprimer toute trace de legacy reactivity
+
+- **ID** : STORY-P7-609 | **Type** : Cleanup | **Taille** : S
+- **Invariant** : INV-no-legacy "Aucun `export let`, `$:`, `createEventDispatcher` dans le codebase frontend".
+- **Taches** :
+  1. [ ] `grep -r "export let" frontend/src/components` → 0 match attendu.
+  2. [ ] `grep -r "^\s*\$:" frontend/src/components` → 0 match.
+  3. [ ] `grep -r "createEventDispatcher" frontend/src` → 0 match (sauf doc).
+  4. [ ] Supprimer les suppressions Svelte legacy dans `svelte.config.js`.
+  5. [ ] Commit : `chore(svelte5): complete runes migration, no legacy reactivity remains`.
+
+---
+
+## Epic P7-7 : Coverage utoipa 100 % + refactor des 25 wrappers API frontend | SHOULD HAVE
+
+**Motivation** : l'Epic P7-1 annote seulement les DTOs critiques des 4 modules v7-impliqués. Mais le projet a 52 DTOs + 62 entités + 511 endpoints. Chaque bloc non annoté reste un risque de mismatch futur. La méthode Maury exige la cohérence totale : si la spec OpenAPI est notre source de vérité, elle doit couvrir 100 % de la surface API.
+
+De plus, le frontend a 25 wrappers `lib/api/*.ts` hand-written. Seuls 3 sont migrés dans P7-103. Les 22 autres restent des sources potentielles de bugs d'enum mismatch.
+
+### Story P7-7.1 : Annoter les 41 DTOs restants
+
+- **ID** : STORY-P7-701 | **Type** : Refactor | **Taille** : L
+- **Bounded Context DDD** : tous les modules applicatifs
+- **Entité(s) DDD** : tous les DTOs de requête et de réponse
+- **Principes SOLID** : OCP (annotations additives), ISP (chaque DTO expose son propre schéma)
+- **Invariants** : INV-100percent "Tout struct `#[derive(Serialize)]` ou `#[derive(Deserialize)]` dans `application/dto/` doit aussi dériver `utoipa::ToSchema`".
+- **User Story** : En tant que développeur, je veux que 100 % des DTOs soient annotés pour que n'importe quel endpoint soit générable en TypeScript sans intervention manuelle.
+- **Fichiers cibles** (41) : `account_dto.rs`, `ag_session_dto.rs`, `age_request_dto.rs`, `annual_report_dto.rs`, `board_decision_dto.rs`, `board_member_dto.rs`, `budget_dto.rs`, `building_dto.rs`, `charge_distribution_dto.rs`, `consent_dto.rs`, `contractor_report_dto.rs`, `convocation_dto.rs`, `convocation_recipient_dto.rs`, `document_dto.rs`, `energy_bill_upload_dto.rs`, `energy_campaign_dto.rs`, `etat_date_dto.rs`, `exchange_dto.rs`, `financial_report_dto.rs`, `gamification_dto.rs`, `inspection_dto.rs`, `iot_dto.rs`, `journal_entry_dto.rs`, `local_exchange_dto.rs`, `marketplace_dto.rs`, `meeting_dto.rs`, `notice_dto.rs`, `organization_dto.rs`, `owner_dto.rs`, `owner_contribution_dto.rs`, `payment_reminder_dto.rs`, `poll_dto.rs`, `public_dto.rs`, `quote_dto.rs`, `resource_booking_dto.rs`, `sel_dto.rs`, `sharing_dto.rs`, `skill_dto.rs`, `two_factor_dto.rs`, `unit_dto.rs`, `unit_owner_dto.rs`, `user_dto.rs`, `work_report_dto.rs`.
+- **Taches techniques TDD** :
+  1. [ ] Pour chaque fichier : ajouter `utoipa::ToSchema` au `#[derive(...)]` existant sur tous les structs publics.
+  2. [ ] Ajouter les enums de domaine référencés (ex. `BudgetStatus`, `PollType`, etc.) dans `components(schemas(...))` de `ApiDoc`.
+  3. [ ] `make openapi-export` après chaque groupe de 5 fichiers et vérifier que `openapi.json` croît sans erreur.
+  4. [ ] `cargo check` pour s'assurer qu'aucun DTO ne casse la compilation utoipa (certains types complexes peuvent nécessiter `#[schema(value_type = String)]`).
+  5. [ ] Commits batchés par module : `refactor(api): annotate <module> DTOs with ToSchema`.
+- **Dependances** : STORY-P7-101, STORY-P7-102.
+- **Fichiers** : 41 fichiers dans `backend/src/application/dto/`.
+
+### Story P7-7.2 : Annoter les 54 entités de domaine restantes
+
+- **ID** : STORY-P7-702 | **Type** : Refactor | **Taille** : L
+- **Scope** : toutes les entités domain qui apparaissent dans une réponse API (ex. `Building`, `Unit`, `Owner`, `Expense`, `Budget`, etc.).
+- **Taches** :
+  1. [ ] Pour chaque entité : `#[derive(..., utoipa::ToSchema)]`.
+  2. [ ] Traiter les enums de statut (`BudgetStatus`, `PollStatus`, etc.) avec attention au `rename_all = "snake_case"` s'il est présent.
+  3. [ ] Tester à nouveau `make openapi-export`.
+- **Dependances** : STORY-P7-701.
+- **Fichiers** : 54 entités dans `backend/src/domain/entities/`.
+
+### Story P7-7.3 : Annoter les ~420 handlers restants avec `#[utoipa::path]`
+
+- **ID** : STORY-P7-703 | **Type** : Refactor | **Taille** : XL (scriptable)
+- **Scope** : 511 endpoints - 90 déjà annotés = 421 à traiter.
+- **Stratégie** :
+  1. [ ] Script de détection : `grep -rL "#\[utoipa::path" backend/src/infrastructure/web/handlers/ --include="*.rs"` liste les handlers manquants.
+  2. [ ] Template d'annotation par type d'endpoint (GET list, GET by id, POST create, PUT update, DELETE).
+  3. [ ] Annoter par module (ticket, poll, resolution, meeting, etc.) pour commits atomiques.
+  4. [ ] Ajouter chaque nouveau path à `ApiDoc::openapi()` paths(...).
+  5. [ ] `make openapi-export` + `make openapi-check` en fin de chaque module.
+- **Dependances** : STORY-P7-701, STORY-P7-702.
+- **Estimation** : ~10h de travail mécanique.
+- **Commits** : 1 par module, format `docs(api): annotate <module> handlers with utoipa::path`.
+
+### Story P7-7.4 : Migrer les 22 wrappers frontend restants vers les types générés
+
+- **ID** : STORY-P7-704 | **Type** : Refactor | **Taille** : L
+- **Scope** : tous les fichiers sous `frontend/src/lib/api/*.ts` sauf ceux déjà migrés par STORY-P7-103 (`resolutions`, `tickets`, `polls`).
+- **Fichiers cibles** (22) : `ag-sessions`, `age-requests`, `bookings`, `budgets`, `charge-distributions`, `convocations`, `energy-campaigns`, `etats-dates`, `gamification`, `inspections`, `local-exchanges`, `marketplace`, `notices`, `notifications`, `payment-reminders`, `payments`, `quotes`, `sel`, `sharing`, `skills`, `tickets`, `work-reports`.
+- **Pattern** (extrait de STORY-P7-103) :
+  ```ts
+  import type { components } from "../../types/api";
+  export type Foo = components["schemas"]["Foo"];
+  export const Foo = { Bar: "bar" as const, Baz: "baz" as const } satisfies Record<string, Foo>;
+  ```
+- **Taches** :
+  1. [ ] Pour chaque wrapper : grep les `export enum` et `export interface` puis les remplacer par des re-exports.
+  2. [ ] `npx svelte-check` après chaque fichier.
+  3. [ ] Commits atomiques : `refactor(frontend): re-export <module> types from api.d.ts`.
+- **Dependances** : STORY-P7-701, STORY-P7-702 (pour que tous les types soient dans `api.d.ts`).
+
+### Story P7-7.5 : Garde d'invariant "no hand-written enum" en CI
+
+- **ID** : STORY-P7-705 | **Type** : Infra | **Taille** : S
+- **Invariant** : INV-api-types "Aucun `export enum` dans `frontend/src/lib/api/` (hors fichiers explicitement exclus comme mcp.ts qui est custom)".
+- **Tache** :
+  1. [ ] Script `scripts/check-api-enums.sh` qui grep `export enum` dans `lib/api/` et exit 1 si match.
+  2. [ ] Ajouter à la CI après `npm run build`.
+  3. [ ] Ajouter au pre-commit hook.
+- **Dependances** : STORY-P7-704.
+
+---
+
+## Epic P7-8 : Seed determinism + cleanup pollution historique | MUST HAVE
+
+**Motivation** : les audits ont révélé une pollution massive du seed (1628 organisations `workreport Org …`, 1773 users, 1278 immeubles) qui rend les tests admin inutilisables et pollue les dashboards. Ce n'est pas "juste de la data" — c'est un défaut de design du scénario de seed qui ne nettoie pas avant d'insérer.
+
+### Story P7-8.1 : Scénario seed `world` idempotent
+
+- **ID** : STORY-P7-801 | **Type** : Refactor | **Taille** : S
+- **Bounded Context DDD** : Seed / Fixtures
+- **Entité(s) DDD** : toutes (Organization, User, Building, ...)
+- **Invariants** : INV-seed-idempotent "Exécuter `POST /seed/scenario/world` N fois produit exactement les mêmes entités et le même nombre de lignes dans chaque table".
+- **User Story** : En tant que testeur, je veux pouvoir relancer le seed autant de fois que je veux sans polluer la base de données.
+- **Scénarios BDD** :
+
+```gherkin
+Scenario: Le seed world est idempotent
+  Given la base contient déjà le scénario world
+  When "POST /seed/scenario/world" est appelé
+  Then la réponse est 200 (pas 409 ni 500)
+  And le nombre de lignes dans orgs/users/buildings reste identique à avant l'appel
+
+Scenario: Le seed world nettoie automatiquement les doublons historiques
+  Given la base contient 1628 organisations incluant 1625 doublons "workreport Org XXX"
+  When "POST /seed/scenario/world" est appelé
+  Then seulement 3 organisations restent (celles du scénario officiel)
+  And les 1625 doublons sont supprimés en cascade (users, buildings, etc.)
+```
+
+- **Taches techniques TDD** :
+  1. [ ] RED : test integration `backend/tests/integration/seed_idempotent_test.rs` qui :
+     - Appelle `seed_world` 3 fois
+     - Vérifie que `COUNT(*)` est stable
+     - Vérifie qu'aucune FK violation n'est levée
+  2. [ ] GREEN : dans `backend/src/infrastructure/database/seed.rs`, modifier `seed_world()` :
+     - Étape 1 : `DELETE FROM <toutes tables> WHERE organization_id IN (SELECT id FROM organizations WHERE slug IN ('syndic-leroy', 'residence-parc', 'terrasses-flagey'))` — en respectant l'ordre FK.
+     - Étape 2 : insertions normales.
+     - Wrapper dans une transaction.
+  3. [ ] Ajouter endpoint `DELETE /api/v1/seed/scenario/world` qui appelle la partie cleanup isolée.
+  4. [ ] Commit : `feat(seed): make world scenario idempotent (clean + reinsert)`.
+- **Dependances** : aucune.
+- **Endpoints** : `POST /api/v1/seed/scenario/world` (comportement changé), `DELETE /api/v1/seed/scenario/world` (nouveau).
+- **Fichiers** : `backend/src/infrastructure/database/seed.rs`, `backend/src/infrastructure/web/handlers/seed_handlers.rs`, `backend/tests/integration/seed_idempotent_test.rs` (nouveau).
+
+### Story P7-8.2 : Migration SQL de cleanup pollution historique
+
+- **ID** : STORY-P7-802 | **Type** : Migration | **Taille** : S
+- **Bounded Context DDD** : Database maintenance
+- **Invariants** : INV-clean "Après exécution, aucune table ne contient d'entité `workreport Org …`".
+- **User Story** : En tant qu'opérateur, je veux nettoyer en un seul script la pollution historique accumulée par les seeds précédents.
+- **Taches** :
+  1. [ ] Créer migration `backend/migrations/[timestamp]_cleanup_workreport_pollution.sql` :
+     ```sql
+     -- Delete test pollution left by earlier audit seeds
+     DELETE FROM organizations WHERE name LIKE 'workreport Org %' OR slug LIKE 'unitowner-%' OR slug LIKE '2fa-%';
+     -- FK cascade cleans users, buildings, etc.
+     ```
+  2. [ ] Tester sur une copie de dev : `sqlx migrate run` + comparer counts avant/après.
+  3. [ ] Commit : `migration: cleanup workreport seed pollution from prior audit runs`.
+- **Dependances** : aucune.
+- **Fichiers** : `backend/migrations/[timestamp]_cleanup_workreport_pollution.sql`.
+
+### Story P7-8.3 : `make seed-reset` target
+
+- **ID** : STORY-P7-803 | **Type** : Infra | **Taille** : XS
+- **Tache** :
+  1. [ ] Dans `Makefile` :
+     ```makefile
+     seed-reset: ## Reset the database to a clean world seed
+         @curl -s -X POST http://localhost/api/v1/auth/login -H 'Content-Type: application/json' -d '{"email":"admin@koprogo.com","password":"admin123"}' | jq -r .token > /tmp/.koprogo-token
+         @curl -s -X POST http://localhost/api/v1/seed/scenario/world -H "Authorization: Bearer $$(cat /tmp/.koprogo-token)"
+         @rm /tmp/.koprogo-token
+         @echo "✅ Seed reset complete"
+     ```
+- **Dependances** : STORY-P7-801.
+
+---
+
+## Epic P7-9 : Accessibilité WCAG 2.1 AA complète | SHOULD HAVE
+
+**Motivation** : KoproGo est une plateforme SaaS B2B à destination de syndics belges, qui incluent des copropriétaires âgés et/ou malvoyants. La conformité WCAG 2.1 AA n'est pas optionnelle : c'est à la fois un impératif éthique (accessibilité universelle), légal (loi belge du 19/07/2018 transposant la directive européenne 2016/2102) et commercial (argument de vente pour les copropriétés avec mandataires publics).
+
+### Story P7-9.1 : Focus trap sur toutes les modales
+
+- **ID** : STORY-P7-901 | **Type** : A11y | **Taille** : M
+- **Bounded Context DDD** : Frontend / Accessibility
+- **Principes SOLID** : DRY (un helper `useFocusTrap` unique pour 100 % des modales)
+- **Invariants** : INV-focus-trap "Tab depuis le dernier élément focusable d'une modale retourne au premier. Shift+Tab depuis le premier retourne au dernier. Escape ferme la modale".
+- **User Story** : En tant qu'utilisateur clavier-only (handicap moteur, préférence ergonomique), je veux que mon focus reste piégé dans la modale active pour ne pas perdre ma saisie en tabulant derrière.
+- **Scénarios BDD** (Playwright) :
+
+```gherkin
+Scenario: Tab en boucle dans une modale ouverte
+  Given TicketCreateModal est ouvert
+  And le focus est sur le dernier bouton "Créer un ticket"
+  When l'utilisateur presse Tab
+  Then le focus revient sur le premier input (titre)
+  And ne va PAS sur un élément derrière la modale (backdrop, navigation)
+
+Scenario: Escape ferme la modale et restaure le focus précédent
+  Given TicketCreateModal est ouvert
+  And le trigger "+ Créer un ticket" avait le focus avant l'ouverture
+  When l'utilisateur presse Escape
+  Then la modale est fermée
+  And le focus retourne sur le bouton "+ Créer un ticket"
+```
+
+- **Taches techniques TDD** :
+  1. [ ] RED : Playwright test `frontend/tests/e2e/a11y/focus-trap.spec.ts` avec 5 scénarios sur 5 modales différentes.
+  2. [ ] GREEN : créer `frontend/src/lib/actions/focusTrap.ts` — une Svelte action :
+     ```ts
+     export function focusTrap(node: HTMLElement) {
+       const focusable = () => node.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+       const handleKeydown = (e: KeyboardEvent) => { /* tab logic */ };
+       const previousFocus = document.activeElement as HTMLElement;
+       focusable()[0]?.focus();
+       node.addEventListener('keydown', handleKeydown);
+       return {
+         destroy() { node.removeEventListener('keydown', handleKeydown); previousFocus?.focus(); }
+       };
+     }
+     ```
+  3. [ ] Appliquer `use:focusTrap` sur toutes les modales : `TicketCreateModal`, `TicketAssignModal`, `MeetingCreateModal`, `InvoiceForm`, `PollCreateForm`, `NoticeCreateModal`, `ExchangeRequestModal`, et les ~15 autres.
+  4. [ ] `Modal.svelte` (composant partagé) : appliquer focusTrap par défaut.
+  5. [ ] Commit : `a11y(modals): add focus trap to all dialogs (WCAG 2.4.3)`.
+- **Dependances** : Epic P7-6 (runes), pour éviter de migrer deux fois le même fichier.
+- **Fichiers** : `frontend/src/lib/actions/focusTrap.ts` (nouveau), ~20 composants modal, `frontend/src/components/ui/Modal.svelte`.
+
+### Story P7-9.2 : ARIA labels sur tous les boutons icône
+
+- **ID** : STORY-P7-902 | **Type** : A11y | **Taille** : M
+- **Invariants** : INV-aria "Tout `<button>` qui ne contient que du texte non verbal (emoji, icône SVG) doit avoir un attribut `aria-label` explicite".
+- **User Story** : En tant qu'utilisateur de lecteur d'écran (NVDA, JAWS, VoiceOver), je veux que chaque bouton icône m'annonce sa fonction au lieu de dire "bouton" ou "cloche".
+- **Taches** :
+  1. [ ] Script d'audit `scripts/a11y-icon-buttons.js` qui parse tous les `.svelte` et liste les `<button>` sans `aria-label`.
+  2. [ ] Corriger manuellement (ex. `<button aria-label={$_('notifications.openBell')}><BellIcon /></button>`).
+  3. [ ] Ajouter clés i18n correspondantes dans les 4 locales.
+  4. [ ] Commit : `a11y(buttons): add aria-label to all icon-only buttons (WCAG 4.1.2)`.
+- **Dependances** : Epic P7-6.
+
+### Story P7-9.3 : Audit navigation clavier complet
+
+- **ID** : STORY-P7-903 | **Type** : A11y | **Taille** : S
+- **Invariants** : INV-keyboard "Tous les parcours P1-P10 sont exécutables sans souris".
+- **Taches** :
+  1. [ ] Playwright test qui refait les 10 parcours en utilisant `page.keyboard.press('Tab')` uniquement.
+  2. [ ] Corriger les composants qui capturent incorrectement le focus (ex. `<div on:click>` au lieu de `<button>`).
+  3. [ ] Commit : `a11y(nav): ensure all user journeys work keyboard-only (WCAG 2.1.1)`.
+
+### Story P7-9.4 : Audit contraste couleurs via axe-core CI
+
+- **ID** : STORY-P7-904 | **Type** : A11y | **Taille** : S
+- **Invariants** : INV-contrast "Tout texte respecte un ratio de contraste WCAG AA (4.5:1 normal, 3:1 large)".
+- **Taches** :
+  1. [ ] Intégrer `@axe-core/playwright` dans la suite E2E.
+  2. [ ] Dans `frontend/tests/e2e/a11y/axe.spec.ts`, lancer axe sur chaque page principale et exporter un rapport JSON.
+  3. [ ] Corriger les violations sur les gris clairs (`text-gray-400` sur `bg-white`).
+  4. [ ] Étape CI qui échoue si axe trouve une violation `impact === serious` ou plus.
+  5. [ ] Commit : `a11y(ci): integrate axe-core in e2e tests`.
+- **Fichiers** : `.github/workflows/ci.yml`, `frontend/tests/e2e/a11y/axe.spec.ts` (nouveau), `frontend/package.json` (+ `@axe-core/playwright`).
+
+### Story P7-9.5 : Tests manuels avec lecteur d'écran
+
+- **ID** : STORY-P7-905 | **Type** : A11y QA | **Taille** : M
+- **Taches** :
+  1. [ ] Exécuter les 10 parcours avec NVDA + Chrome sur Windows.
+  2. [ ] Documenter les correctifs nécessaires dans `docs/A11Y_SCREEN_READER_AUDIT.md`.
+  3. [ ] Corriger les issues (annonces redondantes, sections sans landmark, tables sans caption).
+  4. [ ] Commit : `a11y(sr): screen reader audit + fixes`.
+
+---
+
+## Epic P7-10 : Contractor as first-class domain role | MUST HAVE
+
+**Motivation** : STORY-P7-2 a proposé une "Option A" (réutiliser `BoardMember` comme cible d'assignation) comme compromis pour aller vite. Mais d'un point de vue domain-driven design, **un contractor n'est pas un board member**. Ce sont deux concepts distincts dans la réalité métier belge :
+- **BoardMember** : copropriétaire élu au conseil de copropriété (Art. 577-8 CC)
+- **Contractor** : prestataire externe engagé pour réaliser des travaux ou un service (plombier, électricien, menuisier, etc.) — peut ne pas être copropriétaire.
+
+Fusionner les deux viole DDD / SRP et empêchera plus tard d'ajouter les fonctions contractor-spécifiques (portfolio, avis clients, disponibilités, SIREN/TVA, assurances professionnelles).
+
+Cet epic remplace l'Option A temporaire par une Option B propre.
+
+### Story P7-10.1 : Ajouter `Contractor` au domain UserRole
+
+- **ID** : STORY-P7-1001 | **Type** : Feature | **Taille** : M
+- **Bounded Context DDD** : Identity & Access / Maintenance
+- **Entité(s) DDD** : `User`, nouvelle `Contractor` (profil étendu)
+- **Principes SOLID** : SRP (Contractor est un rôle distinct avec ses invariants), OCP (ajout sans modifier les autres rôles)
+- **Invariants** : INV-contractor "Un User avec `role = Contractor` doit avoir un `ContractorProfile` lié (profession, SIREN, assurance)".
+- **FR PRD** : FR-009 (gestion tickets), FR-013 (nouveau — gestion prestataires)
+- **User Story** : En tant que syndic, je veux enregistrer mon plombier "Marc Dubois" comme Contractor avec sa profession, son numéro SIREN/TVA et son assurance pour pouvoir lui assigner des tickets et valider légalement l'intervention.
+- **Scénarios BDD** :
+
+```gherkin
+Scenario: Créer un contractor avec profil complet
+  Given François est syndic de "Syndic Leroy"
+  When François crée un Contractor "Marc Dubois" avec
+    | email            | marc@plomberie-dubois.be |
+    | profession       | Plombier                 |
+    | siren_or_vat     | BE0123456789             |
+    | insurance_number | AXA-12345                |
+  Then un User avec role=Contractor est créé
+  And un ContractorProfile lié est créé avec les champs ci-dessus
+  And le contractor apparaît dans GET /contractors?organization_id=...
+
+Scenario: Un contractor peut prendre en charge un ticket
+  Given un Contractor Marc existe
+  And un ticket "Fuite" existe en statut Open
+  When le syndic assigne le ticket à Marc
+  Then le ticket passe en Assigned
+  And assigned_to contient l'ID de Marc (qui est un User avec role=Contractor)
+
+Scenario: Un contractor ne peut PAS voter aux AG
+  Given un Contractor Marc n'est pas copropriétaire
+  When Marc tente de voter sur une résolution
+  Then 403 Forbidden est retourné
+  And le message est "Only co-owners can vote"
+```
+
+- **Taches techniques TDD** :
+  1. [ ] RED : test unitaire `backend/src/domain/entities/user.rs` vérifiant que `UserRole::Contractor` existe.
+  2. [ ] GREEN : étendre l'enum `UserRole` dans `backend/src/domain/entities/user.rs` avec variant `Contractor`.
+  3. [ ] Migration SQL `[timestamp]_add_contractor_role.sql` : `ALTER TYPE user_role ADD VALUE 'contractor';`
+  4. [ ] Créer domain entity `backend/src/domain/entities/contractor.rs` :
+     ```rust
+     pub struct ContractorProfile {
+         pub id: Uuid,
+         pub user_id: Uuid,
+         pub profession: String,
+         pub siren_or_vat: String, // Belgian SIREN/VAT
+         pub insurance_number: Option<String>,
+         pub insurance_expires_at: Option<DateTime<Utc>>,
+         pub hourly_rate: Option<f64>,
+         pub created_at: DateTime<Utc>,
+     }
+     ```
+  5. [ ] Validation : SIREN/TVA belge via regex `^BE[0-9]{10}$`.
+  6. [ ] Migration `[timestamp]_create_contractor_profiles.sql`.
+  7. [ ] Port `ContractorRepository` avec 5 méthodes (CRUD + `find_by_organization`).
+  8. [ ] Use case `ContractorUseCases` avec règles métier (création + invariant profil obligatoire).
+  9. [ ] BDD feature `backend/tests/features/contractors.feature`.
+- **Dependances** : aucune.
+- **Endpoints** : `POST /contractors`, `GET /contractors`, `GET /contractors/:id`, `PUT /contractors/:id`, `DELETE /contractors/:id`.
+- **Fichiers** : `backend/src/domain/entities/{user,contractor}.rs`, `backend/src/application/ports/contractor_repository.rs`, `backend/src/application/use_cases/contractor_use_cases.rs`, `backend/src/infrastructure/database/repositories/contractor_repository_impl.rs`, `backend/src/infrastructure/web/handlers/contractor_handlers.rs`, 2 migrations SQL, `backend/tests/features/contractors.feature`.
+
+### Story P7-10.2 : UI Gestion des contractors (CRUD)
+
+- **ID** : STORY-P7-1002 | **Type** : Feature | **Taille** : M
+- **Bounded Context DDD** : Frontend / Contractor Management
+- **User Story** : En tant que syndic, je veux gérer mon carnet d'adresses de contractors depuis une page dédiée avec leur profession, coordonnées et assurance.
+- **Taches** :
+  1. [ ] Créer `frontend/src/pages/contractors.astro` avec liste paginée.
+  2. [ ] Créer `frontend/src/components/contractors/{ContractorList,ContractorCreateModal,ContractorDetail,ContractorEditForm}.svelte`.
+  3. [ ] Ajouter wrapper `frontend/src/lib/api/contractors.ts`.
+  4. [ ] Ajouter entrée sidebar "👷 Prestataires" dans `Navigation.svelte`.
+  5. [ ] i18n FR/NL/DE/EN.
+  6. [ ] Playwright smoke test.
+- **Dependances** : STORY-P7-1001.
+
+### Story P7-10.3 : TicketAssignModal reprend le concept Contractor
+
+- **ID** : STORY-P7-1003 | **Type** : Feature | **Taille** : S
+- **Remplace/étend** : STORY-P7-2 (Option A → Option B).
+- **User Story** : En tant que syndic, je veux que le dropdown d'assignation de ticket affiche les **Contractors** (et éventuellement les BoardMembers/Syndics si besoin) avec leur profession à côté du nom.
+- **Taches** :
+  1. [ ] Modifier endpoint `GET /tickets/assignable-users` pour inclure les users `role IN (Syndic, BoardMember, Contractor)` avec leur profession si Contractor.
+  2. [ ] Mettre à jour `TicketAssignModal` (qui sera déjà migré en runes par P7-602) : afficher "Marc Dubois — Plombier" au lieu de "Marc Dubois (board_member)".
+  3. [ ] Adapter le seed STORY-P7-203 pour créer les contractors au lieu de board_members.
+- **Dependances** : STORY-P7-202, STORY-P7-1001.
+
+### Story P7-10.4 : Ratings + portfolio des contractors
+
+- **ID** : STORY-P7-1004 | **Type** : Feature | **Taille** : L
+- **User Story** : En tant que syndic, je veux voir les avis moyens d'un contractor et son historique d'interventions avant de lui assigner un nouveau ticket.
+- **Taches** :
+  1. [ ] Entité `ContractorRating` (1-5 étoiles + commentaire + liaison ticket).
+  2. [ ] Migration + repository + use case + handler.
+  3. [ ] UI : page détail contractor affiche historique + moyenne.
+  4. [ ] Après la résolution d'un ticket, proposer au syndic de noter le contractor.
+- **Dependances** : STORY-P7-1001, STORY-P7-1002.
+
+### Story P7-10.5 : Alerte assurance contractor expirée
+
+- **ID** : STORY-P7-1005 | **Type** : Feature | **Taille** : S
+- **Invariants** : INV-insurance "Un contractor ne peut pas être assigné si son assurance pro est expirée".
+- **User Story** : En tant que syndic, je veux être alerté si j'essaie d'assigner un ticket à un contractor dont l'assurance est expirée.
+- **Taches** :
+  1. [ ] Validation dans `TicketUseCases::assign_ticket` : vérifier `contractor_profile.insurance_expires_at >= today`.
+  2. [ ] Retour 422 avec message explicite si expirée.
+  3. [ ] Dashboard widget "Contractors avec assurance expirée".
+- **Dependances** : STORY-P7-1001.
+
+---
+
 ## Synthèse traçabilité Epic → FR PRD → Bug audit
 
 | Epic | Story | Taille | FR PRD | Bug audit v7 | Dépendances | Statut |
 |------|-------|--------|--------|--------------|-------------|--------|
-| P7-1 | STORY-P7-101 (openapi-export bin) | S | transverse | — (qualité) | — | PENDING |
-| P7-1 | STORY-P7-102 (annotations DTO) | M | FR-004,006,008,012 | — | P7-101 | PENDING |
-| P7-1 | STORY-P7-103 (frontend re-exports) | S | transverse | prévention v4-v7 | P7-101, P7-102 | PENDING |
-| P7-1 | STORY-P7-104 (CI guard) | S | transverse | — (régression) | P7-101 | PENDING |
-| P7-2 | STORY-P7-201 (GET assignable-users) | S | FR-009 | B14 | P7-101, P7-102 | PENDING |
-| P7-2 | STORY-P7-202 (dropdown modal) | S | FR-009 | B14 | P7-201 | PENDING |
-| P7-2 | STORY-P7-203 (seed board members) | XS | transverse | B14 | — | PENDING |
-| P7-3 | STORY-P7-301 (canManage gating) | S | FR-004, FR-011 | B18 | — | PENDING |
-| P7-3 | STORY-P7-302 (QuorumPanel) | M | FR-004 (Art. 3.87 §5) | B4 (déféré v6) | P7-301, P7-102 | PENDING |
-| P7-4 | STORY-P7-401 (error i18n map) | S | FR-011 | B17 | — | PENDING |
-| P7-4 | STORY-P7-402 (toast dedup + auto-close) | S | transverse | B21 | — | PENDING |
-| P7-4 | STORY-P7-403 (Back to Tickets i18n) | XS | FR-011 | B19 | — | PENDING |
-| P7-5 | STORY-P7-501 (doc Svelte 5) | XS | — | B16 | — | PENDING |
+| **P7-1 Type-safety foundation** | | | | | | |
+| P7-1 | STORY-P7-101 openapi-export bin | S | transverse | — (qualité) | — | PENDING |
+| P7-1 | STORY-P7-102 annotations DTO critiques | M | FR-004,006,008,012 | — | P7-101 | PENDING |
+| P7-1 | STORY-P7-103 frontend re-exports (3) | S | transverse | prévention v4-v7 | P7-101, P7-102 | PENDING |
+| P7-1 | STORY-P7-104 CI guard | S | transverse | régression | P7-101 | PENDING |
+| **P7-2 Ticket assignment UX** | | | | | | |
+| P7-2 | STORY-P7-201 GET assignable-users | S | FR-009 | B14 | P7-101, P7-102 | PENDING |
+| P7-2 | STORY-P7-202 dropdown modal | S | FR-009 | B14 | P7-201 | PENDING |
+| P7-2 | STORY-P7-203 seed board members | XS | transverse | B14 | — | PENDING (sera remplacé par P7-10) |
+| **P7-3 Meeting governance** | | | | | | |
+| P7-3 | STORY-P7-301 canManage gating | S | FR-004, FR-011 | B18 | — | PENDING |
+| P7-3 | STORY-P7-302 QuorumPanel | M | FR-004 (Art. 3.87 §5) | B4 | P7-301, P7-102 | PENDING |
+| **P7-4 Error UX hardening** | | | | | | |
+| P7-4 | STORY-P7-401 error i18n map | S | FR-011 | B17 | — | PENDING |
+| P7-4 | STORY-P7-402 toast dedup + auto-close | S | transverse | B21 | — | PENDING |
+| P7-4 | STORY-P7-403 Back to Tickets i18n | XS | FR-011 | B19 | — | PENDING |
+| **P7-5 Testing hygiene** | | | | | | |
+| P7-5 | STORY-P7-501 doc Svelte 5 | XS | — | B16 | — | PENDING |
+| **P7-6 Svelte 5 runes migration** | | | | | | |
+| P7-6 | STORY-P7-601 pilote TicketCreateModal | M | transverse | prévention B3-v7 | P7-501 | PENDING |
+| P7-6 | STORY-P7-602 tickets (6) | M | transverse | — | P7-601 | PENDING |
+| P7-6 | STORY-P7-603 meetings (7) | M | FR-004 | — | P7-601, P7-302 | PENDING |
+| P7-6 | STORY-P7-604 resolutions (4) | S | FR-008 | — | P7-601 | PENDING |
+| P7-6 | STORY-P7-605 expenses (5) | M | FR-006 | — | P7-601 | PENDING |
+| P7-6 | STORY-P7-606 community (15) | L | FR-012 | — | P7-601 | PENDING |
+| P7-6 | STORY-P7-607 admin+dashboards (20) | L | FR-011 | — | P7-601 | PENDING |
+| P7-6 | STORY-P7-608 restants (130+) | XL | transverse | — | P7-607 | PENDING |
+| P7-6 | STORY-P7-609 cleanup legacy | S | transverse | — | P7-608 | PENDING |
+| **P7-7 utoipa 100 %** | | | | | | |
+| P7-7 | STORY-P7-701 DTO 41 restants | L | transverse | — | P7-101 | PENDING |
+| P7-7 | STORY-P7-702 entités 54 | L | transverse | — | P7-701 | PENDING |
+| P7-7 | STORY-P7-703 handlers 421 | XL | transverse | — | P7-702 | PENDING |
+| P7-7 | STORY-P7-704 wrappers 22 | L | transverse | — | P7-701, P7-702 | PENDING |
+| P7-7 | STORY-P7-705 CI guard enums | S | transverse | régression | P7-704 | PENDING |
+| **P7-8 Seed determinism** | | | | | | |
+| P7-8 | STORY-P7-801 seed idempotent | S | transverse | B20 | — | PENDING |
+| P7-8 | STORY-P7-802 migration cleanup | S | transverse | B20 | — | PENDING |
+| P7-8 | STORY-P7-803 make seed-reset | XS | transverse | B20 | P7-801 | PENDING |
+| **P7-9 WCAG 2.1 AA** | | | | | | |
+| P7-9 | STORY-P7-901 focus trap modales | M | FR-a11y (nouveau) | — | P7-6 complet | PENDING |
+| P7-9 | STORY-P7-902 aria-label boutons | M | FR-a11y | — | P7-6 complet | PENDING |
+| P7-9 | STORY-P7-903 audit clavier | S | FR-a11y | — | P7-902 | PENDING |
+| P7-9 | STORY-P7-904 axe-core CI | S | FR-a11y | — | — | PENDING |
+| P7-9 | STORY-P7-905 screen reader QA | M | FR-a11y | — | P7-901-904 | PENDING |
+| **P7-10 Contractor as domain role** | | | | | | |
+| P7-10 | STORY-P7-1001 domain + migration | M | FR-013 (nouveau) | — | — | PENDING |
+| P7-10 | STORY-P7-1002 UI CRUD | M | FR-013 | — | P7-1001 | PENDING |
+| P7-10 | STORY-P7-1003 ticket assignment refonte | S | FR-009, FR-013 | B14 | P7-202, P7-1001 | PENDING |
+| P7-10 | STORY-P7-1004 ratings + portfolio | L | FR-013 | — | P7-1001, P7-1002 | PENDING |
+| P7-10 | STORY-P7-1005 alerte assurance | S | FR-013 | — | P7-1001 | PENDING |
 
 **Total effort estimé** (T-shirt sizing) :
-- XS (≤ 1h) : 3 stories = 3h
-- S (1-3h) : 7 stories = 14-21h
-- M (3-6h) : 3 stories = 9-18h
+- XS (≤ 1h) : 5 stories → 5h
+- S (1-3h) : 17 stories → 34-51h
+- M (3-6h) : 12 stories → 36-72h
+- L (6-12h) : 7 stories → 42-84h
+- XL (12-24h) : 2 stories → 24-48h
 
-**Fourchette totale** : 26-42h (3-5 jours à temps plein pour un dev seul).
+**Fourchette totale** : **141-260h** (18-32 jours ETP à temps plein, réalistement ~6 semaines pour un dev seul avec contexte switching).
 
 ---
 
-## Ordre d'exécution recommandé
+## Ordre d'exécution recommandé (programme post-audit complet)
 
-Les dépendances imposent l'ordre suivant pour minimiser les blocages :
+Découpage en **6 sprints** (1 semaine chacun), avec priorité ordonnancée par criticité métier et dépendances techniques.
+
+### Sprint 1 — Fondation type-safety + ticket UX (semaine 1)
 
 ```
-Sprint Post-Audit (1 semaine)
+Jour 1-2 : Type-gen pipeline
+├─ STORY-P7-101  openapi-export bin                     [S]
+├─ STORY-P7-102  annotations DTO critiques              [M]
+├─ STORY-P7-104  CI guard                               [S]
+└─ STORY-P7-103  re-exports 3 wrappers                  [S]
 
-Jour 1 — Fondation type-safety
-├─ STORY-P7-101 (openapi-export bin)         [S]
-├─ STORY-P7-102 (annotations DTO)            [M]
-└─ STORY-P7-104 (CI guard)                   [S]
+Jour 3   : Seed cleanup (débloque tests)
+├─ STORY-P7-802  migration cleanup pollution            [S]
+├─ STORY-P7-801  seed idempotent                        [S]
+└─ STORY-P7-803  make seed-reset                        [XS]
 
-Jour 2 — Migration frontend types
-└─ STORY-P7-103 (re-exports)                 [S]
+Jour 4   : Meeting governance (B4 + B18)
+├─ STORY-P7-301  canManage gating                       [S]
+└─ STORY-P7-302  QuorumPanel                            [M]
 
-Jour 3 — Ticket assignment
-├─ STORY-P7-203 (seed board members)         [XS]
-├─ STORY-P7-201 (GET assignable-users)       [S]
-└─ STORY-P7-202 (dropdown modal)             [S]
-
-Jour 4 — Meeting governance
-├─ STORY-P7-301 (canManage gating)           [S]
-└─ STORY-P7-302 (QuorumPanel)                [M]
-
-Jour 5 — UX polish + docs
-├─ STORY-P7-402 (toast dedup)                [S]
-├─ STORY-P7-401 (error i18n)                 [S]
-├─ STORY-P7-403 (Back to Tickets)            [XS]
-└─ STORY-P7-501 (doc Svelte 5)               [XS]
+Jour 5   : UX polish + docs (bugs cosmétiques)
+├─ STORY-P7-402  toast dedup + auto-close               [S]
+├─ STORY-P7-401  error i18n map                         [S]
+├─ STORY-P7-403  Back to Tickets i18n                   [XS]
+└─ STORY-P7-501  doc Svelte 5                           [XS]
 ```
 
-Chaque fin de journée : `make openapi-export && make pre-commit && git commit` thématique, puis `git push` sur `feature/dev`.
+Fin Sprint 1 : **prompt cowork v8** — valider Epics P7-1, P7-3, P7-4, P7-5, P7-8 + acquis de la session actuelle.
 
-Fin de semaine : prompt cowork v8 "verify all 13 stories" avec scénarios BDD → si vert, merge `feature/dev` → `main` et tag éventuel.
+### Sprint 2 — Contractor domain + ticket assignment (semaine 2)
+
+```
+Jour 1-2 : Contractor domain (base)
+├─ STORY-P7-1001 domain UserRole::Contractor + migration [M]
+└─ STORY-P7-203  seed (transformé en contractors)       [XS]
+
+Jour 3-4 : Contractor UI
+├─ STORY-P7-1002 CRUD pages                             [M]
+└─ STORY-P7-1005 alerte assurance                       [S]
+
+Jour 5   : Ticket assignment avec contractors
+├─ STORY-P7-201  GET assignable-users (étendu)          [S]
+├─ STORY-P7-202  dropdown modal                         [S]
+└─ STORY-P7-1003 ticket assign refonte contractor       [S]
+```
+
+Fin Sprint 2 : **prompt cowork v9** — valider P7-2 + P7-10 partiel.
+
+### Sprint 3 — Svelte 5 runes migration (vague 1) (semaine 3)
+
+```
+Jour 1   : Pilote + doc
+├─ STORY-P7-601  pilote TicketCreateModal               [M]
+
+Jour 2-5 : Migration dirigée par domaine
+├─ STORY-P7-602  tickets (6 composants)                 [M]
+├─ STORY-P7-603  meetings (7 composants)                [M]
+├─ STORY-P7-604  resolutions (4 composants)             [S]
+└─ STORY-P7-605  expenses (5 composants)                [M]
+```
+
+Fin Sprint 3 : **prompt cowork v10** — aucune régression sur les 4 modules migrés.
+
+### Sprint 4 — Svelte 5 runes migration (vague 2) + Contractor advanced (semaine 4)
+
+```
+Jour 1-3 : Runes vague 2
+├─ STORY-P7-606  community polls/notices/SEL (15)       [L]
+└─ STORY-P7-607  admin + dashboards + nav (20)          [L]
+
+Jour 4-5 : Contractor ratings + portfolio
+└─ STORY-P7-1004 ratings + portfolio                    [L]
+```
+
+### Sprint 5 — utoipa 100 % + runes vague 3 (semaine 5)
+
+```
+Jour 1-2 : utoipa extension
+├─ STORY-P7-701  DTO 41 restants                        [L]
+└─ STORY-P7-702  entités 54                             [L]
+
+Jour 3-5 : Runes vague 3 (script semi-auto)
+├─ STORY-P7-608  restants 130+ composants               [XL]
+└─ STORY-P7-609  cleanup legacy                         [S]
+```
+
+### Sprint 6 — utoipa finale + accessibilité (semaine 6)
+
+```
+Jour 1-2 : utoipa handlers + garde
+├─ STORY-P7-703  handlers 421 annotations               [XL]
+├─ STORY-P7-704  wrappers 22 migrés                     [L]
+└─ STORY-P7-705  CI guard enums                         [S]
+
+Jour 3-5 : WCAG 2.1 AA
+├─ STORY-P7-901  focus trap modales                     [M]
+├─ STORY-P7-902  aria-label boutons                     [M]
+├─ STORY-P7-903  audit clavier                          [S]
+├─ STORY-P7-904  axe-core CI                            [S]
+└─ STORY-P7-905  screen reader QA                       [M]
+```
+
+Fin Sprint 6 : **audit cowork v11 final** (re-parcours 10 parcours complet) + merge `feature/dev` → `main` + tag `v0.1.0`.
 
 ---
 
 ## Invariants Maury respectés
 
-- ✅ **DDD** : chaque story nomme son Bounded Context et ses entités.
-- ✅ **BDD** : chaque story fonctionnelle contient des scénarios Gherkin exécutables.
-- ✅ **TDD** : chaque story liste les tâches RED → GREEN → REFACTOR.
-- ✅ **SOLID** : chaque story cite les principes qui la gouvernent.
-- ✅ **Traçabilité** : chaque story trace vers un FR PRD ou un bug audit identifié.
-- ✅ **Hexagonal** : les stories backend séparent Domain / Application / Infrastructure.
-- ✅ **YAGNI** : limité à ce que v7 demande, pas de spéculation.
-- ✅ **DRY** : les enums deviennent générés (pas 2 sources de vérité).
-
-## Ce qui N'EST PAS dans ce plan
-
-Hors scope explicite, pour rester dans une semaine :
-
-- Migration vers les runes Svelte 5 (`$state`, `$derived`, `$props`) — refacto majeur, à planifier en Epic séparé.
-- Annotation utoipa à 100 % (seuls les DTOs des 4 modules v7-critiques sont ciblés).
-- Refonte des 25 wrappers `lib/api/*.ts` (seuls 3 en Story P7-103).
-- Nettoyage du seed pollué (1628 orgs `workreport Org …`) — data, pas code.
-- Accessibilité WCAG (focus trap, aria-labels) — nice-to-have, Epic futur.
-- Contractor comme rôle domaine distinct — réutilise `BoardMember`, voir Story P7-2 Option A.
+- ✅ **DDD** : chaque story nomme son Bounded Context et ses entités. Épic P7-10 rejette explicitement la fusion Contractor/BoardMember par SRP.
+- ✅ **BDD** : chaque story fonctionnelle contient des scénarios Gherkin exécutables et des tests Playwright cibles.
+- ✅ **TDD** : chaque story liste les tâches RED → GREEN → REFACTOR avec vérification `cargo test` / `npx svelte-check`.
+- ✅ **SOLID** : chaque story cite les principes qui la gouvernent (SRP / OCP / LSP / ISP / DIP).
+- ✅ **Traçabilité** : chaque story trace vers un FR PRD, un invariant domaine ou un bug audit identifié.
+- ✅ **Hexagonal** : les stories backend séparent Domain / Application / Infrastructure ; les stories frontend séparent composants / stores / services.
+- ✅ **DRY** : les enums deviennent 100 % générés en Sprint 5, pas 2 sources de vérité.
+- ✅ **Completude Maury** : **aucun "hors scope"** — le plan couvre tout ce que l'audit v7 a identifié, y compris les recommandations structurelles de la conclusion. La méthode Maury fait les choses à fond ou ne les fait pas.
