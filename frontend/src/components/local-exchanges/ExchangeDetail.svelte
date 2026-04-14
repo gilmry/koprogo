@@ -12,7 +12,7 @@
     formatRating,
   } from '../../lib/api/local-exchanges';
   import { toast } from '../../stores/toast';
-  import { formatDateTime } from "../../lib/utils/date.utils";
+  import { formatDateTime, formatDate } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
   export let exchange: LocalExchange;

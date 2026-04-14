@@ -71,16 +71,24 @@
   async function loadDashboardData() {
     try {
       loading = true;
-      const [statsData, buildingsData, unitsData, mandatesData] = await Promise.all([
+      const [statsData, buildingsData, mandatesData] = await Promise.all([
         api.get<OwnerStats>('/stats/owner'),
         api.get<{ data: Building[] }>('/buildings?page=1&per_page=3'),
-        api.get<{ data: Unit[] }>('/units?page=1&per_page=5'),
         api.get<{ mandates: BoardMandate[] }>('/board-members/my-mandates'),
       ]);
       stats = statsData;
       recentBuildings = buildingsData.data;
-      recentUnits = unitsData.data;
       boardMandates = mandatesData.mandates;
+
+      // Load this owner's actual units (not all org units)
+      try {
+        const me = await api.get<{ id: string }>('/owners/me');
+        const ownerships = await api.get<Array<{ unit_id: string }>>(`/owners/${me.id}/units`);
+        const ids = (Array.isArray(ownerships) ? ownerships : []).slice(0, 5).map(o => o.unit_id);
+        recentUnits = await Promise.all(ids.map(id => api.get<Unit>(`/units/${id}`)));
+      } catch {
+        recentUnits = [];
+      }
 
       // Load tickets and notifications (non-blocking)
       try {
