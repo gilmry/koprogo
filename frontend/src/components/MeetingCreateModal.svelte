@@ -9,6 +9,8 @@
   let title = '';
   let meetingType: 'Ordinary' | 'Extraordinary' = 'Ordinary';
   let scheduledDate = '';
+  let location = '';
+  let description = '';
   let buildingId = '';
   let loading = false;
   let error = '';
@@ -24,6 +26,10 @@
       error = 'La date est requise';
       return;
     }
+    if (!location.trim()) {
+      error = 'Le lieu est requis';
+      return;
+    }
     if (!buildingId) {
       error = "Veuillez sélectionner un immeuble";
       return;
@@ -35,6 +41,8 @@
         title: title.trim(),
         meeting_type: meetingType,
         scheduled_date: new Date(scheduledDate).toISOString(),
+        location: location.trim(),
+        description: description.trim() || null,
         building_id: buildingId,
       });
       dispatch('created');
@@ -62,8 +70,8 @@
   aria-modal="true"
   aria-label="Créer une assemblée"
 >
-  <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 p-6">
-    <div class="flex justify-between items-center mb-4">
+  <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] flex flex-col">
+    <div class="flex justify-between items-center p-6 pb-4 border-b">
       <h2 class="text-xl font-bold text-gray-900">Nouvelle assemblée générale</h2>
       <button
         on:click={handleClose}
@@ -76,13 +84,13 @@
       </button>
     </div>
 
+    <form on:submit|preventDefault={handleSubmit} class="flex flex-col flex-1 overflow-hidden">
+      <div class="overflow-y-auto p-6 space-y-4 flex-1">
     {#if error}
       <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
         {error}
       </div>
     {/if}
-
-    <form on:submit|preventDefault={handleSubmit} class="space-y-4">
       <BuildingSelector
         bind:selectedBuildingId={buildingId}
         onSelect={handleBuildingSelect}
@@ -134,7 +142,37 @@
         />
       </div>
 
-      <div class="flex justify-end gap-3 pt-4 border-t">
+      <div>
+        <label for="meeting-location" class="block text-sm font-medium text-gray-700">
+          Lieu <span class="text-red-500">*</span>
+        </label>
+        <input
+          id="meeting-location"
+          type="text"
+          bind:value={location}
+          placeholder="Ex: Salle commune, Résidence du Parc"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          required
+          data-testid="input-meeting-location"
+        />
+      </div>
+
+      <div>
+        <label for="meeting-description" class="block text-sm font-medium text-gray-700">
+          Description
+        </label>
+        <textarea
+          id="meeting-description"
+          bind:value={description}
+          rows="3"
+          placeholder="Optionnel"
+          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          data-testid="input-meeting-description"
+        ></textarea>
+      </div>
+      </div>
+
+      <div class="flex justify-end gap-3 p-6 pt-4 border-t bg-gray-50 rounded-b-lg">
         <button
           type="button"
           on:click={handleClose}

@@ -127,7 +127,7 @@
       'ordinary': $_('meetings.type_ordinary'),
       'extraordinary': $_('meetings.type_extraordinary')
     };
-    return labels[type] || type;
+    return labels[type?.toLowerCase()] || type;
   }
 
   function isUpcoming(date: string): boolean {
