@@ -22,6 +22,8 @@
   export let buildingId: string = "";
   export let requesterId: string;
   export let unitId: string | undefined = undefined;
+  export let onCreated: ((ticket: any) => void) | undefined = undefined;
+  export let onClose: (() => void) | undefined = undefined;
 
   const dispatch = createEventDispatcher();
 
@@ -33,7 +35,7 @@
     title: "",
     description: "",
     priority: TicketPriority.Medium,
-    category: TicketCategory.General,
+    category: TicketCategory.Other,
     requester_id: requesterId,
     unit_id: unitId || undefined,
   };
@@ -68,6 +70,10 @@
   }
 
   async function handleSubmit() {
+    // Defensive: prop may have been assigned after script init under Svelte 5 mount()
+    if (!formData.building_id && buildingId) {
+      formData.building_id = buildingId;
+    }
     if (!validate()) {
       toast.error($_('validation.fixErrors'));
       return;
@@ -76,6 +82,7 @@
     const result = await withErrorHandling({
       action: () => ticketsApi.create({
         ...formData,
+        building_id: formData.building_id || buildingId,
         requester_id: requesterId,
         unit_id: formData.unit_id || undefined,
       }),
@@ -85,6 +92,7 @@
     });
     if (result) {
       dispatch("created", result);
+      onCreated?.(result);
       handleClose();
     }
   }
@@ -96,18 +104,19 @@
       title: "",
       description: "",
       priority: TicketPriority.Medium,
-      category: TicketCategory.General,
+      category: TicketCategory.Other,
       requester_id: requesterId,
       unit_id: unitId || undefined,
     };
     errors = {};
     dispatch("close");
+    onClose?.();
   }
 </script>
 
 <Modal isOpen={open} on:close={handleClose} title={$_('tickets.createTitle')}>
-  <form on:submit|preventDefault={handleSubmit} data-testid="ticket-create-form">
-    <div class="space-y-4">
+  <form on:submit|preventDefault={handleSubmit} data-testid="ticket-create-form" class="-m-6">
+    <div class="space-y-4 p-6 pb-4">
       <!-- Sélecteur d'immeuble -->
       {#if !buildingId}
         <div>
@@ -174,7 +183,6 @@
           { value: TicketPriority.Low, label: $_('tickets.priorities.low') },
           { value: TicketPriority.Medium, label: $_('tickets.priorities.medium') },
           { value: TicketPriority.High, label: $_('tickets.priorities.high') },
-          { value: TicketPriority.Urgent, label: $_('tickets.priorities.urgent') },
           { value: TicketPriority.Critical, label: $_('tickets.priorities.critical') },
         ]}
       />
@@ -187,13 +195,15 @@
         required
         data-testid="ticket-category-select"
         options={[
-          { value: TicketCategory.General, label: $_('tickets.categories.general') },
           { value: TicketCategory.Plumbing, label: $_('tickets.categories.plumbing') },
           { value: TicketCategory.Electrical, label: $_('tickets.categories.electrical') },
           { value: TicketCategory.Heating, label: $_('tickets.categories.heating') },
-          { value: TicketCategory.Cleaning, label: $_('tickets.categories.cleaning') },
+          { value: TicketCategory.CommonAreas, label: $_('tickets.categories.commonAreas') },
+          { value: TicketCategory.Elevator, label: $_('tickets.categories.elevator') },
           { value: TicketCategory.Security, label: $_('tickets.categories.security') },
-          { value: TicketCategory.Emergency, label: $_('tickets.categories.emergency') },
+          { value: TicketCategory.Cleaning, label: $_('tickets.categories.cleaning') },
+          { value: TicketCategory.Landscaping, label: $_('tickets.categories.landscaping') },
+          { value: TicketCategory.Other, label: $_('tickets.categories.other') },
         ]}
       />
 
@@ -209,8 +219,7 @@
       {/if}
     </div>
 
-    <!-- Actions -->
-    <div class="mt-6 flex justify-end space-x-3">
+    <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-end space-x-3">
       <Button type="button" variant="outline" on:click={handleClose} data-testid="ticket-cancel-btn">
         {$_('common.cancel')}
       </Button>

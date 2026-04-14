@@ -76,7 +76,7 @@ import Layout from "../layouts/Layout.astro";
       const auth = get(authStore);
       const userRole = auth.user?.activeRole?.role || auth.user?.role;
       const canManage = userRole === UserRole.SYNDIC || userRole === UserRole.SUPERADMIN;
-      const isContractor = ticket.assigned_contractor_id === auth.user?.id;
+      const isContractor = ticket.assigned_to === auth.user?.id;
 
       // Hide loading
       if (loadingEl) loadingEl.style.display = "none";

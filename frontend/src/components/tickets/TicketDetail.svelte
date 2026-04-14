@@ -131,13 +131,13 @@
           </Button>
         {/if}
 
-        {#if isContractor && ticket.status === TicketStatus.Assigned}
+        {#if (isContractor || canManage) && ticket.status === TicketStatus.Assigned}
           <Button on:click={handleStart} loading={actionLoading} size="sm" data-testid="ticket-start-btn">
             {$_("tickets.start_work")}
           </Button>
         {/if}
 
-        {#if isContractor && ticket.status === TicketStatus.InProgress}
+        {#if (isContractor || canManage) && ticket.status === TicketStatus.InProgress}
           <Button on:click={handleResolve} loading={actionLoading} size="sm" data-testid="ticket-resolve-btn">
             {$_("tickets.mark_resolved")}
           </Button>
@@ -202,7 +202,7 @@
       <div class="space-y-4">
         <div>
           <dt class="text-sm font-medium text-gray-500">{$_("tickets.category")}</dt>
-          <dd class="mt-1 text-sm text-gray-900">{ticket.category}</dd>
+          <dd class="mt-1 text-sm text-gray-900">{$_(`tickets.categories.${ticket.category.charAt(0).toLowerCase() + ticket.category.slice(1)}`)}</dd>
         </div>
 
         <div>
@@ -234,7 +234,7 @@
             {$_("tickets.assigned_contractor")}
           </dt>
           <dd class="mt-1 text-sm text-gray-900">
-            {ticket.assigned_contractor_name || $_("tickets.not_assigned")}
+            {ticket.assigned_to_name || $_("tickets.not_assigned")}
           </dd>
         </div>
 

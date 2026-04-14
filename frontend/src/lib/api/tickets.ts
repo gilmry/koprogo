@@ -17,16 +17,17 @@ export interface CreateTicketDto {
 
 export interface Ticket {
   id: string;
+  organization_id: string;
   building_id: string;
   title: string;
   description: string;
   status: TicketStatus;
   priority: TicketPriority;
   category: TicketCategory;
-  requester_id: string;
+  created_by: string;
   requester_name?: string;
-  assigned_contractor_id?: string;
-  assigned_contractor_name?: string;
+  assigned_to?: string;
+  assigned_to_name?: string;
   unit_id?: string;
   unit_number?: string;
   due_date?: string;
@@ -49,18 +50,19 @@ export enum TicketPriority {
   Low = "Low", // 7 days
   Medium = "Medium", // 3 days
   High = "High", // 24h
-  Urgent = "Urgent", // 4h
-  Critical = "Critical", // 1h
+  Critical = "Critical", // 1h (also covers "urgent")
 }
 
 export enum TicketCategory {
   Plumbing = "Plumbing",
   Electrical = "Electrical",
   Heating = "Heating",
-  Cleaning = "Cleaning",
+  CommonAreas = "CommonAreas",
+  Elevator = "Elevator",
   Security = "Security",
-  General = "General",
-  Emergency = "Emergency",
+  Cleaning = "Cleaning",
+  Landscaping = "Landscaping",
+  Other = "Other",
 }
 
 export interface TicketStatistics {

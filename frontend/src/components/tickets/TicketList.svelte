@@ -41,7 +41,7 @@
     });
   }
 
-  $: filteredTickets = filterAndSearch(tickets, searchQuery, ['title', 'description', 'requester_name', 'assigned_contractor_name'], {
+  $: filteredTickets = filterAndSearch(tickets, searchQuery, ['title', 'description', 'requester_name', 'assigned_to_name'], {
     status: statusFilter,
     priority: priorityFilter,
     category: categoryFilter,
@@ -117,7 +117,6 @@
         >
           <option value="all">{$_("tickets.all_priorities")}</option>
           <option value={TicketPriority.Critical}>{$_("tickets.priority_critical")}</option>
-          <option value={TicketPriority.Urgent}>{$_("tickets.priority_urgent")}</option>
           <option value={TicketPriority.High}>{$_("tickets.priority_high")}</option>
           <option value={TicketPriority.Medium}>{$_("tickets.priority_medium")}</option>
           <option value={TicketPriority.Low}>{$_("tickets.priority_low")}</option>
@@ -132,13 +131,15 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">{$_("tickets.all_categories")}</option>
-          <option value={TicketCategory.Plumbing}>{$_("tickets.category_plumbing")}</option>
-          <option value={TicketCategory.Electrical}>{$_("tickets.category_electrical")}</option>
-          <option value={TicketCategory.Heating}>{$_("tickets.category_heating")}</option>
-          <option value={TicketCategory.Cleaning}>{$_("tickets.category_cleaning")}</option>
-          <option value={TicketCategory.Security}>{$_("tickets.category_security")}</option>
-          <option value={TicketCategory.General}>{$_("tickets.category_general")}</option>
-          <option value={TicketCategory.Emergency}>{$_("tickets.category_emergency")}</option>
+          <option value={TicketCategory.Plumbing}>{$_("tickets.categories.plumbing")}</option>
+          <option value={TicketCategory.Electrical}>{$_("tickets.categories.electrical")}</option>
+          <option value={TicketCategory.Heating}>{$_("tickets.categories.heating")}</option>
+          <option value={TicketCategory.CommonAreas}>{$_("tickets.categories.commonAreas")}</option>
+          <option value={TicketCategory.Elevator}>{$_("tickets.categories.elevator")}</option>
+          <option value={TicketCategory.Security}>{$_("tickets.categories.security")}</option>
+          <option value={TicketCategory.Cleaning}>{$_("tickets.categories.cleaning")}</option>
+          <option value={TicketCategory.Landscaping}>{$_("tickets.categories.landscaping")}</option>
+          <option value={TicketCategory.Other}>{$_("tickets.categories.other")}</option>
         </select>
       </div>
     </div>
@@ -184,15 +185,15 @@
               <div class="flex items-center space-x-4 text-sm text-gray-500">
                 <span>#{ticket.id.slice(0, 8)}</span>
                 <span>{$_("tickets.requester")}: {ticket.requester_name || $_("common.unknown")}</span>
-                {#if ticket.assigned_contractor_name}
+                {#if ticket.assigned_to_name}
                   <span>
-                    {$_("tickets.assigned_to")}: {ticket.assigned_contractor_name}
+                    {$_("tickets.assigned_to")}: {ticket.assigned_to_name}
                   </span>
                 {/if}
                 {#if ticket.unit_number}
                   <span>{$_("tickets.unit")}: {ticket.unit_number}</span>
                 {/if}
-                <span>{$_("tickets.category")}: {ticket.category}</span>
+                <span>{$_("tickets.category")}: {$_(`tickets.categories.${ticket.category.charAt(0).toLowerCase() + ticket.category.slice(1)}`)}</span>
                 {#if ticket.due_date}
                   <span>{$_("tickets.due")}: {formatDateTime(ticket.due_date)}</span>
                 {/if}
