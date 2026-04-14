@@ -164,6 +164,21 @@
     loading = true;
     error = '';
 
+    // Defensive: Svelte 5 mount() can assign props after script init, leaving
+    // selectedBuildingId empty even when buildingId prop was provided.
+    if (!selectedBuildingId && buildingId) {
+      selectedBuildingId = buildingId;
+    }
+    if (!selectedBuildingId) {
+      if (buildings.length === 0) {
+        error = $_('invoices.select_building') || 'Veuillez sélectionner un immeuble.';
+      } else {
+        error = $_('invoices.select_building') || 'Veuillez sélectionner un immeuble dans la liste.';
+      }
+      loading = false;
+      return;
+    }
+
     // Validation
     if (mode === 'simple') {
       if (!description.trim()) {
@@ -264,8 +279,8 @@
   <form on:submit|preventDefault={handleSubmit}>
     {#if mode === 'simple'}
       <!-- Simple Mode: Single Amount -->
-      <!-- Building Selector (if no buildingId provided) -->
-      {#if (!buildingId || buildingId === '') && buildings.length > 0}
+      <!-- Building Selector (shown whenever the form needs to pick one) -->
+      {#if buildings.length > 0 && !buildingId}
       <div class="form-group">
         <label for="buildingSelect">{$_('common.building')} *</label>
         <select id="buildingSelect" bind:value={selectedBuildingId} disabled={loading} required data-testid="building-select">

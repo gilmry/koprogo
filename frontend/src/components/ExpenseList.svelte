@@ -92,12 +92,12 @@
 
   function getStatusBadge(status: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
-      'Paid': { class: 'bg-green-100 text-green-800', label: $_('expenses.statuses.paid') },
-      'Pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.statuses.pending') },
-      'Overdue': { class: 'bg-red-100 text-red-800', label: $_('expenses.statuses.overdue') },
-      'Cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.statuses.cancelled') }
+      'paid': { class: 'bg-green-100 text-green-800', label: $_('expenses.statuses.paid') },
+      'pending': { class: 'bg-yellow-100 text-yellow-800', label: $_('expenses.statuses.pending') },
+      'overdue': { class: 'bg-red-100 text-red-800', label: $_('expenses.statuses.overdue') },
+      'cancelled': { class: 'bg-gray-100 text-gray-800', label: $_('expenses.statuses.cancelled') }
     };
-    return badges[status] || { class: 'bg-gray-100 text-gray-800', label: status };
+    return badges[status?.toLowerCase()] || { class: 'bg-gray-100 text-gray-800', label: status };
   }
 
   function getApprovalBadge(approvalStatus: string): { class: string; label: string; emoji: string } {
@@ -170,7 +170,7 @@
                 {/if}
               </div>
               <p class="text-gray-600 text-sm">
-                📁 {expense.category}
+                📁 {$_(`invoices.category_${expense.category?.toLowerCase()}`) || expense.category}
               </p>
               <p class="text-gray-500 text-sm">
                 📅 {formatDate(expense.expense_date)}
