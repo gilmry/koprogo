@@ -5,6 +5,7 @@
     resolutionsApi,
     type Resolution,
     MajorityType,
+    ResolutionType,
   } from '../../lib/api/resolutions';
   import { toast } from '../../stores/toast';
   import { withErrorHandling } from '../../lib/utils/error.utils';
@@ -15,8 +16,8 @@
 
   let title = '';
   let description = '';
-  let resolutionType = 'standard';
-  let majorityRequired: MajorityType = MajorityType.Simple;
+  let resolutionType: ResolutionType = ResolutionType.Ordinary;
+  let majorityRequired: MajorityType = MajorityType.Absolute;
   let loading = false;
 
   async function handleSubmit() {
@@ -40,8 +41,8 @@
         dispatch('created', resolution);
         title = '';
         description = '';
-        resolutionType = 'standard';
-        majorityRequired = MajorityType.Simple;
+        resolutionType = ResolutionType.Ordinary;
+        majorityRequired = MajorityType.Absolute;
       },
     });
   }
@@ -91,12 +92,8 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           data-testid="resolution-type-select"
         >
-          <option value="standard">{$_("resolutions.create.typeStandard")}</option>
-          <option value="budget">{$_("resolutions.create.typeBudget")}</option>
-          <option value="works">{$_("resolutions.create.typeWorks")}</option>
-          <option value="rules">{$_("resolutions.create.typeRules")}</option>
-          <option value="election">{$_("resolutions.create.typeElection")}</option>
-          <option value="other">{$_("common.other")}</option>
+          <option value={ResolutionType.Ordinary}>{$_("resolutions.create.typeOrdinary")}</option>
+          <option value={ResolutionType.Extraordinary}>{$_("resolutions.create.typeExtraordinary")}</option>
         </select>
       </div>
 
@@ -110,9 +107,10 @@
           class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           data-testid="resolution-majority-select"
         >
-          <option value={MajorityType.Simple}>{$_("resolutions.create.majoritySimple")}</option>
           <option value={MajorityType.Absolute}>{$_("resolutions.create.majorityAbsolute")}</option>
-          <option value={MajorityType.Qualified}>{$_("resolutions.create.majorityQualified")}</option>
+          <option value={MajorityType.TwoThirds}>{$_("resolutions.create.majorityTwoThirds")}</option>
+          <option value={MajorityType.FourFifths}>{$_("resolutions.create.majorityFourFifths")}</option>
+          <option value={MajorityType.Unanimity}>{$_("resolutions.create.majorityUnanimity")}</option>
         </select>
       </div>
     </div>

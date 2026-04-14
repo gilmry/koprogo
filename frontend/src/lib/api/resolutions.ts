@@ -37,9 +37,15 @@ export interface Resolution {
 }
 
 export enum MajorityType {
-  Simple = "simple",
   Absolute = "absolute",
-  Qualified = "qualified",
+  TwoThirds = "two_thirds",
+  FourFifths = "four_fifths",
+  Unanimity = "unanimity",
+}
+
+export enum ResolutionType {
+  Ordinary = "ordinary",
+  Extraordinary = "extraordinary",
 }
 
 export enum ResolutionStatus {

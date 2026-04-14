@@ -9,6 +9,7 @@
     ResolutionStatus,
     MajorityType,
   } from '../../lib/api/resolutions';
+  import { api } from '../../lib/api';
   import { toast } from '../../stores/toast';
   import ResolutionStatusBadge from './ResolutionStatusBadge.svelte';
   import { formatDateTime } from '../../lib/utils/date.utils';
@@ -28,6 +29,32 @@
   let submittingVote = false;
   let closingVoting = false;
 
+  let myOwnerId: string = '';
+  let myUnits: Array<{ unit_id: string; unit_number?: string }> = [];
+  let selectedUnitId: string = '';
+
+  onMount(async () => {
+    try {
+      const me = await api.get<{ id: string }>('/owners/me');
+      myOwnerId = me.id;
+      const ownerships = await api.get<Array<{ unit_id: string }>>(`/owners/${myOwnerId}/units`);
+      const enriched = await Promise.all(
+        (Array.isArray(ownerships) ? ownerships : []).map(async (o) => {
+          try {
+            const u = await api.get<{ unit_number?: string }>(`/units/${o.unit_id}`);
+            return { unit_id: o.unit_id, unit_number: u.unit_number };
+          } catch {
+            return { unit_id: o.unit_id };
+          }
+        })
+      );
+      myUnits = enriched;
+      if (myUnits.length > 0) selectedUnitId = myUnits[0].unit_id;
+    } catch {
+      // Non-owner user (e.g. syndic) — voting not applicable
+    }
+  });
+
   $: canVote = resolution.status === ResolutionStatus.Pending && meetingStatus === 'Scheduled';
   $: isClosed = resolution.status !== ResolutionStatus.Pending;
   // Utiliser les champs backend (vote_count_*) avec fallback sur les anciens noms
@@ -39,9 +66,10 @@
 
   function getMajorityLabel(type: MajorityType): string {
     switch (type) {
-      case MajorityType.Simple: return $_("resolutions.vote.majoritySimple");
-      case MajorityType.Absolute: return $_("resolutions.vote.majorityAbsolute");
-      case MajorityType.Qualified: return $_("resolutions.vote.majorityQualified");
+      case MajorityType.Absolute: return $_("resolutions.create.majorityAbsolute");
+      case MajorityType.TwoThirds: return $_("resolutions.create.majorityTwoThirds");
+      case MajorityType.FourFifths: return $_("resolutions.create.majorityFourFifths");
+      case MajorityType.Unanimity: return $_("resolutions.create.majorityUnanimity");
       default: return type;
     }
   }
@@ -69,10 +97,15 @@
       toast.error($_("resolutions.vote.selectVote"));
       return;
     }
+    if (!myOwnerId || !selectedUnitId) {
+      toast.error($_("resolutions.vote.needOwnerAndUnit"));
+      return;
+    }
 
     await withErrorHandling({
       action: () => resolutionsApi.castVote(resolution.id, {
-        owner_id: undefined,
+        owner_id: myOwnerId,
+        unit_id: selectedUnitId,
         choice: voteChoice!,
         voting_power: votingPower,
         proxy_owner_id: proxyOwnerId || undefined,
@@ -217,6 +250,24 @@
           {$_("resolutions.vote.abstain")}
         </button>
       </div>
+
+      {#if myUnits.length > 1}
+        <div class="mb-3">
+          <label for="unit-{resolution.id}" class="block text-xs font-medium text-gray-700 mb-1">
+            {$_("resolutions.vote.unitLabel")}
+          </label>
+          <select
+            id="unit-{resolution.id}"
+            bind:value={selectedUnitId}
+            class="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            data-testid="vote-unit-select"
+          >
+            {#each myUnits as u (u.unit_id)}
+              <option value={u.unit_id}>{$_("tickets.unit")} {u.unit_number || u.unit_id.slice(0, 8)}</option>
+            {/each}
+          </select>
+        </div>
+      {/if}
 
       <div class="grid grid-cols-2 gap-3 mb-3">
         <div>
