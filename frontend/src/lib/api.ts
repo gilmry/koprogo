@@ -85,13 +85,36 @@ export async function apiFetch<T = any>(
       // Body unreadable, keep default message
     }
 
+    // Mask raw DB / internal errors — never expose Postgres errors to end users
+    const raw = errorMessage.toLowerCase();
+    if (
+      raw.includes("database error") ||
+      raw.includes("fkey") ||
+      raw.includes("constraint") ||
+      raw.includes("sqlx") ||
+      raw.includes("postgres")
+    ) {
+      errorMessage = `Une erreur est survenue (${response.status}). Merci de réessayer ou de contacter le support.`;
+    }
+
     // Toast automatique selon le code HTTP
     if (response.status === 429) {
       toast.error("Trop de tentatives. Réessayez dans 15 minutes.");
     } else if (response.status >= 500) {
       toast.error("Erreur serveur. Veuillez réessayer.");
     } else if (response.status === 401) {
-      toast.warning("Session expirée. Veuillez vous reconnecter.");
+      // Clear stale token and dedupe toast across parallel 401s
+      if (typeof window !== "undefined") {
+        const hadToken = localStorage.getItem("koprogo_token");
+        localStorage.removeItem("koprogo_token");
+        if (hadToken && !(window as any).__koprogo_session_expired_shown__) {
+          (window as any).__koprogo_session_expired_shown__ = true;
+          toast.warning("Session expirée. Veuillez vous reconnecter.");
+          setTimeout(() => {
+            (window as any).__koprogo_session_expired_shown__ = false;
+          }, 5000);
+        }
+      }
     } else if (response.status === 403) {
       toast.warning(
         "Accès refusé. Vous n'avez pas les permissions nécessaires.",
