@@ -11,6 +11,8 @@
     "astro": "astro",
     "generate:config": "node scripts/generate-config.js",
     "format": "prettier --write .",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
     "test:e2e": "playwright test --project=chromium",
     "test:e2e:ui": "playwright test --project=chromium --ui",
     "test:e2e:headed": "playwright test --project=chromium --headed",
@@ -44,12 +46,16 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
     "@playwright/test": "^1.58.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/svelte": "^5.3.1",
     "@types/node": "^25.5.0",
     "@vite-pwa/astro": "^1.2.0",
+    "jsdom": "^29.0.2",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.1",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-svelte": "^3.4.1",
+    "vitest": "^4.1.4",
     "workbox-window": "^7.4.0"
   },
   "overrides": {
