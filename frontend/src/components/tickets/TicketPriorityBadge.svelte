@@ -1,8 +1,9 @@
 <script lang="ts">
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
   import { TicketPriority } from "../../lib/api/tickets";
   import { _ } from "../../lib/i18n";
 
-  export let priority: TicketPriority;
+  let { priority }: { priority: TicketPriority } = $props();
 
   const priorityColors: Record<TicketPriority, { bg: string; text: string; key: string; icon: string }> = {
     [TicketPriority.Critical]: { bg: "bg-red-100", text: "text-red-800", key: "tickets.priorities.critical", icon: "🔴" },
@@ -11,7 +12,7 @@
     [TicketPriority.Low]: { bg: "bg-gray-100", text: "text-gray-800", key: "tickets.priorities.low", icon: "⚪" },
   };
 
-  $: config = priorityColors[priority] || priorityColors[TicketPriority.Medium];
+  let config = $derived(priorityColors[priority] || priorityColors[TicketPriority.Medium]);
 </script>
 
 <span

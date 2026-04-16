@@ -1,8 +1,9 @@
 <script lang="ts">
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-601 pilot)
   import { TicketStatus } from "../../lib/api/tickets";
   import { _ } from "../../lib/i18n";
 
-  export let status: TicketStatus;
+  let { status }: { status: TicketStatus } = $props();
 
   const statusColors: Record<TicketStatus, { bg: string; text: string; key: string }> = {
     [TicketStatus.Open]: { bg: "bg-blue-100", text: "text-blue-800", key: "tickets.statuses.open" },
@@ -12,7 +13,7 @@
     [TicketStatus.Cancelled]: { bg: "bg-red-100", text: "text-red-800", key: "tickets.statuses.cancelled" },
   };
 
-  $: config = statusColors[status] || statusColors[TicketStatus.Open];
+  let config = $derived(statusColors[status] || statusColors[TicketStatus.Open]);
 </script>
 
 <span
