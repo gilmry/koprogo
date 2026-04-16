@@ -610,11 +610,113 @@ Scenario: Les toasts différents coexistent
 
 ---
 
+## Epic P7-6a : Frontend test coverage gate (prérequis migration runes) | MUST HAVE
+
+**Motivation** : l'audit de la couverture de test révèle une situation critique :
+
+| Couche | Couverture |
+|---|---|
+| Frontend component unit tests | **0** (aucun vitest/jest) |
+| Playwright E2E specs | 51 specs → ~50 composants couverts / 178 total |
+| Composants SANS test | **~127** (modals, shared UI, forms, workflows) |
+| Safety net `astro check` | Type errors uniquement, pas de regression comportementale |
+
+**INVARIANT MAURY : aucun composant n'est migré vers les runes sans un test E2E qui passe en vert AVANT et APRÈS la migration.** Migrer 178 composants sans filet c'est de la roulette russe — exactement l'inverse de la philosophie BDD/TDD.
+
+### Story P7-6a.1 : Setup vitest + @testing-library/svelte pour tests composants
+
+- **ID** : STORY-P7-6a01 | **Type** : Infra | **Taille** : S
+- **Bounded Context DDD** : Frontend / Testing infrastructure
+- **Invariants** : INV-test-infra "Un `npm run test:unit` existe et retourne exit 0 avant de commencer la migration".
+- **User Story** : En tant que développeur, je veux pouvoir écrire des tests unitaires de composants Svelte avec vitest + @testing-library/svelte pour tester les modals et forms en isolation (pas seulement via Playwright qui est lent et fragile).
+- **Taches techniques TDD** :
+  1. [ ] `npm install -D vitest @testing-library/svelte jsdom @testing-library/jest-dom`
+  2. [ ] Créer `frontend/vitest.config.ts` avec environment jsdom + Svelte plugin.
+  3. [ ] Ajouter script `"test:unit": "vitest run"` dans package.json.
+  4. [ ] Écrire 1 test smoke `frontend/src/components/ui/Button.test.ts` qui monte le composant + vérifie qu'il rend.
+  5. [ ] Ajouter `npm run test:unit` au `make test` et à la CI `.github/workflows/ci.yml`.
+  6. [ ] Commit : `feat(test): setup vitest + @testing-library/svelte for component unit tests`.
+- **Dependances** : aucune.
+- **Fichiers** : `frontend/vitest.config.ts` (nouveau), `frontend/package.json` (+ deps + script), `frontend/src/components/ui/Button.test.ts` (nouveau), `.github/workflows/ci.yml`.
+
+### Story P7-6a.2 : Tests unitaires pour les 20+ composants modals (non couverts par Playwright)
+
+- **ID** : STORY-P7-6a02 | **Type** : Test | **Taille** : L
+- **Bounded Context DDD** : Frontend / Modals
+- **Invariants** : INV-modal-tested "Tout composant *Modal.svelte ou *Form.svelte a au moins 1 test unitaire qui vérifie : (a) le rendu initial avec props par défaut, (b) la soumission avec données valides dispatch/callback, (c) la validation bloque les données invalides".
+- **User Story** : En tant que développeur qui va migrer ces composants vers les runes, je veux un filet de sécurité unitaire AVANT de toucher au code.
+- **Composants cibles** (~20 non couverts par Playwright) :
+  - `TicketCreateModal`, `TicketAssignModal`
+  - `MeetingCreateModal`
+  - `InvoiceForm`, `InvoiceLineItems`
+  - `ResolutionCreateForm`, `ResolutionVotePanel`
+  - `OrganizationForm`, `BuildingForm`, `UserForm`
+  - `NoticeCreateModal`, `ExchangeRequestModal`
+  - `PollCreateForm` (CreatePollForm.svelte)
+  - `BudgetCreateForm`, `CallForFundsForm`
+  - `OwnerCreateModal`, `OwnerEditModal`, `UnitOwnerAddModal`
+  - `SkillOfferModal`, `SharedObjectCreateModal`, `BookingModal`
+- **Taches techniques TDD** :
+  1. [ ] Pour chaque composant : écrire `ComponentName.test.ts` adjacent au fichier .svelte.
+  2. [ ] Pattern de test :
+     ```ts
+     import { render, screen, fireEvent } from '@testing-library/svelte';
+     import Component from './Component.svelte';
+     
+     test('renders with default props', () => {
+       render(Component, { props: { open: true, ... } });
+       expect(screen.getByTestId('...')).toBeInTheDocument();
+     });
+     
+     test('submit dispatches with valid data', async () => {
+       const { component } = render(Component, { props: { ... } });
+       const handler = vi.fn();
+       component.$on('created', handler);
+       await fireEvent.click(screen.getByTestId('submit-btn'));
+       expect(handler).toHaveBeenCalled();
+     });
+     ```
+  3. [ ] Viser 3-5 tests par composant (render, submit valid, submit invalid, close, edge cases).
+  4. [ ] `npm run test:unit` doit passer à 60+ tests.
+  5. [ ] Commits par domaine : `test(tickets): unit tests for TicketCreateModal + TicketAssignModal`.
+- **Dependances** : STORY-P7-6a01.
+- **Fichiers** : ~20 fichiers `*.test.ts` nouveaux.
+
+### Story P7-6a.3 : Tests unitaires pour les composants shared UI (Pagination, Navigation, etc.)
+
+- **ID** : STORY-P7-6a03 | **Type** : Test | **Taille** : M
+- **Bounded Context DDD** : Frontend / Shared UI
+- **Composants cibles** (~15 non couverts) :
+  - `Pagination.svelte`, `Navigation.svelte`, `LanguageSelector.svelte`
+  - `Modal.svelte`, `Button.svelte`, `FormInput.svelte`, `FormSelect.svelte`, `FormTextarea.svelte`
+  - `ConfirmDialog.svelte`, `ProfilePanel.svelte`, `BuildingSelector.svelte`
+  - `NotificationBell.svelte`, `RouteGuard.svelte`, `VersionBadge.svelte`
+- **Taches** : même pattern que P7-6a02 mais axé sur les composants de base.
+- **Dependances** : STORY-P7-6a01.
+- **Fichiers** : ~15 fichiers `*.test.ts` nouveaux.
+
+### Story P7-6a.4 : Cartographie coverage Playwright → composants (matrice traçabilité)
+
+- **ID** : STORY-P7-6a04 | **Type** : Docs | **Taille** : S
+- **Bounded Context DDD** : Frontend / QA
+- **User Story** : En tant que développeur, je veux un fichier `docs/TEST_COVERAGE_MATRIX.md` qui mappe chaque composant `.svelte` à son/ses test(s) (unit + E2E) pour savoir exactement ce qui est couvert et ce qui est risqué à migrer.
+- **Taches** :
+  1. [ ] Script `scripts/coverage-matrix.sh` qui liste tous les composants .svelte et grep les specs E2E + tests unitaires qui les référencent.
+  2. [ ] Générer `docs/TEST_COVERAGE_MATRIX.md` avec colonnes : Composant | Unit test | E2E spec | Migration safe?.
+  3. [ ] Les composants avec 0 test dans les 2 colonnes sont marqués "DANGER — NE PAS MIGRER SANS TEST".
+  4. [ ] Commit : `docs(test): add component test coverage matrix`.
+- **Dependances** : STORY-P7-6a02, STORY-P7-6a03.
+- **Fichiers** : `scripts/coverage-matrix.sh` (nouveau), `docs/TEST_COVERAGE_MATRIX.md` (nouveau).
+
+---
+
 ## Epic P7-6 : Svelte 5 runes migration (178 composants) | SHOULD HAVE
 
 **Motivation** : le projet tourne en **Svelte 5 legacy mode** (`export let` + `$:` + `createEventDispatcher`) au lieu des runes modernes (`$state`, `$props`, `$derived`, `$effect`). Ce mode legacy est la cause directe du bug B3-v7 (building_id perdu parce que `let formData = { building_id: buildingId }` capture le prop **avant** que `mount()` ne l'assigne). La migration vers les runes élimine cette classe entière de bugs de "race d'initialisation" et aligne le code avec l'évolution upstream du framework.
 
-**Stratégie** : migration par vagues. Commencer par un composant pilote pour valider la compatibilité avec Astro islands, puis batcher par domaine fonctionnel. Chaque story est un commit atomique et la suite de tests (unitaire + Playwright E2E) doit rester verte entre chaque.
+**Prérequis strict** : **Epic P7-6a DOIT être terminé avant de commencer toute migration.** L'invariant Maury est : "RED avant GREEN" — les tests unitaires et la matrice de coverage constituent le RED, la migration est le GREEN.
+
+**Stratégie** : migration par vagues. Commencer par un composant pilote pour valider la compatibilité avec Astro islands, puis batcher par domaine fonctionnel. Chaque story est un commit atomique et **les tests unitaires + Playwright E2E doivent tous passer en vert entre chaque commit**.
 
 **Coverage cible** : 100 % des 178 composants `.svelte` migrés. Pas de mode hybride en fin de parcours.
 
@@ -1120,8 +1222,13 @@ Scenario: Un contractor ne peut PAS voter aux AG
 | P7-4 | STORY-P7-403 Back to Tickets i18n | XS | FR-011 | B19 | — | PENDING |
 | **P7-5 Testing hygiene** | | | | | | |
 | P7-5 | STORY-P7-501 doc Svelte 5 | XS | — | B16 | — | PENDING |
+| **P7-6a Frontend test coverage gate** | | | | | | |
+| P7-6a | STORY-P7-6a01 setup vitest + @testing-library/svelte | S | transverse | — (filet) | — | PENDING |
+| P7-6a | STORY-P7-6a02 tests unitaires 20+ modals/forms | L | transverse | — | P7-6a01 | PENDING |
+| P7-6a | STORY-P7-6a03 tests unitaires 15 shared UI | M | transverse | — | P7-6a01 | PENDING |
+| P7-6a | STORY-P7-6a04 matrice coverage composants | S | transverse | — | P7-6a02, P7-6a03 | PENDING |
 | **P7-6 Svelte 5 runes migration** | | | | | | |
-| P7-6 | STORY-P7-601 pilote TicketCreateModal | M | transverse | prévention B3-v7 | P7-501 | PENDING |
+| P7-6 | STORY-P7-601 pilote TicketCreateModal | M | transverse | prévention B3-v7 | **P7-6a complet**, P7-501 | PENDING |
 | P7-6 | STORY-P7-602 tickets (6) | M | transverse | — | P7-601 | PENDING |
 | P7-6 | STORY-P7-603 meetings (7) | M | FR-004 | — | P7-601, P7-302 | PENDING |
 | P7-6 | STORY-P7-604 resolutions (4) | S | FR-008 | — | P7-601 | PENDING |
@@ -1155,120 +1262,143 @@ Scenario: Un contractor ne peut PAS voter aux AG
 
 **Total effort estimé** (T-shirt sizing) :
 - XS (≤ 1h) : 5 stories → 5h
-- S (1-3h) : 17 stories → 34-51h
-- M (3-6h) : 12 stories → 36-72h
-- L (6-12h) : 7 stories → 42-84h
+- S (1-3h) : 21 stories → 42-63h
+- M (3-6h) : 14 stories → 42-84h
+- L (6-12h) : 9 stories → 54-108h
 - XL (12-24h) : 2 stories → 24-48h
 
-**Fourchette totale** : **141-260h** (18-32 jours ETP à temps plein, réalistement ~6 semaines pour un dev seul avec contexte switching).
+**Fourchette totale** : **167-308h** (21-38 jours ETP, ~7-8 semaines pour un dev seul).
+**Note** : l'Epic P7-6a (test coverage gate) ajoute ~24-48h mais réduit le risque de régression de la migration runes de "élevé" à "maîtrisé". C'est un investissement qui paie dès le premier composant migré.
 
 ---
 
 ## Ordre d'exécution recommandé (programme post-audit complet)
 
-Découpage en **6 sprints** (1 semaine chacun), avec priorité ordonnancée par criticité métier et dépendances techniques.
+Découpage en **8 sprints** (1 semaine chacun), avec priorité ordonnancée par criticité métier et dépendances techniques. **Sprint 3 (test coverage gate) est le pivot** : il construit le filet de sécurité qui rend les Sprints 4-7 (runes migration) viables.
 
-### Sprint 1 — Fondation type-safety + ticket UX (semaine 1)
-
-```
-Jour 1-2 : Type-gen pipeline
-├─ STORY-P7-101  openapi-export bin                     [S]
-├─ STORY-P7-102  annotations DTO critiques              [M]
-├─ STORY-P7-104  CI guard                               [S]
-└─ STORY-P7-103  re-exports 3 wrappers                  [S]
-
-Jour 3   : Seed cleanup (débloque tests)
-├─ STORY-P7-802  migration cleanup pollution            [S]
-├─ STORY-P7-801  seed idempotent                        [S]
-└─ STORY-P7-803  make seed-reset                        [XS]
-
-Jour 4   : Meeting governance (B4 + B18)
-├─ STORY-P7-301  canManage gating                       [S]
-└─ STORY-P7-302  QuorumPanel                            [M]
-
-Jour 5   : UX polish + docs (bugs cosmétiques)
-├─ STORY-P7-402  toast dedup + auto-close               [S]
-├─ STORY-P7-401  error i18n map                         [S]
-├─ STORY-P7-403  Back to Tickets i18n                   [XS]
-└─ STORY-P7-501  doc Svelte 5                           [XS]
-```
-
-Fin Sprint 1 : **prompt cowork v8** — valider Epics P7-1, P7-3, P7-4, P7-5, P7-8 + acquis de la session actuelle.
-
-### Sprint 2 — Contractor domain + ticket assignment (semaine 2)
+### Sprint 1 — Fondation type-safety + meeting governance ✅ DONE
 
 ```
-Jour 1-2 : Contractor domain (base)
-├─ STORY-P7-1001 domain UserRole::Contractor + migration [M]
-└─ STORY-P7-203  seed (transformé en contractors)       [XS]
-
-Jour 3-4 : Contractor UI
-├─ STORY-P7-1002 CRUD pages                             [M]
-└─ STORY-P7-1005 alerte assurance                       [S]
-
-Jour 5   : Ticket assignment avec contractors
-├─ STORY-P7-201  GET assignable-users (étendu)          [S]
-├─ STORY-P7-202  dropdown modal                         [S]
-└─ STORY-P7-1003 ticket assign refonte contractor       [S]
+STORY-P7-101  openapi-export bin                        [S] ✅
+STORY-P7-102  annotations DTO critiques                 [M] ✅
+STORY-P7-104  CI guard (Makefile done, CI TBD)          [S] ✅
+STORY-P7-103  re-exports 3 wrappers                     [S] ✅
+STORY-P7-301  canManage gating                          [S] ✅
+STORY-P7-302  QuorumPanel                               [M] ✅
+STORY-P7-401  error i18n map                            [S] ✅
+STORY-P7-402  toast dedup                               [S] ✅
+STORY-P7-403  Back to Tickets i18n                      [XS] ✅
+STORY-P7-501  doc Svelte 5                              [XS] ✅
 ```
 
-Fin Sprint 2 : **prompt cowork v9** — valider P7-2 + P7-10 partiel.
-
-### Sprint 3 — Svelte 5 runes migration (vague 1) (semaine 3)
+### Sprint 2 — Contractor domain + ticket assignment ✅ DONE
 
 ```
-Jour 1   : Pilote + doc
+STORY-P7-1001 domain UserRole::Contractor + migration   [M] ✅
+STORY-P7-203  seed 2 contractors (Marc + Sophie)        [XS] ✅
+STORY-P7-201  GET /tickets/assignable-users             [S] ✅
+STORY-P7-202  dropdown modal                            [S] ✅
+```
+
+### Sprint 3 — TEST COVERAGE GATE (semaine 3) ← NOUVEAU, CRITIQUE
+
+Le sprint le plus important du plan. **Aucune migration runes ne commence sans ce filet.**
+
+```
+Jour 1   : Setup testing infrastructure
+└─ STORY-P7-6a01 vitest + @testing-library/svelte       [S]
+
+Jour 2-3 : Tests unitaires modals + forms (le plus gros gap)
+└─ STORY-P7-6a02 ~20 composants × 3-5 tests = 60-100 tests [L]
+
+Jour 4   : Tests unitaires shared UI
+└─ STORY-P7-6a03 ~15 composants × 2-3 tests = 30-45 tests  [M]
+
+Jour 5   : Matrice de couverture + gate CI
+└─ STORY-P7-6a04 docs/TEST_COVERAGE_MATRIX.md            [S]
+```
+
+Fin Sprint 3 : `npm run test:unit` retourne **90+ tests green**. Chaque composant qui va être migré a au moins 1 test unitaire qui prouve son comportement AVANT migration. La matrice permet de décider quels composants sont "safe" et lesquels nécessitent des tests supplémentaires.
+
+**Gate d'entrée Sprint 4** : `docs/TEST_COVERAGE_MATRIX.md` montre 0 composant marqué "DANGER" dans les modules à migrer en Sprint 4.
+
+### Sprint 4 — Svelte 5 runes migration vague 1 (semaine 4)
+
+**Prérequis strict** : Sprint 3 terminé. Chaque step de migration suit le cycle :
+1. `npm run test:unit` → vert (baseline)
+2. Migrer le composant vers runes
+3. `npm run test:unit` + `npx svelte-check` → vert (pas de régression)
+4. Commit atomique
+
+```
+Jour 1   : Pilote + doc migration
 ├─ STORY-P7-601  pilote TicketCreateModal               [M]
 
-Jour 2-5 : Migration dirigée par domaine
+Jour 2-5 : Migration dirigée par domaine (composants testés)
 ├─ STORY-P7-602  tickets (6 composants)                 [M]
 ├─ STORY-P7-603  meetings (7 composants)                [M]
 ├─ STORY-P7-604  resolutions (4 composants)             [S]
 └─ STORY-P7-605  expenses (5 composants)                [M]
 ```
 
-Fin Sprint 3 : **prompt cowork v10** — aucune régression sur les 4 modules migrés.
+Fin Sprint 4 : **prompt cowork v8** — valider que les 4 modules migrés passent tous les tests unitaires + Playwright E2E.
 
-### Sprint 4 — Svelte 5 runes migration (vague 2) + Contractor advanced (semaine 4)
+### Sprint 5 — Svelte 5 runes migration vague 2 + Contractor advanced (semaine 5)
 
-```
-Jour 1-3 : Runes vague 2
+```text
+Jour 1-3 : Runes vague 2 (composants testés en Sprint 3)
 ├─ STORY-P7-606  community polls/notices/SEL (15)       [L]
 └─ STORY-P7-607  admin + dashboards + nav (20)          [L]
 
-Jour 4-5 : Contractor ratings + portfolio
-└─ STORY-P7-1004 ratings + portfolio                    [L]
+Jour 4-5 : Contractor features avancées
+├─ STORY-P7-1002 CRUD pages contractors                 [M]
+├─ STORY-P7-1003 ticket assignment refonte contractor   [S]
+├─ STORY-P7-1004 ratings + portfolio                    [L]
+└─ STORY-P7-1005 alerte assurance expirée               [S]
 ```
 
-### Sprint 5 — utoipa 100 % + runes vague 3 (semaine 5)
+### Sprint 6 — Runes vague 3 (script codemod) + utoipa extension (semaine 6)
 
-```
-Jour 1-2 : utoipa extension
+```text
+Jour 1-2 : Runes vague 3 (130+ composants restants)
+├─ STORY-P7-608  script codemod semi-auto               [XL]
+└─ STORY-P7-609  cleanup legacy (grep 0 match)          [S]
+
+Jour 3-5 : utoipa extension
 ├─ STORY-P7-701  DTO 41 restants                        [L]
 └─ STORY-P7-702  entités 54                             [L]
-
-Jour 3-5 : Runes vague 3 (script semi-auto)
-├─ STORY-P7-608  restants 130+ composants               [XL]
-└─ STORY-P7-609  cleanup legacy                         [S]
 ```
 
-### Sprint 6 — utoipa finale + accessibilité (semaine 6)
+### Sprint 7 — utoipa handlers + frontend wrappers (semaine 7)
 
+```text
+Jour 1-3 : utoipa handlers (421 endpoints)
+├─ STORY-P7-703  annotations par module                 [XL]
+
+Jour 4-5 : Frontend wrappers migration
+├─ STORY-P7-704  22 wrappers restants → api.d.ts        [L]
+└─ STORY-P7-705  CI guard "no export enum"              [S]
 ```
-Jour 1-2 : utoipa handlers + garde
-├─ STORY-P7-703  handlers 421 annotations               [XL]
-├─ STORY-P7-704  wrappers 22 migrés                     [L]
-└─ STORY-P7-705  CI guard enums                         [S]
 
-Jour 3-5 : WCAG 2.1 AA
+### Sprint 8 — Accessibilité WCAG 2.1 AA + audit final (semaine 8)
+
+```text
+Jour 1-2 : Accessibilité
 ├─ STORY-P7-901  focus trap modales                     [M]
 ├─ STORY-P7-902  aria-label boutons                     [M]
-├─ STORY-P7-903  audit clavier                          [S]
+└─ STORY-P7-903  audit clavier                          [S]
+
+Jour 3-4 : Automatisation a11y
 ├─ STORY-P7-904  axe-core CI                            [S]
-└─ STORY-P7-905  screen reader QA                       [M]
+└─ STORY-P7-905  screen reader QA (NVDA/VoiceOver)      [M]
+
+Jour 5   : Seed cleanup + audit final
+├─ STORY-P7-801  seed idempotent                        [S]
+├─ STORY-P7-802  migration cleanup pollution            [S]
+└─ STORY-P7-803  make seed-reset                        [XS]
 ```
 
-Fin Sprint 6 : **audit cowork v11 final** (re-parcours 10 parcours complet) + merge `feature/dev` → `main` + tag `v0.1.0`.
+Fin Sprint 8 : **audit cowork v11 final** (re-parcours 10 parcours complet) + merge `feature/dev` → `main` + tag `v0.1.0`.
 
 ---
 
@@ -1276,9 +1406,10 @@ Fin Sprint 6 : **audit cowork v11 final** (re-parcours 10 parcours complet) + me
 
 - ✅ **DDD** : chaque story nomme son Bounded Context et ses entités. Épic P7-10 rejette explicitement la fusion Contractor/BoardMember par SRP.
 - ✅ **BDD** : chaque story fonctionnelle contient des scénarios Gherkin exécutables et des tests Playwright cibles.
-- ✅ **TDD** : chaque story liste les tâches RED → GREEN → REFACTOR avec vérification `cargo test` / `npx svelte-check`.
+- ✅ **TDD** : chaque story liste les tâches RED → GREEN → REFACTOR avec vérification `cargo test` / `npx svelte-check` / `npm run test:unit`.
 - ✅ **SOLID** : chaque story cite les principes qui la gouvernent (SRP / OCP / LSP / ISP / DIP).
 - ✅ **Traçabilité** : chaque story trace vers un FR PRD, un invariant domaine ou un bug audit identifié.
 - ✅ **Hexagonal** : les stories backend séparent Domain / Application / Infrastructure ; les stories frontend séparent composants / stores / services.
-- ✅ **DRY** : les enums deviennent 100 % générés en Sprint 5, pas 2 sources de vérité.
-- ✅ **Completude Maury** : **aucun "hors scope"** — le plan couvre tout ce que l'audit v7 a identifié, y compris les recommandations structurelles de la conclusion. La méthode Maury fait les choses à fond ou ne les fait pas.
+- ✅ **DRY** : les enums deviennent 100 % générés en Sprint 7, pas 2 sources de vérité.
+- ✅ **Test-first** : **Epic P7-6a (gate)** impose que chaque composant ait un test unitaire AVANT d'être migré vers les runes. Aucune exception — "RED avant GREEN" est l'ADN de la méthode Maury.
+- ✅ **Completude Maury** : **aucun "hors scope"** — le plan couvre tout ce que l'audit v7 a identifié, y compris les recommandations structurelles. La méthode Maury fait les choses à fond ou ne les fait pas.
