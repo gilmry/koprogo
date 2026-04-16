@@ -166,6 +166,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // Tickets (Maintenance Requests - Issue #85 - Phase 2)
             // Specific routes MUST come before parameterized /tickets/{id}
             .service(create_ticket)
+            .service(list_assignable_users) // /tickets/assignable-users BEFORE /tickets/{id}
             .service(list_my_tickets)
             .service(list_assigned_tickets)
             .service(get_ticket_statistics_org) // /tickets/statistics (org-level)

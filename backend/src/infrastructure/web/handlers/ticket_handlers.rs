@@ -928,3 +928,71 @@ pub async fn get_overdue_tickets(
 pub struct OverdueQuery {
     pub max_days: Option<i64>,
 }
+
+// ==================== Assignable Users ====================
+
+/// DTO for the assignable-users dropdown (minimal fields).
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct AssignableUserDto {
+    pub id: Uuid,
+    pub first_name: String,
+    pub last_name: String,
+    pub role: String,
+    pub profession: Option<String>,
+}
+
+/// List users that can be assigned to a ticket (syndic, board_member, contractor).
+/// Sorted by role (contractors first) then last_name.
+#[utoipa::path(
+    get,
+    path = "/tickets/assignable-users",
+    tag = "Tickets",
+    summary = "List users assignable to tickets",
+    responses(
+        (status = 200, description = "List of assignable users"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden — only syndic/superadmin"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[get("/tickets/assignable-users")]
+pub async fn list_assignable_users(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+) -> impl Responder {
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
+
+    // Fetch all org users + filter roles eligible for ticket assignment
+    match state.user_use_cases.list_all().await {
+        Ok(users) => {
+            let assignable: Vec<AssignableUserDto> = users
+                .into_iter()
+                .filter(|u| {
+                    // Same org check
+                    u.organization_id.as_ref().map(|o| o.as_str())
+                        == Some(&organization_id.to_string())
+                })
+                .filter(|u| {
+                    matches!(
+                        u.role.as_str(),
+                        "syndic" | "board_member" | "contractor"
+                    )
+                })
+                .map(|u| AssignableUserDto {
+                    id: u.id.parse().unwrap_or_default(),
+                    first_name: u.first_name.clone(),
+                    last_name: u.last_name.clone(),
+                    role: u.role.clone(),
+                    profession: None, // TODO: join contractor_profiles when needed
+                })
+                .collect();
+            HttpResponse::Ok().json(assignable)
+        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
+    }
+}

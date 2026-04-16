@@ -1039,11 +1039,21 @@
       "other": "Autre"
     },
     "assign_ticket": "Assigner le ticket",
-    "assign_description": "Assigner ce ticket à un prestataire",
-    "assign_tip": "Entrez l'identifiant du prestataire",
-    "contractor_id": "ID du prestataire",
-    "contractor_id_placeholder": "Ex: 550e8400-e29b...",
-    "enter_contractor_id": "Entrez l'ID du prestataire"
+    "assign_description": "Sélectionnez la personne à qui assigner ce ticket de maintenance.",
+    "assign": {
+      "selectAssignee": "Personne à assigner",
+      "choosePerson": "Choisir un prestataire...",
+      "loadFailed": "Impossible de charger la liste des prestataires.",
+      "noAssignableUsers": "Aucun prestataire disponible dans cette organisation."
+    }
+  },
+  "roles": {
+    "syndic": "Syndic",
+    "board_member": "Membre du conseil",
+    "contractor": "Prestataire",
+    "owner": "Copropriétaire",
+    "accountant": "Comptable",
+    "superadmin": "Administrateur"
   },
   "notices": {
     "title": "Annonces",

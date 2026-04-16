@@ -3310,6 +3310,67 @@ impl DatabaseSeeder {
             last_name: "Vandenberghe".to_string(),
         });
 
+        // Marc Dubois - Contractor (Plombier)
+        let marc_user_id = self
+            .create_demo_user(
+                "marc@plomberie-dubois.be",
+                "marc123",
+                "Marc",
+                "Dubois",
+                "contractor",
+                Some(org_id),
+            )
+            .await?;
+        users_result.push(ScenarioUserResult {
+            user_id: marc_user_id,
+            email: "marc@plomberie-dubois.be".to_string(),
+            password: "marc123".to_string(),
+            role: "contractor".to_string(),
+            first_name: "Marc".to_string(),
+            last_name: "Dubois".to_string(),
+        });
+        // Create contractor profile
+        sqlx::query(
+            r#"INSERT INTO contractor_profiles (user_id, organization_id, profession, siren_or_vat, specialties)
+               VALUES ($1, $2, 'Plombier', 'BE0123456789', ARRAY['plumbing', 'heating'])
+               ON CONFLICT (user_id) DO NOTHING"#,
+        )
+        .bind(marc_user_id)
+        .bind(org_id)
+        .execute(&*self.pool)
+        .await
+        .map_err(|e| format!("Failed to create contractor profile for Marc: {}", e))?;
+
+        // Sophie Leroux - Contractor (Électricienne)
+        let sophie_user_id = self
+            .create_demo_user(
+                "sophie@elec-leroux.be",
+                "sophie123",
+                "Sophie",
+                "Leroux",
+                "contractor",
+                Some(org_id),
+            )
+            .await?;
+        users_result.push(ScenarioUserResult {
+            user_id: sophie_user_id,
+            email: "sophie@elec-leroux.be".to_string(),
+            password: "sophie123".to_string(),
+            role: "contractor".to_string(),
+            first_name: "Sophie".to_string(),
+            last_name: "Leroux".to_string(),
+        });
+        sqlx::query(
+            r#"INSERT INTO contractor_profiles (user_id, organization_id, profession, siren_or_vat, specialties)
+               VALUES ($1, $2, 'Électricienne', 'BE0987654321', ARRAY['electrical', 'security'])
+               ON CONFLICT (user_id) DO NOTHING"#,
+        )
+        .bind(sophie_user_id)
+        .bind(org_id)
+        .execute(&*self.pool)
+        .await
+        .map_err(|e| format!("Failed to create contractor profile for Sophie: {}", e))?;
+
         // Admin (already exists globally, just reference it)
         users_result.push(ScenarioUserResult {
             user_id: Uuid::parse_str("00000000-0000-0000-0000-000000000001")
@@ -3321,7 +3382,7 @@ impl DatabaseSeeder {
             last_name: "Admin".to_string(),
         });
 
-        log::info!("✅ 3 professionals created (syndic, accountant, admin)");
+        log::info!("✅ 5 professionals created (syndic, accountant, 2 contractors, admin)");
 
         // --- 4 community members (users only, role=owner, no units) ---
         struct CommunityPersona {
