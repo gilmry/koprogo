@@ -95,6 +95,21 @@ export async function apiFetch<T = any>(
       raw.includes("postgres")
     ) {
       errorMessage = `Une erreur est survenue (${response.status}). Merci de réessayer ou de contacter le support.`;
+    } else {
+      // STORY-P7-401: map well-known English backend error strings to
+      // localized user-facing messages. Add entries here as they surface.
+      const knownErrors: Record<string, string> = {
+        "no owner record linked to this user":
+          "Aucun compte copropriétaire associé à ce profil.",
+        "invalid email or password": "Email ou mot de passe invalide.",
+        "token expired": "Session expirée. Veuillez vous reconnecter.",
+        "invalid token": "Session expirée. Veuillez vous reconnecter.",
+        "not found": "Ressource introuvable.",
+        "unauthorized": "Authentification requise.",
+        "forbidden": "Accès refusé.",
+      };
+      const mapped = knownErrors[errorMessage.toLowerCase().trim()];
+      if (mapped) errorMessage = mapped;
     }
 
     // Toast automatique selon le code HTTP
