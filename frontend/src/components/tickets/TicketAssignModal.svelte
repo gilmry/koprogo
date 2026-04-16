@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from "svelte";
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
   import { _ } from '../../lib/i18n';
   import { api } from '../../lib/api';
   import { toast } from "../../stores/toast";
@@ -7,10 +7,17 @@
   import Modal from "../ui/Modal.svelte";
   import Button from "../ui/Button.svelte";
 
-  export let open = false;
-  export let ticketId: string;
-
-  const dispatch = createEventDispatcher();
+  let {
+    open = $bindable(false),
+    ticketId,
+    onassigned,
+    onclose,
+  }: {
+    open?: boolean;
+    ticketId: string;
+    onassigned?: (detail: { contractorId: string }) => void;
+    onclose?: () => void;
+  } = $props();
 
   interface AssignableUser {
     id: string;
@@ -20,14 +27,16 @@
     profession?: string;
   }
 
-  let assignableUsers: AssignableUser[] = [];
-  let selectedUserId = "";
-  let loadingUsers = false;
-  let submitting = false;
+  let assignableUsers = $state<AssignableUser[]>([]);
+  let selectedUserId = $state("");
+  let loadingUsers = $state(false);
+  let submitting = $state(false);
 
-  $: if (open && assignableUsers.length === 0) {
-    loadAssignableUsers();
-  }
+  $effect(() => {
+    if (open && assignableUsers.length === 0) {
+      loadAssignableUsers();
+    }
+  });
 
   async function loadAssignableUsers() {
     loadingUsers = true;
@@ -58,9 +67,9 @@
 
     await withErrorHandling({
       action: async () => {
-        dispatch("assigned", { contractorId: selectedUserId });
+        onassigned?.({ contractorId: selectedUserId });
       },
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       errorMessage: $_("tickets.assign_failed"),
     });
     handleClose();
@@ -69,12 +78,12 @@
   function handleClose() {
     open = false;
     selectedUserId = "";
-    dispatch("close");
+    onclose?.();
   }
 </script>
 
-<Modal isOpen={open} on:close={handleClose} title={$_("tickets.assign_to_contractor")}>
-  <form on:submit|preventDefault={handleSubmit} data-testid="ticket-assign-form">
+<Modal isOpen={open} onclose={handleClose} title={$_("tickets.assign_to_contractor")}>
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} data-testid="ticket-assign-form">
     <div class="space-y-4">
       <p class="text-sm text-gray-600" data-testid="ticket-assign-description">
         {$_("tickets.assign_description")}
@@ -108,7 +117,7 @@
     </div>
 
     <div class="mt-6 flex justify-end space-x-3">
-      <Button type="button" variant="outline" on:click={handleClose} data-testid="ticket-assign-cancel-btn">
+      <Button type="button" variant="outline" onclick={handleClose} data-testid="ticket-assign-cancel-btn">
         {$_("common.cancel")}
       </Button>
       <Button

@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
+  // The legacy version had a defensive guard for building_id because
+  // `let formData = { building_id: buildingId }` captured the prop BEFORE
+  // Svelte 5 mount() assigned it. With $props(), the prop value is always
+  // current — no guard needed.
   import { _ } from '../../lib/i18n';
   import {
     ticketsApi,
@@ -18,19 +22,26 @@
   import FormSelect from "../ui/FormSelect.svelte";
   import Button from "../ui/Button.svelte";
 
-  export let open = false;
-  export let buildingId: string = "";
-  export let requesterId: string;
-  export let unitId: string | undefined = undefined;
-  export let onCreated: ((ticket: any) => void) | undefined = undefined;
-  export let onClose: (() => void) | undefined = undefined;
+  let {
+    open = $bindable(false),
+    buildingId = '',
+    requesterId,
+    unitId = undefined,
+    onCreated = undefined,
+    onClose = undefined,
+  }: {
+    open?: boolean;
+    buildingId?: string;
+    requesterId: string;
+    unitId?: string;
+    onCreated?: (ticket: any) => void;
+    onClose?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
+  let buildings = $state<Building[]>([]);
+  let loadingBuildings = $state(false);
 
-  let buildings: Building[] = [];
-  let loadingBuildings = false;
-
-  let formData: CreateTicketDto = {
+  let formData = $state<CreateTicketDto>({
     building_id: buildingId,
     title: "",
     description: "",
@@ -38,20 +49,29 @@
     category: TicketCategory.Other,
     requester_id: requesterId,
     unit_id: unitId || undefined,
-  };
+  });
 
-  let submitting = false;
-  let errors: Record<string, string> = {};
+  let submitting = $state(false);
+  let errors = $state<Record<string, string>>({});
 
-  $: if (open && buildings.length === 0) {
-    loadBuildings();
-  }
+  // Sync formData.building_id with prop (runes capture live value)
+  $effect(() => {
+    if (buildingId && !formData.building_id) {
+      formData.building_id = buildingId;
+    }
+  });
+
+  $effect(() => {
+    if (open && buildings.length === 0) {
+      loadBuildings();
+    }
+  });
 
   async function loadBuildings() {
     await withErrorHandling({
       action: () => api.get<PageResponse<Building>>('/buildings?per_page=100'),
-      setLoading: (v) => loadingBuildings = v,
-      onSuccess: (response) => {
+      setLoading: (v: boolean) => loadingBuildings = v,
+      onSuccess: (response: PageResponse<Building>) => {
         buildings = response.data;
         if (!formData.building_id && buildings.length === 1) {
           formData.building_id = buildings[0].id;
@@ -70,10 +90,6 @@
   }
 
   async function handleSubmit() {
-    // Defensive: prop may have been assigned after script init under Svelte 5 mount()
-    if (!formData.building_id && buildingId) {
-      formData.building_id = buildingId;
-    }
     if (!validate()) {
       toast.error($_('validation.fixErrors'));
       return;
@@ -86,12 +102,11 @@
         requester_id: requesterId,
         unit_id: formData.unit_id || undefined,
       }),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_('tickets.createSuccess'),
       errorMessage: $_('tickets.createError'),
     });
     if (result) {
-      dispatch("created", result);
       onCreated?.(result);
       handleClose();
     }
@@ -109,13 +124,12 @@
       unit_id: unitId || undefined,
     };
     errors = {};
-    dispatch("close");
     onClose?.();
   }
 </script>
 
-<Modal isOpen={open} on:close={handleClose} title={$_('tickets.createTitle')}>
-  <form on:submit|preventDefault={handleSubmit} data-testid="ticket-create-form" class="-m-6">
+<Modal isOpen={open} onclose={handleClose} title={$_('tickets.createTitle')}>
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} data-testid="ticket-create-form" class="-m-6">
     <div class="space-y-4 p-6 pb-4">
       <!-- Sélecteur d'immeuble -->
       {#if !buildingId}
@@ -220,7 +234,7 @@
     </div>
 
     <div class="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4 flex justify-end space-x-3">
-      <Button type="button" variant="outline" on:click={handleClose} data-testid="ticket-cancel-btn">
+      <Button type="button" variant="outline" onclick={handleClose} data-testid="ticket-cancel-btn">
         {$_('common.cancel')}
       </Button>
       <Button type="submit" loading={submitting} data-testid="ticket-submit-btn">
