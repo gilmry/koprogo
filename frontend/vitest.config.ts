@@ -2,9 +2,16 @@ import { defineConfig } from "vitest/config";
 import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 export default defineConfig({
-  plugins: [svelte({ hot: false })],
+  // Production mode disables Svelte 5 DEV-only runtime checks like
+  // "$state rune outside svelte" that fire when bind:value compiled
+  // output is accessed from .test.ts files.
+  mode: "production",
+  plugins: [
+    svelte({
+      hot: false,
+    }),
+  ],
   resolve: {
-    // Force browser exports so Svelte 5 uses mount() instead of SSR
     conditions: ["browser"],
   },
   test: {
