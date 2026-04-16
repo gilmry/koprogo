@@ -715,6 +715,24 @@
     "workflow_title": "Rechnungsworkflow"
   },
   "meetings": {
+    "quorum": {
+      "title": "Quorum / Anwesenheit",
+      "presentQuotas": "Anwesende oder vertretene Anteile",
+      "totalQuotas": "Gesamtanteile",
+      "validate": "Quorum validieren",
+      "validating": "Validierung...",
+      "validated": "Quorum validiert",
+      "validated_success": "Quorum erfolgreich validiert",
+      "validation_failed": "Quorum-Validierung fehlgeschlagen",
+      "second_convocation_scheduled": "Zweite Einberufung automatisch geplant (Art. 3.87 §5 CC)",
+      "invalidValues": "Ungültige Werte: anwesende und gesamte Anteile müssen strikt positiv sein",
+      "legal_notice": "Geben Sie die Summe der anwesenden oder durch Vollmacht vertretenen Anteile ein, um das Quorum gemäß Artikel 3.87 §5 des belgischen Zivilgesetzbuchs zu validieren.",
+      "readonly": "Quorum wartet auf Syndikus-Validierung.",
+      "preview": "Vorschau",
+      "quorum_ok": "Quorum erreicht (> 50%)",
+      "quorum_not_reached": "Quorum nicht erreicht (< 50%)",
+      "thousandths": "Tausendstel"
+    },
     "add_document": "Dokument hinzufügen",
     "add_documents_help": "Verwenden Sie die Schaltfläche oben, um Dokumente zu dieser Versammlung hinzuzufügen.",
     "agenda": "Tagesordnung",

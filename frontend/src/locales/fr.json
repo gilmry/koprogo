@@ -715,6 +715,24 @@
     "workflow_title": "Workflow des factures"
   },
   "meetings": {
+    "quorum": {
+      "title": "Quorum / Présences",
+      "presentQuotas": "Tantièmes présents ou représentés",
+      "totalQuotas": "Tantièmes totaux",
+      "validate": "Valider le quorum",
+      "validating": "Validation...",
+      "validated": "Quorum validé",
+      "validated_success": "Quorum validé avec succès",
+      "validation_failed": "Échec de la validation du quorum",
+      "second_convocation_scheduled": "Seconde convocation auto-planifiée (Art. 3.87 §5 CC)",
+      "invalidValues": "Valeurs invalides : tantièmes présents et totaux doivent être strictement positifs",
+      "legal_notice": "Saisissez le total des tantièmes présents ou représentés par procuration pour valider le quorum conformément à l'Article 3.87 §5 du Code civil belge.",
+      "readonly": "Quorum en attente de validation par le syndic.",
+      "preview": "Aperçu",
+      "quorum_ok": "Quorum atteint (> 50%)",
+      "quorum_not_reached": "Quorum non atteint (< 50%)",
+      "thousandths": "millièmes"
+    },
     "add_document": "Ajouter un document",
     "add_documents_help": "Utilisez le bouton ci-dessus pour ajouter des documents à cette assemblée.",
     "agenda": "Ordre du jour",

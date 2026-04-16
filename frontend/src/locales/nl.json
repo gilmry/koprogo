@@ -715,6 +715,24 @@
     "workflow_title": "Factuurworkflow"
   },
   "meetings": {
+    "quorum": {
+      "title": "Quorum / Aanwezigheid",
+      "presentQuotas": "Aanwezige of vertegenwoordigde aandelen",
+      "totalQuotas": "Totale aandelen",
+      "validate": "Quorum valideren",
+      "validating": "Valideren...",
+      "validated": "Quorum gevalideerd",
+      "validated_success": "Quorum succesvol gevalideerd",
+      "validation_failed": "Quorum-validatie mislukt",
+      "second_convocation_scheduled": "Tweede oproeping automatisch gepland (Art. 3.87 §5 BW)",
+      "invalidValues": "Ongeldige waarden: aanwezige en totale aandelen moeten strikt positief zijn",
+      "legal_notice": "Voer het totaal van aanwezige of door volmacht vertegenwoordigde aandelen in om het quorum te valideren overeenkomstig Artikel 3.87 §5 van het Belgisch Burgerlijk Wetboek.",
+      "readonly": "Quorum in afwachting van syndic-validatie.",
+      "preview": "Voorbeeld",
+      "quorum_ok": "Quorum bereikt (> 50%)",
+      "quorum_not_reached": "Quorum niet bereikt (< 50%)",
+      "thousandths": "duizendsten"
+    },
     "add_document": "Document toevoegen",
     "add_documents_help": "Gebruik de knop hierboven om documenten aan deze vergadering toe te voegen.",
     "agenda": "Agenda",

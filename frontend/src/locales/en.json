@@ -715,6 +715,24 @@
     "workflow_title": "Invoice workflow"
   },
   "meetings": {
+    "quorum": {
+      "title": "Quorum / Attendance",
+      "presentQuotas": "Quotas present or represented",
+      "totalQuotas": "Total quotas",
+      "validate": "Validate quorum",
+      "validating": "Validating...",
+      "validated": "Quorum validated",
+      "validated_success": "Quorum validated successfully",
+      "validation_failed": "Quorum validation failed",
+      "second_convocation_scheduled": "Second convocation auto-scheduled (Art. 3.87 §5 CC)",
+      "invalidValues": "Invalid values: present and total quotas must be strictly positive",
+      "legal_notice": "Enter the total quotas present or represented by proxy to validate the quorum per Article 3.87 §5 of the Belgian Civil Code.",
+      "readonly": "Quorum pending syndic validation.",
+      "preview": "Preview",
+      "quorum_ok": "Quorum reached (> 50%)",
+      "quorum_not_reached": "Quorum not reached (< 50%)",
+      "thousandths": "thousandths"
+    },
     "add_document": "Add document",
     "add_documents_help": "Use the button above to add documents to this meeting.",
     "agenda": "Agenda",
