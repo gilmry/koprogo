@@ -36,16 +36,6 @@
     if (result) { ticket = result; dispatch("updated", ticket); }
   }
 
-  async function handleStart() {
-    const result = await withErrorHandling({
-      action: () => ticketsApi.start(ticket.id),
-      setLoading: (v) => actionLoading = v,
-      successMessage: $_("tickets.work_started"),
-      errorMessage: $_("tickets.start_failed"),
-    });
-    if (result) { ticket = result; dispatch("updated", ticket); }
-  }
-
   async function handleResolve() {
     const result = await withErrorHandling({
       action: () => ticketsApi.resolve(ticket.id),
@@ -131,12 +121,6 @@
           </Button>
         {/if}
 
-        {#if (isContractor || canManage) && ticket.status === TicketStatus.Assigned}
-          <Button on:click={handleStart} loading={actionLoading} size="sm" data-testid="ticket-start-btn">
-            {$_("tickets.start_work")}
-          </Button>
-        {/if}
-
         {#if (isContractor || canManage) && ticket.status === TicketStatus.InProgress}
           <Button on:click={handleResolve} loading={actionLoading} size="sm" data-testid="ticket-resolve-btn">
             {$_("tickets.mark_resolved")}
@@ -149,7 +133,7 @@
           </Button>
         {/if}
 
-        {#if canManage && (ticket.status === TicketStatus.Open || ticket.status === TicketStatus.Assigned)}
+        {#if canManage && (ticket.status === TicketStatus.Open || ticket.status === TicketStatus.InProgress)}
           <Button
             on:click={handleCancel}
             loading={actionLoading}

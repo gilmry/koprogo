@@ -21,7 +21,7 @@ import Layout from "../layouts/Layout.astro";
             d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
             clip-rule="evenodd"></path>
         </svg>
-        Back to Tickets
+        Retour aux tickets
       </a>
     </div>
 
@@ -31,18 +31,18 @@ import Layout from "../layouts/Layout.astro";
     <!-- Loading State -->
     <div id="loading-state" class="text-center py-12">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      <p class="mt-4 text-gray-600">Loading ticket details...</p>
+      <p class="mt-4 text-gray-600">Chargement du ticket...</p>
     </div>
 
     <!-- Error State -->
     <div id="error-state" class="hidden bg-red-50 border border-red-200 rounded-lg p-6">
-      <h2 class="text-lg font-semibold text-red-900 mb-2">Error Loading Ticket</h2>
+      <h2 class="text-lg font-semibold text-red-900 mb-2">Erreur de chargement</h2>
       <p class="text-red-700" id="error-message"></p>
       <a
         href="/tickets"
         class="mt-4 inline-block px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
       >
-        Back to Tickets
+        Retour aux tickets
       </a>
     </div>
   </div>

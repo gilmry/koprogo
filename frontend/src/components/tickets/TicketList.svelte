@@ -101,7 +101,6 @@
         >
           <option value="all">{$_("tickets.all_statuses")}</option>
           <option value={TicketStatus.Open}>{$_("tickets.status_open")}</option>
-          <option value={TicketStatus.Assigned}>{$_("tickets.status_assigned")}</option>
           <option value={TicketStatus.InProgress}>{$_("tickets.status_in_progress")}</option>
           <option value={TicketStatus.Resolved}>{$_("tickets.status_resolved")}</option>
           <option value={TicketStatus.Closed}>{$_("tickets.status_closed")}</option>
