@@ -211,6 +211,35 @@ reset-db: ## ⚠️  Reset DB (SUPPRIME TOUTES LES DONNÉES)
 seed: ## 🌱 Seed DB avec données de test
 	cd backend && cargo run --bin seed
 
+seed-reset: ## 🔄 Reset le scénario world via API (idempotent)
+	@TOKEN=$$(curl -s -X POST http://localhost/api/v1/auth/login \
+		-H 'Content-Type: application/json' \
+		-d '{"email":"admin@koprogo.com","password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))"); \
+	curl -s -X POST http://localhost/api/v1/seed/scenario/world \
+		-H "Authorization: Bearer $$TOKEN" | head -c 200; \
+	echo "\n$(GREEN)✅ Seed world reset$(NC)"
+
+##
+## 🔌 OpenAPI / Type generation
+##
+
+openapi-export: ## 📤 Exporter docs/api/openapi.json depuis ApiDoc
+	@echo "$(GREEN)📤 Exporting OpenAPI spec...$(NC)"
+	@mkdir -p docs/api
+	@docker compose exec -T backend sh -c "cd /app && SQLX_OFFLINE=true cargo run --quiet --bin export_openapi 2>/dev/null" > docs/api/openapi.json
+	@echo "$(GREEN)✅ docs/api/openapi.json written ($$(wc -c < docs/api/openapi.json) bytes)$(NC)"
+
+openapi-check: openapi-export ## 🔍 Vérifier que docs/api/openapi.json est à jour
+	@if ! git diff --quiet docs/api/openapi.json; then \
+		echo "$(YELLOW)❌ docs/api/openapi.json has diverged. Run 'make openapi-export' and commit.$(NC)"; \
+		git diff --stat docs/api/openapi.json; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✅ openapi.json is up-to-date$(NC)"
+
+types-sync: openapi-export ## 🔁 Régénérer api.d.ts depuis le spec live
+	cd frontend && npm run types:generate
+
 ##
 ## 📚 Documentation
 ##

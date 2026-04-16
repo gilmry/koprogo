@@ -156,6 +156,23 @@ use utoipa_swagger_ui::SwaggerUi;
         crate::infrastructure::web::handlers::legal_handlers::get_ag_sequence,
         crate::infrastructure::web::handlers::legal_handlers::get_majority_for,
     ),
+    components(schemas(
+        // Pagination primitives — referenced by query params on list endpoints
+        crate::application::dto::pagination::SortOrder,
+        // Critical enums (STORY-P7-102): expose for frontend re-export
+        crate::domain::entities::resolution::ResolutionType,
+        crate::domain::entities::resolution::MajorityType,
+        crate::domain::entities::ticket::TicketCategory,
+        crate::domain::entities::ticket::TicketPriority,
+        crate::domain::entities::ticket::TicketStatus,
+        crate::domain::entities::poll::PollStatus,
+        crate::domain::entities::poll::PollType,
+        crate::domain::entities::meeting::MeetingType,
+        crate::domain::entities::meeting::MeetingStatus,
+        crate::domain::entities::expense::ExpenseCategory,
+        crate::domain::entities::expense::PaymentStatus,
+        crate::domain::entities::expense::ApprovalStatus,
+    )),
     modifiers(&SecurityAddon),
     tags(
         (name = "Health", description = "System health and monitoring"),

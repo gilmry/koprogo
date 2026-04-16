@@ -1,16 +1,22 @@
-//! Export the live OpenAPI spec to `docs/api/openapi.json`.
+//! Export the live OpenAPI spec to stdout (JSON).
 //!
-//! Run with: `cargo run --bin export_openapi`
+//! Run with: `cargo run --bin export_openapi > docs/api/openapi.json`
+//!
+//! The JSON payload is written to stdout so that the caller (Makefile or
+//! shell pipeline) can redirect it to whichever file the host wants. This
+//! is required because the binary runs inside the docker container where
+//! the host repo root is not mounted — stdout is the universal channel.
+//!
+//! Progress messages (route count, schema count) are written to stderr so
+//! they never corrupt the JSON pipe.
 //!
 //! Usage in the build pipeline:
-//!   make openapi-export   # regenerates docs/api/openapi.json
-//!   make types-sync       # also runs frontend openapi-typescript
-//!
-//! The JSON output is consumed by `frontend` via `npm run types:generate`.
+//!   make openapi-export   # writes docs/api/openapi.json on the host
+//!   make openapi-check    # also fails if the file is stale
+//!   make types-sync       # runs openapi-export then openapi-typescript
 
 use koprogo_api::infrastructure::openapi::ApiDoc;
-use std::fs;
-use std::path::PathBuf;
+use std::io::Write;
 use utoipa::OpenApi;
 
 fn main() -> std::io::Result<()> {
@@ -19,23 +25,22 @@ fn main() -> std::io::Result<()> {
         .to_pretty_json()
         .expect("OpenAPI spec must serialize to JSON");
 
-    // Resolve docs/api/openapi.json relative to the repo root (one level above backend/)
-    let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let out = PathBuf::from(manifest_dir)
-        .join("..")
-        .join("docs")
-        .join("api")
-        .join("openapi.json");
+    // JSON to stdout (consumed by the host via redirection)
+    let stdout = std::io::stdout();
+    let mut handle = stdout.lock();
+    handle.write_all(json.as_bytes())?;
+    handle.write_all(b"\n")?;
 
-    if let Some(parent) = out.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(&out, &json)?;
-
-    println!("✅ OpenAPI spec written to {}", out.display());
-    println!("   Routes: {}", spec.paths.paths.len());
-    if let Some(components) = &spec.components {
-        println!("   Schemas: {}", components.schemas.len());
-    }
+    // Progress on stderr (never touches the pipe)
+    let schemas = spec
+        .components
+        .as_ref()
+        .map(|c| c.schemas.len())
+        .unwrap_or(0);
+    eprintln!(
+        "✅ OpenAPI spec exported — {} routes, {} schemas",
+        spec.paths.paths.len(),
+        schemas
+    );
     Ok(())
 }
