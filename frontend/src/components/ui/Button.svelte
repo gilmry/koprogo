@@ -1,12 +1,28 @@
 <script lang="ts">
-  export let type: 'button' | 'submit' | 'reset' = 'button';
-  export let variant: 'primary' | 'secondary' | 'danger' | 'success' | 'outline' = 'primary';
-  export let size: 'sm' | 'md' | 'lg' = 'md';
-  export let loading = false;
-  export let disabled = false;
-  export let fullWidth = false;
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
+  import type { Snippet } from 'svelte';
 
-  const variantClasses = {
+  let {
+    type = 'button',
+    variant = 'primary',
+    size = 'md',
+    loading = false,
+    disabled = false,
+    fullWidth = false,
+    children,
+    ...restProps
+  }: {
+    type?: 'button' | 'submit' | 'reset';
+    variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'outline';
+    size?: 'sm' | 'md' | 'lg';
+    loading?: boolean;
+    disabled?: boolean;
+    fullWidth?: boolean;
+    children?: Snippet;
+    [key: string]: any;
+  } = $props();
+
+  const variantClasses: Record<string, string> = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
     secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
@@ -14,20 +30,19 @@
     outline: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:ring-primary-500',
   };
 
-  const sizeClasses = {
+  const sizeClasses: Record<string, string> = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2',
     lg: 'px-6 py-3 text-lg',
   };
 
-  $: isDisabled = disabled || loading;
+  let isDisabled = $derived(disabled || loading);
 </script>
 
 <button
   {type}
   disabled={isDisabled}
-  on:click
-  {...$$restProps}
+  {...restProps}
   class="inline-flex items-center justify-center font-medium rounded-lg transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed
     {variantClasses[variant]}
     {sizeClasses[size]}
@@ -39,5 +54,7 @@
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
   {/if}
-  <slot />
+  {#if children}
+    {@render children()}
+  {/if}
 </button>
