@@ -1,25 +1,26 @@
 <script lang="ts">
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-603)
   import { _ } from '../../lib/i18n';
   import { api } from '../../lib/api';
   import { toast } from '../../stores/toast';
   import { withErrorHandling } from '../../lib/utils/error.utils';
   import type { Meeting } from '../../lib/types';
 
-  export let meeting: Meeting;
-  export let canManage: boolean = false;
+  let {
+    meeting = $bindable(),
+    canManage = false,
+  }: {
+    meeting: Meeting;
+    canManage?: boolean;
+  } = $props();
 
-  // STORY-P7-302 — Quorum validation panel (Art. 3.87 §5 Code civil belge).
-  // Backend endpoint: POST /meetings/{id}/validate-quorum with
-  //   { present_quotas: f64, total_quotas: f64 }
-  // Returns: { quorum_reached, meeting, message }
+  let presentQuotas = $state<number>((meeting as any).present_quotas ?? 0);
+  let totalQuotas = $state<number>((meeting as any).total_quotas ?? 1000);
+  let submitting = $state(false);
 
-  let presentQuotas: number = (meeting as any).present_quotas ?? 0;
-  let totalQuotas: number = (meeting as any).total_quotas ?? 1000;
-  let submitting = false;
-
-  $: quorumValidated = (meeting as any).quorum_validated === true;
-  $: quorumPercentage = totalQuotas > 0 ? (presentQuotas / totalQuotas) * 100 : 0;
-  $: displayPercentage = (meeting as any).quorum_percentage ?? quorumPercentage;
+  let quorumValidated = $derived((meeting as any).quorum_validated === true);
+  let quorumPercentage = $derived(totalQuotas > 0 ? (presentQuotas / totalQuotas) * 100 : 0);
+  let displayPercentage = $derived((meeting as any).quorum_percentage ?? quorumPercentage);
 
   async function handleValidateQuorum() {
     if (presentQuotas <= 0 || totalQuotas <= 0) {
@@ -31,7 +32,7 @@
         `/meetings/${meeting.id}/validate-quorum`,
         { present_quotas: presentQuotas, total_quotas: totalQuotas },
       ),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_('meetings.quorum.validated_success'),
       errorMessage: $_('meetings.quorum.validation_failed'),
     });
@@ -111,7 +112,7 @@
         </div>
         <button
           type="button"
-          on:click={handleValidateQuorum}
+          onclick={handleValidateQuorum}
           disabled={submitting}
           class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
           data-testid="quorum-validate-btn"

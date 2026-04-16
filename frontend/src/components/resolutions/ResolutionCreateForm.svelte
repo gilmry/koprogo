@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-604)
   import { _ } from '../../lib/i18n';
   import {
     resolutionsApi,
@@ -10,15 +10,19 @@
   import { toast } from '../../stores/toast';
   import { withErrorHandling } from '../../lib/utils/error.utils';
 
-  export let meetingId: string;
+  let {
+    meetingId,
+    oncreated,
+  }: {
+    meetingId: string;
+    oncreated?: (resolution: Resolution | null) => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher<{ created: Resolution }>();
-
-  let title = '';
-  let description = '';
-  let resolutionType: ResolutionType = ResolutionType.Ordinary;
-  let majorityRequired: MajorityType = MajorityType.Absolute;
-  let loading = false;
+  let title = $state('');
+  let description = $state('');
+  let resolutionType = $state<string>(ResolutionType.Ordinary);
+  let majorityRequired = $state<string>(MajorityType.Absolute);
+  let loading = $state(false);
 
   async function handleSubmit() {
     if (!title.trim()) {
@@ -32,13 +36,13 @@
         title: title.trim(),
         description: description.trim(),
         resolution_type: resolutionType,
-        majority_required: majorityRequired,
+        majority_required: majorityRequired as any,
       }),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       successMessage: $_("resolutions.create.success"),
       errorMessage: $_("resolutions.create.error"),
-      onSuccess: (resolution) => {
-        dispatch('created', resolution);
+      onSuccess: (resolution: Resolution) => {
+        oncreated?.(resolution);
         title = '';
         description = '';
         resolutionType = ResolutionType.Ordinary;
@@ -48,7 +52,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-gray-50 border border-gray-200 rounded-lg p-4">
   <h4 class="text-sm font-semibold text-gray-900 mb-3">{$_("resolutions.create.title")}</h4>
 
   <div class="space-y-3">
@@ -123,7 +127,7 @@
   <div class="flex justify-end gap-2 mt-4">
     <button
       type="button"
-      on:click={() => dispatch('created', null)}
+      onclick={() => oncreated?.(null)}
       class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       data-testid="resolution-cancel-btn"
     >
