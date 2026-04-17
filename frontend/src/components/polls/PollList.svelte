@@ -1,5 +1,5 @@
+// Svelte 5 runes mode
 <script lang="ts">
-  import { onMount } from "svelte";
   import { _ } from '../../lib/i18n';
   import {
     pollsApi,
@@ -12,17 +12,22 @@
   import PollStatusBadge from "./PollStatusBadge.svelte";
   import PollTypeBadge from "./PollTypeBadge.svelte";
 
-  export let buildingId: string;
-  export let showOnlyActive = false;
+  let {
+    buildingId,
+    showOnlyActive = false,
+  }: {
+    buildingId: string;
+    showOnlyActive?: boolean;
+  } = $props();
 
-  let polls: Poll[] = [];
-  let filteredPolls: Poll[] = [];
-  let loading = true;
-  let error = "";
-  let statusFilter: PollStatus | "all" = "all";
+  let polls: Poll[] = $state([]);
+  let filteredPolls: Poll[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let statusFilter: PollStatus | "all" = $state("all");
 
-  onMount(async () => {
-    await loadPolls();
+  $effect(() => {
+    loadPolls();
   });
 
   async function loadPolls() {
@@ -34,8 +39,8 @@
           return await pollsApi.list({ building_id: buildingId });
         }
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string | null) => error = v ?? "",
       onSuccess: (data) => {
         polls = data;
         applyFilters();
@@ -51,7 +56,9 @@
     });
   }
 
-  $: if (statusFilter) applyFilters();
+  $effect(() => {
+    if (statusFilter) applyFilters();
+  });
 
   function getParticipationColor(rate: number): string {
     if (rate >= 50) return "text-green-600";
@@ -116,7 +123,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
-        on:click={loadPolls}
+        onclick={loadPolls}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
         {$_("common.retry")}

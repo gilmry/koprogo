@@ -1,5 +1,5 @@
+// Svelte 5 runes mode
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
   import { _ } from "svelte-i18n";
   import {
     pollsApi,
@@ -10,11 +10,17 @@
   import { withErrorHandling } from "../../lib/utils/error.utils";
   import BuildingSelector from "../BuildingSelector.svelte";
 
-  const dispatch = createEventDispatcher();
+  let {
+    oncreated,
+    oncancel,
+  }: {
+    oncreated?: (poll: any) => void;
+    oncancel?: () => void;
+  } = $props();
 
-  let selectedBuildingId = "";
+  let selectedBuildingId = $state("");
 
-  let formData: CreatePollDto = {
+  let formData: CreatePollDto = $state({
     building_id: "",
     poll_type: PollType.YesNo,
     title: "",
@@ -26,19 +32,21 @@
       { option_text: "Oui", display_order: 1 },
       { option_text: "Non", display_order: 2 },
     ],
-  };
+  });
 
-  $: formData.building_id = selectedBuildingId;
+  $effect(() => {
+    formData.building_id = selectedBuildingId;
+  });
 
-  let startsAt = new Date().toISOString().split("T")[0];
+  let startsAt = $state(new Date().toISOString().split("T")[0]);
 
-  let loading = false;
-  let error = "";
-  let success = false;
+  let loading = $state(false);
+  let error = $state("");
+  let success = $state(false);
 
-  let newOptionText = "";
+  let newOptionText = $state("");
 
-  let endsAtDate = "";
+  let endsAtDate = $state("");
 
   function setDefaultEndDate() {
     if (startsAt) {
@@ -111,11 +119,11 @@
 
     const poll = await withErrorHandling({
       action: () => pollsApi.create(formData),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       errorMessage: $_("polls.createForm.errors.creationFailed"),
       onSuccess: (created) => {
         success = true;
-        dispatch("created", created);
+        oncreated?.(created);
         setTimeout(() => {
           window.location.href = `/polls/detail?id=${created.id}`;
         }, 1500);
@@ -153,7 +161,7 @@
     </div>
   {/if}
 
-  <form on:submit={handleSubmit} class="space-y-6" data-testid="create-poll-form">
+  <form onsubmit={handleSubmit} class="space-y-6" data-testid="create-poll-form">
     <!-- Building Selector -->
     <BuildingSelector bind:selectedBuildingId label={$_("polls.createForm.buildingLabel")} />
 
@@ -165,7 +173,7 @@
       <select
         id="poll_type"
         bind:value={formData.poll_type}
-        on:change={onPollTypeChange}
+        onchange={onPollTypeChange}
         required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         data-testid="create-poll-type-select"
@@ -232,7 +240,7 @@
               />
               <button
                 type="button"
-                on:click={() => removeOption(index)}
+                onclick={() => removeOption(index)}
                 class="text-red-600 hover:text-red-800"
                 title={$_("common.delete")}
               >
@@ -248,7 +256,7 @@
             placeholder={$_("polls.createForm.newOptionPlaceholder")}
             class="flex-1 rounded-md border-gray-300"
             data-testid="create-poll-new-option-input"
-            on:keypress={(e) => {
+            onkeypress={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 addOption();
@@ -257,7 +265,7 @@
           />
           <button
             type="button"
-            on:click={addOption}
+            onclick={addOption}
             class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
             data-testid="create-poll-add-option-btn"
           >
@@ -313,7 +321,7 @@
           type="date"
           id="starts_at"
           bind:value={startsAt}
-          on:change={setDefaultEndDate}
+          onchange={setDefaultEndDate}
           required
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           data-testid="create-poll-start-date-input"
@@ -380,7 +388,7 @@
     <div class="flex justify-end space-x-3">
       <button
         type="button"
-        on:click={() => dispatch("cancel")}
+        onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
         data-testid="create-poll-cancel-btn"
       >

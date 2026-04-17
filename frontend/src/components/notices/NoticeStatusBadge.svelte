@@ -1,8 +1,9 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { NoticeStatus } from "../../lib/api/notices";
 
-  export let status: NoticeStatus;
+  let { status }: { status: NoticeStatus } = $props();
 
   const statusConfig: Record<NoticeStatus, { labelKey: string; class: string }> = {
     [NoticeStatus.Draft]: {
@@ -23,7 +24,7 @@
     },
   };
 
-  $: config = statusConfig[status];
+  let config = $derived(statusConfig[status]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

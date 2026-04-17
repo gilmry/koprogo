@@ -1,5 +1,5 @@
+// Svelte 5 runes mode
 <script lang="ts">
-  import { onMount } from "svelte";
   import { _ } from '../../lib/i18n';
   import { noticesApi, type Notice, NoticeStatus } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
@@ -8,29 +8,32 @@
   import { formatDateTime } from "../../lib/utils/date.utils";
   import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let noticeId: string;
-  export let currentUserId: string;
+  let {
+    noticeId,
+    currentUserId,
+  }: {
+    noticeId: string;
+    currentUserId: string;
+  } = $props();
 
-  let notice: Notice | null = null;
-  let loading = true;
-  let deleting = false;
-  let archiving = false;
+  let notice: Notice | null = $state(null);
+  let loading = $state(true);
+  let deleting = $state(false);
+  let archiving = $state(false);
 
-  onMount(async () => {
-    await loadNotice();
+  $effect(() => {
+    loadNotice();
     // Increment view count
-    try {
-      await noticesApi.incrementViewCount(noticeId);
-    } catch (err) {
+    noticesApi.incrementViewCount(noticeId).catch((err) => {
       // Silently fail view count increment
       console.error("Failed to increment view count:", err);
-    }
+    });
   });
 
   async function loadNotice() {
     await withLoadingState({
       action: () => noticesApi.getById(noticeId),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       setError: () => {},
       onSuccess: (data) => notice = data,
       errorMessage: "Failed to load notice",
@@ -41,7 +44,7 @@
     if (!confirm($_("notices.archive_confirmation"))) return;
     await withErrorHandling({
       action: () => noticesApi.archive(noticeId),
-      setLoading: (v) => archiving = v,
+      setLoading: (v: boolean) => archiving = v,
       successMessage: $_("notices.archived_successfully"),
       errorMessage: $_("notices.archive_failed"),
       onSuccess: () => { window.location.href = "/notices"; },
@@ -52,14 +55,14 @@
     if (!confirm($_("notices.delete_confirmation"))) return;
     await withErrorHandling({
       action: () => noticesApi.delete(noticeId),
-      setLoading: (v) => deleting = v,
+      setLoading: (v: boolean) => deleting = v,
       successMessage: $_("notices.deleted_successfully"),
       errorMessage: $_("notices.delete_failed"),
       onSuccess: () => { window.location.href = "/notices"; },
     });
   }
 
-  $: isAuthor = notice && notice.author_id === currentUserId;
+  let isAuthor = $derived(notice && notice.author_id === currentUserId);
 </script>
 
 <div class="bg-white shadow rounded-lg overflow-hidden" data-testid="notice-detail">
@@ -83,7 +86,7 @@
         {#if isAuthor}
           <div class="flex gap-2">
             <button
-              on:click={handleArchive}
+              onclick={handleArchive}
               disabled={archiving || notice.status === "Archived"}
               data-testid="notice-archive-btn"
               class="px-3 py-1 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -91,7 +94,7 @@
               {archiving ? $_("notices.archiving") : $_("notices.archive")}
             </button>
             <button
-              on:click={handleDelete}
+              onclick={handleDelete}
               disabled={deleting}
               data-testid="notice-delete-btn"
               class="px-3 py-1 text-sm text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"

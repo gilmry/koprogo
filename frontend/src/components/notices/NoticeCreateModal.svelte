@@ -1,29 +1,38 @@
+// Svelte 5 runes mode
 <script lang="ts">
   import { _ } from '../../lib/i18n';
   import { noticesApi, type CreateNoticeDto, NoticeType, NoticeCategory } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let isOpen = false;
-  export let buildingId: string;
-  export let authorId: string = "";
-  export let onClose: () => void;
-  export let onSuccess: () => void;
+  let {
+    isOpen = false,
+    buildingId,
+    authorId = "",
+    onClose,
+    onSuccess,
+  }: {
+    isOpen?: boolean;
+    buildingId: string;
+    authorId?: string;
+    onClose: () => void;
+    onSuccess: () => void;
+  } = $props();
 
-  let submitting = false;
-  let formData: CreateNoticeDto = {
+  let submitting = $state(false);
+  let formData: CreateNoticeDto = $state({
     building_id: buildingId,
     notice_type: NoticeType.Announcement,
     category: NoticeCategory.General,
     title: "",
     content: "",
     contact_info: "",
-  };
+  });
 
-  let expiresEnabled = false;
-  let expiresDate = "";
-  let eventDate = "";
-  let eventLocation = "";
+  let expiresEnabled = $state(false);
+  let expiresDate = $state("");
+  let eventDate = $state("");
+  let eventLocation = $state("");
 
   async function handleSubmit() {
     if (!formData.title.trim()) {
@@ -47,7 +56,7 @@
 
     await withErrorHandling({
       action: () => noticesApi.create(payload),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_("notices.created_successfully"),
       errorMessage: $_("notices.create_failed"),
       onSuccess: () => { resetForm(); onSuccess(); onClose(); },
@@ -81,7 +90,7 @@
       <div class="p-6">
         <h2 class="text-2xl font-bold text-gray-900 mb-6">{$_("notices.create_notice")}</h2>
 
-        <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+        <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
           <!-- Notice Type -->
           <div>
             <label for="notice_type" class="block text-sm font-medium text-gray-700 mb-1">
@@ -224,7 +233,7 @@
             </button>
             <button
               type="button"
-              on:click={handleCancel}
+              onclick={handleCancel}
               disabled={submitting}
               class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50"
             >

@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import {
     localExchangesApi,
     type SelStatistics,
@@ -9,11 +9,11 @@
   } from "../../lib/api/local-exchanges";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
+  let { buildingId }: { buildingId: string } = $props();
 
-  let stats: SelStatistics | null = null;
-  let loading: boolean = true;
-  let error: string | null = null;
+  let stats = $state<SelStatistics | null>(null);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   async function loadStatistics() {
     await withLoadingState({
@@ -25,7 +25,7 @@
     });
   }
 
-  onMount(() => {
+  $effect(() => {
     loadStatistics();
   });
 </script>

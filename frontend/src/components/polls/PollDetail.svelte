@@ -1,5 +1,5 @@
+// Svelte 5 runes mode
 <script lang="ts">
-  import { onMount } from "svelte";
   import { _ } from '../../lib/i18n';
   import {
     pollsApi,
@@ -16,28 +16,31 @@
   import PollTypeBadge from "./PollTypeBadge.svelte";
   import PollResults from "./PollResults.svelte";
 
-  export let pollId: string;
-  export let isAdmin = false;
+  let {
+    pollId,
+  }: {
+    pollId: string;
+  } = $props();
 
-  // Reactively compute isAdmin from auth store if not explicitly set via prop
-  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
+  // Reactively compute isAdmin from auth store
+  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
 
-  let poll: Poll | null = null;
-  let results: PollResultsType | null = null;
-  let loading = true;
-  let error = "";
+  let poll: Poll | null = $state(null);
+  let results: PollResultsType | null = $state(null);
+  let loading = $state(true);
+  let error = $state("");
 
-  let selectedOptionId: string | null = null;
-  let selectedOptions: Set<string> = new Set();
-  let ratingValue: number | null = null;
-  let openEndedText = "";
-  let votingInProgress = false;
-  let votingError = "";
-  let votingSuccess = false;
-  let hasVoted = false;
+  let selectedOptionId: string | null = $state(null);
+  let selectedOptions: Set<string> = $state(new Set());
+  let ratingValue: number | null = $state(null);
+  let openEndedText = $state("");
+  let votingInProgress = $state(false);
+  let votingError = $state("");
+  let votingSuccess = $state(false);
+  let hasVoted = $state(false);
 
-  onMount(async () => {
-    await loadPoll();
+  $effect(() => {
+    loadPoll();
   });
 
   async function loadPoll() {
@@ -197,7 +200,7 @@
   <div class="p-4 bg-red-50 border border-red-200 rounded-md">
     <p class="text-sm text-red-800">❌ {error}</p>
     <button
-      on:click={loadPoll}
+      onclick={loadPoll}
       class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
     >
       {$_("common.retry")}
@@ -267,7 +270,7 @@
         <div class="mt-4 flex items-center space-x-3 pt-4 border-t border-gray-200">
           {#if poll.status === PollStatus.Draft}
             <button
-              on:click={handlePublish}
+              onclick={handlePublish}
               class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700"
               data-testid="poll-publish-button"
             >
@@ -276,7 +279,7 @@
           {/if}
           {#if poll.status === PollStatus.Active}
             <button
-              on:click={handleClose}
+              onclick={handleClose}
               class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700"
               data-testid="poll-close-button"
             >
@@ -285,7 +288,7 @@
           {/if}
           {#if poll.status === PollStatus.Draft || poll.status === PollStatus.Active}
             <button
-              on:click={handleCancel}
+              onclick={handleCancel}
               class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700"
               data-testid="poll-cancel-button"
             >
@@ -325,7 +328,7 @@
                   name="poll_option"
                   value={option.id}
                   checked={poll.allow_multiple_votes ? selectedOptions.has(option.id) : selectedOptionId === option.id}
-                  on:change={() => {
+                  onchange={() => {
                     if (poll.allow_multiple_votes) {
                       toggleMultipleOption(option.id);
                     } else {
@@ -347,7 +350,7 @@
                 {@const value = i + 1}
                 <button
                   type="button"
-                  on:click={() => (ratingValue = value)}
+                  onclick={() => (ratingValue = value)}
                   class="text-4xl transition-all {ratingValue !== null && ratingValue >= value ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-300"
                 >
                   ⭐
@@ -375,7 +378,7 @@
         {/if}
 
         <button
-          on:click={handleVote}
+          onclick={handleVote}
           disabled={votingInProgress}
           class="mt-4 w-full px-4 py-3 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="poll-vote-button"

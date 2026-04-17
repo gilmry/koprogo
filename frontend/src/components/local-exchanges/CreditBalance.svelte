@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     localExchangesApi,
@@ -13,12 +13,11 @@
   } from "../../lib/api/local-exchanges";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let ownerId: string;
-  export let buildingId: string;
+  let { ownerId, buildingId }: { ownerId: string; buildingId: string } = $props();
 
-  let balance: OwnerCreditBalance | null = null;
-  let loading: boolean = true;
-  let error: string | null = null;
+  let balance = $state<OwnerCreditBalance | null>(null);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   async function loadBalance() {
     await withLoadingState({
@@ -30,17 +29,17 @@
     });
   }
 
-  onMount(() => {
+  $effect(() => {
     loadBalance();
   });
 
-  $: participationConfig = balance
+  let participationConfig = $derived(balance
     ? participationLevelColors[balance.participation_level]
-    : null;
-  $: participationLabel = balance
+    : null);
+  let participationLabel = $derived(balance
     ? participationLevelLabels[balance.participation_level]
-    : null;
-  $: balanceColor = balance ? getCreditStatusColor(balance.credit_status) : "";
+    : null);
+  let balanceColor = $derived(balance ? getCreditStatusColor(balance.credit_status) : "");
 </script>
 
 <div class="bg-white shadow rounded-lg p-6" data-testid="credit-balance">

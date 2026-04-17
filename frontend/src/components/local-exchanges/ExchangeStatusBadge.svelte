@@ -1,14 +1,15 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import {
     ExchangeStatus,
     exchangeStatusLabels,
     exchangeStatusColors,
   } from "../../lib/api/local-exchanges";
 
-  export let status: ExchangeStatus;
+  let { status }: { status: ExchangeStatus } = $props();
 
-  $: config = exchangeStatusColors[status];
-  $: label = exchangeStatusLabels[status];
+  let config = $derived(exchangeStatusColors[status]);
+  let label = $derived(exchangeStatusLabels[status]);
 </script>
 
 <span

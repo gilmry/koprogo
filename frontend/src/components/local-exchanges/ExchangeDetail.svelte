@@ -1,3 +1,4 @@
+// Svelte 5 runes mode
 <script lang="ts">
   import { _ } from '../../lib/i18n';
   import {
@@ -15,24 +16,29 @@
   import { formatDateTime, formatDate } from "../../lib/utils/date.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let exchange: LocalExchange;
-  export let currentUserId: string = '';
+  let {
+    exchange = $bindable(),
+    currentUserId = '',
+  }: {
+    exchange: LocalExchange;
+    currentUserId?: string;
+  } = $props();
 
-  let actionLoading = false;
-  let ratingValue = 0;
-  let showRatingForm = false;
-  let cancelReason = '';
-  let showCancelForm = false;
+  let actionLoading = $state(false);
+  let ratingValue = $state(0);
+  let showRatingForm = $state(false);
+  let cancelReason = $state('');
+  let showCancelForm = $state(false);
 
-  $: isProvider = exchange.provider_id === currentUserId;
-  $: isRequester = exchange.requester_id === currentUserId;
-  $: statusColors = exchangeStatusColors[exchange.status];
+  let isProvider = $derived(exchange.provider_id === currentUserId);
+  let isRequester = $derived(exchange.requester_id === currentUserId);
+  let statusColors = $derived(exchangeStatusColors[exchange.status]);
 
   async function handleRequest() {
     if (!confirm($_('exchanges.confirm_request'))) return;
     const result = await withErrorHandling({
       action: () => localExchangesApi.request(exchange.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('exchanges.request_success'),
       errorMessage: $_('exchanges.request_error'),
     });
@@ -43,7 +49,7 @@
     if (!confirm($_('exchanges.confirm_start'))) return;
     const result = await withErrorHandling({
       action: () => localExchangesApi.start(exchange.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('exchanges.start_success'),
       errorMessage: $_('exchanges.start_error'),
     });
@@ -54,7 +60,7 @@
     if (!confirm($_('exchanges.confirm_complete'))) return;
     const result = await withErrorHandling({
       action: () => localExchangesApi.complete(exchange.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('exchanges.complete_success'),
       errorMessage: $_('exchanges.complete_error'),
     });
@@ -68,7 +74,7 @@
     }
     const result = await withErrorHandling({
       action: () => localExchangesApi.cancel(exchange.id, { reason: cancelReason }),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('exchanges.cancel_success'),
       errorMessage: $_('exchanges.cancel_error'),
     });
@@ -87,7 +93,7 @@
       action: () => asProvider
         ? localExchangesApi.rateRequester(exchange.id, { rating: ratingValue })
         : localExchangesApi.rateProvider(exchange.id, { rating: ratingValue }),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('exchanges.rating_saved'),
       errorMessage: $_('exchanges.rating_error'),
     });
@@ -106,7 +112,7 @@
     if (!confirm($_('exchanges.confirm_delete'))) return;
     await withErrorHandling({
       action: () => localExchangesApi.delete(exchange.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_('exchanges.delete_success'),
       errorMessage: $_('exchanges.delete_error'),
       onSuccess: () => { window.location.href = '/exchanges'; },
@@ -229,7 +235,7 @@
       {#if canRate().canRateProvider || canRate().canRateRequester}
         {#if !showRatingForm}
           <button
-            on:click={() => { showRatingForm = true; }}
+            onclick={() => { showRatingForm = true; }}
             class="mt-4 px-4 py-2 bg-amber-600 text-white text-sm rounded-md hover:bg-amber-700"
           >
             {$_('exchanges.rate', { type: canRate().canRateProvider ? $_('exchanges.provider') : $_('exchanges.requester') })}
@@ -243,7 +249,7 @@
               {#each [1, 2, 3, 4, 5] as star}
                 <button
                   type="button"
-                  on:click={() => ratingValue = star}
+                  onclick={() => ratingValue = star}
                   class="text-3xl transition-colors {ratingValue >= star ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-300"
                 >
                   &#9733;
@@ -252,14 +258,14 @@
             </div>
             <div class="flex gap-2">
               <button
-                on:click={() => handleRate(canRate().canRateRequester)}
+                onclick={() => handleRate(canRate().canRateRequester)}
                 disabled={actionLoading || ratingValue === 0}
                 class="px-4 py-2 bg-amber-600 text-white text-sm rounded-md hover:bg-amber-700 disabled:opacity-50"
               >
                 {$_('common.confirm')}
               </button>
               <button
-                on:click={() => { showRatingForm = false; ratingValue = 0; }}
+                onclick={() => { showRatingForm = false; ratingValue = 0; }}
                 class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300"
               >
                 {$_('common.cancel')}
@@ -277,7 +283,7 @@
     <div class="flex flex-wrap gap-3">
       {#if exchange.status === ExchangeStatus.Offered && !isProvider}
         <button
-          on:click={handleRequest}
+          onclick={handleRequest}
           disabled={actionLoading}
           data-testid="exchange-request-btn"
           class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
@@ -288,7 +294,7 @@
 
       {#if exchange.status === ExchangeStatus.Requested && isProvider}
         <button
-          on:click={handleStart}
+          onclick={handleStart}
           disabled={actionLoading}
           data-testid="exchange-start-btn"
           class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
@@ -299,7 +305,7 @@
 
       {#if exchange.status === ExchangeStatus.InProgress && isProvider}
         <button
-          on:click={handleComplete}
+          onclick={handleComplete}
           disabled={actionLoading}
           data-testid="exchange-complete-btn"
           class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
@@ -311,7 +317,7 @@
       {#if exchange.status !== ExchangeStatus.Completed && exchange.status !== ExchangeStatus.Cancelled}
         {#if !showCancelForm}
           <button
-            on:click={() => showCancelForm = true}
+            onclick={() => showCancelForm = true}
             data-testid="exchange-cancel-btn"
             class="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-md hover:bg-red-200"
           >
@@ -328,14 +334,14 @@
             ></textarea>
             <div class="flex gap-2 mt-2">
               <button
-                on:click={handleCancel}
+                onclick={handleCancel}
                 disabled={actionLoading}
                 class="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50"
               >
                 {$_('exchanges.confirm_cancellation')}
               </button>
               <button
-                on:click={() => { showCancelForm = false; cancelReason = ''; }}
+                onclick={() => { showCancelForm = false; cancelReason = ''; }}
                 class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300"
               >
                 {$_('common.back')}
@@ -347,7 +353,7 @@
 
       {#if exchange.status === ExchangeStatus.Offered && isProvider}
         <button
-          on:click={handleDelete}
+          onclick={handleDelete}
           disabled={actionLoading}
           data-testid="exchange-delete-btn"
           class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200"

@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { PollType } from "../../lib/api/polls";
 
-  export let type: PollType;
+  let { type }: { type: PollType } = $props();
 
   const typeConfig: Record<
     PollType,
@@ -33,7 +34,7 @@
     },
   };
 
-  $: config = typeConfig[type] || typeConfig[PollType.YesNo];
+  let config = $derived(typeConfig[type] || typeConfig[PollType.YesNo]);
 </script>
 
 <span
