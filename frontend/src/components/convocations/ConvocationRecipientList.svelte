@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     convocationsApi,
@@ -9,24 +9,28 @@
   import { formatDateTime } from '../../lib/utils/date.utils';
   import { withErrorHandling, withLoadingState } from '../../lib/utils/error.utils';
 
-  export let convocationId: string;
+  let {
+    convocationId,
+  }: {
+    convocationId: string;
+  } = $props();
 
-  let recipients: ConvocationRecipient[] = [];
-  let filteredRecipients: ConvocationRecipient[] = [];
-  let loading = true;
-  let error = '';
-  let filter: 'all' | 'confirmed' | 'pending' | 'absent' = 'all';
+  let recipients = $state<ConvocationRecipient[]>([]);
+  let filteredRecipients = $state<ConvocationRecipient[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let filter = $state<'all' | 'confirmed' | 'pending' | 'absent'>('all');
 
-  onMount(async () => {
-    await loadRecipients();
+  $effect(() => {
+    loadRecipients();
   });
 
   async function loadRecipients() {
     await withLoadingState({
       action: () => convocationsApi.getRecipients(convocationId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => { recipients = data; applyFilter(); },
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data: ConvocationRecipient[]) => { recipients = data; applyFilter(); },
       errorMessage: $_('convocations.errors.loadingRecipientsFailed'),
     });
   }
@@ -55,7 +59,10 @@
     }
   }
 
-  $: if (filter) applyFilter();
+  $effect(() => {
+    filter;
+    applyFilter();
+  });
 
   async function updateAttendance(recipientId: string, status: AttendanceStatus) {
     await withErrorHandling({
@@ -92,7 +99,7 @@
           { value: 'absent', label: $_('convocations.filters.absent') },
         ] as f}
           <button
-            on:click={() => filter = f.value}
+            onclick={() => filter = f.value as 'all' | 'confirmed' | 'pending' | 'absent'}
             class="px-2 py-1 rounded text-xs font-medium transition-colors
               {filter === f.value
                 ? 'bg-amber-600 text-white'
@@ -141,16 +148,16 @@
               <td class="px-4 py-2 text-gray-600">{recipient.owner_email}</td>
               <td class="px-4 py-2">
                 {#if recipient.email_failed}
-                  <span class="text-red-600 text-xs">❌ {$_('common.failed')}</span>
+                  <span class="text-red-600 text-xs">{$_('common.failed')}</span>
                 {:else if recipient.email_sent_at}
-                  <span class="text-green-600 text-xs">✅ {formatDateTime(recipient.email_sent_at)}</span>
+                  <span class="text-green-600 text-xs">{formatDateTime(recipient.email_sent_at)}</span>
                 {:else}
                   <span class="text-gray-400 text-xs">-</span>
                 {/if}
               </td>
               <td class="px-4 py-2">
                 {#if recipient.email_opened_at}
-                  <span class="text-blue-600 text-xs">👁️ {formatDateTime(recipient.email_opened_at)}</span>
+                  <span class="text-blue-600 text-xs">{formatDateTime(recipient.email_opened_at)}</span>
                 {:else}
                   <span class="text-gray-400 text-xs">-</span>
                 {/if}
@@ -163,7 +170,7 @@
               <td class="px-4 py-2">
                 {#if recipient.proxy_owner_id}
                   <span class="text-xs text-purple-600">
-                    🤝 {recipient.proxy_owner_name || recipient.proxy_owner_id.slice(0, 8)}
+                    {recipient.proxy_owner_name || recipient.proxy_owner_id.slice(0, 8)}
                   </span>
                 {:else}
                   <span class="text-gray-400 text-xs">-</span>
@@ -173,7 +180,7 @@
                 <div class="flex gap-1">
                   {#if recipient.attendance_status === AttendanceStatus.Pending}
                     <button
-                      on:click={() => updateAttendance(recipient.id, AttendanceStatus.WillAttend)}
+                      onclick={() => updateAttendance(recipient.id, AttendanceStatus.WillAttend)}
                       class="text-xs text-green-600 hover:text-green-800 underline"
                       title={$_('convocations.markAsPresent')}
                       data-testid="recipient-btn-attend-{recipient.id}"
@@ -181,7 +188,7 @@
                       ✅
                     </button>
                     <button
-                      on:click={() => updateAttendance(recipient.id, AttendanceStatus.WillNotAttend)}
+                      onclick={() => updateAttendance(recipient.id, AttendanceStatus.WillNotAttend)}
                       class="text-xs text-red-600 hover:text-red-800 underline"
                       title={$_('convocations.markAsAbsent')}
                       data-testid="recipient-btn-absent-{recipient.id}"

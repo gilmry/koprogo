@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     resolutionsApi,
@@ -13,34 +13,39 @@
   import ResolutionCreateForm from './ResolutionCreateForm.svelte';
   import { withErrorHandling, withLoadingState } from '../../lib/utils/error.utils';
 
-  export let meetingId: string;
-  export let meetingStatus: string = 'Scheduled';
+  let {
+    meetingId,
+    meetingStatus = 'Scheduled',
+  }: {
+    meetingId: string;
+    meetingStatus?: string;
+  } = $props();
 
-  let resolutions: Resolution[] = [];
-  let loading = true;
-  let error = '';
-  let showCreateForm = false;
+  let resolutions = $state<Resolution[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let showCreateForm = $state(false);
 
-  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
-  $: canAddResolution = meetingStatus === 'Scheduled' && isAdmin;
+  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
+  let canAddResolution = $derived(meetingStatus === 'Scheduled' && isAdmin);
 
-  onMount(async () => {
-    await loadResolutions();
+  $effect(() => {
+    loadResolutions();
   });
 
   async function loadResolutions() {
     await withLoadingState({
       action: () => resolutionsApi.listByMeeting(meetingId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => { resolutions = data; },
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data: Resolution[]) => { resolutions = data; },
       errorMessage: $_("resolutions.list.loadingError"),
     });
   }
 
-  async function handleResolutionCreated(event: CustomEvent<Resolution | null>) {
+  async function handleResolutionCreated(detail: Resolution | null) {
     showCreateForm = false;
-    if (event.detail) {
+    if (detail) {
       await loadResolutions();
     }
   }
@@ -56,9 +61,9 @@
     });
   }
 
-  $: pendingCount = resolutions.filter(r => r.status === ResolutionStatus.Pending).length;
-  $: adoptedCount = resolutions.filter(r => r.status === ResolutionStatus.Adopted).length;
-  $: rejectedCount = resolutions.filter(r => r.status === ResolutionStatus.Rejected).length;
+  let pendingCount = $derived(resolutions.filter(r => r.status === ResolutionStatus.Pending).length);
+  let adoptedCount = $derived(resolutions.filter(r => r.status === ResolutionStatus.Adopted).length);
+  let rejectedCount = $derived(resolutions.filter(r => r.status === ResolutionStatus.Rejected).length);
 </script>
 
 <div class="bg-white rounded-lg shadow-lg overflow-hidden" data-testid="resolution-list">
@@ -83,7 +88,7 @@
       </div>
       {#if canAddResolution && !showCreateForm}
         <button
-          on:click={() => showCreateForm = true}
+          onclick={() => showCreateForm = true}
           class="inline-flex items-center px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors"
           data-testid="resolution-create-btn"
         >
@@ -96,7 +101,7 @@
   <div class="p-6">
     {#if showCreateForm}
       <div class="mb-4">
-        <ResolutionCreateForm {meetingId} on:created={handleResolutionCreated} />
+        <ResolutionCreateForm {meetingId} oncreated={handleResolutionCreated} />
       </div>
     {/if}
 
@@ -109,7 +114,7 @@
     {:else if error}
       <div class="p-4 bg-red-50 border border-red-200 rounded-md">
         <p class="text-sm text-red-800">{error}</p>
-        <button on:click={loadResolutions} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+        <button onclick={loadResolutions} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
           {$_("common.retry")}
         </button>
       </div>
@@ -139,7 +144,7 @@
               </div>
               {#if isAdmin && resolution.status === ResolutionStatus.Pending}
                 <button
-                  on:click={() => handleDeleteResolution(resolution.id)}
+                  onclick={() => handleDeleteResolution(resolution.id)}
                   class="text-gray-400 hover:text-red-500 p-1 shrink-0"
                   title={$_("common.delete")}
                   data-testid="resolution-delete-btn"

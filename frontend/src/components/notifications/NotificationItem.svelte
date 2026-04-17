@@ -1,13 +1,18 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { notificationStore } from "../../stores/notifications";
   import type { Notification, NotificationType } from "../../lib/api/notifications";
 
-  export let notification: Notification;
-  export let clickable = true;
-
-  const dispatch = createEventDispatcher();
+  let {
+    notification,
+    clickable = true,
+    onclick,
+  }: {
+    notification: Notification;
+    clickable?: boolean;
+    onclick?: () => void;
+  } = $props();
 
   const notificationIcons: Record<string, string> = {
     MeetingReminder: "📅",
@@ -77,7 +82,7 @@
       }
     }
 
-    dispatch("click");
+    onclick?.();
   }
 
   async function handleDelete(event: MouseEvent) {
@@ -90,7 +95,8 @@
   class="px-4 py-3 hover:bg-gray-50 transition-colors {clickable
     ? 'cursor-pointer'
     : ''} {!notification.is_read ? 'bg-blue-50' : ''}"
-  on:click={handleClick}
+  onclick={handleClick}
+  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(); }}
   role={clickable ? "button" : "article"}
   tabindex={clickable ? 0 : -1}
 >
@@ -118,7 +124,7 @@
 
         <!-- Delete button -->
         <button
-          on:click={handleDelete}
+          onclick={handleDelete}
           class="ml-2 text-gray-400 hover:text-red-600 transition-colors"
           aria-label={$_("notifications.delete_notification")}
         >

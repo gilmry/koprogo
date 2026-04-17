@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  // Svelte 5 runes mode
+  import type { Snippet } from 'svelte';
   import { _ } from '../../lib/i18n';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
@@ -10,13 +11,21 @@
   import FormSelect from '../ui/FormSelect.svelte';
   import Button from '../ui/Button.svelte';
 
-  export let isOpen = false;
-  export let building: Building | null = null;
-  export let mode: 'create' | 'edit' = 'create';
+  let {
+    isOpen = false,
+    building = null,
+    mode = 'create',
+    onclose,
+    onsuccess,
+  }: {
+    isOpen?: boolean;
+    building?: Building | null;
+    mode?: 'create' | 'edit';
+    onclose?: () => void;
+    onsuccess?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  let formData = {
+  let formData = $state({
     name: '',
     address: '',
     city: '',
@@ -26,22 +35,26 @@
     total_tantiemes: 1000,
     construction_year: null as number | null,
     organization_id: '',
-  };
+  });
 
-  let organizations: Organization[] = [];
-  let organizationOptions: Array<{ value: string; label: string }> = [];
-  let loadingOrgs = false;
-  let isSuperAdmin = false;
+  let organizations = $state<Organization[]>([]);
+  let organizationOptions = $state<Array<{ value: string; label: string }>>([]);
+  let loadingOrgs = $state(false);
+  let isSuperAdmin = $state(false);
 
   // Check if user is SuperAdmin
-  $: if ($authStore.user) {
-    isSuperAdmin = $authStore.user.role === 'superadmin';
-  }
+  $effect(() => {
+    if ($authStore.user) {
+      isSuperAdmin = $authStore.user.role === 'superadmin';
+    }
+  });
 
   // Load organizations when modal opens and user is SuperAdmin
-  $: if (isOpen && isSuperAdmin && organizations.length === 0) {
-    loadOrganizations();
-  }
+  $effect(() => {
+    if (isOpen && isSuperAdmin && organizations.length === 0) {
+      loadOrganizations();
+    }
+  });
 
   async function loadOrganizations() {
     loadingOrgs = true;
@@ -59,7 +72,7 @@
     }
   }
 
-  let errors = {
+  let errors = $state({
     name: '',
     address: '',
     city: '',
@@ -68,24 +81,26 @@
     total_tantiemes: '',
     construction_year: '',
     organization_id: '',
-  };
+  });
 
-  let loading = false;
+  let loading = $state(false);
 
   // Initialize form with building data if editing
-  $: if (building && mode === 'edit') {
-    formData = {
-      name: building.name,
-      address: building.address,
-      city: building.city,
-      postal_code: building.postal_code,
-      country: building.country || 'Belgique',
-      total_units: building.total_units,
-      total_tantiemes: building.total_tantiemes || 1000,
-      construction_year: building.construction_year,
-      organization_id: building.organization_id || '',
-    };
-  }
+  $effect(() => {
+    if (building && mode === 'edit') {
+      formData = {
+        name: building.name,
+        address: building.address,
+        city: building.city,
+        postal_code: building.postal_code,
+        country: building.country || 'Belgique',
+        total_units: building.total_units,
+        total_tantiemes: building.total_tantiemes || 1000,
+        construction_year: building.construction_year,
+        organization_id: building.organization_id || '',
+      };
+    }
+  });
 
   const validateForm = (): boolean => {
     let isValid = true;
@@ -130,7 +145,7 @@
       isValid = false;
     }
 
-    // Total tantièmes validation
+    // Total tantiemes validation
     if (formData.total_tantiemes < 1) {
       errors.total_tantiemes = $_('admin.building.totalTantgemesError');
       isValid = false;
@@ -202,7 +217,7 @@
       handleClose();
 
       // Then dispatch success to reload data
-      dispatch('success');
+      onsuccess?.();
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : $_('common.errorOccurred');
       toast.show(errorMessage, 'error');
@@ -212,7 +227,6 @@
 
   const handleClose = () => {
     if (!loading) {
-      isOpen = false;
       // Reset form
       formData = {
         name: '',
@@ -235,7 +249,7 @@
         construction_year: '',
         organization_id: '',
       };
-      dispatch('close');
+      onclose?.();
     }
   };
 </script>
@@ -244,10 +258,10 @@
   {isOpen}
   title={mode === 'create' ? $_('admin.building.newBuilding') : $_('admin.building.editBuilding')}
   size="lg"
-  on:close={handleClose}
+  onclose={handleClose}
 >
   <form
-    on:submit|preventDefault={handleSubmit}
+    onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}
     class="space-y-4"
     data-testid="building-form"
   >
@@ -272,7 +286,7 @@
       bind:value={formData.name}
       error={errors.name}
       required
-      placeholder="Résidence Les Peupliers"
+      placeholder="Residence Les Peupliers"
       data-testid="building-name-input"
     />
 
@@ -353,19 +367,19 @@
       error={errors.construction_year}
       placeholder="2000"
       hint={$_('common.optional')}
-      on:input={(e) => {
-        const val = e.target.value;
+      oninput={(e: Event) => {
+        const val = (e.target as HTMLInputElement).value;
         formData.construction_year = val === '' ? null : parseInt(val);
       }}
       data-testid="building-constructionyear-input"
     />
   </form>
 
-  <svelte:fragment slot="footer">
+  {#snippet footer()}
     <div class="flex justify-end space-x-3">
       <Button
         variant="outline"
-        on:click={handleClose}
+        onclick={handleClose}
         disabled={loading}
         data-testid="building-cancel-button"
       >
@@ -373,12 +387,12 @@
       </Button>
       <Button
         variant="primary"
-        on:click={handleSubmit}
+        onclick={handleSubmit}
         {loading}
         data-testid="building-submit-button"
       >
         {mode === 'create' ? $_('admin.building.createBuilding') : $_('common.saveChanges')}
       </Button>
     </div>
-  </svelte:fragment>
+  {/snippet}
 </Modal>

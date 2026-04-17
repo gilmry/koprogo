@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     TicketStatus,
@@ -15,37 +15,42 @@
   import TicketStatusBadge from "./TicketStatusBadge.svelte";
   import TicketPriorityBadge from "./TicketPriorityBadge.svelte";
 
-  export let buildingId: string | undefined = undefined;
-  export let view: "all" | "my" | "assigned" = "all";
+  let {
+    buildingId = undefined,
+    view = "all",
+  }: {
+    buildingId?: string | undefined;
+    view?: "all" | "my" | "assigned";
+  } = $props();
 
-  let tickets: Ticket[] = [];
-  let loading = true;
-  let error = "";
+  let tickets = $state<Ticket[]>([]);
+  let loading = $state(true);
+  let error = $state("");
 
-  let statusFilter: TicketStatus | "all" = "all";
-  let priorityFilter: TicketPriority | "all" = "all";
-  let categoryFilter: TicketCategory | "all" = "all";
-  let searchQuery = "";
+  let statusFilter = $state<TicketStatus | "all">("all");
+  let priorityFilter = $state<TicketPriority | "all">("all");
+  let categoryFilter = $state<TicketCategory | "all">("all");
+  let searchQuery = $state("");
 
-  onMount(async () => {
-    await doLoadTickets();
+  $effect(() => {
+    doLoadTickets();
   });
 
   async function doLoadTickets() {
     await withLoadingState({
       action: () => loadTicketsService(view, buildingId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: (data) => tickets = data,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data: Ticket[]) => tickets = data,
       errorMessage: $_("tickets.load_failed"),
     });
   }
 
-  $: filteredTickets = filterAndSearch(tickets, searchQuery, ['title', 'description', 'requester_name', 'assigned_to_name'], {
+  let filteredTickets = $derived(filterAndSearch(tickets, searchQuery, ['title', 'description', 'requester_name', 'assigned_to_name'], {
     status: statusFilter,
     priority: priorityFilter,
     category: categoryFilter,
-  });
+  }));
 
   function getTicketUrl(ticketId: string): string {
     return `/ticket-detail?id=${ticketId}`;
@@ -69,7 +74,7 @@
         </span>
       </h2>
       <button
-        on:click={doLoadTickets}
+        onclick={doLoadTickets}
         data-testid="ticket-refresh-btn"
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
@@ -172,7 +177,7 @@
                     class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800"
                     data-testid="ticket-overdue-badge"
                   >
-                    ⚠️ {$_("tickets.overdue")}
+                    {$_("tickets.overdue")}
                   </span>
                 {/if}
               </div>

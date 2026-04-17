@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     ticketsApi,
@@ -15,76 +15,84 @@
   import Button from "../ui/Button.svelte";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
-  export let ticket: Ticket;
-  export let canManage = false;
-  export let isContractor = false;
+  let {
+    ticket,
+    canManage = false,
+    isContractor = false,
+    onupdated,
+    ondeleted,
+  }: {
+    ticket: Ticket;
+    canManage?: boolean;
+    isContractor?: boolean;
+    onupdated?: (ticket: Ticket) => void;
+    ondeleted?: (ticketId: string) => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
+  let showAssignModal = $state(false);
+  let showDeleteConfirm = $state(false);
+  let actionLoading = $state(false);
 
-  let showAssignModal = false;
-  let showDeleteConfirm = false;
-  let actionLoading = false;
-
-  async function handleAssign(event: CustomEvent) {
-    const contractorId = event.detail.contractorId;
+  async function handleAssign(detail: { contractorId: string }) {
+    const contractorId = detail.contractorId;
     const result = await withErrorHandling({
       action: () => ticketsApi.assign(ticket.id, contractorId),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("tickets.assigned_successfully"),
       errorMessage: $_("tickets.assign_failed"),
     });
-    if (result) { ticket = result; dispatch("updated", ticket); }
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleResolve() {
     const result = await withErrorHandling({
       action: () => ticketsApi.resolve(ticket.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("tickets.marked_resolved"),
       errorMessage: $_("tickets.resolve_failed"),
     });
-    if (result) { ticket = result; dispatch("updated", ticket); }
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleClose() {
     const result = await withErrorHandling({
       action: () => ticketsApi.close(ticket.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("tickets.closed"),
       errorMessage: $_("tickets.close_failed"),
     });
-    if (result) { ticket = result; dispatch("updated", ticket); }
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleCancel() {
     const result = await withErrorHandling({
       action: () => ticketsApi.cancel(ticket.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("tickets.cancelled"),
       errorMessage: $_("tickets.cancel_failed"),
     });
-    if (result) { ticket = result; dispatch("updated", ticket); }
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleReopen() {
     const result = await withErrorHandling({
       action: () => ticketsApi.reopen(ticket.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("tickets.reopened"),
       errorMessage: $_("tickets.reopen_failed"),
     });
-    if (result) { ticket = result; dispatch("updated", ticket); }
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleDelete() {
     const result = await withErrorHandling({
       action: () => ticketsApi.delete(ticket.id),
-      setLoading: (v) => actionLoading = v,
+      setLoading: (v: boolean) => actionLoading = v,
       successMessage: $_("tickets.deleted"),
       errorMessage: $_("tickets.delete_failed"),
     });
     showDeleteConfirm = false;
-    if (result !== undefined) dispatch("deleted", ticket.id);
+    if (result !== undefined) ondeleted?.(ticket.id);
   }
 </script>
 
@@ -100,7 +108,7 @@
               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800"
               data-testid="ticket-overdue-badge"
             >
-              ⚠️ {$_("tickets.overdue")}
+              {$_("tickets.overdue")}
             </span>
           {/if}
         </div>
@@ -116,26 +124,26 @@
       <!-- Actions -->
       <div class="flex flex-col space-y-2">
         {#if canManage && ticket.status === TicketStatus.Open}
-          <Button on:click={() => (showAssignModal = true)} size="sm" data-testid="ticket-assign-btn">
+          <Button onclick={() => (showAssignModal = true)} size="sm" data-testid="ticket-assign-btn">
             {$_("tickets.assign_to_contractor")}
           </Button>
         {/if}
 
         {#if (isContractor || canManage) && ticket.status === TicketStatus.InProgress}
-          <Button on:click={handleResolve} loading={actionLoading} size="sm" data-testid="ticket-resolve-btn">
+          <Button onclick={handleResolve} loading={actionLoading} size="sm" data-testid="ticket-resolve-btn">
             {$_("tickets.mark_resolved")}
           </Button>
         {/if}
 
         {#if canManage && ticket.status === TicketStatus.Resolved}
-          <Button on:click={handleClose} loading={actionLoading} size="sm" data-testid="ticket-close-btn">
+          <Button onclick={handleClose} loading={actionLoading} size="sm" data-testid="ticket-close-btn">
             {$_("tickets.close_ticket")}
           </Button>
         {/if}
 
         {#if canManage && (ticket.status === TicketStatus.Open || ticket.status === TicketStatus.InProgress)}
           <Button
-            on:click={handleCancel}
+            onclick={handleCancel}
             loading={actionLoading}
             variant="outline"
             size="sm"
@@ -147,7 +155,7 @@
 
         {#if ticket.status === TicketStatus.Closed || ticket.status === TicketStatus.Cancelled}
           <Button
-            on:click={handleReopen}
+            onclick={handleReopen}
             loading={actionLoading}
             variant="outline"
             size="sm"
@@ -159,7 +167,7 @@
 
         {#if canManage}
           <Button
-            on:click={() => (showDeleteConfirm = true)}
+            onclick={() => (showDeleteConfirm = true)}
             variant="outline"
             size="sm"
             data-testid="ticket-delete-btn"
@@ -264,7 +272,7 @@
 <TicketAssignModal
   bind:open={showAssignModal}
   ticketId={ticket.id}
-  on:assigned={handleAssign}
+  onassigned={handleAssign}
 />
 
 <!-- Delete Confirmation -->
@@ -274,6 +282,6 @@
   message={$_("tickets.delete_confirmation")}
   confirmText={$_("common.delete")}
   variant="danger"
-  on:confirm={handleDelete}
-  on:cancel={() => (showDeleteConfirm = false)}
+  onconfirm={handleDelete}
+  oncancel={() => (showDeleteConfirm = false)}
 />

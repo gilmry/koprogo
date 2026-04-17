@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     notificationsApi,
@@ -9,11 +9,15 @@
   import { toast } from "../../stores/toast";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let userId: string;
+  let {
+    userId,
+  }: {
+    userId: string;
+  } = $props();
 
-  let preferences: NotificationPreference[] = [];
-  let loading = true;
-  let saving = false;
+  let preferences = $state<NotificationPreference[]>([]);
+  let loading = $state(true);
+  let saving = $state(false);
 
   const notificationTypeLabels: Record<NotificationType, string> = {
     [NotificationType.MeetingReminder]: $_("notifications.type_meeting_reminders"),
@@ -40,8 +44,8 @@
     [NotificationType.ChallengeCompleted]: $_("notifications.type_challenge_completed"),
   };
 
-  onMount(async () => {
-    await loadPreferences();
+  $effect(() => {
+    loadPreferences();
   });
 
   async function loadPreferences() {
@@ -64,7 +68,7 @@
         preference.notification_type,
         { [field]: !(preference as any)[field] },
       ),
-      setLoading: (v) => saving = v,
+      setLoading: (v: boolean) => saving = v,
       successMessage: $_("notifications.preference_updated"),
       errorMessage: $_("notifications.update_preference_failed"),
     });
@@ -132,7 +136,7 @@
                 <input
                   type="checkbox"
                   checked={preference.enabled}
-                  on:change={() => handleToggle(preference, "enabled")}
+                  onchange={() => handleToggle(preference, "enabled")}
                   disabled={saving}
                   class="sr-only peer"
                 />
@@ -148,7 +152,7 @@
                 <input
                   type="checkbox"
                   checked={preference.email_enabled}
-                  on:change={() => handleToggle(preference, "email_enabled")}
+                  onchange={() => handleToggle(preference, "email_enabled")}
                   disabled={!preference.enabled || saving}
                   class="sr-only peer"
                 />
@@ -164,7 +168,7 @@
                 <input
                   type="checkbox"
                   checked={preference.sms_enabled}
-                  on:change={() => handleToggle(preference, "sms_enabled")}
+                  onchange={() => handleToggle(preference, "sms_enabled")}
                   disabled={!preference.enabled || saving}
                   class="sr-only peer"
                 />
@@ -180,7 +184,7 @@
                 <input
                   type="checkbox"
                   checked={preference.push_enabled}
-                  on:change={() => handleToggle(preference, "push_enabled")}
+                  onchange={() => handleToggle(preference, "push_enabled")}
                   disabled={!preference.enabled || saving}
                   class="sr-only peer"
                 />
