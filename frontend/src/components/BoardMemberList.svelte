@@ -1,20 +1,21 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
   import type { BoardMemberResponse } from '../lib/types';
   import { formatDate } from "../lib/utils/date.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string = '';
-  export let showInactive: boolean = false;
+  let { buildingId = '', showInactive = false }: {
+    buildingId?: string;
+    showInactive?: boolean;
+  } = $props();
 
-  let members: BoardMemberResponse[] = [];
-  let loading = true;
-  let error = '';
+  let members = $state<BoardMemberResponse[]>([]);
+  let loading = $state(true);
+  let error = $state('');
 
-  onMount(() => {
+  $effect(() => {
     if (!buildingId) {
       error = $_('board.error.buildingIdMissing');
       loading = false;
@@ -165,7 +166,7 @@
         <strong>{$_('board.legalNote')}:</strong> {$_('board.legalRequirement')}
       </p>
       <button
-        on:click={() => { showInactive = !showInactive; loadMembers(); }}
+        onclick={() => { showInactive = !showInactive; loadMembers(); }}
         class="text-sm text-primary-600 hover:text-primary-800 font-medium"
       >
         {showInactive ? $_('board.hideMembers') : $_('board.showMembers')}

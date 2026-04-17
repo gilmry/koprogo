@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { calculateLineItem, formatCurrency } from '../lib/utils/finance.utils';
 
-  export let lineItems: LineItem[] = [];
-  export let disabled = false;
-
-  const dispatch = createEventDispatcher();
+  let { lineItems = $bindable([]), disabled = false, onchange = (_items: LineItem[]) => {} }: {
+    lineItems?: LineItem[];
+    disabled?: boolean;
+    onchange?: (items: LineItem[]) => void;
+  } = $props();
 
   interface LineItem {
     id?: string;
@@ -62,19 +63,21 @@
   }
 
   function notifyChange() {
-    dispatch('change', lineItems);
+    onchange(lineItems);
   }
 
   // Calculate totals
-  $: totalExclVat = lineItems.reduce((sum, item) => sum + item.amount_excl_vat, 0);
-  $: totalVat = lineItems.reduce((sum, item) => sum + item.vat_amount, 0);
-  $: totalInclVat = lineItems.reduce((sum, item) => sum + item.amount_incl_vat, 0);
+  let totalExclVat = $derived(lineItems.reduce((sum, item) => sum + item.amount_excl_vat, 0));
+  let totalVat = $derived(lineItems.reduce((sum, item) => sum + item.vat_amount, 0));
+  let totalInclVat = $derived(lineItems.reduce((sum, item) => sum + item.amount_incl_vat, 0));
 
   // Initialize with one line if empty
-  $: if (lineItems.length === 0 && !disabled) {
-    lineItems = [createEmptyLine()];
-    notifyChange();
-  }
+  $effect(() => {
+    if (lineItems.length === 0 && !disabled) {
+      lineItems = [createEmptyLine()];
+      notifyChange();
+    }
+  });
 </script>
 
 <div class="line-items-container">
@@ -83,7 +86,7 @@
     <button
       type="button"
       class="btn-add"
-      on:click={addLine}
+      onclick={addLine}
       disabled={disabled}
       data-testid="add-line-button"
     >
@@ -104,7 +107,7 @@
               type="text"
               id="desc-{index}"
               bind:value={line.description}
-              on:input={() => handleLineChange(index)}
+              oninput={() => handleLineChange(index)}
               placeholder={$_('invoices.line_description_placeholder')}
               disabled={disabled}
               required
@@ -120,7 +123,7 @@
                 type="number"
                 id="qty-{index}"
                 bind:value={line.quantity}
-                on:input={() => handleLineChange(index)}
+                oninput={() => handleLineChange(index)}
                 step="0.01"
                 min="0.01"
                 disabled={disabled}
@@ -136,7 +139,7 @@
                 type="number"
                 id="price-{index}"
                 bind:value={line.unit_price}
-                on:input={() => handleLineChange(index)}
+                oninput={() => handleLineChange(index)}
                 step="0.01"
                 min="0"
                 disabled={disabled}
@@ -151,7 +154,7 @@
               <select
                 id="vat-{index}"
                 bind:value={line.vat_rate}
-                on:change={() => handleLineChange(index)}
+                onchange={() => handleLineChange(index)}
                 disabled={disabled}
                 data-testid="line-vat-rate-{index}"
               >
@@ -184,7 +187,7 @@
           <button
             type="button"
             class="btn-remove"
-            on:click={() => removeLine(index)}
+            onclick={() => removeLine(index)}
             title={$_('invoices.remove_line')}
             data-testid="remove-line-{index}"
           >

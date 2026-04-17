@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { authStore } from '../stores/auth';
@@ -10,242 +10,99 @@
   import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
   import { formatDate } from '../lib/utils/date.utils';
 
-  export let unitId: string;
-  export let showHistory = false;
+  let { unitId, showHistory = false }: { unitId: string; showHistory?: boolean } = $props();
 
-  $: canModifyOwnership = $authStore.user?.role === 'superadmin' || $authStore.user?.role === 'syndic';
+  let canModifyOwnership = $derived($authStore.user?.role === 'superadmin' || $authStore.user?.role === 'syndic');
 
-  let unitOwners: (UnitOwner & { owner?: Owner })[] = [];
-  let loading = true;
-  let error = '';
+  let unitOwners = $state<(UnitOwner & { owner?: Owner })[]>([]);
+  let loading = $state(true); let error = $state('');
+  let showEditModal = $state(false); let showAddModal = $state(false);
+  let selectedUnitOwner = $state<(UnitOwner & { owner?: Owner }) | null>(null);
+  let showDeleteConfirm = $state(false); let unitOwnerToDelete = $state<(UnitOwner & { owner?: Owner }) | null>(null);
 
-  let showEditModal = false;
-  let showAddModal = false;
-  let selectedUnitOwner: (UnitOwner & { owner?: Owner }) | null = null;
-  let showDeleteConfirm = false;
-  let unitOwnerToDelete: (UnitOwner & { owner?: Owner }) | null = null;
-
-  onMount(async () => {
-    await loadUnitOwners();
-  });
+  $effect(() => { loadUnitOwners(); });
 
   async function loadUnitOwners() {
-    const endpoint = showHistory
-      ? `/units/${unitId}/owners/history`
-      : `/units/${unitId}/owners`;
-
+    const endpoint = showHistory ? `/units/${unitId}/owners/history` : `/units/${unitId}/owners`;
     await withLoadingState({
       action: async () => {
         const response = await api.get<UnitOwner[]>(endpoint);
-        return Promise.all(
-          response.map(async (uo) => {
-            try {
-              const owner = await api.get<Owner>(`/owners/${uo.owner_id}`);
-              return { ...uo, owner };
-            } catch (e) {
-              console.error(`Failed to load owner ${uo.owner_id}:`, e);
-              return uo;
-            }
-          })
-        );
+        return Promise.all(response.map(async (uo) => { try { const owner = await api.get<Owner>(`/owners/${uo.owner_id}`); return { ...uo, owner }; } catch (e) { console.error(`Failed to load owner ${uo.owner_id}:`, e); return uo; } }));
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      errorMessage: $_('common.error_loading'),
-      onSuccess: (result) => { unitOwners = result; },
+      setLoading: (v: boolean) => loading = v, setError: (v: string) => error = v, errorMessage: $_('common.error_loading'),
+      onSuccess: (result: (UnitOwner & { owner?: Owner })[]) => { unitOwners = result; },
     });
   }
 
-  function formatPercentage(percentage: number): string {
-    return `${(percentage * 100).toFixed(2)}%`;
-  }
+  function formatPercentage(percentage: number): string { return `${(percentage * 100).toFixed(2)}%`; }
 
-  $: activeOwners = unitOwners.filter(uo => uo.is_active);
-  $: inactiveOwners = unitOwners.filter(uo => !uo.is_active);
-  $: totalPercentage = activeOwners.reduce((sum, uo) => sum + uo.ownership_percentage, 0);
+  let activeOwners = $derived(unitOwners.filter(uo => uo.is_active));
+  let inactiveOwners = $derived(unitOwners.filter(uo => !uo.is_active));
+  let totalPercentage = $derived(activeOwners.reduce((sum, uo) => sum + uo.ownership_percentage, 0));
 
-  function handleEditUnitOwner(unitOwner: UnitOwner & { owner?: Owner }) {
-    selectedUnitOwner = unitOwner;
-    showEditModal = true;
-  }
-
-  function handleDeleteClick(unitOwner: UnitOwner & { owner?: Owner }) {
-    unitOwnerToDelete = unitOwner;
-    showDeleteConfirm = true;
-  }
+  function handleEditUnitOwner(unitOwner: UnitOwner & { owner?: Owner }) { selectedUnitOwner = unitOwner; showEditModal = true; }
+  function handleDeleteClick(unitOwner: UnitOwner & { owner?: Owner }) { unitOwnerToDelete = unitOwner; showDeleteConfirm = true; }
 
   async function confirmDelete() {
     if (!unitOwnerToDelete) return;
-
-    await withErrorHandling({
-      action: () => api.delete(`/units/${unitId}/owners/${unitOwnerToDelete!.owner_id}`),
-      errorMessage: $_('units.error_deleting_owner'),
-      onSuccess: async () => {
-        showDeleteConfirm = false;
-        unitOwnerToDelete = null;
-        await loadUnitOwners();
-      },
-    });
+    await withErrorHandling({ action: () => api.delete(`/units/${unitId}/owners/${unitOwnerToDelete!.owner_id}`), errorMessage: $_('units.error_deleting_owner'), onSuccess: async () => { showDeleteConfirm = false; unitOwnerToDelete = null; await loadUnitOwners(); } });
   }
-
-  function cancelDelete() {
-    showDeleteConfirm = false;
-    unitOwnerToDelete = null;
-  }
+  function cancelDelete() { showDeleteConfirm = false; unitOwnerToDelete = null; }
 </script>
 
 <div class="space-y-4">
-  {#if error}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-      {error}
-    </div>
-  {/if}
-
-  {#if loading}
-    <p class="text-center text-gray-600 py-4">{$_('common.loading')}</p>
+  {#if error}<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>{/if}
+  {#if loading}<p class="text-center text-gray-600 py-4">{$_('common.loading')}</p>
   {:else}
-    <!-- Active Owners -->
     {#if activeOwners.length > 0}
       <div class="space-y-2" data-testid="owner-list">
         <div class="flex justify-between items-center">
-          <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-            {$_('units.current_owners')}
-          </h4>
-          {#if canModifyOwnership}
-            <button
-              on:click={() => showAddModal = true}
-              class="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
-              data-testid="add-owner-button"
-            >
-              + {$_('common.add')}
-            </button>
-          {/if}
+          <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">{$_('units.current_owners')}</h4>
+          {#if canModifyOwnership}<button onclick={() => showAddModal = true} class="px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition" data-testid="add-owner-button">+ {$_('common.add')}</button>{/if}
         </div>
-
         {#each activeOwners as unitOwner (unitOwner.id)}
           <div class="bg-white border border-gray-200 rounded-lg p-3" data-testid="owner-row">
             <div class="flex justify-between items-start">
               <div class="flex-1">
                 {#if unitOwner.owner}
-                  <div class="flex items-center gap-2">
-                    <h5 class="font-semibold text-gray-900">
-                      {unitOwner.owner.first_name} {unitOwner.owner.last_name}
-                    </h5>
-                    {#if unitOwner.is_primary_contact}
-                      <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">
-                        {$_('units.primary_contact_label')}
-                      </span>
-                    {/if}
-                  </div>
-                  <p class="text-sm text-gray-600 mt-1">
-                    📧 {unitOwner.owner.email}
-                  </p>
-                  {#if unitOwner.owner.phone}
-                    <p class="text-sm text-gray-500">
-                      📞 {unitOwner.owner.phone}
-                    </p>
-                  {/if}
-                {:else}
-                  <p class="text-gray-500 italic">{$_('common.loading_details')}</p>
-                {/if}
-                <p class="text-xs text-gray-500 mt-1">
-                  {$_('units.since', { values: { date: formatDate(unitOwner.start_date) } })}
-                </p>
+                  <div class="flex items-center gap-2"><h5 class="font-semibold text-gray-900">{unitOwner.owner.first_name} {unitOwner.owner.last_name}</h5>{#if unitOwner.is_primary_contact}<span class="px-2 py-0.5 text-xs font-medium bg-primary-100 text-primary-800 rounded-full">{$_('units.primary_contact_label')}</span>{/if}</div>
+                  <p class="text-sm text-gray-600 mt-1">📧 {unitOwner.owner.email}</p>
+                  {#if unitOwner.owner.phone}<p class="text-sm text-gray-500">📞 {unitOwner.owner.phone}</p>{/if}
+                {:else}<p class="text-gray-500 italic">{$_('common.loading_details')}</p>{/if}
+                <p class="text-xs text-gray-500 mt-1">{$_('units.since', { values: { date: formatDate(unitOwner.start_date) } })}</p>
               </div>
-
               <div class="ml-2 flex items-center gap-1 sm:gap-2">
-                <div class="text-right">
-                  <p class="text-lg sm:text-xl font-bold text-primary-600">
-                    {formatPercentage(unitOwner.ownership_percentage)}
-                  </p>
-                  <p class="text-xs text-gray-500 hidden sm:block">{$_('units.quota_label')}</p>
-                </div>
+                <div class="text-right"><p class="text-lg sm:text-xl font-bold text-primary-600">{formatPercentage(unitOwner.ownership_percentage)}</p><p class="text-xs text-gray-500 hidden sm:block">{$_('units.quota_label')}</p></div>
                 {#if canModifyOwnership}
-                  <button
-                    on:click={() => handleEditUnitOwner(unitOwner)}
-                    class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition"
-                    title={$_('units.edit_quota')}
-                    data-testid="edit-owner-button"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    on:click={() => handleDeleteClick(unitOwner)}
-                    class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition"
-                    title={$_('units.remove_owner')}
-                    data-testid="remove-owner-button"
-                  >
-                    🗑️
-                  </button>
+                  <button onclick={() => handleEditUnitOwner(unitOwner)} class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition" title={$_('units.edit_quota')} data-testid="edit-owner-button">✏️</button>
+                  <button onclick={() => handleDeleteClick(unitOwner)} class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition" title={$_('units.remove_owner')} data-testid="remove-owner-button">🗑️</button>
                 {/if}
               </div>
             </div>
           </div>
         {/each}
-
-        <!-- Total -->
         <div class="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-          <div class="flex justify-between items-center">
-            <span class="font-semibold text-gray-700">Total</span>
-            <span class="text-xl font-bold" class:text-green-600={totalPercentage === 1} class:text-red-600={totalPercentage !== 1}>
-              {formatPercentage(totalPercentage)}
-            </span>
-          </div>
-          {#if totalPercentage !== 1}
-            <p class="text-xs text-red-600 mt-1">
-              ⚠️ {$_('units.quota_should_be_100')}
-            </p>
-          {/if}
+          <div class="flex justify-between items-center"><span class="font-semibold text-gray-700">Total</span><span class="text-xl font-bold" class:text-green-600={totalPercentage === 1} class:text-red-600={totalPercentage !== 1}>{formatPercentage(totalPercentage)}</span></div>
+          {#if totalPercentage !== 1}<p class="text-xs text-red-600 mt-1">⚠️ {$_('units.quota_should_be_100')}</p>{/if}
         </div>
       </div>
     {:else}
-      <div class="text-center py-4">
-        <p class="text-gray-600 mb-3">
-          {$_('units.no_active_owners')}
-        </p>
-        {#if canModifyOwnership}
-          <button
-            on:click={() => showAddModal = true}
-            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
-            data-testid="add-owner-button-empty"
-          >
-            + {$_('units.add_owner')}
-          </button>
-        {/if}
+      <div class="text-center py-4"><p class="text-gray-600 mb-3">{$_('units.no_active_owners')}</p>
+        {#if canModifyOwnership}<button onclick={() => showAddModal = true} class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition" data-testid="add-owner-button-empty">+ {$_('units.add_owner')}</button>{/if}
       </div>
     {/if}
 
-    <!-- Historical Owners (if showHistory is true) -->
     {#if showHistory && inactiveOwners.length > 0}
       <div class="space-y-2 mt-6">
-        <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          {$_('units.history')}
-        </h4>
-
+        <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">{$_('units.history')}</h4>
         {#each inactiveOwners as unitOwner (unitOwner.id)}
           <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 opacity-75">
             <div class="flex justify-between items-start">
               <div class="flex-1">
-                {#if unitOwner.owner}
-                  <h5 class="font-medium text-gray-700">
-                    {unitOwner.owner.first_name} {unitOwner.owner.last_name}
-                  </h5>
-                  <p class="text-sm text-gray-600 mt-1">
-                    📧 {unitOwner.owner.email}
-                  </p>
-                {:else}
-                  <p class="text-gray-500 italic">{$_('common.loading_details')}</p>
-                {/if}
-                <p class="text-xs text-gray-500 mt-1">
-                  {formatDate(unitOwner.start_date)} → {unitOwner.end_date ? formatDate(unitOwner.end_date) : $_('units.ongoing')}
-                </p>
+                {#if unitOwner.owner}<h5 class="font-medium text-gray-700">{unitOwner.owner.first_name} {unitOwner.owner.last_name}</h5><p class="text-sm text-gray-600 mt-1">📧 {unitOwner.owner.email}</p>{:else}<p class="text-gray-500 italic">{$_('common.loading_details')}</p>{/if}
+                <p class="text-xs text-gray-500 mt-1">{formatDate(unitOwner.start_date)} → {unitOwner.end_date ? formatDate(unitOwner.end_date) : $_('units.ongoing')}</p>
               </div>
-
-              <div class="ml-4 text-right">
-                <p class="text-lg font-semibold text-gray-600">
-                  {formatPercentage(unitOwner.ownership_percentage)}
-                </p>
-              </div>
+              <div class="ml-4 text-right"><p class="text-lg font-semibold text-gray-600">{formatPercentage(unitOwner.ownership_percentage)}</p></div>
             </div>
           </div>
         {/each}
@@ -254,64 +111,18 @@
   {/if}
 </div>
 
-<!-- Edit Modal -->
-<UnitOwnerEditModal
-  bind:open={showEditModal}
-  unitOwner={selectedUnitOwner}
-  currentTotalPercentage={totalPercentage}
-  on:updated={loadUnitOwners}
-  on:close={() => {
-    showEditModal = false;
-    selectedUnitOwner = null;
-  }}
-/>
+<UnitOwnerEditModal bind:open={showEditModal} unitOwner={selectedUnitOwner} currentTotalPercentage={totalPercentage} onupdated={loadUnitOwners} onclose={() => { showEditModal = false; selectedUnitOwner = null; }} />
+<UnitOwnerAddModal bind:open={showAddModal} unitId={unitId} currentTotalPercentage={totalPercentage} onadded={loadUnitOwners} onclose={() => showAddModal = false} />
 
-<!-- Add Owner Modal -->
-<UnitOwnerAddModal
-  bind:open={showAddModal}
-  unitId={unitId}
-  currentTotalPercentage={totalPercentage}
-  on:added={loadUnitOwners}
-  on:close={() => showAddModal = false}
-/>
-
-<!-- Delete Confirmation Modal -->
 {#if showDeleteConfirm && unitOwnerToDelete}
-  <div class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex min-h-screen items-center justify-center p-4">
-      <!-- Backdrop -->
-      <div
-        class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        on:click={cancelDelete}
-      ></div>
-
-      <!-- Modal -->
-      <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
-        <div class="mb-4">
-          <h3 class="text-xl font-bold text-gray-900 mb-2">{$_('units.remove_owner_title')}</h3>
-          {#if unitOwnerToDelete.owner}
-            <p class="text-gray-600">
-              {$_('units.remove_owner_confirm', { values: { name: `${unitOwnerToDelete.owner.first_name} ${unitOwnerToDelete.owner.last_name}` } })}
-            </p>
-          {:else}
-            <p class="text-gray-600">
-              {$_('units.remove_owner_confirm_generic')}
-            </p>
-          {/if}
-          <p class="text-sm text-gray-500 mt-2">
-            {$_('units.remove_owner_help')}
-          </p>
-        </div>
-
-        <div class="flex gap-2">
-          <Button variant="danger" on:click={confirmDelete}>
-            {$_('units.remove')}
-          </Button>
-          <Button variant="outline" on:click={cancelDelete}>
-            {$_('common.cancel')}
-          </Button>
-        </div>
+  <div class="fixed inset-0 z-50 overflow-y-auto"><div class="flex min-h-screen items-center justify-center p-4">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick={cancelDelete}></div>
+    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
+      <div class="mb-4"><h3 class="text-xl font-bold text-gray-900 mb-2">{$_('units.remove_owner_title')}</h3>
+        {#if unitOwnerToDelete.owner}<p class="text-gray-600">{$_('units.remove_owner_confirm', { values: { name: `${unitOwnerToDelete.owner.first_name} ${unitOwnerToDelete.owner.last_name}` } })}</p>{:else}<p class="text-gray-600">{$_('units.remove_owner_confirm_generic')}</p>{/if}
+        <p class="text-sm text-gray-500 mt-2">{$_('units.remove_owner_help')}</p>
       </div>
+      <div class="flex gap-2"><Button variant="danger" onclick={confirmDelete}>{$_('units.remove')}</Button><Button variant="outline" onclick={cancelDelete}>{$_('common.cancel')}</Button></div>
     </div>
-  </div>
+  </div></div>
 {/if}

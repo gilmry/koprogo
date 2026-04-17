@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { writable } from 'svelte/store';
+  // Svelte 5 runes mode
 
-  export let show = false;
-  export let message = '';
-  export let type: 'success' | 'error' | 'info' | 'warning' = 'info';
-  export let duration = 5000;
-  export let position: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' = 'top-right';
+  let { show = $bindable(false), message = '', type = 'info', duration = 5000, position = 'top-right' }: {
+    show?: boolean;
+    message?: string;
+    type?: 'success' | 'error' | 'info' | 'warning';
+    duration?: number;
+    position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+  } = $props();
 
   const typeStyles = {
     success: 'bg-green-50 text-green-800 border-green-200',
@@ -29,14 +30,16 @@
     'bottom-left': 'bottom-4 left-4',
   };
 
-  let timeout: number | undefined;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
 
-  $: if (show && duration > 0) {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => {
-      show = false;
-    }, duration);
-  }
+  $effect(() => {
+    if (show && duration > 0) {
+      if (timeout) clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        show = false;
+      }, duration);
+    }
+  });
 
   const handleClose = () => {
     show = false;
@@ -58,7 +61,7 @@
       </div>
 
       <button
-        on:click={handleClose}
+        onclick={handleClose}
         class="ml-3 flex-shrink-0 hover:opacity-75 transition"
         aria-label="Close"
       >

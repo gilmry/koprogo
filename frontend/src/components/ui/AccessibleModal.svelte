@@ -1,20 +1,34 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   /**
    * Accessible Modal Dialog - WCAG 2.1 AA Compliant
    * Features: Focus trap, keyboard navigation, ARIA attributes
    */
 
-  import { onMount, onDestroy } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { _ } from '../../lib/i18n';
   import { trapFocus, FocusManager, announce } from '../../lib/accessibility';
+  import type { Snippet } from 'svelte';
 
-  export let isOpen: boolean = false;
-  export let title: string;
-  export let description: string | undefined = undefined;
-  export let onClose: () => void;
-  export let size: 'sm' | 'md' | 'lg' | 'xl' = 'md';
+  let {
+    isOpen = false,
+    title,
+    description = undefined,
+    onClose,
+    size = 'md',
+    children,
+    footer,
+  }: {
+    isOpen?: boolean;
+    title: string;
+    description?: string | undefined;
+    onClose: () => void;
+    size?: 'sm' | 'md' | 'lg' | 'xl';
+    children?: Snippet;
+    footer?: Snippet;
+  } = $props();
 
-  let dialogEl: HTMLElement;
+  let dialogEl = $state<HTMLElement | undefined>(undefined);
   let cleanupFocusTrap: (() => void) | undefined;
   const focusManager = new FocusManager();
 
@@ -43,17 +57,19 @@
     }
   }
 
-  $: if (isOpen && dialogEl) {
-    focusManager.save();
-    cleanupFocusTrap = trapFocus(dialogEl);
-    announce($_('common.modalOpened', { values: { title } }), 'polite');
-    document.body.style.overflow = 'hidden';
-  } else if (!isOpen && cleanupFocusTrap) {
-    cleanupFocusTrap();
-    focusManager.restore();
-    announce($_('common.modalClosed'), 'polite');
-    document.body.style.overflow = '';
-  }
+  $effect(() => {
+    if (isOpen && dialogEl) {
+      focusManager.save();
+      cleanupFocusTrap = trapFocus(dialogEl);
+      announce($_('common.modalOpened', { values: { title } }), 'polite');
+      document.body.style.overflow = 'hidden';
+    } else if (!isOpen && cleanupFocusTrap) {
+      cleanupFocusTrap();
+      focusManager.restore();
+      announce($_('common.modalClosed'), 'polite');
+      document.body.style.overflow = '';
+    }
+  });
 
   onDestroy(() => {
     if (cleanupFocusTrap) {
@@ -63,7 +79,7 @@
   });
 </script>
 
-<svelte:window on:keydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
   <div
@@ -72,7 +88,7 @@
     aria-describedby={description ? 'modal-description' : undefined}
     role="dialog"
     aria-modal="true"
-    on:click={handleBackdropClick}
+    onclick={handleBackdropClick}
   >
     <div
       class="flex min-h-screen items-center justify-center p-4 text-center sm:p-0"
@@ -100,7 +116,7 @@
             <button
               type="button"
               class="rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-              on:click={handleClose}
+              onclick={handleClose}
               aria-label={$_('common.closeModal')}
             >
               <svg
@@ -129,13 +145,13 @@
 
         <!-- Content -->
         <div class="bg-white px-4 pb-4 sm:p-6">
-          <slot />
+          {#if children}{@render children()}{/if}
         </div>
 
         <!-- Footer (optional) -->
-        {#if $$slots.footer}
+        {#if footer}
           <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-            <slot name="footer" />
+            {@render footer()}
           </div>
         {/if}
       </div>

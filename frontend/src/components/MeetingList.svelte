@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
@@ -10,12 +10,11 @@
   import { withLoadingState } from '../lib/utils/error.utils';
   import { authStore } from '../stores/auth';
 
-  export let buildingId: string | null = null;
+  let { buildingId = null }: { buildingId?: string | null } = $props();
 
-  let showCreateModal = false;
+  let showCreateModal = $state(false);
 
-  // Vérifie si le rôle actif est syndic ou superadmin (seuls à pouvoir créer des AG)
-  $: canCreate = $authStore?.user?.role === UserRole.SYNDIC || $authStore?.user?.role === UserRole.SUPERADMIN;
+  let canCreate = $derived($authStore?.user?.role === UserRole.SYNDIC || $authStore?.user?.role === UserRole.SUPERADMIN);
 
   function handleMeetingCreated() {
     showCreateModal = false;
@@ -32,29 +31,29 @@
     attendees_count?: number;
   }
 
-  let meetings: Meeting[] = [];
-  let loading = true;
-  let error = '';
+  let meetings: Meeting[] = $state([]);
+  let loading = $state(true);
+  let error = $state('');
 
-  let currentPage = 1;
-  let perPage = 20;
-  let totalItems = 0;
-  let totalPages = 0;
+  let currentPage = $state(1);
+  let perPage = $state(20);
+  let totalItems = $state(0);
+  let totalPages = $state(0);
 
-  onMount(async () => {
-    await loadMeetings();
+  $effect(() => {
+    loadMeetings();
 
     if (typeof window !== 'undefined') {
       window.addEventListener('pageshow', handlePageShow);
       window.addEventListener('focus', handleWindowFocus);
     }
-  });
 
-  onDestroy(() => {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('focus', handleWindowFocus);
-    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pageshow', handlePageShow);
+        window.removeEventListener('focus', handleWindowFocus);
+      }
+    };
   });
 
   function handlePageShow(event: PageTransitionEvent) {
@@ -84,8 +83,8 @@
           };
         }
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       onSuccess: (result) => {
         meetings = result.data;
         totalItems = result.total;
@@ -128,7 +127,7 @@
     </p>
     {#if canCreate}
       <button
-        on:click={() => showCreateModal = true}
+        onclick={() => showCreateModal = true}
         class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
         data-testid="btn-new-meeting"
       >
@@ -200,7 +199,7 @@
 
 {#if showCreateModal}
   <MeetingCreateModal
-    on:created={handleMeetingCreated}
-    on:close={() => showCreateModal = false}
+    oncreated={handleMeetingCreated}
+    onclose={() => showCreateModal = false}
   />
 {/if}

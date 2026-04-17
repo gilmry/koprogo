@@ -1,229 +1,91 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { withErrorHandling } from '../lib/utils/error.utils';
 
-  export let organizationId: string;
-  export let onSuccess: () => void = () => {};
+  let { organizationId, onSuccess = () => {} }: { organizationId: string; onSuccess?: () => void } = $props();
 
-  let formData = {
-    owner_id: '',
-    unit_id: '',
-    description: '',
-    amount: '',
-    contribution_type: 'regular',
-    contribution_date: new Date().toISOString().split('T')[0],
-    account_code: '7000'
-  };
-
-  let owners: any[] = [];
-  let units: any[] = [];
-  let loading = false;
-  let error = '';
+  let formData = $state({ owner_id: '', unit_id: '', description: '', amount: '', contribution_type: 'regular', contribution_date: new Date().toISOString().split('T')[0], account_code: '7000' });
+  let owners = $state<any[]>([]);
+  let units = $state<any[]>([]);
+  let loading = $state(false);
+  let error = $state('');
 
   async function loadData() {
     await withErrorHandling({
-      action: async () => {
-        const [ownersData, unitsData] = await Promise.all([
-          api.get('/owners'),
-          api.get('/units')
-        ]);
-        return { ownersData, unitsData };
-      },
-      onSuccess: (result) => {
-        owners = result.ownersData;
-        units = result.unitsData;
-      },
+      action: async () => { const [ownersData, unitsData] = await Promise.all([api.get('/owners'), api.get('/units')]); return { ownersData, unitsData }; },
+      onSuccess: (result: any) => { owners = result.ownersData; units = result.unitsData; },
     });
   }
 
-  $: if (organizationId) {
-    loadData();
-  }
+  $effect(() => { if (organizationId) loadData(); });
 
-  $: if (formData.contribution_type === 'regular') {
-    formData.account_code = '7000';
-  } else if (formData.contribution_type === 'extraordinary') {
-    formData.account_code = '7100';
-  }
+  $effect(() => {
+    if (formData.contribution_type === 'regular') { formData.account_code = '7000'; }
+    else if (formData.contribution_type === 'extraordinary') { formData.account_code = '7100'; }
+  });
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
     error = '';
-
     await withErrorHandling({
       action: async () => {
-        const payload = {
-          owner_id: formData.owner_id,
-          unit_id: formData.unit_id || null,
-          description: formData.description,
-          amount: parseFloat(formData.amount),
-          contribution_type: formData.contribution_type,
-          contribution_date: new Date(formData.contribution_date).toISOString(),
-          account_code: formData.account_code
-        };
+        const payload = { owner_id: formData.owner_id, unit_id: formData.unit_id || null, description: formData.description, amount: parseFloat(formData.amount), contribution_type: formData.contribution_type, contribution_date: new Date(formData.contribution_date).toISOString(), account_code: formData.account_code };
         return api.post('/owner-contributions', payload);
       },
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       errorMessage: $_('contributions.createError'),
-      onSuccess: () => {
-        formData = {
-          owner_id: '',
-          unit_id: '',
-          description: '',
-          amount: '',
-          contribution_type: 'regular',
-          contribution_date: new Date().toISOString().split('T')[0],
-          account_code: '7000'
-        };
-        onSuccess();
-      },
+      onSuccess: () => { formData = { owner_id: '', unit_id: '', description: '', amount: '', contribution_type: 'regular', contribution_date: new Date().toISOString().split('T')[0], account_code: '7000' }; onSuccess(); },
     });
   }
 </script>
 
 <div class="bg-white shadow-md rounded-lg p-6">
-  <h3 class="text-lg font-semibold text-gray-900 mb-4">
-    {$_('contributions.newContribution')}
-  </h3>
-
-  {#if error}
-    <div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-      {error}
-    </div>
-  {/if}
-
-  <form on:submit={handleSubmit} class="space-y-4">
-    <!-- Owner Selection -->
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">{$_('contributions.newContribution')}</h3>
+  {#if error}<div class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>{/if}
+  <form onsubmit={handleSubmit} class="space-y-4">
     <div>
-      <label for="owner_id" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('contributions.owner')} *
-      </label>
-      <select
-        id="owner_id"
-        bind:value={formData.owner_id}
-        required
-        data-testid="contribution-owner-select"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
+      <label for="owner_id" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.owner')} *</label>
+      <select id="owner_id" bind:value={formData.owner_id} required data-testid="contribution-owner-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
         <option value="">{$_('contributions.selectOwner')}</option>
-        {#each owners as owner}
-          <option value={owner.id}>
-            {owner.first_name} {owner.last_name}
-          </option>
-        {/each}
+        {#each owners as owner}<option value={owner.id}>{owner.first_name} {owner.last_name}</option>{/each}
       </select>
     </div>
-
-    <!-- Unit Selection (optional) -->
     <div>
-      <label for="unit_id" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('contributions.unit')}
-      </label>
-      <select
-        id="unit_id"
-        bind:value={formData.unit_id}
-        data-testid="contribution-unit-select"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
+      <label for="unit_id" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.unit')}</label>
+      <select id="unit_id" bind:value={formData.unit_id} data-testid="contribution-unit-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
         <option value="">{$_('contributions.noSpecificUnit')}</option>
-        {#each units as unit}
-          <option value={unit.id}>
-            Lot {unit.unit_number} - {unit.floor}
-          </option>
-        {/each}
+        {#each units as unit}<option value={unit.id}>Lot {unit.unit_number} - {unit.floor}</option>{/each}
       </select>
     </div>
-
-    <!-- Contribution Type -->
     <div>
-      <label for="contribution_type" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('contributions.type')} *
-      </label>
-      <select
-        id="contribution_type"
-        bind:value={formData.contribution_type}
-        required
-        data-testid="contribution-type-select"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
+      <label for="contribution_type" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.type')} *</label>
+      <select id="contribution_type" bind:value={formData.contribution_type} required data-testid="contribution-type-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
         <option value="regular">{$_('contributions.typeRegular')}</option>
         <option value="extraordinary">{$_('contributions.typeExtraordinary')}</option>
         <option value="advance">{$_('contributions.typeAdvance')}</option>
         <option value="adjustment">{$_('contributions.typeAdjustment')}</option>
       </select>
     </div>
-
-    <!-- Description -->
     <div>
-      <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('common.description')} *
-      </label>
-      <textarea
-        id="description"
-        bind:value={formData.description}
-        required
-        rows="3"
-        placeholder="Ex: Appel de fonds T4 2025 - Charges courantes"
-        data-testid="contribution-description"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      ></textarea>
+      <label for="description" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.description')} *</label>
+      <textarea id="description" bind:value={formData.description} required rows="3" placeholder="Ex: Appel de fonds T4 2025 - Charges courantes" data-testid="contribution-description" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
     </div>
-
-    <!-- Amount -->
     <div>
-      <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('contributions.amount')} *
-      </label>
-      <input
-        type="number"
-        id="amount"
-        bind:value={formData.amount}
-        required
-        min="0"
-        step="0.01"
-        placeholder="0.00"
-        data-testid="contribution-amount"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+      <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.amount')} *</label>
+      <input type="number" id="amount" bind:value={formData.amount} required min="0" step="0.01" placeholder="0.00" data-testid="contribution-amount" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
     </div>
-
-    <!-- Contribution Date -->
     <div>
-      <label for="contribution_date" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('contributions.date')} *
-      </label>
-      <input
-        type="date"
-        id="contribution_date"
-        bind:value={formData.contribution_date}
-        required
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+      <label for="contribution_date" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.date')} *</label>
+      <input type="date" id="contribution_date" bind:value={formData.contribution_date} required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
     </div>
-
-    <!-- Account Code (read-only, auto-filled) -->
     <div>
-      <label for="account_code" class="block text-sm font-medium text-gray-700 mb-1">
-        {$_('contributions.accountCode')}
-      </label>
-      <input
-        type="text"
-        id="account_code"
-        bind:value={formData.account_code}
-        readonly
-        class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600"
-      />
+      <label for="account_code" class="block text-sm font-medium text-gray-700 mb-1">{$_('contributions.accountCode')}</label>
+      <input type="text" id="account_code" bind:value={formData.account_code} readonly class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600" />
     </div>
-
-    <!-- Submit Button -->
     <div class="flex justify-end space-x-3 pt-4">
-      <button
-        type="submit"
-        disabled={loading}
-        data-testid="contribution-submit-button"
-        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
+      <button type="submit" disabled={loading} data-testid="contribution-submit-button" class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
         {loading ? $_('common.creating') : $_('contributions.create')}
       </button>
     </div>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import type { Expense, PageResponse } from '../lib/types';
@@ -9,47 +9,47 @@
   import { formatCurrency } from '../lib/utils/finance.utils';
   import { withLoadingState } from '../lib/utils/error.utils';
 
-  export let buildingId: string | null = null;
+  let { buildingId = null }: {
+    buildingId?: string | null;
+  } = $props();
 
   // Modal state for creating new invoice
-  let showCreateModal = false;
+  let showCreateModal = $state(false);
 
-  let expenses: Expense[] = [];
-  let loading = true;
-  let error = '';
+  let expenses = $state<Expense[]>([]);
+  let loading = $state(true);
+  let error = $state('');
 
   // Pagination state
-  let currentPage = 1;
-  let perPage = 20;
-  let totalItems = 0;
-  let totalPages = 0;
+  let currentPage = $state(1);
+  let perPage = $state(20);
+  let totalItems = $state(0);
+  let totalPages = $state(0);
 
-  onMount(async () => {
-    await loadExpenses();
+  $effect(() => {
+    loadExpenses();
 
     // Listen for page show events to reload data when navigating back (client-side only)
     if (typeof window !== 'undefined') {
       window.addEventListener('pageshow', handlePageShow);
       window.addEventListener('focus', handleWindowFocus);
     }
-  });
 
-  onDestroy(() => {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('focus', handleWindowFocus);
-    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pageshow', handlePageShow);
+        window.removeEventListener('focus', handleWindowFocus);
+      }
+    };
   });
 
   function handlePageShow(event: PageTransitionEvent) {
-    // Reload data when navigating back to this page
     if (event.persisted) {
       loadExpenses();
     }
   }
 
   function handleWindowFocus() {
-    // Reload data when window regains focus
     loadExpenses();
   }
 
@@ -65,8 +65,8 @@
           return { type: 'paginated' as const, data: response };
         }
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       errorMessage: $_('expenses.loadError'),
       onSuccess: (result: any) => {
         if (result.type === 'building') {
@@ -110,9 +110,9 @@
     return badges[approvalStatus] || badges['draft'];
   }
 
-  function handleInvoiceSaved(invoice: any) {
+  function handleInvoiceSaved(_invoice: any) {
     showCreateModal = false;
-    loadExpenses(); // Reload list
+    loadExpenses();
   }
 
   function handleCancel() {
@@ -126,7 +126,7 @@
       {totalItems} dépense{totalItems !== 1 ? 's' : ''}
     </p>
     <button
-      on:click={() => showCreateModal = true}
+      onclick={() => showCreateModal = true}
       class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium flex items-center gap-2"
       data-testid="create-button"
     >
@@ -208,12 +208,12 @@
 
 <!-- Modal pour créer une facture -->
 {#if showCreateModal}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" on:click={handleCancel}>
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" on:click|stopPropagation>
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onclick={handleCancel}>
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onclick={(e: MouseEvent) => e.stopPropagation()}>
       <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
         <h2 class="text-2xl font-bold text-gray-900">{$_('expenses.createInvoice')}</h2>
         <button
-          on:click={handleCancel}
+          onclick={handleCancel}
           class="text-gray-400 hover:text-gray-600 transition"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

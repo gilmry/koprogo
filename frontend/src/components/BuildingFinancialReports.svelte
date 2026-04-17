@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
@@ -7,30 +7,34 @@
   import { formatCurrency } from "../lib/utils/finance.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let buildingName: string = '';
+  let { buildingId, buildingName = '' }: {
+    buildingId: string;
+    buildingName?: string;
+  } = $props();
 
   // Report type selection
-  let reportType: 'balance-sheet' | 'income-statement' = 'balance-sheet';
+  let reportType = $state<'balance-sheet' | 'income-statement'>('balance-sheet');
 
   // Date range for income statement
-  let periodStart = '';
-  let periodEnd = '';
+  let periodStart = $state('');
+  let periodEnd = $state('');
 
   // Report data
-  let balanceSheet: any = null;
-  let incomeStatement: any = null;
+  let balanceSheet = $state<any>(null);
+  let incomeStatement = $state<any>(null);
 
   // Loading states
-  let loading = false;
-  let error = '';
+  let loading = $state(false);
+  let error = $state('');
 
-  onMount(() => {
-    // Set default period to current year
-    const now = new Date();
-    const yearStart = new Date(now.getFullYear(), 0, 1);
-    periodStart = yearStart.toISOString().split('T')[0];
-    periodEnd = now.toISOString().split('T')[0];
+  $effect(() => {
+    // Set default period to current year (runs once on mount)
+    if (!periodStart) {
+      const now = new Date();
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      periodStart = yearStart.toISOString().split('T')[0];
+      periodEnd = now.toISOString().split('T')[0];
+    }
   });
 
   async function loadBalanceSheet() {
@@ -152,7 +156,7 @@
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType === 'balance-sheet'
           ? 'bg-primary-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-        on:click={() => { reportType = 'balance-sheet'; handleReportTypeChange(); }}
+        onclick={() => { reportType = 'balance-sheet'; handleReportTypeChange(); }}
       >
         📊 {$_('buildings.balanceSheet')}
       </button>
@@ -160,7 +164,7 @@
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType === 'income-statement'
           ? 'bg-primary-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-        on:click={() => { reportType = 'income-statement'; handleReportTypeChange(); }}
+        onclick={() => { reportType = 'income-statement'; handleReportTypeChange(); }}
       >
         📈 {$_('buildings.incomeStatement')}
       </button>
@@ -202,7 +206,7 @@
   <div class="flex justify-center">
     <button
       class="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-      on:click={() => reportType === 'balance-sheet' ? loadBalanceSheet() : loadIncomeStatement()}
+      onclick={() => reportType === 'balance-sheet' ? loadBalanceSheet() : loadIncomeStatement()}
       disabled={loading}
     >
       {#if loading}
@@ -245,13 +249,13 @@
         <p class="text-primary-100">{$_('buildings.building')}: {buildingName}</p>
         <div class="mt-4 flex space-x-4">
           <button
-            on:click={exportToPDF}
+            onclick={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📄 {$_('buildings.exportPDF')}
           </button>
           <button
-            on:click={exportToExcel}
+            onclick={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📊 {$_('buildings.exportCSV')}
@@ -376,17 +380,16 @@
         <p class="text-primary-100 mt-1">
           {$_('buildings.period')}: {formatDate(incomeStatement.period_start)} - {formatDate(incomeStatement.period_end)}
         </p>
-        <p class="text-primary-100">{$_('buildings.building')}:
- {buildingName}</p>
+        <p class="text-primary-100">{$_('buildings.building')}: {buildingName}</p>
         <div class="mt-4 flex space-x-4">
           <button
-            on:click={exportToPDF}
+            onclick={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📄 {$_('buildings.exportPDF')}
           </button>
           <button
-            on:click={exportToExcel}
+            onclick={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📊 {$_('buildings.exportCSV')}

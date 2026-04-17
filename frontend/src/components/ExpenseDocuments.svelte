@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import type { Document } from '../lib/types';
@@ -8,32 +8,34 @@
   import { formatDate } from '../lib/utils/date.utils';
   import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
 
-  export let expenseId: string;
-  export let expenseStatus: string;
+  let { expenseId, expenseStatus }: {
+    expenseId: string;
+    expenseStatus: string;
+  } = $props();
 
-  let documents: Document[] = [];
-  let loading = true;
-  let error = '';
-  let uploading = false;
+  let documents = $state<Document[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let uploading = $state(false);
 
   // Upload form state
-  let showUploadForm = false;
-  let uploadFile: File | null = null;
-  let uploadTitle = '';
-  let uploadDescription = '';
-  let uploadDocumentType: string = 'Invoice';
+  let showUploadForm = $state(false);
+  let uploadFile = $state<File | null>(null);
+  let uploadTitle = $state('');
+  let uploadDescription = $state('');
+  let uploadDocumentType = $state('Invoice');
 
-  onMount(async () => {
-    await loadDocuments();
+  $effect(() => {
+    loadDocuments();
   });
 
   async function loadDocuments() {
     await withLoadingState({
       action: () => api.get<Document[]>(`/expenses/${expenseId}/documents`),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       errorMessage: $_('documents.load_error'),
-      onSuccess: (data) => { documents = data; },
+      onSuccess: (data: Document[]) => { documents = data; },
     });
   }
 
@@ -77,7 +79,7 @@
 
         await loadDocuments();
       },
-      setLoading: (v) => uploading = v,
+      setLoading: (v: boolean) => uploading = v,
       successMessage: $_('documents.uploaded'),
       errorMessage: $_('documents.upload_error'),
     });
@@ -134,7 +136,7 @@
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-lg font-semibold text-gray-900">{$_('documents.linked_title')}</h3>
     {#if expenseStatus !== 'Cancelled'}
-      <Button variant="primary" on:click={() => showUploadForm = !showUploadForm}>
+      <Button variant="primary" onclick={() => showUploadForm = !showUploadForm}>
         {showUploadForm ? $_('common.cancel') : $_('documents.add_document')}
       </Button>
     {/if}
@@ -193,7 +195,7 @@
             placeholder={$_('documents.description_placeholder')}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             data-testid="description-textarea"
-          />
+          ></textarea>
         </div>
 
         <div>
@@ -202,7 +204,7 @@
           </label>
           <input
             type="file"
-            on:change={handleFileChange}
+            onchange={handleFileChange}
             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             data-testid="file-input"
@@ -215,10 +217,10 @@
         </div>
 
         <div class="flex gap-2">
-          <Button variant="primary" on:click={handleUpload} disabled={uploading} data-testid="upload-button">
+          <Button variant="primary" onclick={handleUpload} disabled={uploading} data-testid="upload-button">
             {uploading ? $_('documents.uploading') : $_('documents.add_document')}
           </Button>
-          <Button variant="outline" on:click={() => showUploadForm = false} data-testid="cancel-button">
+          <Button variant="outline" onclick={() => showUploadForm = false} data-testid="cancel-button">
             {$_('common.cancel')}
           </Button>
         </div>
@@ -257,7 +259,7 @@
                 <span>💾 {formatFileSize(doc.file_size)}</span>
               </div>
             </div>
-            <Button variant="outline" on:click={() => handleDownload(doc.id, doc.title)} data-testid="download-button">
+            <Button variant="outline" onclick={() => handleDownload(doc.id, doc.title)} data-testid="download-button">
               {$_('documents.download')}
             </Button>
           </div>

@@ -1,19 +1,22 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import BuildingSelector from './BuildingSelector.svelte';
 
-  const dispatch = createEventDispatcher();
+  let { oncreated, onclose }: {
+    oncreated?: () => void;
+    onclose?: () => void;
+  } = $props();
 
-  let title = '';
-  let meetingType: 'Ordinary' | 'Extraordinary' = 'Ordinary';
-  let scheduledDate = '';
-  let location = '';
-  let description = '';
-  let buildingId = '';
-  let loading = false;
-  let error = '';
+  let title = $state('');
+  let meetingType: 'Ordinary' | 'Extraordinary' = $state('Ordinary');
+  let scheduledDate = $state('');
+  let location = $state('');
+  let description = $state('');
+  let buildingId = $state('');
+  let loading = $state(false);
+  let error = $state('');
 
   async function handleSubmit() {
     error = '';
@@ -45,7 +48,7 @@
         description: description.trim() || null,
         building_id: buildingId,
       });
-      dispatch('created');
+      oncreated?.();
     } catch (err: any) {
       error = err.message || 'Erreur lors de la création';
     } finally {
@@ -54,7 +57,7 @@
   }
 
   function handleClose() {
-    dispatch('close');
+    onclose?.();
   }
 
   function handleBuildingSelect(id: string) {
@@ -62,10 +65,10 @@
   }
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-  on:click|self={handleClose}
+  onclick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
   role="dialog"
   aria-modal="true"
   aria-label="Créer une assemblée"
@@ -74,7 +77,7 @@
     <div class="flex justify-between items-center p-6 pb-4 border-b">
       <h2 class="text-xl font-bold text-gray-900">Nouvelle assemblée générale</h2>
       <button
-        on:click={handleClose}
+        onclick={handleClose}
         class="text-gray-400 hover:text-gray-600"
         aria-label="Fermer"
       >
@@ -84,7 +87,7 @@
       </button>
     </div>
 
-    <form on:submit|preventDefault={handleSubmit} class="flex flex-col flex-1 overflow-hidden">
+    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="flex flex-col flex-1 overflow-hidden">
       <div class="overflow-y-auto p-6 space-y-4 flex-1">
     {#if error}
       <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
@@ -175,7 +178,7 @@
       <div class="flex justify-end gap-3 p-6 pt-4 border-t bg-gray-50 rounded-b-lg">
         <button
           type="button"
-          on:click={handleClose}
+          onclick={handleClose}
           class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
         >
           Annuler

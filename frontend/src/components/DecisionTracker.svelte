@@ -1,30 +1,31 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
   import type { BoardDecisionResponse } from '../lib/types';
   import { formatDate } from "../lib/utils/date.utils";
   import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string = '';
-  export let filterStatus: string = '';
+  let { buildingId = '', filterStatus = '' }: {
+    buildingId?: string;
+    filterStatus?: string;
+  } = $props();
 
-  let decisions: BoardDecisionResponse[] = [];
-  let loading = true;
-  let error = '';
-  let statusFilter = filterStatus || 'all';
+  let decisions = $state<BoardDecisionResponse[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let statusFilter = $state(filterStatus || 'all');
 
-  $: statusOptions = [
+  let statusOptions = $derived([
     { value: 'all', label: $_('common.all') },
     { value: 'pending', label: $_('board.status.pending') },
     { value: 'in_progress', label: $_('board.status.inProgress') },
     { value: 'completed', label: $_('board.status.completed') },
     { value: 'overdue', label: $_('board.status.overdue') },
     { value: 'cancelled', label: $_('board.status.cancelled') }
-  ];
+  ]);
 
-  onMount(() => {
+  $effect(() => {
     if (!buildingId) {
       error = $_('board.error.buildingIdMissing');
       loading = false;
@@ -138,7 +139,7 @@
         </label>
         <select
           bind:value={statusFilter}
-          on:change={handleStatusFilterChange}
+          onchange={handleStatusFilterChange}
           class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
         >
           {#each statusOptions as option}
@@ -225,14 +226,14 @@
             <div class="ml-4 flex-shrink-0 flex flex-col space-y-2">
               {#if decision.status === 'pending'}
                 <button
-                  on:click={() => updateDecisionStatus(decision.id, 'in_progress')}
+                  onclick={() => updateDecisionStatus(decision.id, 'in_progress')}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
                 >
                   Démarrer
                 </button>
               {:else if decision.status === 'in_progress'}
                 <button
-                  on:click={() => completeDecision(decision.id)}
+                  onclick={() => completeDecision(decision.id)}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md"
                 >
                   Terminer
