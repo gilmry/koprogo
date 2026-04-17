@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { ObjectCategory } from "../../lib/api/sharing";
 
-  export let category: ObjectCategory;
+  let { category }: { category: ObjectCategory } = $props();
 
   const categoryConfig: Record<
     ObjectCategory,
@@ -54,7 +55,7 @@
     },
   };
 
-  $: config = categoryConfig[category];
+  let config = $derived(categoryConfig[category]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

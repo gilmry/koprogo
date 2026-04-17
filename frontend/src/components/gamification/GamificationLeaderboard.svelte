@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from 'svelte';
   import {
     gamificationApi,
     type LeaderboardEntry,
@@ -8,18 +8,20 @@
   import { authStore } from '../../stores/auth';
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let organizationId: string;
-  export let buildingId: string = '';
-  export let limit: number = 10;
+  let { organizationId, buildingId = '', limit = 10 }: {
+    organizationId: string;
+    buildingId?: string;
+    limit?: number;
+  } = $props();
 
-  let leaderboard: LeaderboardEntry[] = [];
-  let loading = true;
-  let error = '';
+  let leaderboard = $state<LeaderboardEntry[]>([]);
+  let loading = $state(true);
+  let error = $state('');
 
-  $: currentUserId = $authStore.user?.id;
+  let currentUserId = $derived($authStore.user?.id);
 
-  onMount(async () => {
-    await loadLeaderboard();
+  $effect(() => {
+    loadLeaderboard();
   });
 
   async function loadLeaderboard() {
@@ -29,8 +31,8 @@
     }
     await withLoadingState({
       action: () => gamificationApi.getLeaderboard(organizationId, buildingId || undefined, limit),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       onSuccess: (data) => leaderboard = data,
       errorMessage: $_('gamification.leaderboard_error'),
     });
@@ -60,7 +62,7 @@
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadLeaderboard} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
+      <button onclick={loadLeaderboard} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if leaderboard.length === 0}
     <div class="p-8 text-center">

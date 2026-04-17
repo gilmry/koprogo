@@ -1,16 +1,19 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { type SkillOffer } from "../../lib/api/skills";
   import SkillCategoryBadge from "./SkillCategoryBadge.svelte";
   import ProficiencyBadge from "./ProficiencyBadge.svelte";
 
-  export let offer: SkillOffer;
-  export let onClick: (() => void) | undefined = undefined;
+  let { offer, onClick }: {
+    offer: SkillOffer;
+    onClick?: () => void;
+  } = $props();
 </script>
 
 <div
   class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-  on:click={onClick}
-  on:keydown={(e) => e.key === "Enter" && onClick?.()}
+  onclick={onClick}
+  onkeydown={(e) => e.key === "Enter" && onClick?.()}
   role="button"
   tabindex="0"
 >

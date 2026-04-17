@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { ResourceType } from "../../lib/api/bookings";
 
-  export let type: ResourceType;
+  let { type }: { type: ResourceType } = $props();
 
   const typeConfig: Record<
     ResourceType,
@@ -74,7 +75,7 @@
     },
   };
 
-  $: config = typeConfig[type];
+  let config = $derived(typeConfig[type]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

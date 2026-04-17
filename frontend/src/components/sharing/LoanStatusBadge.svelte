@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { LoanStatus } from "../../lib/api/sharing";
 
-  export let status: LoanStatus;
+  let { status }: { status: LoanStatus } = $props();
 
   const statusConfig: Record<LoanStatus, { label: string; class: string }> = {
     [LoanStatus.Requested]: {
@@ -34,7 +35,7 @@
     },
   };
 
-  $: config = statusConfig[status];
+  let config = $derived(statusConfig[status]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

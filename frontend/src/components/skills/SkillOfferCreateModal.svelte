@@ -1,4 +1,5 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     skillsApi,
@@ -9,22 +10,24 @@
   import { toast } from "../../stores/toast";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let isOpen = false;
-  export let buildingId: string;
-  export let onClose: () => void;
-  export let onSuccess: () => void;
+  let { isOpen = false, buildingId, onClose, onSuccess }: {
+    isOpen?: boolean;
+    buildingId: string;
+    onClose: () => void;
+    onSuccess: () => void;
+  } = $props();
 
-  let submitting = false;
-  let formData: CreateSkillOfferDto = {
+  let submitting = $state(false);
+  let formData = $state<CreateSkillOfferDto>({
     building_id: buildingId,
     skill_category: SkillCategory.Other,
     skill_name: "",
     description: "",
     expertise_level: ExpertiseLevel.Intermediate,
     is_available_for_help: true,
-  };
+  });
 
-  let certificationInput = "";
+  let certificationInput = $state("");
 
   async function handleSubmit() {
     if (!formData.skill_name.trim()) {
@@ -42,7 +45,7 @@
     }
     const result = await withErrorHandling({
       action: () => skillsApi.createOffer(payload),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_("skills.createModal.createSuccess"),
       errorMessage: $_("skills.createModal.createError"),
     });
@@ -77,7 +80,7 @@
       <div class="p-6">
         <h2 class="text-2xl font-bold text-gray-900 mb-6">{$_("skills.createModal.title")}</h2>
 
-        <form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="skill-offer-create-form">
+        <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="skill-offer-create-form">
           <!-- Category -->
           <div>
             <label for="category" class="block text-sm font-medium text-gray-700 mb-1">
@@ -202,7 +205,7 @@
             </button>
             <button
               type="button"
-              on:click={handleCancel}
+              onclick={handleCancel}
               disabled={submitting}
               class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50"
             >

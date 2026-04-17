@@ -1,11 +1,14 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { type SharedObject } from "../../lib/api/sharing";
   import ObjectCategoryBadge from "./ObjectCategoryBadge.svelte";
   import ObjectConditionBadge from "./ObjectConditionBadge.svelte";
   import AvailabilityStatusBadge from "./AvailabilityStatusBadge.svelte";
 
-  export let object: SharedObject;
-  export let onClick: (() => void) | undefined = undefined;
+  let { object, onClick }: {
+    object: SharedObject;
+    onClick?: () => void;
+  } = $props();
 
   function formatDeposit(cents?: number): string {
     if (!cents) return "No deposit";
@@ -20,8 +23,8 @@
 
 <div
   class="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-  on:click={onClick}
-  on:keydown={(e) => e.key === "Enter" && onClick?.()}
+  onclick={onClick}
+  onkeydown={(e) => e.key === "Enter" && onClick?.()}
   role="button"
   tabindex="0"
 >

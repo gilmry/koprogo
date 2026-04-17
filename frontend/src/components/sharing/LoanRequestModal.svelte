@@ -1,16 +1,23 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { sharingApi, type SharedObject } from "../../lib/api/sharing";
-  import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let isOpen = false;
-  export let object: SharedObject;
-  export let borrowerId: string;
-
-  const dispatch = createEventDispatcher();
+  let {
+    isOpen = false,
+    object,
+    borrowerId,
+    oncreated,
+    onclose,
+  }: {
+    isOpen?: boolean;
+    object: SharedObject;
+    borrowerId: string;
+    oncreated?: (loan: any) => void;
+    onclose?: () => void;
+  } = $props();
 
   function getDefaultStart(): string {
     const d = new Date();
@@ -24,11 +31,11 @@
     return d.toISOString().slice(0, 10);
   }
 
-  let loanStartDate = getDefaultStart();
-  $: loanEndDate = getDefaultEnd(loanStartDate, object?.loan_duration_days ?? 7);
-  let notes = "";
-  let submitting = false;
-  let errors: Record<string, string> = {};
+  let loanStartDate = $state(getDefaultStart());
+  let loanEndDate = $derived(getDefaultEnd(loanStartDate, object?.loan_duration_days ?? 7));
+  let notes = $state("");
+  let submitting = $state(false);
+  let errors = $state<Record<string, string>>({});
 
   function validate(): boolean {
     errors = {};
@@ -63,24 +70,23 @@
         loan_end_date: loanEndDate,
         notes: notes || undefined,
       }),
-      setLoading: (v) => submitting = v,
+      setLoading: (v: boolean) => submitting = v,
       successMessage: $_('sharing.success.loanRequestSent'),
       errorMessage: $_('sharing.error.loanRequestFailed'),
     });
     if (loan) {
-      dispatch("created", loan);
+      oncreated?.(loan);
       handleClose();
     }
   }
 
   function handleClose() {
-    isOpen = false;
     errors = {};
-    dispatch("close");
+    onclose?.();
   }
 </script>
 
-<Modal {isOpen} title={$_('sharing.borrowObject', { values: { name: object?.object_name ?? '' } })} on:close={handleClose}>
+<Modal {isOpen} title={$_('sharing.borrowObject', { values: { name: object?.object_name ?? '' } })} onclose={handleClose}>
   <div class="space-y-4">
     <!-- Object summary -->
     <div class="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
@@ -96,7 +102,7 @@
       {/if}
     </div>
 
-    <form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="loan-request-form">
+    <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="loan-request-form">
       <!-- Dates -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -120,8 +126,9 @@
           <input
             id="loan-end-date"
             type="date"
-            bind:value={loanEndDate}
+            value={loanEndDate}
             class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.endDate ? 'border-red-500' : 'border-gray-300'}"
+            disabled
           />
           {#if errors.endDate}
             <p class="text-red-500 text-xs mt-1">{errors.endDate}</p>
@@ -152,7 +159,7 @@
       <div class="flex justify-end gap-3 pt-2">
         <button
           type="button"
-          on:click={handleClose}
+          onclick={handleClose}
           class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
         >
           Annuler

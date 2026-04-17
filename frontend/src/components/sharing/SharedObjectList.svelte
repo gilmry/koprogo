@@ -1,27 +1,27 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import {
     sharingApi,
     type SharedObject,
     ObjectCategory,
-    AvailabilityStatus,
   } from "../../lib/api/sharing";
-  import { toast } from "../../stores/toast";
   import SharedObjectCard from "./SharedObjectCard.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let showFilters = true;
+  let { buildingId, showFilters = true }: {
+    buildingId: string;
+    showFilters?: boolean;
+  } = $props();
 
-  let objects: SharedObject[] = [];
-  let filteredObjects: SharedObject[] = [];
-  let loading = true;
-  let searchQuery = "";
-  let selectedCategory: ObjectCategory | "all" = "all";
-  let selectedAvailability: "available-only" | "all" = "available-only";
+  let objects = $state<SharedObject[]>([]);
+  let filteredObjects = $state<SharedObject[]>([]);
+  let loading = $state(true);
+  let searchQuery = $state("");
+  let selectedCategory = $state<ObjectCategory | "all">("all");
+  let selectedAvailability = $state<"available-only" | "all">("available-only");
 
-  onMount(async () => {
-    await loadObjects();
+  $effect(() => {
+    loadObjects();
   });
 
   async function loadObjects() {
@@ -54,12 +54,12 @@
     });
   }
 
-  $: {
+  $effect(() => {
     searchQuery;
     selectedCategory;
     selectedAvailability;
     applyFilters();
-  }
+  });
 
   function handleObjectClick(objectId: string) {
     window.location.href = `/sharing-detail?id=${objectId}`;
@@ -110,7 +110,7 @@
           <select
             id="availability"
             bind:value={selectedAvailability}
-            on:change={loadObjects}
+            onchange={loadObjects}
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="available-only">Available Only</option>

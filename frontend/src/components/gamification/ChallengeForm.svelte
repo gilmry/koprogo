@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { createEventDispatcher } from 'svelte';
   import {
     gamificationApi,
     type Challenge,
@@ -9,22 +9,43 @@
   import { toast } from '../../stores/toast';
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let organizationId: string;
-  export let challenge: Challenge | null = null;
-  export let buildingId: string = '';
+  let {
+    organizationId,
+    challenge = null,
+    buildingId = '',
+    onsaved,
+    oncancel,
+  }: {
+    organizationId: string;
+    challenge?: Challenge | null;
+    buildingId?: string;
+    onsaved?: (result: any) => void;
+    oncancel?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-  let saving = false;
+  let saving = $state(false);
 
-  let title = challenge?.title || '';
-  let description = challenge?.description || '';
-  let challengeType: ChallengeType = challenge?.challenge_type || ChallengeType.Individual;
-  let icon = challenge?.icon || '';
-  let startDate = challenge?.start_date ? challenge.start_date.slice(0, 16) : '';
-  let endDate = challenge?.end_date ? challenge.end_date.slice(0, 16) : '';
-  let targetMetric = challenge?.target_metric || '';
-  let targetValue = challenge?.target_value || 1;
-  let rewardPoints = challenge?.reward_points || 100;
+  let title = $state('');
+  let description = $state('');
+  let challengeType = $state<ChallengeType>(ChallengeType.Individual);
+  let icon = $state('');
+  let startDate = $state('');
+  let endDate = $state('');
+  let targetMetric = $state('');
+  let targetValue = $state(1);
+  let rewardPoints = $state(100);
+
+  $effect(() => {
+    title = challenge?.title || '';
+    description = challenge?.description || '';
+    challengeType = challenge?.challenge_type || ChallengeType.Individual;
+    icon = challenge?.icon || '';
+    startDate = challenge?.start_date ? challenge.start_date.slice(0, 16) : '';
+    endDate = challenge?.end_date ? challenge.end_date.slice(0, 16) : '';
+    targetMetric = challenge?.target_metric || '';
+    targetValue = challenge?.target_value || 1;
+    rewardPoints = challenge?.reward_points || 100;
+  });
 
   const typeLabels: Record<ChallengeType, string> = {
     [ChallengeType.Individual]: $_('gamification.type_individual'),
@@ -80,19 +101,19 @@
 
     await withErrorHandling({
       action: () => gamificationApi.createChallenge(data),
-      setLoading: (v) => saving = v,
+      setLoading: (v: boolean) => saving = v,
       successMessage: $_('gamification.challenge_created'),
       errorMessage: $_('gamification.creation_error'),
-      onSuccess: (result) => dispatch('saved', result),
+      onSuccess: (result) => onsaved?.(result),
     });
   }
 
   function handleCancel() {
-    dispatch('cancel');
+    oncancel?.();
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-4" data-testid="challenge-form">
+<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="challenge-form">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="md:col-span-2">
       <label for="ch-title" class="block text-sm font-medium text-gray-700">{$_('gamification.title')} *</label>
@@ -145,7 +166,7 @@
         placeholder="exchanges_completed" />
       <datalist id="metric-suggestions">
         {#each metricSuggestions as suggestion}
-          <option value={suggestion} />
+          <option value={suggestion}></option>
         {/each}
       </datalist>
     </div>
@@ -164,7 +185,7 @@
   </div>
 
   <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-    <button type="button" on:click={handleCancel}
+    <button type="button" onclick={handleCancel}
       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
       {$_('common.cancel')}
     </button>

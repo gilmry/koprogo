@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from 'svelte';
   import {
     gamificationApi,
     type Challenge,
@@ -12,17 +12,19 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let organizationId: string = '';
-  export let buildingId: string = '';
+  let { organizationId = '', buildingId = '' }: {
+    organizationId?: string;
+    buildingId?: string;
+  } = $props();
 
-  let challenges: Challenge[] = [];
-  let userProgress: Map<string, ChallengeProgress> = new Map();
-  let loading = true;
-  let error = '';
-  let statusFilter: 'active' | 'all' | 'completed' = 'active';
+  let challenges = $state<Challenge[]>([]);
+  let userProgress = $state<Map<string, ChallengeProgress>>(new Map());
+  let loading = $state(true);
+  let error = $state('');
+  let statusFilter = $state<'active' | 'all' | 'completed'>('active');
 
-  onMount(async () => {
-    await loadData();
+  $effect(() => {
+    loadData();
   });
 
   async function loadData() {
@@ -48,9 +50,9 @@
           ? gamificationApi.getUserActiveChallenges($authStore.user.id)
           : Promise.resolve([]),
       ]),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: ([challengeList, userChallenges]) => {
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: ([challengeList, userChallenges]: [Challenge[], ChallengeProgress[]]) => {
         if (buildingId && statusFilter !== 'all') {
           const now = new Date();
           challenges = challengeList.filter(c => {
@@ -71,7 +73,10 @@
     });
   }
 
-  $: if (statusFilter) loadData();
+  $effect(() => {
+    statusFilter;
+    loadData();
+  });
 
   function getStatusConfig(status: ChallengeStatus): { bg: string; text: string; label: string } {
     switch (status) {
@@ -120,7 +125,7 @@
         { value: 'all', label: $_('common.all') },
         { value: 'completed', label: $_('gamification.status_completed_plural') },
       ] as f}
-        <button on:click={() => statusFilter = f.value}
+        <button onclick={() => statusFilter = f.value}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
             {statusFilter === f.value ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
           {f.label}
@@ -137,7 +142,7 @@
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md" data-testid="challenge-list-error">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
+      <button onclick={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if challenges.length === 0}
     <div class="p-8 text-center">

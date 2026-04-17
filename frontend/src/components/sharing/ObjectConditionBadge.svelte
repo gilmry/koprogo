@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { ObjectCondition } from "../../lib/api/sharing";
 
-  export let condition: ObjectCondition;
+  let { condition }: { condition: ObjectCondition } = $props();
 
   const conditionConfig: Record<
     ObjectCondition,
@@ -29,7 +30,7 @@
     },
   };
 
-  $: config = conditionConfig[condition];
+  let config = $derived(conditionConfig[condition]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

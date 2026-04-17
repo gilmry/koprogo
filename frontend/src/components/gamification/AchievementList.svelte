@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from 'svelte';
   import {
     gamificationApi,
     type Achievement,
@@ -11,29 +11,29 @@
   import { authStore } from '../../stores/auth';
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let organizationId: string;
+  let { organizationId }: { organizationId: string } = $props();
 
-  let achievements: Achievement[] = [];
-  let userAchievements: UserAchievement[] = [];
-  let loading = true;
-  let error = '';
-  let categoryFilter: AchievementCategory | 'all' = 'all';
+  let achievements = $state<Achievement[]>([]);
+  let userAchievements = $state<UserAchievement[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let categoryFilter = $state<AchievementCategory | 'all'>('all');
 
-  $: earnedIds = new Set(userAchievements.map(ua => ua.achievement_id));
+  let earnedIds = $derived(new Set(userAchievements.map(ua => ua.achievement_id)));
 
-  $: filteredAchievements = achievements.filter(a => {
+  let filteredAchievements = $derived(achievements.filter(a => {
     if (categoryFilter === 'all') return true;
     return a.category === categoryFilter;
-  });
+  }));
 
-  $: earnedCount = achievements.filter(a => earnedIds.has(a.id)).length;
-  $: totalPoints = userAchievements.reduce((sum, ua) => {
+  let earnedCount = $derived(achievements.filter(a => earnedIds.has(a.id)).length);
+  let totalPoints = $derived(userAchievements.reduce((sum, ua) => {
     const ach = achievements.find(a => a.id === ua.achievement_id);
     return sum + (ach ? ach.points_value * ua.times_earned : 0);
-  }, 0);
+  }, 0));
 
-  onMount(async () => {
-    await loadData();
+  $effect(() => {
+    loadData();
   });
 
   async function loadData() {
@@ -48,9 +48,9 @@
           ? gamificationApi.getUserAchievements($authStore.user.id)
           : Promise.resolve([]),
       ]),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
-      onSuccess: ([achList, userAchList]) => {
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: ([achList, userAchList]: [Achievement[], UserAchievement[]]) => {
         achievements = achList;
         userAchievements = userAchList;
       },
@@ -103,13 +103,13 @@
   <!-- Category filters -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex flex-wrap gap-1">
-      <button on:click={() => categoryFilter = 'all'}
+      <button onclick={() => categoryFilter = 'all'}
         class="px-2 py-1 rounded text-xs font-medium transition-colors
           {categoryFilter === 'all' ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
         {$_('common.all')}
       </button>
       {#each Object.values(AchievementCategory) as cat}
-        <button on:click={() => categoryFilter = cat}
+        <button onclick={() => categoryFilter = cat}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
             {categoryFilter === cat ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
           {getCategoryLabel(cat)}
@@ -126,7 +126,7 @@
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
+      <button onclick={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if filteredAchievements.length === 0}
     <div class="p-8 text-center">
