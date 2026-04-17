@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
   import { api } from '../../lib/api';
@@ -10,7 +10,7 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
 
-  $: user = $authStore.user;
+  let user = $derived($authStore.user);
 
   interface SyndicStats {
     total_buildings: number;
@@ -35,20 +35,20 @@
     due_date: string | null;
   }
 
-  let stats: SyndicStats | null = null;
-  let urgentTasks: UrgentTask[] = [];
-  let recentOwners: Owner[] = [];
-  let openTicketsCount = 0;
-  let unreadNotifCount = 0;
-  let loading = true;
-  let error: string | null = null;
+  let stats = $state<SyndicStats | null>(null);
+  let urgentTasks = $state<UrgentTask[]>([]);
+  let recentOwners = $state<Owner[]>([]);
+  let openTicketsCount = $state(0);
+  let unreadNotifCount = $state(0);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   // Modal state
-  let isModalOpen = false;
-  let selectedOwner: Owner | null = null;
+  let isModalOpen = $state(false);
+  let selectedOwner = $state<Owner | null>(null);
 
-  onMount(async () => {
-    await loadDashboardData();
+  $effect(() => {
+    loadDashboardData();
   });
 
   async function loadDashboardData() {
@@ -299,7 +299,7 @@
                     {/if}
                   </div>
                   <button
-                    on:click={() => openEditModal(owner)}
+                    onclick={() => openEditModal(owner)}
                     class="ml-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                   >
                     {$_('common.edit')}

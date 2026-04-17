@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { get } from 'svelte/store';
   import { _ } from '../lib/i18n';
   import { fly, fade } from 'svelte/transition';
@@ -9,15 +9,15 @@
   import NotificationBell from './notifications/NotificationBell.svelte';
 
   // --- State ---
-  let switchingRole = false;
-  let selectedRoleId: string | null = null;
-  let drawerOpen = false;
-  let currentPath = '';
-  let hamburgerButton: HTMLButtonElement;
-  let drawerCloseButton: HTMLButtonElement;
+  let switchingRole = $state(false);
+  let selectedRoleId = $state<string | null>(null);
+  let drawerOpen = $state(false);
+  let currentPath = $state('');
+  let hamburgerButton = $state<HTMLButtonElement | undefined>(undefined);
+  let drawerCloseButton = $state<HTMLButtonElement | undefined>(undefined);
 
-  $: user = $authStore.user;
-  $: isAuthenticated = $authStore.isAuthenticated;
+  let user = $derived($authStore.user);
+  let isAuthenticated = $derived($authStore.isAuthenticated);
 
   // --- Types ---
   interface NavItem {
@@ -101,8 +101,8 @@
   };
 
   // --- Lifecycle ---
-  onMount(async () => {
-    await authStore.init();
+  $effect(() => {
+    authStore.init();
     currentPath = window.location.pathname;
   });
 
@@ -272,10 +272,12 @@
     }];
   };
 
-  $: navGroups = getNavGroups(user?.role, $_);
-  $: if (user?.activeRole?.id && user.activeRole.id !== selectedRoleId) {
-    selectedRoleId = user.activeRole.id;
-  }
+  let navGroups = $derived(getNavGroups(user?.role, $_));
+  $effect(() => {
+    if (user?.activeRole?.id && user.activeRole.id !== selectedRoleId) {
+      selectedRoleId = user.activeRole.id;
+    }
+  });
 </script>
 
 <!-- ============================================================ -->
@@ -333,7 +335,7 @@
           <select
             id="sidebar-role-selector"
             class="w-full px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            on:change={handleRoleChange}
+            onchange={handleRoleChange}
             disabled={switchingRole}
             bind:value={selectedRoleId}
             data-testid="role-selector"
@@ -368,7 +370,7 @@
           🔒 Données RGPD
         </a>
         <button
-          on:click={logout}
+          onclick={logout}
           class="w-full flex items-center gap-2 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           data-testid="user-menu-logout"
         >
@@ -390,7 +392,7 @@
     <!-- Left: Hamburger -->
     <button
       bind:this={hamburgerButton}
-      on:click={openDrawer}
+      onclick={openDrawer}
       class="p-2 -ml-1 rounded-lg text-gray-600 hover:bg-gray-100"
       aria-label="Ouvrir le menu"
       aria-expanded={drawerOpen}
@@ -445,8 +447,8 @@
   <div
     class="fixed inset-0 bg-black/40 z-40 lg:hidden"
     transition:fade={{ duration: 200 }}
-    on:click={closeDrawer}
-    on:keydown={(e) => e.key === 'Escape' && closeDrawer()}
+    onclick={closeDrawer}
+    onkeydown={(e) => e.key === 'Escape' && closeDrawer()}
     role="button"
     tabindex="-1"
     aria-label="Fermer le menu"
@@ -462,12 +464,12 @@
   >
     <!-- Header: logo + close -->
     <div class="flex items-center justify-between h-14 px-4 border-b border-gray-200 shrink-0">
-      <a href={`/${user?.role}`} class="text-xl font-bold text-primary-600" on:click={handleNavClick}>
+      <a href={`/${user?.role}`} class="text-xl font-bold text-primary-600" onclick={handleNavClick}>
         KoproGo
       </a>
       <button
         bind:this={drawerCloseButton}
-        on:click={closeDrawer}
+        onclick={closeDrawer}
         class="p-2 rounded-lg text-gray-500 hover:bg-gray-100"
         aria-label="Fermer le menu"
       >
@@ -489,7 +491,7 @@
               <li>
                 <a
                   href={item.href}
-                  on:click={handleNavClick}
+                  onclick={handleNavClick}
                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors
                     {isActive(item.href)
                       ? 'bg-primary-50 text-primary-700 font-semibold'
@@ -515,7 +517,7 @@
           <select
             id="drawer-role-selector"
             class="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            on:change={handleRoleChange}
+            onchange={handleRoleChange}
             disabled={switchingRole}
             bind:value={selectedRoleId}
           >
@@ -539,17 +541,17 @@
       </div>
 
       <div class="space-y-0.5">
-        <a href="/profile" on:click={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+        <a href="/profile" onclick={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           👤 {$_('navigation.profile')}
         </a>
-        <a href="/settings" on:click={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+        <a href="/settings" onclick={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           ⚙️ Paramètres
         </a>
-        <a href="/settings/gdpr" on:click={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+        <a href="/settings/gdpr" onclick={handleNavClick} class="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
           🔒 Données RGPD
         </a>
         <button
-          on:click={logout}
+          onclick={logout}
           class="w-full flex items-center gap-2 px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors"
           data-testid="mobile-drawer-logout"
         >
@@ -561,4 +563,4 @@
 {/if}
 
 <!-- Global keyboard handler -->
-<svelte:window on:keydown={(e) => e.key === 'Escape' && drawerOpen && closeDrawer()} />
+<svelte:window onkeydown={(e) => e.key === 'Escape' && drawerOpen && closeDrawer()} />

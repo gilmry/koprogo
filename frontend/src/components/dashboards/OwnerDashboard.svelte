@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
   import { api } from '../../lib/api';
@@ -10,7 +10,7 @@
   import { formatDateShort, formatDate } from "../../lib/utils/date.utils";
   import { formatCurrency } from "../../lib/utils/finance.utils";
 
-  $: user = $authStore.user;
+  let user = $derived($authStore.user);
 
   interface OwnerTicket {
     id: string;
@@ -55,17 +55,17 @@
     expires_soon: boolean;
   }
 
-  let stats: OwnerStats | null = null;
-  let recentBuildings: Building[] = [];
-  let recentUnits: Unit[] = [];
-  let boardMandates: BoardMandate[] = [];
-  let myTickets: OwnerTicket[] = [];
-  let unreadNotifications: OwnerNotification[] = [];
-  let loading = true;
-  let error: string | null = null;
+  let stats = $state<OwnerStats | null>(null);
+  let recentBuildings = $state<Building[]>([]);
+  let recentUnits = $state<Unit[]>([]);
+  let boardMandates = $state<BoardMandate[]>([]);
+  let myTickets = $state<OwnerTicket[]>([]);
+  let unreadNotifications = $state<OwnerNotification[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
-  onMount(async () => {
-    await loadDashboardData();
+  $effect(() => {
+    loadDashboardData();
   });
 
   async function loadDashboardData() {
@@ -110,7 +110,7 @@
     }
   }
 
-  $: openTicketsCount = myTickets.filter(t => t.status !== 'Closed' && t.status !== 'Cancelled' && t.status !== 'Resolved').length;
+  let openTicketsCount = $derived(myTickets.filter(t => t.status !== 'Closed' && t.status !== 'Cancelled' && t.status !== 'Resolved').length);
 
   function getUnitTypeIcon(type: string): string {
     const icons: Record<string, string> = {

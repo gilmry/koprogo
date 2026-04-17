@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
   import { api } from '../../lib/api';
@@ -7,13 +7,13 @@
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  $: user = $authStore.user;
+  let user = $derived($authStore.user);
 
   // Dashboard data
-  let stats: any = null;
-  let transactions: any[] = [];
-  let loading = true;
-  let error = '';
+  let stats = $state<any>(null);
+  let transactions = $state<any[]>([]);
+  let loading = $state(true);
+  let error = $state('');
 
   // Load dashboard data
   async function loadDashboardData() {
@@ -38,7 +38,7 @@
     loading = false;
   }
 
-  onMount(() => {
+  $effect(() => {
     loadDashboardData();
   });
 
@@ -82,7 +82,7 @@
         </div>
         <div class="ml-3">
           <p class="text-sm text-red-700">{error}</p>
-          <button on:click={loadDashboardData} class="mt-2 text-sm font-medium text-red-700 hover:text-red-600">
+          <button onclick={loadDashboardData} class="mt-2 text-sm font-medium text-red-700 hover:text-red-600">
             {$_('common.retry')}
           </button>
         </div>
