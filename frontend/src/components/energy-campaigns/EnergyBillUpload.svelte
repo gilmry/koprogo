@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { createEventDispatcher } from "svelte";
   import {
     energyBillsApi,
     type UploadEnergyBillDto,
@@ -8,12 +8,14 @@
   } from "../../lib/api/energy-campaigns";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let campaignId: string;
-  export let unitId: string;
+  let { campaignId, unitId, onuploaded, oncancel }: {
+    campaignId: string;
+    unitId: string;
+    onuploaded?: (upload: any) => void;
+    oncancel?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  let formData: Partial<UploadEnergyBillDto> = {
+  let formData: Partial<UploadEnergyBillDto> = $state({
     campaign_id: campaignId,
     unit_id: unitId,
     billing_period_start: "",
@@ -21,12 +23,12 @@
     energy_type: undefined,
     total_kwh: 0,
     consent_signature: "",
-  };
+  });
 
-  let gdprConsent = false;
-  let loading = false;
-  let error = "";
-  let success = false;
+  let gdprConsent = $state(false);
+  let loading = $state(false);
+  let error = $state("");
+  let success = $state(false);
 
   function generateConsentSignature(): string {
     // Generate a simple signature based on user consent timestamp
@@ -51,11 +53,11 @@
 
     await withErrorHandling({
       action: () => energyBillsApi.upload(formData as UploadEnergyBillDto),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       errorMessage: $_("energy.upload.uploadError"),
       onSuccess: (upload) => {
         success = true;
-        dispatch("uploaded", upload);
+        onuploaded?.(upload);
         setTimeout(() => {
           formData = {
             campaign_id: campaignId,
@@ -97,7 +99,7 @@
     </div>
   {/if}
 
-  <form on:submit={handleSubmit} class="space-y-6" data-testid="energy-bill-upload-form">
+  <form onsubmit={handleSubmit} class="space-y-6" data-testid="energy-bill-upload-form">
     <!-- Energy Type -->
     <div>
       <label for="energy_type" class="block text-sm font-medium text-gray-700">
@@ -231,7 +233,7 @@
     <div class="flex justify-end space-x-3">
       <button
         type="button"
-        on:click={() => dispatch("cancel")}
+        onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         {$_("common.cancel")}

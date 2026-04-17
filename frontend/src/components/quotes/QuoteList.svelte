@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     quotesApi,
@@ -16,52 +16,48 @@
   import { formatDate } from '../../lib/utils/date.utils';
   import { formatAmount } from '../../lib/utils/finance.utils';
 
-  export let buildingId: string;
+  let { buildingId }: { buildingId: string } = $props();
 
-  let quotes: Quote[] = [];
-  let filteredQuotes: Quote[] = [];
-  let loading = true;
-  let error = '';
-  let statusFilter: QuoteStatus | 'all' = 'all';
-  let expandedId: string | null = null;
-  let showCreateForm = false;
-  let createLoading = false;
+  let quotes: Quote[] = $state([]);
+  let loading = $state(true);
+  let error = $state('');
+  let statusFilter: QuoteStatus | 'all' = $state('all');
+  let expandedId: string | null = $state(null);
+  let showCreateForm = $state(false);
+  let createLoading = $state(false);
 
-  let compareMode = false;
-  let selectedForCompare: Set<string> = new Set();
+  let compareMode = $state(false);
+  let selectedForCompare: Set<string> = $state(new Set());
 
-  let newContractorId = '';
-  let newProjectTitle = '';
-  let newProjectDescription = '';
-  let newWorkCategory = '';
+  let newContractorId = $state('');
+  let newProjectTitle = $state('');
+  let newProjectDescription = $state('');
+  let newWorkCategory = $state('');
 
-  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
+  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
 
-  onMount(async () => {
-    await loadQuotes();
+  $effect(() => {
+    loadQuotes();
   });
 
   async function loadQuotes() {
     await withLoadingState({
       action: () => quotesApi.listByBuilding(buildingId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       errorMessage: $_("quotes.list.loadingError"),
       onSuccess: (data) => {
         quotes = data;
-        applyFilters();
       },
     });
   }
 
-  function applyFilters() {
-    filteredQuotes = quotes.filter(q => {
+  let filteredQuotes = $derived.by(() => {
+    return quotes.filter(q => {
       if (statusFilter === 'all') return true;
       return q.status === statusFilter;
     });
-  }
-
-  $: if (statusFilter) applyFilters();
+  });
 
   function formatQuoteAmount(amountCents: number | undefined): string {
     if (!amountCents) return '-';
@@ -78,7 +74,7 @@
     } else {
       selectedForCompare.add(id);
     }
-    selectedForCompare = selectedForCompare;
+    selectedForCompare = new Set(selectedForCompare);
   }
 
   function goToCompare() {
@@ -107,7 +103,7 @@
         };
         return quotesApi.create(data);
       },
-      setLoading: (v) => createLoading = v,
+      setLoading: (v: boolean) => createLoading = v,
       successMessage: $_("quotes.list.createSuccess"),
       errorMessage: $_("quotes.list.createError"),
       onSuccess: async () => {
@@ -121,27 +117,24 @@
     });
   }
 
-  function handleQuoteUpdated(event: CustomEvent<Quote>) {
-    const updated = event.detail;
+  function handleQuoteUpdated(updated: Quote) {
     quotes = quotes.map(q => q.id === updated.id ? updated : q);
-    applyFilters();
   }
 
   function handleQuoteDeleted(quoteId: string) {
     quotes = quotes.filter(q => q.id !== quoteId);
     expandedId = null;
-    applyFilters();
   }
 
   // Status counts
-  $: statusCounts = {
+  let statusCounts = $derived({
     total: quotes.length,
     requested: quotes.filter(q => q.status === QuoteStatus.Requested).length,
     received: quotes.filter(q => q.status === QuoteStatus.Received).length,
     underReview: quotes.filter(q => q.status === QuoteStatus.UnderReview).length,
     accepted: quotes.filter(q => q.status === QuoteStatus.Accepted).length,
     rejected: quotes.filter(q => q.status === QuoteStatus.Rejected).length,
-  };
+  });
 </script>
 
 <div class="bg-white shadow-md rounded-lg" data-testid="quote-list">
@@ -158,23 +151,23 @@
       {#if isAdmin}
         <div class="flex gap-2">
           {#if compareMode}
-            <button on:click={goToCompare}
+            <button onclick={goToCompare}
               class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
               disabled={selectedForCompare.size < 2}>
               {$_("quotes.list.compare")} ({selectedForCompare.size})
             </button>
-            <button on:click={() => { compareMode = false; selectedForCompare = new Set(); }}
+            <button onclick={() => { compareMode = false; selectedForCompare = new Set(); }}
               class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
               {$_("common.cancel")}
             </button>
           {:else}
-            <button on:click={() => compareMode = true}
+            <button onclick={() => compareMode = true}
               data-testid="compare-quotes-button"
               class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors"
               disabled={quotes.length < 2}>
               {$_("quotes.list.compare")}
             </button>
-            <button on:click={() => showCreateForm = !showCreateForm}
+            <button onclick={() => showCreateForm = !showCreateForm}
               data-testid="request-quote-button"
               class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors">
               + {$_("quotes.list.requestQuote")}
@@ -253,11 +246,11 @@
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button on:click={handleCreate} disabled={createLoading}
+        <button onclick={handleCreate} disabled={createLoading}
           class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors">
           {createLoading ? $_("quotes.list.creating") : $_("quotes.list.createRequest")}
         </button>
-        <button on:click={() => showCreateForm = false}
+        <button onclick={() => showCreateForm = false}
           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
           {$_("common.cancel")}
         </button>
@@ -276,7 +269,7 @@
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadQuotes} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+      <button onclick={loadQuotes} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
         {$_("common.retry")}
       </button>
     </div>
@@ -294,11 +287,11 @@
       {#each filteredQuotes as quote (quote.id)}
         <li class="hover:bg-gray-50" data-testid="quote-row">
           <div class="px-4 py-4 sm:px-6">
-            <div class="flex items-center justify-between cursor-pointer" on:click={() => toggleExpand(quote.id)}>
+            <div class="flex items-center justify-between cursor-pointer" onclick={() => toggleExpand(quote.id)}>
               <div class="flex items-center space-x-3 flex-1 min-w-0">
                 {#if compareMode}
                   <input type="checkbox" checked={selectedForCompare.has(quote.id)}
-                    on:click|stopPropagation={() => toggleCompareSelect(quote.id)}
+                    onclick={(e) => { e.stopPropagation(); toggleCompareSelect(quote.id); }}
                     class="h-4 w-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500" />
                 {/if}
                 <div class="flex-1 min-w-0">
@@ -327,8 +320,8 @@
             {#if expandedId === quote.id}
               <div class="mt-3">
                 <QuoteDetail {quote}
-                  on:updated={handleQuoteUpdated}
-                  on:deleted={() => handleQuoteDeleted(quote.id)} />
+                  onupdated={(updated) => handleQuoteUpdated(updated)}
+                  ondeleted={() => handleQuoteDeleted(quote.id)} />
               </div>
             {/if}
           </div>

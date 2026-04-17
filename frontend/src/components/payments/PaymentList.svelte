@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     paymentsApi,
@@ -11,18 +11,20 @@
   import { withLoadingState } from "../../lib/utils/error.utils";
   import PaymentStatusBadge from "./PaymentStatusBadge.svelte";
 
-  export let ownerId: string | undefined = undefined;
-  export let buildingId: string | undefined = undefined;
-  export let expenseId: string | undefined = undefined;
+  let { ownerId = undefined, buildingId = undefined, expenseId = undefined }: {
+    ownerId?: string | undefined;
+    buildingId?: string | undefined;
+    expenseId?: string | undefined;
+  } = $props();
 
-  let payments: Payment[] = [];
-  let loading = true;
-  let error = "";
-  let statusFilter: PaymentStatus | "all" = "all";
-  let searchQuery = "";
+  let payments: Payment[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let statusFilter: PaymentStatus | "all" = $state("all");
+  let searchQuery = $state("");
 
-  onMount(async () => {
-    await loadPayments();
+  $effect(() => {
+    loadPayments();
   });
 
   async function loadPayments() {
@@ -38,14 +40,14 @@
           return [];
         }
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       onSuccess: (data) => payments = data,
       errorMessage: $_('payments.loadError'),
     });
   }
 
-  $: filteredPayments = payments.filter((payment) => {
+  let filteredPayments = $derived(payments.filter((payment) => {
     if (statusFilter !== "all" && payment.status !== statusFilter) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -56,7 +58,7 @@
       );
     }
     return true;
-  });
+  }));
 
   function getPaymentUrl(paymentId: string): string {
     return `/payment-detail?id=${paymentId}`;
@@ -74,7 +76,7 @@
         </span>
       </h2>
       <button
-        on:click={loadPayments}
+        onclick={loadPayments}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
         {$_('common.refresh')}

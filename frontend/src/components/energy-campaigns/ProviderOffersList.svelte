@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import {
     energyCampaignsApi,
     type ProviderOffer,
@@ -8,24 +8,26 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let campaignId: string;
-  export let selectedOfferId: string | undefined = undefined;
-  export let canSelect = false; // Admin/Syndic can select offer
+  let { campaignId, selectedOfferId = undefined, canSelect = false }: {
+    campaignId: string;
+    selectedOfferId?: string | undefined;
+    canSelect?: boolean;
+  } = $props();
 
-  let offers: ProviderOffer[] = [];
-  let loading = true;
-  let error = "";
-  let bestOffer: ProviderOffer | null = null;
+  let offers: ProviderOffer[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let bestOffer: ProviderOffer | null = $state(null);
 
-  onMount(async () => {
-    await loadOffers();
+  $effect(() => {
+    loadOffers();
   });
 
   async function loadOffers() {
     await withLoadingState({
       action: () => energyCampaignsApi.listOffers(campaignId),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       onSuccess: (data) => {
         offers = data;
         if (offers.length > 0) {
@@ -96,7 +98,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
-        on:click={loadOffers}
+        onclick={loadOffers}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
         {$_("common.retry")}
@@ -198,7 +200,7 @@
           <!-- Selection Button (Admin only) -->
           {#if canSelect && !selectedOfferId}
             <button
-              on:click={() => {
+              onclick={() => {
                 /* Dispatch select event */
               }}
               data-testid="select-offer-btn"

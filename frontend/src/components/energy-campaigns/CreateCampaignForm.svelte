@@ -1,4 +1,5 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     energyCampaignsApi,
@@ -8,28 +9,32 @@
   import BuildingSelector from "../BuildingSelector.svelte";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let organizationId: string;
-  export let onCreated: ((campaign: any) => void) | undefined = undefined;
-  export let onCancel: (() => void) | undefined = undefined;
+  let { organizationId, onCreated = undefined, onCancel = undefined }: {
+    organizationId: string;
+    onCreated?: ((campaign: any) => void) | undefined;
+    onCancel?: (() => void) | undefined;
+  } = $props();
 
-  let selectedBuildingId = "";
+  let selectedBuildingId = $state("");
 
   // Default deadline: 3 months from now
   const defaultDeadline = new Date();
   defaultDeadline.setMonth(defaultDeadline.getMonth() + 3);
 
-  let formData: CreateCampaignDto = {
+  let formData: CreateCampaignDto = $state({
     building_id: undefined,
     campaign_name: "",
     deadline_participation: defaultDeadline.toISOString().split("T")[0],
     energy_types: [],
-  };
+  });
 
-  $: formData.building_id = selectedBuildingId || undefined;
+  $effect(() => {
+    formData.building_id = selectedBuildingId || undefined;
+  });
 
-  let loading = false;
-  let error = "";
-  let success = false;
+  let loading = $state(false);
+  let error = $state("");
+  let success = $state(false);
 
   function toggleEnergyType(type: EnergyType) {
     if (formData.energy_types.includes(type)) {
@@ -58,7 +63,7 @@
 
     await withErrorHandling({
       action: () => energyCampaignsApi.create(payload as any),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       errorMessage: $_("energy.campaign.createError"),
       onSuccess: (campaign) => {
         error = "";
@@ -102,7 +107,7 @@
     </div>
   {/if}
 
-  <form on:submit={handleSubmit} class="space-y-6">
+  <form onsubmit={handleSubmit} class="space-y-6">
     <!-- Building Selector -->
     <BuildingSelector bind:selectedBuildingId label={$_("energy.campaign.building")} required={false} />
 
@@ -138,7 +143,7 @@
           <input
             type="checkbox"
             checked={formData.energy_types.includes(EnergyType.Electricity)}
-            on:change={() => toggleEnergyType(EnergyType.Electricity)}
+            onchange={() => toggleEnergyType(EnergyType.Electricity)}
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">
@@ -149,7 +154,7 @@
           <input
             type="checkbox"
             checked={formData.energy_types.includes(EnergyType.Gas)}
-            on:change={() => toggleEnergyType(EnergyType.Gas)}
+            onchange={() => toggleEnergyType(EnergyType.Gas)}
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">
@@ -160,7 +165,7 @@
           <input
             type="checkbox"
             checked={formData.energy_types.includes(EnergyType.Heating)}
-            on:change={() => toggleEnergyType(EnergyType.Heating)}
+            onchange={() => toggleEnergyType(EnergyType.Heating)}
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">
@@ -219,7 +224,7 @@
     <div class="flex justify-end space-x-3">
       <button
         type="button"
-        on:click={() => onCancel && onCancel()}
+        onclick={() => onCancel && onCancel()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         {$_("common.cancel")}

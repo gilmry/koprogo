@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     energyCampaignsApi,
@@ -16,20 +16,22 @@
   import { formatDateShort } from "../../lib/utils/date.utils";
   import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let campaignId: string;
-  export let currentUserId: string;
-  export let currentUnitId: string | undefined = undefined;
-  export let isAdmin = false;
+  let { campaignId, currentUserId, currentUnitId = undefined, isAdmin = false }: {
+    campaignId: string;
+    currentUserId: string;
+    currentUnitId?: string | undefined;
+    isAdmin?: boolean;
+  } = $props();
 
-  let campaign: EnergyCampaign | null = null;
-  let stats: CampaignStatistics | null = null;
-  let myUploads: EnergyBillUploadType[] = [];
-  let loading = true;
-  let error = "";
-  let showUploadForm = false;
+  let campaign: EnergyCampaign | null = $state(null);
+  let stats: CampaignStatistics | null = $state(null);
+  let myUploads: EnergyBillUploadType[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let showUploadForm = $state(false);
 
-  onMount(async () => {
-    await loadData();
+  $effect(() => {
+    loadData();
   });
 
   async function loadData() {
@@ -129,7 +131,7 @@
   <div class="p-4 bg-red-50 border border-red-200 rounded-md" data-testid="campaign-detail-error">
     <p class="text-sm text-red-800">❌ {error}</p>
     <button
-      on:click={loadData}
+      onclick={loadData}
       class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
     >
       {$_("common.retry")}
@@ -232,7 +234,7 @@
           </h3>
           {#if canUpload()}
             <button
-              on:click={() => (showUploadForm = !showUploadForm)}
+              onclick={() => (showUploadForm = !showUploadForm)}
               class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700"
             >
               {showUploadForm ? $_("common.cancel") : "➕ " + $_("energy.uploadBill")}
@@ -244,8 +246,8 @@
           <EnergyBillUpload
             campaignId={campaign.id}
             unitId={currentUnitId}
-            on:uploaded={handleUploadComplete}
-            on:cancel={() => (showUploadForm = false)}
+            onuploaded={handleUploadComplete}
+            oncancel={() => (showUploadForm = false)}
           />
         {:else if myUploads.length === 0}
           <p class="text-sm text-gray-500">
@@ -276,7 +278,7 @@
                   </div>
                 </div>
                 <button
-                  on:click={() => withdrawConsent(upload.id)}
+                  onclick={() => withdrawConsent(upload.id)}
                   data-testid="withdraw-consent-btn"
                   class="text-xs text-red-600 hover:text-red-800 underline"
                   title={$_("energy.withdrawConsentTitle")}

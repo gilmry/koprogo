@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { quotesApi, type QuoteComparison } from "../../lib/api/quotes";
   import QuoteStatusBadge from "./QuoteStatusBadge.svelte";
@@ -7,21 +7,21 @@
   import { formatDateShort } from '../../lib/utils/date.utils';
   import { formatAmount } from '../../lib/utils/finance.utils';
 
-  export let quoteIds: string[];
+  let { quoteIds }: { quoteIds: string[] } = $props();
 
-  let comparison: QuoteComparison | null = null;
-  let loading = true;
-  let error = '';
+  let comparison: QuoteComparison | null = $state(null);
+  let loading = $state(true);
+  let error = $state('');
 
-  onMount(async () => {
-    await loadComparison();
+  $effect(() => {
+    loadComparison();
   });
 
   async function loadComparison() {
     await withLoadingState({
       action: () => quotesApi.compare(quoteIds),
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       errorMessage: $_("quotes.comparison.loadError"),
       onSuccess: (data) => { comparison = data; },
     });

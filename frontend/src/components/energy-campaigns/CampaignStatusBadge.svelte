@@ -1,8 +1,9 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { CampaignStatus } from "../../lib/api/energy-campaigns";
 
-  export let status: CampaignStatus;
+  let { status }: { status: CampaignStatus } = $props();
 
   function getStatusConfig() {
     const statusConfig: Record<
@@ -49,7 +50,7 @@
     return statusConfig[status] || statusConfig[CampaignStatus.Draft];
   }
 
-  $: config = getStatusConfig();
+  let config = $derived(getStatusConfig());
 </script>
 
 <span

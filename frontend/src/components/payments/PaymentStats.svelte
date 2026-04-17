@@ -1,19 +1,21 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { paymentsApi, type PaymentStats } from "../../lib/api/payments";
   import { formatAmount } from "../../lib/utils/finance.utils";
   import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let ownerId: string | undefined = undefined;
-  export let buildingId: string | undefined = undefined;
+  let { ownerId = undefined, buildingId = undefined }: {
+    ownerId?: string | undefined;
+    buildingId?: string | undefined;
+  } = $props();
 
-  let stats: PaymentStats | null = null;
-  let loading = true;
-  let error = "";
+  let stats: PaymentStats | null = $state(null);
+  let loading = $state(true);
+  let error = $state("");
 
-  onMount(async () => {
-    await loadStats();
+  $effect(() => {
+    loadStats();
   });
 
   async function loadStats() {
@@ -26,8 +28,8 @@
         }
         return null;
       },
-      setLoading: (v) => loading = v,
-      setError: (v) => error = v,
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
       onSuccess: (data) => stats = data,
       errorMessage: $_('payments.loadError'),
     });

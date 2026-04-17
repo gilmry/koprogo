@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import { workReportsApi, workTypeLabels, warrantyTypeLabels } from "../../lib/api/work-reports";
   import type { WorkReport, CreateWorkReportDto } from "../../lib/api/work-reports";
   import { WorkType, WarrantyType } from "../../lib/api/work-reports";
@@ -10,19 +10,21 @@
   import { formatCurrency } from "../../lib/utils/finance.utils";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let organizationId: string = "";
+  let { buildingId, organizationId = "" }: {
+    buildingId: string;
+    organizationId?: string;
+  } = $props();
 
-  let reports: WorkReport[] = [];
-  let loading = true;
-  let error = "";
-  let showCreateForm = false;
-  let filterType = "all";
-  let selectedReport: WorkReport | null = null;
-  let detailOpen = false;
+  let reports: WorkReport[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let showCreateForm = $state(false);
+  let filterType = $state("all");
+  let selectedReport: WorkReport | null = $state(null);
+  let detailOpen = $state(false);
 
   // Create form
-  let form: Partial<CreateWorkReportDto> = resetForm();
+  let form: Partial<CreateWorkReportDto> = $state(resetForm());
 
   function resetForm(): Partial<CreateWorkReportDto> {
     return {
@@ -100,26 +102,27 @@
     detailOpen = true;
   }
 
-  function handleDetailUpdated(event: CustomEvent<WorkReport>) {
-    const updated = event.detail;
+  function handleDetailUpdated(updated: WorkReport) {
     reports = reports.map((r) => (r.id === updated.id ? updated : r));
   }
 
-  function handleDetailDeleted(event: CustomEvent<string>) {
-    reports = reports.filter((r) => r.id !== event.detail);
+  function handleDetailDeleted(id: string) {
+    reports = reports.filter((r) => r.id !== id);
     detailOpen = false;
   }
 
-  $: filteredReports = filterType === "all"
+  let filteredReports = $derived(filterType === "all"
     ? reports
-    : reports.filter((r) => r.work_type === filterType);
+    : reports.filter((r) => r.work_type === filterType));
 
-  $: typeCounts = reports.reduce((acc, r) => {
+  let typeCounts = $derived(reports.reduce((acc, r) => {
     acc[r.work_type] = (acc[r.work_type] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>));
 
-  onMount(loadReports);
+  $effect(() => {
+    loadReports();
+  });
 </script>
 
 <div class="space-y-4" data-testid="work-report-list">
@@ -127,7 +130,7 @@
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold text-gray-800">{$_("workReports.title")}</h2>
     <button
-      on:click={() => (showCreateForm = !showCreateForm)}
+      onclick={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
     >
       {showCreateForm ? $_("common.cancel") : "+ " + $_("workReports.newReport")}
@@ -189,20 +192,20 @@
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button on:click={createReport} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">{$_("common.create")}</button>
-        <button on:click={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
+        <button onclick={createReport} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">{$_("common.create")}</button>
+        <button onclick={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
       </div>
     </div>
   {/if}
 
   <!-- Filters -->
   <div class="flex flex-wrap gap-2">
-    <button on:click={() => (filterType = "all")} class="px-3 py-1 text-xs rounded-full {filterType === 'all' ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
+    <button onclick={() => (filterType = "all")} class="px-3 py-1 text-xs rounded-full {filterType === 'all' ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
       {$_("common.all")} ({reports.length})
     </button>
     {#each Object.entries(workTypeLabels) as [val, label]}
       {#if typeCounts[val]}
-        <button on:click={() => (filterType = val)} class="px-3 py-1 text-xs rounded-full {filterType === val ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
+        <button onclick={() => (filterType = val)} class="px-3 py-1 text-xs rounded-full {filterType === val ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
           {label} ({typeCounts[val]})
         </button>
       {/if}
@@ -218,7 +221,7 @@
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
       {error}
-      <button on:click={loadReports} class="ml-2 underline">{$_("common.retry")}</button>
+      <button onclick={loadReports} class="ml-2 underline">{$_("common.retry")}</button>
     </div>
   {:else if filteredReports.length === 0}
     <div class="text-center py-8 text-gray-400 text-sm">{$_("workReports.none")}</div>
@@ -229,8 +232,8 @@
         <div
           class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer"
           data-testid="work-report-row"
-          on:click={() => openDetail(report)}
-          on:keydown={(e) => e.key === "Enter" && openDetail(report)}
+          onclick={() => openDetail(report)}
+          onkeydown={(e) => e.key === "Enter" && openDetail(report)}
           role="button"
           tabindex="0"
         >
@@ -268,7 +271,7 @@
               </div>
             </div>
             <button
-              on:click|stopPropagation={() => deleteReport(report.id)}
+              onclick={(e) => { e.stopPropagation(); deleteReport(report.id); }}
               class="text-red-400 hover:text-red-600 p-1"
               title={$_("common.delete")}
             >
@@ -285,8 +288,8 @@
   <WorkReportDetail
     isOpen={detailOpen}
     report={selectedReport}
-    on:close={() => (detailOpen = false)}
-    on:updated={handleDetailUpdated}
-    on:deleted={handleDetailDeleted}
+    onclose={() => (detailOpen = false)}
+    onupdated={(updated) => handleDetailUpdated(updated)}
+    ondeleted={(id) => handleDetailDeleted(id)}
   />
 {/if}

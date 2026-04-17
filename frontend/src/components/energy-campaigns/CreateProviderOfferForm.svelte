@@ -1,17 +1,19 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { createEventDispatcher } from "svelte";
   import {
     energyCampaignsApi,
     type CreateProviderOfferDto,
   } from "../../lib/api/energy-campaigns";
   import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let campaignId: string;
+  let { campaignId, oncreated, oncancel }: {
+    campaignId: string;
+    oncreated?: (offer: any) => void;
+    oncancel?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  let formData: CreateProviderOfferDto = {
+  let formData: CreateProviderOfferDto = $state({
     provider_name: "",
     price_kwh_electricity: undefined,
     price_kwh_gas: undefined,
@@ -20,11 +22,11 @@
     contract_duration_months: 12,
     estimated_savings_pct: 0,
     offer_valid_until: "",
-  };
+  });
 
-  let loading = false;
-  let error = "";
-  let success = false;
+  let loading = $state(false);
+  let error = $state("");
+  let success = $state(false);
 
   function setDefaultValidityDate() {
     const date = new Date();
@@ -51,12 +53,12 @@
 
     await withErrorHandling({
       action: () => energyCampaignsApi.addOffer(campaignId, payload as any),
-      setLoading: (v) => loading = v,
+      setLoading: (v: boolean) => loading = v,
       errorMessage: $_("energy.offer.createError"),
       onSuccess: (offer) => {
         error = "";
         success = true;
-        dispatch("created", offer);
+        oncreated?.(offer);
         setTimeout(() => {
           formData = {
             provider_name: "",
@@ -99,7 +101,7 @@
     </div>
   {/if}
 
-  <form on:submit={handleSubmit} class="space-y-6">
+  <form onsubmit={handleSubmit} class="space-y-6">
     <!-- Provider Name -->
     <div>
       <label
@@ -273,7 +275,7 @@
     <div class="flex justify-end space-x-3">
       <button
         type="button"
-        on:click={() => dispatch("cancel")}
+        onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         {$_("common.cancel")}
