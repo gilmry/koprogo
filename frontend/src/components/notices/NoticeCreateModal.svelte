@@ -1,5 +1,5 @@
-// Svelte 5 runes mode
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { noticesApi, type CreateNoticeDto, NoticeType, NoticeCategory } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";

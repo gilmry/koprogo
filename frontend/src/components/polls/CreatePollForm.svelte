@@ -1,5 +1,5 @@
-// Svelte 5 runes mode
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from "svelte-i18n";
   import {
     pollsApi,
