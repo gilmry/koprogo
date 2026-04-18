@@ -122,16 +122,16 @@
 
     const communityGroup: NavGroup = {
       id: 'communaute',
-      label: 'Communauté',
+      label: t('navigation.community'),
       items: [
-        { href: '/exchanges', label: 'SEL', icon: '🔄' },
-        { href: '/polls', label: 'Sondages', icon: '📊' },
-        { href: '/notices', label: 'Annonces', icon: '📌' },
-        { href: '/bookings', label: 'Réservations', icon: '📅' },
-        { href: '/sharing', label: 'Partage', icon: '🎁' },
-        { href: '/skills', label: 'Compétences', icon: '🎓' },
-        { href: '/energy-campaigns', label: 'Énergie', icon: '⚡' },
-        { href: '/gamification', label: 'Gamification', icon: '🏆' },
+        { href: '/exchanges', label: t('navigation.sel'), icon: '🔄' },
+        { href: '/polls', label: t('navigation.polls'), icon: '📊' },
+        { href: '/notices', label: t('navigation.notices'), icon: '📌' },
+        { href: '/bookings', label: t('navigation.bookings'), icon: '📅' },
+        { href: '/sharing', label: t('navigation.sharing_short'), icon: '🎁' },
+        { href: '/skills', label: t('navigation.skills'), icon: '🎓' },
+        { href: '/energy-campaigns', label: t('navigation.energy'), icon: '⚡' },
+        { href: '/gamification', label: t('navigation.gamification'), icon: '🏆' },
       ],
     };
 
@@ -140,7 +140,7 @@
       return [
         {
           id: 'principal',
-          label: 'Principal',
+          label: t('navigation.main'),
           items: [
             { href: '/admin', label: t('navigation.admin'), icon: '⚙️' },
             { href: '/admin/monitoring', label: t('navigation.monitoring'), icon: '📈' },
@@ -149,13 +149,13 @@
         },
         {
           id: 'gestion',
-          label: 'Gestion',
+          label: t('navigation.management'),
           items: [
-            { href: '/admin/organizations', label: 'Organisations', icon: '🏛️' },
-            { href: '/admin/users', label: 'Utilisateurs', icon: '👥' },
-            { href: '/admin/board-members', label: 'Conseil', icon: '👑' },
-            { href: '/admin/gdpr', label: 'RGPD', icon: '🔒' },
-            { href: '/admin/gamification', label: 'Gamification', icon: '🏆' },
+            { href: '/admin/organizations', label: t('navigation.organizations'), icon: '🏛️' },
+            { href: '/admin/users', label: t('navigation.users'), icon: '👥' },
+            { href: '/admin/board-members', label: t('navigation.council'), icon: '👑' },
+            { href: '/admin/gdpr', label: t('navigation.gdpr'), icon: '🔒' },
+            { href: '/admin/gamification', label: t('navigation.gamification'), icon: '🏆' },
           ],
         },
         communityGroup,
@@ -167,7 +167,7 @@
       return [
         {
           id: 'principal',
-          label: 'Principal',
+          label: t('navigation.main'),
           items: [
             { href: '/syndic', label: t('navigation.dashboard'), icon: '📊' },
             { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
@@ -175,31 +175,31 @@
         },
         {
           id: 'gestion',
-          label: 'Gestion',
+          label: t('navigation.management'),
           items: [
             { href: '/owners', label: t('navigation.owners'), icon: '👤' },
             { href: '/units', label: t('navigation.units'), icon: '🚪' },
             { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
-            { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
-            { href: '/call-for-funds', label: 'Appels de fonds', icon: '📢' },
-            { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
-            { href: '/payment-reminders', label: 'Relances', icon: '📧' },
-            { href: '/budgets', label: 'Budgets', icon: '📊' },
-            { href: '/etats-dates', label: 'États datés', icon: '📋' },
-            { href: '/gamification', label: 'Gamification', icon: '🏆' },
+            { href: '/invoice-workflow', label: t('navigation.invoiceWorkflow'), icon: '✅' },
+            { href: '/call-for-funds', label: t('navigation.callForFunds'), icon: '📢' },
+            { href: '/owner-contributions', label: t('navigation.contributions'), icon: '💶' },
+            { href: '/payment-reminders', label: t('navigation.reminders'), icon: '📧' },
+            { href: '/budgets', label: t('navigation.budgets'), icon: '📊' },
+            { href: '/etats-dates', label: t('navigation.etatsDates'), icon: '📋' },
+            { href: '/gamification', label: t('navigation.gamification'), icon: '🏆' },
           ],
         },
         {
           id: 'gouvernance',
-          label: 'Gouvernance',
+          label: t('navigation.governance'),
           items: [
             { href: '/meetings', label: t('navigation.meetings'), icon: '📅' },
-            { href: '/convocations', label: 'Convocations', icon: '📨' },
-            { href: '/tickets', label: 'Tickets', icon: '🎫' },
-            { href: '/quotes', label: 'Devis', icon: '📋' },
-            { href: '/work-reports', label: 'Travaux', icon: '🔧' },
-            { href: '/inspections', label: 'Inspections', icon: '🔍' },
-            { href: '/syndic/board-members', label: 'Conseil', icon: '👑' },
+            { href: '/convocations', label: t('navigation.convocations'), icon: '📨' },
+            { href: '/tickets', label: t('navigation.tickets'), icon: '🎫' },
+            { href: '/quotes', label: t('navigation.quotes'), icon: '📋' },
+            { href: '/work-reports', label: t('navigation.works'), icon: '🔧' },
+            { href: '/inspections', label: t('navigation.inspections'), icon: '🔍' },
+            { href: '/syndic/board-members', label: t('navigation.council'), icon: '👑' },
             { href: '/documents', label: t('navigation.documents'), icon: '📄' },
           ],
         },
@@ -212,7 +212,7 @@
       return [
         {
           id: 'principal',
-          label: 'Principal',
+          label: t('navigation.main'),
           items: [
             { href: '/accountant', label: t('navigation.dashboard'), icon: '📊' },
             { href: '/buildings', label: t('navigation.buildings'), icon: '🏢' },
@@ -220,17 +220,17 @@
         },
         {
           id: 'comptabilite',
-          label: 'Comptabilité',
+          label: t('navigation.accounting'),
           items: [
             { href: '/expenses', label: t('navigation.expenses'), icon: '💰' },
-            { href: '/invoice-workflow', label: 'Workflow factures', icon: '✅' },
-            { href: '/call-for-funds', label: 'Appels de fonds', icon: '📢' },
-            { href: '/owner-contributions', label: 'Contributions', icon: '💶' },
-            { href: '/payment-reminders', label: 'Relances', icon: '📧' },
-            { href: '/budgets', label: 'Budgets', icon: '📊' },
-            { href: '/etats-dates', label: 'États datés', icon: '📋' },
-            { href: '/journal-entries', label: 'Ecritures comptables', icon: '📒' },
-            { href: '/reports', label: 'Rapports PCMN', icon: '📈' },
+            { href: '/invoice-workflow', label: t('navigation.invoiceWorkflow'), icon: '✅' },
+            { href: '/call-for-funds', label: t('navigation.callForFunds'), icon: '📢' },
+            { href: '/owner-contributions', label: t('navigation.contributions'), icon: '💶' },
+            { href: '/payment-reminders', label: t('navigation.reminders'), icon: '📧' },
+            { href: '/budgets', label: t('navigation.budgets'), icon: '📊' },
+            { href: '/etats-dates', label: t('navigation.etatsDates'), icon: '📋' },
+            { href: '/journal-entries', label: t('navigation.journalEntries'), icon: '📒' },
+            { href: '/reports', label: t('navigation.reportsPcmn'), icon: '📈' },
           ],
         },
         communityGroup,
@@ -242,7 +242,7 @@
       return [
         {
           id: 'principal',
-          label: 'Principal',
+          label: t('navigation.main'),
           items: [
             { href: '/owner', label: t('navigation.dashboard'), icon: '🏠' },
             { href: '/owner/units', label: t('navigation.units'), icon: '🚪' },
@@ -250,14 +250,14 @@
         },
         {
           id: 'espace',
-          label: 'Mon espace',
+          label: t('navigation.mySpace'),
           items: [
             { href: '/owner/expenses', label: t('navigation.expenses'), icon: '💰' },
-            { href: '/owner/payments', label: 'Paiements', icon: '💳' },
-            { href: '/owner/payment-methods', label: 'Moyens paiement', icon: '🏦' },
-            { href: '/owner/tickets', label: 'Mes tickets', icon: '🎫' },
+            { href: '/owner/payments', label: t('navigation.payments'), icon: '💳' },
+            { href: '/owner/payment-methods', label: t('navigation.paymentMethods'), icon: '🏦' },
+            { href: '/owner/tickets', label: t('navigation.myTickets'), icon: '🎫' },
             { href: '/owner/documents', label: t('navigation.documents'), icon: '📄' },
-            { href: '/owner/profile', label: 'Profil', icon: '👤' },
+            { href: '/owner/profile', label: t('navigation.profile'), icon: '👤' },
           ],
         },
         communityGroup,
@@ -267,7 +267,7 @@
     // Fallback for any unmapped roles - return minimal navigation
     return [{
       id: 'principal',
-      label: 'Principal',
+      label: t('navigation.main'),
       items: [{ href: '/buildings', label: t('navigation.buildings'), icon: '🏢' }],
     }];
   };

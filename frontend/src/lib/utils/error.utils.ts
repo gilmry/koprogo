@@ -40,7 +40,7 @@ export async function withErrorHandling<T>(
     opts.onSuccess?.(result);
     return result;
   } catch (err: any) {
-    const message = err?.message || opts.errorMessage || "An error occurred";
+    const message = opts.errorMessage || err?.message || "An error occurred";
     toast.error(message);
     return undefined;
   } finally {
@@ -73,7 +73,7 @@ export async function withLoadingState<T>(opts: {
     const result = await opts.action();
     opts.onSuccess(result);
   } catch (err: any) {
-    const message = err?.message || opts.errorMessage || "An error occurred";
+    const message = opts.errorMessage || err?.message || "An error occurred";
     opts.setError(message);
     toast.error(message);
   } finally {
