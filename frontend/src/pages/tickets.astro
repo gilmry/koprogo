@@ -23,8 +23,8 @@ import Layout from "../layouts/Layout.astro";
     <div class="mb-6">
       <button
         id="create-ticket-btn"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled
+        type="button"
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         data-testid="tickets-create-btn"
       >
         <svg
@@ -85,12 +85,8 @@ import Layout from "../layouts/Layout.astro";
         selectedBuildingId: selectedBuildingId,
         onSelect: (buildingId: string) => {
           selectedBuildingId = buildingId;
-          // Update button state
-          if (createButton) {
-            createButton.disabled = !buildingId;
-            if (warningDiv) {
-              warningDiv.classList.toggle("hidden", !!buildingId);
-            }
+          if (warningDiv) {
+            warningDiv.classList.toggle("hidden", !!buildingId);
           }
           // Reload ticket list with new building
           const listContainer = document.getElementById("tickets-list");
@@ -140,12 +136,9 @@ import Layout from "../layouts/Layout.astro";
       }
     }
 
-    // Update button state based on initial building selection
-    if (createButton) {
-      createButton.disabled = !selectedBuildingId;
-      if (warningDiv) {
-        warningDiv.classList.toggle("hidden", !!selectedBuildingId);
-      }
+    // Update warning visibility based on initial building selection
+    if (warningDiv) {
+      warningDiv.classList.toggle("hidden", !!selectedBuildingId);
     }
 
     // Handle create button click

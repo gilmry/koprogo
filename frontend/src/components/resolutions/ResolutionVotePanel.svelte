@@ -63,7 +63,8 @@
     })();
   });
 
-  let canVote = $derived(resolution.status === ResolutionStatus.Pending && meetingStatus === 'Scheduled');
+  let isOwner = $derived(!!myOwnerId && myUnits.length > 0);
+  let canVote = $derived(resolution.status === ResolutionStatus.Pending && meetingStatus === 'Scheduled' && isOwner);
   let isClosed = $derived(resolution.status !== ResolutionStatus.Pending);
   let votesPour = $derived(resolution.vote_count_pour ?? 0);
   let votesContre = $derived(resolution.vote_count_contre ?? 0);

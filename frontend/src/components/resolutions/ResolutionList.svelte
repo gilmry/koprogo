@@ -88,6 +88,7 @@
       </div>
       {#if canAddResolution && !showCreateForm}
         <button
+          type="button"
           onclick={() => showCreateForm = true}
           class="inline-flex items-center px-3 py-1.5 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors"
           data-testid="resolution-create-btn"
