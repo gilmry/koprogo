@@ -1,8 +1,12 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Notice Board API Client
  * Community announcements and classified ads
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface Notice {
@@ -28,29 +32,33 @@ export interface Notice {
   updated_at: string;
 }
 
-export enum NoticeType {
-  Announcement = "Announcement",
-  Event = "Event",
-  LostAndFound = "LostAndFound",
-  ClassifiedAd = "ClassifiedAd",
-}
+// Re-exported from generated api.d.ts — single source of truth.
+export type NoticeType = components["schemas"]["NoticeType"];
+export const NoticeType = {
+  Announcement: "Announcement" as const,
+  Event: "Event" as const,
+  LostAndFound: "LostAndFound" as const,
+  ClassifiedAd: "ClassifiedAd" as const,
+} satisfies Record<string, NoticeType>;
 
-export enum NoticeCategory {
-  General = "General",
-  Maintenance = "Maintenance",
-  Social = "Social",
-  Security = "Security",
-  Environment = "Environment",
-  Parking = "Parking",
-  Other = "Other",
-}
+export type NoticeCategory = components["schemas"]["NoticeCategory"];
+export const NoticeCategory = {
+  General: "General" as const,
+  Maintenance: "Maintenance" as const,
+  Social: "Social" as const,
+  Security: "Security" as const,
+  Environment: "Environment" as const,
+  Parking: "Parking" as const,
+  Other: "Other" as const,
+} satisfies Record<string, NoticeCategory>;
 
-export enum NoticeStatus {
-  Draft = "Draft",
-  Published = "Published",
-  Archived = "Archived",
-  Expired = "Expired",
-}
+export type NoticeStatus = components["schemas"]["NoticeStatus"];
+export const NoticeStatus = {
+  Draft: "Draft" as const,
+  Published: "Published" as const,
+  Archived: "Archived" as const,
+  Expired: "Expired" as const,
+} satisfies Record<string, NoticeStatus>;
 
 export interface CreateNoticeDto {
   building_id: string;

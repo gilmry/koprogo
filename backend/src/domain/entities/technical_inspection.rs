@@ -52,7 +52,7 @@ pub struct TechnicalInspection {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum InspectionType {
     Elevator,               // Ascenseur (annuel)
@@ -67,7 +67,7 @@ pub enum InspectionType {
     Other { name: String }, // Autre type d'inspection
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum InspectionStatus {
     Scheduled,  // Planifiée

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Achievement category for organizational purposes
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum AchievementCategory {
     Community,  // Community participation achievements
     Sel,        // SEL (Local Exchange) achievements
@@ -16,7 +16,7 @@ pub enum AchievementCategory {
 }
 
 /// Achievement tier for progression
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema)]
 pub enum AchievementTier {
     Bronze,   // Entry-level achievements
     Silver,   // Intermediate achievements

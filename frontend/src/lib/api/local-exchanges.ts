@@ -1,4 +1,5 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Local Exchange Trading System (SEL) - Système d'Échange Local
@@ -11,39 +12,47 @@ import { api } from "../api";
  * - No taxation if non-commercial (barter)
  * - Must not replace professional services (insurance issues)
  * - Clear T&Cs required (liability disclaimer)
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
-export enum ExchangeType {
-  Service = "Service", // Skills (plumbing, gardening, tutoring, etc.)
-  ObjectLoan = "ObjectLoan", // Temporary loan (tools, books, equipment)
-  SharedPurchase = "SharedPurchase", // Co-buying (bulk food, equipment rental)
-}
+// Re-exported from generated api.d.ts — single source of truth.
+export type ExchangeType = components["schemas"]["ExchangeType"];
+export const ExchangeType = {
+  Service: "Service" as const, // Skills (plumbing, gardening, tutoring, etc.)
+  ObjectLoan: "ObjectLoan" as const, // Temporary loan (tools, books, equipment)
+  SharedPurchase: "SharedPurchase" as const, // Co-buying (bulk food, equipment rental)
+} satisfies Record<string, ExchangeType>;
 
-export enum ExchangeStatus {
-  Offered = "Offered", // Available for anyone to request
-  Requested = "Requested", // Someone claimed it (pending provider acceptance)
-  InProgress = "InProgress", // Exchange is happening
-  Completed = "Completed", // Both parties confirmed completion
-  Cancelled = "Cancelled", // Exchange was cancelled
-}
+export type ExchangeStatus = components["schemas"]["ExchangeStatus"];
+export const ExchangeStatus = {
+  Offered: "Offered" as const, // Available for anyone to request
+  Requested: "Requested" as const, // Someone claimed it (pending provider acceptance)
+  InProgress: "InProgress" as const, // Exchange is happening
+  Completed: "Completed" as const, // Both parties confirmed completion
+  Cancelled: "Cancelled" as const, // Exchange was cancelled
+} satisfies Record<string, ExchangeStatus>;
 
-export enum CreditStatus {
-  Positive = "Positive", // Balance > 0 (net provider)
-  Balanced = "Balanced", // Balance = 0
-  Negative = "Negative", // Balance < 0 (net receiver)
-}
+export type CreditStatus = components["schemas"]["CreditStatus"];
+export const CreditStatus = {
+  Positive: "Positive" as const, // Balance > 0 (net provider)
+  Balanced: "Balanced" as const, // Balance = 0
+  Negative: "Negative" as const, // Balance < 0 (net receiver)
+} satisfies Record<string, CreditStatus>;
 
-export enum ParticipationLevel {
-  New = "New", // 0 exchanges
-  Beginner = "Beginner", // 1-5 exchanges
-  Active = "Active", // 6-20 exchanges
-  Veteran = "Veteran", // 21-50 exchanges
-  Expert = "Expert", // 51+ exchanges
-}
+export type ParticipationLevel = components["schemas"]["ParticipationLevel"];
+export const ParticipationLevel = {
+  New: "New" as const, // 0 exchanges
+  Beginner: "Beginner" as const, // 1-5 exchanges
+  Active: "Active" as const, // 6-20 exchanges
+  Veteran: "Veteran" as const, // 21-50 exchanges
+  Expert: "Expert" as const, // 51+ exchanges
+} satisfies Record<string, ParticipationLevel>;
 
 export interface LocalExchange {
   id: string;

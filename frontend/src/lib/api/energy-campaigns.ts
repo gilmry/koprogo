@@ -1,9 +1,13 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Energy Campaigns API Client
  * Belgian CREG-compliant energy buying groups with GDPR data protection
  * Target: 15-25% savings on energy bills through collective negotiation
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface EnergyCampaign {
@@ -31,15 +35,24 @@ export interface EnergyCampaign {
   updated_at: string;
 }
 
-export enum CampaignStatus {
-  Draft = "Draft",
-  CollectingData = "CollectingData",
-  Negotiating = "Negotiating",
-  AwaitingFinalVote = "AwaitingFinalVote",
-  Finalized = "Finalized",
-  Completed = "Completed",
-}
+// Re-exported from generated api.d.ts — single source of truth.
+// Backend schema has additional variants (AwaitingAGVote, Cancelled)
+// not currently used in UI but kept accessible via the type.
+export type CampaignStatus = components["schemas"]["CampaignStatus"];
+export const CampaignStatus = {
+  Draft: "Draft" as const,
+  AwaitingAGVote: "AwaitingAGVote" as const,
+  CollectingData: "CollectingData" as const,
+  Negotiating: "Negotiating" as const,
+  AwaitingFinalVote: "AwaitingFinalVote" as const,
+  Finalized: "Finalized" as const,
+  Completed: "Completed" as const,
+  Cancelled: "Cancelled" as const,
+} satisfies Record<string, CampaignStatus>;
 
+// Hand-written: api.d.ts EnergyType is "Electricity"|"Gas"|"Both";
+// frontend UI needs a distinct "Heating" value (used by EnergyBillUpload.svelte).
+// Kept as hand-written enum until backend schema aligns.
 export enum EnergyType {
   Electricity = "Electricity",
   Gas = "Gas",

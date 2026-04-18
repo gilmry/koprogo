@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Statut du budget annuel
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type, utoipa::ToSchema)]
 #[sqlx(type_name = "budget_status", rename_all = "snake_case")]
 pub enum BudgetStatus {
     Draft,     // Brouillon (en préparation)

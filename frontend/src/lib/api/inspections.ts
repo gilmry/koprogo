@@ -3,6 +3,15 @@ import { api } from "../api";
 /**
  * Technical Inspection API Client
  * Wraps all backend endpoints for technical inspection management
+ *
+ * STORY-P7-704: Enums kept hand-written because backend schemas diverge:
+ *   - InspectionType: UI has extra members (Drainage, EmergencyLighting, Other)
+ *     and different values for RoofStructure ("roof") / WaterQuality ("water_tank")
+ *     vs the api.d.ts schema ("roof_structure"/"water_quality"). api.d.ts also
+ *     models "other" as an object variant {other:{name}}, not a plain string.
+ *   - InspectionStatus: UI uses Pending/Completed/Failed/PassedWithRemarks;
+ *     api.d.ts schema uses scheduled/in_progress/completed/failed/overdue/cancelled.
+ *     Svelte components (InspectionDetail) reference the UI-only members.
  */
 
 export enum InspectionType {

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Skill category for classification
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum SkillCategory {
     /// Home repair and maintenance (plumbing, electrical, carpentry, etc.)
     HomeRepair,
@@ -34,7 +34,7 @@ pub enum SkillCategory {
 }
 
 /// Expertise level for skill proficiency
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema)]
 pub enum ExpertiseLevel {
     /// Beginner (< 1 year experience)
     Beginner,

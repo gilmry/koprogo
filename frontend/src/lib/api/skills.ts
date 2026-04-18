@@ -1,8 +1,12 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Skills Directory API Client
  * Resident skills marketplace and offers
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface SkillOffer {
@@ -24,28 +28,30 @@ export interface SkillOffer {
   updated_at: string;
 }
 
-export enum SkillCategory {
-  HomeRepair = "HomeRepair",
-  Languages = "Languages",
-  Technology = "Technology",
-  Education = "Education",
-  Arts = "Arts",
-  Sports = "Sports",
-  Cooking = "Cooking",
-  Gardening = "Gardening",
-  Health = "Health",
-  Legal = "Legal",
-  Financial = "Financial",
-  PetCare = "PetCare",
-  Other = "Other",
-}
+export type SkillCategory = components["schemas"]["SkillCategory"];
+export const SkillCategory = {
+  HomeRepair: "HomeRepair" as const,
+  Languages: "Languages" as const,
+  Technology: "Technology" as const,
+  Education: "Education" as const,
+  Arts: "Arts" as const,
+  Sports: "Sports" as const,
+  Cooking: "Cooking" as const,
+  Gardening: "Gardening" as const,
+  Health: "Health" as const,
+  Legal: "Legal" as const,
+  Financial: "Financial" as const,
+  PetCare: "PetCare" as const,
+  Other: "Other" as const,
+} satisfies Record<string, SkillCategory>;
 
-export enum ExpertiseLevel {
-  Beginner = "Beginner",
-  Intermediate = "Intermediate",
-  Advanced = "Advanced",
-  Expert = "Expert",
-}
+export type ExpertiseLevel = components["schemas"]["ExpertiseLevel"];
+export const ExpertiseLevel = {
+  Beginner: "Beginner" as const,
+  Intermediate: "Intermediate" as const,
+  Advanced: "Advanced" as const,
+  Expert: "Expert" as const,
+} satisfies Record<string, ExpertiseLevel>;
 
 export interface CreateSkillOfferDto {
   building_id: string;

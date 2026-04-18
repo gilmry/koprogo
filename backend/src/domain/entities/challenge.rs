@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Challenge status lifecycle
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum ChallengeStatus {
     Draft,     // Challenge being created
     Active,    // Challenge is live
@@ -12,7 +12,7 @@ pub enum ChallengeStatus {
 }
 
 /// Challenge type for different engagement patterns
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum ChallengeType {
     Individual, // Each user competes individually
     Team,       // Users work together towards shared goal

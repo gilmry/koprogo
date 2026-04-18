@@ -8,7 +8,7 @@ use uuid::Uuid;
 static ETAT_DATE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Statut de l'état daté (workflow de génération)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type, utoipa::ToSchema)]
 #[sqlx(type_name = "etat_date_status", rename_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 pub enum EtatDateStatus {
@@ -20,7 +20,7 @@ pub enum EtatDateStatus {
 }
 
 /// Langue de génération du document (Belgique: FR/NL/DE)
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, sqlx::Type, utoipa::ToSchema)]
 #[sqlx(type_name = "etat_date_language", rename_all = "snake_case")]
 #[serde(rename_all = "lowercase")]
 pub enum EtatDateLanguage {

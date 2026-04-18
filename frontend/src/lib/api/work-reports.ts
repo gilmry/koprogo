@@ -1,27 +1,35 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Work Report API Client
  * Wraps all backend endpoints for work report management (Digital Maintenance Logbook)
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
-export enum WorkType {
-  Maintenance = "maintenance",
-  Repair = "repair",
-  Renovation = "renovation",
-  Emergency = "emergency",
-  Inspection = "inspection",
-  Installation = "installation",
-  Other = "other",
-}
+export type WorkType = components["schemas"]["WorkType"];
+export const WorkType = {
+  Maintenance: "maintenance" as const,
+  Repair: "repair" as const,
+  Renovation: "renovation" as const,
+  Emergency: "emergency" as const,
+  Inspection: "inspection" as const,
+  Installation: "installation" as const,
+  Other: "other" as const,
+} satisfies Record<string, WorkType>;
 
-export enum WarrantyType {
-  None = "none",
-  Standard = "standard", // 2 years (vices apparents)
-  Decennial = "decennial", // 10 years (garantie décennale)
-  Extended = "extended", // 3 years
-  Custom = "custom", // Custom duration
-}
+// Backend WarrantyType is a union of string literals + `{custom: {years: number}}`.
+// The const below exposes only the string variants; use the object form
+// `{ custom: { years: N } }` directly for custom durations.
+export type WarrantyType = components["schemas"]["WarrantyType"];
+export const WarrantyType = {
+  None: "none" as const,
+  Standard: "standard" as const, // 2 years (vices apparents)
+  Decennial: "decennial" as const, // 10 years (garantie décennale)
+  Extended: "extended" as const, // 3 years
+} satisfies Record<string, WarrantyType>;
 
 export interface CreateWorkReportDto {
   organization_id: string;
@@ -167,10 +175,10 @@ export const workTypeLabels: Record<WorkType, string> = {
   [WorkType.Other]: "Autre",
 };
 
-export const warrantyTypeLabels: Record<WarrantyType, string> = {
+export const warrantyTypeLabels: Record<string, string> = {
   [WarrantyType.None]: "Aucune",
   [WarrantyType.Standard]: "Standard (2 ans)",
   [WarrantyType.Decennial]: "Décennale (10 ans)",
   [WarrantyType.Extended]: "Étendue (3 ans)",
-  [WarrantyType.Custom]: "Personnalisée",
+  custom: "Personnalisée",
 };

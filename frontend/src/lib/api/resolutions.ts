@@ -57,17 +57,19 @@ export const ResolutionType = {
   Extraordinary: "extraordinary" as const,
 } satisfies Record<string, ResolutionType>;
 
-export enum ResolutionStatus {
-  Pending = "pending",
-  Adopted = "adopted",
-  Rejected = "rejected",
-}
+export type ResolutionStatus = components["schemas"]["ResolutionStatus"];
+export const ResolutionStatus = {
+  Pending: "pending" as const,
+  Adopted: "adopted" as const,
+  Rejected: "rejected" as const,
+} satisfies Record<string, ResolutionStatus>;
 
-export enum VoteChoice {
-  Pour = "pour",
-  Contre = "contre",
-  Abstention = "abstention",
-}
+export type VoteChoice = components["schemas"]["VoteChoice"];
+export const VoteChoice = {
+  Pour: "pour" as const,
+  Contre: "contre" as const,
+  Abstention: "abstention" as const,
+} satisfies Record<string, VoteChoice>;
 
 export interface Vote {
   id: string;

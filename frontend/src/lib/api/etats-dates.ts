@@ -1,23 +1,30 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * États Datés API Client
  * Belgian legal requirement: financial snapshot of a unit for property sales
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
-export enum EtatDateStatus {
-  Requested = "requested",
-  InProgress = "in_progress",
-  Generated = "generated",
-  Delivered = "delivered",
-  Expired = "expired",
-}
+// Re-exported from generated api.d.ts — single source of truth.
+export type EtatDateStatus = components["schemas"]["EtatDateStatus"];
+export const EtatDateStatus = {
+  Requested: "requested" as const,
+  InProgress: "in_progress" as const,
+  Generated: "generated" as const,
+  Delivered: "delivered" as const,
+  Expired: "expired" as const,
+} satisfies Record<string, EtatDateStatus>;
 
-export enum EtatDateLanguage {
-  Fr = "fr",
-  Nl = "nl",
-  De = "de",
-}
+export type EtatDateLanguage = components["schemas"]["EtatDateLanguage"];
+export const EtatDateLanguage = {
+  Fr: "fr" as const,
+  Nl: "nl" as const,
+  De: "de" as const,
+} satisfies Record<string, EtatDateLanguage>;
 
 export interface EtatDate {
   id: string;

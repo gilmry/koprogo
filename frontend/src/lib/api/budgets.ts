@@ -1,17 +1,23 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Budgets API Client
  * Belgian copropriété annual budget management with AG approval workflow
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
-export enum BudgetStatus {
-  Draft = "draft",
-  Submitted = "submitted",
-  Approved = "approved",
-  Rejected = "rejected",
-  Archived = "archived",
-}
+// Re-exported from generated api.d.ts — single source of truth.
+export type BudgetStatus = components["schemas"]["BudgetStatus"];
+export const BudgetStatus = {
+  Draft: "Draft" as const,
+  Submitted: "Submitted" as const,
+  Approved: "Approved" as const,
+  Rejected: "Rejected" as const,
+  Archived: "Archived" as const,
+} satisfies Record<string, BudgetStatus>;
 
 export interface Budget {
   id: string;

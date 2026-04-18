@@ -3337,7 +3337,7 @@ impl DatabaseSeeder {
         )
         .bind(marc_user_id)
         .bind(org_id)
-        .execute(&*self.pool)
+        .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to create contractor profile for Marc: {}", e))?;
 
@@ -3367,7 +3367,7 @@ impl DatabaseSeeder {
         )
         .bind(sophie_user_id)
         .bind(org_id)
-        .execute(&*self.pool)
+        .execute(&self.pool)
         .await
         .map_err(|e| format!("Failed to create contractor profile for Sophie: {}", e))?;
 

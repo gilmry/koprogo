@@ -35,7 +35,7 @@ pub struct LocalExchange {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "PascalCase")]
 pub enum ExchangeType {
     Service,        // Skills (plumbing, gardening, tutoring, etc.)
@@ -62,7 +62,7 @@ impl ExchangeType {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "PascalCase")]
 pub enum ExchangeStatus {
     Offered,    // Available for anyone to request

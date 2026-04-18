@@ -1666,6 +1666,24 @@ export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
     /**
+     * @description Achievement category for organizational purposes
+     * @enum {string}
+     */
+    AchievementCategory:
+      | "Community"
+      | "Sel"
+      | "Booking"
+      | "Sharing"
+      | "Skills"
+      | "Notice"
+      | "Governance"
+      | "Milestone";
+    /**
+     * @description Achievement tier for progression
+     * @enum {string}
+     */
+    AchievementTier: "Bronze" | "Silver" | "Gold" | "Platinum" | "Diamond";
+    /**
      * @description Statut d'approbation pour le workflow de validation
      * @enum {string}
      */
@@ -1674,6 +1692,43 @@ export interface components {
       /** Format: uuid */
       assigned_to: string;
     };
+    /**
+     * @description Attendance status for recipient
+     * @enum {string}
+     */
+    AttendanceStatus:
+      | "Pending"
+      | "WillAttend"
+      | "WillNotAttend"
+      | "Attended"
+      | "DidNotAttend";
+    /**
+     * @description Booking status lifecycle
+     * @enum {string}
+     */
+    BookingStatus:
+      | "Pending"
+      | "Confirmed"
+      | "Cancelled"
+      | "Completed"
+      | "NoShow";
+    /**
+     * @description Statut du budget annuel
+     * @enum {string}
+     */
+    BudgetStatus: "Draft" | "Submitted" | "Approved" | "Rejected" | "Archived";
+    /** @enum {string} */
+    CampaignStatus:
+      | "Draft"
+      | "AwaitingAGVote"
+      | "CollectingData"
+      | "Negotiating"
+      | "AwaitingFinalVote"
+      | "Finalized"
+      | "Completed"
+      | "Cancelled";
+    /** @enum {string} */
+    CampaignType: "BuyingGroup" | "CollectiveSwitch";
     CancelTicketRequest: {
       reason: string;
     };
@@ -1697,6 +1752,16 @@ export interface components {
       /** Format: double */
       voting_power: number;
     };
+    /**
+     * @description Challenge status lifecycle
+     * @enum {string}
+     */
+    ChallengeStatus: "Draft" | "Active" | "Completed" | "Cancelled";
+    /**
+     * @description Challenge type for different engagement patterns
+     * @enum {string}
+     */
+    ChallengeType: "Individual" | "Team" | "Building";
     /** @description Request DTO for changing a vote */
     ChangeVoteRequest: {
       vote_choice: components["schemas"]["VoteChoice"];
@@ -1728,6 +1793,19 @@ export interface components {
       /** @description User ID */
       user_id: string;
     };
+    /** @enum {string} */
+    ContractType: "Fixed" | "Variable";
+    /**
+     * @description Convocation status
+     * @enum {string}
+     */
+    ConvocationStatus: "Draft" | "Scheduled" | "Sent" | "Cancelled";
+    /**
+     * @description Convocation type according to Belgian copropriété law
+     *     Art. 3.87 §3 Code Civil (ex Art. 577-6 §2): minimum 15 days notice for ALL types
+     * @enum {string}
+     */
+    ConvocationType: "Ordinary" | "Extraordinary" | "SecondConvocation";
     CreateBuildingDto: {
       address: string;
       city: string;
@@ -1809,6 +1887,39 @@ export interface components {
       /** Format: uuid */
       unit_id?: string | null;
     };
+    /** @enum {string} */
+    CreditStatus: "Positive" | "Balanced" | "Negative";
+    /**
+     * @description Méthode d'envoi de la relance
+     * @enum {string}
+     */
+    DeliveryMethod: "Email" | "RegisteredLetter" | "Bailiff";
+    /** @enum {string} */
+    EnergyType: "Electricity" | "Gas" | "Both";
+    /**
+     * @description Langue de génération du document (Belgique: FR/NL/DE)
+     * @enum {string}
+     */
+    EtatDateLanguage: "fr" | "nl" | "de";
+    /**
+     * @description Statut de l'état daté (workflow de génération)
+     * @enum {string}
+     */
+    EtatDateStatus:
+      | "requested"
+      | "in_progress"
+      | "generated"
+      | "delivered"
+      | "expired";
+    /** @enum {string} */
+    ExchangeStatus:
+      | "Offered"
+      | "Requested"
+      | "InProgress"
+      | "Completed"
+      | "Cancelled";
+    /** @enum {string} */
+    ExchangeType: "Service" | "ObjectLoan" | "SharedPurchase";
     /**
      * @description Catégorie de charges
      * @enum {string}
@@ -1822,6 +1933,11 @@ export interface components {
       | "Administration"
       | "Works"
       | "Other";
+    /**
+     * @description Expertise level for skill proficiency
+     * @enum {string}
+     */
+    ExpertiseLevel: "Beginner" | "Intermediate" | "Advanced" | "Expert";
     GdprMarketingPreferenceRequest: {
       opt_out: boolean;
     };
@@ -1831,6 +1947,29 @@ export interface components {
       last_name?: string | null;
     };
     GdprRestrictProcessingRequest: Record<string, never>;
+    /** @enum {string} */
+    InspectionStatus:
+      | "scheduled"
+      | "in_progress"
+      | "completed"
+      | "failed"
+      | "overdue"
+      | "cancelled";
+    InspectionType:
+      | "elevator"
+      | "boiler"
+      | "electrical"
+      | "fire_extinguisher"
+      | "fire_alarm"
+      | "gas_installation"
+      | "roof_structure"
+      | "facade"
+      | "water_quality"
+      | {
+          other: {
+            name: string;
+          };
+        };
     LoginRequest: {
       email: string;
       password: string;
@@ -1853,6 +1992,28 @@ export interface components {
      */
     MeetingType: "Ordinary" | "Extraordinary";
     /**
+     * @description Notice category for filtering
+     * @enum {string}
+     */
+    NoticeCategory:
+      | "General"
+      | "Maintenance"
+      | "Social"
+      | "Security"
+      | "Environment"
+      | "Parking"
+      | "Other";
+    /**
+     * @description Notice status workflow
+     * @enum {string}
+     */
+    NoticeStatus: "Draft" | "Published" | "Archived" | "Expired";
+    /**
+     * @description Notice type for community board
+     * @enum {string}
+     */
+    NoticeType: "Announcement" | "Event" | "LostAndFound" | "ClassifiedAd";
+    /**
      * @description Notification Channel - Delivery method
      * @enum {string}
      */
@@ -1862,6 +2023,11 @@ export interface components {
      * @enum {string}
      */
     NotificationPriority: "Low" | "Medium" | "High" | "Critical";
+    /**
+     * @description Notification Status
+     * @enum {string}
+     */
+    NotificationStatus: "Pending" | "Sent" | "Failed" | "Read";
     /**
      * @description Notification Type - Different categories of notifications
      * @enum {string}
@@ -1878,6 +2044,13 @@ export interface components {
       | "ResolutionVote"
       | "System";
     /**
+     * @description Condition of shared object
+     * @enum {string}
+     */
+    ObjectCondition: "Excellent" | "Good" | "Fair" | "Used";
+    /** @enum {string} */
+    ParticipationLevel: "New" | "Beginner" | "Active" | "Veteran" | "Expert";
+    /**
      * @description Payment method type (extensible for future methods)
      * @enum {string}
      */
@@ -1891,6 +2064,15 @@ export interface components {
     PollStatus: "draft" | "active" | "closed" | "cancelled";
     /** @enum {string} */
     PollType: "yes_no" | "multiple_choice" | "rating" | "open_ended";
+    /** @enum {string} */
+    QuoteStatus:
+      | "Requested"
+      | "Received"
+      | "UnderReview"
+      | "Accepted"
+      | "Rejected"
+      | "Expired"
+      | "Withdrawn";
     /** @description Request body for recording user consent */
     RecordConsentRequest: {
       /** @description Type of consent: 'privacy_policy' or 'terms' */
@@ -1898,6 +2080,11 @@ export interface components {
       /** @description Optional policy version (e.g., "1.0", "1.1") */
       policy_version?: string | null;
     };
+    /**
+     * @description Recurring pattern for repeated bookings
+     * @enum {string}
+     */
+    RecurringPattern: "None" | "Daily" | "Weekly" | "Monthly";
     RefreshTokenRequest: {
       refresh_token: string;
     };
@@ -1916,9 +2103,30 @@ export interface components {
       password: string;
       role: string;
     };
+    /**
+     * @description Niveau de relance de paiement
+     * @enum {string}
+     */
+    ReminderLevel: "FirstReminder" | "SecondReminder" | "FormalNotice";
+    /**
+     * @description Statut d'une relance
+     * @enum {string}
+     */
+    ReminderStatus:
+      | "Pending"
+      | "Sent"
+      | "Opened"
+      | "Paid"
+      | "Escalated"
+      | "Cancelled";
     ReopenTicketRequest: {
       reason: string;
     };
+    /**
+     * @description Statut d'une résolution
+     * @enum {string}
+     */
+    ResolutionStatus: "pending" | "adopted" | "rejected";
     /**
      * @description Type de résolution (ordinaire ou extraordinaire)
      * @enum {string}
@@ -1927,6 +2135,51 @@ export interface components {
     ResolveTicketRequest: {
       resolution_notes: string;
     };
+    /**
+     * @description Resource types available for booking in a building
+     * @enum {string}
+     */
+    ResourceType:
+      | "MeetingRoom"
+      | "LaundryRoom"
+      | "Gym"
+      | "Rooftop"
+      | "ParkingSpot"
+      | "CommonSpace"
+      | "GuestRoom"
+      | "BikeStorage"
+      | "Other";
+    /**
+     * @description Category for shared objects
+     * @enum {string}
+     */
+    SharedObjectCategory:
+      | "Tools"
+      | "Books"
+      | "Electronics"
+      | "Sports"
+      | "Gardening"
+      | "Kitchen"
+      | "Baby"
+      | "Other";
+    /**
+     * @description Skill category for classification
+     * @enum {string}
+     */
+    SkillCategory:
+      | "HomeRepair"
+      | "Languages"
+      | "Technology"
+      | "Education"
+      | "Arts"
+      | "Sports"
+      | "Cooking"
+      | "Gardening"
+      | "Health"
+      | "Legal"
+      | "Financial"
+      | "PetCare"
+      | "Other";
     /**
      * @description Sort order for pagination
      * @enum {string}
@@ -1960,6 +2213,19 @@ export interface components {
      * @enum {string}
      */
     TicketStatus: "Open" | "InProgress" | "Resolved" | "Closed" | "Cancelled";
+    /**
+     * @description Payment transaction status following Stripe webhook lifecycle
+     *     Note: This is different from expense::PaymentStatus which tracks expense payment state
+     * @enum {string}
+     */
+    TransactionStatus:
+      | "pending"
+      | "processing"
+      | "requires_action"
+      | "succeeded"
+      | "failed"
+      | "cancelled"
+      | "refunded";
     UpdateBuildingDto: {
       address: string;
       city: string;
@@ -1995,6 +2261,26 @@ export interface components {
      * @enum {string}
      */
     VoteChoice: "pour" | "contre" | "abstention";
+    WarrantyType:
+      | "none"
+      | "standard"
+      | "decennial"
+      | "extended"
+      | {
+          custom: {
+            /** Format: int32 */
+            years: number;
+          };
+        };
+    /** @enum {string} */
+    WorkType:
+      | "maintenance"
+      | "repair"
+      | "renovation"
+      | "emergency"
+      | "inspection"
+      | "installation"
+      | "other";
   };
   responses: never;
   parameters: never;
