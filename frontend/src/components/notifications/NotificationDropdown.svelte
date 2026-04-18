@@ -1,5 +1,6 @@
 <script lang="ts">
   // Svelte 5 runes mode
+  import { _ } from "../../lib/i18n";
   import { notificationStore } from "../../stores/notifications";
   import NotificationItem from "./NotificationItem.svelte";
   import type { Notification } from "../../lib/api/notifications";
@@ -87,7 +88,7 @@
 
 <div
   bind:this={listEl}
-  class="w-96 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5"
+  class="w-96 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5"
   onclick={(e) => e.stopPropagation()}
   onkeydown={handleKey}
   role="presentation"
@@ -96,13 +97,13 @@
   <div
     class="px-4 py-3 border-b border-gray-200 flex items-center justify-between"
   >
-    <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
+    <h3 class="text-lg font-semibold text-gray-900">{$_("notifications.title")}</h3>
     {#if notifications.length > 0}
       <button
         onclick={handleMarkAllRead}
         class="text-sm text-blue-600 hover:text-blue-700 font-medium"
       >
-        Mark all read
+        {$_("notifications.markAllRead")}
       </button>
     {/if}
   </div>
@@ -114,7 +115,7 @@
         <div
           class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
         ></div>
-        <p class="mt-2">Loading notifications...</p>
+        <p class="mt-2">{$_("common.loading")}</p>
       </div>
     {:else if notifications.length === 0}
       <div class="px-4 py-8 text-center text-gray-500">
@@ -132,7 +133,7 @@
             d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
           />
         </svg>
-        <p class="mt-2">No new notifications</p>
+        <p class="mt-2">{$_("notifications.noNotifications")}</p>
       </div>
     {:else}
       <ul class="divide-y divide-gray-100 list-none m-0 p-0" role="menu" aria-label="Notifications">
@@ -155,7 +156,7 @@
         onclick={handleViewAll}
         class="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
       >
-        View all notifications
+        {$_("notifications.viewAll")}
       </button>
     </div>
   {/if}

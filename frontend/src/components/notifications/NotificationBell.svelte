@@ -44,9 +44,16 @@
       showDropdown = false;
     }
   }
+
+  function handleWindowKeydown(event: KeyboardEvent) {
+    if (showDropdown && event.key === "Escape") {
+      event.preventDefault();
+      showDropdown = false;
+    }
+  }
 </script>
 
-<svelte:window onclick={handleClickOutside} />
+<svelte:window onclick={handleClickOutside} onkeydown={handleWindowKeydown} />
 
 <div class="notification-bell relative inline-block">
   <!-- Bell Icon Button -->
