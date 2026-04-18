@@ -340,10 +340,15 @@ jobs:
       # variant that no longer exists in the Rust source will fail here.
       # This closes the loop — Rust is the single source of truth for every
       # enum value visible in the UI.
-      - name: Run svelte-check (enforces frontend↔backend enum contract)
+      #
+      # We use --threshold warning to also block on a11y warnings (form
+      # labels, click handlers without keyboard events, ARIA roles, etc.).
+      # As of commit a173848 the baseline is 0 warnings — any regression
+      # hides a potential accessibility bug.
+      - name: Run svelte-check (enforces frontend↔backend contract + a11y)
         run: |
           cd frontend
-          npx svelte-check --threshold error
+          npx svelte-check --threshold warning
 
       # Gate 4: No hand-written enum re-introductions in lib/api/*.ts
       # A small-surface safety net: we allow a documented allowlist of
