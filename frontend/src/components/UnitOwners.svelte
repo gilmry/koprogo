@@ -116,7 +116,7 @@
 
 {#if showDeleteConfirm && unitOwnerToDelete}
   <div class="fixed inset-0 z-50 overflow-y-auto"><div class="flex min-h-screen items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick={cancelDelete}></div>
+    <button type="button" aria-label={$_('common.closeModal')} class="fixed inset-0 bg-black bg-opacity-50 transition-opacity cursor-default" onclick={cancelDelete}></button>
     <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
       <div class="mb-4"><h3 class="text-xl font-bold text-gray-900 mb-2">{$_('units.remove_owner_title')}</h3>
         {#if unitOwnerToDelete.owner}<p class="text-gray-600">{$_('units.remove_owner_confirm', { values: { name: `${unitOwnerToDelete.owner.first_name} ${unitOwnerToDelete.owner.last_name}` } })}</p>{:else}<p class="text-gray-600">{$_('units.remove_owner_confirm_generic')}</p>{/if}

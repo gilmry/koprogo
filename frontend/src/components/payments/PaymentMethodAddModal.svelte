@@ -21,13 +21,15 @@
   } = $props();
 
   let formData: CreatePaymentMethodDto = $state({
-    owner_id: ownerId,
+    owner_id: "",
     method_type: PaymentMethodType.Card,
     display_label: "",
     stripe_payment_method_id: "",
     last4: "",
     brand: "",
   });
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (ownerId && !formData.owner_id) formData.owner_id = ownerId; });
 
   let submitting = $state(false);
   let errors: Record<string, string> = $state({});

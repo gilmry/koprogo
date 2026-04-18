@@ -515,7 +515,7 @@
                   Aucun rattachement d'organisation pour un SuperAdmin.
                 </p>
               {:else}
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label for={`role-org-${index}`} class="block text-sm font-medium text-gray-700 mb-1">
                   Organisation <span class="text-red-500">*</span>
                 </label>
                 <FormSelect

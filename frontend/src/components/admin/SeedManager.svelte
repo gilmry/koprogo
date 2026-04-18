@@ -347,7 +347,7 @@
 							</div>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
 								<div>
-									<label class="text-gray-600 text-xs font-medium block mb-1">Email:</label>
+									<span class="text-gray-600 text-xs font-medium block mb-1">Email:</span>
 									<div class="flex items-center gap-2">
 										<code class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs">{account.email}</code>
 										<button
@@ -361,7 +361,7 @@
 									</div>
 								</div>
 								<div>
-									<label class="text-gray-600 text-xs font-medium block mb-1">Mot de passe:</label>
+									<span class="text-gray-600 text-xs font-medium block mb-1">Mot de passe:</span>
 									<div class="flex items-center gap-2">
 										<code class="bg-gray-50 px-3 py-1.5 rounded border border-gray-200 flex-1 text-xs">{account.password}</code>
 										<button

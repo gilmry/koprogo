@@ -208,12 +208,14 @@
 
 <!-- Modal pour créer une facture -->
 {#if showCreateModal}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onclick={handleCancel}>
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onclick={(e: MouseEvent) => e.stopPropagation()}>
+  <button type="button" aria-label={$_('common.closeModal')} class="fixed inset-0 bg-black bg-opacity-50 z-40 cursor-default" onclick={handleCancel}></button>
+  <div class="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto" role="presentation">
       <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
         <h2 class="text-2xl font-bold text-gray-900">{$_('expenses.createInvoice')}</h2>
         <button
           onclick={handleCancel}
+          aria-label={$_('common.close')}
           class="text-gray-400 hover:text-gray-600 transition"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

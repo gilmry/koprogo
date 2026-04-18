@@ -166,17 +166,17 @@
 
             <!-- Calculated Amounts -->
             <div class="form-group calculated">
-              <label>{$_('invoices.total_excl')}</label>
+              <span class="form-label-static">{$_('invoices.total_excl')}</span>
               <div class="amount">{formatCurrency(line.amount_excl_vat)}</div>
             </div>
 
             <div class="form-group calculated">
-              <label>{$_('invoices.vat')}</label>
+              <span class="form-label-static">{$_('invoices.vat')}</span>
               <div class="amount">{formatCurrency(line.vat_amount)}</div>
             </div>
 
             <div class="form-group calculated total">
-              <label>{$_('invoices.total_incl')}</label>
+              <span class="form-label-static">{$_('invoices.total_incl')}</span>
               <div class="amount">{formatCurrency(line.amount_incl_vat)}</div>
             </div>
           </div>
@@ -311,7 +311,8 @@
     align-items: end;
   }
 
-  label {
+  label,
+  .form-label-static {
     display: block;
     margin-bottom: 0.25rem;
     font-weight: 500;

@@ -42,24 +42,26 @@
   let loadingBuildings = $state(false);
 
   let formData = $state<CreateTicketDto>({
-    building_id: buildingId,
+    building_id: "",
     title: "",
     description: "",
     priority: TicketPriority.Medium,
     category: TicketCategory.Other,
-    requester_id: requesterId,
-    unit_id: unitId || undefined,
+    requester_id: "",
+    unit_id: undefined,
   });
 
   let submitting = $state(false);
   let errors = $state<Record<string, string>>({});
 
-  // Sync formData.building_id with prop (runes capture live value)
+  // Sync formData fields with props (live values via $effect, not stale initial capture)
   $effect(() => {
     if (buildingId && !formData.building_id) {
       formData.building_id = buildingId;
     }
   });
+  $effect(() => { if (requesterId && !formData.requester_id) formData.requester_id = requesterId; });
+  $effect(() => { if (unitId && !formData.unit_id) formData.unit_id = unitId; });
 
   $effect(() => {
     if (open && buildings.length === 0) {

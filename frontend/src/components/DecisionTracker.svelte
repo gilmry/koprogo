@@ -14,7 +14,9 @@
   let decisions = $state<BoardDecisionResponse[]>([]);
   let loading = $state(true);
   let error = $state('');
-  let statusFilter = $state(filterStatus || 'all');
+  let statusFilter = $state('all');
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (filterStatus) statusFilter = filterStatus; });
 
   let statusOptions = $derived([
     { value: 'all', label: $_('common.all') },

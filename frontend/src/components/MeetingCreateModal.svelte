@@ -72,6 +72,7 @@
   role="dialog"
   aria-modal="true"
   aria-label="Créer une assemblée"
+  tabindex={-1}
 >
   <div class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] flex flex-col">
     <div class="flex justify-between items-center p-6 pb-4 border-b">

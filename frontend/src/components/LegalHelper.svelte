@@ -135,7 +135,7 @@
     class="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity"
     on:click={closePanel}
     role="presentation"
-  />
+  ></div>
 
   <!-- Panel -->
   <div class="fixed right-0 top-0 h-screen w-96 bg-white shadow-2xl z-40 overflow-y-auto flex flex-col">

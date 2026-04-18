@@ -225,9 +225,9 @@
       </div>
     {:else if formData.poll_type === PollType.MultipleChoice}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
+        <span class="block text-sm font-medium text-gray-700 mb-2">
           {$_("polls.createForm.options")} <span class="text-red-500">*</span>
-        </label>
+        </span>
         <div class="space-y-2 mb-3">
           {#each formData.options as option, index}
             <div class="flex items-center space-x-2">
@@ -282,9 +282,9 @@
       </div>
     {:else if formData.poll_type === PollType.Rating}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
+        <span class="block text-sm font-medium text-gray-700 mb-2">
           {$_("polls.createForm.ratingScale")}
-        </label>
+        </span>
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="create-poll-min-rating" class="text-xs text-gray-500">{$_("polls.createForm.minRating")}</label>

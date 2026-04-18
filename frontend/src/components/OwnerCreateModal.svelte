@@ -41,13 +41,12 @@
   }
 
   function closeModal() { onclose(); }
-
-  function handleBackdropClick(e: MouseEvent) { if (e.target === e.currentTarget) closeModal(); }
 </script>
 
 {#if isOpen}
-  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick={handleBackdropClick}>
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+  <button type="button" aria-label={$_('common.closeModal')} class="fixed inset-0 bg-black bg-opacity-50 z-40 cursor-default" onclick={closeModal}></button>
+  <div class="fixed inset-0 flex items-center justify-center z-50 pointer-events-none p-4" role="dialog" aria-modal="true">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto pointer-events-auto">
       <div class="p-6 border-b border-gray-200"><h2 class="text-xl font-bold text-gray-900">{$_('owners.create.title')}</h2></div>
       <form onsubmit={(e: Event) => { e.preventDefault(); handleSubmit(); }} class="p-6 space-y-4">
         {#if error}<div class="bg-red-50 border border-red-200 rounded-lg p-3"><p class="text-red-800 text-sm">{error}</p></div>{/if}

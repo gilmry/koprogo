@@ -186,11 +186,11 @@
               rows={3}
               bind:value={description}
               placeholder="Informations supplémentaires sur le document"
-            />
+            ></textarea>
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.file')}</label>
+            <span class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.file')}</span>
             <div class="flex items-center gap-3">
               <input
                 type="file"

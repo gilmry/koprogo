@@ -108,7 +108,7 @@
 
   {#if showDeleteConfirm && unitToDelete}
     <div class="fixed inset-0 z-50 overflow-y-auto"><div class="flex min-h-screen items-center justify-center p-4">
-      <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick={cancelDelete}></div>
+      <button type="button" aria-label={$_('common.closeModal')} class="fixed inset-0 bg-black bg-opacity-50 transition-opacity cursor-default" onclick={cancelDelete}></button>
       <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
         <div class="mb-4"><h3 class="text-xl font-bold text-gray-900 mb-2">{$_('common.confirmDelete')}</h3><p class="text-gray-600">{$_('units.confirmDeleteMessage')} <strong>{unitToDelete.unit_number}</strong> ?</p><p class="text-sm text-red-600 mt-2">{$_('units.deleteWarning')}</p></div>
         <div class="flex gap-2"><Button variant="danger" onclick={confirmDelete}>{$_('common.delete')}</Button><Button variant="outline" onclick={cancelDelete}>{$_('common.cancel')}</Button></div>

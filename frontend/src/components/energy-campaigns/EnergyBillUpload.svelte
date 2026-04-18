@@ -16,14 +16,17 @@
   } = $props();
 
   let formData: Partial<UploadEnergyBillDto> = $state({
-    campaign_id: campaignId,
-    unit_id: unitId,
+    campaign_id: "",
+    unit_id: "",
     billing_period_start: "",
     billing_period_end: "",
     energy_type: undefined,
     total_kwh: 0,
     consent_signature: "",
   });
+  // Sync IDs with props (live values via $effect, not stale initial capture)
+  $effect(() => { if (campaignId && !formData.campaign_id) formData.campaign_id = campaignId; });
+  $effect(() => { if (unitId && !formData.unit_id) formData.unit_id = unitId; });
 
   let gdprConsent = $state(false);
   let loading = $state(false);

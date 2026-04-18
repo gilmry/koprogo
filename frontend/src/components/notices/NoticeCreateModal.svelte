@@ -21,13 +21,15 @@
 
   let submitting = $state(false);
   let formData: CreateNoticeDto = $state({
-    building_id: buildingId,
+    building_id: "",
     notice_type: NoticeType.Announcement,
     category: NoticeCategory.General,
     title: "",
     content: "",
     contact_info: "",
   });
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (buildingId && !formData.building_id) formData.building_id = buildingId; });
 
   let expiresEnabled = $state(false);
   let expiresDate = $state("");
@@ -154,7 +156,7 @@
               placeholder={$_("notices.content_placeholder")}
               data-testid="notice-content-input"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            />
+            ></textarea>
           </div>
 
           <!-- Event Fields (shown only for Event type) -->

@@ -16,7 +16,9 @@
   let submitting = $state(false);
 
   // Form fields
-  let selectedBuildingId = $state(buildingId ?? '');
+  let selectedBuildingId = $state('');
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (buildingId && !selectedBuildingId) selectedBuildingId = buildingId; });
   let title = $state('');
   let description = $state('');
   let totalAmount = $state(0);

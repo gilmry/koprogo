@@ -19,13 +19,15 @@
 
   let submitting = $state(false);
   let formData = $state<CreateSkillOfferDto>({
-    building_id: buildingId,
+    building_id: "",
     skill_category: SkillCategory.Other,
     skill_name: "",
     description: "",
     expertise_level: ExpertiseLevel.Intermediate,
     is_available_for_help: true,
   });
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (buildingId && !formData.building_id) formData.building_id = buildingId; });
 
   let certificationInput = $state("");
 

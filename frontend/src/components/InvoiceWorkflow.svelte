@@ -376,8 +376,9 @@
 
 <!-- Modal d'approbation -->
 {#if showApprovalModal && selectedInvoice}
-  <div class="modal-overlay" on:click={closeModals}>
-    <div class="modal" on:click|stopPropagation>
+  <button type="button" class="modal-overlay modal-overlay-btn" aria-label={$_('common.closeModal')} on:click={closeModals}></button>
+  <div class="modal-wrapper" role="dialog" aria-modal="true">
+    <div class="modal" role="presentation">
       <div class="modal-header">
         <h2>{$_('invoices.approve_invoice')}</h2>
         <button on:click={closeModals} class="btn-close">×</button>
@@ -412,8 +413,9 @@
 
 <!-- Modal de rejet -->
 {#if showRejectionModal && selectedInvoice}
-  <div class="modal-overlay" on:click={closeModals}>
-    <div class="modal" on:click|stopPropagation>
+  <button type="button" class="modal-overlay modal-overlay-btn" aria-label={$_('common.closeModal')} on:click={closeModals}></button>
+  <div class="modal-wrapper" role="dialog" aria-modal="true">
+    <div class="modal" role="presentation">
       <div class="modal-header">
         <h2>{$_('invoices.reject_invoice')}</h2>
         <button on:click={closeModals} class="btn-close">×</button>
@@ -782,6 +784,23 @@
     padding: 1rem;
   }
 
+  .modal-overlay-btn {
+    border: 0;
+    cursor: default;
+    padding: 0;
+  }
+
+  .modal-wrapper {
+    position: fixed;
+    inset: 0;
+    z-index: 51;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    pointer-events: none;
+  }
+
   .modal {
     background: white;
     border-radius: 0.5rem;
@@ -790,6 +809,7 @@
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
+    pointer-events: auto;
   }
 
   .modal-header {

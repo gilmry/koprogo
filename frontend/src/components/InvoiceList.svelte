@@ -18,7 +18,9 @@
   let loading = $state(false);
   let error = $state('');
 
-  let statusFilter = $state(filterByStatus || '');
+  let statusFilter = $state('');
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (filterByStatus) statusFilter = filterByStatus; });
   let searchQuery = $state('');
   let dateFrom = $state('');
   let dateTo = $state('');

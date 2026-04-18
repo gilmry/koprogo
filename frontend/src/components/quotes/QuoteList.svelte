@@ -287,7 +287,12 @@
       {#each filteredQuotes as quote (quote.id)}
         <li class="hover:bg-gray-50" data-testid="quote-row">
           <div class="px-4 py-4 sm:px-6">
-            <div class="flex items-center justify-between cursor-pointer" onclick={() => toggleExpand(quote.id)}>
+            <button
+              type="button"
+              class="w-full flex items-center justify-between cursor-pointer text-left bg-transparent border-0 p-0"
+              aria-expanded={expandedId === quote.id}
+              onclick={() => toggleExpand(quote.id)}
+            >
               <div class="flex items-center space-x-3 flex-1 min-w-0">
                 {#if compareMode}
                   <input type="checkbox" checked={selectedForCompare.has(quote.id)}
@@ -315,7 +320,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </div>
+            </button>
 
             {#if expandedId === quote.id}
               <div class="mt-3">

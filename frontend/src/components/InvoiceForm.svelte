@@ -38,7 +38,9 @@
 
   // Liste des bâtiments (si buildingId n'est pas fourni)
   let buildings = $state<any[]>([]);
-  let selectedBuildingId = $state(buildingId);
+  let selectedBuildingId = $state('');
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (buildingId && !selectedBuildingId) selectedBuildingId = buildingId; });
 
   // Calculated fields
   let vatAmount = $state(0);

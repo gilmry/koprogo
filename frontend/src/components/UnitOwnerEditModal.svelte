@@ -32,7 +32,7 @@
 
 {#if open}
   <div class="fixed inset-0 z-50 overflow-y-auto"><div class="flex min-h-screen items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick={handleClose}></div>
+    <button type="button" aria-label={$_('common.closeModal')} class="fixed inset-0 bg-black bg-opacity-50 transition-opacity cursor-default" onclick={handleClose}></button>
     <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 z-10">
       <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-900">{$_('units.edit_ownership')}</h2><button onclick={handleClose} class="text-gray-400 hover:text-gray-500"><span class="text-2xl">&times;</span></button></div>
       {#if unitOwner?.owner}<div class="mb-4 p-3 bg-gray-50 rounded-lg"><p class="font-semibold text-gray-900">{unitOwner.owner.first_name} {unitOwner.owner.last_name}</p><p class="text-sm text-gray-600">{unitOwner.owner.email}</p></div>{/if}

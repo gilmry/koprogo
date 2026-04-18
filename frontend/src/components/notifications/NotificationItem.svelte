@@ -94,6 +94,7 @@
   }
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
   class="px-4 py-3 hover:bg-gray-50 transition-colors {clickable
     ? 'cursor-pointer'
@@ -163,6 +164,7 @@
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }

@@ -7,7 +7,9 @@
 
   interface BuildingInfo { id: string; name: string; syndic_name: string | null; syndic_email: string | null; syndic_phone: string | null; syndic_address: string | null; syndic_office_hours: string | null; syndic_emergency_contact: string | null; }
 
-  let selectedBuildingId = $state(buildingIds[0] ?? "");
+  let selectedBuildingId = $state("");
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (buildingIds.length > 0 && !selectedBuildingId) selectedBuildingId = buildingIds[0]; });
   let building = $state<BuildingInfo | null>(null);
   let loading = $state(false);
   let error = $state("");

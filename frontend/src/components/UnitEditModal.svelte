@@ -30,7 +30,7 @@
 
 {#if open}
   <div class="fixed inset-0 z-50 overflow-y-auto"><div class="flex min-h-screen items-center justify-center p-4">
-    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onclick={handleClose}></div>
+    <button type="button" aria-label={$_('common.closeModal')} class="fixed inset-0 bg-black bg-opacity-50 transition-opacity cursor-default" onclick={handleClose}></button>
     <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full p-6 z-10">
       <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-900">{$_('units.edit_unit')}</h2><button onclick={handleClose} class="text-gray-400 hover:text-gray-500"><span class="text-2xl">&times;</span></button></div>
       {#if error}<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">{error}</div>{/if}
