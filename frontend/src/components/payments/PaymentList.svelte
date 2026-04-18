@@ -99,7 +99,9 @@
 
       <!-- Status filter -->
       <div>
+        <label for="payment-status-filter" class="sr-only">{$_('payments.allStatuses')}</label>
         <select
+          id="payment-status-filter"
           bind:value={statusFilter}
           data-testid="payment-status-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"

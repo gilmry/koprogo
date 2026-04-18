@@ -365,7 +365,9 @@
           </div>
         {:else if poll.poll_type === PollType.OpenEnded}
           <div>
+            <label for="poll-open-ended-response" class="sr-only">Votre réponse</label>
             <textarea
+              id="poll-open-ended-response"
               bind:value={openEndedText}
               rows="5"
               placeholder="Écrivez votre réponse ici..."

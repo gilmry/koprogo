@@ -184,6 +184,7 @@
                   <button
                     on:click={() => handleEdit(building)}
                     class="text-primary-600 hover:text-primary-900"
+                    aria-label={$_('common.edit')}
                     title={$_('common.edit')}
                     disabled={actionLoading}
                     data-testid="edit-building-button"
@@ -193,6 +194,7 @@
                   <button
                     on:click={() => handleDeleteClick(building)}
                     class="text-red-600 hover:text-red-900"
+                    aria-label={$_('common.delete')}
                     title={$_('common.delete')}
                     disabled={actionLoading}
                     data-testid="delete-building-button"

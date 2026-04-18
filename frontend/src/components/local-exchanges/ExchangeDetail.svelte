@@ -325,8 +325,9 @@
           </button>
         {:else}
           <div class="w-full p-4 border border-red-200 rounded-lg bg-red-50">
-            <label class="block text-sm font-medium text-red-800 mb-1">{$_('exchanges.cancellation_reason')}</label>
+            <label for="exchange-cancel-reason" class="block text-sm font-medium text-red-800 mb-1">{$_('exchanges.cancellation_reason')}</label>
             <textarea
+              id="exchange-cancel-reason"
               bind:value={cancelReason}
               rows="2"
               class="w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 text-sm"

@@ -74,8 +74,8 @@
               <div class="ml-2 flex items-center gap-1 sm:gap-2">
                 <div class="text-right"><p class="text-lg sm:text-xl font-bold text-primary-600">{formatPercentage(unitOwner.ownership_percentage)}</p><p class="text-xs text-gray-500 hidden sm:block">{$_('units.quota_label')}</p></div>
                 {#if canModifyOwnership}
-                  <button onclick={() => handleEditUnitOwner(unitOwner)} class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition" title={$_('units.edit_quota')} data-testid="edit-owner-button">✏️</button>
-                  <button onclick={() => handleDeleteClick(unitOwner)} class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition" title={$_('units.remove_owner')} data-testid="remove-owner-button">🗑️</button>
+                  <button onclick={() => handleEditUnitOwner(unitOwner)} class="px-2 py-1.5 text-sm font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition" aria-label={$_('units.edit_quota')} title={$_('units.edit_quota')} data-testid="edit-owner-button">✏️</button>
+                  <button onclick={() => handleDeleteClick(unitOwner)} class="px-2 py-1.5 text-sm font-medium text-white bg-red-600 rounded hover:bg-red-700 transition" aria-label={$_('units.remove_owner')} title={$_('units.remove_owner')} data-testid="remove-owner-button">🗑️</button>
                 {/if}
               </div>
             </div>

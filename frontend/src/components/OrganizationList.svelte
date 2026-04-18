@@ -242,6 +242,7 @@
                     <button
                       on:click={() => handleEdit(org)}
                       class="text-primary-600 hover:text-primary-900"
+                      aria-label="Modifier"
                       title="Modifier"
                       data-testid="edit-organization-button"
                       disabled={actionLoading}
@@ -251,6 +252,7 @@
                     <button
                       on:click={() => handleToggleActive(org)}
                       class={org.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
+                      aria-label={org.is_active ? 'Désactiver' : 'Activer'}
                       title={org.is_active ? 'Désactiver' : 'Activer'}
                       data-testid="toggle-organization-button"
                       disabled={actionLoading}
@@ -260,6 +262,7 @@
                     <button
                       on:click={() => handleDeleteClick(org)}
                       class="text-red-600 hover:text-red-900"
+                      aria-label="Supprimer"
                       title="Supprimer"
                       data-testid="delete-organization-button"
                       disabled={actionLoading}

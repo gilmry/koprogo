@@ -182,6 +182,7 @@
                     <button
                       onclick={() => updateAttendance(recipient.id, AttendanceStatus.WillAttend)}
                       class="text-xs text-green-600 hover:text-green-800 underline"
+                      aria-label={$_('convocations.markAsPresent')}
                       title={$_('convocations.markAsPresent')}
                       data-testid="recipient-btn-attend-{recipient.id}"
                     >
@@ -190,6 +191,7 @@
                     <button
                       onclick={() => updateAttendance(recipient.id, AttendanceStatus.WillNotAttend)}
                       class="text-xs text-red-600 hover:text-red-800 underline"
+                      aria-label={$_('convocations.markAsAbsent')}
                       title={$_('convocations.markAsAbsent')}
                       data-testid="recipient-btn-absent-{recipient.id}"
                     >

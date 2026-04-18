@@ -99,7 +99,9 @@
 
       <!-- Status filter -->
       <div>
+        <label for="ticket-status-filter" class="sr-only">{$_("tickets.all_statuses")}</label>
         <select
+          id="ticket-status-filter"
           bind:value={statusFilter}
           data-testid="ticket-status-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -114,7 +116,9 @@
 
       <!-- Priority filter -->
       <div>
+        <label for="ticket-priority-filter" class="sr-only">{$_("tickets.all_priorities")}</label>
         <select
+          id="ticket-priority-filter"
           bind:value={priorityFilter}
           data-testid="ticket-priority-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -129,7 +133,9 @@
 
       <!-- Category filter -->
       <div>
+        <label for="ticket-category-filter" class="sr-only">{$_("tickets.all_categories")}</label>
         <select
+          id="ticket-category-filter"
           bind:value={categoryFilter}
           data-testid="ticket-category-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"

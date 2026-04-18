@@ -142,6 +142,7 @@
                 <button
                   on:click={() => toggleOwnerExpanded(owner.id)}
                   class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                  aria-label={expandedOwners.has(owner.id) ? $_('owners.action.hide_units') : $_('owners.action.show_units')}
                   title={expandedOwners.has(owner.id) ? $_('owners.action.hide_units') : $_('owners.action.show_units')}
                 >
                   {expandedOwners.has(owner.id) ? '▼' : '▶'} {$_('owners.units')}

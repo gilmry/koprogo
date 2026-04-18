@@ -98,8 +98,8 @@
       <h4 class="font-medium text-gray-900 mb-4">{$_('meetings.add_document')}</h4>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('meetings.document_type')} *</label>
-          <select bind:value={uploadDocumentType} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" data-testid="upload-document-type">
+          <label for="meeting-doc-type" class="block text-sm font-medium text-gray-700 mb-1">{$_('meetings.document_type')} *</label>
+          <select id="meeting-doc-type" bind:value={uploadDocumentType} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" data-testid="upload-document-type">
             <option value="MeetingMinutes">{$_('meetings.doc_type_minutes')}</option>
             <option value="FinancialStatement">{$_('meetings.doc_type_financial')}</option>
             <option value="Invoice">{$_('meetings.doc_type_invoice')}</option>
@@ -110,16 +110,16 @@
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('meetings.title')} *</label>
-          <input type="text" bind:value={uploadTitle} placeholder={$_('meetings.title_example')} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" data-testid="upload-title" />
+          <label for="meeting-doc-title" class="block text-sm font-medium text-gray-700 mb-1">{$_('meetings.title')} *</label>
+          <input id="meeting-doc-title" type="text" bind:value={uploadTitle} placeholder={$_('meetings.title_example')} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" data-testid="upload-title" />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('common.description')}</label>
-          <textarea bind:value={uploadDescription} rows="3" placeholder={$_('meetings.document_description')} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" data-testid="upload-description"></textarea>
+          <label for="meeting-doc-description" class="block text-sm font-medium text-gray-700 mb-1">{$_('common.description')}</label>
+          <textarea id="meeting-doc-description" bind:value={uploadDescription} rows="3" placeholder={$_('meetings.document_description')} class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" data-testid="upload-description"></textarea>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">{$_('meetings.file')} *</label>
-          <input type="file" onchange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" data-testid="upload-file" />
+          <label for="meeting-doc-file" class="block text-sm font-medium text-gray-700 mb-1">{$_('meetings.file')} *</label>
+          <input id="meeting-doc-file" type="file" onchange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" data-testid="upload-file" />
           {#if uploadFile}<p class="text-sm text-gray-500 mt-1">{$_('meetings.file_selected', { values: { name: uploadFile.name, size: formatFileSize(uploadFile.size) } })}</p>{/if}
         </div>
         <div class="flex gap-2">

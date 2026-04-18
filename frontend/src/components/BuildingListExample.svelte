@@ -119,10 +119,11 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Name -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-create-name" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('buildings.name')} *
           </label>
           <input
+            id="building-create-name"
             type="text"
             bind:value={newBuilding.name}
             required
@@ -133,10 +134,11 @@
 
         <!-- Address -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-create-address" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('buildings.address')} *
           </label>
           <input
+            id="building-create-address"
             type="text"
             bind:value={newBuilding.address}
             required
@@ -147,10 +149,11 @@
 
         <!-- City -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-create-city" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('buildings.city')} *
           </label>
           <input
+            id="building-create-city"
             type="text"
             bind:value={newBuilding.city}
             required
@@ -161,10 +164,11 @@
 
         <!-- Postal Code -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-create-postal-code" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('buildings.postalCode')} *
           </label>
           <input
+            id="building-create-postal-code"
             type="text"
             bind:value={newBuilding.postal_code}
             required
@@ -175,10 +179,11 @@
 
         <!-- Country -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-create-country" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('buildings.country')} *
           </label>
           <input
+            id="building-create-country"
             type="text"
             bind:value={newBuilding.country}
             required
@@ -189,10 +194,11 @@
 
         <!-- Total Units -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-create-total-units" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('buildings.totalUnits')} *
           </label>
           <input
+            id="building-create-total-units"
             type="number"
             bind:value={newBuilding.total_units}
             required
@@ -204,10 +210,11 @@
 
         <!-- Construction Year -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="building-create-construction-year" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('buildings.constructionYear')}
           </label>
           <input
+            id="building-create-construction-year"
             type="number"
             bind:value={newBuilding.construction_year}
             min="1800"

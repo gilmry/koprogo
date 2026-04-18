@@ -150,24 +150,24 @@
   {:else if showForm}
     <form onsubmit={(e: Event) => { e.preventDefault(); createSession(); }} class="space-y-3" data-testid="ag-session-form">
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.platform')}</label>
-        <select bind:value={form.platform} class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-platform-select">
+        <label for="ag-session-platform" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.platform')}</label>
+        <select id="ag-session-platform" bind:value={form.platform} class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-platform-select">
           {#each platforms as p}
             <option value={p}>{p}</option>
           {/each}
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.meetingUrl')} *</label>
-        <input bind:value={form.video_url} type="url" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" placeholder="https://meet.jit.si/..." data-testid="ag-session-video-url-input" />
+        <label for="ag-session-video-url" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.meetingUrl')} *</label>
+        <input id="ag-session-video-url" bind:value={form.video_url} type="url" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" placeholder="https://meet.jit.si/..." data-testid="ag-session-video-url-input" />
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.hostUrl')}</label>
-        <input bind:value={form.host_url} type="url" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-host-url-input" />
+        <label for="ag-session-host-url" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.hostUrl')}</label>
+        <input id="ag-session-host-url" bind:value={form.host_url} type="url" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-host-url-input" />
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.password')}</label>
-        <input bind:value={form.access_password} type="text" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-password-input" />
+        <label for="ag-session-password" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.password')}</label>
+        <input id="ag-session-password" bind:value={form.access_password} type="text" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-password-input" />
       </div>
       <div class="flex gap-4">
         <label class="flex items-center gap-1 text-xs">

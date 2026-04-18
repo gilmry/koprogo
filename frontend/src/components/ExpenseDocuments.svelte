@@ -154,10 +154,11 @@
       <h4 class="font-medium text-gray-900 mb-4">{$_('documents.add_document')}</h4>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="expense-doc-type" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('documents.type_label')} *
           </label>
           <select
+            id="expense-doc-type"
             bind:value={uploadDocumentType}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             data-testid="document-type-select"
@@ -173,10 +174,11 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="expense-doc-title" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('common.title')} *
           </label>
           <input
+            id="expense-doc-title"
             type="text"
             bind:value={uploadTitle}
             placeholder={$_('documents.title_placeholder')}
@@ -186,10 +188,11 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="expense-doc-description" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('common.description')}
           </label>
           <textarea
+            id="expense-doc-description"
             bind:value={uploadDescription}
             rows="3"
             placeholder={$_('documents.description_placeholder')}
@@ -199,10 +202,11 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="expense-doc-file" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('documents.file_label')} *
           </label>
           <input
+            id="expense-doc-file"
             type="file"
             onchange={handleFileChange}
             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"

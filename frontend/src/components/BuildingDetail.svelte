@@ -43,11 +43,12 @@
 
       // Load organization name (only for SuperAdmin)
       if (building && building.organization_id) {
+        const orgId = building.organization_id;
         try {
           const userInfo = await api.get<any>('/auth/me');
           if (userInfo.role === 'superadmin') {
             const response = await api.get<{ data: any[] }>('/organizations?per_page=1000');
-            const org = response.data.find((o: any) => o.id === building.organization_id);
+            const org = response.data.find((o: any) => o.id === orgId);
             organizationName = org ? org.name : $_('buildings.unknownOrg');
           }
         } catch (e) {

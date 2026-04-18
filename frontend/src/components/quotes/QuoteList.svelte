@@ -193,8 +193,8 @@
   <!-- Filters -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex items-center space-x-4">
-      <label class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
-      <select bind:value={statusFilter}
+      <label for="quote-status-filter" class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
+      <select id="quote-status-filter" bind:value={statusFilter}
         data-testid="quote-status-filter"
         class="text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500">
         <option value="all">{$_("common.all")}</option>

@@ -283,6 +283,7 @@
                   onclick={() => withdrawConsent(upload.id)}
                   data-testid="withdraw-consent-btn"
                   class="text-xs text-red-600 hover:text-red-800 underline"
+                  aria-label={$_("energy.withdrawConsentTitle")}
                   title={$_("energy.withdrawConsentTitle")}
                 >
                   🗑️ {$_("energy.withdraw")}

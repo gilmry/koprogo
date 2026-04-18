@@ -135,13 +135,14 @@
 
         <div class="px-6 py-4 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.building')}</label>
+            <label for="doc-upload-building" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.building')}</label>
             {#if loadingBuildings}
               <p class="text-sm text-gray-500">{$_('documents.loadingBuildings')}</p>
             {:else if buildings.length === 0}
               <p class="text-sm text-red-500">{$_('documents.noBuildings')}</p>
             {:else}
               <select
+                id="doc-upload-building"
                 class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 bind:value={buildingId}
               >
@@ -153,8 +154,9 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.documentType')}</label>
+            <label for="doc-upload-type" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.documentType')}</label>
             <select
+              id="doc-upload-type"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               bind:value={documentType}
             >
@@ -165,8 +167,9 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.title')}</label>
+            <label for="doc-upload-title" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.title')}</label>
             <input
+              id="doc-upload-title"
               type="text"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               bind:value={title}
@@ -176,8 +179,9 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.description')}</label>
+            <label for="doc-upload-description" class="block text-sm font-medium text-gray-700 mb-1">{$_('documents.description')}</label>
             <textarea
+              id="doc-upload-description"
               class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               rows={3}
               bind:value={description}

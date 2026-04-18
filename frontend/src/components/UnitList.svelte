@@ -76,10 +76,10 @@
               </div>
               <div class="flex gap-2 ml-4">
                 {#if buildingId && isSuperAdmin}
-                  <button onclick={() => handleEditUnit(unit)} class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition" title={$_('units.editUnit')}>✏️</button>
-                  <button onclick={() => handleDeleteClick(unit)} class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition" title={$_('units.deleteUnit')}>🗑️</button>
+                  <button onclick={() => handleEditUnit(unit)} class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition" aria-label={$_('units.editUnit')} title={$_('units.editUnit')}>✏️</button>
+                  <button onclick={() => handleDeleteClick(unit)} class="px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition" aria-label={$_('units.deleteUnit')} title={$_('units.deleteUnit')}>🗑️</button>
                 {/if}
-                <button onclick={() => toggleUnitExpanded(unit.id)} class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition" title={expandedUnits.has(unit.id) ? $_('units.hideOwners') : $_('units.showOwners')}>{expandedUnits.has(unit.id) ? '▼' : '▶'} {$_('units.owners')}</button>
+                <button onclick={() => toggleUnitExpanded(unit.id)} class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition" aria-label={expandedUnits.has(unit.id) ? $_('units.hideOwners') : $_('units.showOwners')} title={expandedUnits.has(unit.id) ? $_('units.hideOwners') : $_('units.showOwners')}>{expandedUnits.has(unit.id) ? '▼' : '▶'} {$_('units.owners')}</button>
               </div>
             </div>
           </div>

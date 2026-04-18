@@ -96,8 +96,9 @@
   {#if !showOnlyActive}
     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
       <div class="flex items-center space-x-4">
-        <label class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
+        <label for="poll-status-filter" class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
         <select
+          id="poll-status-filter"
           bind:value={statusFilter}
           class="text-sm rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
           data-testid="poll-status-filter"

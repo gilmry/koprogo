@@ -191,7 +191,9 @@ interface BackendUser {
         <span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
       </div>
       <div>
+        <label for="user-role-filter" class="sr-only">{$_('admin.users.roles.syndic')}</label>
         <select
+          id="user-role-filter"
           bind:value={roleFilter}
           data-testid="user-role-filter"
           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -329,6 +331,7 @@ interface BackendUser {
                     <button
                       on:click={() => handleEdit(user)}
                       class="text-primary-600 hover:text-primary-900"
+                      aria-label={$_('common.edit')}
                       title={$_('common.edit')}
                       disabled={actionLoading}
                       data-testid="edit-user-button"
@@ -338,6 +341,7 @@ interface BackendUser {
                     <button
                       on:click={() => handleToggleActive(user)}
                       class={user.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
+                      aria-label={user.is_active ? $_('common.deactivate') : $_('common.activate')}
                       title={user.is_active ? $_('common.deactivate') : $_('common.activate')}
                       disabled={actionLoading}
                       data-testid="toggle-user-button"
@@ -347,6 +351,7 @@ interface BackendUser {
                     <button
                       on:click={() => handleDeleteClick(user)}
                       class="text-red-600 hover:text-red-900"
+                      aria-label={$_('common.delete')}
                       title={$_('common.delete')}
                       disabled={actionLoading}
                       data-testid="delete-user-button"

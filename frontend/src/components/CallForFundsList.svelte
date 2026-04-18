@@ -204,6 +204,7 @@
                   <button
                     onclick={() => handleSend(call.id)}
                     class="text-blue-600 hover:text-blue-900"
+                    aria-label={$_('callForFunds.sendTitle')}
                     title={$_('callForFunds.sendTitle')}
                   >
                     {$_('callForFunds.send')}
@@ -211,6 +212,7 @@
                   <button
                     onclick={() => handleDelete(call.id)}
                     class="text-red-600 hover:text-red-900"
+                    aria-label={$_('callForFunds.deleteTitle')}
                     title={$_('callForFunds.deleteTitle')}
                   >
                     {$_('common.delete')}
@@ -219,6 +221,7 @@
                   <button
                     onclick={() => handleCancel(call.id)}
                     class="text-orange-600 hover:text-orange-900"
+                    aria-label={$_('callForFunds.cancelTitle')}
                     title={$_('callForFunds.cancelTitle')}
                   >
                     {$_('common.cancel')}
@@ -226,6 +229,7 @@
                   <a
                     href="/owner-contributions?call_for_funds_id={call.id}"
                     class="text-green-600 hover:text-green-900"
+                    aria-label={$_('callForFunds.viewContributions')}
                     title={$_('callForFunds.viewContributions')}
                   >
                     {$_('callForFunds.contributions')}

@@ -9,6 +9,9 @@
   let notifications = $state<Notification[]>([]);
   let loading = $state(false);
 
+  let listEl = $state<HTMLDivElement | undefined>();
+  let focusIndex = $state(0);
+
   notificationStore.subscribe((state) => {
     notifications = state.notifications.slice(0, 10); // Show latest 10
     loading = state.loading;
@@ -22,11 +25,71 @@
     window.location.href = "/notifications";
     onclose?.();
   }
+
+  function getMenuItems(): HTMLElement[] {
+    if (!listEl) return [];
+    return Array.from(
+      listEl.querySelectorAll<HTMLElement>('[role="menuitem"]'),
+    );
+  }
+
+  function handleKey(e: KeyboardEvent) {
+    const items = getMenuItems();
+    if (items.length === 0) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onclose?.();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        focusIndex = (focusIndex + 1) % items.length;
+        items[focusIndex].focus();
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        focusIndex = focusIndex <= 0 ? items.length - 1 : focusIndex - 1;
+        items[focusIndex].focus();
+        break;
+      case "Home":
+        e.preventDefault();
+        focusIndex = 0;
+        items[0].focus();
+        break;
+      case "End":
+        e.preventDefault();
+        focusIndex = items.length - 1;
+        items[focusIndex].focus();
+        break;
+      case "Escape":
+        e.preventDefault();
+        onclose?.();
+        break;
+    }
+  }
+
+  // Auto-focus first notification item when dropdown opens / list changes
+  $effect(() => {
+    if (!listEl) return;
+    // Re-run when notifications array changes
+    const count = notifications.length;
+    if (count === 0) return;
+    const items = listEl.querySelectorAll<HTMLElement>('[role="menuitem"]');
+    if (items.length > 0) {
+      focusIndex = 0;
+      items[0].focus();
+    }
+  });
 </script>
 
 <div
+  bind:this={listEl}
   class="w-96 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5"
   onclick={(e) => e.stopPropagation()}
+  onkeydown={handleKey}
   role="presentation"
 >
   <!-- Header -->
@@ -60,6 +123,7 @@
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
+          aria-hidden="true"
         >
           <path
             stroke-linecap="round"
@@ -71,14 +135,16 @@
         <p class="mt-2">No new notifications</p>
       </div>
     {:else}
-      <div class="divide-y divide-gray-100">
+      <ul class="divide-y divide-gray-100 list-none m-0 p-0" role="menu" aria-label="Notifications">
         {#each notifications as notification (notification.id)}
-          <NotificationItem
-            {notification}
-            onclick={() => onclose?.()}
-          />
+          <li role="menuitem" tabindex="-1">
+            <NotificationItem
+              {notification}
+              onclick={() => onclose?.()}
+            />
+          </li>
         {/each}
-      </div>
+      </ul>
     {/if}
   </div>
 

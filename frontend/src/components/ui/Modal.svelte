@@ -1,6 +1,8 @@
 <script lang="ts">
   // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
+  // Focus trap + focus restoration backported from AccessibleModal (STORY-P7-803)
   import type { Snippet } from 'svelte';
+  import { trapFocus, FocusManager, getFocusableElements } from '../../lib/accessibility';
 
   let {
     isOpen = false,
@@ -27,6 +29,8 @@
     xl: 'max-w-6xl',
   };
 
+  let dialogEl = $state<HTMLElement | undefined>(undefined);
+
   const handleClose = () => {
     onclose?.();
   };
@@ -50,6 +54,31 @@
       document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
   });
+
+  // Focus trap + focus restoration (WCAG 2.1 AA)
+  $effect(() => {
+    if (!isOpen || !dialogEl) return;
+
+    const focusManager = new FocusManager();
+    focusManager.save();
+
+    // Activate focus trap — this also moves focus to the first focusable child
+    const cleanupTrap = trapFocus(dialogEl);
+
+    // If trapFocus didn't focus anything (no focusable children), fall back to dialog
+    const focusables = getFocusableElements(dialogEl);
+    if (focusables.length === 0) {
+      dialogEl.focus();
+    }
+
+    // Screen-reader announcement is handled implicitly by aria-labelledby
+    // pointing at #modal-title when focus enters the dialog.
+
+    return () => {
+      cleanupTrap();
+      focusManager.restore();
+    };
+  });
 </script>
 
 {#if isOpen}
@@ -64,6 +93,7 @@
   <!-- Modal -->
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
     <div
+      bind:this={dialogEl}
       class="bg-white rounded-lg shadow-xl w-full {sizeClasses[size]} mx-auto my-8 max-h-[90vh] flex flex-col"
       onclick={(e) => e.stopPropagation()}
       onkeydown={(e) => e.stopPropagation()}

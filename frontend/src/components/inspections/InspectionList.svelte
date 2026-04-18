@@ -279,6 +279,7 @@
             <button
               onclick={(e) => { e.stopPropagation(); deleteInspection(inspection.id); }}
               class="text-red-400 hover:text-red-600 p-1"
+              aria-label={$_("common.delete")}
               title={$_("common.delete")}
               data-testid="delete-inspection-button"
             >

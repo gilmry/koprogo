@@ -353,6 +353,7 @@
 										<button
 											on:click={() => copyToClipboard(account.email)}
 											class="text-blue-600 hover:text-blue-800 transition"
+											aria-label="Copier l'email"
 											title="Copier l'email"
 										>
 											📋
@@ -366,6 +367,7 @@
 										<button
 											on:click={() => copyToClipboard(account.password)}
 											class="text-blue-600 hover:text-blue-800 transition"
+											aria-label="Copier le mot de passe"
 											title="Copier le mot de passe"
 										>
 											📋

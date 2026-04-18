@@ -492,10 +492,11 @@
             data-testid="user-role-row"
           >
             <div class="md:col-span-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
+              <label for={`user-role-select-${index}`} class="block text-sm font-medium text-gray-700 mb-1">
                 Role <span class="text-red-500">*</span>
               </label>
               <select
+                id={`user-role-select-${index}`}
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 bind:value={roleEntry.role}
                 onchange={(event) =>
@@ -547,6 +548,7 @@
                   type="button"
                   class="text-red-600 hover:text-red-800 text-sm"
                   onclick={() => removeRoleEntry(index)}
+                  aria-label="Supprimer ce role"
                   title="Supprimer ce role"
                   data-testid="delete-user-role-button"
                 >

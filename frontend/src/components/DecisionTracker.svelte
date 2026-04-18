@@ -134,10 +134,11 @@
         </p>
       </div>
       <div class="flex items-center space-x-4">
-        <label class="text-sm font-medium text-gray-700">
+        <label for="decision-status-filter" class="text-sm font-medium text-gray-700">
           {$_('board.filterByStatus')}:
         </label>
         <select
+          id="decision-status-filter"
           bind:value={statusFilter}
           onchange={handleStatusFilterChange}
           class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"

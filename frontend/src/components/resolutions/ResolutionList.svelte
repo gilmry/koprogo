@@ -146,6 +146,7 @@
                 <button
                   onclick={() => handleDeleteResolution(resolution.id)}
                   class="text-gray-400 hover:text-red-500 p-1 shrink-0"
+                  aria-label={$_("common.delete")}
                   title={$_("common.delete")}
                   data-testid="resolution-delete-btn"
                 >

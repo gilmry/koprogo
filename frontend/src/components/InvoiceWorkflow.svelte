@@ -424,7 +424,9 @@
           <p><strong>{$_('common.description')}:</strong> {selectedInvoice.description}</p>
           <p><strong>{$_('common.amount')}:</strong> {formatCurrency(selectedInvoice.amount_incl_vat || selectedInvoice.amount || 0)}</p>
         </div>
+        <label for="invoice-rejection-reason" class="sr-only">{$_('invoices.rejection_reason_placeholder')}</label>
         <textarea
+          id="invoice-rejection-reason"
           bind:value={rejectionReason}
           placeholder={$_('invoices.rejection_reason_placeholder')}
           rows="4"

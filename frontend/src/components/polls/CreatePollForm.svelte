@@ -234,6 +234,7 @@
               <span class="text-sm text-gray-500">{index + 1}.</span>
               <input
                 type="text"
+                aria-label={`Option ${index + 1}`}
                 value={option.option_text}
                 readonly
                 class="flex-1 rounded-md border-gray-300 bg-gray-50"
@@ -242,6 +243,7 @@
                 type="button"
                 onclick={() => removeOption(index)}
                 class="text-red-600 hover:text-red-800"
+                aria-label={$_("common.delete")}
                 title={$_("common.delete")}
               >
                 🗑️
@@ -250,7 +252,9 @@
           {/each}
         </div>
         <div class="flex items-center space-x-2">
+          <label for="create-poll-new-option" class="sr-only">{$_("polls.createForm.newOptionPlaceholder")}</label>
           <input
+            id="create-poll-new-option"
             type="text"
             bind:value={newOptionText}
             placeholder={$_("polls.createForm.newOptionPlaceholder")}
@@ -283,8 +287,9 @@
         </label>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="text-xs text-gray-500">{$_("polls.createForm.minRating")}</label>
+            <label for="create-poll-min-rating" class="text-xs text-gray-500">{$_("polls.createForm.minRating")}</label>
             <input
+              id="create-poll-min-rating"
               type="number"
               value="1"
               disabled
@@ -294,8 +299,9 @@
             />
           </div>
           <div>
-            <label class="text-xs text-gray-500">{$_("polls.createForm.maxRating")}</label>
+            <label for="create-poll-max-rating" class="text-xs text-gray-500">{$_("polls.createForm.maxRating")}</label>
             <input
+              id="create-poll-max-rating"
               type="number"
               value="5"
               disabled

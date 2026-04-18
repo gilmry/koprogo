@@ -188,6 +188,7 @@
             type="button"
             class="btn-remove"
             onclick={() => removeLine(index)}
+            aria-label={$_('invoices.remove_line')}
             title={$_('invoices.remove_line')}
             data-testid="remove-line-{index}"
           >

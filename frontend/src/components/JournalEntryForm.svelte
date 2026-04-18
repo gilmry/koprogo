@@ -212,20 +212,24 @@
             {#each lines as line, index}
               <tr class="journal-line">
                 <td>
-                  <input type="text" bind:value={line.accountCode} class="form-control form-control-sm" placeholder="Ex: 6100" maxlength="10" />
+                  <label for={`journal-line-${index}-account-code`} class="sr-only">{$_('journal.account')}</label>
+                  <input id={`journal-line-${index}-account-code`} type="text" bind:value={line.accountCode} class="form-control form-control-sm" placeholder="Ex: 6100" maxlength="10" />
                 </td>
                 <td>
-                  <input type="text" bind:value={line.description} class="form-control form-control-sm" placeholder="Libellé de la ligne" />
+                  <label for={`journal-line-${index}-description`} class="sr-only">{$_('journal.description')}</label>
+                  <input id={`journal-line-${index}-description`} type="text" bind:value={line.description} class="form-control form-control-sm" placeholder="Libellé de la ligne" />
                 </td>
                 <td>
-                  <input type="number" bind:value={line.debit} oninput={() => handleDebitInput(index)} class="form-control form-control-sm text-right" placeholder="0.00" step="0.01" min="0" />
+                  <label for={`journal-line-${index}-debit`} class="sr-only">{$_('journal.debit')}</label>
+                  <input id={`journal-line-${index}-debit`} type="number" bind:value={line.debit} oninput={() => handleDebitInput(index)} class="form-control form-control-sm text-right" placeholder="0.00" step="0.01" min="0" />
                 </td>
                 <td>
-                  <input type="number" bind:value={line.credit} oninput={() => handleCreditInput(index)} class="form-control form-control-sm text-right" placeholder="0.00" step="0.01" min="0" />
+                  <label for={`journal-line-${index}-credit`} class="sr-only">{$_('journal.credit')}</label>
+                  <input id={`journal-line-${index}-credit`} type="number" bind:value={line.credit} oninput={() => handleCreditInput(index)} class="form-control form-control-sm text-right" placeholder="0.00" step="0.01" min="0" />
                 </td>
                 <td class="text-center">
                   {#if lines.length > 2}
-                    <button type="button" class="btn-icon-danger" onclick={() => removeLine(index)} title="Supprimer cette ligne">
+                    <button type="button" class="btn-icon-danger" onclick={() => removeLine(index)} aria-label="Supprimer cette ligne" title="Supprimer cette ligne">
                       🗑️
                     </button>
                   {/if}
