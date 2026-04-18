@@ -378,11 +378,11 @@ interface BackendUser {
 
 <!-- User Form Modal -->
 <UserForm
-  bind:isOpen={showFormModal}
+  isOpen={showFormModal}
   user={selectedUser}
   mode={formMode}
-  on:success={handleFormSuccess}
-  on:close={() => {
+  onsuccess={handleFormSuccess}
+  onclose={() => {
     showFormModal = false;
     selectedUser = null;
   }}
@@ -390,15 +390,15 @@ interface BackendUser {
 
 <!-- Delete Confirmation Dialog -->
 <ConfirmDialog
-  bind:isOpen={showConfirmDialog}
+  isOpen={showConfirmDialog}
   title={$_('common.confirmDelete')}
   message={$_('admin.users.confirmDeleteMessage', { values: { name: selectedUser ? selectedUser.first_name + ' ' + selectedUser.last_name : '' } })}
   confirmText={$_('common.delete')}
   cancelText={$_('common.cancel')}
   variant="danger"
   loading={actionLoading}
-  on:confirm={handleDeleteConfirm}
-  on:cancel={() => {
+  onconfirm={handleDeleteConfirm}
+  oncancel={() => {
     showConfirmDialog = false;
     selectedUser = null;
   }}

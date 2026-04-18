@@ -96,7 +96,8 @@
 				messageType = 'error';
 			}
 		} catch (error) {
-			message = `Error: ${error.message}`;
+			const errMsg = error instanceof Error ? error.message : String(error);
+			message = `Error: ${errMsg}`;
 			messageType = 'error';
 		} finally {
 			loading = false;
@@ -122,7 +123,8 @@
 			}
 		} catch (error) {
 			console.error('Seed error:', error);
-			message = `Error: ${error.message}`;
+			const errMsg = error instanceof Error ? error.message : String(error);
+			message = `Error: ${errMsg}`;
 			messageType = 'error';
 		} finally {
 			loading = false;

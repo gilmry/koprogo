@@ -291,11 +291,11 @@
 
 <!-- Organization Form Modal -->
 <OrganizationForm
-  bind:isOpen={showFormModal}
+  isOpen={showFormModal}
   organization={selectedOrganization}
   mode={formMode}
-  on:success={handleFormSuccess}
-  on:close={() => {
+  onsuccess={handleFormSuccess}
+  onclose={() => {
     showFormModal = false;
     selectedOrganization = null;
   }}
@@ -303,15 +303,15 @@
 
 <!-- Delete Confirmation Dialog -->
 <ConfirmDialog
-  bind:isOpen={showConfirmDialog}
+  isOpen={showConfirmDialog}
   title="Confirmer la suppression"
   message="Êtes-vous sûr de vouloir supprimer l'organisation '{selectedOrganization?.name}' ? Cette action est irréversible et supprimera également tous les utilisateurs, immeubles et données associés."
   confirmText="Supprimer"
   cancelText="Annuler"
   variant="danger"
   loading={actionLoading}
-  on:confirm={handleDeleteConfirm}
-  on:cancel={() => {
+  onconfirm={handleDeleteConfirm}
+  oncancel={() => {
     showConfirmDialog = false;
     selectedOrganization = null;
   }}

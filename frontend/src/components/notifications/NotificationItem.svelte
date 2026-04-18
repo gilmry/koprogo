@@ -8,10 +8,12 @@
     notification,
     clickable = true,
     onclick,
+    ondeleted,
   }: {
     notification: Notification;
     clickable?: boolean;
     onclick?: () => void;
+    ondeleted?: (id: string) => void;
   } = $props();
 
   const notificationIcons: Record<string, string> = {
@@ -88,6 +90,7 @@
   async function handleDelete(event: MouseEvent) {
     event.stopPropagation();
     await notificationStore.delete(notification.id);
+    ondeleted?.(notification.id);
   }
 </script>
 

@@ -159,7 +159,7 @@
           <label for="insp-new-type" class="block text-sm text-gray-600 mb-1">{$_("inspections.type")}</label>
           <select id="insp-new-type" bind:value={form.inspection_type} class="w-full border rounded px-3 py-1.5 text-sm">
             {#each Object.entries(inspectionTypeLabels) as [val, label]}
-              <option value={val}>{label} ({inspectionFrequencyLabels[val] || ""})</option>
+              <option value={val}>{label} ({(inspectionFrequencyLabels as Record<string, string>)[val] || ""})</option>
             {/each}
           </select>
         </div>

@@ -125,7 +125,7 @@
         { value: 'all', label: $_('common.all') },
         { value: 'completed', label: $_('gamification.status_completed_plural') },
       ] as f}
-        <button onclick={() => statusFilter = f.value}
+        <button onclick={() => statusFilter = f.value as 'active' | 'all' | 'completed'}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
             {statusFilter === f.value ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
           {f.label}
@@ -146,7 +146,7 @@
     </div>
   {:else if challenges.length === 0}
     <div class="p-8 text-center">
-      <p class="text-gray-500">{$_('gamification.no_challenges_filter', { filter: statusFilter === 'active' ? $_('gamification.status_active') : '' })}</p>
+      <p class="text-gray-500">{$_('gamification.no_challenges_filter', { values: { filter: statusFilter === 'active' ? $_('gamification.status_active') : '' } })}</p>
     </div>
   {:else}
     <ul class="divide-y divide-gray-200">
@@ -189,7 +189,7 @@
                 <span>{formatDateShort(challenge.start_date)} - {formatDateShort(challenge.end_date)}</span>
                 {#if challenge.status === ChallengeStatus.Active && daysLeft > 0}
                   <span class="font-medium {daysLeft <= 3 ? 'text-red-600' : 'text-gray-600'}">
-                    {$_('gamification.days_remaining', { days: daysLeft })}
+                    {$_('gamification.days_remaining', { values: { days: daysLeft } })}
                   </span>
                 {/if}
                 {#if progress?.completed}

@@ -16,6 +16,12 @@
         label: $_("energy.campaign.status.draft"),
         icon: "📝",
       },
+      [CampaignStatus.AwaitingAGVote]: {
+        bg: "bg-yellow-100",
+        text: "text-yellow-800",
+        label: "Vote AG attendu",
+        icon: "⏳",
+      },
       [CampaignStatus.CollectingData]: {
         bg: "bg-blue-100",
         text: "text-blue-800",
@@ -45,6 +51,12 @@
         text: "text-emerald-800",
         label: $_("energy.campaign.status.completed"),
         icon: "🎉",
+      },
+      [CampaignStatus.Cancelled]: {
+        bg: "bg-red-100",
+        text: "text-red-800",
+        label: "Annulé",
+        icon: "❌",
       },
     };
     return statusConfig[status] || statusConfig[CampaignStatus.Draft];

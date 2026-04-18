@@ -42,13 +42,15 @@
   }
 
   function getCampaignProgress(campaign: EnergyCampaign): number {
-    const statuses = [
+    const statuses: CampaignStatus[] = [
       CampaignStatus.Draft,
+      CampaignStatus.AwaitingAGVote,
       CampaignStatus.CollectingData,
       CampaignStatus.Negotiating,
       CampaignStatus.AwaitingFinalVote,
       CampaignStatus.Finalized,
       CampaignStatus.Completed,
+      CampaignStatus.Cancelled,
     ];
     const currentIndex = statuses.indexOf(campaign.status);
     return ((currentIndex + 1) / statuses.length) * 100;

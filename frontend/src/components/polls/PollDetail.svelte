@@ -329,7 +329,7 @@
                   value={option.id}
                   checked={poll.allow_multiple_votes ? selectedOptions.has(option.id) : selectedOptionId === option.id}
                   onchange={() => {
-                    if (poll.allow_multiple_votes) {
+                    if (poll!.allow_multiple_votes) {
                       toggleMultipleOption(option.id);
                     } else {
                       selectedOptionId = option.id;

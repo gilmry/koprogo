@@ -1,30 +1,40 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { notificationStore } from "../../stores/notifications";
   import NotificationDropdown from "./NotificationDropdown.svelte";
 
-  let showDropdown = false;
-  let unreadCount = 0;
+  let showDropdown = $state(false);
+  let unreadCount = $state(0);
 
   // Subscribe to notification store
   notificationStore.subscribe((state) => {
     unreadCount = state.unreadCount;
   });
 
-  onMount(async () => {
-    // Load unread notifications on mount
-    await notificationStore.loadUnread();
+  $effect(() => {
+    let cancelled = false;
+    let interval: ReturnType<typeof setInterval> | undefined;
 
-    // Poll for new notifications every 30 seconds
-    // In production, use WebSocket instead
-    const interval = setInterval(() => {
-      notificationStore.loadUnread();
-    }, 30000);
+    (async () => {
+      // Load unread notifications on mount
+      await notificationStore.loadUnread();
+      if (cancelled) return;
 
-    return () => clearInterval(interval);
+      // Poll for new notifications every 30 seconds
+      // In production, use WebSocket instead
+      interval = setInterval(() => {
+        notificationStore.loadUnread();
+      }, 30000);
+    })();
+
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
   });
 
-  function toggleDropdown() {
+  function toggleDropdown(event: MouseEvent) {
+    event.stopPropagation();
     showDropdown = !showDropdown;
   }
 
@@ -36,12 +46,12 @@
   }
 </script>
 
-<svelte:window on:click={handleClickOutside} />
+<svelte:window onclick={handleClickOutside} />
 
 <div class="notification-bell relative inline-block">
   <!-- Bell Icon Button -->
   <button
-    on:click|stopPropagation={toggleDropdown}
+    onclick={toggleDropdown}
     class="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
     aria-label="Notifications"
   >
@@ -74,7 +84,7 @@
   <!-- Dropdown -->
   {#if showDropdown}
     <div class="absolute right-0 mt-2 z-50">
-      <NotificationDropdown on:close={() => (showDropdown = false)} />
+      <NotificationDropdown onclose={() => (showDropdown = false)} />
     </div>
   {/if}
 </div>

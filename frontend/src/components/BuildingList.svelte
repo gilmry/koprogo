@@ -237,11 +237,11 @@
 
 <!-- Building Form Modal -->
 <BuildingForm
-  bind:isOpen={showFormModal}
+  isOpen={showFormModal}
   building={selectedBuilding}
   mode={formMode}
-  on:success={handleFormSuccess}
-  on:close={() => {
+  onsuccess={handleFormSuccess}
+  onclose={() => {
     showFormModal = false;
     selectedBuilding = null;
   }}
@@ -249,15 +249,15 @@
 
 <!-- Delete Confirmation Dialog -->
 <ConfirmDialog
-  bind:isOpen={showConfirmDialog}
+  isOpen={showConfirmDialog}
   title={$_('buildings.confirmDeleteTitle')}
   message={`${$_('buildings.confirmDeleteMessage', { values: { name: selectedBuilding?.name || '' } })}`}
   confirmText={$_('common.delete')}
   cancelText={$_('common.cancel')}
   variant="danger"
   loading={actionLoading}
-  on:confirm={handleDeleteConfirm}
-  on:cancel={() => {
+  onconfirm={handleDeleteConfirm}
+  oncancel={() => {
     showConfirmDialog = false;
     selectedBuilding = null;
   }}

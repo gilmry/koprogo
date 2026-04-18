@@ -195,7 +195,7 @@
                 </p>
                 <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600">
                   <p>
-                    <strong>AG :</strong> {formatDate(decision.meeting_date || decision.created_at)}
+                    <strong>AG :</strong> {formatDate((decision as any).meeting_date ?? decision.created_at)}
                   </p>
                   {#if decision.deadline}
                     <p class:text-red-600={isOverdue(decision)}>
@@ -207,9 +207,9 @@
                       {/if}
                     </p>
                   {/if}
-                  {#if decision.completed_at}
+                  {#if decision.status === 'completed'}
                     <p class="text-green-600">
-                      <strong>Terminée le :</strong> {formatDate(decision.completed_at)}
+                      <strong>Terminée le :</strong> {formatDate((decision as any).completed_at ?? decision.updated_at)}
                     </p>
                   {/if}
                 </div>

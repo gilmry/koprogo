@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { notificationStore } from "../../stores/notifications";
   import NotificationItem from "./NotificationItem.svelte";
   import type { Notification } from "../../lib/api/notifications";
 
-  const dispatch = createEventDispatcher();
+  let { onclose }: { onclose?: () => void } = $props();
 
-  let notifications: Notification[] = [];
-  let loading = false;
+  let notifications = $state<Notification[]>([]);
+  let loading = $state(false);
 
   notificationStore.subscribe((state) => {
     notifications = state.notifications.slice(0, 10); // Show latest 10
@@ -20,13 +20,14 @@
 
   function handleViewAll() {
     window.location.href = "/notifications";
-    dispatch("close");
+    onclose?.();
   }
 </script>
 
 <div
   class="w-96 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5"
-  on:click|stopPropagation
+  onclick={(e) => e.stopPropagation()}
+  role="presentation"
 >
   <!-- Header -->
   <div
@@ -35,7 +36,7 @@
     <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
     {#if notifications.length > 0}
       <button
-        on:click={handleMarkAllRead}
+        onclick={handleMarkAllRead}
         class="text-sm text-blue-600 hover:text-blue-700 font-medium"
       >
         Mark all read
@@ -74,7 +75,7 @@
         {#each notifications as notification (notification.id)}
           <NotificationItem
             {notification}
-            on:click={() => dispatch("close")}
+            onclick={() => onclose?.()}
           />
         {/each}
       </div>
@@ -85,7 +86,7 @@
   {#if notifications.length > 0}
     <div class="px-4 py-3 border-t border-gray-200">
       <button
-        on:click={handleViewAll}
+        onclick={handleViewAll}
         class="w-full text-center text-sm text-blue-600 hover:text-blue-700 font-medium"
       >
         View all notifications

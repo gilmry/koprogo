@@ -18,7 +18,7 @@
   }: {
     id: string;
     label: string;
-    value?: string | number;
+    value?: string | number | null;
     type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'date';
     placeholder?: string;
     required?: boolean;
@@ -60,7 +60,7 @@
     {min}
     {max}
     {step}
-    {autocomplete}
+    autocomplete={autocomplete as AutoFill | undefined}
     {...restProps}
     {value}
     oninput={handleInput}

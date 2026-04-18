@@ -94,7 +94,7 @@
       <div>
         <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.achievements_title')}</h3>
         <p class="mt-1 text-sm text-gray-500">
-          {$_('gamification.earned_stats', { earned: earnedCount, total: achievements.length, points: totalPoints })}
+          {$_('gamification.earned_stats', { values: { earned: earnedCount, total: achievements.length, points: totalPoints } })}
         </p>
       </div>
     </div>

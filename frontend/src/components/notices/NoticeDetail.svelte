@@ -16,7 +16,7 @@
     currentUserId: string;
   } = $props();
 
-  let notice: Notice | null = $state(null);
+  let notice = $state<Notice | null>(null);
   let loading = $state(true);
   let deleting = $state(false);
   let archiving = $state(false);

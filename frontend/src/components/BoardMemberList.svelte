@@ -121,7 +121,7 @@
               <div class="flex-1">
                 <div class="flex items-center">
                   <h3 class="text-lg font-medium text-gray-900">
-                    {member.owner_name}
+                    {(member as any).owner_name ?? "Inconnu"}
                   </h3>
                   <span class="ml-3 inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
                     {getPositionLabel(member.position)}
@@ -133,7 +133,7 @@
                     {formatDate(member.mandate_start)} → {formatDate(member.mandate_end)}
                   </p>
                   <p>
-                    <strong>{$_('board.electedAt')}:</strong> AG du {formatDate(member.elected_at)}
+                    <strong>{$_('board.electedAt')}:</strong> AG du {formatDate((member as any).elected_at ?? member.mandate_start)}
                   </p>
                 </div>
               </div>

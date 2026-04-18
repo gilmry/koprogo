@@ -178,7 +178,9 @@
           <div>
             <p class="text-gray-500">{$_("workReports.warranty")}</p>
             <p class="font-medium {report.is_warranty_valid ? 'text-green-700' : 'text-red-700'}">
-              {warrantyTypeLabels[report.warranty_type] || report.warranty_type}
+              {typeof report.warranty_type === "string"
+                ? (warrantyTypeLabels[report.warranty_type] || report.warranty_type)
+                : "Personnalisé (" + report.warranty_type.custom.years + " ans)"}
             </p>
             {#if report.warranty_type !== 'none'}
               <p class="text-xs {report.is_warranty_valid ? 'text-green-600' : 'text-red-600'} mt-0.5">

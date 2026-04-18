@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
-  import { api } from '../lib/api';
+  import { api, API_BASE_URL } from '../lib/api';
 
   interface LegalRule {
     code: string;
@@ -49,9 +49,9 @@
     try {
       // Load all legal data in parallel
       const [sequenceRes, rulesRes, majoritiesRes] = await Promise.all([
-        fetch(`${api.baseUrl}/legal/ag-sequence`),
-        fetch(`${api.baseUrl}/legal/rules`),
-        fetch(`${api.baseUrl}/legal/majority-for/ordinary`)
+        fetch(`${API_BASE_URL}/legal/ag-sequence`),
+        fetch(`${API_BASE_URL}/legal/rules`),
+        fetch(`${API_BASE_URL}/legal/majority-for/ordinary`)
       ]);
 
       if (sequenceRes.ok) {

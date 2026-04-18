@@ -321,7 +321,7 @@
   <OwnerEditModal
     owner={selectedOwner}
     isOpen={isModalOpen}
-    on:close={closeModal}
-    on:save={handleOwnerSaved}
+    onclose={closeModal}
+    onsave={handleOwnerSaved}
   />
 </div>

@@ -184,30 +184,30 @@
       <div class="space-y-2 text-sm">
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-green-500"></span>
-          <span class="text-gray-600">{$_('exchanges.offered_at', { date: formatDate(exchange.offered_at) })}</span>
+          <span class="text-gray-600">{$_('exchanges.offered_at', { values: { date: formatDate(exchange.offered_at) } })}</span>
         </div>
         {#if exchange.requested_at}
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-            <span class="text-gray-600">{$_('exchanges.requested_at', { date: formatDate(exchange.requested_at) })}</span>
+            <span class="text-gray-600">{$_('exchanges.requested_at', { values: { date: formatDate(exchange.requested_at) } })}</span>
           </div>
         {/if}
         {#if exchange.started_at}
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
-            <span class="text-gray-600">{$_('exchanges.started_at', { date: formatDate(exchange.started_at) })}</span>
+            <span class="text-gray-600">{$_('exchanges.started_at', { values: { date: formatDate(exchange.started_at) } })}</span>
           </div>
         {/if}
         {#if exchange.completed_at}
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-green-600"></span>
-            <span class="text-gray-600">{$_('exchanges.completed_at', { date: formatDate(exchange.completed_at) })}</span>
+            <span class="text-gray-600">{$_('exchanges.completed_at', { values: { date: formatDate(exchange.completed_at) } })}</span>
           </div>
         {/if}
         {#if exchange.cancelled_at}
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-red-500"></span>
-            <span class="text-gray-600">{$_('exchanges.cancelled_at', { date: formatDate(exchange.cancelled_at) })}</span>
+            <span class="text-gray-600">{$_('exchanges.cancelled_at', { values: { date: formatDate(exchange.cancelled_at) } })}</span>
             {#if exchange.cancellation_reason}
               <span class="text-gray-500">- {exchange.cancellation_reason}</span>
             {/if}
@@ -238,7 +238,7 @@
             onclick={() => { showRatingForm = true; }}
             class="mt-4 px-4 py-2 bg-amber-600 text-white text-sm rounded-md hover:bg-amber-700"
           >
-            {$_('exchanges.rate', { type: canRate().canRateProvider ? $_('exchanges.provider') : $_('exchanges.requester') })}
+            {$_('exchanges.rate', { values: { type: canRate().canRateProvider ? $_('exchanges.provider') : $_('exchanges.requester') } })}
           </button>
         {:else}
           <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-amber-50">

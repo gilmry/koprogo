@@ -96,7 +96,7 @@
         country: building.country || 'Belgique',
         total_units: building.total_units,
         total_tantiemes: building.total_tantiemes || 1000,
-        construction_year: building.construction_year,
+        construction_year: building.construction_year ?? null,
         organization_id: building.organization_id || '',
       };
     }

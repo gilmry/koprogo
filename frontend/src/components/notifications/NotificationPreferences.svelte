@@ -20,28 +20,16 @@
   let saving = $state(false);
 
   const notificationTypeLabels: Record<NotificationType, string> = {
-    [NotificationType.MeetingReminder]: $_("notifications.type_meeting_reminders"),
-    [NotificationType.PaymentDue]: $_("notifications.type_payment_due"),
-    [NotificationType.DocumentShared]: $_("notifications.type_document_sharing"),
-    [NotificationType.TicketUpdate]: $_("notifications.type_ticket_updates"),
-    [NotificationType.TicketAssigned]: $_("notifications.type_ticket_assigned"),
+    [NotificationType.ExpenseCreated]: $_("notifications.type_expense_created"),
+    [NotificationType.MeetingConvocation]: $_("notifications.type_meeting_convocation"),
+    [NotificationType.PaymentReceived]: $_("notifications.type_payment_received"),
     [NotificationType.TicketResolved]: $_("notifications.type_ticket_resolved"),
-    [NotificationType.SystemAlert]: $_("notifications.type_system_alerts"),
-    [NotificationType.AccountUpdate]: $_("notifications.type_account_updates"),
-    [NotificationType.NewMessage]: $_("notifications.type_new_messages"),
-    [NotificationType.ConvocationSent]: $_("notifications.type_convocation_sent"),
-    [NotificationType.ResolutionVoting]: $_("notifications.type_resolution_voting"),
-    [NotificationType.QuoteReceived]: $_("notifications.type_quote_received"),
-    [NotificationType.QuoteAccepted]: $_("notifications.type_quote_accepted"),
-    [NotificationType.PaymentSuccess]: $_("notifications.type_payment_success"),
-    [NotificationType.PaymentFailed]: $_("notifications.type_payment_failed"),
+    [NotificationType.DocumentAdded]: $_("notifications.type_document_added"),
+    [NotificationType.BoardMessage]: $_("notifications.type_board_message"),
+    [NotificationType.PaymentReminder]: $_("notifications.type_payment_reminder"),
     [NotificationType.BudgetApproved]: $_("notifications.type_budget_approved"),
-    [NotificationType.EtatDateReady]: $_("notifications.type_etat_date_ready"),
-    [NotificationType.ExchangeRequested]: $_("notifications.type_exchange_requested"),
-    [NotificationType.ExchangeCompleted]: $_("notifications.type_exchange_completed"),
-    [NotificationType.AchievementEarned]: $_("notifications.type_achievement_earned"),
-    [NotificationType.ChallengeStarted]: $_("notifications.type_challenge_started"),
-    [NotificationType.ChallengeCompleted]: $_("notifications.type_challenge_completed"),
+    [NotificationType.ResolutionVote]: $_("notifications.type_resolution_vote"),
+    [NotificationType.System]: $_("notifications.type_system"),
   };
 
   $effect(() => {

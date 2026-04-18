@@ -184,13 +184,13 @@
 <OwnerEditModal
   owner={selectedOwner}
   isOpen={isEditModalOpen}
-  on:close={closeEditModal}
-  on:save={handleOwnerSaved}
+  onclose={closeEditModal}
+  onsave={handleOwnerSaved}
 />
 
 <!-- Owner Create Modal -->
 <OwnerCreateModal
   isOpen={isCreateModalOpen}
-  on:close={closeCreateModal}
-  on:save={handleOwnerSaved}
+  onclose={closeCreateModal}
+  onsave={handleOwnerSaved}
 />

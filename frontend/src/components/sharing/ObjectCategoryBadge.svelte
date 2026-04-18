@@ -13,13 +13,13 @@
       class: "bg-orange-100 text-orange-800",
       icon: "🔧",
     },
-    [ObjectCategory.GardenEquipment]: {
-      label: "Garden Equipment",
+    [ObjectCategory.Gardening]: {
+      label: "Gardening",
       class: "bg-green-100 text-green-800",
       icon: "🌿",
     },
-    [ObjectCategory.KitchenAppliances]: {
-      label: "Kitchen Appliances",
+    [ObjectCategory.Kitchen]: {
+      label: "Kitchen",
       class: "bg-red-100 text-red-800",
       icon: "🍳",
     },
@@ -38,15 +38,10 @@
       class: "bg-purple-100 text-purple-800",
       icon: "📚",
     },
-    [ObjectCategory.ChildrenEquipment]: {
-      label: "Children Equipment",
+    [ObjectCategory.Baby]: {
+      label: "Baby",
       class: "bg-pink-100 text-pink-800",
       icon: "🧸",
-    },
-    [ObjectCategory.PartySupplies]: {
-      label: "Party Supplies",
-      class: "bg-fuchsia-100 text-fuchsia-800",
-      icon: "🎉",
     },
     [ObjectCategory.Other]: {
       label: "Other",

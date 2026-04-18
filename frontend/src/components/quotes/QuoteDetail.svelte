@@ -283,7 +283,7 @@
         class="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors">
         {$_("quotes.detail.reject")}
       </button>
-    {:else if quote.status === QuoteStatus.Received || quote.status === QuoteStatus.Requested}
+    {:else if quote.status === QuoteStatus.UnderReview}
       <button onclick={handleWithdraw} disabled={actionLoading}
         data-testid="withdraw-quote-button"
         class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 disabled:opacity-50 transition-colors">

@@ -208,10 +208,10 @@
 <!-- Edit Modal -->
 {#if building}
   <BuildingForm
-    bind:isOpen={showEditModal}
+    isOpen={showEditModal}
     building={building}
     mode="edit"
-    on:success={handleEditSuccess}
-    on:close={() => showEditModal = false}
+    onsuccess={handleEditSuccess}
+    onclose={() => showEditModal = false}
   />
 {/if}
