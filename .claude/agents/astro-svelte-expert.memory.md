@@ -88,6 +88,7 @@ last_updated: 2026-04-29
 
 - La migration Svelte 5 runes est en cours mais incomplète et a généré des anti-patterns (commentaires hors `<script>` qui crashent silencieusement).
 - L'audit a révélé que les composants admin sont les plus laxistes (`payload: any` toléré). C'est le périmètre prioritaire pour le strict TS.
+- **Tooling via docker compose** (cf. memory `feedback_use-docker-compose-for-tooling.md`) : avant toute review/PR frontend, lancer `docker compose run --rm frontend npm run check` (astro check + svelte-check). Idem `npm run lint` et `npx playwright test`. Le shell hôte peut avoir node mais le container assure l'environnement reproductible.
 
 ## Liens
 

@@ -15,6 +15,7 @@ Source de vérité courte. Pour le détail : issues #425, #426, #427, #428, #429
 9. **Multi-rôles e2e**. Scénarios E2E ont les bons acteurs (syndic crée AG, copropriétaire vote, syndic clôture). Pas un seul login pour tout. Cf. mémoire `feedback_multirole-narrative-scenarios.md`.
 10. **v0.1.0 n'est pas en prod**. Aucun système live. Findings = observations expérimentation, pas crise. Cf. mémoire `project_koprogo-current-state.md`.
 11. **Modèle Tier 1 / Tier 2 d'autorisation**. Tier 1 (mutation prod, création doc publique, envoi externe, fermeture issue) = **humain valide systématiquement** (message reply OR workflow_dispatch GH OR environment approval). Tier 2 (lecture, diagnostic, proposal, retrieval doc, comments) = autorisé mais **logué** dans `docs/agent-activity/YYYY-MM-DD-<persona>.md`. Si tu hésites entre Tier 1 et Tier 2 : choisis Tier 1 (humain). Cf. #429.
+12. **Tooling via docker compose**. cargo / sqlx / rustfmt / clippy / npm / astro / svelte-check vivent dans les containers du `docker-compose.yml` de dev, **PAS** dans le shell hôte. Avant de conclure "outil X non dispo", essayer : `docker compose run --rm backend bash -c "SQLX_OFFLINE=true cargo <cmd>"` ou `docker compose exec backend cargo <cmd>` (si compose up). Idem `docker compose run --rm frontend npm run <cmd>`. Cf. mémoire `feedback_use-docker-compose-for-tooling.md`.
 
 ## Si tu hésites
 

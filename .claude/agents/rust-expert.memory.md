@@ -60,6 +60,7 @@ last_updated: 2026-04-29
 ## Lessons learned
 
 - L'agent IA optimise pour les chemins de moindre résistance (`f64` est le default Rust pour les literals décimaux, donc tentation forte). **La discipline doit être instrumentée** (hook + memory + ADR), pas juste demandée.
+- **Tooling via docker compose** (cf. memory `feedback_use-docker-compose-for-tooling.md`) : avant toute review/PR backend, lancer `docker compose run --rm backend bash -c "SQLX_OFFLINE=true cargo check --lib"` puis `cargo clippy --lib -- -D warnings` puis `cargo test --lib`. Le shell hôte n'a pas cargo en standalone — toujours via compose.
 
 ## Liens
 
