@@ -8,6 +8,46 @@
 
 ---
 
+## Runtime mode — Claude Desktop primary (depuis 2026-04-29)
+
+**Décision architecturale** : les agents personas s'exécutent dans **Claude Desktop / Claude Code sur la machine du superviseur humain**, pas via GH Actions invoquant l'API Anthropic.
+
+### Ce que ça veut dire concrètement
+
+- Pas d'`ANTHROPIC_API_KEY` en GH secret.
+- Workflows GH = **context preparation + dispatch + notifications**, aucune invocation Claude dans les workflows.
+- Pour invoquer un persona : ouvrir Claude Desktop, charger `.claude/agents/<role>.md` + `<role>.memory.md`, donner la mission.
+- Mobile dispatch = bouton qui trigger un workflow GH qui PRÉPARE un contexte (issue avec briefing) → notification → superviseur va à son ordi → Claude Desktop fait le travail.
+
+### Pourquoi ce choix
+
+| Critère | Verdict |
+|---|---|
+| Coût | Claude Desktop déjà payé, pas de coût API additionnel |
+| Sécurité | Pas de secret API en GH = moins de surface d'attaque |
+| Audit | Chaque action passe par dialog interactif Claude Desktop ↔ humain |
+| Flexibilité | Chat-driven > workflow scripté pour cas non-stéréotypés |
+| Réactivité | Latence = présence du superviseur. OK en v0.1.0 pre-release sans prod 24/7 |
+
+### Pattern d'invocation persona
+
+```
+Charge le persona <role> :
+  - lis .claude/agents/<role>.md
+  - lis .claude/agents/<role>.memory.md
+Puis [mission].
+```
+
+Future itération : slash command `/persona <role>` qui automatise le load.
+
+### Réversibilité
+
+Si vraie prod arrive plus tard et nécessite réactivité 24/7 sur SEV1, on ajoutera **une couche minimale** d'invocation Claude API pour ces cas critiques uniquement (pas l'ensemble des cérémonies). Le travail accompli (Tier model, RBAC, environments, personas, memory files) reste valable.
+
+Mémoire : [`project_claude-desktop-primary-runtime.md`](../../C:/Users/gilmr/.claude/projects/c--Users-gilmr-koprogo/memory/project_claude-desktop-primary-runtime.md).
+
+---
+
 ## Modèle Tier 1 / Tier 2 d'autorisation (depuis #429)
 
 Tout agent en runtime tombe dans un des **deux tiers**, jamais dans la zone grise :

@@ -1,0 +1,142 @@
+name: CSI Monthly Report Template
+
+# Architecture: Claude Desktop primary runtime (cf. .claude/AGENT_GUARDRAILS.md).
+# Ce workflow n'invoque PAS Claude. Il aggrège quelques métriques DORA basiques
+# et ouvre une issue à analyser par csi-analyst dans Claude Desktop.
+
+on:
+  schedule:
+    - cron: "0 9 1 * *" # 1er du mois 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      target_month:
+        description: "Mois à analyser (YYYY-MM, default = mois précédent)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute target month + dates
+        id: dates
+        run: |
+          if [ -n "${{ inputs.target_month }}" ]; then
+            MONTH="${{ inputs.target_month }}"
+          else
+            # Default: previous month
+            MONTH=$(date -d "$(date +%Y-%m-01) -1 day" +%Y-%m)
+          fi
+          START="${MONTH}-01"
+          END=$(date -d "${START} +1 month -1 day" +%Y-%m-%d)
+          {
+            echo "month=${MONTH}"
+            echo "start=${START}"
+            echo "end=${END}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Aggregate DORA metrics
+        id: metrics
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          START="${{ steps.dates.outputs.start }}"
+          END="${{ steps.dates.outputs.end }}"
+
+          # PRs merged in window
+          PR_COUNT=$(gh pr list --state merged --search "merged:${START}..${END}" --json number --jq 'length' 2>/dev/null || echo "0")
+
+          # Issues closed in window (proxy for resolution time)
+          ISSUE_CLOSED=$(gh issue list --state closed --search "closed:${START}..${END}" --json number --jq 'length' 2>/dev/null || echo "0")
+
+          # Incidents this period (issues label incident-*)
+          INCIDENT_COUNT=$(gh issue list --search "label:ceremony in:title incident-${{ steps.dates.outputs.month }}" --json number --jq 'length' 2>/dev/null || echo "0")
+
+          # Commits in window
+          COMMIT_COUNT=$(git log --since="${START}" --until="${END}" --oneline | wc -l)
+
+          {
+            echo "pr_count=${PR_COUNT}"
+            echo "issue_closed=${ISSUE_CLOSED}"
+            echo "incident_count=${INCIDENT_COUNT}"
+            echo "commit_count=${COMMIT_COUNT}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build CSI report skeleton
+        run: |
+          MONTH="${{ steps.dates.outputs.month }}"
+          {
+            echo "---"
+            echo "ceremony: csi-monthly-report"
+            echo "period: ${MONTH}"
+            echo "owner: csi-analyst (à remplir par superviseur via Claude Desktop)"
+            echo "status: draft (skeleton auto-généré, analyse à faire)"
+            echo "---"
+            echo
+            echo "# CSI Report — ${MONTH}"
+            echo
+            echo "## Métriques agrégées (auto-collected)"
+            echo
+            echo "| Métrique | Valeur ${MONTH} | Source |"
+            echo "|---|---|---|"
+            echo "| PRs mergées | ${{ steps.metrics.outputs.pr_count }} | gh pr list |"
+            echo "| Issues fermées | ${{ steps.metrics.outputs.issue_closed }} | gh issue list |"
+            echo "| Incidents (issues incident-*) | ${{ steps.metrics.outputs.incident_count }} | gh issue list |"
+            echo "| Commits | ${{ steps.metrics.outputs.commit_count }} | git log |"
+            echo "| SLO availability | (à mesurer) | Prometheus |"
+            echo "| Latency P99 | (à mesurer) | Prometheus |"
+            echo "| MTTR | (à calculer depuis postmortems) | docs/postmortem/ |"
+            echo "| Token budget moyen / session | (à calculer) | docs/metrics/token-budget-* |"
+            echo
+            echo "## TODO côté superviseur"
+            echo
+            echo "1. Ouvre Claude Desktop."
+            echo "2. Charge le persona \`csi-analyst\` :"
+            echo '   ```'
+            echo "   Charge le persona csi-analyst :"
+            echo "     - lis .claude/agents/csi-analyst.md"
+            echo "     - lis .claude/agents/csi-analyst.memory.md"
+            echo "   Puis complète ce CSI report skeleton avec :"
+            echo "   - Executive summary (3 lignes : trend, top achievement, top concern)"
+            echo "   - Comparaison aux DORA quartiles (Elite/High/Medium/Low)"
+            echo "   - Top 3 improvement opportunities"
+            echo "   - Lessons from incidents this period"
+            echo "   - Lessons from support questions"
+            echo "   - Maury method evolution candidates (Phase H)"
+            echo '   ```'
+            echo "3. Une fois rempli, créer fichier \`docs/csi/csi-report-${MONTH}.md\` (PR à reviewer humain pour signature finale)."
+            echo "4. Si trimestriel : préparer slides pour Portfolio Sync."
+            echo
+            echo "## Référence"
+            echo
+            echo "- Persona : \`.claude/agents/csi-analyst.md\` + \`.claude/agents/csi-analyst.memory.md\`"
+            echo "- Issue tracking : [#429](https://github.com/gilmry/koprogo/issues/429) §6bis"
+            echo "- DORA references : *Accelerate* (Forsgren/Humble/Kim)"
+            echo
+            echo "🤖 Skeleton auto-prepared by \`csi-monthly-template.yml\` (Tier 2 logué — analyse Tier 2 par csi-analyst dans Claude Desktop, signature finale Tier 1 humain)."
+          } > /tmp/csi-report.md
+
+      - name: Open CSI issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MONTH="${{ steps.dates.outputs.month }}"
+          TITLE="csi-report-${MONTH}"
+          # Idempotency check
+          if gh issue list --search "in:title $TITLE" --state open --json number --jq 'length' | grep -q '^[1-9]'; then
+            echo "Issue $TITLE already exists, skipping."
+            exit 0
+          fi
+          gh issue create \
+            --title "$TITLE" \
+            --label "ceremony,documentation,track:infrastructure" \
+            --body-file /tmp/csi-report.md
