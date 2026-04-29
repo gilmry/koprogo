@@ -2,9 +2,35 @@
 
 > Documentation des garde-fous IA actifs sur le dépôt. Remplace l'ancien `.claude/hooks.md` (format obsolète).
 >
-> Pour la stratégie complète et les enseignements : voir issues GitHub [#425](https://github.com/gilmry/koprogo/issues/425), [#426](https://github.com/gilmry/koprogo/issues/426), [#427](https://github.com/gilmry/koprogo/issues/427), [#428](https://github.com/gilmry/koprogo/issues/428).
+> Pour la stratégie complète et les enseignements : voir issues GitHub [#425](https://github.com/gilmry/koprogo/issues/425), [#426](https://github.com/gilmry/koprogo/issues/426), [#427](https://github.com/gilmry/koprogo/issues/427), [#428](https://github.com/gilmry/koprogo/issues/428), [#429](https://github.com/gilmry/koprogo/issues/429).
 >
 > Pour la méthode complète : voir [`Maury/README.md`](../Maury/README.md) (point d'entrée canonique).
+
+---
+
+## Modèle Tier 1 / Tier 2 d'autorisation (depuis #429)
+
+Tout agent en runtime tombe dans un des **deux tiers**, jamais dans la zone grise :
+
+### Tier 1 — Dangereux : validation humaine obligatoire
+- Mutations prod : `terraform apply`, `helm upgrade`, `kubectl mutate`, `argocd sync`, `velero restore`.
+- Création de documentation publique-facing.
+- Envoi d'emails / messages externes.
+- Opérations git destructives, fermeture d'issues, suppressions de branches.
+- Bumps de versions Cargo/npm critiques.
+- **Approbation** : message reply OR workflow_dispatch GH OR GH environment approval (cf. #429 §5).
+
+### Tier 2 — Autorisé non-supervisé : tracé en activity report
+- Lecture logs / métriques / configs.
+- Recherche dans la documentation interne, retour d'extraits.
+- Diagnostic + plan proposal (publié en GH issue, pas exécuté).
+- Commentaires sur issues/PRs (avec attribution explicite `🤖 [persona]`).
+- Mise à jour de status interne (label issue, milestone tracking).
+- Génération de rapports automatisés (velocity, token budget, ADR digest, WBS, CSI).
+
+Tout Tier 2 est logé quotidiennement dans `docs/agent-activity/YYYY-MM-DD-<persona>.md` par `documentation-writer`. Le superviseur humain peut auditer rétroactivement sans suivre en temps réel chaque action.
+
+**Règle d'or** : si un agent hésite entre Tier 1 et Tier 2, il choisit **Tier 1** (demande humain). Refuser plutôt que mal classer.
 
 ---
 
