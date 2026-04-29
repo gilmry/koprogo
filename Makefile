@@ -523,3 +523,57 @@ info: ## ℹ️  Infos projet
 	@echo "  - Sphinx:   make docs-serve"
 	@echo ""
 	@echo "🚀 Quick start: make setup && make dev"
+
+##
+## 🛡️ Guardrails (issues #425 / #426 / #427 / #428)
+##
+
+secret-scan: ## 🔐 Scan secrets (gitleaks) sur diff staged + working tree
+	@command -v gitleaks >/dev/null 2>&1 || { echo "$(RED)Install gitleaks: https://github.com/gitleaks/gitleaks$(NC)"; exit 1; }
+	@echo "$(GREEN)🔐 gitleaks staged...$(NC)"
+	@gitleaks protect --no-banner --redact --staged --config .gitleaks.toml || (echo "$(RED)❌ Secrets in staged changes$(NC)" && exit 1)
+	@echo "$(GREEN)🔐 gitleaks working tree...$(NC)"
+	@gitleaks protect --no-banner --redact --config .gitleaks.toml || (echo "$(RED)❌ Secrets in working tree$(NC)" && exit 1)
+	@echo "$(GREEN)✓ No secrets detected$(NC)"
+
+secret-scan-history: ## 🔐 Scan secrets sur tout l'historique git (lent)
+	@command -v gitleaks >/dev/null 2>&1 || { echo "$(RED)Install gitleaks first$(NC)"; exit 1; }
+	@gitleaks detect --no-banner --redact --config .gitleaks.toml --report-path gitleaks-report.json || (echo "$(RED)❌ Secrets in history (see gitleaks-report.json)$(NC)" && exit 1)
+
+iac-lint: ## 🏗️  Lint IaC (terraform fmt, ansible-lint, helm lint, tfsec, kube-linter)
+	@echo "$(GREEN)🏗️  terraform fmt check...$(NC)"
+	@command -v terraform >/dev/null 2>&1 && find infrastructure -name "*.tf" -exec dirname {} \; | sort -u | while read d; do terraform -chdir="$$d" fmt -check -recursive 2>/dev/null || true; done || echo "$(YELLOW)terraform missing$(NC)"
+	@echo "$(GREEN)🏗️  ansible-lint...$(NC)"
+	@command -v ansible-lint >/dev/null 2>&1 && ansible-lint infrastructure/_shared/ansible/ || echo "$(YELLOW)ansible-lint missing$(NC)"
+	@echo "$(GREEN)🏗️  helm lint...$(NC)"
+	@command -v helm >/dev/null 2>&1 && for c in infrastructure/_shared/helm/*/; do helm lint "$$c" 2>/dev/null || true; done || echo "$(YELLOW)helm missing$(NC)"
+	@echo "$(GREEN)🏗️  tfsec (security scan terraform)...$(NC)"
+	@command -v tfsec >/dev/null 2>&1 && tfsec infrastructure/ --no-color --format=lovely || echo "$(YELLOW)tfsec missing — recommended: brew/curl install tfsec$(NC)"
+	@echo "$(GREEN)🏗️  kube-linter (security scan k8s manifests)...$(NC)"
+	@command -v kube-linter >/dev/null 2>&1 && kube-linter lint infrastructure/_shared/kustomize/ infrastructure/_shared/helm/ 2>/dev/null || echo "$(YELLOW)kube-linter missing$(NC)"
+
+claude-check: ## 🤖 Valider la config guardrails Claude Code (settings.json + hooks + gitleaks)
+	@echo "$(GREEN)🤖 settings.json valid JSON?$(NC)"
+	@command -v jq >/dev/null 2>&1 && jq empty .claude/settings.json && echo "$(GREEN)✓ valid$(NC)" || echo "$(RED)✗ invalid$(NC)"
+	@echo "$(GREEN)🤖 hooks count$(NC)"
+	@command -v jq >/dev/null 2>&1 && jq -r '.hooks | keys[] as $$k | "  - \($$k): \(.[$$k] | length) matcher(s)"' .claude/settings.json
+	@echo "$(GREEN)🤖 hook scripts present and executable?$(NC)"
+	@for h in .claude/hooks/*.sh; do test -x "$$h" && echo "  ✓ $$h" || echo "  $(RED)✗ $$h not executable$(NC)"; done
+	@echo "$(GREEN)🤖 .gitleaks.toml present?$(NC)"
+	@test -f .gitleaks.toml && echo "  ✓ .gitleaks.toml" || echo "  $(RED)✗ missing$(NC)"
+	@echo "$(GREEN)🤖 .claude/rules/CRITICAL.md present?$(NC)"
+	@test -f .claude/rules/CRITICAL.md && echo "  ✓ CRITICAL.md ($$(wc -l < .claude/rules/CRITICAL.md) lines)" || echo "  $(RED)✗ missing$(NC)"
+	@echo "$(GREEN)🤖 Maury entry doc present?$(NC)"
+	@test -f Maury/README.md && echo "  ✓ Maury/README.md" || echo "  $(YELLOW)✗ missing — créer pour devenir agent canonical entry$(NC)"
+
+token-budget: ## 📊 Mesure budget tokens des artefacts agents (cible CLAUDE.md ≤5k)
+	@echo "$(GREEN)📊 Token budget snapshot$(NC)"
+	@for f in CLAUDE.md README.md Maury/Méthode\ Maury.md Maury/CHANGELOG.md Maury/README.md .claude/rules/CRITICAL.md .claude/AGENT_GUARDRAILS.md; do \
+		if [ -f "$$f" ]; then \
+			lines=$$(wc -l < "$$f"); chars=$$(wc -c < "$$f"); \
+			printf "  %-45s %5d lines  %7d chars  ~%5d tokens\n" "$$f" "$$lines" "$$chars" "$$((chars / 4))"; \
+		fi; \
+	done
+
+ci-guardrails: claude-check secret-scan ## 🚦 CI guardrails seul (claude-check + secret-scan)
+	@echo "$(GREEN)✅ Guardrails CI passed$(NC)"

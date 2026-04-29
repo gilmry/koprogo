@@ -1,0 +1,71 @@
+# Gitleaks config for KoproGo
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+
+# Extend the default rule set
+[extend]
+useDefault = true
+
+# Project-specific allowlist (justified false positives)
+[[allowlists]]
+description = "Test seed personas — Belgian copropriete demo data, never real secrets"
+paths = [
+  '''backend/src/infrastructure/database/seed\.rs''',
+  '''backend/tests/.*\.rs''',
+  '''backend/tests/features/.*\.feature''',
+  '''frontend/tests/.*\.(ts|spec\.ts)''',
+  '''docs/HUMAN_REVIEW_(PLAN|REPORT)_.*\.md''',
+  '''Maury/.*\.md''',
+]
+regexes = [
+  '''(alice|bob|charlie|diane|emmanuel|philippe|marcel|nadia|marguerite|jeanne|francois|gisele|admin)123''',
+  '''koprogo123''',
+  '''postgres123''',
+  '''test-secret-key-not-for-production''',
+  '''load-test-secret-key-not-for-production''',
+  '''changeme-to-32-chars-minimum''',
+]
+
+[[allowlists]]
+description = "Documentation example placeholders (well-known canonical values)"
+paths = [
+  '''.*\.example$''',
+  '''.*\.template\..*''',
+  '''.*\.sample\..*''',
+  '''.*/\.env\.example$''',
+  '''docs/INTEGRATION_GUIDES\.md''',
+]
+regexes = [
+  # AWS docs canonical example (literally documented as fake)
+  '''AKIAIOSFODNN7EXAMPLE''',
+  '''wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY''',
+  '''<your[_-].*>''',
+  '''<replace.*>''',
+  '''xxxxxxxx''',
+  '''placeholder''',
+]
+
+[[allowlists]]
+description = "Drafts and Claude internal directories (audit reports, issue bodies, agent recipes)"
+paths = [
+  '''\.claude/_drafts/.*''',
+  '''\.claude/worktrees/.*''',
+  '''\.claude/rules/.*''',
+  '''\.claude/agents/.*''',
+  '''\.claude/hooks/.*''',
+  '''docs/cowork/Prompt.*''',
+  '''docs/cowork/.*\.md''',
+]
+
+# Custom rules for project-specific patterns
+[[rules]]
+id = "koprogo-jwt-weak"
+description = "Weak JWT secret (must be 32+ chars random in prod)"
+regex = '''(?i)jwt[_-]?secret\s*[:=]\s*["'](changeme|secret|test)[^"']{0,16}["']'''
+tags = ["jwt", "weak-secret"]
+
+[[rules]]
+id = "koprogo-helm-default-password"
+description = "Default password koprogo123 in helm values"
+regex = '''koprogo123'''
+path = '''infrastructure/.*values.*\.ya?ml'''
+tags = ["helm", "default-password"]
