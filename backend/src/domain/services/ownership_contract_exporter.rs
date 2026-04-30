@@ -375,7 +375,7 @@ mod tests {
             unit_type: crate::domain::entities::UnitType::Apartment,
             floor: Some(1),
             surface_area: 75.5,
-            quota: 150.0,
+            quota: rust_decimal_macros::dec!(150),
             owner_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -401,7 +401,7 @@ mod tests {
             &building,
             &unit,
             &owner,
-            0.15,                                     // 15% ownership
+            rust_decimal_macros::dec!(0.15),          // 15% ownership
             Utc::now() - chrono::Duration::days(365), // Started 1 year ago
         );
 

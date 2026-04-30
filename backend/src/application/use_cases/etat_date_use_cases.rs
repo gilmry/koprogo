@@ -355,9 +355,9 @@ mod tests {
             async fn update(&self, unit_owner: &UnitOwner) -> Result<UnitOwner, String>;
             async fn delete(&self, id: Uuid) -> Result<(), String>;
             async fn has_active_owners(&self, unit_id: Uuid) -> Result<bool, String>;
-            async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<f64, String>;
+            async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<rust_decimal::Decimal, String>;
             async fn find_active_by_unit_and_owner(&self, unit_id: Uuid, owner_id: Uuid) -> Result<Option<UnitOwner>, String>;
-            async fn find_active_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, f64)>, String>;
+            async fn find_active_by_building(&self, building_id: Uuid) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String>;
         }
     }
 

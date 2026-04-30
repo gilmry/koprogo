@@ -766,7 +766,7 @@ async fn test_total_ownership_percentage() {
         .get_total_ownership_percentage(unit.id)
         .await
         .unwrap();
-    assert_eq!(total, 0.0);
+    assert_eq!(total, Decimal::ZERO);
 
     // Add 60%
     use_cases
@@ -778,7 +778,7 @@ async fn test_total_ownership_percentage() {
         .get_total_ownership_percentage(unit.id)
         .await
         .unwrap();
-    assert_eq!(total, 0.6);
+    assert_eq!(total, dec!(0.6));
 }
 
 #[tokio::test]

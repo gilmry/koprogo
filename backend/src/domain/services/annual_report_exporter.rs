@@ -386,11 +386,11 @@ mod tests {
                 building_id: building.id,
                 organization_id: building.organization_id,
                 description: "Entretien ascenseur".to_string(),
-                amount: 1500.0,
-                amount_excl_vat: Some(1239.67),
-                vat_rate: Some(21.0),
-                vat_amount: Some(260.33),
-                amount_incl_vat: Some(1500.0),
+                amount: dec!(1500),
+                amount_excl_vat: Some(dec!(1239.67)),
+                vat_rate: Some(dec!(21)),
+                vat_amount: Some(dec!(260.33)),
+                amount_incl_vat: Some(dec!(1500)),
                 expense_date: Utc::now(),
                 invoice_date: None,
                 due_date: None,
@@ -414,11 +414,11 @@ mod tests {
                 building_id: building.id,
                 organization_id: building.organization_id,
                 description: "Électricité parties communes".to_string(),
-                amount: 800.0,
-                amount_excl_vat: Some(661.16),
-                vat_rate: Some(21.0),
-                vat_amount: Some(138.84),
-                amount_incl_vat: Some(800.0),
+                amount: dec!(800),
+                amount_excl_vat: Some(dec!(661.16)),
+                vat_rate: Some(dec!(21)),
+                vat_amount: Some(dec!(138.84)),
+                amount_incl_vat: Some(dec!(800)),
                 expense_date: Utc::now(),
                 invoice_date: None,
                 due_date: None,
@@ -442,13 +442,13 @@ mod tests {
         let budget_items = vec![
             BudgetItem {
                 category: ExpenseCategory::Maintenance,
-                budgeted: 2000.0,
-                actual: 1500.0,
+                budgeted: dec!(2000),
+                actual: dec!(1500),
             },
             BudgetItem {
                 category: ExpenseCategory::Utilities,
-                budgeted: 1000.0,
-                actual: 800.0,
+                budgeted: dec!(1000),
+                actual: dec!(800),
             },
         ];
 
@@ -457,8 +457,8 @@ mod tests {
             2025,
             &expenses,
             &budget_items,
-            3000.0, // Total income
-            5000.0, // Reserve fund
+            dec!(3000), // Total income
+            dec!(5000), // Reserve fund
         );
 
         assert!(result.is_ok());

@@ -715,7 +715,7 @@ mod tests {
         };
         let expense_id = expense.id;
 
-        let ownerships = vec![(unit_id, owner_id, 1.0)]; // 100%
+        let ownerships = vec![(unit_id, owner_id, Decimal::ONE)]; // 100%
 
         let dist_repo = MockChargeDistributionRepository::new();
         let expense_repo = MockExpenseRepository::with_expense(expense);

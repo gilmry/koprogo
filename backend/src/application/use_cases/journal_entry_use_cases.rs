@@ -77,7 +77,7 @@ impl JournalEntryUseCases {
 
         if (total_debit - total_credit).abs() > dec!(0.01) {
             return Err(format!(
-                "Journal entry is unbalanced: debits={} credits={}. Debits must equal credits.",
+                "Journal entry is unbalanced: debits={:.2} credits={:.2}. Debits must equal credits.",
                 total_debit, total_credit
             ));
         }
@@ -291,7 +291,7 @@ mod tests {
         async fn calculate_account_balances(
             &self,
             _organization_id: Uuid,
-        ) -> Result<HashMap<String, f64>, String> {
+        ) -> Result<HashMap<String, Decimal>, String> {
             Ok(HashMap::new())
         }
 
@@ -300,7 +300,7 @@ mod tests {
             _organization_id: Uuid,
             _start_date: DateTime<Utc>,
             _end_date: DateTime<Utc>,
-        ) -> Result<HashMap<String, f64>, String> {
+        ) -> Result<HashMap<String, Decimal>, String> {
             Ok(HashMap::new())
         }
 
@@ -324,7 +324,7 @@ mod tests {
             &self,
             _organization_id: Uuid,
             _building_id: Uuid,
-        ) -> Result<HashMap<String, f64>, String> {
+        ) -> Result<HashMap<String, Decimal>, String> {
             Ok(HashMap::new())
         }
 
@@ -334,7 +334,7 @@ mod tests {
             _building_id: Uuid,
             _start_date: DateTime<Utc>,
             _end_date: DateTime<Utc>,
-        ) -> Result<HashMap<String, f64>, String> {
+        ) -> Result<HashMap<String, Decimal>, String> {
             Ok(HashMap::new())
         }
 
@@ -405,18 +405,18 @@ mod tests {
     }
 
     /// Balanced lines: 1000 debit on 6100, 1000 credit on 4400
-    fn balanced_lines() -> Vec<(String, f64, f64, String)> {
+    fn balanced_lines() -> Vec<(String, Decimal, Decimal, String)> {
         vec![
             (
                 "6100".to_string(),
-                1000.0,
-                0.0,
+                dec!(1000),
+                Decimal::ZERO,
                 "Utilities expense".to_string(),
             ),
             (
                 "4400".to_string(),
-                0.0,
-                1000.0,
+                Decimal::ZERO,
+                dec!(1000),
                 "Supplier payable".to_string(),
             ),
         ]
@@ -460,8 +460,18 @@ mod tests {
         let org_id = Uuid::new_v4();
 
         let unbalanced_lines = vec![
-            ("6100".to_string(), 1000.0, 0.0, "Debit".to_string()),
-            ("4400".to_string(), 0.0, 800.0, "Credit".to_string()),
+            (
+                "6100".to_string(),
+                dec!(1000),
+                Decimal::ZERO,
+                "Debit".to_string(),
+            ),
+            (
+                "4400".to_string(),
+                Decimal::ZERO,
+                dec!(800),
+                "Credit".to_string(),
+            ),
         ];
 
         let result = uc
@@ -516,7 +526,12 @@ mod tests {
         let uc = make_use_cases(repo);
         let org_id = Uuid::new_v4();
 
-        let single_line = vec![("6100".to_string(), 1000.0, 0.0, "Only debit".to_string())];
+        let single_line = vec![(
+            "6100".to_string(),
+            dec!(1000),
+            Decimal::ZERO,
+            "Only debit".to_string(),
+        )];
 
         let result = uc
             .create_manual_entry(

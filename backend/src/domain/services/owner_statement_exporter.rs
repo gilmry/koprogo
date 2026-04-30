@@ -372,7 +372,7 @@ mod tests {
             unit_type: crate::domain::entities::UnitType::Apartment,
             floor: Some(1),
             surface_area: 75.5,
-            quota: 150.0,
+            quota: rust_decimal_macros::dec!(150),
             owner_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -380,7 +380,7 @@ mod tests {
 
         let units = vec![UnitWithOwnership {
             unit,
-            ownership_percentage: 0.15, // 15%
+            ownership_percentage: rust_decimal_macros::dec!(0.15), // 15%
         }];
 
         let expenses = vec![Expense {
@@ -388,11 +388,11 @@ mod tests {
             building_id: building.id,
             organization_id: building.organization_id,
             description: "Entretien ascenseur".to_string(),
-            amount: 150.0,
-            amount_excl_vat: Some(123.97),
-            vat_rate: Some(21.0),
-            vat_amount: Some(26.03),
-            amount_incl_vat: Some(150.0),
+            amount: rust_decimal_macros::dec!(150),
+            amount_excl_vat: Some(rust_decimal_macros::dec!(123.97)),
+            vat_rate: Some(rust_decimal_macros::dec!(21)),
+            vat_amount: Some(rust_decimal_macros::dec!(26.03)),
+            amount_incl_vat: Some(rust_decimal_macros::dec!(150)),
             expense_date: Utc::now(),
             invoice_date: None,
             due_date: None,
