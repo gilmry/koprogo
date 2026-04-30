@@ -123,7 +123,10 @@ if kubectl get ns argocd >/dev/null 2>&1; then
 else
     log "Installing ArgoCD..."
     kubectl create namespace argocd
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    # --server-side required: ArgoCD CRDs (notably applicationsets.argoproj.io) exceed
+    # the 262144-byte limit of the client-side last-applied-configuration annotation.
+    kubectl apply -n argocd --server-side --force-conflicts \
+        -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
     kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
 fi
 
