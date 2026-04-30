@@ -3,6 +3,8 @@
 // Phase 2: payments + payment_methods step definitions
 
 use chrono::{DateTime, Datelike, Duration as ChronoDuration, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
     AccountantDashboardStats, ApproveInvoiceDto, CreateBudgetRequest, CreateInvoiceDraftDto,
@@ -93,7 +95,7 @@ pub struct FinancialWorld {
     last_journal_entry_id: Option<Uuid>,
     journal_entry_lines: Vec<JournalEntryLine>,
     journal_entry_list: Vec<JournalEntry>,
-    pending_journal_lines: Vec<(String, f64, f64, String)>,
+    pending_journal_lines: Vec<(String, rust_decimal::Decimal, rust_decimal::Decimal, String)>,
 
     // Call for funds tracking
     last_call_for_funds_id: Option<Uuid>,
@@ -422,7 +424,7 @@ impl FinancialWorld {
         id
     }
 
-    async fn create_expense_sql(&self, amount: f64) -> Uuid {
+    async fn create_expense_sql(&self, amount: Decimal) -> Uuid {
         let pool = self.pool.as_ref().unwrap();
         let building_id = self.building_id.unwrap();
         let org_id = self.org_id.unwrap();
@@ -522,7 +524,7 @@ async fn given_owner_exists(world: &mut FinancialWorld, name: String, _building:
 }
 
 #[given(regex = r#"^an expense of (\d+) EUR exists for building "([^"]*)"$"#)]
-async fn given_expense_exists(world: &mut FinancialWorld, amount: f64, _building: String) {
+async fn given_expense_exists(world: &mut FinancialWorld, amount: Decimal, _building: String) {
     let expense_id = world.create_expense_sql(amount).await;
     world.expense_id = Some(expense_id);
 }
@@ -1598,13 +1600,13 @@ async fn when_create_journal_entry(world: &mut FinancialWorld, step: &Step) {
 #[when("I add the following lines:")]
 async fn when_add_journal_lines(world: &mut FinancialWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
-    let mut lines: Vec<(String, f64, f64, String)> = Vec::new();
+    let mut lines: Vec<(String, rust_decimal::Decimal, rust_decimal::Decimal, String)> = Vec::new();
 
     // Skip header row (first row has column names)
     for row in table.rows.iter().skip(1) {
         let account_code = row[0].clone();
-        let debit: f64 = row[1].parse().unwrap_or(0.0);
-        let credit: f64 = row[2].parse().unwrap_or(0.0);
+        let debit: Decimal = row[1].parse().unwrap_or(Decimal::ZERO);
+        let credit: Decimal = row[2].parse().unwrap_or(Decimal::ZERO);
         let desc = row[3].clone();
         lines.push((account_code, debit, credit, desc));
     }
@@ -1711,17 +1713,18 @@ async fn given_n_journal_entries(world: &mut FinancialWorld, count: usize) {
     seed_journal_accounts(pool, org_id).await;
 
     for i in 0..count {
+        let amount = dec!(100) * Decimal::from(i + 1);
         let lines = vec![
             (
                 "604000".to_string(),
-                100.0 * (i + 1) as f64,
-                0.0,
+                amount,
+                Decimal::ZERO,
                 format!("Debit line {}", i),
             ),
             (
                 "440000".to_string(),
-                0.0,
-                100.0 * (i + 1) as f64,
+                Decimal::ZERO,
+                amount,
                 format!("Credit line {}", i),
             ),
         ];
@@ -1782,8 +1785,8 @@ async fn given_journal_entries_ach_ods(world: &mut FinancialWorld) {
 
     for jtype in &["ACH", "ODS"] {
         let lines = vec![
-            ("604000".to_string(), 100.0, 0.0, "Debit".to_string()),
-            ("440000".to_string(), 0.0, 100.0, "Credit".to_string()),
+            ("604000".to_string(), dec!(100.0), dec!(0.0), "Debit".to_string()),
+            ("440000".to_string(), dec!(0.0), dec!(100.0), "Credit".to_string()),
         ];
         uc.create_manual_entry(
             org_id,
@@ -1829,17 +1832,22 @@ async fn given_journal_entry_with_3_lines(world: &mut FinancialWorld) {
     seed_journal_accounts(pool, org_id).await;
 
     let lines = vec![
-        ("612100".to_string(), 1000.0, 0.0, "Electricite".to_string()),
+        (
+            "612100".to_string(),
+            dec!(1000),
+            Decimal::ZERO,
+            "Electricite".to_string(),
+        ),
         (
             "411000".to_string(),
-            210.0,
-            0.0,
+            dec!(210),
+            Decimal::ZERO,
             "TVA a recuperer".to_string(),
         ),
         (
             "440000".to_string(),
-            0.0,
-            1210.0,
+            Decimal::ZERO,
+            dec!(1210),
             "Fournisseurs".to_string(),
         ),
     ];
@@ -1891,7 +1899,7 @@ async fn then_each_line_has_fields(world: &mut FinancialWorld) {
             "account_code should not be empty"
         );
         assert!(
-            line.debit > 0.0 || line.credit > 0.0,
+            line.debit > Decimal::ZERO || line.credit > Decimal::ZERO,
             "Either debit or credit should be > 0"
         );
     }
@@ -1908,8 +1916,8 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
 
     // Create entry for main building
     let lines = vec![
-        ("604000".to_string(), 200.0, 0.0, "Debit".to_string()),
-        ("440000".to_string(), 0.0, 200.0, "Credit".to_string()),
+        ("604000".to_string(), dec!(200.0), dec!(0.0), "Debit".to_string()),
+        ("440000".to_string(), dec!(0.0), dec!(200.0), "Credit".to_string()),
     ];
     uc.create_manual_entry(
         org_id,
@@ -1942,8 +1950,8 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
     building_repo.create(&b2).await.expect("create building 2");
 
     let lines2 = vec![
-        ("604000".to_string(), 300.0, 0.0, "Debit".to_string()),
-        ("440000".to_string(), 0.0, 300.0, "Credit".to_string()),
+        ("604000".to_string(), dec!(300.0), dec!(0.0), "Debit".to_string()),
+        ("440000".to_string(), dec!(0.0), dec!(300.0), "Credit".to_string()),
     ];
     uc.create_manual_entry(
         org_id,
@@ -1993,8 +2001,8 @@ async fn given_journal_entry_exists(world: &mut FinancialWorld) {
     let building_id = world.building_id;
 
     let lines = vec![
-        ("604000".to_string(), 50.0, 0.0, "Debit".to_string()),
-        ("440000".to_string(), 0.0, 50.0, "Credit".to_string()),
+        ("604000".to_string(), dec!(50.0), dec!(0.0), "Debit".to_string()),
+        ("440000".to_string(), dec!(0.0), dec!(50.0), "Credit".to_string()),
     ];
     let entry = uc
         .create_manual_entry(
@@ -2117,7 +2125,7 @@ async fn given_n_owners_with_percentages(world: &mut FinancialWorld, count: usiz
 async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
     let table = step.table.as_ref().expect("table expected");
     let mut title = "BDD Call".to_string();
-    let mut total_amount = 0.0;
+    let mut total_amount = Decimal::ZERO;
     let mut contribution_type = ContributionType::Regular;
     let mut due_date = Utc::now() + ChronoDuration::days(30);
     let mut account_code: Option<String> = None;
@@ -2127,7 +2135,7 @@ async fn when_create_call_for_funds(world: &mut FinancialWorld, step: &Step) {
         let val = row[1].as_str();
         match key {
             "title" => title = val.to_string(),
-            "total_amount" => total_amount = val.parse().unwrap_or(0.0),
+            "total_amount" => total_amount = val.parse().unwrap_or(Decimal::ZERO),
             "contribution_type" => contribution_type = parse_contribution_type(val),
             "due_date" => {
                 due_date = val.parse::<DateTime<Utc>>().unwrap_or_else(|_| {
@@ -2191,7 +2199,7 @@ async fn then_call_created_with_status(world: &mut FinancialWorld, expected: Str
 }
 
 #[given(regex = r#"^a draft call for funds of (\d+) EUR exists$"#)]
-async fn given_draft_call_for_funds(world: &mut FinancialWorld, amount: f64) {
+async fn given_draft_call_for_funds(world: &mut FinancialWorld, amount: Decimal) {
     let uc = world.call_for_funds_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
@@ -2279,7 +2287,7 @@ async fn given_n_calls_for_funds(world: &mut FinancialWorld, count: usize) {
             building_id,
             format!("Call {}", i + 1),
             format!("Description {}", i + 1),
-            1000.0 * (i + 1) as f64,
+            dec!(1000) * Decimal::from(i + 1),
             ContributionType::Regular,
             Utc::now(),
             Utc::now() + ChronoDuration::days(30),
@@ -2320,7 +2328,7 @@ async fn given_sent_overdue_call(world: &mut FinancialWorld) {
             building_id,
             "Overdue Call".to_string(),
             "Past due".to_string(),
-            500.0,
+            dec!(500),
             ContributionType::Regular,
             Utc::now() - ChronoDuration::days(60),
             Utc::now() - ChronoDuration::days(30),
@@ -2362,7 +2370,7 @@ async fn given_draft_call_exists(world: &mut FinancialWorld) {
             building_id,
             "Draft Call".to_string(),
             "To be acted on".to_string(),
-            1000.0,
+            dec!(1000),
             ContributionType::Regular,
             Utc::now(),
             Utc::now() + ChronoDuration::days(30),
@@ -2427,7 +2435,7 @@ async fn given_sent_call_exists(world: &mut FinancialWorld) {
             building_id,
             "Sent Call".to_string(),
             "Already sent".to_string(),
-            2000.0,
+            dec!(2000),
             ContributionType::Regular,
             Utc::now(),
             Utc::now() + ChronoDuration::days(30),
@@ -2552,7 +2560,7 @@ async fn given_2_owners_with_pcts(world: &mut FinancialWorld, pct1: f64, pct2: f
 }
 
 #[given(regex = r#"^a call for funds of (\d+) EUR is sent$"#)]
-async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: f64) {
+async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: Decimal) {
     let uc = world.call_for_funds_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
@@ -2577,7 +2585,7 @@ async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: f64) {
 }
 
 #[then(regex = r#"^owner with (\d+)% should have contribution of (\d+) EUR$"#)]
-async fn then_owner_pct_contribution(world: &mut FinancialWorld, _pct: f64, expected_amount: f64) {
+async fn then_owner_pct_contribution(world: &mut FinancialWorld, _pct: Decimal, expected_amount: Decimal) {
     let uc = world.owner_contribution_use_cases.as_ref().unwrap().clone();
     // Find the owner with matching percentage
     for (_name, owner_id) in &world.owner_by_name {
@@ -2651,7 +2659,7 @@ async fn given_sent_call_with_contributions(world: &mut FinancialWorld) {
             building_id,
             "Sent Call With Contribs".to_string(),
             "For payment test".to_string(),
-            1000.0,
+            dec!(1000),
             ContributionType::Regular,
             Utc::now(),
             Utc::now() + ChronoDuration::days(30),
@@ -2839,7 +2847,7 @@ async fn given_contribution_exists(world: &mut FinancialWorld, name: String) {
             owner_id,
             world.unit_ids.first().copied(),
             "Existing contribution".to_string(),
-            250.0,
+            dec!(250),
             ContributionType::Regular,
             Utc::now(),
             Some("701000".to_string()),
@@ -2952,7 +2960,7 @@ async fn given_mixed_contributions(
             owner_id,
             world.unit_ids.first().copied(),
             format!("Unpaid {}", i + 1),
-            100.0,
+            dec!(100),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -2969,7 +2977,7 @@ async fn given_mixed_contributions(
                 owner_id,
                 world.unit_ids.first().copied(),
                 format!("Paid {}", i + 1),
-                200.0,
+                dec!(200),
                 ContributionType::Regular,
                 Utc::now(),
                 None,
@@ -3019,7 +3027,7 @@ async fn then_all_have_status(world: &mut FinancialWorld, expected: String) {
 }
 
 #[given(regex = r#"^an unpaid contribution of (\d+) EUR exists$"#)]
-async fn given_unpaid_contribution(world: &mut FinancialWorld, amount: f64) {
+async fn given_unpaid_contribution(world: &mut FinancialWorld, amount: Decimal) {
     let uc = world.owner_contribution_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let owner_id = world
@@ -3095,7 +3103,7 @@ async fn given_paid_contribution(world: &mut FinancialWorld) {
             owner_id,
             world.unit_ids.first().copied(),
             "Already paid".to_string(),
-            300.0,
+            dec!(300),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -3175,7 +3183,7 @@ async fn given_contributions_multiple_owners(world: &mut FinancialWorld) {
             *owner_id,
             world.unit_ids.first().copied(),
             "Multi owner contrib".to_string(),
-            150.0,
+            dec!(150),
             ContributionType::Regular,
             Utc::now(),
             None,
@@ -3221,7 +3229,7 @@ async fn given_contribution_with_account_code(world: &mut FinancialWorld, code: 
             owner_id,
             world.unit_ids.first().copied(),
             "Contrib with account code".to_string(),
-            500.0,
+            dec!(500),
             ContributionType::Regular,
             Utc::now(),
             Some(code),
@@ -3309,7 +3317,7 @@ async fn given_unit_owned_by(world: &mut FinancialWorld, unit_num: usize, name: 
 }
 
 #[given(regex = r#"^an expense of (\d+) EUR exists for the building$"#)]
-async fn given_expense_for_building(world: &mut FinancialWorld, amount: f64) {
+async fn given_expense_for_building(world: &mut FinancialWorld, amount: Decimal) {
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
@@ -3568,7 +3576,7 @@ async fn then_total_due_amount(world: &mut FinancialWorld, expected: f64, _pct: 
 }
 
 #[given(regex = r#"^an expense of (\d+) EUR exists$"#)]
-async fn given_expense_amount(world: &mut FinancialWorld, amount: f64) {
+async fn given_expense_amount(world: &mut FinancialWorld, amount: Decimal) {
     given_expense_for_building(world, amount).await;
 }
 
@@ -3808,7 +3816,7 @@ async fn given_owner_contributions_exist(world: &mut FinancialWorld) {
         owner_id,
         None,
         "Dashboard contrib".to_string(),
-        500.0,
+        dec!(500),
         ContributionType::Regular,
         Utc::now(),
         None,
@@ -4694,7 +4702,7 @@ async fn then_request_forbidden(world: &mut FinancialWorld) {
 
 // Charge distribution steps (simplified for invoices feature)
 #[given(regex = r#"^a pending invoice with total ([0-9.]+) EUR$"#)]
-async fn given_pending_invoice_amount(world: &mut FinancialWorld, _amount: f64) {
+async fn given_pending_invoice_amount(world: &mut FinancialWorld, _amount: Decimal) {
     given_pending_invoice(world).await;
 }
 
@@ -4732,7 +4740,7 @@ async fn then_n_distributions(world: &mut FinancialWorld, expected: usize) {
 
 // Remaining invoice scenarios use simplified assertions
 #[given(regex = r#"^the accountant creates an invoice draft with (\d+) EUR HT and (\d+)% VAT$"#)]
-async fn given_create_invoice_ht_vat(world: &mut FinancialWorld, amount: f64, vat: f64) {
+async fn given_create_invoice_ht_vat(world: &mut FinancialWorld, amount: Decimal, vat: Decimal) {
     if world.pool.is_none() {
         world.setup_database().await;
     }
@@ -4929,7 +4937,7 @@ async fn given_owner_recovery(world: &mut FinancialWorld, name: String, email: S
 }
 
 #[given(regex = r#"^an overdue expense of (\d+) EUR due (\d+) days ago$"#)]
-async fn given_overdue_expense(world: &mut FinancialWorld, amount: f64, days_ago: i64) {
+async fn given_overdue_expense(world: &mut FinancialWorld, amount: Decimal, days_ago: i64) {
     let pool = world.pool.as_ref().unwrap();
     let building_id = world.building_id.unwrap();
     let org_id = world.org_id.unwrap();
@@ -5240,10 +5248,10 @@ async fn given_active_reminders(world: &mut FinancialWorld, _count: usize) {
 }
 
 #[given(regex = r#"^total owed amount is (\d+) EUR$"#)]
-async fn given_total_owed(_world: &mut FinancialWorld, _amount: f64) {}
+async fn given_total_owed(_world: &mut FinancialWorld, _amount: Decimal) {}
 
 #[given(regex = r#"^total penalties amount is (\d+) EUR$"#)]
-async fn given_total_penalties(_world: &mut FinancialWorld, _amount: f64) {}
+async fn given_total_penalties(_world: &mut FinancialWorld, _amount: Decimal) {}
 
 #[when("I request recovery statistics")]
 async fn when_request_stats(world: &mut FinancialWorld) {
@@ -5251,10 +5259,10 @@ async fn when_request_stats(world: &mut FinancialWorld) {
 }
 
 #[then(regex = r#"^the stats should show (\d+) EUR total owed$"#)]
-async fn then_stats_owed(_world: &mut FinancialWorld, _amount: f64) {}
+async fn then_stats_owed(_world: &mut FinancialWorld, _amount: Decimal) {}
 
 #[then(regex = r#"^the stats should show (\d+) EUR total penalties$"#)]
-async fn then_stats_penalties(_world: &mut FinancialWorld, _amount: f64) {}
+async fn then_stats_penalties(_world: &mut FinancialWorld, _amount: Decimal) {}
 
 #[then("the stats should show reminder count by level")]
 async fn then_stats_by_level(_world: &mut FinancialWorld) {}
@@ -6470,11 +6478,16 @@ async fn given_account_with_journal_lines(world: &mut FinancialWorld) {
     let journal_uc = world.journal_entry_use_cases.as_ref().unwrap().clone();
     let building_id = world.building_id;
     let lines = vec![
-        ("604000".to_string(), 100.0, 0.0, "Debit linked".to_string()),
+        (
+            "604000".to_string(),
+            dec!(100),
+            Decimal::ZERO,
+            "Debit linked".to_string(),
+        ),
         (
             "440000".to_string(),
-            0.0,
-            100.0,
+            Decimal::ZERO,
+            dec!(100),
             "Credit linked".to_string(),
         ),
     ];
@@ -6746,7 +6759,7 @@ async fn then_amount_incl_vat(world: &mut FinancialWorld, expected: f64) {
 }
 
 #[when(regex = r#"^I try to create an expense with amount (-?\d+)$"#)]
-async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: f64) {
+async fn when_create_expense_bad_amount(world: &mut FinancialWorld, amount: Decimal) {
     let uc = world.expense_use_cases.as_ref().unwrap().clone();
     let org_id = world.org_id.unwrap();
     let building_id = world.building_id.unwrap();
@@ -6945,7 +6958,7 @@ async fn given_approved_expense(world: &mut FinancialWorld) {
 }
 
 #[when(regex = r#"^I try to update the expense amount to (\d+(?:\.\d+)?)$"#)]
-async fn when_try_update_expense_amount(world: &mut FinancialWorld, _new_amount: f64) {
+async fn when_try_update_expense_amount(world: &mut FinancialWorld, _new_amount: Decimal) {
     let uc = world.expense_use_cases.as_ref().unwrap().clone();
     let id = world.last_invoice_id.expect("no expense id");
     let dto = UpdateInvoiceDraftDto {

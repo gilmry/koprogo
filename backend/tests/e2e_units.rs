@@ -50,7 +50,7 @@ async fn create_test_unit(
         unit_type: UnitType::Apartment,
         floor: Some(1),
         surface_area: 75.0,
-        quota: 100.0,
+        quota: rust_decimal_macros::dec!(100),
     };
     app_state
         .unit_use_cases

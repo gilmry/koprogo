@@ -153,7 +153,7 @@ async fn create_test_fixtures(
         floor: Some(1),
         surface_area: 75.0,
         unit_type: UnitType::Apartment,
-        quota: 0.4,
+        quota: rust_decimal_macros::dec!(0.4),
     };
 
     let unit1 = app_state
@@ -171,7 +171,7 @@ async fn create_test_fixtures(
         floor: Some(1),
         surface_area: 85.0,
         unit_type: UnitType::Apartment,
-        quota: 0.6,
+        quota: rust_decimal_macros::dec!(0.6),
     };
 
     let unit2 = app_state
@@ -185,13 +185,13 @@ async fn create_test_fixtures(
     // 6. Assign owners to units with voting power (milliemes)
     app_state
         .unit_owner_use_cases
-        .add_owner_to_unit(unit1_id, owner1_id, 0.4, true) // 400 milliemes (40%)
+        .add_owner_to_unit(unit1_id, owner1_id, rust_decimal_macros::dec!(0.4), true) // 400 milliemes (40%)
         .await
         .expect("Failed to add owner 1 to unit 1");
 
     app_state
         .unit_owner_use_cases
-        .add_owner_to_unit(unit2_id, owner2_id, 0.6, true) // 600 milliemes (60%)
+        .add_owner_to_unit(unit2_id, owner2_id, rust_decimal_macros::dec!(0.6), true) // 600 milliemes (60%)
         .await
         .expect("Failed to add owner 2 to unit 2");
 
@@ -221,7 +221,7 @@ async fn create_extra_unit(
         floor: Some(1),
         surface_area: 100.0,
         unit_type: UnitType::Apartment,
-        quota: 0.6,
+        quota: rust_decimal_macros::dec!(0.6),
     };
 
     let unit = app_state
@@ -234,7 +234,7 @@ async fn create_extra_unit(
 
     app_state
         .unit_owner_use_cases
-        .add_owner_to_unit(unit_id, owner_id, 0.6, true)
+        .add_owner_to_unit(unit_id, owner_id, rust_decimal_macros::dec!(0.6), true)
         .await
         .expect("Failed to add owner to extra unit");
 
