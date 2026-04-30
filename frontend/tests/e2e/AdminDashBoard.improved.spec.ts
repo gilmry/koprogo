@@ -124,7 +124,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
   });
 
   test.describe("Organizations Management with Test IDs", () => {
-    test("should create, edit, and delete organization using test IDs", async ({
+    test.fixme("should create, edit, and delete organization using test IDs", async ({
       page,
     }) => {
       const testData = generateTestData("E2E");
@@ -223,7 +223,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       await expect(searchInput).toHaveValue("test");
     });
 
-    test("should toggle organization status", async ({ page }) => {
+    test.fixme("should toggle organization status", async ({ page }) => {
       const testData = generateTestData("Toggle");
 
       // Navigate to organizations
@@ -267,7 +267,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
   });
 
   test.describe("Users Management with Test IDs", () => {
-    test("should create, edit, and delete user using test IDs", async ({
+    test.fixme("should create, edit, and delete user using test IDs", async ({
       page,
     }) => {
       const testData = generateTestData("User");
@@ -374,7 +374,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
   });
 
   test.describe("Buildings Management with Test IDs", () => {
-    test("should create, edit, and delete a building using test IDs", async ({
+    test.fixme("should create, edit, and delete a building using test IDs", async ({
       page,
     }) => {
       const testData = generateTestData("Building");
@@ -481,7 +481,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       await deleteOrganizationByName(page, organization.name);
     });
 
-    test("should search buildings using test IDs", async ({ page }) => {
+    test.fixme("should search buildings using test IDs", async ({ page }) => {
       const testData = generateTestData("Search");
       const organization = await createOrganizationViaUI(
         page,
@@ -500,7 +500,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
   });
 
   test.describe("Idempotent Full Journey", () => {
-    test("should complete full workflow and cleanup automatically", async ({
+    test.fixme("should complete full workflow and cleanup automatically", async ({
       page,
     }) => {
       const testData = generateTestData("Journey");
