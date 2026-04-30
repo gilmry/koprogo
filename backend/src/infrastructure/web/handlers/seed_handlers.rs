@@ -44,12 +44,12 @@ pub async fn seed_demo_data(data: web::Data<AppState>, req: HttpRequest) -> impl
                     "message": message
                 })),
                 Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": e
+                    "error": e.to_string()
                 })),
             }
         }
         Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e
+            "error": e.to_string()
         })),
     }
 }
@@ -91,12 +91,12 @@ pub async fn clear_demo_data(data: web::Data<AppState>, req: HttpRequest) -> imp
                     "message": message
                 })),
                 Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": e
+                    "error": e.to_string()
                 })),
             }
         }
         Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e
+            "error": e.to_string()
         })),
     }
 }
@@ -139,12 +139,12 @@ pub async fn seed_scenario_world(data: web::Data<AppState>, req: HttpRequest) ->
                     "data": result
                 })),
                 Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": e
+                    "error": e.to_string()
                 })),
             }
         }
         Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e
+            "error": e.to_string()
         })),
     }
 }
@@ -186,12 +186,12 @@ pub async fn clear_scenario_world(data: web::Data<AppState>, req: HttpRequest) -
                     "message": message
                 })),
                 Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": e
+                    "error": e.to_string()
                 })),
             }
         }
         Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e
+            "error": e.to_string()
         })),
     }
 }
@@ -237,12 +237,12 @@ pub async fn clear_scenario_world(data: web::Data<AppState>, req: HttpRequest) -
 //                     "message": message
 //                 })),
 //                 Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
-//                     "error": e
+//                     "error": e.to_string()
 //                 })),
 //             }
 //         }
 //         Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
-//             "error": e
+//             "error": e.to_string()
 //         })),
 //     }
 // }
