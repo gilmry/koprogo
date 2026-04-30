@@ -88,6 +88,8 @@ backend/.env
 backend/.env.loadtest
 frontend/.env
 frontend/.env.local
+infrastructure/monosite/local/*/.env
+infrastructure/monosite/vps/*/.env
 
 # Claude Code local state
 .claude/worktrees/
