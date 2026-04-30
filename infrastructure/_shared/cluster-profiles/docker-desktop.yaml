@@ -1,0 +1,37 @@
+# Cluster profile: Docker Desktop K8s (Mac/Windows local sandbox)
+#
+# Use case: supervisor's machine running ArgoCD locally to validate the full
+# GitFlow chain (dev → integration → staging → production) before touching
+# real Terraform/Ansible-provisioned infrastructure.
+#
+# Constraints:
+#   - 8-16 GB RAM dedicated to Docker Desktop
+#   - hostpath storage (data lost on Docker Desktop reset)
+#   - No cert-manager (TLS off)
+#   - All hostnames resolve via /etc/hosts (see infrastructure/_shared/scripts/hosts-local-gitops.txt)
+
+global:
+  storageClassName: hostpath        # Docker Desktop default
+  ingressClassName: nginx           # ingress-nginx installed via gitops-bootstrap.sh
+  domainOverride: ""                # keep per-env domains; /etc/hosts maps them all to 127.0.0.1
+  secretsBackend: raw               # Helm values in cleartext — sandbox only, NEVER in real prod
+  tls:
+    enabled: false
+    certResolver: ""
+
+resources:
+  preset: small                     # tight limits to fit multiple envs on one Docker Desktop
+
+# Storage overrides (consume global.storageClassName, see PR-A template updates)
+postgres:
+  storage: 1Gi                      # smaller for sandbox
+  storageClass: hostpath            # explicit fallback for templates not yet using global
+  config:
+    sharedBuffers: 64MB
+    effectiveCacheSize: 128MB
+    maxConnections: "10"
+    maxWalSize: 256MB
+
+minio:
+  storage: 1Gi
+  storageClass: hostpath

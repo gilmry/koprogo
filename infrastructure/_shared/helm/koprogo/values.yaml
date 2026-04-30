@@ -105,7 +105,24 @@ global:
   tls:
     enabled: false
     certResolver: letsencrypt
+    issuer: ""                       # cert-manager Issuer name (set by cluster profile)
   imagePullSecrets: []
+  # Cluster-profile-injected fields (PR-A — see infrastructure/_shared/cluster-profiles/README.md)
+  # When set, these override component-level equivalents (postgres.storageClass, minio.storageClass).
+  # Empty default = backward compat (templates fall back to component-level values).
+  storageClassName: ""               # hostpath | local-path | csi-cinder-high-speed | gp2 | ...
+  ingressClassName: ""               # nginx | traefik | alb | ...
+  domainOverride: ""                 # if set, replaces .domain / .apiDomain in cluster-profile context
+  secretsBackend: raw                # raw | sealed-secrets | external-secrets-vault
+  vaultRole: ""                      # only used when secretsBackend = external-secrets-vault
+
+# Cluster profile resources preset (advisory — actual resources still set per-component)
+# Used by cluster profiles to communicate intended sizing to operators.
+# small  = sandbox / Docker Desktop (256Mi/500m typical limits)
+# medium = single-VPS k3s self-host (512Mi/750m typical limits)
+# large  = managed K8s production (1Gi+/1+CPU typical limits)
+resources:
+  preset: medium
 
 secrets:
   postgresPassword: koprogo123

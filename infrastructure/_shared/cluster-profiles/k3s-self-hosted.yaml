@@ -1,0 +1,37 @@
+# Cluster profile: K3s self-hosted (community open-source AGPL deployments)
+#
+# Use case: a copropriété or self-hoster runs `apt install k3s` (or `curl -sfL https://get.k3s.io | sh`)
+# on a single VPS or HA cluster, then bootstraps ArgoCD via gitops-bootstrap.sh.
+#
+# Constraints:
+#   - K3s ships with traefik ingress + local-path storage by default
+#   - Admin must provide a public domain (KOPROGO_DOMAIN env at bootstrap time)
+#   - Sealed-secrets controller required for safe secret rotation in Git
+#   - Let's Encrypt prod issuer assumed (cert-manager installed by gitops-bootstrap.sh)
+
+global:
+  storageClassName: local-path      # k3s default
+  ingressClassName: traefik         # k3s default
+  domainOverride: ""                # MUST be set by admin: -f override.yaml --set global.domainOverride=ma-copro.be
+  secretsBackend: sealed-secrets
+  tls:
+    enabled: true
+    certResolver: letsencrypt       # Used by Traefik annotations
+    issuer: letsencrypt-prod        # cert-manager Issuer name
+
+resources:
+  preset: medium                    # typical 4 CPU / 8 Go RAM single-node VPS
+
+# Storage overrides
+postgres:
+  storage: 10Gi
+  storageClass: local-path
+  config:
+    sharedBuffers: 256MB
+    effectiveCacheSize: 768MB
+    maxConnections: "15"
+    maxWalSize: 1GB
+
+minio:
+  storage: 20Gi
+  storageClass: local-path
