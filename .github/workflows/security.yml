@@ -2,9 +2,19 @@ name: Security Audit
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - main
+      - dev
+      - integration
+      - staging
+      - production
   pull_request:
-    branches: [ main, develop ]
+    branches:
+      - main
+      - dev
+      - integration
+      - staging
+      - production
   schedule:
     - cron: '0 0 * * 0' # Weekly on Sunday at midnight UTC
 
