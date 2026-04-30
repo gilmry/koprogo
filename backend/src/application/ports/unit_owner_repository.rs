@@ -1,5 +1,6 @@
 use crate::domain::entities::UnitOwner;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 #[async_trait]
@@ -32,7 +33,7 @@ pub trait UnitOwnerRepository: Send + Sync {
     async fn has_active_owners(&self, unit_id: Uuid) -> Result<bool, String>;
 
     /// Get the total ownership percentage for a unit (should be <= 1.0)
-    async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<f64, String>;
+    async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<Decimal, String>;
 
     /// Find active unit-owner relationship by unit and owner IDs
     async fn find_active_by_unit_and_owner(
@@ -47,5 +48,5 @@ pub trait UnitOwnerRepository: Send + Sync {
     async fn find_active_by_building(
         &self,
         building_id: Uuid,
-    ) -> Result<Vec<(Uuid, Uuid, f64)>, String>;
+    ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String>;
 }

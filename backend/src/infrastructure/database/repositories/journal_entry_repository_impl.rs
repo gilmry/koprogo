@@ -11,6 +11,8 @@ use crate::application::ports::JournalEntryRepository;
 use crate::domain::entities::{JournalEntry, JournalEntryLine};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use sqlx::PgPool;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -110,8 +112,8 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
                 entry_row.id,
                 line.organization_id,
                 line.account_code,
-                rust_decimal::Decimal::from_f64_retain(line.debit).unwrap_or_default(),
-                rust_decimal::Decimal::from_f64_retain(line.credit).unwrap_or_default(),
+                line.debit,
+                line.credit,
                 line.description
             )
             .execute(&mut *tx)
@@ -223,7 +225,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
     async fn calculate_account_balances(
         &self,
         organization_id: Uuid,
-    ) -> Result<HashMap<String, f64>, String> {
+    ) -> Result<HashMap<String, Decimal>, String> {
         // Use the account_balances view created in migration
         let balances = sqlx::query!(
             r#"
@@ -240,12 +242,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
         let mut result = HashMap::new();
         for row in balances {
             if let Some(code) = row.account_code {
-                result.insert(
-                    code,
-                    row.balance
-                        .map(|b| b.to_string().parse::<f64>().unwrap_or(0.0))
-                        .unwrap_or(0.0),
-                );
+                result.insert(code, row.balance.unwrap_or(Decimal::ZERO));
             }
         }
 
@@ -257,7 +254,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
         organization_id: Uuid,
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
-    ) -> Result<HashMap<String, f64>, String> {
+    ) -> Result<HashMap<String, Decimal>, String> {
         // Similar to calculate_account_balances but filtered by date
         let balances = sqlx::query!(
             r#"
@@ -285,20 +282,14 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
 
         let mut result = HashMap::new();
         for row in balances {
-            let total_debit = row
-                .total_debit
-                .map(|d| d.to_string().parse::<f64>().unwrap_or(0.0))
-                .unwrap_or(0.0);
-            let total_credit = row
-                .total_credit
-                .map(|c| c.to_string().parse::<f64>().unwrap_or(0.0))
-                .unwrap_or(0.0);
+            let total_debit = row.total_debit.unwrap_or(Decimal::ZERO);
+            let total_credit = row.total_credit.unwrap_or(Decimal::ZERO);
 
             // Calculate balance based on account type
             let balance = match row.account_type.as_str() {
                 "ASSET" | "EXPENSE" => total_debit - total_credit,
                 "LIABILITY" | "REVENUE" => total_credit - total_debit,
-                _ => 0.0,
+                _ => Decimal::ZERO,
             };
 
             result.insert(row.account_code, balance);
@@ -354,23 +345,17 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
         .await
         .map_err(|e| format!("Failed to validate balance: {}", e))?;
 
-        let total_debits = result
-            .total_debits
-            .map(|d| d.to_string().parse::<f64>().unwrap_or(0.0))
-            .unwrap_or(0.0);
-        let total_credits = result
-            .total_credits
-            .map(|c| c.to_string().parse::<f64>().unwrap_or(0.0))
-            .unwrap_or(0.0);
+        let total_debits = result.total_debits.unwrap_or(Decimal::ZERO);
+        let total_credits = result.total_credits.unwrap_or(Decimal::ZERO);
 
-        Ok((total_debits - total_credits).abs() <= 0.01)
+        Ok((total_debits - total_credits).abs() <= dec!(0.01))
     }
 
     async fn calculate_account_balances_for_building(
         &self,
         organization_id: Uuid,
         building_id: Uuid,
-    ) -> Result<HashMap<String, f64>, String> {
+    ) -> Result<HashMap<String, Decimal>, String> {
         // Calculate balances from journal entries linked to expenses or contributions for this building
         let rows = sqlx::query!(
             r#"
@@ -394,14 +379,8 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
 
         let mut balances = HashMap::new();
         for row in rows {
-            let debit = row
-                .total_debit
-                .map(|d| d.to_string().parse::<f64>().unwrap_or(0.0))
-                .unwrap_or(0.0);
-            let credit = row
-                .total_credit
-                .map(|c| c.to_string().parse::<f64>().unwrap_or(0.0))
-                .unwrap_or(0.0);
+            let debit = row.total_debit.unwrap_or(Decimal::ZERO);
+            let credit = row.total_credit.unwrap_or(Decimal::ZERO);
 
             // For expenses/assets: positive balance = debit - credit
             // For revenue/liabilities: positive balance = credit - debit
@@ -430,7 +409,7 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
         building_id: Uuid,
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
-    ) -> Result<HashMap<String, f64>, String> {
+    ) -> Result<HashMap<String, Decimal>, String> {
         // Calculate balances from journal entries linked to expenses or contributions for this building and period
         let rows = sqlx::query!(
             r#"
@@ -458,14 +437,8 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
 
         let mut balances = HashMap::new();
         for row in rows {
-            let debit = row
-                .total_debit
-                .map(|d| d.to_string().parse::<f64>().unwrap_or(0.0))
-                .unwrap_or(0.0);
-            let credit = row
-                .total_credit
-                .map(|c| c.to_string().parse::<f64>().unwrap_or(0.0))
-                .unwrap_or(0.0);
+            let debit = row.total_debit.unwrap_or(Decimal::ZERO);
+            let credit = row.total_credit.unwrap_or(Decimal::ZERO);
 
             let account_code = &row.account_code;
             let balance = if account_code.starts_with('6')
@@ -542,8 +515,8 @@ impl JournalEntryRepository for PostgresJournalEntryRepository {
                 line.journal_entry_id,
                 line.organization_id,
                 line.account_code,
-                rust_decimal::Decimal::from_f64_retain(line.debit).unwrap_or_default(),
-                rust_decimal::Decimal::from_f64_retain(line.credit).unwrap_or_default(),
+                line.debit,
+                line.credit,
                 line.description,
                 line.created_at
             )
@@ -742,8 +715,8 @@ struct JournalEntryLineRow {
     journal_entry_id: Uuid,
     organization_id: Uuid,
     account_code: String,
-    debit: rust_decimal::Decimal,
-    credit: rust_decimal::Decimal,
+    debit: Decimal,
+    credit: Decimal,
     description: Option<String>,
     created_at: DateTime<Utc>,
 }
@@ -755,8 +728,8 @@ impl From<JournalEntryLineRow> for JournalEntryLine {
             journal_entry_id: row.journal_entry_id,
             organization_id: row.organization_id,
             account_code: row.account_code,
-            debit: row.debit.to_string().parse::<f64>().unwrap_or(0.0),
-            credit: row.credit.to_string().parse::<f64>().unwrap_or(0.0),
+            debit: row.debit,
+            credit: row.credit,
             description: row.description,
             created_at: row.created_at,
         }

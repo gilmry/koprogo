@@ -10,6 +10,7 @@
 use crate::domain::entities::{JournalEntry, JournalEntryLine};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -80,7 +81,7 @@ pub trait JournalEntryRepository: Send + Sync {
     async fn calculate_account_balances(
         &self,
         organization_id: Uuid,
-    ) -> Result<HashMap<String, f64>, String>;
+    ) -> Result<HashMap<String, Decimal>, String>;
 
     /// Calculate account balances for a specific period
     ///
@@ -90,7 +91,7 @@ pub trait JournalEntryRepository: Send + Sync {
         organization_id: Uuid,
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
-    ) -> Result<HashMap<String, f64>, String>;
+    ) -> Result<HashMap<String, Decimal>, String>;
 
     /// Get all journal entry lines for an account
     ///
@@ -113,7 +114,7 @@ pub trait JournalEntryRepository: Send + Sync {
         &self,
         organization_id: Uuid,
         building_id: Uuid,
-    ) -> Result<HashMap<String, f64>, String>;
+    ) -> Result<HashMap<String, Decimal>, String>;
 
     /// Calculate account balances for a specific building and period
     async fn calculate_account_balances_for_building_and_period(
@@ -122,7 +123,7 @@ pub trait JournalEntryRepository: Send + Sync {
         building_id: Uuid,
         start_date: DateTime<Utc>,
         end_date: DateTime<Utc>,
-    ) -> Result<HashMap<String, f64>, String>;
+    ) -> Result<HashMap<String, Decimal>, String>;
 
     /// Create a manual journal entry with multiple lines
     async fn create_manual_entry(

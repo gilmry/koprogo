@@ -382,13 +382,13 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             85.0,
-            50.0,
+            rust_decimal_macros::dec!(50),
         )
         .unwrap()
     }
 
     fn make_unit_owner(unit_id: Uuid) -> UnitOwner {
-        UnitOwner::new(unit_id, Uuid::new_v4(), 0.5, true).unwrap()
+        UnitOwner::new(unit_id, Uuid::new_v4(), rust_decimal_macros::dec!(0.5), true).unwrap()
     }
 
     fn make_etat_date(org_id: Uuid, building_id: Uuid, unit_id: Uuid) -> EtatDate {

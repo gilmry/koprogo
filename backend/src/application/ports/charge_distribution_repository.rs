@@ -1,5 +1,6 @@
 use crate::domain::entities::ChargeDistribution;
 use async_trait::async_trait;
+use rust_decimal::Decimal;
 use uuid::Uuid;
 
 #[async_trait]
@@ -30,5 +31,5 @@ pub trait ChargeDistributionRepository: Send + Sync {
     async fn delete_by_expense(&self, expense_id: Uuid) -> Result<(), String>;
 
     /// Get total amount due for an owner across all pending distributions
-    async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<f64, String>;
+    async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<Decimal, String>;
 }

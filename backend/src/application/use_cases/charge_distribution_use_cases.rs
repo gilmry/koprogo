@@ -3,6 +3,7 @@ use crate::application::ports::{
     ChargeDistributionRepository, ExpenseRepository, UnitOwnerRepository,
 };
 use crate::domain::entities::{ApprovalStatus, ChargeDistribution};
+use rust_decimal::Decimal;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -103,7 +104,7 @@ impl ChargeDistributionUseCases {
     }
 
     /// Récupérer le montant total dû par un propriétaire
-    pub async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<f64, String> {
+    pub async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<Decimal, String> {
         self.distribution_repository
             .get_total_due_by_owner(owner_id)
             .await
@@ -141,6 +142,7 @@ mod tests {
     };
     use async_trait::async_trait;
     use chrono::Utc;
+    use rust_decimal_macros::dec;
     use std::collections::HashMap;
     use std::sync::Mutex;
 
@@ -223,7 +225,7 @@ mod tests {
             Ok(())
         }
 
-        async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<f64, String> {
+        async fn get_total_due_by_owner(&self, owner_id: Uuid) -> Result<Decimal, String> {
             let distributions = self.distributions.lock().unwrap();
             let total = distributions
                 .values()
@@ -304,7 +306,7 @@ mod tests {
     // ========== Mock UnitOwnerRepository ==========
 
     /// (unit_id, owner_id, percentage) tuples grouped by building_id
-    type BuildingOwnerships = HashMap<Uuid, Vec<(Uuid, Uuid, f64)>>;
+    type BuildingOwnerships = HashMap<Uuid, Vec<(Uuid, Uuid, Decimal)>>;
 
     struct MockUnitOwnerRepository {
         /// Stores active building ownerships: building_id -> Vec<(unit_id, owner_id, percentage)>
@@ -318,7 +320,10 @@ mod tests {
             }
         }
 
-        fn with_building_ownerships(building_id: Uuid, ownerships: Vec<(Uuid, Uuid, f64)>) -> Self {
+        fn with_building_ownerships(
+            building_id: Uuid,
+            ownerships: Vec<(Uuid, Uuid, Decimal)>,
+        ) -> Self {
             let mut map = HashMap::new();
             map.insert(building_id, ownerships);
             Self {
@@ -371,7 +376,7 @@ mod tests {
             unimplemented!("not needed for charge distribution tests")
         }
 
-        async fn get_total_ownership_percentage(&self, _unit_id: Uuid) -> Result<f64, String> {
+        async fn get_total_ownership_percentage(&self, _unit_id: Uuid) -> Result<Decimal, String> {
             unimplemented!("not needed for charge distribution tests")
         }
 
@@ -386,7 +391,7 @@ mod tests {
         async fn find_active_by_building(
             &self,
             building_id: Uuid,
-        ) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
+        ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
             let ownerships = self.building_ownerships.lock().unwrap();
             Ok(ownerships.get(&building_id).cloned().unwrap_or_default())
         }
@@ -394,8 +399,10 @@ mod tests {
 
     // ========== Helpers ==========
 
-    fn make_approved_expense(building_id: Uuid, amount_incl_vat: f64) -> Expense {
+    fn make_approved_expense(building_id: Uuid, amount_incl_vat: Decimal) -> Expense {
         let now = Utc::now();
+        let vat_factor = dec!(1.21);
+        let amount_excl_vat = amount_incl_vat / vat_factor;
         Expense {
             id: Uuid::new_v4(),
             organization_id: Uuid::new_v4(),
@@ -403,9 +410,9 @@ mod tests {
             category: ExpenseCategory::Maintenance,
             description: "Elevator maintenance".to_string(),
             amount: amount_incl_vat,
-            amount_excl_vat: Some(amount_incl_vat / 1.21),
-            vat_rate: Some(21.0),
-            vat_amount: Some(amount_incl_vat - amount_incl_vat / 1.21),
+            amount_excl_vat: Some(amount_excl_vat),
+            vat_rate: Some(dec!(21)),
+            vat_amount: Some(amount_incl_vat - amount_excl_vat),
             amount_incl_vat: Some(amount_incl_vat),
             expense_date: now,
             invoice_date: Some(now),
@@ -434,7 +441,7 @@ mod tests {
             building_id,
             category: ExpenseCategory::Maintenance,
             description: "Draft expense".to_string(),
-            amount: 1000.0,
+            amount: dec!(1000),
             amount_excl_vat: None,
             vat_rate: None,
             vat_amount: None,
@@ -480,12 +487,12 @@ mod tests {
         let owner1_id = Uuid::new_v4();
         let owner2_id = Uuid::new_v4();
 
-        let expense = make_approved_expense(building_id, 1000.0);
+        let expense = make_approved_expense(building_id, dec!(1000));
         let expense_id = expense.id;
 
         let ownerships = vec![
-            (unit1_id, owner1_id, 0.60), // 60%
-            (unit2_id, owner2_id, 0.40), // 40%
+            (unit1_id, owner1_id, dec!(0.60)), // 60%
+            (unit2_id, owner2_id, dec!(0.40)), // 40%
         ];
 
         let dist_repo = MockChargeDistributionRepository::new();
@@ -502,8 +509,8 @@ mod tests {
         assert_eq!(distributions.len(), 2);
 
         // Verify amounts: 60% of 1000 = 600, 40% of 1000 = 400
-        let total_amount: f64 = distributions.iter().map(|d| d.amount_due).sum();
-        assert!((total_amount - 1000.0).abs() < 0.01);
+        let total_amount: Decimal = distributions.iter().map(|d| d.amount_due).sum();
+        assert_eq!(total_amount, dec!(1000));
 
         // Verify all distributions reference the correct expense
         assert!(distributions
@@ -545,7 +552,7 @@ mod tests {
     #[tokio::test]
     async fn test_calculate_and_save_distribution_no_active_owners() {
         let building_id = Uuid::new_v4();
-        let expense = make_approved_expense(building_id, 1000.0);
+        let expense = make_approved_expense(building_id, dec!(1000));
         let expense_id = expense.id;
 
         let dist_repo = MockChargeDistributionRepository::new();
@@ -570,10 +577,10 @@ mod tests {
         let unit1_id = Uuid::new_v4();
         let owner1_id = Uuid::new_v4();
 
-        let expense = make_approved_expense(building_id, 500.0);
+        let expense = make_approved_expense(building_id, dec!(500));
         let expense_id = expense.id;
 
-        let ownerships = vec![(unit1_id, owner1_id, 1.0)]; // 100%
+        let ownerships = vec![(unit1_id, owner1_id, Decimal::ONE)]; // 100%
 
         let dist_repo = MockChargeDistributionRepository::new();
         let expense_repo = MockExpenseRepository::with_expense(expense);
@@ -593,8 +600,8 @@ mod tests {
         let distributions = result.unwrap();
         assert_eq!(distributions.len(), 1);
         assert_eq!(distributions[0].expense_id, expense_id.to_string());
-        assert_eq!(distributions[0].quota_percentage, 1.0);
-        assert!((distributions[0].amount_due - 500.0).abs() < 0.01);
+        assert_eq!(distributions[0].quota_percentage, Decimal::ONE);
+        assert_eq!(distributions[0].amount_due, dec!(500.00));
     }
 
     #[tokio::test]
@@ -619,14 +626,14 @@ mod tests {
         let owner2_id = Uuid::new_v4();
 
         // Create 2 approved expenses
-        let expense1 = make_approved_expense(building_id, 1000.0);
+        let expense1 = make_approved_expense(building_id, dec!(1000));
         let expense1_id = expense1.id;
-        let expense2 = make_approved_expense(building_id, 2000.0);
+        let expense2 = make_approved_expense(building_id, dec!(2000));
         let expense2_id = expense2.id;
 
         let ownerships = vec![
-            (unit1_id, owner1_id, 0.60), // 60%
-            (unit2_id, owner2_id, 0.40), // 40%
+            (unit1_id, owner1_id, dec!(0.60)), // 60%
+            (unit2_id, owner2_id, dec!(0.40)), // 40%
         ];
 
         let dist_repo = MockChargeDistributionRepository::new();
@@ -651,11 +658,11 @@ mod tests {
 
         // Owner 1 owes 60% of 1000 + 60% of 2000 = 600 + 1200 = 1800
         let total = uc.get_total_due_by_owner(owner1_id).await.unwrap();
-        assert!((total - 1800.0).abs() < 0.01);
+        assert_eq!(total, dec!(1800.00));
 
         // Owner 2 owes 40% of 1000 + 40% of 2000 = 400 + 800 = 1200
         let total = uc.get_total_due_by_owner(owner2_id).await.unwrap();
-        assert!((total - 1200.0).abs() < 0.01);
+        assert_eq!(total, dec!(1200.00));
     }
 
     #[tokio::test]
@@ -667,7 +674,7 @@ mod tests {
         let uc = make_use_cases(dist_repo, expense_repo, unit_owner_repo);
 
         let total = uc.get_total_due_by_owner(Uuid::new_v4()).await.unwrap();
-        assert_eq!(total, 0.0);
+        assert_eq!(total, Decimal::ZERO);
     }
 
     #[tokio::test]
@@ -684,11 +691,11 @@ mod tests {
             building_id,
             category: ExpenseCategory::Utilities,
             description: "Electricity".to_string(),
-            amount: 1000.0,
-            amount_excl_vat: Some(1000.0),
-            vat_rate: Some(21.0),
-            vat_amount: Some(210.0),
-            amount_incl_vat: Some(1210.0),
+            amount: dec!(1000),
+            amount_excl_vat: Some(dec!(1000)),
+            vat_rate: Some(dec!(21)),
+            vat_amount: Some(dec!(210)),
+            amount_incl_vat: Some(dec!(1210)),
             expense_date: now,
             invoice_date: Some(now),
             due_date: None,
@@ -724,6 +731,6 @@ mod tests {
 
         // Should use amount_incl_vat (1210), not amount (1000)
         assert_eq!(result.len(), 1);
-        assert!((result[0].amount_due - 1210.0).abs() < 0.01);
+        assert_eq!(result[0].amount_due, dec!(1210));
     }
 }
