@@ -593,8 +593,8 @@ impl DatabaseSeeder {
             unit1_id,
             owner1_db_id,
             rust_decimal_macros::dec!(1), // 100%
-            true, // primary contact
-            None, // no end_date (active)
+            true,                         // primary contact
+            None,                         // no end_date (active)
         )
         .await?;
 
@@ -603,7 +603,7 @@ impl DatabaseSeeder {
             unit2_id,
             owner2_db_id,
             rust_decimal_macros::dec!(0.6), // 60%
-            true, // primary contact
+            true,                           // primary contact
             None,
         )
         .await?;
@@ -611,8 +611,8 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit2_id,
             owner3_db_id,
-            rust_decimal_macros::dec!(0.4),   // 40%
-            false, // not primary contact
+            rust_decimal_macros::dec!(0.4), // 40%
+            false,                          // not primary contact
             None,
         )
         .await?;
@@ -622,7 +622,7 @@ impl DatabaseSeeder {
             unit3_id,
             owner1_db_id,
             rust_decimal_macros::dec!(0.5), // 50%
-            true, // primary contact
+            true,                           // primary contact
             None,
         )
         .await?;
@@ -650,7 +650,7 @@ impl DatabaseSeeder {
             unit4_id,
             owner3_db_id,
             rust_decimal_macros::dec!(1), // 100%
-            true, // primary contact
+            true,                         // primary contact
             None,
         )
         .await?;

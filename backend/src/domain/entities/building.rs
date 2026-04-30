@@ -170,8 +170,7 @@ impl Building {
     ) -> Result<(), String> {
         // Quotas en millièmes — Decimal exact, conversion via .trunc() vers i32 pour la borne 1000.
         use rust_decimal::prelude::ToPrimitive;
-        let total_shares_decimal: rust_decimal::Decimal =
-            units.iter().map(|u| u.quota).sum();
+        let total_shares_decimal: rust_decimal::Decimal = units.iter().map(|u| u.quota).sum();
         let total_shares: i32 = total_shares_decimal.trunc().to_i32().unwrap_or(0);
 
         // Note: During setup, units may not sum to total_shares yet (incomplete distribution is OK)

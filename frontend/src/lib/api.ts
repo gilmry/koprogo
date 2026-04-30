@@ -105,8 +105,8 @@ export async function apiFetch<T = any>(
         "token expired": "Session expirée. Veuillez vous reconnecter.",
         "invalid token": "Session expirée. Veuillez vous reconnecter.",
         "not found": "Ressource introuvable.",
-        "unauthorized": "Authentification requise.",
-        "forbidden": "Accès refusé.",
+        unauthorized: "Authentification requise.",
+        forbidden: "Accès refusé.",
       };
       const mapped = knownErrors[errorMessage.toLowerCase().trim()];
       if (mapped) errorMessage = mapped;

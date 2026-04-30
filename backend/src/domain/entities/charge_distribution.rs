@@ -307,12 +307,9 @@ mod tests {
         ];
 
         let total_invoice = dec!(5000);
-        let distributions = ChargeDistribution::calculate_distributions(
-            expense_id,
-            total_invoice,
-            unit_ownerships,
-        )
-        .unwrap();
+        let distributions =
+            ChargeDistribution::calculate_distributions(expense_id, total_invoice, unit_ownerships)
+                .unwrap();
 
         assert_eq!(distributions.len(), 5);
         assert_eq!(distributions[0].amount_due, dec!(1250.00)); // 25%

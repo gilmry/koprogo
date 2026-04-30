@@ -3,8 +3,6 @@
 // Phase 2: payments + payment_methods step definitions
 
 use chrono::{DateTime, Datelike, Duration as ChronoDuration, Utc};
-use rust_decimal::Decimal;
-use rust_decimal_macros::dec;
 use cucumber::{gherkin::Step, given, then, when, World};
 use koprogo_api::application::dto::{
     AccountantDashboardStats, ApproveInvoiceDto, CreateBudgetRequest, CreateInvoiceDraftDto,
@@ -22,6 +20,8 @@ use koprogo_api::domain::entities::{
     Account, AccountType, ContributionPaymentMethod, ContributionType, ExpenseCategory,
     JournalEntry, JournalEntryLine, OwnerContribution, ReminderLevel,
 };
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 // Two separate PaymentMethodType enums exist in the domain:
 // payment.rs defines one (for Payment entity), payment_method.rs defines another (for PaymentMethod entity)
 use koprogo_api::domain::entities::payment_method::PaymentMethodType as PmMethodType;
@@ -1785,8 +1785,18 @@ async fn given_journal_entries_ach_ods(world: &mut FinancialWorld) {
 
     for jtype in &["ACH", "ODS"] {
         let lines = vec![
-            ("604000".to_string(), dec!(100.0), dec!(0.0), "Debit".to_string()),
-            ("440000".to_string(), dec!(0.0), dec!(100.0), "Credit".to_string()),
+            (
+                "604000".to_string(),
+                dec!(100.0),
+                dec!(0.0),
+                "Debit".to_string(),
+            ),
+            (
+                "440000".to_string(),
+                dec!(0.0),
+                dec!(100.0),
+                "Credit".to_string(),
+            ),
         ];
         uc.create_manual_entry(
             org_id,
@@ -1916,8 +1926,18 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
 
     // Create entry for main building
     let lines = vec![
-        ("604000".to_string(), dec!(200.0), dec!(0.0), "Debit".to_string()),
-        ("440000".to_string(), dec!(0.0), dec!(200.0), "Credit".to_string()),
+        (
+            "604000".to_string(),
+            dec!(200.0),
+            dec!(0.0),
+            "Debit".to_string(),
+        ),
+        (
+            "440000".to_string(),
+            dec!(0.0),
+            dec!(200.0),
+            "Credit".to_string(),
+        ),
     ];
     uc.create_manual_entry(
         org_id,
@@ -1950,8 +1970,18 @@ async fn given_journal_entries_2_buildings(world: &mut FinancialWorld) {
     building_repo.create(&b2).await.expect("create building 2");
 
     let lines2 = vec![
-        ("604000".to_string(), dec!(300.0), dec!(0.0), "Debit".to_string()),
-        ("440000".to_string(), dec!(0.0), dec!(300.0), "Credit".to_string()),
+        (
+            "604000".to_string(),
+            dec!(300.0),
+            dec!(0.0),
+            "Debit".to_string(),
+        ),
+        (
+            "440000".to_string(),
+            dec!(0.0),
+            dec!(300.0),
+            "Credit".to_string(),
+        ),
     ];
     uc.create_manual_entry(
         org_id,
@@ -2001,8 +2031,18 @@ async fn given_journal_entry_exists(world: &mut FinancialWorld) {
     let building_id = world.building_id;
 
     let lines = vec![
-        ("604000".to_string(), dec!(50.0), dec!(0.0), "Debit".to_string()),
-        ("440000".to_string(), dec!(0.0), dec!(50.0), "Credit".to_string()),
+        (
+            "604000".to_string(),
+            dec!(50.0),
+            dec!(0.0),
+            "Debit".to_string(),
+        ),
+        (
+            "440000".to_string(),
+            dec!(0.0),
+            dec!(50.0),
+            "Credit".to_string(),
+        ),
     ];
     let entry = uc
         .create_manual_entry(
@@ -2585,7 +2625,11 @@ async fn given_call_of_amount_sent(world: &mut FinancialWorld, amount: Decimal) 
 }
 
 #[then(regex = r#"^owner with (\d+)% should have contribution of (\d+) EUR$"#)]
-async fn then_owner_pct_contribution(world: &mut FinancialWorld, _pct: Decimal, expected_amount: Decimal) {
+async fn then_owner_pct_contribution(
+    world: &mut FinancialWorld,
+    _pct: Decimal,
+    expected_amount: Decimal,
+) {
     let uc = world.owner_contribution_use_cases.as_ref().unwrap().clone();
     // Find the owner with matching percentage
     for (_name, owner_id) in &world.owner_by_name {
@@ -3386,7 +3430,12 @@ async fn then_distributions_for_n_owners(world: &mut FinancialWorld, count: usiz
 }
 
 #[then(regex = r#"^"([^"]*)" should owe (\d+(?:\.\d+)?) EUR \((\d+)%\)$"#)]
-async fn then_owner_should_owe(world: &mut FinancialWorld, name: String, expected: f64, _pct: f64) {
+async fn then_owner_should_owe(
+    world: &mut FinancialWorld,
+    name: String,
+    expected: Decimal,
+    _pct: Decimal,
+) {
     let found = world
         .distribution_amounts
         .iter()
@@ -3565,7 +3614,12 @@ async fn when_get_total_due(world: &mut FinancialWorld, name: String, _pct: f64)
 }
 
 #[then(regex = r#"^the total due should be (\d+(?:\.\d+)?) EUR \((\d+)% of (\d+) EUR\)$"#)]
-async fn then_total_due_amount(world: &mut FinancialWorld, expected: f64, _pct: f64, _total: f64) {
+async fn then_total_due_amount(
+    world: &mut FinancialWorld,
+    expected: Decimal,
+    _pct: Decimal,
+    _total: Decimal,
+) {
     let total = world.total_due.expect("total due");
     let expected_dec = rust_decimal::prelude::FromPrimitive::from_f64(expected).unwrap_or(Decimal::ZERO);
     let diff = (total - expected_dec).abs();
@@ -3724,13 +3778,19 @@ async fn then_stats_include_expenses(world: &mut FinancialWorld) {
 #[then("the stats should include payment totals")]
 async fn then_stats_include_payments(world: &mut FinancialWorld) {
     let stats = world.dashboard_stats.as_ref().expect("stats");
-    assert!(stats.total_paid >= Decimal::ZERO, "Paid total should be >= 0");
+    assert!(
+        stats.total_paid >= Decimal::ZERO,
+        "Paid total should be >= 0"
+    );
 }
 
 #[then("the stats should include outstanding amounts")]
 async fn then_stats_include_outstanding(world: &mut FinancialWorld) {
     let stats = world.dashboard_stats.as_ref().expect("stats");
-    assert!(stats.total_pending >= Decimal::ZERO, "Pending total should be >= 0");
+    assert!(
+        stats.total_pending >= Decimal::ZERO,
+        "Pending total should be >= 0"
+    );
 }
 
 #[given(regex = r#"^(\d+) transactions exist$"#)]
@@ -4106,7 +4166,7 @@ async fn then_invoice_status(world: &mut FinancialWorld, expected: String) {
 }
 
 #[then(regex = r#"^the invoice VAT amount should be ([0-9.]+)$"#)]
-async fn then_invoice_vat_amount(world: &mut FinancialWorld, expected: f64) {
+async fn then_invoice_vat_amount(world: &mut FinancialWorld, expected: Decimal) {
     let inv = world.last_invoice.as_ref().expect("no invoice");
     let vat = inv.vat_amount.unwrap_or(Decimal::ZERO);
     let expected_dec = rust_decimal::prelude::FromPrimitive::from_f64(expected).unwrap_or(Decimal::ZERO);
@@ -4119,7 +4179,7 @@ async fn then_invoice_vat_amount(world: &mut FinancialWorld, expected: f64) {
 }
 
 #[then(regex = r#"^the invoice total \(TTC\) should be ([0-9.]+)$"#)]
-async fn then_invoice_total_ttc(world: &mut FinancialWorld, expected: f64) {
+async fn then_invoice_total_ttc(world: &mut FinancialWorld, expected: Decimal) {
     let inv = world.last_invoice.as_ref().expect("no invoice");
     let ttc = inv.amount_incl_vat.unwrap_or(inv.amount);
     let expected_dec = rust_decimal::prelude::FromPrimitive::from_f64(expected).unwrap_or(Decimal::ZERO);
@@ -4911,12 +4971,12 @@ async fn then_total_due(world: &mut FinancialWorld, expected: f64) {
 }
 
 #[then(regex = r#"^Owner (\d+) amount due should be ([0-9.]+) EUR$"#)]
-async fn then_owner_amount_due(_world: &mut FinancialWorld, _owner_num: usize, _expected: f64) {
+async fn then_owner_amount_due(_world: &mut FinancialWorld, _owner_num: usize, _expected: Decimal) {
     // Distribution amounts verified through charge_distribution use cases
 }
 
 #[then(regex = r#"^the total distributed should be ([0-9.]+) EUR$"#)]
-async fn then_total_distributed(_world: &mut FinancialWorld, _expected: f64) {
+async fn then_total_distributed(_world: &mut FinancialWorld, _expected: Decimal) {
     // Verified by sum of distributions
 }
 
@@ -5065,10 +5125,12 @@ async fn when_calculate_penalty(world: &mut FinancialWorld) {
 }
 
 #[then(regex = r#"^the penalty should be (\d+) EUR$"#)]
-async fn then_penalty_amount(world: &mut FinancialWorld, expected: f64) {
-    let penalty = world.last_reminder_penalty.unwrap_or(0.0);
+async fn then_penalty_amount(world: &mut FinancialWorld, expected: Decimal) {
+    use rust_decimal::prelude::FromPrimitive;
+    let penalty_f64 = world.last_reminder_penalty.unwrap_or(0.0);
+    let penalty = Decimal::from_f64(penalty_f64).unwrap_or(Decimal::ZERO);
     assert!(
-        (penalty - expected).abs() < 1.0,
+        (penalty - expected).abs() < dec!(1),
         "Expected {} EUR, got {}",
         expected,
         penalty
@@ -6682,7 +6744,7 @@ async fn then_expense_created_with_status(world: &mut FinancialWorld, expected: 
 }
 
 #[then(regex = r#"^the amount should be (\d+(?:\.\d+)?)$"#)]
-async fn then_expense_amount(world: &mut FinancialWorld, expected: f64) {
+async fn then_expense_amount(world: &mut FinancialWorld, expected: Decimal) {
     // Amount verified through creation success
     assert!(
         world.operation_success,
@@ -6751,7 +6813,7 @@ async fn then_expense_created(world: &mut FinancialWorld) {
 }
 
 #[then(regex = r#"^the amount_incl_vat should be (\d+(?:\.\d+)?)$"#)]
-async fn then_amount_incl_vat(world: &mut FinancialWorld, expected: f64) {
+async fn then_amount_incl_vat(world: &mut FinancialWorld, expected: Decimal) {
     if let Some(ref inv) = world.last_invoice {
         let ttc = inv.amount_incl_vat.unwrap_or(inv.amount);
         let expected_dec = <Decimal as rust_decimal::prelude::FromPrimitive>::from_f64(expected)

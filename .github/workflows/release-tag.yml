@@ -1,0 +1,88 @@
+name: Release Tag (manual)
+
+# Tier 1 per CRITICAL.md: tag creation + GitHub Release publication require explicit
+# human action. We deliberately do NOT trigger this workflow on push to `main` — the
+# human runs `gh workflow run release-tag.yml -f version=vX.Y.Z` after validating
+# the production → main promotion.
+#
+# The workflow:
+#   1. Verifies the requested version matches backend/Cargo.toml `version = ...`
+#   2. Verifies the tag does not already exist
+#   3. Creates an annotated git tag pointing at the current HEAD of main
+#   4. Pushes the tag (which triggers docker-build-push.yml's `tags: v*.*.*` filter)
+#   5. Drafts a GitHub Release with auto-generated changelog (NOT published — human edits + publishes)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag (must match Cargo.toml, format vX.Y.Z)'
+        required: true
+        type: string
+      target_sha:
+        description: 'Commit SHA to tag (defaults to current HEAD of main)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release-tag:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Validate version format
+        run: |
+          if [[ ! "${{ inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version must match vX.Y.Z (got: ${{ inputs.version }})"
+            exit 1
+          fi
+
+      - name: Verify version matches Cargo.toml
+        run: |
+          cargo_version=$(grep -m1 '^version = ' backend/Cargo.toml | sed -E 's/version = "(.*)"/v\1/')
+          requested="${{ inputs.version }}"
+          if [ "$cargo_version" != "$requested" ]; then
+            echo "::error::Cargo.toml version ($cargo_version) does not match requested tag ($requested)"
+            echo "::error::Bump backend/Cargo.toml first, merge to main, then re-run this workflow"
+            exit 1
+          fi
+
+      - name: Verify tag does not exist
+        run: |
+          if git rev-parse "${{ inputs.version }}" >/dev/null 2>&1; then
+            echo "::error::Tag ${{ inputs.version }} already exists"
+            exit 1
+          fi
+
+      - name: Create annotated tag
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          target="${{ inputs.target_sha }}"
+          target="${target:-$(git rev-parse HEAD)}"
+          git tag -a "${{ inputs.version }}" "$target" -m "Release ${{ inputs.version }}"
+          git push origin "${{ inputs.version }}"
+
+      - name: Draft GitHub Release (not published — human edits + publishes)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ inputs.version }}" \
+            --draft \
+            --generate-notes \
+            --title "${{ inputs.version }}" \
+            --target main
+          echo ""
+          echo "✅ Draft release created: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.version }}"
+          echo "→ Edit the changelog and PUBLISH manually (Tier 1 per CRITICAL.md #2)"

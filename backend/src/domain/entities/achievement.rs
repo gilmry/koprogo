@@ -16,7 +16,9 @@ pub enum AchievementCategory {
 }
 
 /// Achievement tier for progression
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema,
+)]
 pub enum AchievementTier {
     Bronze,   // Entry-level achievements
     Silver,   // Intermediate achievements

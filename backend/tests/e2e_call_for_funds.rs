@@ -97,8 +97,10 @@ async fn create_call_for_funds_fixtures(
     let _ = app_state
         .unit_owner_use_cases
         .add_owner_to_unit(
-            unit_id, owner_id, dec!(0.25), // 25% ownership share
-            true, // is primary contact
+            unit_id,
+            owner_id,
+            rust_decimal_macros::dec!(0.25), // 25% ownership share
+            true,                            // is primary contact
         )
         .await;
     // Note: ownership validation may require total = 100%, so we accept any result here
