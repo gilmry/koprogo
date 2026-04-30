@@ -81,6 +81,22 @@ argocd-sync:
 argocd-status:
 	argocd app get koprogo-infra-$(ENV) && argocd app get koprogo-app-$(ENV)
 
+# ---- GitOps cluster-agnostic bootstrap (PR-B) ----
+# CLUSTER auto-detected from kubectl context if unset (docker-desktop | k3s-self-hosted | k8s-managed)
+.PHONY: gitops-bootstrap gitops-status gitops-ui gitops-down
+gitops-bootstrap:  ## Bootstrap ArgoCD + cluster prereqs (Tier 1 — interactive prompt)
+	$(INFRA_DIR)/_shared/scripts/gitops-bootstrap.sh $(CLUSTER)
+
+gitops-status:  ## List ArgoCD Applications and their sync status
+	kubectl get applications -n argocd -o wide
+
+gitops-ui:  ## Port-forward ArgoCD UI on https://localhost:8080
+	@echo "ArgoCD UI: https://localhost:8080 (admin password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)"
+	kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+gitops-down:  ## Remove ArgoCD + ApplicationSets (keeps koprogo-* workloads — Tier 1)
+	$(INFRA_DIR)/_shared/scripts/gitops-teardown.sh
+
 # ---- Local K8s (Docker Desktop / minikube / k3d) ----
 LOCAL_VALUES := $(INFRA_DIR)/monosite/k3s/local/helm-values.yaml
 LOCAL_KUSTOMIZE := $(INFRA_DIR)/monosite/k3s/local/kustomize
@@ -180,6 +196,7 @@ infra-help:
 	@echo "VPS:      make deploy-dev-vps | deploy-prod-vps | vps-logs ENV=dev"
 	@echo "Helm:     make helm-install ENV=dev ARCH=k3s | helm-rollback REVISION=3"
 	@echo "Local:    make local-k8s-up | local-k8s-down | local-k8s-forward"
+	@echo "GitOps:   make gitops-bootstrap [CLUSTER=docker-desktop|k3s-self-hosted|k8s-managed] | gitops-status | gitops-ui | gitops-down"
 	@echo "Monitor:  make monitoring-up ENV=dev ARCH=vps"
 	@echo "Secrets:  make secrets-keygen | secrets-encrypt ENV=prod ARCH=vps"
 	@echo "Velero:   make velero-backup ENV=prod | velero-status"
