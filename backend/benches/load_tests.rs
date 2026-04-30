@@ -2,6 +2,7 @@ use chrono::Utc;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use koprogo_api::domain::entities::{Building, Expense, ExpenseCategory, Owner, Unit, UnitType};
 use koprogo_api::domain::services::ExpenseCalculator;
+use rust_decimal_macros::dec;
 use std::hint::black_box;
 use uuid::Uuid;
 
@@ -37,7 +38,7 @@ fn benchmark_unit_creation(c: &mut Criterion) {
                 black_box(UnitType::Apartment),
                 black_box(Some(1)),
                 black_box(75.5),
-                black_box(50.0),
+                black_box(dec!(50)),
             )
         });
     });
@@ -75,7 +76,7 @@ fn benchmark_expense_calculation(c: &mut Criterion) {
                     building_id,
                     ExpenseCategory::Maintenance,
                     format!("Expense {}", i),
-                    100.0,
+                    dec!(100),
                     Utc::now(),
                     None,
                     None,
@@ -105,7 +106,7 @@ fn benchmark_unit_share_calculation(c: &mut Criterion) {
         building_id,
         ExpenseCategory::Maintenance,
         "Test".to_string(),
-        1000.0,
+        dec!(1000),
         Utc::now(),
         None,
         None,
@@ -120,7 +121,7 @@ fn benchmark_unit_share_calculation(c: &mut Criterion) {
         UnitType::Apartment,
         Some(1),
         75.0,
-        50.0,
+        dec!(50),
     )
     .unwrap();
 

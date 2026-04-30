@@ -22,7 +22,13 @@ vi.mock("../../lib/api", () => ({
   api: {
     post: vi.fn().mockResolvedValue({
       quorum_reached: true,
-      meeting: { id: "m1", quorum_validated: true, present_quotas: 800, total_quotas: 1000, quorum_percentage: 80.0 },
+      meeting: {
+        id: "m1",
+        quorum_validated: true,
+        present_quotas: 800,
+        total_quotas: 1000,
+        quorum_percentage: 80.0,
+      },
       message: "OK",
     }),
   },
@@ -53,7 +59,12 @@ describe("QuorumPanel", () => {
   it("shows validated badge when quorum already validated", () => {
     render(QuorumPanel, {
       props: {
-        meeting: { ...baseMeeting, quorum_validated: true, present_quotas: 800, quorum_percentage: 80.0 },
+        meeting: {
+          ...baseMeeting,
+          quorum_validated: true,
+          present_quotas: 800,
+          quorum_percentage: 80.0,
+        },
         canManage: true,
       },
     });
@@ -89,7 +100,9 @@ describe("QuorumPanel", () => {
     render(QuorumPanel, {
       props: { meeting: baseMeeting, canManage: true },
     });
-    const presentInput = screen.getByTestId("quorum-present-input") as HTMLInputElement;
+    const presentInput = screen.getByTestId(
+      "quorum-present-input",
+    ) as HTMLInputElement;
     await fireEvent.input(presentInput, { target: { value: "600" } });
     // Check that 60.0% is shown somewhere in the preview
     const preview = screen.getByText(/60\.0%/);

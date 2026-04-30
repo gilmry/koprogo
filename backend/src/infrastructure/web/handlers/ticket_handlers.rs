@@ -974,15 +974,9 @@ pub async fn list_assignable_users(
                 .into_iter()
                 .filter(|u| {
                     // Same org check
-                    u.organization_id.as_ref().map(|o| o.as_str())
-                        == Some(&organization_id.to_string())
+                    u.organization_id.as_deref() == Some(&organization_id.to_string())
                 })
-                .filter(|u| {
-                    matches!(
-                        u.role.as_str(),
-                        "syndic" | "board_member" | "contractor"
-                    )
-                })
+                .filter(|u| matches!(u.role.as_str(), "syndic" | "board_member" | "contractor"))
                 .map(|u| AssignableUserDto {
                     id: u.id.parse().unwrap_or_default(),
                     first_name: u.first_name.clone(),

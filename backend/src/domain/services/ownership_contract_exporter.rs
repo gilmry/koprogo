@@ -169,7 +169,10 @@ impl OwnershipContractExporter {
         y -= 6.0;
 
         current_layer.use_text(
-            format!("Quote-part: {:.2}%", ownership_percentage * rust_decimal_macros::dec!(100)),
+            format!(
+                "Quote-part: {:.2}%",
+                ownership_percentage * rust_decimal_macros::dec!(100)
+            ),
             10.0,
             Mm(20.0),
             Mm(y),

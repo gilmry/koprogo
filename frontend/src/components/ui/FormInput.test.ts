@@ -33,10 +33,7 @@ describe("FormInput", () => {
     render(FormInput, {
       props: { id: "test", label: "X", error: "Bad" },
     });
-    expect(screen.getByRole("textbox")).toHaveAttribute(
-      "aria-invalid",
-      "true",
-    );
+    expect(screen.getByRole("textbox")).toHaveAttribute("aria-invalid", "true");
   });
 
   it("shows hint text when no error", () => {

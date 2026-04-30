@@ -111,9 +111,9 @@ impl ResponseError for AppError {
     fn status_code(&self) -> StatusCode {
         match self {
             AppError::Validation(_) => StatusCode::BAD_REQUEST,
-            AppError::Unauthorized
-            | AppError::InvalidCredentials
-            | AppError::TokenError(_) => StatusCode::UNAUTHORIZED,
+            AppError::Unauthorized | AppError::InvalidCredentials | AppError::TokenError(_) => {
+                StatusCode::UNAUTHORIZED
+            }
             AppError::Forbidden(_) | AppError::AccountDeactivated => StatusCode::FORBIDDEN,
             AppError::NotFound(_) => StatusCode::NOT_FOUND,
             AppError::Conflict(_) => StatusCode::CONFLICT,

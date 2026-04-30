@@ -530,7 +530,9 @@ async fn test_update_ownership_percentage_success() {
         .unwrap();
 
     // Update percentage
-    let result = use_cases.update_ownership_percentage(uo.id, dec!(0.75)).await;
+    let result = use_cases
+        .update_ownership_percentage(uo.id, dec!(0.75))
+        .await;
 
     assert!(result.is_ok());
     let updated = result.unwrap();
@@ -563,7 +565,9 @@ async fn test_update_percentage_exceeds_limit() {
         .unwrap();
 
     // Try to increase owner1 to 0.7 (would make total 1.1)
-    let result = use_cases.update_ownership_percentage(uo1.id, dec!(0.7)).await;
+    let result = use_cases
+        .update_ownership_percentage(uo1.id, dec!(0.7))
+        .await;
 
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("exceed 100%"));
