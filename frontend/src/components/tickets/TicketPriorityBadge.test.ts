@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/svelte";
+import { render, screen } from "../../test-helpers";
 import { describe, it, expect } from "vitest";
 import TicketPriorityBadge from "./TicketPriorityBadge.svelte";
 

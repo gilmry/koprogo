@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/svelte";
+import { render, screen } from "../../test-helpers";
 import { describe, it, expect, vi } from "vitest";
 import TicketAssignModal from "./TicketAssignModal.svelte";
 
