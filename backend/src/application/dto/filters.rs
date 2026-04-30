@@ -1,5 +1,6 @@
 use crate::domain::entities::ApprovalStatus;
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -26,8 +27,8 @@ pub struct ExpenseFilters {
     pub approval_status: Option<ApprovalStatus>, // Nouveau: pour filtrer par statut workflow
     pub date_from: Option<DateTime<Utc>>,
     pub date_to: Option<DateTime<Utc>>,
-    pub min_amount: Option<f64>,
-    pub max_amount: Option<f64>,
+    pub min_amount: Option<Decimal>,
+    pub max_amount: Option<Decimal>,
 }
 
 /// Filters for unit list queries

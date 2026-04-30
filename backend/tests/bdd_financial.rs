@@ -3447,12 +3447,14 @@ async fn then_owner_should_owe(
         world.distribution_amounts
     );
     let (_, amount) = found.unwrap();
-    let diff = (amount - expected).abs();
+    let expected_dec = <Decimal as rust_decimal::prelude::FromPrimitive>::from_f64(expected)
+        .unwrap_or(Decimal::ZERO);
+    let diff = (*amount - expected_dec).abs();
     assert!(
         diff < dec!(0.02),
         "Expected {} to owe {}, got {} (diff: {})",
         name,
-        expected,
+        expected_dec,
         amount,
         diff
     );
@@ -3619,11 +3621,12 @@ async fn then_total_due_amount(
     _total: Decimal,
 ) {
     let total = world.total_due.expect("total due");
-    let diff = (total - expected).abs();
+    let expected_dec = rust_decimal::prelude::FromPrimitive::from_f64(expected).unwrap_or(Decimal::ZERO);
+    let diff = (total - expected_dec).abs();
     assert!(
         diff < dec!(1),
         "Expected total due {}, got {} (diff: {})",
-        expected,
+        expected_dec,
         total,
         diff
     );
@@ -4166,10 +4169,11 @@ async fn then_invoice_status(world: &mut FinancialWorld, expected: String) {
 async fn then_invoice_vat_amount(world: &mut FinancialWorld, expected: Decimal) {
     let inv = world.last_invoice.as_ref().expect("no invoice");
     let vat = inv.vat_amount.unwrap_or(Decimal::ZERO);
+    let expected_dec = rust_decimal::prelude::FromPrimitive::from_f64(expected).unwrap_or(Decimal::ZERO);
     assert!(
-        (vat - expected).abs() < dec!(0.01),
+        (vat - expected_dec).abs() < dec!(0.01),
         "Expected VAT {}, got {}",
-        expected,
+        expected_dec,
         vat
     );
 }
@@ -4178,8 +4182,9 @@ async fn then_invoice_vat_amount(world: &mut FinancialWorld, expected: Decimal) 
 async fn then_invoice_total_ttc(world: &mut FinancialWorld, expected: Decimal) {
     let inv = world.last_invoice.as_ref().expect("no invoice");
     let ttc = inv.amount_incl_vat.unwrap_or(inv.amount);
+    let expected_dec = rust_decimal::prelude::FromPrimitive::from_f64(expected).unwrap_or(Decimal::ZERO);
     assert!(
-        (ttc - expected).abs() < dec!(0.01),
+        (ttc - expected_dec).abs() < dec!(0.01),
         "Expected TTC {}, got {}",
         expected,
         ttc
@@ -4953,10 +4958,12 @@ async fn when_request_total_due(world: &mut FinancialWorld) {
 }
 
 #[then(regex = r#"^the total amount due should be ([0-9.]+) EUR$"#)]
-async fn then_total_due(world: &mut FinancialWorld, expected: Decimal) {
+async fn then_total_due(world: &mut FinancialWorld, expected: f64) {
     let total = world.total_due.unwrap_or(Decimal::ZERO);
+    let expected_dec = <Decimal as rust_decimal::prelude::FromPrimitive>::from_f64(expected)
+        .unwrap_or(Decimal::ZERO);
     assert!(
-        (total - expected).abs() < dec!(0.01),
+        (total - expected_dec).abs() < dec!(0.01),
         "Expected {}, got {}",
         expected,
         total
@@ -6809,10 +6816,12 @@ async fn then_expense_created(world: &mut FinancialWorld) {
 async fn then_amount_incl_vat(world: &mut FinancialWorld, expected: Decimal) {
     if let Some(ref inv) = world.last_invoice {
         let ttc = inv.amount_incl_vat.unwrap_or(inv.amount);
+        let expected_dec = <Decimal as rust_decimal::prelude::FromPrimitive>::from_f64(expected)
+            .unwrap_or(Decimal::ZERO);
         assert!(
-            (ttc - expected).abs() < dec!(0.01),
+            (ttc - expected_dec).abs() < dec!(0.01),
             "Expected amount_incl_vat {}, got {}",
-            expected,
+            expected_dec,
             ttc
         );
     } else {

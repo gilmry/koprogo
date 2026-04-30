@@ -8,6 +8,7 @@ use actix_web::http::header;
 use actix_web::{test, App};
 use koprogo_api::application::dto::{CreateBuildingDto, CreateOwnerDto, CreateUnitDto};
 use koprogo_api::domain::entities::UnitType;
+use rust_decimal_macros::dec;
 use koprogo_api::infrastructure::web::configure_routes;
 use serde_json::json;
 use serial_test::serial;
