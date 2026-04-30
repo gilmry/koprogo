@@ -130,9 +130,17 @@ pub async fn list_buildings(
     // Extract organization_id from authenticated user (secure!)
     let organization_id = user.organization_id;
 
+    // BUG-WF14-2: Pour les Owners, filtrer par les immeubles où ils possèdent un lot
+    // via la table unit_owners → units → buildings
+    let owner_user_id = if user.role == "owner" {
+        Some(user.user_id)
+    } else {
+        None
+    };
+
     match state
         .building_use_cases
-        .list_buildings_paginated(&page_request, organization_id)
+        .list_buildings_paginated_for_user(&page_request, organization_id, owner_user_id)
         .await
     {
         Ok((buildings, total)) => {

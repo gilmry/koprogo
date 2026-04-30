@@ -1,0 +1,114 @@
+name: Prepare Incident Context
+
+# Architecture: Claude Desktop primary runtime (cf. .claude/AGENT_GUARDRAILS.md).
+# Ce workflow ne fait AUCUN appel à Claude API. Il prépare un briefing + ouvre une issue ;
+# le superviseur ouvre Claude Desktop et charge le persona sre-platform pour analyse.
+
+on:
+  workflow_dispatch:
+    inputs:
+      alert_id:
+        description: "Alert ID ou description courte"
+        required: true
+        type: string
+      severity:
+        description: "Severity"
+        type: choice
+        options: [SEV1, SEV2, SEV3, SEV4]
+        default: SEV3
+      time_window_minutes:
+        description: "Fenêtre de logs/metrics à inclure (minutes)"
+        default: "30"
+        type: string
+      notes:
+        description: "Notes initiales (optionnel)"
+        required: false
+        type: string
+  repository_dispatch:
+    types: [alertmanager-webhook]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
+      - name: Resolve inputs (workflow_dispatch OR repository_dispatch)
+        id: inputs
+        run: |
+          ALERT_ID="${{ inputs.alert_id || github.event.client_payload.alert_id || 'unknown' }}"
+          SEV="${{ inputs.severity || github.event.client_payload.severity || 'SEV3' }}"
+          WINDOW="${{ inputs.time_window_minutes || '30' }}"
+          NOTES="${{ inputs.notes || github.event.client_payload.notes || '' }}"
+          {
+            echo "alert_id=${ALERT_ID}"
+            echo "severity=${SEV}"
+            echo "window=${WINDOW}"
+            echo "notes=${NOTES}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build briefing
+        run: |
+          DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          WINDOW="${{ steps.inputs.outputs.window }}"
+          {
+            echo "---"
+            echo "ceremony: incident-context"
+            echo "alert_id: ${{ steps.inputs.outputs.alert_id }}"
+            echo "severity: ${{ steps.inputs.outputs.severity }}"
+            echo "triggered_at: ${DATE}"
+            echo "time_window_minutes: ${WINDOW}"
+            echo "status: awaiting_diagnostic"
+            echo "---"
+            echo
+            echo "# Incident context preparation"
+            echo
+            echo "**Notes initiales** : ${{ steps.inputs.outputs.notes }}"
+            echo
+            echo "## Recent commits (50 derniers)"
+            echo '```'
+            git log --oneline -50
+            echo '```'
+            echo
+            echo "## Recent merged PRs (last 7 days)"
+            echo '```'
+            gh pr list --state merged --search "merged:>=$(date -d '7 days ago' +%Y-%m-%d)" --json number,title,mergedAt --jq '.[] | "#\(.number) \(.title) (\(.mergedAt))"' || echo "(gh pr list failed)"
+            echo '```'
+            echo
+            echo "## TODO côté superviseur"
+            echo
+            echo "1. Ouvre Claude Desktop sur ton ordi."
+            echo "2. Charge le persona \`sre-platform\` :"
+            echo '   ```'
+            echo "   Charge le persona sre-platform :"
+            echo "     - lis .claude/agents/sre-platform.md"
+            echo "     - lis .claude/agents/sre-platform.memory.md"
+            echo "   Puis investigate cette issue."
+            echo '   ```'
+            echo "3. Claude produira un diagnostic + plan d'action."
+            echo "4. Tu approuves ou corriges → tu exécutes les actions Tier 1 (mutation prod)."
+            echo
+            echo "**Logs/metrics Prometheus/Loki** : à intégrer dans une future itération du workflow (S3 #429)."
+            echo
+            echo "🤖 Auto-prepared by \`prepare-incident-context.yml\` (Tier 2 — pas d'IA dans ce workflow)."
+          } > /tmp/incident-context.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Open incident issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          TITLE="incident-${DATE}-${{ steps.inputs.outputs.alert_id }}"
+          gh issue create \
+            --title "$TITLE" \
+            --label "ceremony,priority:high,track:infrastructure" \
+            --body-file /tmp/incident-context.md

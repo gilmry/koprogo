@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { NoticeType } from "../../lib/api/notices";
 
-  export let type: NoticeType;
+  let { type }: { type: NoticeType } = $props();
 
   const typeConfig: Record<
     NoticeType,
@@ -29,7 +30,7 @@
     },
   };
 
-  $: config = typeConfig[type];
+  let config = $derived(typeConfig[type]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

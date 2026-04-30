@@ -6,7 +6,6 @@
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::infrastructure::web::middleware::AuthenticatedUser;
@@ -104,7 +103,7 @@ fn generate_api_key() -> (String, String, String) {
 #[post("/api-keys")]
 pub async fn create_api_key(
     claims: AuthenticatedUser,
-    state: web::Data<Arc<AppState>>,
+    state: web::Data<AppState>,
     body: web::Json<CreateApiKeyRequest>,
 ) -> HttpResponse {
     // Verify permissions
@@ -210,10 +209,7 @@ pub async fn create_api_key(
 
 /// List API keys for organization (key bodies hidden)
 #[get("/api-keys")]
-pub async fn list_api_keys(
-    claims: AuthenticatedUser,
-    state: web::Data<Arc<AppState>>,
-) -> HttpResponse {
+pub async fn list_api_keys(claims: AuthenticatedUser, state: web::Data<AppState>) -> HttpResponse {
     let org_id = match claims.organization_id {
         Some(id) => id,
         None => {
@@ -270,7 +266,7 @@ pub async fn list_api_keys(
 #[get("/api-keys/{id}")]
 pub async fn get_api_key(
     claims: AuthenticatedUser,
-    state: web::Data<Arc<AppState>>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
 ) -> HttpResponse {
     let key_id = path.into_inner();
@@ -323,7 +319,7 @@ pub async fn get_api_key(
 #[put("/api-keys/{id}")]
 pub async fn update_api_key(
     claims: AuthenticatedUser,
-    state: web::Data<Arc<AppState>>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
     body: web::Json<UpdateApiKeyRequest>,
 ) -> HttpResponse {
@@ -430,7 +426,7 @@ pub async fn update_api_key(
 #[delete("/api-keys/{id}")]
 pub async fn revoke_api_key(
     claims: AuthenticatedUser,
-    state: web::Data<Arc<AppState>>,
+    state: web::Data<AppState>,
     path: web::Path<Uuid>,
 ) -> HttpResponse {
     let key_id = path.into_inner();
@@ -489,7 +485,7 @@ pub async fn revoke_api_key(
 #[post("/api-keys/{id}/rotate")]
 pub async fn rotate_api_key(
     claims: AuthenticatedUser,
-    _state: web::Data<Arc<AppState>>,
+    _state: web::Data<AppState>,
     path: web::Path<Uuid>,
 ) -> HttpResponse {
     let _key_id = path.into_inner();

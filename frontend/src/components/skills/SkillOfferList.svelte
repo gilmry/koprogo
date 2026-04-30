@@ -1,38 +1,41 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import {
     skillsApi,
     type SkillOffer,
     SkillCategory,
     ExpertiseLevel,
   } from "../../lib/api/skills";
-  import { toast } from "../../stores/toast";
   import SkillOfferCard from "./SkillOfferCard.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let showFilters = true;
+  let { buildingId, showFilters = true }: {
+    buildingId: string;
+    showFilters?: boolean;
+  } = $props();
 
-  let offers: SkillOffer[] = [];
-  let filteredOffers: SkillOffer[] = [];
-  let loading = true;
-  let searchQuery = "";
-  let selectedCategory: SkillCategory | "all" = "all";
-  let selectedExpertise: ExpertiseLevel | "all" = "all";
+  let offers = $state<SkillOffer[]>([]);
+  let filteredOffers = $state<SkillOffer[]>([]);
+  let loading = $state(true);
+  let searchQuery = $state("");
+  let selectedCategory = $state<SkillCategory | "all">("all");
+  let selectedExpertise = $state<ExpertiseLevel | "all">("all");
 
-  onMount(async () => {
-    await loadOffers();
+  $effect(() => {
+    loadOffers();
   });
 
   async function loadOffers() {
-    try {
-      loading = true;
-      offers = await skillsApi.listAvailableOffers(buildingId);
+    loading = true;
+    const result = await withErrorHandling({
+      action: () => skillsApi.listAvailableOffers(buildingId),
+      errorMessage: "Failed to load skill offers",
+    });
+    if (result) {
+      offers = result;
       applyFilters();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load skill offers");
-    } finally {
-      loading = false;
     }
+    loading = false;
   }
 
   function applyFilters() {
@@ -53,19 +56,19 @@
     });
   }
 
-  $: {
+  $effect(() => {
     searchQuery;
     selectedCategory;
     selectedExpertise;
     applyFilters();
-  }
+  });
 
   function handleOfferClick(offerId: string) {
     window.location.href = `/skill-detail?id=${offerId}`;
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="skill-offer-list">
   {#if showFilters}
     <!-- Filters -->
     <div class="bg-white shadow rounded-lg p-4">

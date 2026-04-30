@@ -1,4 +1,12 @@
-import { init, getLocaleFromNavigator, addMessages } from "svelte-i18n";
+import {
+  init,
+  getLocaleFromNavigator,
+  addMessages,
+  _,
+  locale,
+  isLoading,
+  waitLocale,
+} from "svelte-i18n";
 import frMessages from "../locales/fr.json";
 import nlMessages from "../locales/nl.json";
 import deMessages from "../locales/de.json";
@@ -43,6 +51,7 @@ export function setupI18n() {
 }
 
 // Auto-init when imported as side-effect (for backward compat)
+// i18n translations updated 2026-03-26
 setupI18n();
 
 // Export language options for selector
@@ -54,3 +63,5 @@ export const languages = [
 ] as const;
 
 export type LanguageCode = (typeof languages)[number]["code"];
+
+export { _, locale, isLoading, waitLocale };

@@ -12,22 +12,17 @@ Comprehensive security and monitoring setup for production KoproGo deployment.
 
 ## 🚀 Quick Start
 
-Deploy all security and monitoring features:
+Deploy all security and monitoring features via the new role-based Makefile:
 
 ```bash
-cd infrastructure/ansible
-ansible-playbook -i inventory.ini security-monitoring.yml
+# VPS (Docker Compose)
+make -f infrastructure/Makefile.infra ansible-setup ENV=production ARCH=vps SITE=monosite
+
+# K3s
+make -f infrastructure/Makefile.infra ansible-setup ENV=production ARCH=k3s SITE=monosite
 ```
 
-Or run specific components:
-
-```bash
-# Security only
-ansible-playbook -i inventory.ini security-monitoring.yml --tags security
-
-# Monitoring only
-ansible-playbook -i inventory.ini security-monitoring.yml --tags monitoring
-```
+Individual roles: `security`, `monitoring`, `hardening`, `backup` are in `infrastructure/_shared/ansible/roles/`.
 
 ---
 
@@ -48,10 +43,9 @@ Encrypts PostgreSQL data and document uploads volumes using LUKS full-disk encry
 **Setup:**
 
 ```bash
-# Configure volume devices (edit inventory.ini or pass as variables)
-ansible-playbook -i inventory.ini security-monitoring.yml \
-  -e "postgres_volume_device=vdb" \
-  -e "uploads_volume_device=vdc"
+# Configure volume devices via group_vars (monosite/vps/production/ansible/group_vars/)
+make -f infrastructure/Makefile.infra ansible-setup ENV=production ARCH=vps SITE=monosite \
+  -- -e "postgres_volume_device=vdb" -e "uploads_volume_device=vdc"
 
 # Verify encryption
 cryptsetup status postgres_encrypted

@@ -1,9 +1,15 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { type Poll, type PollResults, PollType } from "../../lib/api/polls";
 
-  export let poll: Poll;
-  export let results: PollResults;
+  let {
+    poll,
+    results,
+  }: {
+    poll: Poll;
+    results: PollResults;
+  } = $props();
 
   function getWinnerColor(optionId: string): string {
     if (results.winning_option && results.winning_option.id === optionId) {

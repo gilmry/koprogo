@@ -4,6 +4,9 @@
   import { etatsDatesApi, type EtatDate, type EtatDateStats, EtatDateStatus } from '../../lib/api/etats-dates';
   import EtatDateStatusBadge from './EtatDateStatusBadge.svelte';
   import EtatDateCreateForm from './EtatDateCreateForm.svelte';
+  import { formatDate } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   let etatsDates: EtatDate[] = [];
   let stats: EtatDateStats | null = null;
@@ -21,37 +24,27 @@
   });
 
   async function loadEtatsDates() {
-    try {
-      loading = true;
-      error = '';
-      const statusFilter = filterStatus ? filterStatus as EtatDateStatus : undefined;
-      const response = await etatsDatesApi.list(currentPage, 20, statusFilter);
-      etatsDates = response.data;
-      totalPages = Math.ceil(response.total / response.per_page);
-    } catch (err: any) {
-      error = err.message || $_('common.loadingError');
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    const statusFilter = filterStatus ? filterStatus as EtatDateStatus : undefined;
+    const result = await withErrorHandling({
+      action: () => etatsDatesApi.list(currentPage, 20, statusFilter),
+      errorMessage: $_('common.loadingError'),
+    });
+    if (result) {
+      etatsDates = result.data;
+      totalPages = Math.ceil(result.total / result.per_page);
+    } else {
+      error = $_('common.loadingError');
     }
+    loading = false;
   }
 
   async function loadStats() {
-    try {
-      stats = await etatsDatesApi.getStats();
-    } catch (err) {
-      console.error('Error loading stats:', err);
-    }
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
-  function formatDate(dateString: string | null): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric', month: 'short', day: 'numeric'
+    const result = await withErrorHandling({
+      action: () => etatsDatesApi.getStats(),
     });
+    if (result) stats = result;
   }
 
   function handleCreated() {
@@ -66,7 +59,7 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-testid="etat-date-list">
   <!-- Stats -->
   {#if stats}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -139,7 +132,7 @@
   <!-- List -->
   {#if loading}
     <div class="flex justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" data-testid="etat-date-list-spinner"></div>
     </div>
   {:else if etatsDates.length === 0}
     <div class="bg-white rounded-lg shadow p-12 text-center">
@@ -164,7 +157,7 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
           {#each etatsDates as ed}
-            <tr class="hover:bg-gray-50 transition {ed.is_overdue ? 'bg-red-50' : ''}">
+            <tr class="hover:bg-gray-50 transition {ed.is_overdue ? 'bg-red-50' : ''}" data-testid="etat-date-row">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-900">{ed.reference_number}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm">
                 <p class="font-medium text-gray-900">{ed.building_name}</p>

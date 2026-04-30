@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     gamificationApi,
@@ -8,22 +8,43 @@
     AchievementTier,
   } from '../../lib/api/gamification';
   import { toast } from '../../stores/toast';
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let organizationId: string;
-  export let achievement: Achievement | null = null;
+  let {
+    organizationId,
+    achievement = null,
+    onsaved,
+    oncancel,
+  }: {
+    organizationId: string;
+    achievement?: Achievement | null;
+    onsaved?: (result: any) => void;
+    oncancel?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-  let saving = false;
+  let saving = $state(false);
 
-  let title = achievement?.name || '';
-  let description = achievement?.description || '';
-  let category: AchievementCategory = achievement?.category || AchievementCategory.Community;
-  let tier: AchievementTier = achievement?.tier || AchievementTier.Bronze;
-  let icon = achievement?.icon || '';
-  let pointsValue = achievement?.points_value || 10;
-  let isSecret = achievement?.is_secret || false;
-  let isRepeatable = achievement?.is_repeatable || false;
-  let displayOrder = achievement?.display_order || 0;
+  let title = $state('');
+  let description = $state('');
+  let category = $state<AchievementCategory>(AchievementCategory.Community);
+  let tier = $state<AchievementTier>(AchievementTier.Bronze);
+  let icon = $state('');
+  let pointsValue = $state(10);
+  let isSecret = $state(false);
+  let isRepeatable = $state(false);
+  let displayOrder = $state(0);
+
+  $effect(() => {
+    title = achievement?.name || '';
+    description = achievement?.description || '';
+    category = achievement?.category || AchievementCategory.Community;
+    tier = achievement?.tier || AchievementTier.Bronze;
+    icon = achievement?.icon || '';
+    pointsValue = achievement?.points_value || 10;
+    isSecret = achievement?.is_secret || false;
+    isRepeatable = achievement?.is_repeatable || false;
+    displayOrder = achievement?.display_order || 0;
+  });
 
   const categoryLabels: Record<AchievementCategory, string> = {
     [AchievementCategory.Community]: $_('gamification.category.community'),
@@ -66,48 +87,44 @@
       return;
     }
 
-    try {
-      saving = true;
-      const data = {
-        organization_id: organizationId,
-        name: title.trim(),
-        description: description.trim(),
-        category,
-        tier,
-        icon: icon || '🏅',
-        points_value: pointsValue,
-        is_secret: isSecret,
-        is_repeatable: isRepeatable,
-        display_order: displayOrder,
-        requirements: '{}',
-      };
+    const data = {
+      organization_id: organizationId,
+      name: title.trim(),
+      description: description.trim(),
+      category,
+      tier,
+      icon: icon || '🏅',
+      points_value: pointsValue,
+      is_secret: isSecret,
+      is_repeatable: isRepeatable,
+      display_order: displayOrder,
+      requirements: '{}',
+    };
 
-      let result: Achievement;
-      if (achievement) {
-        result = await gamificationApi.updateAchievement(achievement.id, data);
-        toast.success($_('gamification.updateSuccess', { values: { name: title.trim() } }));
-      } else {
-        result = await gamificationApi.createAchievement(data);
-        toast.success($_('gamification.createSuccess', { values: { name: title.trim() } }));
-      }
-      dispatch('saved', result);
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.saveError'));
-    } finally {
-      saving = false;
-    }
+    await withErrorHandling({
+      action: () => achievement
+        ? gamificationApi.updateAchievement(achievement.id, data)
+        : gamificationApi.createAchievement(data),
+      setLoading: (v: boolean) => saving = v,
+      successMessage: achievement
+        ? $_('gamification.updateSuccess', { values: { name: title.trim() } })
+        : $_('gamification.createSuccess', { values: { name: title.trim() } }),
+      errorMessage: $_('gamification.saveError'),
+      onSuccess: (result) => onsaved?.(result),
+    });
   }
 
   function handleCancel() {
-    dispatch('cancel');
+    oncancel?.();
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+<form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="achievement-form">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="md:col-span-2">
       <label for="ach-name" class="block text-sm font-medium text-gray-700">{$_('common.name')} *</label>
       <input id="ach-name" type="text" bind:value={title} required
+        data-testid="achievement-name-input"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
         placeholder={$_('gamification.namePlaceholder')} />
       <p class="mt-1 text-xs text-gray-500">{$_('gamification.nameHelp')}</p>
@@ -116,6 +133,7 @@
     <div class="md:col-span-2">
       <label for="ach-desc" class="block text-sm font-medium text-gray-700">{$_('common.description')} *</label>
       <textarea id="ach-desc" bind:value={description} rows="2"
+        data-testid="achievement-description-input"
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
         placeholder={$_('gamification.descriptionPlaceholder')}></textarea>
       <p class="mt-1 text-xs text-gray-500">{$_('gamification.descriptionHelp')}</p>
@@ -178,11 +196,12 @@
   </div>
 
   <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-    <button type="button" on:click={handleCancel}
+    <button type="button" onclick={handleCancel}
       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
       {$_('common.cancel')}
     </button>
     <button type="submit" disabled={saving}
+      data-testid="achievement-submit-btn"
       class="px-4 py-2 text-sm font-medium text-white bg-amber-600 border border-transparent rounded-md hover:bg-amber-700 disabled:opacity-50">
       {#if saving}
         {$_('common.saving')}

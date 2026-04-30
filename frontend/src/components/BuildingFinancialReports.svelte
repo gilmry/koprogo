@@ -1,46 +1,55 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { formatCurrency } from "../lib/utils/finance.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let buildingName: string = '';
+  let { buildingId, buildingName = '' }: {
+    buildingId: string;
+    buildingName?: string;
+  } = $props();
 
   // Report type selection
-  let reportType: 'balance-sheet' | 'income-statement' = 'balance-sheet';
+  let reportType = $state<'balance-sheet' | 'income-statement'>('balance-sheet');
 
   // Date range for income statement
-  let periodStart = '';
-  let periodEnd = '';
+  let periodStart = $state('');
+  let periodEnd = $state('');
 
   // Report data
-  let balanceSheet: any = null;
-  let incomeStatement: any = null;
+  let balanceSheet = $state<any>(null);
+  let incomeStatement = $state<any>(null);
 
   // Loading states
-  let loading = false;
-  let error = '';
+  let loading = $state(false);
+  let error = $state('');
 
-  onMount(() => {
-    // Set default period to current year
-    const now = new Date();
-    const yearStart = new Date(now.getFullYear(), 0, 1);
-    periodStart = yearStart.toISOString().split('T')[0];
-    periodEnd = now.toISOString().split('T')[0];
+  $effect(() => {
+    // Set default period to current year (runs once on mount)
+    if (!periodStart) {
+      const now = new Date();
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      periodStart = yearStart.toISOString().split('T')[0];
+      periodEnd = now.toISOString().split('T')[0];
+    }
   });
 
   async function loadBalanceSheet() {
-    try {
-      loading = true;
-      error = '';
-      balanceSheet = await api.get(`/buildings/${buildingId}/reports/balance-sheet`);
-    } catch (err: any) {
-      error = err.message || $_('buildings.balanceSheetLoadError');
-      console.error('Error loading balance sheet:', err);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    const result = await withErrorHandling({
+      action: () => api.get(`/buildings/${buildingId}/reports/balance-sheet`),
+      errorMessage: $_('buildings.balanceSheetLoadError'),
+    });
+    if (result) {
+      balanceSheet = result;
+    } else {
+      error = $_('buildings.balanceSheetLoadError');
     }
+    loading = false;
   }
 
   async function loadIncomeStatement() {
@@ -48,45 +57,28 @@
       error = $_('buildings.selectPeriod');
       return;
     }
-
-    try {
-      loading = true;
-      error = '';
-      // Convert YYYY-MM-DD to ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
-      const startISO = `${periodStart}T00:00:00Z`;
-      const endISO = `${periodEnd}T23:59:59Z`;
-      incomeStatement = await api.get(
+    loading = true;
+    error = '';
+    const startISO = `${periodStart}T00:00:00Z`;
+    const endISO = `${periodEnd}T23:59:59Z`;
+    const result = await withErrorHandling({
+      action: () => api.get(
         `/buildings/${buildingId}/reports/income-statement?period_start=${startISO}&period_end=${endISO}`
-      );
-    } catch (err: any) {
-      error = err.message || $_('buildings.incomeStatementLoadError');
-      console.error('Error loading income statement:', err);
-    } finally {
-      loading = false;
+      ),
+      errorMessage: $_('buildings.incomeStatementLoadError'),
+    });
+    if (result) {
+      incomeStatement = result;
+    } else {
+      error = $_('buildings.incomeStatementLoadError');
     }
+    loading = false;
   }
 
   function handleReportTypeChange() {
     error = '';
     balanceSheet = null;
     incomeStatement = null;
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', {
-      style: 'currency',
-      currency: 'EUR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
   }
 
   function exportToPDF() {
@@ -148,7 +140,7 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-testid="building-financial-reports">
   <!-- Building Context Header -->
   <div class="bg-primary-50 border-l-4 border-primary-400 p-4 rounded-r-lg">
     <p class="text-sm text-primary-700">
@@ -164,7 +156,7 @@
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType === 'balance-sheet'
           ? 'bg-primary-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-        on:click={() => { reportType = 'balance-sheet'; handleReportTypeChange(); }}
+        onclick={() => { reportType = 'balance-sheet'; handleReportTypeChange(); }}
       >
         📊 {$_('buildings.balanceSheet')}
       </button>
@@ -172,7 +164,7 @@
         class="px-6 py-3 rounded-lg font-medium transition-colors {reportType === 'income-statement'
           ? 'bg-primary-600 text-white'
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}"
-        on:click={() => { reportType = 'income-statement'; handleReportTypeChange(); }}
+        onclick={() => { reportType = 'income-statement'; handleReportTypeChange(); }}
       >
         📈 {$_('buildings.incomeStatement')}
       </button>
@@ -214,7 +206,7 @@
   <div class="flex justify-center">
     <button
       class="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-      on:click={() => reportType === 'balance-sheet' ? loadBalanceSheet() : loadIncomeStatement()}
+      onclick={() => reportType === 'balance-sheet' ? loadBalanceSheet() : loadIncomeStatement()}
       disabled={loading}
     >
       {#if loading}
@@ -257,13 +249,13 @@
         <p class="text-primary-100">{$_('buildings.building')}: {buildingName}</p>
         <div class="mt-4 flex space-x-4">
           <button
-            on:click={exportToPDF}
+            onclick={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📄 {$_('buildings.exportPDF')}
           </button>
           <button
-            on:click={exportToExcel}
+            onclick={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📊 {$_('buildings.exportCSV')}
@@ -388,17 +380,16 @@
         <p class="text-primary-100 mt-1">
           {$_('buildings.period')}: {formatDate(incomeStatement.period_start)} - {formatDate(incomeStatement.period_end)}
         </p>
-        <p class="text-primary-100">{$_('buildings.building')}:
- {buildingName}</p>
+        <p class="text-primary-100">{$_('buildings.building')}: {buildingName}</p>
         <div class="mt-4 flex space-x-4">
           <button
-            on:click={exportToPDF}
+            onclick={exportToPDF}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📄 {$_('buildings.exportPDF')}
           </button>
           <button
-            on:click={exportToExcel}
+            onclick={exportToExcel}
             class="px-4 py-2 bg-white text-primary-600 rounded hover:bg-primary-50 transition-colors text-sm font-medium"
           >
             📊 {$_('buildings.exportCSV')}

@@ -3,14 +3,14 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Type d'assemblée générale
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum MeetingType {
     Ordinary,      // Assemblée Générale Ordinaire (AGO)
     Extraordinary, // Assemblée Générale Extraordinaire (AGE)
 }
 
 /// Statut de l'assemblée
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum MeetingStatus {
     Scheduled,
     Completed,

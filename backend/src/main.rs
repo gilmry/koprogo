@@ -153,6 +153,8 @@ async fn main() -> std::io::Result<()> {
     let board_member_repo = Arc::new(PostgresBoardMemberRepository::new(pool.clone()));
     let board_decision_repo = Arc::new(PostgresBoardDecisionRepository::new(pool.clone()));
     let gdpr_repo = Arc::new(PostgresGdprRepository::new(Arc::new(pool.clone())));
+    let gdpr_art30_repo = Arc::new(PostgresGdprArt30Repository::new(pool.clone()));
+    let gdpr_art30_use_cases = GdprArt30UseCases::new(gdpr_art30_repo);
     let audit_log_repo = Arc::new(PostgresAuditLogRepository::new(pool.clone()));
     let charge_distribution_repo =
         Arc::new(PostgresChargeDistributionRepository::new(pool.clone()));
@@ -217,9 +219,10 @@ async fn main() -> std::io::Result<()> {
     let auth_use_cases = AuthUseCases::new(
         user_repo.clone(),
         refresh_token_repo,
-        user_role_repo,
+        user_role_repo.clone(),
         jwt_secret,
     );
+    let user_use_cases = UserUseCases::new(user_repo.clone(), user_role_repo);
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
     let unit_use_cases = UnitUseCases::new(unit_repo.clone());
     let owner_use_cases = OwnerUseCases::new(owner_repo.clone());
@@ -272,9 +275,12 @@ async fn main() -> std::io::Result<()> {
     let linky_use_cases = LinkyUseCases::new(iot_repo, linky_client, oauth_redirect_uri);
     let notification_use_cases =
         NotificationUseCases::new(notification_repo, notification_preference_repo);
-    let payment_use_cases = PaymentUseCases::new(payment_repo.clone(), payment_method_repo.clone());
+    let payment_use_cases_arc = Arc::new(PaymentUseCases::new(
+        payment_repo.clone(),
+        payment_method_repo.clone(),
+    ));
     let payment_method_use_cases = PaymentMethodUseCases::new(payment_method_repo);
-    let quote_use_cases = QuoteUseCases::new(quote_repo);
+    let quote_use_cases = QuoteUseCases::new(quote_repo.clone());
     let local_exchange_use_cases = LocalExchangeUseCases::new(
         local_exchange_repo,
         owner_credit_balance_repo.clone(),
@@ -289,6 +295,8 @@ async fn main() -> std::io::Result<()> {
         owner_credit_balance_repo.clone(),
     );
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
+    let stats_repo = Arc::new(PostgresStatsRepository::new(pool.clone()));
+    let stats_use_cases = StatsUseCases::new(stats_repo);
     let technical_inspection_use_cases =
         TechnicalInspectionUseCases::new(technical_inspection_repo);
     let work_report_use_cases = WorkReportUseCases::new(work_report_repo);
@@ -321,6 +329,9 @@ async fn main() -> std::io::Result<()> {
         building_repo.clone(),
     );
     let account_use_cases = AccountUseCases::new(account_repo.clone());
+    let audit_log_use_cases = AuditLogUseCases::new(audit_log_repo.clone());
+    let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
+    let organization_use_cases = OrganizationUseCases::new(organization_repo);
     let financial_report_use_cases = FinancialReportUseCases::new(
         account_repo.clone(),
         expense_repo.clone(),
@@ -362,7 +373,26 @@ async fn main() -> std::io::Result<()> {
     let ag_session_use_cases =
         AgSessionUseCases::new(ag_session_repo.clone(), meeting_repo.clone());
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo.clone());
-    let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone());
+    let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo.clone())
+        .with_payment_support(quote_repo.clone(), payment_use_cases_arc.clone());
+
+    // Marketplace (Issue #276)
+    let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
+    let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
+
+    // Individual Members (Energy group buying extensions)
+    let individual_member_repo = Arc::new(PostgresIndividualMemberRepository::new(pool.clone()));
+    let individual_member_use_cases = IndividualMemberUseCases::new(individual_member_repo);
+
+    // Security Incidents (GDPR Art. 33 — APD notification within 72h)
+    let security_incident_repo = Arc::new(PostgresSecurityIncidentRepository::new(pool.clone()));
+    let security_incident_use_cases = SecurityIncidentUseCases::new(security_incident_repo);
+
+    // Consent (GDPR Art. 7)
+    let consent_repo = Arc::new(PostgresConsentRepository::new(pool.clone()));
+    let consent_use_cases =
+        consent_use_cases::ConsentUseCases::new(consent_repo, audit_log_repo.clone());
+
     let energy_campaign_use_cases = EnergyCampaignUseCases::new(
         energy_campaign_repo.clone(),
         energy_bill_upload_repo.clone(),
@@ -376,6 +406,7 @@ async fn main() -> std::io::Result<()> {
 
     let app_state = web::Data::new(AppState::new(
         account_use_cases,
+        audit_log_use_cases,
         auth_use_cases,
         building_use_cases,
         budget_use_cases,
@@ -390,15 +421,17 @@ async fn main() -> std::io::Result<()> {
         ticket_use_cases,
         two_factor_use_cases,
         notification_use_cases,
-        payment_use_cases,
+        payment_use_cases_arc,
         payment_method_use_cases,
         poll_use_cases,
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
+        organization_use_cases,
         resource_booking_use_cases,
         shared_object_use_cases,
         skill_use_cases,
+        stats_use_cases,
         technical_inspection_use_cases,
         work_report_use_cases,
         document_use_cases,
@@ -407,6 +440,7 @@ async fn main() -> std::io::Result<()> {
         etat_date_use_cases,
         pcn_use_cases,
         payment_reminder_use_cases,
+        gdpr_art30_use_cases,
         gdpr_use_cases,
         iot_use_cases,
         linky_use_cases,
@@ -424,11 +458,16 @@ async fn main() -> std::io::Result<()> {
         ag_session_use_cases,
         age_request_use_cases,
         contractor_report_use_cases,
+        security_incident_use_cases,
+        service_provider_use_cases,
+        individual_member_use_cases,
+        consent_use_cases,
         audit_logger,
         email_service,
         pool.clone(),
         mqtt_energy_adapter,
         boinc_use_cases,
+        user_use_cases,
     ));
 
     log::info!(

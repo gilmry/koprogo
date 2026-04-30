@@ -1,14 +1,32 @@
 <script lang="ts">
-  export let id: string;
-  export let label: string;
-  export let value: string | number = '';
-  export let options: Array<{ value: string | number; label: string }> = [];
-  export let placeholder = 'Sélectionner...';
-  export let required = false;
-  export let disabled = false;
-  export let error = '';
-  export let hint = '';
+  // Svelte 5 runes mode
+  import type { Snippet } from 'svelte';
 
+  let {
+    id = '',
+    label = '',
+    value = $bindable(''),
+    options = [],
+    placeholder = 'Sélectionner...',
+    required = false,
+    disabled = false,
+    error = '',
+    hint = '',
+    children,
+    ...restProps
+  }: {
+    id?: string;
+    label?: string;
+    value?: string | number;
+    options?: Array<{ value: string | number; label: string }>;
+    placeholder?: string;
+    required?: boolean;
+    disabled?: boolean;
+    error?: string;
+    hint?: string;
+    children?: Snippet;
+    [key: string]: any;
+  } = $props();
 </script>
 
 <div class="mb-4">
@@ -25,20 +43,22 @@
     {required}
     {disabled}
     bind:value
-    {...$$restProps}
-    on:blur
-    on:focus
+    {...restProps}
     aria-invalid={error ? 'true' : undefined}
     aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
     class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition
       {error ? 'border-red-500' : 'border-gray-300'}"
   >
-    {#if placeholder}
+    {#if placeholder && options.length > 0}
       <option value="" disabled selected={!value}>{placeholder}</option>
     {/if}
-    {#each options as option}
-      <option value={option.value}>{option.label}</option>
-    {/each}
+    {#if options.length > 0}
+      {#each options as option}
+        <option value={option.value}>{option.label}</option>
+      {/each}
+    {:else if children}
+      {@render children()}
+    {/if}
   </select>
 
   {#if error}

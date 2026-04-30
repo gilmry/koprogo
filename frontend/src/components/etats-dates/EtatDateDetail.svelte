@@ -4,6 +4,9 @@
   import { etatsDatesApi, type EtatDate } from '../../lib/api/etats-dates';
   import EtatDateStatusBadge from './EtatDateStatusBadge.svelte';
   import { toast } from '../../stores/toast';
+  import { formatDate } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
   let etatDate: EtatDate | null = null;
   let loading = true;
@@ -18,26 +21,18 @@
   });
 
   async function loadEtatDate() {
-    try {
-      loading = true;
-      error = '';
-      etatDate = await etatsDatesApi.getById(etatDateId);
-    } catch (err: any) {
-      error = err.message || $_('common.loadingError');
-    } finally {
-      loading = false;
-    }
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
-  function formatDate(dateString: string | null): string {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric', month: 'long', day: 'numeric'
+    loading = true;
+    error = '';
+    const result = await withErrorHandling({
+      action: () => etatsDatesApi.getById(etatDateId),
+      errorMessage: $_('common.loadingError'),
     });
+    if (result) {
+      etatDate = result;
+    } else {
+      error = $_('common.loadingError');
+    }
+    loading = false;
   }
 
   function formatPercent(value: number): string {
@@ -46,55 +41,48 @@
 
   async function markInProgress() {
     if (!confirm($_('etatsDate.confirms.startProcessing'))) return;
-    try {
-      actionLoading = true;
-      etatDate = await etatsDatesApi.markInProgress(etatDateId);
-    } catch (err: any) {
-      toast.error($_('etatsDate.errors.markingInProgress') + ': ' + (err.message || $_('common.error')));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => etatsDatesApi.markInProgress(etatDateId),
+      setLoading: (v) => actionLoading = v,
+      errorMessage: $_('etatsDate.errors.markingInProgress'),
+    });
+    if (result) etatDate = result;
   }
 
   async function markGenerated() {
     const pdfPath = prompt($_('etatsDate.prompts.pdfPath'));
     if (!pdfPath) return;
-    try {
-      actionLoading = true;
-      etatDate = await etatsDatesApi.markGenerated(etatDateId, pdfPath);
-    } catch (err: any) {
-      toast.error($_('etatsDate.errors.markingGenerated') + ': ' + (err.message || $_('common.error')));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => etatsDatesApi.markGenerated(etatDateId, pdfPath),
+      setLoading: (v) => actionLoading = v,
+      errorMessage: $_('etatsDate.errors.markingGenerated'),
+    });
+    if (result) etatDate = result;
   }
 
   async function markDelivered() {
     if (!confirm($_('etatsDate.confirms.confirmDelivery'))) return;
-    try {
-      actionLoading = true;
-      etatDate = await etatsDatesApi.markDelivered(etatDateId);
-    } catch (err: any) {
-      toast.error($_('etatsDate.errors.markingDelivered') + ': ' + (err.message || $_('common.error')));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => etatsDatesApi.markDelivered(etatDateId),
+      setLoading: (v) => actionLoading = v,
+      errorMessage: $_('etatsDate.errors.markingDelivered'),
+    });
+    if (result) etatDate = result;
   }
 
   async function deleteEtatDate() {
     if (!confirm($_('etatsDate.confirms.deleteEtatDate'))) return;
-    try {
-      await etatsDatesApi.delete(etatDateId);
-      window.location.href = '/etats-dates';
-    } catch (err: any) {
-      toast.error($_('etatsDate.errors.deletion') + ': ' + (err.message || $_('common.error')));
-    }
+    const result = await withErrorHandling({
+      action: () => etatsDatesApi.delete(etatDateId),
+      errorMessage: $_('etatsDate.errors.deletion'),
+    });
+    if (result !== undefined) window.location.href = '/etats-dates';
   }
 </script>
 
 {#if loading}
   <div class="flex justify-center py-12">
-    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" data-testid="etat-date-detail-spinner"></div>
   </div>
 {:else if error}
   <div class="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -253,6 +241,7 @@
             on:click={markInProgress}
             disabled={actionLoading}
             class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition disabled:opacity-50"
+            data-testid="mark-in-progress-button"
           >
             {$_('etatsDate.actions.startProcessing')}
           </button>
@@ -263,6 +252,7 @@
             on:click={markGenerated}
             disabled={actionLoading}
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+            data-testid="mark-generated-button"
           >
             {$_('etatsDate.actions.markAsGenerated')}
           </button>
@@ -273,6 +263,7 @@
             on:click={markDelivered}
             disabled={actionLoading}
             class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition disabled:opacity-50"
+            data-testid="mark-delivered-button"
           >
             {$_('etatsDate.actions.confirmDelivery')}
           </button>
@@ -282,6 +273,7 @@
           <button
             on:click={deleteEtatDate}
             class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+            data-testid="delete-etat-date-button"
           >
             {$_('common.delete')}
           </button>

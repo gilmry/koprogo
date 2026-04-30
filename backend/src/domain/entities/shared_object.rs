@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Category for shared objects
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum SharedObjectCategory {
     /// Tools and equipment (drill, ladder, hammer, saw, etc.)
     Tools,
@@ -24,7 +24,7 @@ pub enum SharedObjectCategory {
 }
 
 /// Condition of shared object
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema)]
 pub enum ObjectCondition {
     /// Excellent condition (like new)
     Excellent,

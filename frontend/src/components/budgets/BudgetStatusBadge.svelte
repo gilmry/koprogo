@@ -1,7 +1,12 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
 
-  export let status: string;
+  let {
+    status,
+  }: {
+    status: string;
+  } = $props();
 
   function getBadge(s: string): { class: string; label: string } {
     const badges: Record<string, { class: string; label: string }> = {
@@ -14,7 +19,7 @@
     return badges[s] || { class: 'bg-gray-100 text-gray-800', label: s };
   }
 
-  $: badge = getBadge(status);
+  let badge = $derived(getBadge(status));
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {badge.class}">

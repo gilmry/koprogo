@@ -78,18 +78,15 @@ pub async fn get_my_uploads(
     state: web::Data<AppState>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, actix_web::Error> {
-    // TODO: Get unit_id from unit_owners table based on user_id
     // Verify user has organization
     let _organization_id = user
         .organization_id
         .ok_or_else(|| actix_web::error::ErrorUnauthorized("Organization required"))?;
 
-    // Get uploads for user's organization (filtered by repository)
-    let unit_id = uuid::Uuid::nil(); // Placeholder, should come from unit_owners table
-
+    // Get uploads by the authenticated user
     let list = state
         .energy_bill_upload_use_cases
-        .get_my_uploads(unit_id)
+        .get_my_uploads(user.user_id)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
 

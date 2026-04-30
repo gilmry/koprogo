@@ -17,15 +17,16 @@ use koprogo_api::infrastructure::database::{
     PostgresGdprRepository, PostgresIoTRepository, PostgresJournalEntryRepository,
     PostgresLocalExchangeRepository, PostgresNoticeRepository,
     PostgresNotificationPreferenceRepository, PostgresNotificationRepository,
-    PostgresOwnerContributionRepository, PostgresOwnerCreditBalanceRepository,
-    PostgresOwnerRepository, PostgresPaymentMethodRepository, PostgresPaymentReminderRepository,
-    PostgresPaymentRepository, PostgresPollRepository, PostgresPollVoteRepository,
-    PostgresQuoteRepository, PostgresRefreshTokenRepository, PostgresResolutionRepository,
-    PostgresResourceBookingRepository, PostgresSharedObjectRepository, PostgresSkillRepository,
-    PostgresTechnicalInspectionRepository, PostgresTicketRepository, PostgresTwoFactorRepository,
-    PostgresUnitOwnerRepository, PostgresUnitRepository, PostgresUserAchievementRepository,
-    PostgresUserRepository, PostgresUserRoleRepository, PostgresVoteRepository,
-    PostgresWorkReportRepository,
+    PostgresOrganizationRepository, PostgresOwnerContributionRepository,
+    PostgresOwnerCreditBalanceRepository, PostgresOwnerRepository, PostgresPaymentMethodRepository,
+    PostgresPaymentReminderRepository, PostgresPaymentRepository, PostgresPollRepository,
+    PostgresPollVoteRepository, PostgresQuoteRepository, PostgresRefreshTokenRepository,
+    PostgresResolutionRepository, PostgresResourceBookingRepository,
+    PostgresServiceProviderRepository, PostgresSharedObjectRepository, PostgresSkillRepository,
+    PostgresStatsRepository, PostgresTechnicalInspectionRepository, PostgresTicketRepository,
+    PostgresTwoFactorRepository, PostgresUnitOwnerRepository, PostgresUnitRepository,
+    PostgresUserAchievementRepository, PostgresUserRepository, PostgresUserRoleRepository,
+    PostgresVoteRepository, PostgresWorkReportRepository,
 };
 use koprogo_api::infrastructure::email::EmailService;
 use koprogo_api::infrastructure::grid::BoincGridAdapter;
@@ -114,6 +115,7 @@ async fn setup_test_db() -> (
     let account_repo = Arc::new(PostgresAccountRepository::new(pool.clone()));
     let journal_entry_repo = Arc::new(PostgresJournalEntryRepository::new(pool.clone()));
     let account_use_cases = AccountUseCases::new(account_repo.clone());
+    let audit_log_use_cases = AuditLogUseCases::new(audit_log_repo.clone());
     let financial_report_use_cases = FinancialReportUseCases::new(
         account_repo,
         expense_repo.clone(),
@@ -123,7 +125,7 @@ async fn setup_test_db() -> (
     let auth_use_cases = AuthUseCases::new(
         user_repo.clone(),
         refresh_token_repo,
-        user_role_repo,
+        user_role_repo.clone(),
         jwt_secret,
     );
     let building_use_cases = BuildingUseCases::new(building_repo.clone());
@@ -152,6 +154,10 @@ async fn setup_test_db() -> (
         owner_repo.clone(),
     );
     let gdpr_use_cases = GdprUseCases::new(gdpr_repo, user_repo.clone());
+    let gdpr_art30_repo = Arc::new(
+        koprogo_api::infrastructure::database::PostgresGdprArt30Repository::new(pool.clone()),
+    );
+    let gdpr_art30_use_cases = GdprArt30UseCases::new(gdpr_art30_repo);
 
     // Create an organization for FK references
     let org_id = Uuid::new_v4();
@@ -252,6 +258,8 @@ async fn setup_test_db() -> (
         owner_repo.clone(),
     );
     let notice_use_cases = NoticeUseCases::new(notice_repo, user_repo.clone());
+    let organization_repo = Arc::new(PostgresOrganizationRepository::new(pool.clone()));
+    let organization_use_cases = OrganizationUseCases::new(organization_repo);
     let resource_booking_use_cases =
         ResourceBookingUseCases::new(resource_booking_repo, owner_repo.clone());
     let shared_object_use_cases = SharedObjectUseCases::new(
@@ -260,6 +268,8 @@ async fn setup_test_db() -> (
         owner_credit_balance_repo.clone(),
     );
     let skill_use_cases = SkillUseCases::new(skill_repo, owner_repo.clone());
+    let stats_repo = Arc::new(PostgresStatsRepository::new(pool.clone()));
+    let stats_use_cases = StatsUseCases::new(stats_repo);
     let technical_inspection_use_cases =
         TechnicalInspectionUseCases::new(technical_inspection_repo);
     let work_report_use_cases = WorkReportUseCases::new(work_report_repo);
@@ -329,14 +339,31 @@ async fn setup_test_db() -> (
     let age_request_use_cases = AgeRequestUseCases::new(age_request_repo);
     let contractor_report_repo = Arc::new(PostgresContractorReportRepository::new(pool.clone()));
     let contractor_report_use_cases = ContractorReportUseCases::new(contractor_report_repo);
+    let service_provider_repo = Arc::new(PostgresServiceProviderRepository::new(pool.clone()));
+    let service_provider_use_cases = ServiceProviderUseCases::new(service_provider_repo);
+    let individual_member_repo = Arc::new(
+        koprogo_api::infrastructure::database::PostgresIndividualMemberRepository::new(
+            pool.clone(),
+        ),
+    );
+    let individual_member_use_cases = IndividualMemberUseCases::new(individual_member_repo);
+
+    let security_incident_repo = Arc::new(
+        koprogo_api::infrastructure::database::PostgresSecurityIncidentRepository::new(
+            pool.clone(),
+        ),
+    );
+    let security_incident_use_cases = SecurityIncidentUseCases::new(security_incident_repo);
 
     let mqtt_energy_adapter: Arc<dyn MqttEnergyPort> = Arc::new(NoopMqttAdapter);
     let boinc_iot_repo = Arc::new(PostgresIoTRepository::new(pool.clone()));
     let boinc_grid_adapter = Arc::new(BoincGridAdapter::new(pool.clone()));
     let boinc_use_cases = BoincUseCases::new(boinc_grid_adapter, boinc_iot_repo);
+    let user_use_cases = UserUseCases::new(user_repo.clone(), user_role_repo.clone());
 
     let app_state = actix_web::web::Data::new(AppState::new(
         account_use_cases,
+        audit_log_use_cases,
         auth_use_cases,
         building_use_cases,
         budget_use_cases,
@@ -351,15 +378,17 @@ async fn setup_test_db() -> (
         ticket_use_cases,
         two_factor_use_cases,
         notification_use_cases,
-        payment_use_cases,
+        Arc::new(payment_use_cases),
         payment_method_use_cases,
         poll_use_cases,
         quote_use_cases,
         local_exchange_use_cases,
         notice_use_cases,
+        organization_use_cases,
         resource_booking_use_cases,
         shared_object_use_cases,
         skill_use_cases,
+        stats_use_cases,
         technical_inspection_use_cases,
         work_report_use_cases,
         document_use_cases,
@@ -368,6 +397,7 @@ async fn setup_test_db() -> (
         etat_date_use_cases,
         pcn_use_cases,
         payment_reminder_use_cases,
+        gdpr_art30_use_cases,
         gdpr_use_cases,
         iot_use_cases,
         linky_use_cases,
@@ -385,11 +415,19 @@ async fn setup_test_db() -> (
         ag_session_use_cases,
         age_request_use_cases,
         contractor_report_use_cases,
+        security_incident_use_cases,
+        service_provider_use_cases,
+        individual_member_use_cases,
+        koprogo_api::application::use_cases::consent_use_cases::ConsentUseCases::new(
+            std::sync::Arc::new(koprogo_api::infrastructure::database::repositories::PostgresConsentRepository::new(pool.clone())),
+            std::sync::Arc::new(koprogo_api::infrastructure::database::repositories::PostgresAuditLogRepository::new(pool.clone())),
+        ),
         audit_logger,
         EmailService::from_env().expect("email service"),
         pool.clone(),
         mqtt_energy_adapter,
         boinc_use_cases,
+        user_use_cases,
     ));
 
     (app_state, postgres_container, org_id)

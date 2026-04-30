@@ -25,7 +25,7 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
                 specializations, service_zone_postal_codes, certifications,
                 ipi_registration, bce_number, rating_avg, reviews_count,
                 is_verified, public_profile_slug, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            ) VALUES ($1, $2, $3, $4::trade_category, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
             "#,
         )
         .bind(provider.id)
@@ -53,7 +53,7 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
     async fn find_by_id(&self, id: Uuid) -> Result<Option<ServiceProvider>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, company_name, trade_category,
+            SELECT id, organization_id, company_name, trade_category::text as trade_category,
                    specializations, service_zone_postal_codes, certifications,
                    ipi_registration, bce_number, rating_avg, reviews_count,
                    is_verified, public_profile_slug, created_at, updated_at
@@ -89,7 +89,7 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
     async fn find_by_slug(&self, slug: &str) -> Result<Option<ServiceProvider>, String> {
         let row = sqlx::query(
             r#"
-            SELECT id, organization_id, company_name, trade_category,
+            SELECT id, organization_id, company_name, trade_category::text as trade_category,
                    specializations, service_zone_postal_codes, certifications,
                    ipi_registration, bce_number, rating_avg, reviews_count,
                    is_verified, public_profile_slug, created_at, updated_at
@@ -137,7 +137,7 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
         let query = if let Some(org_id) = organization_id {
             sqlx::query(
                 r#"
-                SELECT id, organization_id, company_name, trade_category,
+                SELECT id, organization_id, company_name, trade_category::text as trade_category,
                        specializations, service_zone_postal_codes, certifications,
                        ipi_registration, bce_number, rating_avg, reviews_count,
                        is_verified, public_profile_slug, created_at, updated_at
@@ -155,7 +155,7 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
         } else {
             sqlx::query(
                 r#"
-                SELECT id, organization_id, company_name, trade_category,
+                SELECT id, organization_id, company_name, trade_category::text as trade_category,
                        specializations, service_zone_postal_codes, certifications,
                        ipi_registration, bce_number, rating_avg, reviews_count,
                        is_verified, public_profile_slug, created_at, updated_at
@@ -210,12 +210,12 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
 
         let rows = sqlx::query(
             r#"
-            SELECT id, organization_id, company_name, trade_category,
+            SELECT id, organization_id, company_name, trade_category::text as trade_category,
                    specializations, service_zone_postal_codes, certifications,
                    ipi_registration, bce_number, rating_avg, reviews_count,
                    is_verified, public_profile_slug, created_at, updated_at
             FROM service_providers
-            WHERE trade_category = $1
+            WHERE trade_category::text = $1
             ORDER BY rating_avg DESC NULLS LAST, created_at DESC
             LIMIT $2 OFFSET $3
             "#,
@@ -267,7 +267,7 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
         let rows = if let Some(postal) = postal_code {
             sqlx::query(
                 r#"
-                SELECT id, organization_id, company_name, trade_category,
+                SELECT id, organization_id, company_name, trade_category::text as trade_category,
                        specializations, service_zone_postal_codes, certifications,
                        ipi_registration, bce_number, rating_avg, reviews_count,
                        is_verified, public_profile_slug, created_at, updated_at
@@ -287,7 +287,7 @@ impl ServiceProviderRepository for PostgresServiceProviderRepository {
         } else {
             sqlx::query(
                 r#"
-                SELECT id, organization_id, company_name, trade_category,
+                SELECT id, organization_id, company_name, trade_category::text as trade_category,
                        specializations, service_zone_postal_codes, certifications,
                        ipi_registration, bce_number, rating_avg, reviews_count,
                        is_verified, public_profile_slug, created_at, updated_at

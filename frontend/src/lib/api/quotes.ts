@@ -1,9 +1,13 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Quote API Client
  * Wraps all 15 backend endpoints for contractor quote management
  * Belgian professional best practice: 3 quotes for works >5000€
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface Quote {
@@ -30,15 +34,17 @@ export interface Quote {
   updated_at: string;
 }
 
-export enum QuoteStatus {
-  Requested = "Requested",
-  Received = "Received",
-  UnderReview = "UnderReview",
-  Accepted = "Accepted",
-  Rejected = "Rejected",
-  Expired = "Expired",
-  Withdrawn = "Withdrawn",
-}
+// Re-exported from generated api.d.ts — single source of truth.
+export type QuoteStatus = components["schemas"]["QuoteStatus"];
+export const QuoteStatus = {
+  Requested: "Requested" as const,
+  Received: "Received" as const,
+  UnderReview: "UnderReview" as const,
+  Accepted: "Accepted" as const,
+  Rejected: "Rejected" as const,
+  Expired: "Expired" as const,
+  Withdrawn: "Withdrawn" as const,
+} satisfies Record<string, QuoteStatus>;
 
 export interface CreateQuoteDto {
   building_id: string;

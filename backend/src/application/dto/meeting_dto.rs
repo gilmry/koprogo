@@ -74,6 +74,9 @@ pub struct CreateMeetingRequest {
     pub description: Option<String>,
     pub scheduled_date: DateTime<Utc>,
     pub location: String,
+    /// Art. 3.87 §5 CC: 2nd convocation skips quorum requirement
+    #[serde(default)]
+    pub is_second_convocation: bool,
 }
 
 /// Request DTO for updating a meeting

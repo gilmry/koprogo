@@ -50,6 +50,7 @@ async fn create_ag_test_meeting(
         description: Some("Test AG session".to_string()),
         scheduled_date: Utc::now() + Duration::days(30),
         location: "Visioconférence".to_string(),
+        is_second_convocation: false,
     };
     let m = app_state
         .meeting_use_cases

@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { SkillCategory } from "../../lib/api/skills";
 
-  export let category: SkillCategory;
+  let { category }: { category: SkillCategory } = $props();
 
   const categoryConfig: Record<
     SkillCategory,
@@ -74,7 +75,7 @@
     },
   };
 
-  $: config = categoryConfig[category] || categoryConfig[SkillCategory.Other];
+  let config = $derived(categoryConfig[category] || categoryConfig[SkillCategory.Other]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

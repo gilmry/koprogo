@@ -1,25 +1,29 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import { inspectionsApi, inspectionTypeLabels, inspectionStatusLabels, inspectionFrequencyLabels } from "../../lib/api/inspections";
   import type { TechnicalInspection, CreateInspectionDto } from "../../lib/api/inspections";
   import { InspectionType, InspectionStatus } from "../../lib/api/inspections";
   import { toast } from "../../stores/toast";
   import InspectionDetail from "./InspectionDetail.svelte";
+  import { formatDate, formatDateShort } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let organizationId: string = "";
+  let { buildingId, organizationId = "" }: {
+    buildingId: string;
+    organizationId?: string;
+  } = $props();
 
-  let inspections: TechnicalInspection[] = [];
-  let loading = true;
-  let error = "";
-  let showCreateForm = false;
-  let activeTab: "all" | "overdue" | "upcoming" = "all";
-  let selectedInspection: TechnicalInspection | null = null;
-  let detailOpen = false;
+  let inspections: TechnicalInspection[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let showCreateForm = $state(false);
+  let activeTab: "all" | "overdue" | "upcoming" = $state("all");
+  let selectedInspection: TechnicalInspection | null = $state(null);
+  let detailOpen = $state(false);
 
-  // Create form
-  let form: Partial<CreateInspectionDto> = resetForm();
+  let form: Partial<CreateInspectionDto> = $state(resetForm());
 
   function resetForm(): Partial<CreateInspectionDto> {
     return {
@@ -37,19 +41,24 @@
   async function loadInspections() {
     loading = true;
     error = "";
-    try {
-      if (activeTab === "overdue") {
-        inspections = await inspectionsApi.getOverdue(buildingId);
-      } else if (activeTab === "upcoming") {
-        inspections = await inspectionsApi.getUpcoming(buildingId, 90);
-      } else {
-        inspections = await inspectionsApi.listByBuilding(buildingId);
-      }
-    } catch (e: any) {
-      error = e.message || $_("common.loadError");
-    } finally {
-      loading = false;
+    const result = await withErrorHandling({
+      action: async () => {
+        if (activeTab === "overdue") {
+          return inspectionsApi.getOverdue(buildingId);
+        } else if (activeTab === "upcoming") {
+          return inspectionsApi.getUpcoming(buildingId, 90);
+        } else {
+          return inspectionsApi.listByBuilding(buildingId);
+        }
+      },
+      errorMessage: $_("common.loadError"),
+    });
+    if (result) {
+      inspections = result;
+    } else {
+      error = $_("common.loadError");
     }
+    loading = false;
   }
 
   async function createInspection() {
@@ -57,38 +66,38 @@
       toast.error($_("inspections.titleAndInspectorRequired"));
       return;
     }
-    try {
-      const data: CreateInspectionDto = {
-        organization_id: organizationId,
-        building_id: buildingId,
-        title: form.title!,
-        description: form.description || undefined,
-        inspection_type: form.inspection_type || InspectionType.Elevator,
-        inspector_name: form.inspector_name!,
-        inspector_company: form.inspector_company || undefined,
-        inspection_date: new Date(form.inspection_date!).toISOString(),
-        cost: form.cost || undefined,
-        notes: form.notes || undefined,
-      };
-      await inspectionsApi.create(data);
-      toast.success($_("inspections.createSuccess"));
-      form = resetForm();
-      showCreateForm = false;
-      await loadInspections();
-    } catch (e: any) {
-      toast.error(e.message || $_("inspections.createError"));
-    }
+    const data: CreateInspectionDto = {
+      organization_id: organizationId,
+      building_id: buildingId,
+      title: form.title!,
+      description: form.description || undefined,
+      inspection_type: form.inspection_type || InspectionType.Elevator,
+      inspector_name: form.inspector_name!,
+      inspector_company: form.inspector_company || undefined,
+      inspection_date: new Date(form.inspection_date!).toISOString(),
+      cost: form.cost || undefined,
+      notes: form.notes || undefined,
+    };
+    const result = await withErrorHandling({
+      action: () => inspectionsApi.create(data),
+      successMessage: $_("inspections.createSuccess"),
+      errorMessage: $_("inspections.createError"),
+      onSuccess: () => {
+        form = resetForm();
+        showCreateForm = false;
+      },
+    });
+    if (result) await loadInspections();
   }
 
   async function deleteInspection(id: string) {
     if (!confirm($_("inspections.deleteConfirm"))) return;
-    try {
-      await inspectionsApi.delete(id);
-      toast.success($_("inspections.deleteSuccess"));
-      await loadInspections();
-    } catch (e: any) {
-      toast.error(e.message || $_("inspections.deleteError"));
-    }
+    const result = await withErrorHandling({
+      action: () => inspectionsApi.delete(id),
+      successMessage: $_("inspections.deleteSuccess"),
+      errorMessage: $_("inspections.deleteError"),
+    });
+    if (result !== undefined) await loadInspections();
   }
 
   function openDetail(inspection: TechnicalInspection) {
@@ -96,22 +105,13 @@
     detailOpen = true;
   }
 
-  function handleDetailUpdated(event: CustomEvent<TechnicalInspection>) {
-    const updated = event.detail;
+  function handleDetailUpdated(updated: TechnicalInspection) {
     inspections = inspections.map((i) => (i.id === updated.id ? updated : i));
   }
 
-  function handleDetailDeleted(event: CustomEvent<string>) {
-    inspections = inspections.filter((i) => i.id !== event.detail);
+  function handleDetailDeleted(id: string) {
+    inspections = inspections.filter((i) => i.id !== id);
     detailOpen = false;
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
   }
 
   function statusColor(status: string): string {
@@ -128,24 +128,25 @@
     loadInspections();
   }
 
-  $: overdueCount = inspections.filter((i) => i.is_overdue).length;
+  let overdueCount = $derived(inspections.filter((i) => i.is_overdue).length);
 
-  onMount(loadInspections);
+  $effect(() => {
+    loadInspections();
+  });
 </script>
 
-<div class="space-y-4">
-  <!-- Header -->
+<div class="space-y-4" data-testid="inspection-list">
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold text-gray-800">{$_("inspections.title")}</h2>
     <button
-      on:click={() => (showCreateForm = !showCreateForm)}
+      onclick={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+      data-testid="create-inspection-button"
     >
       {showCreateForm ? $_("common.cancel") : "+ " + $_("inspections.newInspection")}
     </button>
   </div>
 
-  <!-- Create Form -->
   {#if showCreateForm}
     <div class="bg-white shadow rounded-lg p-4 border border-blue-200">
       <h3 class="font-medium text-gray-800 mb-3">{$_("inspections.schedule")}</h3>
@@ -158,7 +159,7 @@
           <label for="insp-new-type" class="block text-sm text-gray-600 mb-1">{$_("inspections.type")}</label>
           <select id="insp-new-type" bind:value={form.inspection_type} class="w-full border rounded px-3 py-1.5 text-sm">
             {#each Object.entries(inspectionTypeLabels) as [val, label]}
-              <option value={val}>{label} ({inspectionFrequencyLabels[val] || ""})</option>
+              <option value={val}>{label} ({(inspectionFrequencyLabels as Record<string, string>)[val] || ""})</option>
             {/each}
           </select>
         </div>
@@ -184,38 +185,37 @@
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button on:click={createInspection} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">{$_("common.create")}</button>
-        <button on:click={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
+        <button onclick={createInspection} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700" data-testid="submit-inspection-button">{$_("common.create")}</button>
+        <button onclick={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
       </div>
     </div>
   {/if}
 
   <!-- Tabs -->
   <div class="flex gap-2 border-b border-gray-200">
-    <button on:click={() => switchTab("all")}
+    <button onclick={() => switchTab("all")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'all' ? 'border-blue-500 text-blue-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
       {$_("inspections.all")} ({inspections.length})
     </button>
-    <button on:click={() => switchTab("overdue")}
+    <button onclick={() => switchTab("overdue")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'overdue' ? 'border-red-500 text-red-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
       {$_("inspections.overdue")} {#if overdueCount > 0}<span class="ml-1 bg-red-100 text-red-800 px-1.5 py-0.5 rounded-full text-xs">{overdueCount}</span>{/if}
     </button>
-    <button on:click={() => switchTab("upcoming")}
+    <button onclick={() => switchTab("upcoming")}
       class="px-3 py-2 text-sm border-b-2 {activeTab === 'upcoming' ? 'border-yellow-500 text-yellow-600 font-medium' : 'border-transparent text-gray-500 hover:text-gray-700'}">
       {$_("inspections.upcoming")}
     </button>
   </div>
 
-  <!-- Loading / Error / Empty -->
   {#if loading}
     <div class="text-center py-8 text-gray-500">
-      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" data-testid="inspection-list-spinner"></div>
       <p class="mt-2 text-sm">{$_("common.loading")}</p>
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
       {error}
-      <button on:click={loadInspections} class="ml-2 underline">{$_("common.retry")}</button>
+      <button onclick={loadInspections} class="ml-2 underline">{$_("common.retry")}</button>
     </div>
   {:else if inspections.length === 0}
     <div class="text-center py-8 text-gray-400 text-sm">
@@ -224,13 +224,13 @@
        $_("inspections.none")}
     </div>
   {:else}
-    <!-- Inspections list -->
     <div class="space-y-3">
       {#each inspections as inspection}
         <div
           class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer {inspection.is_overdue ? 'border-l-4 border-l-red-500' : ''}"
-          on:click={() => openDetail(inspection)}
-          on:keydown={(e) => e.key === "Enter" && openDetail(inspection)}
+          data-testid="inspection-row"
+          onclick={() => openDetail(inspection)}
+          onkeydown={(e) => e.key === "Enter" && openDetail(inspection)}
           role="button"
           tabindex="0"
         >
@@ -267,7 +267,7 @@
                   </span>
                 {/if}
                 {#if inspection.cost}
-                  <span>{new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(inspection.cost)}</span>
+                  <span>{formatCurrency(inspection.cost)}</span>
                 {/if}
               </div>
               {#if inspection.defects_found}
@@ -277,9 +277,11 @@
               {/if}
             </div>
             <button
-              on:click|stopPropagation={() => deleteInspection(inspection.id)}
+              onclick={(e) => { e.stopPropagation(); deleteInspection(inspection.id); }}
               class="text-red-400 hover:text-red-600 p-1"
+              aria-label={$_("common.delete")}
               title={$_("common.delete")}
+              data-testid="delete-inspection-button"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
             </button>
@@ -294,8 +296,8 @@
   <InspectionDetail
     isOpen={detailOpen}
     inspection={selectedInspection}
-    on:close={() => (detailOpen = false)}
-    on:updated={handleDetailUpdated}
-    on:deleted={handleDetailDeleted}
+    onclose={() => (detailOpen = false)}
+    onupdated={(updated) => handleDetailUpdated(updated)}
+    ondeleted={(id) => handleDetailDeleted(id)}
   />
 {/if}

@@ -1,5 +1,6 @@
 import { get } from "svelte/store";
 import { locale } from "svelte-i18n";
+import { toast } from "../stores/toast";
 import type { Document, DocumentUploadPayload } from "./types";
 
 /**
@@ -76,13 +77,67 @@ export async function apiFetch<T = any>(
       const errorText = await response.text();
       try {
         const errorData = JSON.parse(errorText);
-        errorMessage = errorData.error || errorMessage;
+        errorMessage = errorData.error || errorData.message || errorMessage;
       } catch {
         if (errorText) errorMessage = errorText;
       }
     } catch {
       // Body unreadable, keep default message
     }
+
+    // Mask raw DB / internal errors — never expose Postgres errors to end users
+    const raw = errorMessage.toLowerCase();
+    if (
+      raw.includes("database error") ||
+      raw.includes("fkey") ||
+      raw.includes("constraint") ||
+      raw.includes("sqlx") ||
+      raw.includes("postgres")
+    ) {
+      errorMessage = `Une erreur est survenue (${response.status}). Merci de réessayer ou de contacter le support.`;
+    } else {
+      // STORY-P7-401: map well-known English backend error strings to
+      // localized user-facing messages. Add entries here as they surface.
+      const knownErrors: Record<string, string> = {
+        "no owner record linked to this user":
+          "Aucun compte copropriétaire associé à ce profil.",
+        "invalid email or password": "Email ou mot de passe invalide.",
+        "token expired": "Session expirée. Veuillez vous reconnecter.",
+        "invalid token": "Session expirée. Veuillez vous reconnecter.",
+        "not found": "Ressource introuvable.",
+        "unauthorized": "Authentification requise.",
+        "forbidden": "Accès refusé.",
+      };
+      const mapped = knownErrors[errorMessage.toLowerCase().trim()];
+      if (mapped) errorMessage = mapped;
+    }
+
+    // Toast automatique selon le code HTTP
+    if (response.status === 429) {
+      toast.error("Trop de tentatives. Réessayez dans 15 minutes.");
+    } else if (response.status >= 500) {
+      toast.error("Erreur serveur. Veuillez réessayer.");
+    } else if (response.status === 401) {
+      // Clear stale token and dedupe toast across parallel 401s
+      if (typeof window !== "undefined") {
+        const hadToken = localStorage.getItem("koprogo_token");
+        localStorage.removeItem("koprogo_token");
+        if (hadToken && !(window as any).__koprogo_session_expired_shown__) {
+          (window as any).__koprogo_session_expired_shown__ = true;
+          toast.warning("Session expirée. Veuillez vous reconnecter.");
+          setTimeout(() => {
+            (window as any).__koprogo_session_expired_shown__ = false;
+          }, 5000);
+        }
+      }
+    } else if (response.status === 403) {
+      toast.warning(
+        "Accès refusé. Vous n'avez pas les permissions nécessaires.",
+      );
+    } else if (response.status >= 400) {
+      toast.error(errorMessage);
+    }
+
     throw new Error(errorMessage);
   }
 

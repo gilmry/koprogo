@@ -1,150 +1,114 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     ticketsApi,
     TicketStatus,
     type Ticket,
   } from "../../lib/api/tickets";
-  import { toast } from "../../stores/toast";
+  import { formatDateTime } from "../../lib/utils/date.utils";
+  import { isOverdue as checkOverdue } from "../../lib/utils/date.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
   import TicketStatusBadge from "./TicketStatusBadge.svelte";
   import TicketPriorityBadge from "./TicketPriorityBadge.svelte";
   import TicketAssignModal from "./TicketAssignModal.svelte";
   import Button from "../ui/Button.svelte";
   import ConfirmDialog from "../ui/ConfirmDialog.svelte";
 
-  export let ticket: Ticket;
-  export let canManage = false; // Syndic can manage
-  export let isContractor = false; // Contractor can start/resolve
+  let {
+    ticket,
+    canManage = false,
+    isContractor = false,
+    onupdated,
+    ondeleted,
+  }: {
+    ticket: Ticket;
+    canManage?: boolean;
+    isContractor?: boolean;
+    onupdated?: (ticket: Ticket) => void;
+    ondeleted?: (ticketId: string) => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
+  let showAssignModal = $state(false);
+  let showDeleteConfirm = $state(false);
+  let actionLoading = $state(false);
 
-  let showAssignModal = false;
-  let showDeleteConfirm = false;
-  let actionLoading = false;
-
-  function formatDate(dateString: string | undefined): string {
-    if (!dateString) return $_("common.not_available");
-    return new Date(dateString).toLocaleDateString("nl-BE", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+  async function handleAssign(detail: { contractorId: string }) {
+    const contractorId = detail.contractorId;
+    const result = await withErrorHandling({
+      action: () => ticketsApi.assign(ticket.id, contractorId),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_("tickets.assigned_successfully"),
+      errorMessage: $_("tickets.assign_failed"),
     });
-  }
-
-  function isOverdue(): boolean {
-    if (!ticket.due_date || ticket.status === TicketStatus.Closed) return false;
-    return new Date(ticket.due_date) < new Date();
-  }
-
-  async function handleAssign(event: CustomEvent) {
-    const contractorId = event.detail.contractorId;
-    try {
-      actionLoading = true;
-      ticket = await ticketsApi.assign(ticket.id, contractorId);
-      toast.success($_("tickets.assigned_successfully"));
-      dispatch("updated", ticket);
-    } catch (err: any) {
-      toast.error(err.message || $_("tickets.assign_failed"));
-    } finally {
-      actionLoading = false;
-    }
-  }
-
-  async function handleStart() {
-    try {
-      actionLoading = true;
-      ticket = await ticketsApi.start(ticket.id);
-      toast.success($_("tickets.work_started"));
-      dispatch("updated", ticket);
-    } catch (err: any) {
-      toast.error(err.message || $_("tickets.start_failed"));
-    } finally {
-      actionLoading = false;
-    }
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleResolve() {
-    try {
-      actionLoading = true;
-      ticket = await ticketsApi.resolve(ticket.id);
-      toast.success($_("tickets.marked_resolved"));
-      dispatch("updated", ticket);
-    } catch (err: any) {
-      toast.error(err.message || $_("tickets.resolve_failed"));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => ticketsApi.resolve(ticket.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_("tickets.marked_resolved"),
+      errorMessage: $_("tickets.resolve_failed"),
+    });
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleClose() {
-    try {
-      actionLoading = true;
-      ticket = await ticketsApi.close(ticket.id);
-      toast.success($_("tickets.closed"));
-      dispatch("updated", ticket);
-    } catch (err: any) {
-      toast.error(err.message || $_("tickets.close_failed"));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => ticketsApi.close(ticket.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_("tickets.closed"),
+      errorMessage: $_("tickets.close_failed"),
+    });
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleCancel() {
-    try {
-      actionLoading = true;
-      ticket = await ticketsApi.cancel(ticket.id);
-      toast.success($_("tickets.cancelled"));
-      dispatch("updated", ticket);
-    } catch (err: any) {
-      toast.error(err.message || $_("tickets.cancel_failed"));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => ticketsApi.cancel(ticket.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_("tickets.cancelled"),
+      errorMessage: $_("tickets.cancel_failed"),
+    });
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleReopen() {
-    try {
-      actionLoading = true;
-      ticket = await ticketsApi.reopen(ticket.id);
-      toast.success($_("tickets.reopened"));
-      dispatch("updated", ticket);
-    } catch (err: any) {
-      toast.error(err.message || $_("tickets.reopen_failed"));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => ticketsApi.reopen(ticket.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_("tickets.reopened"),
+      errorMessage: $_("tickets.reopen_failed"),
+    });
+    if (result) { ticket = result; onupdated?.(ticket); }
   }
 
   async function handleDelete() {
-    try {
-      actionLoading = true;
-      await ticketsApi.delete(ticket.id);
-      toast.success($_("tickets.deleted"));
-      dispatch("deleted", ticket.id);
-    } catch (err: any) {
-      toast.error(err.message || $_("tickets.delete_failed"));
-    } finally {
-      actionLoading = false;
-      showDeleteConfirm = false;
-    }
+    const result = await withErrorHandling({
+      action: () => ticketsApi.delete(ticket.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_("tickets.deleted"),
+      errorMessage: $_("tickets.delete_failed"),
+    });
+    showDeleteConfirm = false;
+    if (result !== undefined) ondeleted?.(ticket.id);
   }
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="ticket-detail">
   <!-- Header -->
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-start justify-between">
       <div class="flex-1">
         <div class="flex items-center space-x-3 mb-2">
-          <h1 class="text-2xl font-bold text-gray-900">{ticket.title}</h1>
-          {#if isOverdue()}
+          <h1 class="text-2xl font-bold text-gray-900" data-testid="ticket-detail-title">{ticket.title}</h1>
+          {#if checkOverdue(ticket.due_date, ticket.status)}
             <span
               class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800"
+              data-testid="ticket-overdue-badge"
             >
-              ⚠️ {$_("tickets.overdue")}
+              {$_("tickets.overdue")}
             </span>
           {/if}
         </div>
@@ -160,35 +124,30 @@
       <!-- Actions -->
       <div class="flex flex-col space-y-2">
         {#if canManage && ticket.status === TicketStatus.Open}
-          <Button on:click={() => (showAssignModal = true)} size="sm">
+          <Button onclick={() => (showAssignModal = true)} size="sm" data-testid="ticket-assign-btn">
             {$_("tickets.assign_to_contractor")}
           </Button>
         {/if}
 
-        {#if isContractor && ticket.status === TicketStatus.Assigned}
-          <Button on:click={handleStart} loading={actionLoading} size="sm">
-            {$_("tickets.start_work")}
-          </Button>
-        {/if}
-
-        {#if isContractor && ticket.status === TicketStatus.InProgress}
-          <Button on:click={handleResolve} loading={actionLoading} size="sm">
+        {#if (isContractor || canManage) && ticket.status === TicketStatus.InProgress}
+          <Button onclick={handleResolve} loading={actionLoading} size="sm" data-testid="ticket-resolve-btn">
             {$_("tickets.mark_resolved")}
           </Button>
         {/if}
 
         {#if canManage && ticket.status === TicketStatus.Resolved}
-          <Button on:click={handleClose} loading={actionLoading} size="sm">
+          <Button onclick={handleClose} loading={actionLoading} size="sm" data-testid="ticket-close-btn">
             {$_("tickets.close_ticket")}
           </Button>
         {/if}
 
-        {#if canManage && (ticket.status === TicketStatus.Open || ticket.status === TicketStatus.Assigned)}
+        {#if canManage && (ticket.status === TicketStatus.Open || ticket.status === TicketStatus.InProgress)}
           <Button
-            on:click={handleCancel}
+            onclick={handleCancel}
             loading={actionLoading}
             variant="outline"
             size="sm"
+            data-testid="ticket-cancel-btn"
           >
             {$_("common.cancel")}
           </Button>
@@ -196,10 +155,11 @@
 
         {#if ticket.status === TicketStatus.Closed || ticket.status === TicketStatus.Cancelled}
           <Button
-            on:click={handleReopen}
+            onclick={handleReopen}
             loading={actionLoading}
             variant="outline"
             size="sm"
+            data-testid="ticket-reopen-btn"
           >
             {$_("tickets.reopen")}
           </Button>
@@ -207,9 +167,10 @@
 
         {#if canManage}
           <Button
-            on:click={() => (showDeleteConfirm = true)}
+            onclick={() => (showDeleteConfirm = true)}
             variant="outline"
             size="sm"
+            data-testid="ticket-delete-btn"
             class="text-red-600 hover:text-red-700"
           >
             {$_("common.delete")}
@@ -224,16 +185,16 @@
     <!-- Description -->
     <div>
       <h2 class="text-lg font-semibold text-gray-900 mb-2">{$_("tickets.description")}</h2>
-      <p class="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+      <p class="text-gray-700 whitespace-pre-wrap" data-testid="ticket-detail-description">{ticket.description}</p>
     </div>
 
     <!-- Metadata Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="ticket-detail-metadata">
       <!-- Left column -->
       <div class="space-y-4">
         <div>
           <dt class="text-sm font-medium text-gray-500">{$_("tickets.category")}</dt>
-          <dd class="mt-1 text-sm text-gray-900">{ticket.category}</dd>
+          <dd class="mt-1 text-sm text-gray-900">{$_(`tickets.categories.${ticket.category.charAt(0).toLowerCase() + ticket.category.slice(1)}`)}</dd>
         </div>
 
         <div>
@@ -253,7 +214,7 @@
         <div>
           <dt class="text-sm font-medium text-gray-500">{$_("tickets.created_at")}</dt>
           <dd class="mt-1 text-sm text-gray-900">
-            {formatDate(ticket.created_at)}
+            {formatDateTime(ticket.created_at)}
           </dd>
         </div>
       </div>
@@ -265,7 +226,7 @@
             {$_("tickets.assigned_contractor")}
           </dt>
           <dd class="mt-1 text-sm text-gray-900">
-            {ticket.assigned_contractor_name || $_("tickets.not_assigned")}
+            {ticket.assigned_to_name || $_("tickets.not_assigned")}
           </dd>
         </div>
 
@@ -273,7 +234,7 @@
           <div>
             <dt class="text-sm font-medium text-gray-500">{$_("tickets.due_date")}</dt>
             <dd class="mt-1 text-sm text-gray-900">
-              {formatDate(ticket.due_date)}
+              {formatDateTime(ticket.due_date)}
             </dd>
           </div>
         {/if}
@@ -282,7 +243,7 @@
           <div>
             <dt class="text-sm font-medium text-gray-500">{$_("tickets.resolved_at")}</dt>
             <dd class="mt-1 text-sm text-gray-900">
-              {formatDate(ticket.resolved_at)}
+              {formatDateTime(ticket.resolved_at)}
             </dd>
           </div>
         {/if}
@@ -291,7 +252,7 @@
           <div>
             <dt class="text-sm font-medium text-gray-500">{$_("tickets.closed_at")}</dt>
             <dd class="mt-1 text-sm text-gray-900">
-              {formatDate(ticket.closed_at)}
+              {formatDateTime(ticket.closed_at)}
             </dd>
           </div>
         {/if}
@@ -299,7 +260,7 @@
         <div>
           <dt class="text-sm font-medium text-gray-500">{$_("tickets.last_updated")}</dt>
           <dd class="mt-1 text-sm text-gray-900">
-            {formatDate(ticket.updated_at)}
+            {formatDateTime(ticket.updated_at)}
           </dd>
         </div>
       </div>
@@ -311,16 +272,16 @@
 <TicketAssignModal
   bind:open={showAssignModal}
   ticketId={ticket.id}
-  on:assigned={handleAssign}
+  onassigned={handleAssign}
 />
 
 <!-- Delete Confirmation -->
 <ConfirmDialog
-  open={showDeleteConfirm}
+  isOpen={showDeleteConfirm}
   title={$_("tickets.delete_ticket")}
   message={$_("tickets.delete_confirmation")}
   confirmText={$_("common.delete")}
-  confirmVariant="danger"
-  on:confirm={handleDelete}
-  on:cancel={() => (showDeleteConfirm = false)}
+  variant="danger"
+  onconfirm={handleDelete}
+  oncancel={() => (showDeleteConfirm = false)}
 />

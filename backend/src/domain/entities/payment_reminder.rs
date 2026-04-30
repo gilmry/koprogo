@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Niveau de relance de paiement
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum ReminderLevel {
     FirstReminder,  // J+15 - Rappel aimable
     SecondReminder, // J+30 - Relance ferme
@@ -40,7 +40,7 @@ impl ReminderLevel {
 }
 
 /// Statut d'une relance
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum ReminderStatus {
     Pending,   // En attente d'envoi
     Sent,      // Envoyée
@@ -51,7 +51,7 @@ pub enum ReminderStatus {
 }
 
 /// Méthode d'envoi de la relance
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum DeliveryMethod {
     Email,
     RegisteredLetter, // Lettre recommandée

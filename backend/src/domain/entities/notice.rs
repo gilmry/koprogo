@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Notice type for community board
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum NoticeType {
     /// General announcement (info, rules, reminders)
     Announcement,
@@ -16,7 +16,7 @@ pub enum NoticeType {
 }
 
 /// Notice category for filtering
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum NoticeCategory {
     /// General information
     General,
@@ -35,7 +35,7 @@ pub enum NoticeCategory {
 }
 
 /// Notice status workflow
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, utoipa::ToSchema)]
 pub enum NoticeStatus {
     /// Draft (not visible to others)
     Draft,

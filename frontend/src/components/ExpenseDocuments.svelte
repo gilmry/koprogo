@@ -1,41 +1,42 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
   import type { Document } from '../lib/types';
   import Button from './ui/Button.svelte';
   import { toast } from '../stores/toast';
+  import { formatDate } from '../lib/utils/date.utils';
+  import { withLoadingState, withErrorHandling } from '../lib/utils/error.utils';
 
-  export let expenseId: string;
-  export let expenseStatus: string;
+  let { expenseId, expenseStatus }: {
+    expenseId: string;
+    expenseStatus: string;
+  } = $props();
 
-  let documents: Document[] = [];
-  let loading = true;
-  let error = '';
-  let uploading = false;
+  let documents = $state<Document[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let uploading = $state(false);
 
   // Upload form state
-  let showUploadForm = false;
-  let uploadFile: File | null = null;
-  let uploadTitle = '';
-  let uploadDescription = '';
-  let uploadDocumentType: string = 'Invoice';
+  let showUploadForm = $state(false);
+  let uploadFile = $state<File | null>(null);
+  let uploadTitle = $state('');
+  let uploadDescription = $state('');
+  let uploadDocumentType = $state('Invoice');
 
-  onMount(async () => {
-    await loadDocuments();
+  $effect(() => {
+    loadDocuments();
   });
 
   async function loadDocuments() {
-    try {
-      loading = true;
-      error = '';
-      documents = await api.get<Document[]>(`/expenses/${expenseId}/documents`);
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('documents.load_error');
-      console.error('Error loading documents:', e);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => api.get<Document[]>(`/expenses/${expenseId}/documents`),
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      errorMessage: $_('documents.load_error'),
+      onSuccess: (data: Document[]) => { documents = data; },
+    });
   }
 
   function handleFileChange(event: Event) {
@@ -51,81 +52,63 @@
       return;
     }
 
-    try {
-      uploading = true;
-      error = '';
+    await withErrorHandling({
+      action: async () => {
+        const userInfo = await api.get<any>('/auth/me');
+        const expenseResponse = await api.get<any>(`/expenses/${expenseId}`);
+        const buildingId = expenseResponse.building_id;
 
-      // Get user info and expense details
-      const userInfo = await api.get<any>('/auth/me');
-      const expenseResponse = await api.get<any>(`/expenses/${expenseId}`);
-      const buildingId = expenseResponse.building_id;
+        const uploadedDoc = await api.uploadDocument({
+          file: uploadFile!,
+          buildingId: buildingId,
+          documentType: uploadDocumentType as any,
+          title: uploadTitle,
+          description: uploadDescription || undefined,
+          uploadedBy: userInfo.id
+        });
 
-      // Step 1: Upload document using api helper
-      const uploadedDoc = await api.uploadDocument({
-        file: uploadFile,
-        buildingId: buildingId,
-        documentType: uploadDocumentType as any,
-        title: uploadTitle,
-        description: uploadDescription || undefined,
-        uploadedBy: userInfo.id
-      });
+        await api.put(`/documents/${uploadedDoc.id}/link-expense`, {
+          expense_id: expenseId
+        });
 
-      // Step 2: Link document to expense
-      await api.put(`/documents/${uploadedDoc.id}/link-expense`, {
-        expense_id: expenseId
-      });
+        uploadFile = null;
+        uploadTitle = '';
+        uploadDescription = '';
+        uploadDocumentType = 'Invoice';
+        showUploadForm = false;
 
-      // Reset form
-      uploadFile = null;
-      uploadTitle = '';
-      uploadDescription = '';
-      uploadDocumentType = 'Invoice';
-      showUploadForm = false;
-
-      // Reload documents
-      await loadDocuments();
-      toast.success($_('documents.uploaded'));
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('documents.upload_error');
-      console.error('Error uploading document:', e);
-      toast.error(`${$_('common.error')}: ${error}`);
-    } finally {
-      uploading = false;
-    }
+        await loadDocuments();
+      },
+      setLoading: (v: boolean) => uploading = v,
+      successMessage: $_('documents.uploaded'),
+      errorMessage: $_('documents.upload_error'),
+    });
   }
 
   async function handleDownload(documentId: string, title: string) {
-    try {
-      const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/documents/${documentId}/download`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+    await withErrorHandling({
+      action: async () => {
+        const response = await fetch(`${import.meta.env.PUBLIC_API_URL}/documents/${documentId}/download`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error($_('documents.download_error'));
-      }
+        if (!response.ok) {
+          throw new Error($_('documents.download_error'));
+        }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = title;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (e) {
-      toast.error($_('documents.download_error'));
-      console.error('Error downloading document:', e);
-    }
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = title;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      },
+      errorMessage: $_('documents.download_error'),
     });
   }
 
@@ -153,7 +136,7 @@
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-lg font-semibold text-gray-900">{$_('documents.linked_title')}</h3>
     {#if expenseStatus !== 'Cancelled'}
-      <Button variant="primary" on:click={() => showUploadForm = !showUploadForm}>
+      <Button variant="primary" onclick={() => showUploadForm = !showUploadForm}>
         {showUploadForm ? $_('common.cancel') : $_('documents.add_document')}
       </Button>
     {/if}
@@ -171,12 +154,14 @@
       <h4 class="font-medium text-gray-900 mb-4">{$_('documents.add_document')}</h4>
       <div class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="expense-doc-type" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('documents.type_label')} *
           </label>
           <select
+            id="expense-doc-type"
             bind:value={uploadDocumentType}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            data-testid="document-type-select"
           >
             <option value="Invoice">{$_('documents.type_invoice')}</option>
             <option value="FinancialStatement">{$_('documents.type_statement')}</option>
@@ -189,38 +174,44 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="expense-doc-title" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('common.title')} *
           </label>
           <input
+            id="expense-doc-title"
             type="text"
             bind:value={uploadTitle}
             placeholder={$_('documents.title_placeholder')}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            data-testid="title-input"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="expense-doc-description" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('common.description')}
           </label>
           <textarea
+            id="expense-doc-description"
             bind:value={uploadDescription}
             rows="3"
             placeholder={$_('documents.description_placeholder')}
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-          />
+            data-testid="description-textarea"
+          ></textarea>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="expense-doc-file" class="block text-sm font-medium text-gray-700 mb-1">
             {$_('documents.file_label')} *
           </label>
           <input
+            id="expense-doc-file"
             type="file"
-            on:change={handleFileChange}
+            onchange={handleFileChange}
             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            data-testid="file-input"
           />
           {#if uploadFile}
             <p class="text-sm text-gray-500 mt-1">
@@ -230,10 +221,10 @@
         </div>
 
         <div class="flex gap-2">
-          <Button variant="primary" on:click={handleUpload} disabled={uploading}>
+          <Button variant="primary" onclick={handleUpload} disabled={uploading} data-testid="upload-button">
             {uploading ? $_('documents.uploading') : $_('documents.add_document')}
           </Button>
-          <Button variant="outline" on:click={() => showUploadForm = false}>
+          <Button variant="outline" onclick={() => showUploadForm = false} data-testid="cancel-button">
             {$_('common.cancel')}
           </Button>
         </div>
@@ -252,9 +243,9 @@
       <p class="text-sm mt-2">{$_('documents.empty_help')}</p>
     </div>
   {:else}
-    <div class="space-y-3">
+    <div class="space-y-3" data-testid="documents-list">
       {#each documents as doc (doc.id)}
-        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition" data-testid="document-row">
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
@@ -272,7 +263,7 @@
                 <span>💾 {formatFileSize(doc.file_size)}</span>
               </div>
             </div>
-            <Button variant="outline" on:click={() => handleDownload(doc.id, doc.title)}>
+            <Button variant="outline" onclick={() => handleDownload(doc.id, doc.title)} data-testid="download-button">
               {$_('documents.download')}
             </Button>
           </div>

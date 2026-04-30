@@ -99,6 +99,7 @@
     </p>
     {#if canManageOwners}
       <button
+        type="button"
         on:click={openCreateModal}
         class="px-4 py-2 text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition font-medium"
       >
@@ -142,6 +143,7 @@
                 <button
                   on:click={() => toggleOwnerExpanded(owner.id)}
                   class="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                  aria-label={expandedOwners.has(owner.id) ? $_('owners.action.hide_units') : $_('owners.action.show_units')}
                   title={expandedOwners.has(owner.id) ? $_('owners.action.hide_units') : $_('owners.action.show_units')}
                 >
                   {expandedOwners.has(owner.id) ? '▼' : '▶'} {$_('owners.units')}
@@ -184,13 +186,13 @@
 <OwnerEditModal
   owner={selectedOwner}
   isOpen={isEditModalOpen}
-  on:close={closeEditModal}
-  on:save={handleOwnerSaved}
+  onclose={closeEditModal}
+  onsave={handleOwnerSaved}
 />
 
 <!-- Owner Create Modal -->
 <OwnerCreateModal
   isOpen={isCreateModalOpen}
-  on:close={closeCreateModal}
-  on:save={handleOwnerSaved}
+  onclose={closeCreateModal}
+  onsave={handleOwnerSaved}
 />

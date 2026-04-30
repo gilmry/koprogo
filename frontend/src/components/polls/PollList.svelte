@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     pollsApi,
@@ -7,38 +7,46 @@
     PollStatus,
     PollType,
   } from "../../lib/api/polls";
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState } from "../../lib/utils/error.utils";
   import PollStatusBadge from "./PollStatusBadge.svelte";
   import PollTypeBadge from "./PollTypeBadge.svelte";
 
-  export let buildingId: string;
-  export let showOnlyActive = false;
+  let {
+    buildingId,
+    showOnlyActive = false,
+  }: {
+    buildingId: string;
+    showOnlyActive?: boolean;
+  } = $props();
 
-  let polls: Poll[] = [];
-  let filteredPolls: Poll[] = [];
-  let loading = true;
-  let error = "";
-  let statusFilter: PollStatus | "all" = "all";
+  let polls: Poll[] = $state([]);
+  let filteredPolls: Poll[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let statusFilter: PollStatus | "all" = $state("all");
 
-  onMount(async () => {
-    await loadPolls();
+  $effect(() => {
+    loadPolls();
   });
 
   async function loadPolls() {
-    try {
-      loading = true;
-      error = "";
-      if (showOnlyActive) {
-        polls = await pollsApi.listActive(buildingId);
-      } else {
-        polls = await pollsApi.list({ building_id: buildingId });
-      }
-      applyFilters();
-    } catch (err: any) {
-      error = err.message || $_("polls.list.loadingError");
-      console.error("Failed to load polls:", err);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: async () => {
+        if (showOnlyActive) {
+          return await pollsApi.listActive(buildingId);
+        } else {
+          return await pollsApi.list({ building_id: buildingId });
+        }
+      },
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string | null) => error = v ?? "",
+      onSuccess: (data) => {
+        polls = data;
+        applyFilters();
+      },
+      errorMessage: $_("polls.list.loadingError"),
+    });
   }
 
   function applyFilters() {
@@ -48,15 +56,9 @@
     });
   }
 
-  $: if (statusFilter) applyFilters();
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  }
+  $effect(() => {
+    if (statusFilter) applyFilters();
+  });
 
   function getParticipationColor(rate: number): string {
     if (rate >= 50) return "text-green-600";
@@ -70,7 +72,7 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="poll-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -79,6 +81,7 @@
       <a
         href="/polls/new?building={buildingId}"
         class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
+        data-testid="poll-create-button"
       >
         <span class="mr-2">➕</span>
         {$_("polls.list.newPoll")}
@@ -93,10 +96,12 @@
   {#if !showOnlyActive}
     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
       <div class="flex items-center space-x-4">
-        <label class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
+        <label for="poll-status-filter" class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
         <select
+          id="poll-status-filter"
           bind:value={statusFilter}
           class="text-sm rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+          data-testid="poll-status-filter"
         >
           <option value="all">{$_("common.all")}</option>
           <option value={PollStatus.Draft}>{$_("polls.list.draft")}</option>
@@ -119,7 +124,7 @@
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">❌ {error}</p>
       <button
-        on:click={loadPolls}
+        onclick={loadPolls}
         class="mt-2 text-sm text-red-600 hover:text-red-800 underline"
       >
         {$_("common.retry")}
@@ -135,7 +140,7 @@
   {:else}
     <ul class="divide-y divide-gray-200">
       {#each filteredPolls as poll}
-        <li class="hover:bg-gray-50">
+        <li class="hover:bg-gray-50" data-testid="poll-card">
           <a href="/polls/detail?id={poll.id}" class="block px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
@@ -178,7 +183,7 @@
                   {#if poll.starts_at && poll.ends_at}
                     <span class="mx-2">•</span>
                     <span>
-                      📅 {formatDate(poll.starts_at)} → {formatDate(
+                      📅 {formatDateShort(poll.starts_at)} → {formatDateShort(
                         poll.ends_at,
                       )}
                     </span>
@@ -187,7 +192,7 @@
                   <!-- Created by -->
                   <span class="mx-2">•</span>
                   <span class="text-xs text-gray-400">
-                    {$_("polls.list.createdOn")} {formatDate(poll.created_at)}
+                    {$_("polls.list.createdOn")} {formatDateShort(poll.created_at)}
                   </span>
                 </div>
 

@@ -76,6 +76,8 @@ services:
       - cargo_cache:/usr/local/cargo/registry
       - cargo_git:/usr/local/cargo/git
       - target_cache:/app/target
+      # Docker socket for testcontainers (BDD/E2E tests)
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       postgres:
         condition: service_healthy

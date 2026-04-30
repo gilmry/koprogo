@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
+  import { formatDate } from "../lib/utils/date.utils";
   import Pagination from './Pagination.svelte';
   import DocumentUploadModal from './DocumentUploadModal.svelte';
   import {
@@ -14,54 +15,60 @@
   } from '../lib/types';
   import { authStore } from '../stores/auth';
 
-  export let allowUpload: boolean | null = null;
-  export let allowDelete: boolean | null = null;
-  export let buildingId: string | null = null;
+  let { allowUpload = null, allowDelete = null, buildingId = null }: {
+    allowUpload?: boolean | null;
+    allowDelete?: boolean | null;
+    buildingId?: string | null;
+  } = $props();
 
-  let documents: Document[] = [];
-  let loading = true;
-  let error = '';
-  let downloadError = '';
-  let deleteError = '';
-  let infoMessage = '';
+  let documents = $state<Document[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let downloadError = $state('');
+  let deleteError = $state('');
+  let infoMessage = $state('');
 
-  let currentPage = 1;
-  let perPage = 20;
-  let totalItems = 0;
-  let totalPages = 0;
+  let currentPage = $state(1);
+  let perPage = $state(20);
+  let totalItems = $state(0);
+  let totalPages = $state(0);
 
-  let buildings: Building[] = [];
-  let buildingsLoading = false;
-  let buildingsError: string | null = null;
-  let buildingNameMap = new Map<string, string>();
+  let buildings = $state<Building[]>([]);
+  let buildingsLoading = $state(false);
+  let buildingsError = $state<string | null>(null);
+  let buildingNameMap = $state(new Map<string, string>());
 
-  let showUploadModal = false;
-  let deletingId: string | null = null;
+  let showUploadModal = $state(false);
+  let deletingId = $state<string | null>(null);
 
-  let user: User | null = null;
+  let user = $state<User | null>(null);
   let unsubscribe: () => void;
 
-  onMount(async () => {
+  $effect(() => {
     authStore.init();
     unsubscribe = authStore.subscribe((state) => {
       user = state.user;
     });
-    await loadDocuments();
+    loadDocuments();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   });
 
-  onDestroy(() => {
-    if (unsubscribe) unsubscribe();
+  let computedAllowUpload = $derived(
+    allowUpload ?? (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SYNDIC)
+  );
+
+  let computedAllowDelete = $derived(
+    allowDelete ?? (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SYNDIC)
+  );
+
+  $effect(() => {
+    if (computedAllowUpload && user && buildings.length === 0 && !buildingsLoading) {
+      loadBuildings();
+    }
   });
-
-  $: computedAllowUpload =
-    allowUpload ?? (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SYNDIC);
-
-  $: computedAllowDelete =
-    allowDelete ?? (user?.role === UserRole.SUPERADMIN || user?.role === UserRole.SYNDIC);
-
-  $: if (computedAllowUpload && user && buildings.length === 0 && !buildingsLoading) {
-    loadBuildings();
-  }
 
   async function loadBuildings() {
     try {
@@ -84,14 +91,12 @@
       error = '';
 
       if (buildingId) {
-        // Endpoint without pagination for building-specific documents
         const response = await api.get<Document[]>(`/buildings/${buildingId}/documents`);
         documents = response;
         totalItems = response.length;
         totalPages = 1;
         currentPage = 1;
       } else {
-        // Paginated endpoint for all documents
         const endpoint = `/documents?page=${currentPage}&per_page=${perPage}`;
         const response = await api.get<PageResponse<Document>>(endpoint);
         documents = response.data;
@@ -118,14 +123,6 @@
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
   }
 
   function getDocumentLabel(type: string): string {
@@ -204,7 +201,7 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-testid="document-list">
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
       <p class="text-gray-600">
@@ -217,7 +214,7 @@
     {#if computedAllowUpload}
       <button
         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition"
-        on:click={handleOpenUpload}
+        onclick={handleOpenUpload}
       >
         <span>📤</span>
         <span>{$_('documents.upload')}</span>
@@ -290,7 +287,7 @@
                 <div class="flex justify-end gap-2">
                   <button
                     class="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-medium"
-                    on:click={() => handleDownload(doc)}
+                    onclick={() => handleDownload(doc)}
                   >
                     <span>⬇️</span>
                     <span>{$_('common.download')}</span>
@@ -298,7 +295,7 @@
                   {#if computedAllowDelete}
                     <button
                       class="inline-flex items-center gap-1 text-red-600 hover:text-red-700 font-medium disabled:opacity-60"
-                      on:click={() => handleDelete(doc)}
+                      onclick={() => handleDelete(doc)}
                       disabled={deletingId === doc.id}
                     >
                       <span>🗑️</span>
@@ -330,8 +327,8 @@
       {buildings}
       {user}
       loadingBuildings={buildingsLoading}
-      on:close={() => (showUploadModal = false)}
-      on:uploaded={handleUploadSuccess}
+      onclose={() => (showUploadModal = false)}
+      onuploaded={handleUploadSuccess}
     />
   {/if}
 </div>

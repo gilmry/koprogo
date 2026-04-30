@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from 'svelte';
   import {
     gamificationApi,
     type Challenge,
@@ -8,24 +8,27 @@
     ChallengeType,
   } from '../../lib/api/gamification';
   import ChallengeForm from './ChallengeForm.svelte';
-  import { toast } from '../../stores/toast';
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let organizationId: string;
-  export let buildingId: string = '';
+  let { organizationId, buildingId = '' }: {
+    organizationId: string;
+    buildingId?: string;
+  } = $props();
 
-  let challenges: Challenge[] = [];
-  let loading = true;
-  let error = '';
-  let showForm = false;
-  let statusFilter: ChallengeStatus | 'all' = 'all';
+  let challenges = $state<Challenge[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let showForm = $state(false);
+  let statusFilter = $state<ChallengeStatus | 'all'>('all');
 
-  $: filteredChallenges = challenges.filter(c => {
+  let filteredChallenges = $derived(challenges.filter(c => {
     if (statusFilter === 'all') return true;
     return c.status === statusFilter;
-  });
+  }));
 
-  onMount(async () => {
-    await loadData();
+  $effect(() => {
+    loadData();
   });
 
   async function loadData() {
@@ -33,59 +36,53 @@
       loading = false;
       return;
     }
-    try {
-      loading = true;
-      error = '';
-      challenges = await gamificationApi.listChallenges(organizationId);
-    } catch (err: any) {
-      error = err.message || $_('common.load_error');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => gamificationApi.listChallenges(organizationId),
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data) => challenges = data,
+      errorMessage: $_('common.load_error'),
+    });
   }
 
   async function handleActivate(challenge: Challenge) {
-    if (!confirm($_('gamification.confirm_activate', { title: challenge.title }))) return;
-    try {
-      await gamificationApi.activateChallenge(challenge.id);
-      toast.success($_('gamification.activate_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.activate_error'));
-    }
+    if (!confirm($_('gamification.confirm_activate', { values: { title: challenge.title } }))) return;
+    await withErrorHandling({
+      action: () => gamificationApi.activateChallenge(challenge.id),
+      successMessage: $_('gamification.activate_success'),
+      errorMessage: $_('gamification.activate_error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   async function handleComplete(challenge: Challenge) {
-    if (!confirm($_('gamification.confirm_complete', { title: challenge.title }))) return;
-    try {
-      await gamificationApi.completeChallenge(challenge.id);
-      toast.success($_('gamification.complete_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('common.error'));
-    }
+    if (!confirm($_('gamification.confirm_complete', { values: { title: challenge.title } }))) return;
+    await withErrorHandling({
+      action: () => gamificationApi.completeChallenge(challenge.id),
+      successMessage: $_('gamification.complete_success'),
+      errorMessage: $_('common.error'),
+      onSuccess: () => loadData(),
+    });
   }
 
-  async function handleCancel(challenge: Challenge) {
-    if (!confirm($_('gamification.confirm_cancel', { title: challenge.title }))) return;
-    try {
-      await gamificationApi.cancelChallenge(challenge.id);
-      toast.success($_('gamification.cancel_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('common.error'));
-    }
+  async function handleCancelChallenge(challenge: Challenge) {
+    if (!confirm($_('gamification.confirm_cancel', { values: { title: challenge.title } }))) return;
+    await withErrorHandling({
+      action: () => gamificationApi.cancelChallenge(challenge.id),
+      successMessage: $_('gamification.cancel_success'),
+      errorMessage: $_('common.error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   async function handleDelete(challenge: Challenge) {
-    if (!confirm($_('gamification.confirm_delete_challenge', { title: challenge.title }))) return;
-    try {
-      await gamificationApi.deleteChallenge(challenge.id);
-      toast.success($_('gamification.delete_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.delete_error'));
-    }
+    if (!confirm($_('gamification.confirm_delete_challenge', { values: { title: challenge.title } }))) return;
+    await withErrorHandling({
+      action: () => gamificationApi.deleteChallenge(challenge.id),
+      successMessage: $_('gamification.delete_success'),
+      errorMessage: $_('gamification.delete_error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   function handleSaved() {
@@ -109,21 +106,17 @@
     [ChallengeType.Building]: $_('gamification.type_building'),
   };
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit', month: 'short', year: 'numeric',
-    });
-  }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="admin-challenge-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
         <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.challenges_management')}</h3>
-        <p class="mt-1 text-sm text-gray-500">{$_('gamification.challenge_count', { count: challenges.length })}</p>
+        <p class="mt-1 text-sm text-gray-500">{$_('gamification.challenge_count', { values: { count: challenges.length } })}</p>
       </div>
-      <button on:click={() => showForm = !showForm}
+      <button onclick={() => showForm = !showForm}
+        data-testid="challenge-create-btn"
         class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700">
         {showForm ? $_('common.close') : '+ ' + $_('common.new')}
       </button>
@@ -136,8 +129,8 @@
       <ChallengeForm
         {organizationId}
         {buildingId}
-        on:saved={handleSaved}
-        on:cancel={() => showForm = false}
+        onsaved={handleSaved}
+        oncancel={() => showForm = false}
       />
     </div>
   {/if}
@@ -146,14 +139,14 @@
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex flex-wrap gap-1">
       {#each [
-        { value: 'all', label: $_('common.all') },
-        { value: ChallengeStatus.Draft, label: $_('gamification.status_drafts') },
-        { value: ChallengeStatus.Active, label: $_('gamification.status_actives') },
-        { value: ChallengeStatus.Completed, label: $_('gamification.status_completed_plural') },
-        { value: ChallengeStatus.Cancelled, label: $_('gamification.status_cancelled_plural') },
+        { value: 'all' as ChallengeStatus | 'all', label: $_('common.all') },
+        { value: ChallengeStatus.Draft as ChallengeStatus | 'all', label: $_('gamification.status_drafts') },
+        { value: ChallengeStatus.Active as ChallengeStatus | 'all', label: $_('gamification.status_actives') },
+        { value: ChallengeStatus.Completed as ChallengeStatus | 'all', label: $_('gamification.status_completed_plural') },
+        { value: ChallengeStatus.Cancelled as ChallengeStatus | 'all', label: $_('gamification.status_cancelled_plural') },
       ] as f}
         {@const count = f.value === 'all' ? challenges.length : challenges.filter(c => c.status === f.value).length}
-        <button on:click={() => statusFilter = f.value}
+        <button onclick={() => statusFilter = f.value}
           class="px-2 py-1 rounded text-xs font-medium transition-colors
             {statusFilter === f.value ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
           {f.label} ({count})
@@ -163,19 +156,19 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="admin-challenge-loading">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
-    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
+    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md" data-testid="admin-challenge-error">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
+      <button onclick={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if filteredChallenges.length === 0}
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_('gamification.no_challenges')}</p>
-      <button on:click={() => showForm = true} class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline">
+      <button onclick={() => showForm = true} class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline">
         {$_('gamification.create_first')}
       </button>
     </div>
@@ -183,7 +176,7 @@
     <ul class="divide-y divide-gray-200">
       {#each filteredChallenges as challenge (challenge.id)}
         {@const statusCfg = getStatusConfig(challenge.status)}
-        <li class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+        <li class="px-4 py-4 sm:px-6 hover:bg-gray-50" data-testid="admin-challenge-row">
           <div class="flex items-start gap-3">
             <span class="text-2xl flex-shrink-0">{challenge.icon || '🎯'}</span>
             <div class="flex-1 min-w-0">
@@ -199,7 +192,7 @@
               {/if}
               <div class="flex items-center gap-3 text-xs text-gray-500">
                 <span>{challenge.reward_points} pts</span>
-                <span>{formatDate(challenge.start_date)} - {formatDate(challenge.end_date)}</span>
+                <span>{formatDateShort(challenge.start_date)} - {formatDateShort(challenge.end_date)}</span>
                 <span>Objectif: {challenge.target_value} {challenge.target_metric}</span>
               </div>
             </div>
@@ -207,17 +200,17 @@
             <!-- Actions -->
             <div class="flex items-center gap-1 flex-shrink-0">
               {#if challenge.status === ChallengeStatus.Draft}
-                <button on:click={() => handleActivate(challenge)}
+                <button onclick={() => handleActivate(challenge)}
                   class="px-2 py-1 text-xs text-green-600 hover:bg-green-50 rounded">{$_('gamification.activate')}</button>
-                <button on:click={() => handleDelete(challenge)}
+                <button onclick={() => handleDelete(challenge)}
                   class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">{$_('common.delete')}</button>
               {:else if challenge.status === ChallengeStatus.Active}
-                <button on:click={() => handleComplete(challenge)}
+                <button onclick={() => handleComplete(challenge)}
                   class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">{$_('gamification.complete')}</button>
-                <button on:click={() => handleCancel(challenge)}
+                <button onclick={() => handleCancelChallenge(challenge)}
                   class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">{$_('common.cancel')}</button>
               {:else}
-                <button on:click={() => handleDelete(challenge)}
+                <button onclick={() => handleDelete(challenge)}
                   class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">{$_('common.delete')}</button>
               {/if}
             </div>

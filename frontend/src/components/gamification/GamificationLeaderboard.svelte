@@ -1,24 +1,27 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from 'svelte';
   import {
     gamificationApi,
     type LeaderboardEntry,
   } from '../../lib/api/gamification';
   import { authStore } from '../../stores/auth';
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let organizationId: string;
-  export let buildingId: string = '';
-  export let limit: number = 10;
+  let { organizationId, buildingId = '', limit = 10 }: {
+    organizationId: string;
+    buildingId?: string;
+    limit?: number;
+  } = $props();
 
-  let leaderboard: LeaderboardEntry[] = [];
-  let loading = true;
-  let error = '';
+  let leaderboard = $state<LeaderboardEntry[]>([]);
+  let loading = $state(true);
+  let error = $state('');
 
-  $: currentUserId = $authStore.user?.id;
+  let currentUserId = $derived($authStore.user?.id);
 
-  onMount(async () => {
-    await loadLeaderboard();
+  $effect(() => {
+    loadLeaderboard();
   });
 
   async function loadLeaderboard() {
@@ -26,19 +29,13 @@
       loading = false;
       return;
     }
-    try {
-      loading = true;
-      error = '';
-      leaderboard = await gamificationApi.getLeaderboard(
-        organizationId,
-        buildingId || undefined,
-        limit,
-      );
-    } catch (err: any) {
-      error = err.message || $_('gamification.leaderboard_error');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => gamificationApi.getLeaderboard(organizationId, buildingId || undefined, limit),
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data) => leaderboard = data,
+      errorMessage: $_('gamification.leaderboard_error'),
+    });
   }
 
   function getRankDisplay(rank: number): string {
@@ -51,21 +48,21 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="gamification-leaderboard">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.leaderboard')}</h3>
     <p class="mt-1 text-sm text-gray-500">{$_('gamification.leaderboard_description')}</p>
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="gamification-leaderboard-loading">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadLeaderboard} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
+      <button onclick={loadLeaderboard} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if leaderboard.length === 0}
     <div class="p-8 text-center">
@@ -75,7 +72,7 @@
     <div class="divide-y divide-gray-100">
       {#each leaderboard as entry (entry.user_id)}
         {@const isMe = entry.user_id === currentUserId}
-        <div class="flex items-center gap-4 px-4 py-3 {isMe ? 'bg-amber-50' : 'hover:bg-gray-50'}">
+        <div data-testid="gamification-leaderboard-row" class="flex items-center gap-4 px-4 py-3 {isMe ? 'bg-amber-50' : 'hover:bg-gray-50'}">
           <!-- Rank -->
           <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg
             {entry.rank <= 3 ? 'bg-gradient-to-br from-yellow-300 to-amber-400 text-white shadow' : 'bg-gray-100 text-gray-600'}">
@@ -91,8 +88,8 @@
               {/if}
             </p>
             <div class="flex items-center gap-3 text-xs text-gray-500">
-              <span>{$_('gamification.achievement_count', { count: entry.achievements_count })}</span>
-              <span>{$_('gamification.challenge_count_completed', { count: entry.challenges_completed })}</span>
+              <span>{$_('gamification.achievement_count', { values: { count: entry.achievements_count } })}</span>
+              <span>{$_('gamification.challenge_count_completed', { values: { count: entry.challenges_completed } })}</span>
             </div>
           </div>
 

@@ -1,8 +1,12 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Gamification & Achievements API Client
  * Community engagement system
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface Achievement {
@@ -22,24 +26,27 @@ export interface Achievement {
   updated_at: string;
 }
 
-export enum AchievementCategory {
-  Community = "Community",
-  Sel = "Sel",
-  Booking = "Booking",
-  Sharing = "Sharing",
-  Skills = "Skills",
-  Notice = "Notice",
-  Governance = "Governance",
-  Milestone = "Milestone",
-}
+// Re-exported from generated api.d.ts — single source of truth.
+export type AchievementCategory = components["schemas"]["AchievementCategory"];
+export const AchievementCategory = {
+  Community: "Community" as const,
+  Sel: "Sel" as const,
+  Booking: "Booking" as const,
+  Sharing: "Sharing" as const,
+  Skills: "Skills" as const,
+  Notice: "Notice" as const,
+  Governance: "Governance" as const,
+  Milestone: "Milestone" as const,
+} satisfies Record<string, AchievementCategory>;
 
-export enum AchievementTier {
-  Bronze = "Bronze",
-  Silver = "Silver",
-  Gold = "Gold",
-  Platinum = "Platinum",
-  Diamond = "Diamond",
-}
+export type AchievementTier = components["schemas"]["AchievementTier"];
+export const AchievementTier = {
+  Bronze: "Bronze" as const,
+  Silver: "Silver" as const,
+  Gold: "Gold" as const,
+  Platinum: "Platinum" as const,
+  Diamond: "Diamond" as const,
+} satisfies Record<string, AchievementTier>;
 
 export interface UserAchievement {
   id: string;
@@ -68,18 +75,20 @@ export interface Challenge {
   updated_at: string;
 }
 
-export enum ChallengeType {
-  Individual = "Individual",
-  Team = "Team",
-  Building = "Building",
-}
+export type ChallengeType = components["schemas"]["ChallengeType"];
+export const ChallengeType = {
+  Individual: "Individual" as const,
+  Team: "Team" as const,
+  Building: "Building" as const,
+} satisfies Record<string, ChallengeType>;
 
-export enum ChallengeStatus {
-  Draft = "Draft",
-  Active = "Active",
-  Completed = "Completed",
-  Cancelled = "Cancelled",
-}
+export type ChallengeStatus = components["schemas"]["ChallengeStatus"];
+export const ChallengeStatus = {
+  Draft: "Draft" as const,
+  Active: "Active" as const,
+  Completed: "Completed" as const,
+  Cancelled: "Cancelled" as const,
+} satisfies Record<string, ChallengeStatus>;
 
 export interface ChallengeProgress {
   id: string;

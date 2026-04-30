@@ -1,8 +1,7 @@
 <script lang="ts">
-  import '../lib/i18n';
   import { onMount } from 'svelte';
-  import { _ } from 'svelte-i18n';
-  import { api } from '../lib/api';
+  import { _ } from '../lib/i18n';
+  import { api, API_BASE_URL } from '../lib/api';
 
   interface LegalRule {
     code: string;
@@ -50,9 +49,9 @@
     try {
       // Load all legal data in parallel
       const [sequenceRes, rulesRes, majoritiesRes] = await Promise.all([
-        fetch(`${api.baseUrl}/legal/ag-sequence`),
-        fetch(`${api.baseUrl}/legal/rules`),
-        fetch(`${api.baseUrl}/legal/majority-for/ordinary`)
+        fetch(`${API_BASE_URL}/legal/ag-sequence`),
+        fetch(`${API_BASE_URL}/legal/rules`),
+        fetch(`${API_BASE_URL}/legal/majority-for/ordinary`)
       ]);
 
       if (sequenceRes.ok) {
@@ -136,7 +135,7 @@
     class="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity"
     on:click={closePanel}
     role="presentation"
-  />
+  ></div>
 
   <!-- Panel -->
   <div class="fixed right-0 top-0 h-screen w-96 bg-white shadow-2xl z-40 overflow-y-auto flex flex-col">

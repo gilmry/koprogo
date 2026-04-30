@@ -1,47 +1,53 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     paymentsApi,
     PaymentStatus,
     type Payment,
   } from "../../lib/api/payments";
-  import { toast } from "../../stores/toast";
+  import { formatDateTime } from "../../lib/utils/date.utils";
+  import { formatAmount } from "../../lib/utils/finance.utils";
+  import { withLoadingState } from "../../lib/utils/error.utils";
   import PaymentStatusBadge from "./PaymentStatusBadge.svelte";
 
-  export let ownerId: string | undefined = undefined;
-  export let buildingId: string | undefined = undefined;
-  export let expenseId: string | undefined = undefined;
+  let { ownerId = undefined, buildingId = undefined, expenseId = undefined }: {
+    ownerId?: string | undefined;
+    buildingId?: string | undefined;
+    expenseId?: string | undefined;
+  } = $props();
 
-  let payments: Payment[] = [];
-  let loading = true;
-  let statusFilter: PaymentStatus | "all" = "all";
-  let searchQuery = "";
+  let payments: Payment[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let statusFilter: PaymentStatus | "all" = $state("all");
+  let searchQuery = $state("");
 
-  onMount(async () => {
-    await loadPayments();
+  $effect(() => {
+    loadPayments();
   });
 
   async function loadPayments() {
-    try {
-      loading = true;
-      if (ownerId) {
-        payments = await paymentsApi.listByOwner(ownerId);
-      } else if (buildingId) {
-        payments = await paymentsApi.listByBuilding(buildingId);
-      } else if (expenseId) {
-        payments = await paymentsApi.listByExpense(expenseId);
-      } else {
-        payments = [];
-      }
-    } catch (err: any) {
-      toast.error(err.message || $_('payments.loadError'));
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: async () => {
+        if (ownerId) {
+          return await paymentsApi.listByOwner(ownerId);
+        } else if (buildingId) {
+          return await paymentsApi.listByBuilding(buildingId);
+        } else if (expenseId) {
+          return await paymentsApi.listByExpense(expenseId);
+        } else {
+          return [];
+        }
+      },
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data) => payments = data,
+      errorMessage: $_('payments.loadError'),
+    });
   }
 
-  $: filteredPayments = payments.filter((payment) => {
+  let filteredPayments = $derived(payments.filter((payment) => {
     if (statusFilter !== "all" && payment.status !== statusFilter) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -52,32 +58,14 @@
       );
     }
     return true;
-  });
-
-  function formatAmount(amountCents: number, currency: string): string {
-    const amount = amountCents / 100;
-    return new Intl.NumberFormat("nl-BE", {
-      style: "currency",
-      currency: currency,
-    }).format(amount);
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString("nl-BE", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
+  }));
 
   function getPaymentUrl(paymentId: string): string {
     return `/payment-detail?id=${paymentId}`;
   }
 </script>
 
-<div class="bg-white shadow rounded-lg">
+<div class="bg-white shadow rounded-lg" data-testid="payment-list">
   <!-- Header with filters -->
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between mb-4">
@@ -88,7 +76,7 @@
         </span>
       </h2>
       <button
-        on:click={loadPayments}
+        onclick={loadPayments}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
       >
         {$_('common.refresh')}
@@ -111,8 +99,11 @@
 
       <!-- Status filter -->
       <div>
+        <label for="payment-status-filter" class="sr-only">{$_('payments.allStatuses')}</label>
         <select
+          id="payment-status-filter"
           bind:value={statusFilter}
+          data-testid="payment-status-filter"
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">{$_('payments.allStatuses')}</option>
@@ -130,7 +121,7 @@
   <!-- Payments table -->
   <div class="overflow-x-auto">
     {#if loading}
-      <div class="px-6 py-12 text-center text-gray-500">
+      <div class="px-6 py-12 text-center text-gray-500" data-testid="payment-list-loading">
         <div
           class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
         ></div>
@@ -181,20 +172,17 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           {#each filteredPayments as payment (payment.id)}
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-gray-50" data-testid="payment-row">
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {formatDate(payment.created_at)}
+                {formatDateTime(payment.created_at)}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900">
-                  {formatAmount(payment.amount_cents, payment.currency)}
+                  {formatAmount(payment.amount_cents)}
                 </div>
                 {#if payment.refunded_amount_cents > 0}
                   <div class="text-xs text-purple-600">
-                    {$_('payments.refunded')}: {formatAmount(
-                      payment.refunded_amount_cents,
-                      payment.currency,
-                    )}
+                    {$_('payments.refunded')}: {formatAmount(payment.refunded_amount_cents)}
                   </div>
                 {/if}
               </td>

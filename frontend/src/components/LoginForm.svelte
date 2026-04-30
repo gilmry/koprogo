@@ -1,21 +1,19 @@
 <script lang="ts">
-  import { setupI18n } from '../lib/i18n';
-  setupI18n();
-  import { onMount } from 'svelte';
-  import { _, isLoading } from 'svelte-i18n';
+  // Svelte 5 runes mode
+  import { _, isLoading } from '../lib/i18n';
   import { authStore, mapUserFromBackend } from '../stores/auth';
   import { UserRole } from '../lib/types';
   import type { User } from '../lib/types';
   import { apiEndpoint } from '../lib/config';
 
-  let email = '';
-  let password = '';
-  let error = '';
-  let loading = false;
+  let email = $state('');
+  let password = $state('');
+  let error = $state('');
+  let loading = $state(false);
 
-  onMount(async () => {
+  $effect(() => {
     // Ensure auth store is initialized before any login attempt
-    await authStore.init();
+    authStore.init();
   });
 
   const handleLogin = async (e: Event) => {
@@ -42,15 +40,26 @@
         await authStore.login(mappedUser, token, refresh_token);
 
         // Redirect based on role
-        const redirectMap = {
+        const redirectMap: Record<string, string> = {
           [UserRole.SUPERADMIN]: '/admin',
           [UserRole.SYNDIC]: '/syndic',
           [UserRole.ACCOUNTANT]: '/accountant',
           [UserRole.OWNER]: '/owner',
         };
-        window.location.href = redirectMap[mappedUser.role] || '/';
+
+        // Check for ?redirect= query param (set by RouteGuard)
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams.get('redirect');
+        const targetUrl = redirectTo || redirectMap[mappedUser.role] || '/';
+
+        // Petit délai pour laisser localStorage se propager avant navigation
+        setTimeout(() => {
+          window.location.href = targetUrl;
+        }, 100);
+      } else if (response.status === 429) {
+        error = $_('auth.tooManyAttempts') || 'Trop de tentatives de connexion. Réessayez dans 15 minutes.';
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         error = errorData.error || $_('auth.loginError');
       }
     } catch (e) {
@@ -67,7 +76,7 @@
     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
   </div>
 {:else}
-<form on:submit={handleLogin} class="space-y-6" data-testid="login-form">
+<form onsubmit={handleLogin} class="space-y-6" data-testid="login-form">
   {#if error}
     <div
       class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"

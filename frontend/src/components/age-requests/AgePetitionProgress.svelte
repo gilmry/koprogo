@@ -1,27 +1,33 @@
 <script lang="ts">
-	import '../../lib/i18n';
-	import { _ } from 'svelte-i18n';
-	import type { AgeRequestCosignatory } from '$lib/types';
+	// Svelte 5 runes mode
+	import { _ } from '../../lib/i18n';
+	import type { AgeRequestCosignatory } from '../../lib/api/age-requests';
 
 	/**
 	 * Props pour AgePetitionProgress
-	 * - totalSharesPct: Pourcentage total des quotes-parts signataires (0.0 à 1.0)
-	 * - thresholdPct: Seuil légal à atteindre (0.20 = 20% = 1/5, Art. 3.87 §2 CC)
+	 * - totalSharesPct: Pourcentage total des quotes-parts signataires (0.0 a 1.0)
+	 * - thresholdPct: Seuil legal a atteindre (0.20 = 20% = 1/5, Art. 3.87 ss2 CC)
 	 * - cosignatories: Liste des cosignataires pour affichage (optionnel)
 	 */
-	export let totalSharesPct: number = 0;
-	export let thresholdPct: number = 0.2;
-	export let cosignatories: AgeRequestCosignatory[] = [];
+	let {
+		totalSharesPct = 0,
+		thresholdPct = 0.2,
+		cosignatories = [],
+	}: {
+		totalSharesPct?: number;
+		thresholdPct?: number;
+		cosignatories?: AgeRequestCosignatory[];
+	} = $props();
 
 	// Calculs
-	$: progressPercentage = totalSharesPct >= thresholdPct ? 100 : (totalSharesPct / thresholdPct) * 100;
-	$: isThresholdReached = totalSharesPct >= thresholdPct;
-	$: sharesPercentageMissing = Math.max(0, (thresholdPct - totalSharesPct) * 100);
-	$: displayProgress = Math.min(progressPercentage, 100);
+	let progressPercentage = $derived(totalSharesPct >= thresholdPct ? 100 : (totalSharesPct / thresholdPct) * 100);
+	let isThresholdReached = $derived(totalSharesPct >= thresholdPct);
+	let sharesPercentageMissing = $derived(Math.max(0, (thresholdPct - totalSharesPct) * 100));
+	let displayProgress = $derived(Math.min(progressPercentage, 100));
 
 	// Couleurs pour la barre de progression
-	$: progressColor = isThresholdReached ? 'bg-green-500' : 'bg-blue-500';
-	$: progressBgColor = isThresholdReached ? 'bg-green-100' : 'bg-gray-200';
+	let progressColor = $derived(isThresholdReached ? 'bg-green-500' : 'bg-blue-500');
+	let progressBgColor = $derived(isThresholdReached ? 'bg-green-100' : 'bg-gray-200');
 </script>
 
 <div class="age-petition-progress space-y-4 rounded-lg border border-gray-200 bg-white p-6">
@@ -75,7 +81,7 @@
 		{/if}
 	</div>
 
-	<!-- Détail des cosignataires (optionnel) -->
+	<!-- Detail des cosignataires (optionnel) -->
 	{#if cosignatories.length > 0}
 		<div class="border-t border-gray-200 pt-4">
 			<p class="mb-2 text-sm font-medium text-gray-700">
@@ -92,7 +98,7 @@
 		</div>
 	{/if}
 
-	<!-- Informations légales -->
+	<!-- Informations legales -->
 	<div class="border-t border-gray-200 pt-4 text-xs text-gray-500">
 		<p>
 			<strong>{$_('ageRequest.legalBasisLabel')} :</strong> {$_('ageRequest.legalBasisText')}

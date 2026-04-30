@@ -17,8 +17,10 @@ use uuid::Uuid;
 /// Setup function shared across resolution agenda E2E tests
 async fn setup_app() -> (
     actix_web::web::Data<AppState>,
-    testcontainers_modules::testcontainers::ContainerAsync<
-        testcontainers_modules::postgres::Postgres,
+    Option<
+        testcontainers_modules::testcontainers::ContainerAsync<
+            testcontainers_modules::postgres::Postgres,
+        >,
     >,
     Uuid,
 ) {
@@ -63,6 +65,7 @@ async fn create_meeting_fixtures(
         description: Some("Testing agenda_item_index on resolutions".to_string()),
         scheduled_date: Utc::now() + Duration::days(14),
         location: "Conference Room".to_string(),
+        is_second_convocation: false,
     };
 
     let meeting = app_state
@@ -97,7 +100,7 @@ async fn test_create_resolution_with_agenda_item_index() {
             "title": "Approve Renovation Budget",
             "description": "Vote on the facade renovation budget for 2026",
             "resolution_type": "ordinary",
-            "majority_required": "simple",
+            "majority_required": "absolute",
             "agenda_item_index": 3
         }))
         .to_request();
@@ -178,7 +181,7 @@ async fn test_create_resolution_with_zero_agenda_item_index() {
             "title": "Opening Resolution",
             "description": "First agenda item resolution",
             "resolution_type": "ordinary",
-            "majority_required": "simple",
+            "majority_required": "absolute",
             "agenda_item_index": 0
         }))
         .to_request();
@@ -212,7 +215,7 @@ async fn test_create_multiple_resolutions_with_different_agenda_indices() {
             "title": "Budget Approval",
             "description": "First agenda item",
             "resolution_type": "ordinary",
-            "majority_required": "simple",
+            "majority_required": "absolute",
             "agenda_item_index": 1
         }))
         .to_request();
@@ -280,7 +283,7 @@ async fn test_create_resolution_agenda_item_persists_on_get() {
             "title": "Facade Renovation",
             "description": "Vote on facade renovation project",
             "resolution_type": "extraordinary",
-            "majority_required": "qualified",
+            "majority_required": "two_thirds",
             "agenda_item_index": 5
         }))
         .to_request();
@@ -294,6 +297,7 @@ async fn test_create_resolution_agenda_item_persists_on_get() {
     // GET the resolution and verify agenda_item_index persists
     let get_req = test::TestRequest::get()
         .uri(&format!("/api/v1/resolutions/{}", resolution_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let get_resp = test::call_service(&app, get_req).await;
@@ -305,5 +309,5 @@ async fn test_create_resolution_agenda_item_persists_on_get() {
         "agenda_item_index should persist on GET"
     );
     assert_eq!(resolution["resolution_type"], "extraordinary");
-    assert_eq!(resolution["majority_required"], "qualified");
+    assert_eq!(resolution["majority_required"], "two_thirds");
 }

@@ -35,7 +35,7 @@ test.describe("Dashboard - Admin & Syndic Views", () => {
       `${API_BASE}/dashboard/accountant/stats`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 403].includes(statsResp.status())).toBeTruthy();
+    expect(statsResp.status()).toBe(200);
   });
 
   test("should get recent transactions via API", async ({ page }) => {
@@ -45,6 +45,6 @@ test.describe("Dashboard - Admin & Syndic Views", () => {
       `${API_BASE}/dashboard/accountant/transactions?limit=5`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
-    expect([200, 403].includes(txResp.status())).toBeTruthy();
+    expect(txResp.status()).toBe(200);
   });
 });

@@ -1,11 +1,26 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import type { PageResponse } from '../lib/types';
+  import { toast } from '../stores/toast';
+  import { type PageResponse, UserRole } from '../lib/types';
   import Pagination from './Pagination.svelte';
+  import MeetingCreateModal from './MeetingCreateModal.svelte';
+  import { formatDateTime } from '../lib/utils/date.utils';
+  import { withLoadingState } from '../lib/utils/error.utils';
+  import { authStore } from '../stores/auth';
 
-  export let buildingId: string | null = null;
+  let { buildingId = null }: { buildingId?: string | null } = $props();
+
+  let showCreateModal = $state(false);
+
+  let canCreate = $derived($authStore?.user?.role === UserRole.SYNDIC || $authStore?.user?.role === UserRole.SUPERADMIN);
+
+  function handleMeetingCreated() {
+    showCreateModal = false;
+    toast.success('Assemblée créée avec succès');
+    loadMeetings();
+  }
 
   interface Meeting {
     id: string;
@@ -16,89 +31,73 @@
     attendees_count?: number;
   }
 
-  let meetings: Meeting[] = [];
-  let loading = true;
-  let error = '';
+  let meetings: Meeting[] = $state([]);
+  let loading = $state(true);
+  let error = $state('');
 
-  // Pagination state
-  let currentPage = 1;
-  let perPage = 20;
-  let totalItems = 0;
-  let totalPages = 0;
+  let currentPage = $state(1);
+  let perPage = $state(20);
+  let totalItems = $state(0);
+  let totalPages = $state(0);
 
-  onMount(async () => {
-    await loadMeetings();
+  $effect(() => {
+    loadMeetings();
 
-    // Listen for page show events to reload data when navigating back (client-side only)
     if (typeof window !== 'undefined') {
       window.addEventListener('pageshow', handlePageShow);
       window.addEventListener('focus', handleWindowFocus);
     }
-  });
 
-  onDestroy(() => {
-    if (typeof window !== 'undefined') {
-      window.removeEventListener('pageshow', handlePageShow);
-      window.removeEventListener('focus', handleWindowFocus);
-    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pageshow', handlePageShow);
+        window.removeEventListener('focus', handleWindowFocus);
+      }
+    };
   });
 
   function handlePageShow(event: PageTransitionEvent) {
-    // Reload data when navigating back to this page
     if (event.persisted) {
       loadMeetings();
     }
   }
 
   function handleWindowFocus() {
-    // Reload data when window regains focus
     loadMeetings();
   }
 
   async function loadMeetings() {
-    try {
-      loading = true;
-
-      if (buildingId) {
-        // Endpoint without pagination for building-specific meetings
-        const response = await api.get<Meeting[]>(`/buildings/${buildingId}/meetings`);
-        meetings = response;
-        totalItems = response.length;
-        totalPages = 1;
-        currentPage = 1;
-      } else {
-        // Paginated endpoint for all meetings
-        const endpoint = `/meetings?page=${currentPage}&per_page=${perPage}`;
-        const response = await api.get<PageResponse<Meeting>>(endpoint);
-        meetings = response.data;
-        totalItems = response.pagination.total_items;
-        totalPages = response.pagination.total_pages;
-        currentPage = response.pagination.current_page;
-        perPage = response.pagination.per_page;
-      }
-
-      error = '';
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('meetings.error_loading_meetings');
-      console.error('Error loading meetings:', e);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: async () => {
+        if (buildingId) {
+          const response = await api.get<Meeting[]>(`/buildings/${buildingId}/meetings`);
+          return { data: response, total: response.length, pages: 1, page: 1 };
+        } else {
+          const endpoint = `/meetings?page=${currentPage}&per_page=${perPage}`;
+          const response = await api.get<PageResponse<Meeting>>(endpoint);
+          return {
+            data: response.data,
+            total: response.pagination.total_items,
+            pages: response.pagination.total_pages,
+            page: response.pagination.current_page,
+          };
+        }
+      },
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (result) => {
+        meetings = result.data;
+        totalItems = result.total;
+        totalPages = result.pages;
+        currentPage = result.page;
+      },
+      errorMessage: $_('meetings.error_loading_meetings'),
+    });
   }
 
   async function handlePageChange(page: number) {
     currentPage = page;
     await loadMeetings();
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   }
 
   function getStatusBadge(status: string): { class: string; label: string } {
@@ -121,11 +120,23 @@
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="meeting-list-container">
   <div class="flex justify-between items-center">
     <p class="text-gray-600">
       {$_('meetings.count', { values: { count: totalItems } })}
     </p>
+    {#if canCreate}
+      <button
+        onclick={() => showCreateModal = true}
+        class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+        data-testid="btn-new-meeting"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Nouvelle réunion
+      </button>
+    {/if}
   </div>
 
   {#if error}
@@ -135,7 +146,7 @@
   {/if}
 
   {#if loading}
-    <p class="text-center text-gray-600 py-8">{$_('common.loading')}</p>
+    <p class="text-center text-gray-600 py-8" data-testid="meeting-list-loading">{$_('common.loading')}</p>
   {:else if meetings.length === 0}
     <p class="text-center text-gray-600 py-8">
       {$_('meetings.no_meetings')}
@@ -143,14 +154,14 @@
   {:else}
     <div class="grid gap-4">
       {#each meetings as meeting (meeting.id)}
-        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+        <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition" data-testid="meeting-card">
           <div class="flex justify-between items-start">
             <div>
               <div class="flex items-center gap-2 mb-2">
                 <h3 class="text-lg font-semibold text-gray-900">
                   {meeting.title}
                 </h3>
-                <span class="text-xs px-2 py-1 rounded-full {getStatusBadge(meeting.status).class}">
+                <span class="text-xs px-2 py-1 rounded-full {getStatusBadge(meeting.status).class}" data-testid="meeting-status-badge">
                   {getStatusBadge(meeting.status).label}
                 </span>
               </div>
@@ -158,7 +169,7 @@
                 📋 {getMeetingTypeLabel(meeting.meeting_type)}
               </p>
               <p class="text-gray-500 text-sm">
-                📅 {formatDate(meeting.scheduled_date)}
+                📅 {formatDateTime(meeting.scheduled_date)}
               </p>
               {#if meeting.attendees_count}
                 <p class="text-gray-500 text-sm">
@@ -185,3 +196,10 @@
     {/if}
   {/if}
 </div>
+
+{#if showCreateModal}
+  <MeetingCreateModal
+    oncreated={handleMeetingCreated}
+    onclose={() => showCreateModal = false}
+  />
+{/if}

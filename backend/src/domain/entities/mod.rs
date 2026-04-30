@@ -9,6 +9,7 @@ pub mod building;
 pub mod call_for_funds;
 pub mod challenge;
 pub mod charge_distribution;
+pub mod consent;
 pub mod contract_evaluation;
 pub mod contractor_report;
 pub mod convocation;
@@ -18,6 +19,7 @@ pub mod energy_bill_upload;
 pub mod energy_campaign;
 pub mod etat_date;
 pub mod expense;
+pub mod gdpr_art30;
 pub mod gdpr_export;
 pub mod gdpr_objection;
 pub mod gdpr_rectification;
@@ -44,6 +46,7 @@ pub mod quote;
 pub mod refresh_token;
 pub mod resolution;
 pub mod resource_booking;
+pub mod security_incident;
 pub mod service_provider;
 pub mod shared_object;
 pub mod skill;
@@ -68,6 +71,7 @@ pub use building::Building;
 pub use call_for_funds::{CallForFunds, CallForFundsStatus};
 pub use challenge::{Challenge, ChallengeProgress, ChallengeStatus, ChallengeType};
 pub use charge_distribution::ChargeDistribution;
+pub use consent::{ConsentRecord, ConsentStatus};
 pub use contract_evaluation::ContractEvaluation;
 pub use contractor_report::{ContractorReport, ContractorReportStatus, ReplacedPart};
 pub use convocation::{Convocation, ConvocationStatus, ConvocationType};
@@ -79,6 +83,7 @@ pub use energy_campaign::{
 };
 pub use etat_date::{EtatDate, EtatDateLanguage, EtatDateStatus};
 pub use expense::{ApprovalStatus, Expense, ExpenseCategory, PaymentStatus};
+pub use gdpr_art30::{ProcessingActivity, ProcessorAgreement};
 pub use gdpr_export::{
     DocumentData, ExpenseData, GdprExport, MeetingData, OwnerData, RelatedData, UnitOwnershipData,
     UserData,
@@ -113,6 +118,7 @@ pub use quote::{Quote, QuoteScore, QuoteStatus};
 pub use refresh_token::RefreshToken;
 pub use resolution::{MajorityType, Resolution, ResolutionStatus, ResolutionType};
 pub use resource_booking::{BookingStatus, RecurringPattern, ResourceBooking, ResourceType};
+pub use security_incident::{IncidentSeverity, IncidentStatus, SecurityIncident};
 pub use service_provider::{ServiceProvider, TradeCategory};
 pub use shared_object::{ObjectCondition, SharedObject, SharedObjectCategory};
 pub use skill::{ExpertiseLevel, Skill, SkillCategory};

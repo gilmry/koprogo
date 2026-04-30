@@ -1,39 +1,42 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { noticesApi, type Notice, NoticeType, NoticeStatus } from "../../lib/api/notices";
   import { toast } from "../../stores/toast";
   import NoticeTypeBadge from "./NoticeTypeBadge.svelte";
   import NoticeStatusBadge from "./NoticeStatusBadge.svelte";
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let showFilters = true;
+  let {
+    buildingId,
+    showFilters = true,
+  }: {
+    buildingId: string;
+    showFilters?: boolean;
+  } = $props();
 
-  let notices: Notice[] = [];
-  let filteredNotices: Notice[] = [];
-  let loading = true;
-  let searchQuery = "";
-  let selectedType: NoticeType | "all" = "all";
-  let selectedStatus: NoticeStatus | "active-only" = "active-only";
+  let notices: Notice[] = $state([]);
+  let filteredNotices: Notice[] = $state([]);
+  let loading = $state(true);
+  let searchQuery = $state("");
+  let selectedType: NoticeType | "all" = $state("all");
+  let selectedStatus: NoticeStatus | "active-only" = $state("active-only");
 
-  onMount(async () => {
-    await loadNotices();
+  $effect(() => {
+    loadNotices();
   });
 
   async function loadNotices() {
-    try {
-      loading = true;
-      if (selectedStatus === "active-only") {
-        notices = await noticesApi.listActive(buildingId);
-      } else {
-        notices = await noticesApi.listByBuilding(buildingId);
-      }
-      applyFilters();
-    } catch (err: any) {
-      toast.error(err.message || $_("notices.load_failed"));
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => selectedStatus === "active-only"
+        ? noticesApi.listActive(buildingId)
+        : noticesApi.listByBuilding(buildingId),
+      setLoading: (v: boolean) => loading = v,
+      setError: () => {},
+      onSuccess: (data) => { notices = data; applyFilters(); },
+      errorMessage: $_("notices.load_failed"),
+    });
   }
 
   function applyFilters() {
@@ -54,20 +57,12 @@
     });
   }
 
-  $: {
+  $effect(() => {
     searchQuery;
     selectedType;
     selectedStatus;
     applyFilters();
-  }
-
-  function formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  }
+  });
 
   function truncate(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
@@ -75,10 +70,10 @@
   }
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="notice-list">
   {#if showFilters}
     <!-- Filters -->
-    <div class="bg-white shadow rounded-lg p-4">
+    <div class="bg-white shadow rounded-lg p-4" data-testid="notice-list-filters">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Search -->
         <div>
@@ -129,7 +124,7 @@
   <!-- Notices List -->
   <div class="bg-white shadow rounded-lg overflow-hidden">
     {#if loading}
-      <div class="text-center py-12 text-gray-500">{$_("notices.loading")}</div>
+      <div class="text-center py-12 text-gray-500" data-testid="notice-list-loading">{$_("notices.loading")}</div>
     {:else if filteredNotices.length === 0}
       <div class="text-center py-12 text-gray-500">
         {$_("notices.no_notices_found")} {#if searchQuery || selectedType !== "all"}{$_("notices.try_adjusting_filters")}{/if}
@@ -137,7 +132,7 @@
     {:else}
       <ul class="divide-y divide-gray-200">
         {#each filteredNotices as notice}
-          <li>
+          <li data-testid="notice-list-row">
             <a
               href={`/notice-detail?id=${notice.id}`}
               class="block hover:bg-gray-50 transition-colors duration-150 p-4"
@@ -153,13 +148,13 @@
                     {truncate(notice.content, 150)}
                   </p>
                   <div class="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                    <span>📅 {formatDate(notice.created_at)}</span>
+                    <span>📅 {formatDateShort(notice.created_at)}</span>
                     {#if notice.author_name}
                       <span>👤 {notice.author_name}</span>
                     {/if}
                     {#if notice.is_pinned}<span>📌 {$_("notices.pinned")}</span>{/if}
                     {#if notice.expires_at}
-                      <span>⏰ {$_("notices.expires")} {formatDate(notice.expires_at)}</span>
+                      <span>⏰ {$_("notices.expires")} {formatDateShort(notice.expires_at)}</span>
                     {/if}
                   </div>
                 </div>

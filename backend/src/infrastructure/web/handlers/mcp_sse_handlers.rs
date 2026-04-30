@@ -26,7 +26,6 @@ use actix_web::{
 use futures_util::stream::{self};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::sync::Arc;
 use uuid::Uuid;
 
 // ─────────────────────────────────────────────────────────
@@ -1755,7 +1754,7 @@ async fn handle_jsonrpc(req: JsonRpcRequest, state: &AppState, user: &Authentica
 pub async fn mcp_sse_endpoint(
     _req: HttpRequest,
     claims: AuthenticatedUser,
-    _state: Data<Arc<AppState>>,
+    _state: Data<AppState>,
 ) -> HttpResponse {
     // Generate a unique session ID for this SSE connection
     let session_id = Uuid::new_v4();
@@ -1801,7 +1800,7 @@ pub async fn mcp_sse_endpoint(
 pub async fn mcp_messages_endpoint(
     req: HttpRequest,
     claims: AuthenticatedUser,
-    state: Data<Arc<AppState>>,
+    state: Data<AppState>,
     body: web::Json<Value>,
 ) -> HttpResponse {
     let session_id = req
@@ -1913,7 +1912,7 @@ pub async fn mcp_info_endpoint() -> HttpResponse {
 #[get("/mcp/system-prompt")]
 pub async fn mcp_system_prompt_endpoint(
     _claims: AuthenticatedUser,
-    _state: Data<Arc<AppState>>,
+    _state: Data<AppState>,
 ) -> HttpResponse {
     let prompt = include_str!("../../mcp_system_prompt.md");
     HttpResponse::Ok()
@@ -1928,7 +1927,7 @@ pub async fn mcp_system_prompt_endpoint(
 #[get("/mcp/legal-index")]
 pub async fn mcp_legal_index_endpoint(
     _claims: AuthenticatedUser,
-    _state: Data<Arc<AppState>>,
+    _state: Data<AppState>,
 ) -> HttpResponse {
     let index = include_str!("../../legal_index.json");
     HttpResponse::Ok()

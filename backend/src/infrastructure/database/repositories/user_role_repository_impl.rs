@@ -3,6 +3,7 @@ use crate::domain::entities::{UserRole, UserRoleAssignment};
 use crate::infrastructure::pool::DbPool;
 use async_trait::async_trait;
 use sqlx::Row;
+use std::collections::HashMap;
 use uuid::Uuid;
 
 pub struct PostgresUserRoleRepository {
@@ -86,6 +87,75 @@ impl UserRoleRepository for PostgresUserRoleRepository {
         rows.into_iter()
             .map(Self::map_row)
             .collect::<Result<Vec<_>, _>>()
+    }
+
+    async fn list_for_users(
+        &self,
+        user_ids: &[Uuid],
+    ) -> Result<HashMap<Uuid, Vec<UserRoleAssignment>>, String> {
+        if user_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        let rows = sqlx::query(
+            r#"
+            SELECT id, user_id, role, organization_id, is_primary, created_at, updated_at
+            FROM user_roles
+            WHERE user_id = ANY($1)
+            ORDER BY user_id, is_primary DESC, created_at ASC
+            "#,
+        )
+        .bind(user_ids)
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to list roles for users: {}", e))?;
+
+        let mut map: HashMap<Uuid, Vec<UserRoleAssignment>> = HashMap::new();
+        for row in rows {
+            let assignment = Self::map_row(row)?;
+            map.entry(assignment.user_id).or_default().push(assignment);
+        }
+        Ok(map)
+    }
+
+    async fn replace_all(
+        &self,
+        user_id: Uuid,
+        assignments: &[UserRoleAssignment],
+    ) -> Result<(), String> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .map_err(|e| format!("Failed to begin transaction: {}", e))?;
+
+        sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
+            .bind(user_id)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| format!("Failed to delete old roles: {}", e))?;
+
+        for a in assignments {
+            sqlx::query(
+                r#"
+                INSERT INTO user_roles (id, user_id, role, organization_id, is_primary, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+                "#,
+            )
+            .bind(a.id)
+            .bind(user_id)
+            .bind(a.role.to_string())
+            .bind(a.organization_id)
+            .bind(a.is_primary)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| format!("Failed to insert role: {}", e))?;
+        }
+
+        tx.commit()
+            .await
+            .map_err(|e| format!("Failed to commit replace_all: {}", e))?;
+        Ok(())
     }
 
     async fn find_by_id(&self, id: Uuid) -> Result<Option<UserRoleAssignment>, String> {

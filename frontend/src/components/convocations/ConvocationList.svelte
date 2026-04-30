@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     convocationsApi,
@@ -7,30 +7,34 @@
     ConvocationStatus,
     MeetingType,
   } from '../../lib/api/convocations';
+  import { formatDate } from '../../lib/utils/date.utils';
+  import { withLoadingState } from '../../lib/utils/error.utils';
+  import { extractArray } from '../../lib/utils/response.utils';
 
-  export let buildingId: string;
+  let {
+    buildingId,
+  }: {
+    buildingId: string;
+  } = $props();
 
-  let convocations: Convocation[] = [];
-  let filteredConvocations: Convocation[] = [];
-  let loading = true;
-  let error = '';
-  let statusFilter: ConvocationStatus | 'all' = 'all';
+  let convocations = $state<Convocation[]>([]);
+  let filteredConvocations = $state<Convocation[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let statusFilter = $state<ConvocationStatus | 'all'>('all');
 
-  onMount(async () => {
-    await loadConvocations();
+  $effect(() => {
+    if (buildingId) loadConvocations();
   });
 
   async function loadConvocations() {
-    try {
-      loading = true;
-      error = '';
-      convocations = await convocationsApi.listByBuilding(buildingId);
-      applyFilters();
-    } catch (err: any) {
-      error = err.message || $_('convocations.errors.loadingFailed');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => convocationsApi.listByBuilding(buildingId),
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data: any) => { convocations = extractArray<Convocation>(data, 'convocations'); applyFilters(); },
+      errorMessage: $_('convocations.errors.loadingFailed'),
+    });
   }
 
   function applyFilters() {
@@ -40,15 +44,10 @@
     });
   }
 
-  $: if (statusFilter) applyFilters();
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-  }
+  $effect(() => {
+    statusFilter;
+    applyFilters();
+  });
 
   function getStatusConfig(status: ConvocationStatus): { bg: string; text: string; label: string; icon: string } {
     const config: Record<ConvocationStatus, { bg: string; text: string; label: string; icon: string }> = {
@@ -70,7 +69,7 @@
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="convocation-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <h3 class="text-lg leading-6 font-medium text-gray-900">
       📨 {$_('convocations.title')}
@@ -83,8 +82,9 @@
   <!-- Filters -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex items-center space-x-4">
-      <label class="text-sm font-medium text-gray-700">{$_('common.status')}:</label>
+      <label for="convocation-status-filter" class="text-sm font-medium text-gray-700">{$_('common.status')}:</label>
       <select
+        id="convocation-status-filter"
         bind:value={statusFilter}
         class="text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500"
       >
@@ -98,14 +98,14 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
-      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
+    <div class="p-8 text-center" data-testid="convocation-list-loading">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" data-testid="convocation-list-spinner"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('convocations.loading')}</p>
     </div>
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadConvocations} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+      <button onclick={loadConvocations} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
         {$_('common.retry')}
       </button>
     </div>
@@ -117,10 +117,10 @@
       </p>
     </div>
   {:else}
-    <ul class="divide-y divide-gray-200">
+    <ul class="divide-y divide-gray-200" data-testid="convocation-rows">
       {#each filteredConvocations as convocation (convocation.id)}
         {@const statusCfg = getStatusConfig(convocation.status)}
-        <li class="hover:bg-gray-50">
+        <li class="hover:bg-gray-50" data-testid="convocation-row-{convocation.id}">
           <a href="/convocation-detail?id={convocation.id}" class="block px-4 py-4 sm:px-6">
             <div class="flex items-center justify-between">
               <div class="flex-1 min-w-0">
@@ -128,25 +128,25 @@
                   <h4 class="text-sm font-medium text-amber-700">
                     {getMeetingTypeLabel(convocation.meeting_type)}
                   </h4>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {statusCfg.bg} {statusCfg.text}">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {statusCfg.bg} {statusCfg.text}" data-testid="convocation-status-{convocation.id}">
                     <span class="mr-1">{statusCfg.icon}</span>
                     {statusCfg.label}
                   </span>
                   {#if !convocation.respects_legal_deadline}
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
-                      ⚠️ {$_('convocations.legalDeadlineNotRespected')}
+                      {$_('convocations.legalDeadlineNotRespected')}
                     </span>
                   {/if}
                 </div>
 
                 <div class="mt-2 flex items-center text-sm text-gray-500 flex-wrap gap-x-4 gap-y-1">
                   <span>📅 {$_('convocations.meetingOn', { values: { date: formatDate(convocation.meeting_date) } })}</span>
-                  <span>📧 {convocation.total_recipients} {$_('common.recipient', { count: convocation.total_recipients })}</span>
+                  <span>📧 {convocation.total_recipients} {$_('common.recipient', { values: { count: convocation.total_recipients } })}</span>
                   {#if convocation.opened_count > 0}
-                    <span>👁️ {convocation.opened_count} {$_('common.opened', { count: convocation.opened_count })}</span>
+                    <span>👁️ {convocation.opened_count} {$_('common.opened', { values: { count: convocation.opened_count } })}</span>
                   {/if}
                   {#if convocation.will_attend_count > 0}
-                    <span>✅ {convocation.will_attend_count} {$_('common.present', { count: convocation.will_attend_count })}</span>
+                    <span>✅ {convocation.will_attend_count} {$_('common.present', { values: { count: convocation.will_attend_count } })}</span>
                   {/if}
                   <span class="text-xs text-gray-400">{$_('common.createdOn')} {formatDate(convocation.created_at)}</span>
                 </div>

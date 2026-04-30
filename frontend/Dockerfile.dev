@@ -9,6 +9,10 @@ COPY package.json package-lock.json* ./
 # Install dependencies
 RUN npm install
 
+# Install Playwright Chromium + system deps (same as CI)
+# Needed for: npm run test:e2e, npm run test:scenarios
+RUN npx playwright install chromium --with-deps
+
 # Source code will be mounted via volume
 
 # Expose Astro dev server port

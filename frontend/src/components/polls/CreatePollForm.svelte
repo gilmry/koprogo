@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from "svelte-i18n";
   import {
     pollsApi,
@@ -7,13 +7,20 @@
     type CreatePollOptionDto,
     PollType,
   } from "../../lib/api/polls";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
   import BuildingSelector from "../BuildingSelector.svelte";
 
-  const dispatch = createEventDispatcher();
+  let {
+    oncreated,
+    oncancel,
+  }: {
+    oncreated?: (poll: any) => void;
+    oncancel?: () => void;
+  } = $props();
 
-  let selectedBuildingId = "";
+  let selectedBuildingId = $state("");
 
-  let formData: CreatePollDto = {
+  let formData: CreatePollDto = $state({
     building_id: "",
     poll_type: PollType.YesNo,
     title: "",
@@ -25,26 +32,26 @@
       { option_text: "Oui", display_order: 1 },
       { option_text: "Non", display_order: 2 },
     ],
-  };
+  });
 
-  $: formData.building_id = selectedBuildingId;
+  $effect(() => {
+    formData.building_id = selectedBuildingId;
+  });
 
-  // UI-only fields (not sent to backend)
-  let startsAt = new Date().toISOString().split("T")[0];
+  let startsAt = $state(new Date().toISOString().split("T")[0]);
 
-  let loading = false;
-  let error = "";
-  let success = false;
+  let loading = $state(false);
+  let error = $state("");
+  let success = $state(false);
 
-  // For multiple choice options
-  let newOptionText = "";
+  let newOptionText = $state("");
 
-  let endsAtDate = "";
+  let endsAtDate = $state("");
 
   function setDefaultEndDate() {
     if (startsAt) {
       const startDate = new Date(startsAt);
-      startDate.setDate(startDate.getDate() + 7); // 7 days by default
+      startDate.setDate(startDate.getDate() + 7);
       endsAtDate = startDate.toISOString().split("T")[0];
     }
   }
@@ -52,7 +59,6 @@
   function onPollTypeChange() {
     formData.options = [];
     if (formData.poll_type === PollType.YesNo) {
-      // Auto-create Yes/No options
       formData.options = [
         { option_text: "Oui", display_order: 1 },
         { option_text: "Non", display_order: 2 },
@@ -74,7 +80,6 @@
 
   function removeOption(index: number) {
     formData.options = formData.options.filter((_, i) => i !== index);
-    // Reorder
     formData.options = formData.options.map((opt, i) => ({
       ...opt,
       display_order: i + 1,
@@ -83,51 +88,52 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    loading = true;
     error = "";
     success = false;
 
-    try {
-      // Validate
-      if (!formData.building_id) {
-        throw new Error($_("polls.createForm.errors.selectBuilding"));
-      }
-      if (!formData.title.trim()) {
-        throw new Error($_("polls.createForm.errors.titleRequired"));
-      }
-      if (!endsAtDate) {
-        throw new Error($_("polls.createForm.errors.endDateRequired"));
-      }
-      if (endsAtDate <= startsAt) {
-        throw new Error($_("polls.createForm.errors.endDateAfterStart"));
-      }
-      // Convert date to ISO 8601 for backend
-      formData.ends_at = new Date(endsAtDate + "T23:59:59Z").toISOString();
-      if (
-        (formData.poll_type === PollType.YesNo ||
-          formData.poll_type === PollType.MultipleChoice) &&
-        formData.options.length === 0
-      ) {
-        throw new Error($_("polls.createForm.errors.optionRequired"));
-      }
+    if (!formData.building_id) {
+      error = $_("polls.createForm.errors.selectBuilding");
+      return;
+    }
+    if (!formData.title.trim()) {
+      error = $_("polls.createForm.errors.titleRequired");
+      return;
+    }
+    if (!endsAtDate) {
+      error = $_("polls.createForm.errors.endDateRequired");
+      return;
+    }
+    if (endsAtDate <= startsAt) {
+      error = $_("polls.createForm.errors.endDateAfterStart");
+      return;
+    }
+    formData.ends_at = new Date(endsAtDate + "T23:59:59Z").toISOString();
+    if (
+      (formData.poll_type === PollType.YesNo ||
+        formData.poll_type === PollType.MultipleChoice) &&
+      formData.options.length === 0
+    ) {
+      error = $_("polls.createForm.errors.optionRequired");
+      return;
+    }
 
-      const poll = await pollsApi.create(formData);
-      success = true;
-      dispatch("created", poll);
-
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        window.location.href = `/polls/detail?id=${poll.id}`;
-      }, 1500);
-    } catch (err: any) {
-      error = err.message || $_("polls.createForm.errors.creationFailed");
-      console.error("Failed to create poll:", err);
-    } finally {
-      loading = false;
+    const poll = await withErrorHandling({
+      action: () => pollsApi.create(formData),
+      setLoading: (v: boolean) => loading = v,
+      errorMessage: $_("polls.createForm.errors.creationFailed"),
+      onSuccess: (created) => {
+        success = true;
+        oncreated?.(created);
+        setTimeout(() => {
+          window.location.href = `/polls/detail?id=${created.id}`;
+        }, 1500);
+      },
+    });
+    if (!poll) {
+      error = error || $_("polls.createForm.errors.creationFailed");
     }
   }
 
-  // Initialize default end date
   setDefaultEndDate();
 </script>
 
@@ -142,7 +148,7 @@
   </p>
 
   {#if success}
-    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
+    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-md" data-testid="create-poll-success">
       <p class="text-sm text-green-800">
         ✅ {$_("polls.createForm.successMessage")}
       </p>
@@ -150,12 +156,12 @@
   {/if}
 
   {#if error}
-    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+    <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-md" data-testid="create-poll-error">
       <p class="text-sm text-red-800">❌ {error}</p>
     </div>
   {/if}
 
-  <form on:submit={handleSubmit} class="space-y-6" data-testid="create-poll-form">
+  <form onsubmit={handleSubmit} class="space-y-6" data-testid="create-poll-form">
     <!-- Building Selector -->
     <BuildingSelector bind:selectedBuildingId label={$_("polls.createForm.buildingLabel")} />
 
@@ -167,7 +173,7 @@
       <select
         id="poll_type"
         bind:value={formData.poll_type}
-        on:change={onPollTypeChange}
+        onchange={onPollTypeChange}
         required
         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         data-testid="create-poll-type-select"
@@ -219,23 +225,25 @@
       </div>
     {:else if formData.poll_type === PollType.MultipleChoice}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
+        <span class="block text-sm font-medium text-gray-700 mb-2">
           {$_("polls.createForm.options")} <span class="text-red-500">*</span>
-        </label>
+        </span>
         <div class="space-y-2 mb-3">
           {#each formData.options as option, index}
             <div class="flex items-center space-x-2">
               <span class="text-sm text-gray-500">{index + 1}.</span>
               <input
                 type="text"
+                aria-label={`Option ${index + 1}`}
                 value={option.option_text}
                 readonly
                 class="flex-1 rounded-md border-gray-300 bg-gray-50"
               />
               <button
                 type="button"
-                on:click={() => removeOption(index)}
+                onclick={() => removeOption(index)}
                 class="text-red-600 hover:text-red-800"
+                aria-label={$_("common.delete")}
                 title={$_("common.delete")}
               >
                 🗑️
@@ -244,13 +252,15 @@
           {/each}
         </div>
         <div class="flex items-center space-x-2">
+          <label for="create-poll-new-option" class="sr-only">{$_("polls.createForm.newOptionPlaceholder")}</label>
           <input
+            id="create-poll-new-option"
             type="text"
             bind:value={newOptionText}
             placeholder={$_("polls.createForm.newOptionPlaceholder")}
             class="flex-1 rounded-md border-gray-300"
             data-testid="create-poll-new-option-input"
-            on:keypress={(e) => {
+            onkeypress={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
                 addOption();
@@ -259,7 +269,7 @@
           />
           <button
             type="button"
-            on:click={addOption}
+            onclick={addOption}
             class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200"
             data-testid="create-poll-add-option-btn"
           >
@@ -272,13 +282,14 @@
       </div>
     {:else if formData.poll_type === PollType.Rating}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">
+        <span class="block text-sm font-medium text-gray-700 mb-2">
           {$_("polls.createForm.ratingScale")}
-        </label>
+        </span>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="text-xs text-gray-500">{$_("polls.createForm.minRating")}</label>
+            <label for="create-poll-min-rating" class="text-xs text-gray-500">{$_("polls.createForm.minRating")}</label>
             <input
+              id="create-poll-min-rating"
               type="number"
               value="1"
               disabled
@@ -288,8 +299,9 @@
             />
           </div>
           <div>
-            <label class="text-xs text-gray-500">{$_("polls.createForm.maxRating")}</label>
+            <label for="create-poll-max-rating" class="text-xs text-gray-500">{$_("polls.createForm.maxRating")}</label>
             <input
+              id="create-poll-max-rating"
               type="number"
               value="5"
               disabled
@@ -315,7 +327,7 @@
           type="date"
           id="starts_at"
           bind:value={startsAt}
-          on:change={setDefaultEndDate}
+          onchange={setDefaultEndDate}
           required
           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           data-testid="create-poll-start-date-input"
@@ -382,7 +394,7 @@
     <div class="flex justify-end space-x-3">
       <button
         type="button"
-        on:click={() => dispatch("cancel")}
+        onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
         data-testid="create-poll-cancel-btn"
       >

@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { PaymentStatus } from "../../lib/api/payments";
 
-  export let status: PaymentStatus;
+  let { status }: { status: PaymentStatus } = $props();
 
   const statusConfig: Record<
     PaymentStatus,
@@ -51,7 +52,7 @@
     },
   };
 
-  $: config = statusConfig[status] || statusConfig[PaymentStatus.Pending];
+  let config = $derived(statusConfig[status] || statusConfig[PaymentStatus.Pending]);
 </script>
 
 <span

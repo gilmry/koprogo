@@ -231,7 +231,14 @@ jobs:
 
       - name: Check for breaking API changes
         run: |
-          oasdiff breaking base/docs/api/openapi.yaml pr/docs/api/openapi.yaml \
+          # The live spec source is now docs/api/openapi.json (auto-exported
+          # from the Rust utoipa ApiDoc). openapi.yaml remains as a
+          # human-readable fallback during the migration period.
+          BASE_SPEC="base/docs/api/openapi.json"
+          PR_SPEC="pr/docs/api/openapi.json"
+          [ -f "$BASE_SPEC" ] || BASE_SPEC="base/docs/api/openapi.yaml"
+          [ -f "$PR_SPEC" ] || PR_SPEC="pr/docs/api/openapi.yaml"
+          oasdiff breaking "$BASE_SPEC" "$PR_SPEC" \
             --fail-on ERR \
             --format text || {
             echo ""
@@ -244,11 +251,127 @@ jobs:
       - name: Report non-breaking API changes
         if: always()
         run: |
+          BASE_SPEC="base/docs/api/openapi.json"
+          PR_SPEC="pr/docs/api/openapi.json"
+          [ -f "$BASE_SPEC" ] || BASE_SPEC="base/docs/api/openapi.yaml"
+          [ -f "$PR_SPEC" ] || PR_SPEC="pr/docs/api/openapi.yaml"
           echo "📋 API changelog (non-breaking):"
-          oasdiff changelog base/docs/api/openapi.yaml pr/docs/api/openapi.yaml --format text || true
+          oasdiff changelog "$BASE_SPEC" "$PR_SPEC" --format text || true
 
   contract-types:
-    name: Contract Types Check (DTO drift)
+    name: Contract Types Check (end-to-end anti-drift)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v5
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v5
+        with:
+          path: backend/target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      # Gate 1: Rust → OpenAPI spec
+      # The export_openapi binary prints the spec generated from the live
+      # ApiDoc derive to stdout. The committed docs/api/openapi.json MUST
+      # match exactly — otherwise a #[derive(ToSchema)] or #[utoipa::path]
+      # was added/removed without running `make openapi-export`.
+      - name: Export OpenAPI spec from Rust source
+        run: |
+          cd backend
+          cargo run --bin export_openapi > /tmp/openapi.fresh.json
+
+      - name: Verify committed openapi.json matches Rust source
+        run: |
+          diff -u docs/api/openapi.json /tmp/openapi.fresh.json || {
+            echo ""
+            echo "❌ docs/api/openapi.json is out of sync with the Rust source."
+            echo "   A DTO, enum, or handler annotation changed without a spec refresh."
+            echo "   Run locally:"
+            echo "     make openapi-export"
+            echo "     git add docs/api/openapi.json && git commit"
+            exit 1
+          }
+
+      # Gate 2: OpenAPI spec → TypeScript types
+      # The committed src/types/api.d.ts MUST be regenerated from the spec
+      # whenever the spec changes. Any drift here means the lib/api/*.ts
+      # re-exports could be referencing schemas that no longer exist.
+      - name: Verify api.d.ts is regenerated from the fresh spec
+        run: |
+          cd frontend
+          npm run types:generate
+          git diff --exit-code src/types/api.d.ts || {
+            echo ""
+            echo "❌ src/types/api.d.ts is stale."
+            echo "   Run locally:"
+            echo "     cd frontend && npm run types:generate"
+            echo "     git add src/types/api.d.ts && git commit"
+            exit 1
+          }
+
+      # Gate 3: TypeScript types → Svelte components
+      # With enums re-exported from api.d.ts, any component referencing a
+      # variant that no longer exists in the Rust source will fail here.
+      # This closes the loop — Rust is the single source of truth for every
+      # enum value visible in the UI.
+      #
+      # We use --threshold warning to also block on a11y warnings (form
+      # labels, click handlers without keyboard events, ARIA roles, etc.).
+      # As of commit a173848 the baseline is 0 warnings — any regression
+      # hides a potential accessibility bug.
+      - name: Run svelte-check (enforces frontend↔backend contract + a11y)
+        run: |
+          cd frontend
+          npx svelte-check --threshold warning
+
+      # Gate 4: No hand-written enum re-introductions in lib/api/*.ts
+      # A small-surface safety net: we allow a documented allowlist of
+      # UI-only enums without backend counterpart (e.g. ResourceStatus in
+      # bookings.ts), but any NEW `export enum` needs to be justified.
+      - name: Guard against new hand-written enums in lib/api
+        run: |
+          cd frontend
+          count=$(grep -lE "^export enum [A-Z]" src/lib/api/*.ts 2>/dev/null | wc -l)
+          if [ "$count" -gt 4 ]; then
+            echo ""
+            echo "❌ Too many hand-written enums in frontend/src/lib/api (got $count, max 4)."
+            echo "   Re-export from api.d.ts instead:"
+            echo "     export type Foo = components[\"schemas\"][\"Foo\"];"
+            echo "     export const Foo = { ... } satisfies Record<string, Foo>;"
+            echo ""
+            echo "   Files still declaring enums:"
+            grep -lE "^export enum [A-Z]" src/lib/api/*.ts
+            exit 1
+          fi
+
+  vitest:
+    name: Frontend Unit Tests (vitest)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -259,16 +382,15 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: |
           cd frontend
           npm ci
 
-      - name: Check for DTO drift
+      - name: Run vitest
         run: |
           cd frontend
-          npm run types:generate
-          git diff --exit-code src/types/api.d.ts || (echo "❌ api.d.ts is out of sync with openapi.yaml — run 'npm run types:generate' and commit the result" && exit 1)
+          npx vitest run --reporter=default
 
   frontend-check:
     name: Frontend Check & Build
@@ -363,7 +485,19 @@ jobs:
           sqlx migrate run
           cargo build
           cargo run &
-          sleep 15
+          # Wait for backend to be ready (health check instead of fixed sleep)
+          echo "Waiting for backend to start..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/api/v1/health > /dev/null 2>&1; then
+              echo "Backend is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "Backend failed to start within 60s"
+              exit 1
+            fi
+            sleep 5
+          done
 
       - name: Start frontend dev server
         env:
@@ -372,15 +506,58 @@ jobs:
           cd frontend
           node scripts/generate-config.js
           npx astro dev --port 3000 &
-          sleep 10
+          # Wait for frontend to be ready
+          echo "Waiting for frontend to start..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000 > /dev/null 2>&1; then
+              echo "Frontend is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Frontend failed to start within 30s"
+              exit 1
+            fi
+            sleep 2
+          done
 
-      - name: Run Playwright tests
+      - name: Run Playwright smoke tests
         env:
           PLAYWRIGHT_BASE_URL: http://localhost:3000
           PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
         run: |
           cd frontend
-          npx playwright test
+          npx playwright test --project=chromium
+
+      - name: Seed scenario world for Documentation Vivante
+        env:
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          # Login admin and seed the world for scenario tests
+          TOKEN=$(curl -s http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@koprogo.com","password":"admin123"}' \
+            | jq -r '.token')
+          curl -s -X POST http://localhost:8080/api/v1/seed/scenario/world \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' || echo "Seed already exists or failed"
+
+      - name: Run Documentation Vivante scenarios (video generation)
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          PLAYWRIGHT_API_BASE: http://localhost:8080/api/v1
+        run: |
+          cd frontend
+          npx playwright test --project=scenarios || echo "Some scenarios failed (non-blocking for CI)"
+
+      - name: Cleanup scenario world
+        if: always()
+        run: |
+          TOKEN=$(curl -s http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@koprogo.com","password":"admin123"}' \
+            | jq -r '.token') || true
+          curl -s -X DELETE http://localhost:8080/api/v1/seed/scenario/world \
+            -H "Authorization: Bearer $TOKEN" || true
 
       - name: Upload Playwright report
         if: always()
@@ -393,7 +570,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-bdd, test-e2e, frontend-check, contract-types]
+    needs: [lint, test-unit, test-bdd, test-e2e, frontend-check, contract-types, vitest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

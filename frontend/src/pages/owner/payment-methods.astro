@@ -70,18 +70,24 @@ import Layout from "../../layouts/Layout.astro";
   import { mount } from "svelte";
   import PaymentMethodList from "../../components/payments/PaymentMethodList.svelte";
   import { getMyOwner } from "../../lib/api";
+  import { authStore } from "../../stores/auth";
+  import { get } from "svelte/store";
 
   async function init() {
     const owner = await getMyOwner();
-    const ownerId = owner?.id || "";
+    // Use owner.id if available, fall back to authenticated user's ID
+    const auth = get(authStore);
+    const ownerId = owner?.id || auth.user?.id || "";
 
-    if (ownerId) {
-      const listContainer = document.getElementById("payment-methods-list");
-      if (listContainer) {
+    const listContainer = document.getElementById("payment-methods-list");
+    if (listContainer) {
+      if (ownerId) {
         mount(PaymentMethodList as any, {
           target: listContainer,
           props: { ownerId, canManage: true },
         });
+      } else {
+        listContainer.innerHTML = '<div class="text-center py-12 text-gray-500" data-testid="payment-method-list-error">Impossible de charger vos moyens de paiement. Veuillez vous reconnecter.</div>';
       }
     }
   }

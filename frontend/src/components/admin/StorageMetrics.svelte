@@ -185,7 +185,7 @@
   });
 </script>
 
-<section class="bg-white border border-gray-200 rounded-xl shadow-sm">
+<section class="bg-white border border-gray-200 rounded-xl shadow-sm" data-testid="storage-metrics">
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6 border-b border-gray-100">
     <div>
       <h2 class="text-2xl font-semibold text-gray-900">{$_('admin.storage.title')}</h2>

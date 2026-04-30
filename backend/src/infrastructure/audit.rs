@@ -35,6 +35,7 @@ pub enum AuditEventType {
     InvoiceRejected,
     MeetingCreated,
     MeetingCompleted,
+    MeetingQuorumValidated,
     MeetingMinutesSent,
     DocumentUploaded,
     DocumentDeleted,
@@ -258,6 +259,10 @@ pub enum AuditEventType {
     GdprMarketingOptOut,
     GdprMarketingOptIn,
     GdprMarketingPreferenceChangeFailed,
+
+    // GDPR Article 7: Consent Management (Issue #337)
+    ConsentRecorded,
+    ConsentStatusChecked,
 
     // GDPR Article 33: Security Incidents & APD Notification (Issue #317)
     SecurityIncidentReported,

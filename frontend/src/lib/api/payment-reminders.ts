@@ -1,31 +1,37 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Payment Reminders API Client
  * Belgian payment recovery workflow: FirstReminder (J+15) → SecondReminder (J+30) → FormalNotice (J+60)
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
-export enum ReminderLevel {
-  FirstReminder = "FirstReminder",
-  SecondReminder = "SecondReminder",
-  FormalNotice = "FormalNotice",
-  LegalAction = "LegalAction",
-}
+export type ReminderLevel = components["schemas"]["ReminderLevel"];
+export const ReminderLevel = {
+  FirstReminder: "FirstReminder" as const,
+  SecondReminder: "SecondReminder" as const,
+  FormalNotice: "FormalNotice" as const,
+} satisfies Record<string, ReminderLevel>;
 
-export enum ReminderStatus {
-  Pending = "Pending",
-  Sent = "Sent",
-  Opened = "Opened",
-  Paid = "Paid",
-  Escalated = "Escalated",
-  Cancelled = "Cancelled",
-}
+export type ReminderStatus = components["schemas"]["ReminderStatus"];
+export const ReminderStatus = {
+  Pending: "Pending" as const,
+  Sent: "Sent" as const,
+  Opened: "Opened" as const,
+  Paid: "Paid" as const,
+  Escalated: "Escalated" as const,
+  Cancelled: "Cancelled" as const,
+} satisfies Record<string, ReminderStatus>;
 
-export enum DeliveryMethod {
-  Email = "Email",
-  RegisteredLetter = "RegisteredLetter",
-  Bailiff = "Bailiff",
-}
+export type DeliveryMethod = components["schemas"]["DeliveryMethod"];
+export const DeliveryMethod = {
+  Email: "Email" as const,
+  RegisteredLetter: "RegisteredLetter" as const,
+  Bailiff: "Bailiff" as const,
+} satisfies Record<string, DeliveryMethod>;
 
 export interface PaymentReminder {
   id: string;

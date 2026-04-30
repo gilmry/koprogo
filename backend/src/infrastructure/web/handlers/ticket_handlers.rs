@@ -1,12 +1,59 @@
 use crate::application::dto::{
     AssignTicketRequest, CancelTicketRequest, CreateTicketRequest, ReopenTicketRequest,
-    ResolveTicketRequest,
+    ResolveTicketRequest, TicketResponse,
 };
 use crate::domain::entities::TicketStatus;
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use std::collections::HashMap;
 use uuid::Uuid;
+
+/// Resolve display names for the requester and assignee of a single ticket.
+async fn enrich_ticket(state: &AppState, mut ticket: TicketResponse) -> TicketResponse {
+    if let Ok(name) = state
+        .user_use_cases
+        .find_display_name(ticket.created_by)
+        .await
+    {
+        ticket.requester_name = name;
+    }
+    if let Some(assignee_id) = ticket.assigned_to {
+        if let Ok(name) = state.user_use_cases.find_display_name(assignee_id).await {
+            ticket.assigned_to_name = name;
+        }
+    }
+    ticket
+}
+
+/// Enrich a list of tickets in a single pass, deduplicating user lookups.
+async fn enrich_tickets(state: &AppState, tickets: Vec<TicketResponse>) -> Vec<TicketResponse> {
+    let mut user_ids: Vec<Uuid> = Vec::new();
+    for t in &tickets {
+        user_ids.push(t.created_by);
+        if let Some(a) = t.assigned_to {
+            user_ids.push(a);
+        }
+    }
+    user_ids.sort();
+    user_ids.dedup();
+
+    let mut names: HashMap<Uuid, String> = HashMap::new();
+    for id in user_ids {
+        if let Ok(Some(name)) = state.user_use_cases.find_display_name(id).await {
+            names.insert(id, name);
+        }
+    }
+
+    tickets
+        .into_iter()
+        .map(|mut t| {
+            t.requester_name = names.get(&t.created_by).cloned();
+            t.assigned_to_name = t.assigned_to.and_then(|a| names.get(&a).cloned());
+            t
+        })
+        .collect()
+}
 
 // ==================== Ticket CRUD Endpoints ====================
 
@@ -54,7 +101,8 @@ pub async fn create_ticket(
             .with_resource("Ticket", ticket.id)
             .log();
 
-            HttpResponse::Created().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Created().json(enriched)
         }
         Err(err) => {
             AuditLogEntry::new(
@@ -97,7 +145,8 @@ pub async fn get_ticket(
             if let Err(e) = user.verify_org_access(ticket.organization_id) {
                 return HttpResponse::Forbidden().json(serde_json::json!({ "error": e }));
             }
-            HttpResponse::Ok().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
         }
         Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
             "error": "Ticket not found"
@@ -130,7 +179,7 @@ pub async fn list_building_tickets(
         .list_tickets_by_building(*building_id)
         .await
     {
-        Ok(tickets) => HttpResponse::Ok().json(tickets),
+        Ok(tickets) => HttpResponse::Ok().json(enrich_tickets(&state, tickets).await),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
@@ -152,14 +201,18 @@ pub async fn list_building_tickets(
 #[get("/organizations/{organization_id}/tickets")]
 pub async fn list_organization_tickets(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match state
         .ticket_use_cases
         .list_tickets_by_organization(*organization_id)
         .await
     {
-        Ok(tickets) => HttpResponse::Ok().json(tickets),
+        Ok(tickets) => HttpResponse::Ok().json(enrich_tickets(&state, tickets).await),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
@@ -183,7 +236,7 @@ pub async fn list_my_tickets(
     let created_by = user.user_id;
 
     match state.ticket_use_cases.list_my_tickets(created_by).await {
-        Ok(tickets) => HttpResponse::Ok().json(tickets),
+        Ok(tickets) => HttpResponse::Ok().json(enrich_tickets(&state, tickets).await),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
@@ -211,7 +264,7 @@ pub async fn list_assigned_tickets(
         .list_assigned_tickets(assigned_to)
         .await
     {
-        Ok(tickets) => HttpResponse::Ok().json(tickets),
+        Ok(tickets) => HttpResponse::Ok().json(enrich_tickets(&state, tickets).await),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
@@ -257,7 +310,7 @@ pub async fn list_tickets_by_status(
         .list_tickets_by_status(building_id, status)
         .await
     {
-        Ok(tickets) => HttpResponse::Ok().json(tickets),
+        Ok(tickets) => HttpResponse::Ok().json(enrich_tickets(&state, tickets).await),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
@@ -366,7 +419,8 @@ pub async fn assign_ticket(
             .with_resource("Ticket", ticket.id)
             .log();
 
-            HttpResponse::Ok().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
         }
         Err(err) => {
             AuditLogEntry::new(
@@ -420,7 +474,8 @@ pub async fn start_work(
             .with_resource("Ticket", ticket.id)
             .log();
 
-            HttpResponse::Ok().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
         }
         Err(err) => {
             AuditLogEntry::new(
@@ -480,7 +535,8 @@ pub async fn resolve_ticket(
             .with_resource("Ticket", ticket.id)
             .log();
 
-            HttpResponse::Ok().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
         }
         Err(err) => {
             AuditLogEntry::new(
@@ -534,7 +590,8 @@ pub async fn close_ticket(
             .with_resource("Ticket", ticket.id)
             .log();
 
-            HttpResponse::Ok().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
         }
         Err(err) => {
             AuditLogEntry::new(
@@ -594,7 +651,8 @@ pub async fn cancel_ticket(
             .with_resource("Ticket", ticket.id)
             .log();
 
-            HttpResponse::Ok().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
         }
         Err(err) => {
             AuditLogEntry::new(
@@ -654,7 +712,8 @@ pub async fn reopen_ticket(
             .with_resource("Ticket", ticket.id)
             .log();
 
-            HttpResponse::Ok().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
         }
         Err(err) => {
             AuditLogEntry::new(
@@ -710,7 +769,8 @@ pub async fn send_work_order(
             .with_resource("Ticket", ticket.id)
             .log();
 
-            HttpResponse::Ok().json(ticket)
+            let enriched = enrich_ticket(&state, ticket).await;
+            HttpResponse::Ok().json(enriched)
         }
         Err(err) => {
             AuditLogEntry::new(
@@ -797,7 +857,7 @@ pub async fn get_overdue_tickets_org(
         .get_overdue_tickets_by_organization(organization_id, max_days)
         .await
     {
-        Ok(tickets) => HttpResponse::Ok().json(tickets),
+        Ok(tickets) => HttpResponse::Ok().json(enrich_tickets(&state, tickets).await),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
@@ -859,7 +919,7 @@ pub async fn get_overdue_tickets(
         .get_overdue_tickets(*building_id, max_days)
         .await
     {
-        Ok(tickets) => HttpResponse::Ok().json(tickets),
+        Ok(tickets) => HttpResponse::Ok().json(enrich_tickets(&state, tickets).await),
         Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
     }
 }
@@ -867,4 +927,72 @@ pub async fn get_overdue_tickets(
 #[derive(serde::Deserialize)]
 pub struct OverdueQuery {
     pub max_days: Option<i64>,
+}
+
+// ==================== Assignable Users ====================
+
+/// DTO for the assignable-users dropdown (minimal fields).
+#[derive(serde::Serialize, utoipa::ToSchema)]
+pub struct AssignableUserDto {
+    pub id: Uuid,
+    pub first_name: String,
+    pub last_name: String,
+    pub role: String,
+    pub profession: Option<String>,
+}
+
+/// List users that can be assigned to a ticket (syndic, board_member, contractor).
+/// Sorted by role (contractors first) then last_name.
+#[utoipa::path(
+    get,
+    path = "/tickets/assignable-users",
+    tag = "Tickets",
+    summary = "List users assignable to tickets",
+    responses(
+        (status = 200, description = "List of assignable users"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden — only syndic/superadmin"),
+    ),
+    security(("bearer_auth" = []))
+)]
+#[get("/tickets/assignable-users")]
+pub async fn list_assignable_users(
+    state: web::Data<AppState>,
+    user: AuthenticatedUser,
+) -> impl Responder {
+    let organization_id = match user.require_organization() {
+        Ok(org_id) => org_id,
+        Err(e) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({"error": e.to_string()}))
+        }
+    };
+
+    // Fetch all org users + filter roles eligible for ticket assignment
+    match state.user_use_cases.list_all().await {
+        Ok(users) => {
+            let assignable: Vec<AssignableUserDto> = users
+                .into_iter()
+                .filter(|u| {
+                    // Same org check
+                    u.organization_id.as_ref().map(|o| o.as_str())
+                        == Some(&organization_id.to_string())
+                })
+                .filter(|u| {
+                    matches!(
+                        u.role.as_str(),
+                        "syndic" | "board_member" | "contractor"
+                    )
+                })
+                .map(|u| AssignableUserDto {
+                    id: u.id.parse().unwrap_or_default(),
+                    first_name: u.first_name.clone(),
+                    last_name: u.last_name.clone(),
+                    role: u.role.clone(),
+                    profession: None, // TODO: join contractor_profiles when needed
+                })
+                .collect();
+            HttpResponse::Ok().json(assignable)
+        }
+        Err(err) => HttpResponse::InternalServerError().json(serde_json::json!({"error": err})),
+    }
 }

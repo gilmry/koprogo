@@ -1,17 +1,36 @@
 <script lang="ts">
-  export let id: string;
-  export let label: string;
-  export let value: string | number = '';
-  export let type: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'date' = 'text';
-  export let placeholder = '';
-  export let required = false;
-  export let disabled = false;
-  export let error = '';
-  export let hint = '';
-  export let min: string | number | undefined = undefined;
-  export let max: string | number | undefined = undefined;
-  export let step: string | number | undefined = undefined;
-  export let autocomplete: string | undefined = undefined;
+  // Svelte 5 runes mode — migrated from legacy (STORY-P7-602)
+  let {
+    id,
+    label,
+    value = $bindable(''),
+    type = 'text',
+    placeholder = '',
+    required = false,
+    disabled = false,
+    error = '',
+    hint = '',
+    min = undefined,
+    max = undefined,
+    step = undefined,
+    autocomplete = undefined,
+    ...restProps
+  }: {
+    id: string;
+    label: string;
+    value?: string | number | null;
+    type?: 'text' | 'email' | 'password' | 'number' | 'tel' | 'url' | 'date';
+    placeholder?: string;
+    required?: boolean;
+    disabled?: boolean;
+    error?: string;
+    hint?: string;
+    min?: string | number;
+    max?: string | number;
+    step?: string | number;
+    autocomplete?: string;
+    [key: string]: any;
+  } = $props();
 
   const handleInput = (e: Event) => {
     const target = e.target as HTMLInputElement;
@@ -41,13 +60,10 @@
     {min}
     {max}
     {step}
-    {autocomplete}
-    {...$$restProps}
-    value={type === 'number' ? value : value}
-    on:input={handleInput}
-    on:blur
-    on:focus
-    on:change
+    autocomplete={autocomplete as AutoFill | undefined}
+    {...restProps}
+    {value}
+    oninput={handleInput}
     aria-invalid={error ? 'true' : undefined}
     aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
     class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition

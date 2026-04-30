@@ -1,50 +1,48 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import {
     localExchangesApi,
     type SelStatistics,
     exchangeTypeLabels,
     exchangeTypeIcons,
   } from "../../lib/api/local-exchanges";
+  import { withLoadingState } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
+  let { buildingId }: { buildingId: string } = $props();
 
-  let stats: SelStatistics | null = null;
-  let loading: boolean = true;
-  let error: string | null = null;
+  let stats = $state<SelStatistics | null>(null);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   async function loadStatistics() {
-    try {
-      loading = true;
-      error = null;
-      stats = await localExchangesApi.getStatistics(buildingId);
-    } catch (err: any) {
-      error = err.message || $_('exchanges.stats_load_error');
-      console.error("Error loading statistics:", err);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => localExchangesApi.getStatistics(buildingId),
+      setLoading: (v) => loading = v,
+      setError: (v) => error = v,
+      onSuccess: (data) => stats = data,
+      errorMessage: $_('exchanges.stats_load_error'),
+    });
   }
 
-  onMount(() => {
+  $effect(() => {
     loadStatistics();
   });
 </script>
 
-<div class="bg-white shadow rounded-lg p-6">
+<div class="bg-white shadow rounded-lg p-6" data-testid="sel-statistics">
   <h3 class="text-lg font-semibold text-gray-900 mb-4">
     📊 {$_('exchanges.statistics_title')}
   </h3>
 
   {#if loading}
-    <div class="text-center py-8">
+    <div class="text-center py-8" data-testid="sel-statistics-loading">
       <div
         class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"
       ></div>
     </div>
   {:else if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="sel-statistics-error">
       <p class="text-red-800">❌ {error}</p>
     </div>
   {:else if stats}
@@ -120,7 +118,7 @@
     <!-- Impact Message -->
     <div class="mt-6 p-4 bg-green-50 border-l-4 border-green-400 text-sm text-green-800">
       <p>
-        🌱 <strong>{$_('exchanges.impact_title')}</strong> {$_('exchanges.impact_message', { hours: stats.total_credits_exchanged })}
+        🌱 <strong>{$_('exchanges.impact_title')}</strong> {$_('exchanges.impact_message', { values: { hours: stats.total_credits_exchanged } })}
       </p>
     </div>
   {/if}

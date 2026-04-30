@@ -3,6 +3,16 @@ import { api } from "../api";
 /**
  * Resource Booking Calendar API Client
  * Common area reservations (meeting rooms, parking, gym, etc.)
+ *
+ * STORY-P7-704: Enums kept hand-written because backend schemas diverge:
+ *   - ResourceType: UI uses PartyRoom/SwimmingPool/Sauna/ParkingSpace/Garden/
+ *     StorageSpace/CoworkingSpace; api.d.ts schema has ParkingSpot/CommonSpace/
+ *     BikeStorage instead. Svelte components (ResourceTypeBadge) reference the
+ *     UI-only members.
+ *   - BookingStatus: UI uses Approved/Active/Rejected; api.d.ts schema has
+ *     Confirmed/NoShow instead. Svelte components (BookingStatusBadge) reference
+ *     the UI-only members.
+ *   - ResourceStatus: No corresponding schema exists in api.d.ts.
  */
 
 export interface BookableResource {

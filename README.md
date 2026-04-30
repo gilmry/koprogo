@@ -153,7 +153,7 @@ Prix fixe 5€/mois → Surplus réinvesti → AG vote baisse
 
 **Philosophie** : KoproGo progresse par **jalons de capacités**, pas par dates fixes. Chaque jalon débloque le suivant quand les fonctionnalités sont validées.
 
-- **Jalon 0** ✅ : 10-20 early adopters (Architecture hexagonale, 73 endpoints API)
+- **Jalon 0** ✅ : 10-20 early adopters (Architecture hexagonale, 559 endpoints API, 59 entités, 137k+ LOC Rust)
 - **Jalon 1** : 50-100 copros (LUKS, backups GPG, GDPR basique)
 - **Jalon 2** : 200-500 copros (Facturation TVA, recouvrement, K3s)
 - **Jalon 3** : 500-1,000 copros (IA, Blockchain, IoT → Constitution ASBL)
@@ -197,11 +197,11 @@ Retrouvez des tutoriels vidéo pour démarrer avec KoproGo, comprendre l'archite
 - 🌱 **Ultra-Écologique** : 0.12g CO₂/requête (7-25x mieux que solutions SaaS classiques)
 - 💰 **Prix Fixe Démocratique** : 5€/mois cloud, self-hosted 0€, baisse par vote AG
 - 🏗️ **Architecture Hexagonale** : Séparation stricte des couches (Domain, Application, Infrastructure)
-- 🧪 **Tests Complets** : Unitaires, Intégration, BDD (Cucumber), E2E, Load tests
+- 🧪 **Tests Complets** : 819 BDD scenarios, 49 E2E smoke, 12 Documentation Vivante, unitaires, intégration, benchmarks
 - 🧑‍🤝‍🧑 **Multi-propriété native** : quote-parts cumulées, contact principal, historique complet
 - 🧠 **Multi-rôles utilisateurs** : syndic/comptable/superadmin, switch rôle instantané
 - 🔒 **Sécurité Production** : LUKS encryption, backups GPG+S3, IDS Suricata, CrowdSec WAF, fail2ban
-- 🛡️ **GDPR Compliant** : Articles 15, 16, 17 implémentés, audit logging complet
+- 🛡️ **GDPR Compliant** : Articles 15, 16, 17, 18, 21, 30 implémentés, audit logging complet
 - 📦 **Stack Moderne** : Rust + Actix-web + Astro + Svelte + PostgreSQL 15
 
 ### 🤝 Modules Communautaires (Standalone)
@@ -295,8 +295,18 @@ koprogo/
 ├── frontend/                  # Frontend Astro
 │   ├── src/
 │   │   ├── components/       # Composants Svelte (Islands)
+│   │   ├── lib/
+│   │   │   ├── api/           # 22 API clients typés
+│   │   │   ├── utils/         # Utilitaires partagés (date, finance, error, filter)
+│   │   │   ├── validators/    # Validation centralisée
+│   │   │   ├── services/      # Couche application (ticket service)
+│   │   │   └── stores/        # Svelte stores (auth, toast, notifications)
 │   │   ├── layouts/          # Layouts Astro
 │   │   └── pages/            # Pages SSG
+│   ├── tests/e2e/
+│   │   ├── scenarios/         # 12 Documentation Vivante (vidéos YouTube)
+│   │   ├── helpers/           # Auth, video-pace, test-world
+│   │   └── *.spec.ts          # 49 smoke tests
 │   └── package.json
 │
 ├── infrastructure/           # Infrastructure as Code
@@ -316,6 +326,26 @@ koprogo/
 ├── Makefile                  # Commandes utilitaires
 └── README.md
 ```
+
+---
+
+## 🌿 Stratégie de Branches
+
+| Branche | Rôle | Protection |
+|---------|------|-----------|
+| `main` | Production stable | Protégée, merge via PR |
+| `dev` | Intégration continue | Pre-production |
+| `integration` | Tests multi-composants | Validation croisée |
+| `staging` | Pré-production données réalistes | Smoke tests |
+| `production` | Identique à main | GitOps ArgoCD |
+
+**Infrastructure** : Le code IaC vit dans un worktree séparé (`infra/restructure`) avec :
+- **Terraform** : Provisioning OVH (VPS, K3s, K8s, networking)
+- **Ansible** : 12 rôles (security, docker, gitops, k3s, monitoring, backup, dns, argocd, vault, velero)
+- **Kustomize** : Base + overlays par environnement (dev/integration/staging/production)
+- **Helm** : Charts KoproGo, Vault, Velero, Monitoring
+- **ArgoCD** : GitOps deployment continu
+- **Architectures** : Monosite (VPS + K3s) et Multisite (K8s OVH Managed)
 
 ---
 

@@ -1,31 +1,37 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { createEventDispatcher } from "svelte";
   import {
     energyBillsApi,
     type UploadEnergyBillDto,
     EnergyType,
   } from "../../lib/api/energy-campaigns";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let campaignId: string;
-  export let unitId: string;
+  let { campaignId, unitId, onuploaded, oncancel }: {
+    campaignId: string;
+    unitId: string;
+    onuploaded?: (upload: any) => void;
+    oncancel?: () => void;
+  } = $props();
 
-  const dispatch = createEventDispatcher();
-
-  let formData: Partial<UploadEnergyBillDto> = {
-    campaign_id: campaignId,
-    unit_id: unitId,
+  let formData: Partial<UploadEnergyBillDto> = $state({
+    campaign_id: "",
+    unit_id: "",
     billing_period_start: "",
     billing_period_end: "",
     energy_type: undefined,
     total_kwh: 0,
     consent_signature: "",
-  };
+  });
+  // Sync IDs with props (live values via $effect, not stale initial capture)
+  $effect(() => { if (campaignId && !formData.campaign_id) formData.campaign_id = campaignId; });
+  $effect(() => { if (unitId && !formData.unit_id) formData.unit_id = unitId; });
 
-  let gdprConsent = false;
-  let loading = false;
-  let error = "";
-  let success = false;
+  let gdprConsent = $state(false);
+  let loading = $state(false);
+  let error = $state("");
+  let success = $state(false);
 
   function generateConsentSignature(): string {
     // Generate a simple signature based on user consent timestamp
@@ -37,61 +43,43 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
-    loading = true;
     error = "";
     success = false;
 
-    try {
-      // Validate
-      if (!gdprConsent) {
-        throw new Error($_("energy.upload.gdprRequired"));
-      }
-      if (!formData.energy_type) {
-        throw new Error($_("energy.upload.typeRequired"));
-      }
-      if (!formData.total_kwh || formData.total_kwh <= 0) {
-        throw new Error($_("energy.upload.consumptionRequired"));
-      }
-      if (!formData.billing_period_start || !formData.billing_period_end) {
-        throw new Error($_("energy.upload.datesRequired"));
-      }
-      if (formData.billing_period_end! <= formData.billing_period_start!) {
-        throw new Error($_("energy.upload.dateInvalid"));
-      }
+    if (!gdprConsent) { error = $_("energy.upload.gdprRequired"); return; }
+    if (!formData.energy_type) { error = $_("energy.upload.typeRequired"); return; }
+    if (!formData.total_kwh || formData.total_kwh <= 0) { error = $_("energy.upload.consumptionRequired"); return; }
+    if (!formData.billing_period_start || !formData.billing_period_end) { error = $_("energy.upload.datesRequired"); return; }
+    if (formData.billing_period_end! <= formData.billing_period_start!) { error = $_("energy.upload.dateInvalid"); return; }
 
-      // Generate GDPR consent signature
-      formData.consent_signature = generateConsentSignature();
+    formData.consent_signature = generateConsentSignature();
 
-      const upload = await energyBillsApi.upload(
-        formData as UploadEnergyBillDto,
-      );
-      success = true;
-      dispatch("uploaded", upload);
-
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        formData = {
-          campaign_id: campaignId,
-          unit_id: unitId,
-          billing_period_start: "",
-          billing_period_end: "",
-          energy_type: undefined,
-          total_kwh: 0,
-          consent_signature: "",
-        };
-        gdprConsent = false;
-        success = false;
-      }, 2000);
-    } catch (err: any) {
-      error = err.message || $_("energy.upload.uploadError");
-      console.error("Failed to upload energy bill:", err);
-    } finally {
-      loading = false;
-    }
+    await withErrorHandling({
+      action: () => energyBillsApi.upload(formData as UploadEnergyBillDto),
+      setLoading: (v: boolean) => loading = v,
+      errorMessage: $_("energy.upload.uploadError"),
+      onSuccess: (upload) => {
+        success = true;
+        onuploaded?.(upload);
+        setTimeout(() => {
+          formData = {
+            campaign_id: campaignId,
+            unit_id: unitId,
+            billing_period_start: "",
+            billing_period_end: "",
+            energy_type: undefined,
+            total_kwh: 0,
+            consent_signature: "",
+          };
+          gdprConsent = false;
+          success = false;
+        }, 2000);
+      },
+    });
   }
 </script>
 
-<div class="bg-white shadow-md rounded-lg p-6">
+<div class="bg-white shadow-md rounded-lg p-6" data-testid="energy-bill-upload">
   <h3 class="text-lg font-medium text-gray-900 mb-4">
     📄 {$_("energy.upload.title")}
   </h3>
@@ -114,7 +102,7 @@
     </div>
   {/if}
 
-  <form on:submit={handleSubmit} class="space-y-6">
+  <form onsubmit={handleSubmit} class="space-y-6" data-testid="energy-bill-upload-form">
     <!-- Energy Type -->
     <div>
       <label for="energy_type" class="block text-sm font-medium text-gray-700">
@@ -248,7 +236,7 @@
     <div class="flex justify-end space-x-3">
       <button
         type="button"
-        on:click={() => dispatch("cancel")}
+        onclick={() => oncancel?.()}
         class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         {$_("common.cancel")}
@@ -256,6 +244,7 @@
       <button
         type="submit"
         disabled={loading || !gdprConsent}
+        data-testid="energy-bill-submit-btn"
         class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {#if loading}

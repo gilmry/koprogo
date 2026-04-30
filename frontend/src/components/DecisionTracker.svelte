@@ -1,28 +1,33 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
   import type { BoardDecisionResponse } from '../lib/types';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string = '';
-  export let filterStatus: string = '';
+  let { buildingId = '', filterStatus = '' }: {
+    buildingId?: string;
+    filterStatus?: string;
+  } = $props();
 
-  let decisions: BoardDecisionResponse[] = [];
-  let loading = true;
-  let error = '';
-  let statusFilter = filterStatus || 'all';
+  let decisions = $state<BoardDecisionResponse[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let statusFilter = $state('all');
+  // Sync with prop (live value via $effect, not stale initial capture)
+  $effect(() => { if (filterStatus) statusFilter = filterStatus; });
 
-  $: statusOptions = [
+  let statusOptions = $derived([
     { value: 'all', label: $_('common.all') },
     { value: 'pending', label: $_('board.status.pending') },
     { value: 'in_progress', label: $_('board.status.inProgress') },
     { value: 'completed', label: $_('board.status.completed') },
     { value: 'overdue', label: $_('board.status.overdue') },
     { value: 'cancelled', label: $_('board.status.cancelled') }
-  ];
+  ]);
 
-  onMount(() => {
+  $effect(() => {
     if (!buildingId) {
       error = $_('board.error.buildingIdMissing');
       loading = false;
@@ -32,45 +37,40 @@
   });
 
   async function loadDecisions() {
-    try {
-      loading = true;
-      error = '';
-
-      let endpoint = `/board-decisions/building/${buildingId}`;
-      if (statusFilter !== 'all') {
-        endpoint = `/board-decisions/building/${buildingId}/status/${statusFilter}`;
-      }
-
-      decisions = await api.get<BoardDecisionResponse[]>(endpoint);
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('board.error.loadDecisions');
-      console.error('Error loading decisions:', e);
-      toast.error(error);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    let endpoint = `/board-decisions/building/${buildingId}`;
+    if (statusFilter !== 'all') {
+      endpoint = `/board-decisions/building/${buildingId}/status/${statusFilter}`;
     }
+    const result = await withErrorHandling({
+      action: () => api.get<BoardDecisionResponse[]>(endpoint),
+      errorMessage: $_('board.error.loadDecisions'),
+    });
+    if (result) {
+      decisions = result;
+    } else {
+      error = $_('board.error.loadDecisions');
+    }
+    loading = false;
   }
 
   async function updateDecisionStatus(decisionId: string, newStatus: string) {
-    try {
-      await api.put(`/board-decisions/${decisionId}/status`, { status: newStatus });
-      toast.success($_('board.success.statusUpdated'));
-      loadDecisions();
-    } catch (e) {
-      toast.error($_('board.error.updateStatus'));
-      console.error('Error updating status:', e);
-    }
+    await withErrorHandling({
+      action: () => api.put(`/board-decisions/${decisionId}/status`, { status: newStatus }),
+      successMessage: $_('board.success.statusUpdated'),
+      errorMessage: $_('board.error.updateStatus'),
+      onSuccess: () => loadDecisions(),
+    });
   }
 
   async function completeDecision(decisionId: string) {
-    try {
-      await api.put(`/board-decisions/${decisionId}/complete`, {});
-      toast.success($_('board.success.decisionCompleted'));
-      loadDecisions();
-    } catch (e) {
-      toast.error($_('board.error.completeDecision'));
-      console.error('Error completing decision:', e);
-    }
+    await withErrorHandling({
+      action: () => api.put(`/board-decisions/${decisionId}/complete`, {}),
+      successMessage: $_('board.success.decisionCompleted'),
+      errorMessage: $_('board.error.completeDecision'),
+      onSuccess: () => loadDecisions(),
+    });
   }
 
   function getStatusColor(status: string): string {
@@ -106,14 +106,6 @@
     return icons[status] || '📋';
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
-
   function isOverdue(decision: BoardDecisionResponse): boolean {
     if (!decision.deadline) return false;
     const deadline = new Date(decision.deadline);
@@ -132,7 +124,7 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="decision-tracker">
   <div class="px-6 py-4 border-b border-gray-200">
     <div class="flex items-center justify-between">
       <div>
@@ -144,12 +136,13 @@
         </p>
       </div>
       <div class="flex items-center space-x-4">
-        <label class="text-sm font-medium text-gray-700">
+        <label for="decision-status-filter" class="text-sm font-medium text-gray-700">
           {$_('board.filterByStatus')}:
         </label>
         <select
+          id="decision-status-filter"
           bind:value={statusFilter}
-          on:change={handleStatusFilterChange}
+          onchange={handleStatusFilterChange}
           class="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
         >
           {#each statusOptions as option}
@@ -205,7 +198,7 @@
                 </p>
                 <div class="mt-3 flex flex-wrap items-center gap-4 text-sm text-gray-600">
                   <p>
-                    <strong>AG :</strong> {formatDate(decision.meeting_date || decision.created_at)}
+                    <strong>AG :</strong> {formatDate((decision as any).meeting_date ?? decision.created_at)}
                   </p>
                   {#if decision.deadline}
                     <p class:text-red-600={isOverdue(decision)}>
@@ -217,9 +210,9 @@
                       {/if}
                     </p>
                   {/if}
-                  {#if decision.completed_at}
+                  {#if decision.status === 'completed'}
                     <p class="text-green-600">
-                      <strong>Terminée le :</strong> {formatDate(decision.completed_at)}
+                      <strong>Terminée le :</strong> {formatDate((decision as any).completed_at ?? decision.updated_at)}
                     </p>
                   {/if}
                 </div>
@@ -236,14 +229,14 @@
             <div class="ml-4 flex-shrink-0 flex flex-col space-y-2">
               {#if decision.status === 'pending'}
                 <button
-                  on:click={() => updateDecisionStatus(decision.id, 'in_progress')}
+                  onclick={() => updateDecisionStatus(decision.id, 'in_progress')}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
                 >
                   Démarrer
                 </button>
               {:else if decision.status === 'in_progress'}
                 <button
-                  on:click={() => completeDecision(decision.id)}
+                  onclick={() => completeDecision(decision.id)}
                   class="px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md"
                 >
                   Terminer

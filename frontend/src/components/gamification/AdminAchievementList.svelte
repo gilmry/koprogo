@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from 'svelte';
   import {
     gamificationApi,
     type Achievement,
@@ -8,24 +8,24 @@
     AchievementTier,
   } from '../../lib/api/gamification';
   import AchievementForm from './AchievementForm.svelte';
-  import { toast } from '../../stores/toast';
+  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let organizationId: string;
+  let { organizationId }: { organizationId: string } = $props();
 
-  let achievements: Achievement[] = [];
-  let loading = true;
-  let error = '';
-  let showForm = false;
-  let editingAchievement: Achievement | null = null;
-  let categoryFilter: AchievementCategory | 'all' = 'all';
+  let achievements = $state<Achievement[]>([]);
+  let loading = $state(true);
+  let error = $state('');
+  let showForm = $state(false);
+  let editingAchievement = $state<Achievement | null>(null);
+  let categoryFilter = $state<AchievementCategory | 'all'>('all');
 
-  $: filteredAchievements = achievements.filter(a => {
+  let filteredAchievements = $derived(achievements.filter(a => {
     if (categoryFilter === 'all') return true;
     return a.category === categoryFilter;
-  });
+  }));
 
-  onMount(async () => {
-    await loadData();
+  $effect(() => {
+    loadData();
   });
 
   async function loadData() {
@@ -33,15 +33,13 @@
       loading = false;
       return;
     }
-    try {
-      loading = true;
-      error = '';
-      achievements = await gamificationApi.listAchievements(organizationId);
-    } catch (err: any) {
-      error = err.message || $_('common.load_error');
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => gamificationApi.listAchievements(organizationId),
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      onSuccess: (data) => achievements = data,
+      errorMessage: $_('common.load_error'),
+    });
   }
 
   function handleCreate() {
@@ -55,14 +53,13 @@
   }
 
   async function handleDelete(achievement: Achievement) {
-    if (!confirm($_('gamification.confirm_delete', { name: achievement.name }))) return;
-    try {
-      await gamificationApi.deleteAchievement(achievement.id);
-      toast.success($_('gamification.delete_success'));
-      await loadData();
-    } catch (err: any) {
-      toast.error(err.message || $_('gamification.delete_error'));
-    }
+    if (!confirm($_('gamification.confirm_delete', { values: { name: achievement.name } }))) return;
+    await withErrorHandling({
+      action: () => gamificationApi.deleteAchievement(achievement.id),
+      successMessage: $_('gamification.delete_success'),
+      errorMessage: $_('gamification.delete_error'),
+      onSuccess: () => loadData(),
+    });
   }
 
   function handleSaved() {
@@ -99,14 +96,15 @@
   };
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="admin-achievement-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
         <h3 class="text-lg leading-6 font-medium text-gray-900">{$_('gamification.management_title')}</h3>
-        <p class="mt-1 text-sm text-gray-500">{$_('gamification.achievement_count', { count: achievements.length })}</p>
+        <p class="mt-1 text-sm text-gray-500">{$_('gamification.achievement_count', { values: { count: achievements.length } })}</p>
       </div>
-      <button on:click={handleCreate}
+      <button onclick={handleCreate}
+        data-testid="achievement-create-btn"
         class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700">
         + {$_('common.new')}
       </button>
@@ -121,8 +119,8 @@
       <AchievementForm
         {organizationId}
         achievement={editingAchievement}
-        on:saved={handleSaved}
-        on:cancel={handleCancel}
+        onsaved={handleSaved}
+        oncancel={handleCancel}
       />
     </div>
   {/if}
@@ -130,7 +128,7 @@
   <!-- Category filters -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex flex-wrap gap-1">
-      <button on:click={() => categoryFilter = 'all'}
+      <button onclick={() => categoryFilter = 'all'}
         class="px-2 py-1 rounded text-xs font-medium transition-colors
           {categoryFilter === 'all' ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
         {$_('common.all')} ({achievements.length})
@@ -138,7 +136,7 @@
       {#each Object.values(AchievementCategory) as cat}
         {@const count = achievements.filter(a => a.category === cat).length}
         {#if count > 0}
-          <button on:click={() => categoryFilter = cat}
+          <button onclick={() => categoryFilter = cat}
             class="px-2 py-1 rounded text-xs font-medium transition-colors
               {categoryFilter === cat ? 'bg-amber-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}">
             {categoryLabels[cat]} ({count})
@@ -149,19 +147,19 @@
   </div>
 
   {#if loading}
-    <div class="p-8 text-center">
+    <div class="p-8 text-center" data-testid="admin-achievement-loading">
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
       <p class="mt-2 text-sm text-gray-500">{$_('common.loading')}</p>
     </div>
   {:else if error}
-    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
+    <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md" data-testid="admin-achievement-error">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
+      <button onclick={loadData} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">{$_('common.retry')}</button>
     </div>
   {:else if filteredAchievements.length === 0}
     <div class="p-8 text-center">
       <p class="text-gray-500">{$_('gamification.no_achievements')}</p>
-      <button on:click={handleCreate} class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline">
+      <button onclick={handleCreate} class="mt-2 text-sm text-amber-600 hover:text-amber-800 underline">
         {$_('gamification.create_first')}
       </button>
     </div>
@@ -180,7 +178,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           {#each filteredAchievements as achievement (achievement.id)}
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-gray-50" data-testid="admin-achievement-row">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-2">
                   <span class="text-lg">{achievement.icon || '🏅'}</span>
@@ -213,11 +211,13 @@
               </td>
               <td class="px-4 py-3 text-right">
                 <div class="flex justify-end gap-1">
-                  <button on:click={() => handleEdit(achievement)}
+                  <button onclick={() => handleEdit(achievement)}
+                    data-testid="achievement-edit-btn"
                     class="px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded">
                     {$_('common.edit')}
                   </button>
-                  <button on:click={() => handleDelete(achievement)}
+                  <button onclick={() => handleDelete(achievement)}
+                    data-testid="achievement-delete-btn"
                     class="px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded">
                     {$_('common.delete')}
                   </button>

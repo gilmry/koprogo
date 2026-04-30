@@ -18,8 +18,10 @@ use uuid::Uuid;
 /// Setup function shared across second convocation E2E tests
 async fn setup_app() -> (
     actix_web::web::Data<AppState>,
-    testcontainers_modules::testcontainers::ContainerAsync<
-        testcontainers_modules::postgres::Postgres,
+    Option<
+        testcontainers_modules::testcontainers::ContainerAsync<
+            testcontainers_modules::postgres::Postgres,
+        >,
     >,
     Uuid,
 ) {
@@ -64,6 +66,7 @@ async fn create_test_meeting(
         description: Some("Annual general assembly".to_string()),
         scheduled_date: Utc::now() + Duration::days(days_from_now),
         location: "Building Main Hall".to_string(),
+        is_second_convocation: true,
     };
 
     let meeting = app_state

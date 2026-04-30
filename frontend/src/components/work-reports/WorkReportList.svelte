@@ -1,25 +1,30 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import { workReportsApi, workTypeLabels, warrantyTypeLabels } from "../../lib/api/work-reports";
   import type { WorkReport, CreateWorkReportDto } from "../../lib/api/work-reports";
   import { WorkType, WarrantyType } from "../../lib/api/work-reports";
   import { toast } from "../../stores/toast";
   import WorkReportDetail from "./WorkReportDetail.svelte";
+  import { formatDate } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let organizationId: string = "";
+  let { buildingId, organizationId = "" }: {
+    buildingId: string;
+    organizationId?: string;
+  } = $props();
 
-  let reports: WorkReport[] = [];
-  let loading = true;
-  let error = "";
-  let showCreateForm = false;
-  let filterType = "all";
-  let selectedReport: WorkReport | null = null;
-  let detailOpen = false;
+  let reports: WorkReport[] = $state([]);
+  let loading = $state(true);
+  let error = $state("");
+  let showCreateForm = $state(false);
+  let filterType = $state("all");
+  let selectedReport: WorkReport | null = $state(null);
+  let detailOpen = $state(false);
 
   // Create form
-  let form: Partial<CreateWorkReportDto> = resetForm();
+  let form: Partial<CreateWorkReportDto> = $state(resetForm());
 
   function resetForm(): Partial<CreateWorkReportDto> {
     return {
@@ -39,13 +44,16 @@
   async function loadReports() {
     loading = true;
     error = "";
-    try {
-      reports = await workReportsApi.listByBuilding(buildingId);
-    } catch (e: any) {
-      error = e.message || $_("workReports.loadError");
-    } finally {
-      loading = false;
+    const result = await withErrorHandling({
+      action: () => workReportsApi.listByBuilding(buildingId),
+      errorMessage: $_("workReports.loadError"),
+    });
+    if (result) {
+      reports = result;
+    } else {
+      error = $_("workReports.loadError");
     }
+    loading = false;
   }
 
   async function createReport() {
@@ -53,40 +61,40 @@
       toast.error($_("workReports.titleAndContractorRequired"));
       return;
     }
-    try {
-      const data: CreateWorkReportDto = {
-        organization_id: organizationId,
-        building_id: buildingId,
-        title: form.title!,
-        description: form.description || "",
-        work_type: form.work_type || WorkType.Maintenance,
-        contractor_name: form.contractor_name!,
-        contractor_contact: form.contractor_contact || undefined,
-        work_date: new Date(form.work_date!).toISOString(),
-        cost: form.cost || 0,
-        invoice_number: form.invoice_number || undefined,
-        notes: form.notes || undefined,
-        warranty_type: form.warranty_type || WarrantyType.Standard,
-      };
-      await workReportsApi.create(data);
-      toast.success($_("workReports.createSuccess"));
-      form = resetForm();
-      showCreateForm = false;
-      await loadReports();
-    } catch (e: any) {
-      toast.error(e.message || $_("common.createError"));
-    }
+    const data: CreateWorkReportDto = {
+      organization_id: organizationId,
+      building_id: buildingId,
+      title: form.title!,
+      description: form.description || "",
+      work_type: form.work_type || WorkType.Maintenance,
+      contractor_name: form.contractor_name!,
+      contractor_contact: form.contractor_contact || undefined,
+      work_date: new Date(form.work_date!).toISOString(),
+      cost: form.cost || 0,
+      invoice_number: form.invoice_number || undefined,
+      notes: form.notes || undefined,
+      warranty_type: form.warranty_type || WarrantyType.Standard,
+    };
+    const result = await withErrorHandling({
+      action: () => workReportsApi.create(data),
+      successMessage: $_("workReports.createSuccess"),
+      errorMessage: $_("common.createError"),
+      onSuccess: () => {
+        form = resetForm();
+        showCreateForm = false;
+      },
+    });
+    if (result) await loadReports();
   }
 
   async function deleteReport(id: string) {
     if (!confirm($_("workReports.deleteConfirm"))) return;
-    try {
-      await workReportsApi.delete(id);
-      toast.success($_("workReports.deleteSuccess"));
-      await loadReports();
-    } catch (e: any) {
-      toast.error(e.message || $_("workReports.deleteError"));
-    }
+    const result = await withErrorHandling({
+      action: () => workReportsApi.delete(id),
+      successMessage: $_("workReports.deleteSuccess"),
+      errorMessage: $_("workReports.deleteError"),
+    });
+    if (result !== undefined) await loadReports();
   }
 
   function openDetail(report: WorkReport) {
@@ -94,46 +102,35 @@
     detailOpen = true;
   }
 
-  function handleDetailUpdated(event: CustomEvent<WorkReport>) {
-    const updated = event.detail;
+  function handleDetailUpdated(updated: WorkReport) {
     reports = reports.map((r) => (r.id === updated.id ? updated : r));
   }
 
-  function handleDetailDeleted(event: CustomEvent<string>) {
-    reports = reports.filter((r) => r.id !== event.detail);
+  function handleDetailDeleted(id: string) {
+    reports = reports.filter((r) => r.id !== id);
     detailOpen = false;
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString("fr-BE", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(amount);
-  }
-
-  $: filteredReports = filterType === "all"
+  let filteredReports = $derived(filterType === "all"
     ? reports
-    : reports.filter((r) => r.work_type === filterType);
+    : reports.filter((r) => r.work_type === filterType));
 
-  $: typeCounts = reports.reduce((acc, r) => {
+  let typeCounts = $derived(reports.reduce((acc, r) => {
     acc[r.work_type] = (acc[r.work_type] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>));
 
-  onMount(loadReports);
+  $effect(() => {
+    loadReports();
+  });
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="work-report-list">
   <!-- Header -->
   <div class="flex items-center justify-between">
     <h2 class="text-lg font-semibold text-gray-800">{$_("workReports.title")}</h2>
     <button
-      on:click={() => (showCreateForm = !showCreateForm)}
+      onclick={() => (showCreateForm = !showCreateForm)}
       class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
     >
       {showCreateForm ? $_("common.cancel") : "+ " + $_("workReports.newReport")}
@@ -195,20 +192,20 @@
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button on:click={createReport} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">{$_("common.create")}</button>
-        <button on:click={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
+        <button onclick={createReport} class="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">{$_("common.create")}</button>
+        <button onclick={() => (showCreateForm = false)} class="px-4 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">{$_("common.cancel")}</button>
       </div>
     </div>
   {/if}
 
   <!-- Filters -->
   <div class="flex flex-wrap gap-2">
-    <button on:click={() => (filterType = "all")} class="px-3 py-1 text-xs rounded-full {filterType === 'all' ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
+    <button onclick={() => (filterType = "all")} class="px-3 py-1 text-xs rounded-full {filterType === 'all' ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
       {$_("common.all")} ({reports.length})
     </button>
     {#each Object.entries(workTypeLabels) as [val, label]}
       {#if typeCounts[val]}
-        <button on:click={() => (filterType = val)} class="px-3 py-1 text-xs rounded-full {filterType === val ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
+        <button onclick={() => (filterType = val)} class="px-3 py-1 text-xs rounded-full {filterType === val ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}">
           {label} ({typeCounts[val]})
         </button>
       {/if}
@@ -218,13 +215,13 @@
   <!-- Loading / Error / Empty -->
   {#if loading}
     <div class="text-center py-8 text-gray-500">
-      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+      <div class="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full" data-testid="work-report-list-spinner"></div>
       <p class="mt-2 text-sm">{$_("common.loading")}</p>
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
       {error}
-      <button on:click={loadReports} class="ml-2 underline">{$_("common.retry")}</button>
+      <button onclick={loadReports} class="ml-2 underline">{$_("common.retry")}</button>
     </div>
   {:else if filteredReports.length === 0}
     <div class="text-center py-8 text-gray-400 text-sm">{$_("workReports.none")}</div>
@@ -234,8 +231,9 @@
       {#each filteredReports as report}
         <div
           class="bg-white shadow-sm rounded-lg p-4 border border-gray-200 hover:border-blue-300 transition-colors cursor-pointer"
-          on:click={() => openDetail(report)}
-          on:keydown={(e) => e.key === "Enter" && openDetail(report)}
+          data-testid="work-report-row"
+          onclick={() => openDetail(report)}
+          onkeydown={(e) => e.key === "Enter" && openDetail(report)}
           role="button"
           tabindex="0"
         >
@@ -273,8 +271,9 @@
               </div>
             </div>
             <button
-              on:click|stopPropagation={() => deleteReport(report.id)}
+              onclick={(e) => { e.stopPropagation(); deleteReport(report.id); }}
               class="text-red-400 hover:text-red-600 p-1"
+              aria-label={$_("common.delete")}
               title={$_("common.delete")}
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -290,8 +289,8 @@
   <WorkReportDetail
     isOpen={detailOpen}
     report={selectedReport}
-    on:close={() => (detailOpen = false)}
-    on:updated={handleDetailUpdated}
-    on:deleted={handleDetailDeleted}
+    onclose={() => (detailOpen = false)}
+    onupdated={(updated) => handleDetailUpdated(updated)}
+    ondeleted={(id) => handleDetailDeleted(id)}
   />
 {/if}

@@ -459,6 +459,7 @@ async fn when_create_meeting(world: &mut BuildingWorld, title: String) {
         description: None,
         scheduled_date: chrono::Utc::now(),
         location: "Salle A".to_string(),
+        is_second_convocation: false,
     };
     let uc = world.meeting_use_cases.as_ref().unwrap();
     let res = uc.create_meeting(req).await;

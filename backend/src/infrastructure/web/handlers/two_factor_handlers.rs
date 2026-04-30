@@ -415,6 +415,9 @@ mod tests {
             async fn find_all(&self) -> Result<Vec<User>, String>;
             async fn find_by_organization(&self, org_id: Uuid) -> Result<Vec<User>, String>;
             async fn update(&self, user: &User) -> Result<User, String>;
+            async fn update_password(&self, id: Uuid, password_hash: &str) -> Result<bool, String>;
+            async fn activate(&self, id: Uuid) -> Result<Option<User>, String>;
+            async fn deactivate(&self, id: Uuid) -> Result<Option<User>, String>;
             async fn delete(&self, id: Uuid) -> Result<bool, String>;
             async fn count_by_organization(&self, org_id: Uuid) -> Result<i64, String>;
         }

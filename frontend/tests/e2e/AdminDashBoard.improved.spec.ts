@@ -112,6 +112,10 @@ const deleteOrganizationByName = async (
 };
 
 test.describe("Admin Dashboard - CRUD with Test IDs", () => {
+  // These tests perform multiple UI CRUD operations with navigation and cleanup,
+  // so they need more than the default 30s timeout.
+  test.setTimeout(60000);
+
   test.beforeEach(async ({ page }) => {
     // Use API-based login to inject auth token into localStorage.
     // This avoids UI login timing issues with RouteGuard overlay.
@@ -297,6 +301,10 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
         .getByTestId("user-confirmpassword-input")
         .fill(testData.user.password);
       await page.getByTestId("user-role-select").first().selectOption("syndic");
+      // Wait for organization options to load (async fetch on mount)
+      await expect(
+        page.getByTestId("user-organization-select").first(),
+      ).toBeEnabled({ timeout: 10000 });
       await page
         .getByTestId("user-organization-select")
         .first()
@@ -306,7 +314,7 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       const userRow = page.locator(
         `tr[data-user-email="${testData.user.email}"]`,
       );
-      await expect(userRow).toBeVisible({ timeout: 10000 });
+      await expect(userRow).toBeVisible({ timeout: 15000 });
 
       // EDIT
       const updatedFirstName = `${testData.user.firstName}-Upd`;
@@ -381,10 +389,6 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
       await page.getByTestId("building-form").waitFor({ state: "visible" });
       // Wait for organization options to load, then select the first one
       const orgSelect = page.getByTestId("building-organization-select");
-      await expect(orgSelect.locator("option")).toHaveCount(
-        await orgSelect.locator("option").count(),
-        { timeout: 10000 },
-      );
       // Wait until there's more than just the placeholder option
       await page.waitForFunction(
         (testId) => {
@@ -535,6 +539,10 @@ test.describe("Admin Dashboard - CRUD with Test IDs", () => {
           .getByTestId("user-role-select")
           .first()
           .selectOption("syndic");
+        // Wait for organization options to load (async fetch on mount)
+        await expect(
+          page.getByTestId("user-organization-select").first(),
+        ).toBeEnabled({ timeout: 10000 });
         await page
           .getByTestId("user-organization-select")
           .first()

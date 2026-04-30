@@ -1,15 +1,23 @@
 <script lang="ts">
-  import { createEventDispatcher } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { bookingsApi, type BookableResource } from "../../lib/api/bookings";
-  import { toast } from "../../stores/toast";
   import Modal from "../ui/Modal.svelte";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let isOpen = false;
-  export let resource: BookableResource;
-  export let ownerId: string;
-
-  const dispatch = createEventDispatcher();
+  let {
+    isOpen = false,
+    resource,
+    ownerId,
+    oncreated,
+    onclose,
+  }: {
+    isOpen?: boolean;
+    resource: BookableResource;
+    ownerId: string;
+    oncreated?: (booking: any) => void;
+    onclose?: () => void;
+  } = $props();
 
   function getDefaultStart(): string {
     const d = new Date();
@@ -23,15 +31,13 @@
     return d.toISOString().slice(0, 16);
   }
 
-  let startTime = getDefaultStart();
-  let endTime = getDefaultEnd(startTime);
-  let purpose = "";
-  let attendeesCount: number | undefined = undefined;
-  let specialRequests = "";
-  let submitting = false;
-  let errors: Record<string, string> = {};
-
-  $: if (startTime) endTime = getDefaultEnd(startTime);
+  let startTime = $state(getDefaultStart());
+  let endTime = $derived(getDefaultEnd(startTime));
+  let purpose = $state("");
+  let attendeesCount = $state<number | undefined>(undefined);
+  let specialRequests = $state("");
+  let submitting = $state(false);
+  let errors = $state<Record<string, string>>({});
 
   function validate(): boolean {
     errors = {};
@@ -62,9 +68,8 @@
   async function handleSubmit() {
     if (!validate()) return;
 
-    try {
-      submitting = true;
-      const booking = await bookingsApi.createBooking({
+    const booking = await withErrorHandling({
+      action: () => bookingsApi.createBooking({
         resource_id: resource.id,
         owner_id: ownerId,
         start_time: new Date(startTime).toISOString(),
@@ -72,26 +77,25 @@
         purpose: purpose || undefined,
         attendees_count: attendeesCount || undefined,
         special_requests: specialRequests || undefined,
-      });
-      toast.success($_('bookings.success.created'));
-      dispatch("created", booking);
+      }),
+      setLoading: (v: boolean) => submitting = v,
+      successMessage: $_('bookings.success.created'),
+      errorMessage: $_('bookings.error.creationFailed'),
+    });
+    if (booking) {
+      oncreated?.(booking);
       handleClose();
-    } catch (err: any) {
-      toast.error(err.message || $_('bookings.error.creationFailed'));
-    } finally {
-      submitting = false;
     }
   }
 
   function handleClose() {
-    isOpen = false;
     errors = {};
-    dispatch("close");
+    onclose?.();
   }
 </script>
 
-<Modal {isOpen} title={$_('bookings.bookResource', { values: { name: resource?.resource_name ?? '' } })} on:close={handleClose}>
-  <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+<Modal {isOpen} title={$_('bookings.bookResource', { values: { name: resource?.resource_name ?? '' } })} onclose={handleClose}>
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4" data-testid="booking-create-form">
     <!-- Dates -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
@@ -115,7 +119,7 @@
         <input
           id="booking-end"
           type="datetime-local"
-          bind:value={endTime}
+          value={endTime}
           class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 {errors.endTime ? 'border-red-500' : 'border-gray-300'}"
         />
         {#if errors.endTime}
@@ -180,7 +184,7 @@
     <div class="flex justify-end gap-3 pt-2">
       <button
         type="button"
-        on:click={handleClose}
+        onclick={handleClose}
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
       >
         Annuler
@@ -189,6 +193,7 @@
         type="submit"
         disabled={submitting}
         class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:opacity-50 transition"
+        data-testid="submit-booking-button"
       >
         {submitting ? "Création…" : "Confirmer la réservation"}
       </button>

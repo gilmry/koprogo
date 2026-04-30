@@ -1,14 +1,25 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from "../lib/api";
+  import { withLoadingState } from "../lib/utils/error.utils";
+  import { extractArray } from "../lib/utils/response.utils";
 
-  export let selectedBuildingId = "";
-  export let label = "Immeuble";
-  export let required = true;
-  export let disabled = false;
-  export let onSelect: ((buildingId: string) => void) | undefined = undefined;
-  export let onSelectBuilding: ((building: Building) => void) | undefined = undefined;
+  let {
+    selectedBuildingId = $bindable(""),
+    label = "Immeuble",
+    required = true,
+    disabled = false,
+    onSelect,
+    onSelectBuilding,
+  }: {
+    selectedBuildingId?: string;
+    label?: string;
+    required?: boolean;
+    disabled?: boolean;
+    onSelect?: (buildingId: string) => void;
+    onSelectBuilding?: (building: Building) => void;
+  } = $props();
 
   interface Building {
     id: string;
@@ -19,80 +30,64 @@
     organization_id?: string;
   }
 
-  let buildings: Building[] = [];
-  let loading = true;
-  let error = "";
+  let buildings = $state<Building[]>([]);
+  let loading = $state(true);
+  let error = $state("");
 
-  onMount(async () => {
-    await loadBuildings();
+  $effect(() => {
+    loadBuildings();
   });
 
   async function loadBuildings() {
-    try {
-      loading = true;
-      error = "";
-      const response = await api.get("/buildings?per_page=100");
+    await withLoadingState({
+      action: () => api.get("/buildings?per_page=100"),
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      errorMessage: $_('buildings.loadError'),
+      onSuccess: (response) => {
+        buildings = extractArray<Building>(response, 'buildings');
 
-      // Le backend retourne { data: [...], pagination: {...} }
-      // Gérer tous les formats possibles de manière robuste
-      let list: Building[];
-      if (Array.isArray(response)) {
-        list = response;
-      } else if (response && Array.isArray(response.data)) {
-        list = response.data;
-      } else if (response && Array.isArray(response.buildings)) {
-        list = response.buildings;
-      } else {
-        list = [];
-      }
-      buildings = list;
-
-      // Auto-sélection si un seul immeuble
-      if (buildings.length === 1 && !selectedBuildingId) {
-        selectedBuildingId = buildings[0].id;
-        // Utiliser tick() pour laisser Svelte mettre à jour avant d'appeler le callback
-        setTimeout(() => {
-          if (onSelect) onSelect(selectedBuildingId);
-          if (onSelectBuilding) onSelectBuilding(buildings[0]);
-        }, 0);
-      } else if (buildings.length > 1 && selectedBuildingId) {
-        // Si un ID était déjà sélectionné, notifier le parent
-        const selected = buildings.find(b => b.id === selectedBuildingId);
-        setTimeout(() => {
-          if (onSelect) onSelect(selectedBuildingId);
-          if (selected && onSelectBuilding) onSelectBuilding(selected);
-        }, 0);
-      }
-    } catch (err: any) {
-      error = $_('buildings.loadError');
-      console.error("Failed to load buildings:", err);
-    } finally {
-      loading = false;
-    }
+        if (buildings.length > 0 && !selectedBuildingId) {
+          // Auto-select first building to ensure content loads immediately
+          selectedBuildingId = buildings[0].id;
+          setTimeout(() => {
+            if (onSelect) onSelect(selectedBuildingId);
+            if (onSelectBuilding) onSelectBuilding(buildings[0]);
+          }, 0);
+        } else if (buildings.length > 0 && selectedBuildingId) {
+          const selected = buildings.find(b => b.id === selectedBuildingId);
+          setTimeout(() => {
+            if (onSelect) onSelect(selectedBuildingId);
+            if (selected && onSelectBuilding) onSelectBuilding(selected);
+          }, 0);
+        }
+      },
+    });
   }
 </script>
 
 {#if loading}
-  <div class="text-sm text-gray-500 py-2">{$_('buildings.loading')}</div>
+  <div class="text-sm text-gray-500 py-2" data-testid="loading-spinner">{$_('buildings.loading')}</div>
 {:else if error}
-  <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+  <div class="p-3 bg-red-50 border border-red-200 rounded-md" data-testid="building-selector-error">
     <p class="text-sm text-red-800">{error}</p>
     <button
-      on:click={loadBuildings}
+      onclick={loadBuildings}
       class="mt-2 text-sm text-red-700 underline hover:text-red-900"
+      data-testid="building-selector-retry"
     >
       {$_('common.retry')}
     </button>
   </div>
 {:else if buildings.length === 0}
-  <div class="p-3 bg-red-50 border border-red-200 rounded-md">
+  <div class="p-3 bg-red-50 border border-red-200 rounded-md" data-testid="building-selector-empty">
     <p class="text-sm text-red-800">
       {$_('buildings.noBuildings')}
     </p>
   </div>
 {:else if buildings.length === 1}
-  <div>
-    <label class="block text-sm font-medium text-gray-700">{label}</label>
+  <div data-testid="building-selected">
+    <span class="block text-sm font-medium text-gray-700">{label}</span>
     <div class="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
       {buildings[0].name} — {buildings[0].address}{#if buildings[0].city}, {buildings[0].postal_code} {buildings[0].city}{/if}
     </div>
@@ -105,7 +100,8 @@
     <select
       id="building-selector"
       bind:value={selectedBuildingId}
-      on:change={() => {
+      data-testid="building-selector"
+      onchange={() => {
         if (selectedBuildingId) {
           if (onSelect) onSelect(selectedBuildingId);
           const selected = buildings.find(b => b.id === selectedBuildingId);

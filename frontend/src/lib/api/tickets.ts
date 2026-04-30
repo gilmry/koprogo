@@ -1,8 +1,12 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Ticket API Client
- * Wraps all 17 backend endpoints for ticket management
+ * Wraps all 17 backend endpoints for ticket management.
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-103) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface CreateTicketDto {
@@ -11,22 +15,23 @@ export interface CreateTicketDto {
   description: string;
   priority: TicketPriority;
   category: TicketCategory;
-  requester_id: string;
+  requester_id?: string; // Ignoré par le backend (utilise le JWT), gardé pour compat frontend
   unit_id?: string;
 }
 
 export interface Ticket {
   id: string;
+  organization_id: string;
   building_id: string;
   title: string;
   description: string;
   status: TicketStatus;
   priority: TicketPriority;
   category: TicketCategory;
-  requester_id: string;
+  created_by: string;
   requester_name?: string;
-  assigned_contractor_id?: string;
-  assigned_contractor_name?: string;
+  assigned_to?: string;
+  assigned_to_name?: string;
   unit_id?: string;
   unit_number?: string;
   due_date?: string;
@@ -36,32 +41,38 @@ export interface Ticket {
   updated_at: string;
 }
 
-export enum TicketStatus {
-  Open = "Open",
-  Assigned = "Assigned",
-  InProgress = "InProgress",
-  Resolved = "Resolved",
-  Closed = "Closed",
-  Cancelled = "Cancelled",
-}
+// Re-exported from generated api.d.ts — single source of truth.
+// Backend TicketStatus has 5 variants (no Assigned — the "assigned" state
+// is derived from `assigned_to IS NOT NULL` + Open/InProgress).
+export type TicketStatus = components["schemas"]["TicketStatus"];
+export const TicketStatus = {
+  Open: "Open" as const,
+  InProgress: "InProgress" as const,
+  Resolved: "Resolved" as const,
+  Closed: "Closed" as const,
+  Cancelled: "Cancelled" as const,
+} satisfies Record<string, TicketStatus>;
 
-export enum TicketPriority {
-  Low = "Low", // 7 days
-  Medium = "Medium", // 3 days
-  High = "High", // 24h
-  Urgent = "Urgent", // 4h
-  Critical = "Critical", // 1h
-}
+export type TicketPriority = components["schemas"]["TicketPriority"];
+export const TicketPriority = {
+  Low: "Low" as const, // 7 days
+  Medium: "Medium" as const, // 3 days
+  High: "High" as const, // 24h
+  Critical: "Critical" as const, // 1h (also covers "urgent")
+} satisfies Record<string, TicketPriority>;
 
-export enum TicketCategory {
-  Plumbing = "Plumbing",
-  Electrical = "Electrical",
-  Heating = "Heating",
-  Cleaning = "Cleaning",
-  Security = "Security",
-  General = "General",
-  Emergency = "Emergency",
-}
+export type TicketCategory = components["schemas"]["TicketCategory"];
+export const TicketCategory = {
+  Plumbing: "Plumbing" as const,
+  Electrical: "Electrical" as const,
+  Heating: "Heating" as const,
+  CommonAreas: "CommonAreas" as const,
+  Elevator: "Elevator" as const,
+  Security: "Security" as const,
+  Cleaning: "Cleaning" as const,
+  Landscaping: "Landscaping" as const,
+  Other: "Other" as const,
+} satisfies Record<string, TicketCategory>;
 
 export interface TicketStatistics {
   total_tickets: number;
@@ -83,7 +94,20 @@ export const ticketsApi = {
    * Create a new ticket
    */
   async create(data: CreateTicketDto): Promise<Ticket> {
-    return api.post("/tickets", data);
+    // Envoyer uniquement les champs attendus par le backend (CreateTicketRequest)
+    // Le backend ignore requester_id et utilise le user_id du JWT
+    const payload: Record<string, any> = {
+      building_id: data.building_id,
+      title: data.title,
+      description: data.description,
+      priority: data.priority,
+      category: data.category,
+    };
+    // unit_id seulement si c'est un UUID valide (pas vide)
+    if (data.unit_id && data.unit_id.trim() !== "") {
+      payload.unit_id = data.unit_id;
+    }
+    return api.post("/tickets", payload);
   },
 
   /**
@@ -132,7 +156,7 @@ export const ticketsApi = {
    * Assign ticket to contractor
    */
   async assign(id: string, contractorId: string): Promise<Ticket> {
-    return api.put(`/tickets/${id}/assign`, { contractor_id: contractorId });
+    return api.put(`/tickets/${id}/assign`, { assigned_to: contractorId });
   },
 
   /**

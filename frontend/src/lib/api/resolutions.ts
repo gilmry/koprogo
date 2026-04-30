@@ -1,8 +1,14 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Resolution & Voting API Client
  * Belgian copropriété law compliance (tantièmes/millièmes voting)
+ *
+ * Types are re-exported from auto-generated api.d.ts (STORY-P7-103).
+ * TypeScript will refuse any enum value that doesn't exist in the Rust
+ * backend — preventing the class of "invented variant" bugs flagged by
+ * audits v1→v7 (e.g. `MajorityType.Simple` or `TicketPriority.Urgent`).
  */
 
 export interface Resolution {
@@ -10,36 +16,60 @@ export interface Resolution {
   meeting_id: string;
   title: string;
   description: string;
-  resolution_type: string;
+  resolution_type: ResolutionType;
   majority_required: MajorityType;
-  threshold: number;
-  votes_pour: number;
-  votes_contre: number;
-  votes_abstention: number;
-  total_voting_power: number;
+  threshold?: number;
+  // Backend field names (snake_case)
+  vote_count_pour: number;
+  vote_count_contre: number;
+  vote_count_abstention: number;
+  total_voting_power_pour: number;
+  total_voting_power_contre: number;
+  total_voting_power_abstention: number;
+  // Computed by backend
+  total_votes: number;
+  pour_percentage: number;
+  contre_percentage: number;
+  abstention_percentage: number;
+  // Aliases for backward compat (deprecated)
+  votes_pour?: number;
+  votes_contre?: number;
+  votes_abstention?: number;
+  total_voting_power?: number;
   status: ResolutionStatus;
-  closed_at?: string;
+  voted_at?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
-export enum MajorityType {
-  Simple = "Simple",
-  Absolute = "Absolute",
-  Qualified = "Qualified",
-}
+// Re-exported from the generated OpenAPI spec — single source of truth.
+export type MajorityType = components["schemas"]["MajorityType"];
+export const MajorityType = {
+  Absolute: "absolute" as const,
+  TwoThirds: "two_thirds" as const,
+  FourFifths: "four_fifths" as const,
+  Unanimity: "unanimity" as const,
+} satisfies Record<string, MajorityType>;
 
-export enum ResolutionStatus {
-  Pending = "Pending",
-  Adopted = "Adopted",
-  Rejected = "Rejected",
-}
+export type ResolutionType = components["schemas"]["ResolutionType"];
+export const ResolutionType = {
+  Ordinary: "ordinary" as const,
+  Extraordinary: "extraordinary" as const,
+} satisfies Record<string, ResolutionType>;
 
-export enum VoteChoice {
-  Pour = "Pour",
-  Contre = "Contre",
-  Abstention = "Abstention",
-}
+export type ResolutionStatus = components["schemas"]["ResolutionStatus"];
+export const ResolutionStatus = {
+  Pending: "pending" as const,
+  Adopted: "adopted" as const,
+  Rejected: "rejected" as const,
+} satisfies Record<string, ResolutionStatus>;
+
+export type VoteChoice = components["schemas"]["VoteChoice"];
+export const VoteChoice = {
+  Pour: "pour" as const,
+  Contre: "contre" as const,
+  Abstention: "abstention" as const,
+} satisfies Record<string, VoteChoice>;
 
 export interface Vote {
   id: string;
@@ -63,7 +93,8 @@ export interface CreateResolutionDto {
 }
 
 export interface CastVoteDto {
-  owner_id: string;
+  owner_id?: string;
+  unit_id?: string;
   choice: VoteChoice;
   voting_power: number;
   proxy_owner_id?: string;
@@ -90,7 +121,15 @@ export const resolutionsApi = {
   },
 
   async castVote(resolutionId: string, data: CastVoteDto): Promise<Vote> {
-    return api.post(`/resolutions/${resolutionId}/vote`, data);
+    // Mapper le champ 'choice' frontend vers 'vote_choice' backend
+    const payload: Record<string, any> = {
+      vote_choice: data.choice,
+      voting_power: data.voting_power,
+    };
+    if (data.owner_id) payload.owner_id = data.owner_id;
+    if (data.unit_id) payload.unit_id = data.unit_id;
+    if (data.proxy_owner_id) payload.proxy_owner_id = data.proxy_owner_id;
+    return api.post(`/resolutions/${resolutionId}/vote`, payload);
   },
 
   async getVotes(resolutionId: string): Promise<Vote[]> {
@@ -98,7 +137,7 @@ export const resolutionsApi = {
   },
 
   async changeVote(voteId: string, newChoice: VoteChoice): Promise<Vote> {
-    return api.put(`/votes/${voteId}`, { choice: newChoice });
+    return api.put(`/votes/${voteId}`, { vote_choice: newChoice });
   },
 
   async closeVoting(resolutionId: string): Promise<Resolution> {

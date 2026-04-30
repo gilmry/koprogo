@@ -22,6 +22,10 @@ pub struct TicketResponse {
     pub updated_at: DateTime<Utc>,
     pub resolved_at: Option<DateTime<Utc>>,
     pub closed_at: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requester_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_to_name: Option<String>,
 }
 
 impl From<Ticket> for TicketResponse {
@@ -44,6 +48,8 @@ impl From<Ticket> for TicketResponse {
             updated_at: ticket.updated_at,
             resolved_at: ticket.resolved_at,
             closed_at: ticket.closed_at,
+            requester_name: None,
+            assigned_to_name: None,
         }
     }
 }

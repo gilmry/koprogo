@@ -211,6 +211,7 @@
                     </button>
                   {:else}
                     <select
+                      aria-label="Sélectionner un utilisateur à lier"
                       on:change={(e) => {
                         const userId = e.currentTarget.value;
                         if (userId) {

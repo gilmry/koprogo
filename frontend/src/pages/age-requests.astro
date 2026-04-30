@@ -1,0 +1,35 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Demandes d'AGE - KoproGo">
+  <div class="container mx-auto px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+      <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Demandes d'AGE</h1>
+        <p class="text-gray-600 mt-2">
+          Demandes d'assemblée générale extraordinaire par les copropriétaires (Art. 3.87 §2 CC)
+        </p>
+      </div>
+
+      <div data-testid="age-requests-list" class="bg-white rounded-lg shadow p-6">
+        <p class="text-gray-500">
+          Les copropriétaires peuvent demander la convocation d'une AGE lorsqu'ils représentent
+          au moins 1/5 des quotes-parts (Art. 3.87 §2 CC).
+        </p>
+        <a href="/age-requests/new" class="mt-4 inline-block px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700">
+          Nouvelle demande d'AGE
+        </a>
+      </div>
+
+      <div class="mt-6">
+        <a href="/owner" class="inline-flex items-center text-primary-600 hover:text-primary-700">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Retour au dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</Layout>

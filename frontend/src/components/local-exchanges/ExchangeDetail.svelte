@@ -1,4 +1,5 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     localExchangesApi,
@@ -12,67 +13,58 @@
     formatRating,
   } from '../../lib/api/local-exchanges';
   import { toast } from '../../stores/toast';
+  import { formatDateTime, formatDate } from "../../lib/utils/date.utils";
+  import { withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let exchange: LocalExchange;
-  export let currentUserId: string = '';
+  let {
+    exchange = $bindable(),
+    currentUserId = '',
+  }: {
+    exchange: LocalExchange;
+    currentUserId?: string;
+  } = $props();
 
-  let actionLoading = false;
-  let ratingValue = 0;
-  let showRatingForm = false;
-  let cancelReason = '';
-  let showCancelForm = false;
+  let actionLoading = $state(false);
+  let ratingValue = $state(0);
+  let showRatingForm = $state(false);
+  let cancelReason = $state('');
+  let showCancelForm = $state(false);
 
-  $: isProvider = exchange.provider_id === currentUserId;
-  $: isRequester = exchange.requester_id === currentUserId;
-  $: statusColors = exchangeStatusColors[exchange.status];
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
+  let isProvider = $derived(exchange.provider_id === currentUserId);
+  let isRequester = $derived(exchange.requester_id === currentUserId);
+  let statusColors = $derived(exchangeStatusColors[exchange.status]);
 
   async function handleRequest() {
     if (!confirm($_('exchanges.confirm_request'))) return;
-    actionLoading = true;
-    try {
-      exchange = await localExchangesApi.request(exchange.id);
-      toast.success($_('exchanges.request_success'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.request_error'));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.request(exchange.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_('exchanges.request_success'),
+      errorMessage: $_('exchanges.request_error'),
+    });
+    if (result) exchange = result;
   }
 
   async function handleStart() {
     if (!confirm($_('exchanges.confirm_start'))) return;
-    actionLoading = true;
-    try {
-      exchange = await localExchangesApi.start(exchange.id);
-      toast.success($_('exchanges.start_success'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.start_error'));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.start(exchange.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_('exchanges.start_success'),
+      errorMessage: $_('exchanges.start_error'),
+    });
+    if (result) exchange = result;
   }
 
   async function handleComplete() {
     if (!confirm($_('exchanges.confirm_complete'))) return;
-    actionLoading = true;
-    try {
-      exchange = await localExchangesApi.complete(exchange.id);
-      toast.success($_('exchanges.complete_success'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.complete_error'));
-    } finally {
-      actionLoading = false;
-    }
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.complete(exchange.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_('exchanges.complete_success'),
+      errorMessage: $_('exchanges.complete_error'),
+    });
+    if (result) exchange = result;
   }
 
   async function handleCancel() {
@@ -80,15 +72,15 @@
       toast.error($_('exchanges.reason_required'));
       return;
     }
-    actionLoading = true;
-    try {
-      exchange = await localExchangesApi.cancel(exchange.id, { reason: cancelReason });
+    const result = await withErrorHandling({
+      action: () => localExchangesApi.cancel(exchange.id, { reason: cancelReason }),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_('exchanges.cancel_success'),
+      errorMessage: $_('exchanges.cancel_error'),
+    });
+    if (result) {
+      exchange = result;
       showCancelForm = false;
-      toast.success($_('exchanges.cancel_success'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.cancel_error'));
-    } finally {
-      actionLoading = false;
     }
   }
 
@@ -97,37 +89,34 @@
       toast.error($_('exchanges.rating_required'));
       return;
     }
-    actionLoading = true;
-    try {
+    const result = await withErrorHandling({
+      action: () => asProvider
+        ? localExchangesApi.rateRequester(exchange.id, { rating: ratingValue })
+        : localExchangesApi.rateProvider(exchange.id, { rating: ratingValue }),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_('exchanges.rating_saved'),
+      errorMessage: $_('exchanges.rating_error'),
+    });
+    if (result) {
       if (asProvider) {
-        await localExchangesApi.rateRequester(exchange.id, { rating: ratingValue });
         exchange.requester_rating = ratingValue;
       } else {
-        await localExchangesApi.rateProvider(exchange.id, { rating: ratingValue });
         exchange.provider_rating = ratingValue;
       }
       showRatingForm = false;
       ratingValue = 0;
-      toast.success($_('exchanges.rating_saved'));
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.rating_error'));
-    } finally {
-      actionLoading = false;
     }
   }
 
   async function handleDelete() {
     if (!confirm($_('exchanges.confirm_delete'))) return;
-    actionLoading = true;
-    try {
-      await localExchangesApi.delete(exchange.id);
-      toast.success($_('exchanges.delete_success'));
-      window.location.href = '/exchanges';
-    } catch (err: any) {
-      toast.error(err.message || $_('exchanges.delete_error'));
-    } finally {
-      actionLoading = false;
-    }
+    await withErrorHandling({
+      action: () => localExchangesApi.delete(exchange.id),
+      setLoading: (v: boolean) => actionLoading = v,
+      successMessage: $_('exchanges.delete_success'),
+      errorMessage: $_('exchanges.delete_error'),
+      onSuccess: () => { window.location.href = '/exchanges'; },
+    });
   }
 
   function canRate(): { canRateProvider: boolean; canRateRequester: boolean } {
@@ -139,9 +128,9 @@
   }
 </script>
 
-<div class="space-y-6">
+<div class="space-y-6" data-testid="exchange-detail">
   <!-- Header Card -->
-  <div class="bg-white shadow-md rounded-lg p-6">
+  <div class="bg-white shadow-md rounded-lg p-6" data-testid="exchange-detail-header">
     <div class="flex items-start justify-between">
       <div class="flex items-start gap-4">
         <span class="text-4xl">{exchangeTypeIcons[exchange.exchange_type]}</span>
@@ -185,7 +174,7 @@
       </div>
       <div class="p-3 bg-purple-50 rounded-lg">
         <div class="text-xs text-purple-600 font-medium">{$_('exchanges.created_at')}</div>
-        <div class="text-sm text-purple-900">{formatDate(exchange.created_at)}</div>
+        <div class="text-sm text-purple-900">{formatDateTime(exchange.created_at)}</div>
       </div>
     </div>
 
@@ -195,30 +184,30 @@
       <div class="space-y-2 text-sm">
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-green-500"></span>
-          <span class="text-gray-600">{$_('exchanges.offered_at', { date: formatDate(exchange.offered_at) })}</span>
+          <span class="text-gray-600">{$_('exchanges.offered_at', { values: { date: formatDate(exchange.offered_at) } })}</span>
         </div>
         {#if exchange.requested_at}
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-            <span class="text-gray-600">{$_('exchanges.requested_at', { date: formatDate(exchange.requested_at) })}</span>
+            <span class="text-gray-600">{$_('exchanges.requested_at', { values: { date: formatDate(exchange.requested_at) } })}</span>
           </div>
         {/if}
         {#if exchange.started_at}
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
-            <span class="text-gray-600">{$_('exchanges.started_at', { date: formatDate(exchange.started_at) })}</span>
+            <span class="text-gray-600">{$_('exchanges.started_at', { values: { date: formatDate(exchange.started_at) } })}</span>
           </div>
         {/if}
         {#if exchange.completed_at}
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-green-600"></span>
-            <span class="text-gray-600">{$_('exchanges.completed_at', { date: formatDate(exchange.completed_at) })}</span>
+            <span class="text-gray-600">{$_('exchanges.completed_at', { values: { date: formatDate(exchange.completed_at) } })}</span>
           </div>
         {/if}
         {#if exchange.cancelled_at}
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-red-500"></span>
-            <span class="text-gray-600">{$_('exchanges.cancelled_at', { date: formatDate(exchange.cancelled_at) })}</span>
+            <span class="text-gray-600">{$_('exchanges.cancelled_at', { values: { date: formatDate(exchange.cancelled_at) } })}</span>
             {#if exchange.cancellation_reason}
               <span class="text-gray-500">- {exchange.cancellation_reason}</span>
             {/if}
@@ -230,7 +219,7 @@
 
   <!-- Ratings Card (if completed) -->
   {#if exchange.status === ExchangeStatus.Completed}
-    <div class="bg-white shadow-md rounded-lg p-6">
+    <div class="bg-white shadow-md rounded-lg p-6" data-testid="exchange-ratings-card">
       <h3 class="text-lg font-medium text-gray-900 mb-4">{$_('exchanges.ratings')}</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="p-4 bg-gray-50 rounded-lg">
@@ -246,10 +235,10 @@
       {#if canRate().canRateProvider || canRate().canRateRequester}
         {#if !showRatingForm}
           <button
-            on:click={() => { showRatingForm = true; }}
+            onclick={() => { showRatingForm = true; }}
             class="mt-4 px-4 py-2 bg-amber-600 text-white text-sm rounded-md hover:bg-amber-700"
           >
-            {$_('exchanges.rate', { type: canRate().canRateProvider ? $_('exchanges.provider') : $_('exchanges.requester') })}
+            {$_('exchanges.rate', { values: { type: canRate().canRateProvider ? $_('exchanges.provider') : $_('exchanges.requester') } })}
           </button>
         {:else}
           <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-amber-50">
@@ -260,7 +249,7 @@
               {#each [1, 2, 3, 4, 5] as star}
                 <button
                   type="button"
-                  on:click={() => ratingValue = star}
+                  onclick={() => ratingValue = star}
                   class="text-3xl transition-colors {ratingValue >= star ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-300"
                 >
                   &#9733;
@@ -269,14 +258,14 @@
             </div>
             <div class="flex gap-2">
               <button
-                on:click={() => handleRate(canRate().canRateRequester)}
+                onclick={() => handleRate(canRate().canRateRequester)}
                 disabled={actionLoading || ratingValue === 0}
                 class="px-4 py-2 bg-amber-600 text-white text-sm rounded-md hover:bg-amber-700 disabled:opacity-50"
               >
                 {$_('common.confirm')}
               </button>
               <button
-                on:click={() => { showRatingForm = false; ratingValue = 0; }}
+                onclick={() => { showRatingForm = false; ratingValue = 0; }}
                 class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300"
               >
                 {$_('common.cancel')}
@@ -289,13 +278,14 @@
   {/if}
 
   <!-- Actions Card -->
-  <div class="bg-white shadow-md rounded-lg p-6">
+  <div class="bg-white shadow-md rounded-lg p-6" data-testid="exchange-actions-card">
     <h3 class="text-lg font-medium text-gray-900 mb-4">{$_('common.actions')}</h3>
     <div class="flex flex-wrap gap-3">
       {#if exchange.status === ExchangeStatus.Offered && !isProvider}
         <button
-          on:click={handleRequest}
+          onclick={handleRequest}
           disabled={actionLoading}
+          data-testid="exchange-request-btn"
           class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50"
         >
           {$_('exchanges.request_exchange')}
@@ -304,8 +294,9 @@
 
       {#if exchange.status === ExchangeStatus.Requested && isProvider}
         <button
-          on:click={handleStart}
+          onclick={handleStart}
           disabled={actionLoading}
+          data-testid="exchange-start-btn"
           class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
         >
           {$_('exchanges.accept_and_start')}
@@ -314,8 +305,9 @@
 
       {#if exchange.status === ExchangeStatus.InProgress && isProvider}
         <button
-          on:click={handleComplete}
+          onclick={handleComplete}
           disabled={actionLoading}
+          data-testid="exchange-complete-btn"
           class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-50"
         >
           {$_('exchanges.mark_completed')}
@@ -325,15 +317,17 @@
       {#if exchange.status !== ExchangeStatus.Completed && exchange.status !== ExchangeStatus.Cancelled}
         {#if !showCancelForm}
           <button
-            on:click={() => showCancelForm = true}
+            onclick={() => showCancelForm = true}
+            data-testid="exchange-cancel-btn"
             class="px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-md hover:bg-red-200"
           >
             {$_('common.cancel')}
           </button>
         {:else}
           <div class="w-full p-4 border border-red-200 rounded-lg bg-red-50">
-            <label class="block text-sm font-medium text-red-800 mb-1">{$_('exchanges.cancellation_reason')}</label>
+            <label for="exchange-cancel-reason" class="block text-sm font-medium text-red-800 mb-1">{$_('exchanges.cancellation_reason')}</label>
             <textarea
+              id="exchange-cancel-reason"
               bind:value={cancelReason}
               rows="2"
               class="w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 text-sm"
@@ -341,14 +335,14 @@
             ></textarea>
             <div class="flex gap-2 mt-2">
               <button
-                on:click={handleCancel}
+                onclick={handleCancel}
                 disabled={actionLoading}
                 class="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 disabled:opacity-50"
               >
                 {$_('exchanges.confirm_cancellation')}
               </button>
               <button
-                on:click={() => { showCancelForm = false; cancelReason = ''; }}
+                onclick={() => { showCancelForm = false; cancelReason = ''; }}
                 class="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-md hover:bg-gray-300"
               >
                 {$_('common.back')}
@@ -360,8 +354,9 @@
 
       {#if exchange.status === ExchangeStatus.Offered && isProvider}
         <button
-          on:click={handleDelete}
+          onclick={handleDelete}
           disabled={actionLoading}
+          data-testid="exchange-delete-btn"
           class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200"
         >
           {$_('exchanges.delete_offer')}

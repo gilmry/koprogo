@@ -1,17 +1,19 @@
 <script lang="ts">
-  import '../lib/i18n';
-  import { _ } from 'svelte-i18n';
+  // Svelte 5 runes mode
+  import { _ } from '../lib/i18n';
 
-  export let mandateCount: number = 0;
-  export let totalDelegatedPct: number = 0;
+  let { mandateCount = 0, totalDelegatedPct = 0 }: {
+    mandateCount?: number;
+    totalDelegatedPct?: number;
+  } = $props();
 
   const MAX_MANDATES = 3;
   const MAX_PCT = 10;
 
-  $: isAtLimit = mandateCount >= MAX_MANDATES;
-  $: isNearLimit = mandateCount === MAX_MANDATES - 1;
-  $: isQuotaAtRisk = totalDelegatedPct > MAX_PCT * 0.8; // warn at 80% of limit
-  $: isQuotaExceeded = totalDelegatedPct > MAX_PCT;
+  let isAtLimit = $derived(mandateCount >= MAX_MANDATES);
+  let isNearLimit = $derived(mandateCount === MAX_MANDATES - 1);
+  let isQuotaAtRisk = $derived(totalDelegatedPct > MAX_PCT * 0.8);
+  let isQuotaExceeded = $derived(totalDelegatedPct > MAX_PCT);
 </script>
 
 {#if isAtLimit || isQuotaExceeded}

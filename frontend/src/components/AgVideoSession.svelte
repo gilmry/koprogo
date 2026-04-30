@@ -1,13 +1,15 @@
 <script lang="ts">
-  import '../lib/i18n';
-  import { _ } from 'svelte-i18n';
+  // Svelte 5 runes mode
+  import { _ } from '../lib/i18n';
   import { apiEndpoint } from '../lib/config';
   import { authStore } from '../stores/auth';
   import Button from './ui/Button.svelte';
   import { toast } from '../stores/toast';
 
-  export let meetingId: string;
-  export let readOnly = false;
+  let { meetingId, readOnly = false }: {
+    meetingId: string;
+    readOnly?: boolean;
+  } = $props();
 
   interface AgSession {
     id: string;
@@ -25,19 +27,19 @@
     created_at: string;
   }
 
-  let session: AgSession | null = null;
-  let loading = false;
-  let creating = false;
-  let showForm = false;
+  let session = $state<AgSession | null>(null);
+  let loading = $state(false);
+  let creating = $state(false);
+  let showForm = $state(false);
 
-  let form = {
+  let form = $state({
     platform: 'Jitsi',
     video_url: '',
     host_url: '',
     access_password: '',
     waiting_room_enabled: true,
     recording_enabled: false,
-  };
+  });
 
   const platforms = ['Zoom', 'Teams', 'Meet', 'Jitsi', 'Whereby'];
 
@@ -123,7 +125,9 @@
     return map[status] || 'bg-gray-100 text-gray-800';
   }
 
-  $: if (meetingId) loadSession();
+  $effect(() => {
+    if (meetingId) loadSession();
+  });
 </script>
 
 <div class="bg-white rounded-lg border border-gray-200 p-4">
@@ -135,7 +139,7 @@
       {$_('agSession.title')}
     </h3>
     {#if !readOnly && !session && !showForm}
-      <Button size="sm" variant="outline" on:click={() => (showForm = true)} data-testid="ag-session-create-btn">
+      <Button size="sm" variant="outline" onclick={() => (showForm = true)} data-testid="ag-session-create-btn">
         + {$_('agSession.createButton')}
       </Button>
     {/if}
@@ -144,26 +148,26 @@
   {#if loading}
     <p class="text-sm text-gray-500">{$_('common.loading')}</p>
   {:else if showForm}
-    <form on:submit|preventDefault={createSession} class="space-y-3" data-testid="ag-session-form">
+    <form onsubmit={(e: Event) => { e.preventDefault(); createSession(); }} class="space-y-3" data-testid="ag-session-form">
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.platform')}</label>
-        <select bind:value={form.platform} class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-platform-select">
+        <label for="ag-session-platform" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.platform')}</label>
+        <select id="ag-session-platform" bind:value={form.platform} class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-platform-select">
           {#each platforms as p}
             <option value={p}>{p}</option>
           {/each}
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.meetingUrl')} *</label>
-        <input bind:value={form.video_url} type="url" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" placeholder="https://meet.jit.si/..." data-testid="ag-session-video-url-input" />
+        <label for="ag-session-video-url" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.meetingUrl')} *</label>
+        <input id="ag-session-video-url" bind:value={form.video_url} type="url" required class="w-full rounded border border-gray-300 px-2 py-1 text-sm" placeholder="https://meet.jit.si/..." data-testid="ag-session-video-url-input" />
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.hostUrl')}</label>
-        <input bind:value={form.host_url} type="url" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-host-url-input" />
+        <label for="ag-session-host-url" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.hostUrl')}</label>
+        <input id="ag-session-host-url" bind:value={form.host_url} type="url" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-host-url-input" />
       </div>
       <div>
-        <label class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.password')}</label>
-        <input bind:value={form.access_password} type="text" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-password-input" />
+        <label for="ag-session-password" class="block text-xs font-medium text-gray-700 mb-1">{$_('agSession.password')}</label>
+        <input id="ag-session-password" bind:value={form.access_password} type="text" class="w-full rounded border border-gray-300 px-2 py-1 text-sm" data-testid="ag-session-password-input" />
       </div>
       <div class="flex gap-4">
         <label class="flex items-center gap-1 text-xs">
@@ -177,7 +181,7 @@
       </div>
       <div class="flex gap-2">
         <Button type="submit" size="sm" loading={creating} data-testid="ag-session-submit-btn">{$_('common.create')}</Button>
-        <Button type="button" size="sm" variant="ghost" on:click={() => (showForm = false)} data-testid="ag-session-cancel-btn">{$_('common.cancel')}</Button>
+        <Button type="button" size="sm" variant="ghost" onclick={() => (showForm = false)} data-testid="ag-session-cancel-btn">{$_('common.cancel')}</Button>
       </div>
     </form>
   {:else if session}
@@ -217,9 +221,9 @@
       {#if !readOnly}
         <div class="flex gap-2 mt-2">
           {#if session.status === 'Scheduled'}
-            <Button size="sm" variant="primary" on:click={startSession} data-testid="ag-session-start-btn">▶ {$_('agSession.start')}</Button>
+            <Button size="sm" variant="primary" onclick={startSession} data-testid="ag-session-start-btn">▶ {$_('agSession.start')}</Button>
           {:else if session.status === 'Live'}
-            <Button size="sm" variant="danger" on:click={endSession} data-testid="ag-session-end-btn">⏹ {$_('agSession.end')}</Button>
+            <Button size="sm" variant="danger" onclick={endSession} data-testid="ag-session-end-btn">⏹ {$_('agSession.end')}</Button>
           {/if}
         </div>
       {/if}

@@ -1,5 +1,5 @@
 // Web Handlers: Financial Reports for Buildings
-use super::financial_report_handlers::IncomeStatementQuery;
+use super::financial_report_handlers::{parse_date_flexible, IncomeStatementQuery};
 use crate::infrastructure::audit::{AuditEventType, AuditLogEntry};
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, web, HttpResponse, Responder};
@@ -74,20 +74,20 @@ pub async fn generate_income_statement_for_building(
         }
     };
 
-    let period_start = match chrono::DateTime::parse_from_rfc3339(&query.period_start) {
-        Ok(dt) => dt.with_timezone(&chrono::Utc),
-        Err(_) => {
+    let period_start = match parse_date_flexible(&query.period_start) {
+        Some(dt) => dt,
+        None => {
             return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Invalid period_start format"
+                "error": "Invalid period_start format. Use 2024-01-01 or 2024-01-01T00:00:00Z"
             }))
         }
     };
 
-    let period_end = match chrono::DateTime::parse_from_rfc3339(&query.period_end) {
-        Ok(dt) => dt.with_timezone(&chrono::Utc),
-        Err(_) => {
+    let period_end = match parse_date_flexible(&query.period_end) {
+        Some(dt) => dt,
+        None => {
             return HttpResponse::BadRequest().json(serde_json::json!({
-                "error": "Invalid period_end format"
+                "error": "Invalid period_end format. Use 2024-12-31 or 2024-12-31T23:59:59Z"
             }))
         }
     };

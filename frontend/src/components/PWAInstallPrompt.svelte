@@ -89,6 +89,7 @@
         </div>
         <button
           on:click={dismissPrompt}
+          aria-label={$_('common.close')}
           class="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,18 +1,21 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../lib/i18n';
   import { api } from '../lib/api';
-  import { toast } from '../stores/toast';
   import type { BoardMemberResponse } from '../lib/types';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
-  export let buildingId: string = '';
-  export let showInactive: boolean = false;
+  let { buildingId = '', showInactive = false }: {
+    buildingId?: string;
+    showInactive?: boolean;
+  } = $props();
 
-  let members: BoardMemberResponse[] = [];
-  let loading = true;
-  let error = '';
+  let members = $state<BoardMemberResponse[]>([]);
+  let loading = $state(true);
+  let error = $state('');
 
-  onMount(() => {
+  $effect(() => {
     if (!buildingId) {
       error = $_('board.error.buildingIdMissing');
       loading = false;
@@ -22,22 +25,21 @@
   });
 
   async function loadMembers() {
-    try {
-      loading = true;
-      error = '';
-
-      const endpoint = showInactive
-        ? `/board-members/building/${buildingId}/all`
-        : `/board-members/building/${buildingId}`;
-
-      members = await api.get<BoardMemberResponse[]>(endpoint);
-    } catch (e) {
-      error = e instanceof Error ? e.message : $_('board.error.loadMembers');
-      console.error('Error loading board members:', e);
-      toast.error(error);
-    } finally {
-      loading = false;
+    loading = true;
+    error = '';
+    const endpoint = showInactive
+      ? `/board-members/building/${buildingId}/all`
+      : `/board-members/building/${buildingId}`;
+    const result = await withErrorHandling({
+      action: () => api.get<BoardMemberResponse[]>(endpoint),
+      errorMessage: $_('board.error.loadMembers'),
+    });
+    if (result) {
+      members = result;
+    } else {
+      error = $_('board.error.loadMembers');
     }
+    loading = false;
   }
 
   function getPositionLabel(position: string): string {
@@ -60,14 +62,6 @@
     return icons[position] || '👤';
   }
 
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
-
   function getMandateStatusColor(member: BoardMemberResponse): string {
     if (!member.is_active) return 'bg-gray-100 text-gray-800 border-gray-300';
     if (member.expires_soon) return 'bg-orange-100 text-orange-800 border-orange-300';
@@ -81,7 +75,7 @@
   }
 </script>
 
-<div class="bg-white shadow rounded-lg overflow-hidden">
+<div class="bg-white shadow rounded-lg overflow-hidden" data-testid="board-member-list">
   <div class="px-6 py-4 border-b border-gray-200">
     <h2 class="text-xl font-semibold text-gray-900">
       {$_('board.membersTitle')}
@@ -127,7 +121,7 @@
               <div class="flex-1">
                 <div class="flex items-center">
                   <h3 class="text-lg font-medium text-gray-900">
-                    {member.owner_name}
+                    {(member as any).owner_name ?? "Inconnu"}
                   </h3>
                   <span class="ml-3 inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
                     {getPositionLabel(member.position)}
@@ -139,7 +133,7 @@
                     {formatDate(member.mandate_start)} → {formatDate(member.mandate_end)}
                   </p>
                   <p>
-                    <strong>{$_('board.electedAt')}:</strong> AG du {formatDate(member.elected_at)}
+                    <strong>{$_('board.electedAt')}:</strong> AG du {formatDate((member as any).elected_at ?? member.mandate_start)}
                   </p>
                 </div>
               </div>
@@ -172,7 +166,7 @@
         <strong>{$_('board.legalNote')}:</strong> {$_('board.legalRequirement')}
       </p>
       <button
-        on:click={() => { showInactive = !showInactive; loadMembers(); }}
+        onclick={() => { showInactive = !showInactive; loadMembers(); }}
         class="text-sm text-primary-600 hover:text-primary-800 font-medium"
       >
         {showInactive ? $_('board.hideMembers') : $_('board.showMembers')}

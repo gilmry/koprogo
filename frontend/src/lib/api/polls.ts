@@ -1,10 +1,13 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Polls API Client
  * Wraps all 12 backend endpoints for poll (sondage) management
  * Belgian legal compliance: Article 577-8/4 §4 Code Civil Belge
  * Allows syndic to consult co-owners between general assemblies
+ *
+ * Enums re-exported from generated api.d.ts (STORY-P7-103).
  */
 
 export interface Poll {
@@ -31,19 +34,21 @@ export interface Poll {
   updated_at: string;
 }
 
-export enum PollType {
-  YesNo = "yes_no",
-  MultipleChoice = "multiple_choice",
-  Rating = "rating",
-  OpenEnded = "open_ended",
-}
+export type PollType = components["schemas"]["PollType"];
+export const PollType = {
+  YesNo: "yes_no" as const,
+  MultipleChoice: "multiple_choice" as const,
+  Rating: "rating" as const,
+  OpenEnded: "open_ended" as const,
+} satisfies Record<string, PollType>;
 
-export enum PollStatus {
-  Draft = "draft",
-  Active = "active",
-  Closed = "closed",
-  Cancelled = "cancelled",
-}
+export type PollStatus = components["schemas"]["PollStatus"];
+export const PollStatus = {
+  Draft: "draft" as const,
+  Active: "active" as const,
+  Closed: "closed" as const,
+  Cancelled: "cancelled" as const,
+} satisfies Record<string, PollStatus>;
 
 export interface PollOption {
   id: string;

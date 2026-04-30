@@ -90,8 +90,9 @@ import Layout from "../../layouts/Layout.astro";
     "notification-preferences",
   );
   if (preferencesContainer) {
-    // Get user ID from localStorage or auth context
-    const userId = localStorage.getItem("koprogo_user_id") || "";
+    // Get user ID from stored user JSON (koprogo_user_id key doesn't exist)
+    const storedUser = localStorage.getItem("koprogo_user");
+    const userId = storedUser ? JSON.parse(storedUser).id : "";
 
     if (userId) {
       mount(NotificationPreferences as any, {

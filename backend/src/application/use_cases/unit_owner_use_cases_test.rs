@@ -237,6 +237,10 @@ impl OwnerRepository for MockOwnerRepository {
     async fn delete(&self, _id: Uuid) -> Result<bool, String> {
         unimplemented!()
     }
+
+    async fn set_user_link(&self, _owner_id: Uuid, _user_id: Option<Uuid>) -> Result<bool, String> {
+        unimplemented!()
+    }
 }
 
 // Helper to create test data

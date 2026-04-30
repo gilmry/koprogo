@@ -5,8 +5,56 @@ use fake::faker::address::en::*;
 use fake::faker::name::en::*;
 use fake::Fake;
 use rand::RngExt;
+use serde::Serialize;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
+
+/// Result struct returned by `seed_scenario_world` with all created IDs and credentials.
+#[derive(Debug, Clone, Serialize)]
+pub struct ScenarioWorldResult {
+    pub organization_id: Uuid,
+    pub building_id: Uuid,
+    pub meeting_id: Uuid,
+    pub resolution_id: Uuid,
+    pub users: Vec<ScenarioUserResult>,
+    pub owners: Vec<ScenarioOwnerResult>,
+    pub units: Vec<ScenarioUnitResult>,
+    pub building2_id: Uuid,
+    pub building2_name: String,
+    pub building2_owners: Vec<ScenarioOwnerResult>,
+    pub building2_units: Vec<ScenarioUnitResult>,
+    pub building3_id: Uuid,
+    pub building3_name: String,
+    pub building3_owners: Vec<ScenarioOwnerResult>,
+    pub building3_units: Vec<ScenarioUnitResult>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ScenarioUserResult {
+    pub user_id: Uuid,
+    pub email: String,
+    pub password: String,
+    pub role: String,
+    pub first_name: String,
+    pub last_name: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ScenarioOwnerResult {
+    pub owner_id: Uuid,
+    pub user_id: Uuid,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ScenarioUnitResult {
+    pub unit_id: Uuid,
+    pub unit_number: String,
+    pub owner_id: Uuid,
+    pub tantièmes: f64,
+}
 
 pub struct DatabaseSeeder {
     pool: PgPool,
@@ -2964,6 +3012,1003 @@ impl DatabaseSeeder {
             "✅ Seed data cleared successfully! ({} organizations removed)",
             seed_org_ids.len()
         ))
+    }
+
+    /// Seed the "Résidence du Parc Royal" scenario world with all 14 personas.
+    ///
+    /// Creates one organization, one building, 12 units, 10 co-owners, 3 professionals,
+    /// 4 community members, one meeting (2nd convocation) and one pending resolution.
+    pub async fn seed_scenario_world(&self) -> Result<ScenarioWorldResult, String> {
+        log::info!("🌱 Starting scenario world seeding (Résidence du Parc Royal)...");
+
+        // Check if scenario world already exists
+        let existing = sqlx::query_scalar!(
+            "SELECT COUNT(*) as count FROM organizations WHERE slug = 'residence-parc-royal-test'"
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to check existing scenario world: {}", e))?;
+
+        if existing.unwrap_or(0) > 0 {
+            return Err(
+                "Scenario world already exists. Please clear it first with DELETE /seed/scenario/world."
+                    .to_string(),
+            );
+        }
+
+        let org_id = Uuid::new_v4();
+        let now = Utc::now();
+
+        // 1. Create organization
+        sqlx::query(
+            r#"
+            INSERT INTO organizations (id, name, slug, contact_email, contact_phone, subscription_plan, max_buildings, max_users, is_active, is_seed_data, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#,
+        )
+        .bind(org_id)
+        .bind("Résidence du Parc Royal ASBL")
+        .bind("residence-parc-royal-test")
+        .bind("contact@residence-parc.be")
+        .bind("+32 2 600 00 00")
+        .bind("professional")
+        .bind(5)
+        .bind(50)
+        .bind(true)
+        .bind(true) // is_seed_data
+        .bind(now)
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create scenario organization: {}", e))?;
+
+        log::info!("✅ Scenario organization created: Résidence du Parc Royal ASBL");
+
+        // 2. Create building: 42 Avenue Louise, 182 lots, 10000 tantièmes, 1965
+        let building_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#,
+            building_id,
+            org_id,
+            "Résidence du Parc Royal",
+            "Avenue Louise 42",
+            "Bruxelles",
+            "1050",
+            "Belgique",
+            182,
+            1965,
+            "residence-du-parc-royal-bruxelles",
+            now,
+            now
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create scenario building: {}", e))?;
+
+        log::info!("✅ Scenario building created: Résidence du Parc Royal");
+
+        // 3. Create users and owners
+        let mut users_result: Vec<ScenarioUserResult> = Vec::new();
+        let mut owners_result: Vec<ScenarioOwnerResult> = Vec::new();
+        let mut units_result: Vec<ScenarioUnitResult> = Vec::new();
+
+        // --- 10 copropriétaires (users + owners + units + unit_owners) ---
+        struct OwnerPersona {
+            first_name: &'static str,
+            last_name: &'static str,
+            email: &'static str,
+            password: &'static str,
+            lots: Vec<(&'static str, f64)>, // (unit_number, tantièmes)
+        }
+
+        let owner_personas = vec![
+            OwnerPersona {
+                first_name: "Alice",
+                last_name: "Dubois",
+                email: "alice@residence-parc.be",
+                password: "alice123",
+                lots: vec![("2A", 450.0)],
+            },
+            OwnerPersona {
+                first_name: "Bob",
+                last_name: "Janssen",
+                email: "bob@residence-parc.be",
+                password: "bob123",
+                lots: vec![("2B", 430.0)],
+            },
+            OwnerPersona {
+                first_name: "Charlie",
+                last_name: "Martin",
+                email: "charlie@residence-parc.be",
+                password: "charlie123",
+                lots: vec![("3B", 660.0)],
+            },
+            OwnerPersona {
+                first_name: "Diane",
+                last_name: "Peeters",
+                email: "diane@residence-parc.be",
+                password: "diane123",
+                lots: vec![("3A", 580.0)],
+            },
+            OwnerPersona {
+                first_name: "Emmanuel",
+                last_name: "Claes",
+                email: "emmanuel@residence-parc.be",
+                password: "emmanuel123",
+                lots: vec![("5A", 1280.0)],
+            },
+            OwnerPersona {
+                first_name: "Nadia",
+                last_name: "Benali",
+                email: "nadia@residence-parc.be",
+                password: "nadia123",
+                lots: vec![("4A", 320.0)],
+            },
+            OwnerPersona {
+                first_name: "Marguerite",
+                last_name: "Lemaire",
+                email: "marguerite@residence-parc.be",
+                password: "marguerite123",
+                lots: vec![("1A", 380.0)],
+            },
+            OwnerPersona {
+                first_name: "Jeanne",
+                last_name: "Devos",
+                email: "jeanne@residence-parc.be",
+                password: "jeanne123",
+                lots: vec![("1B", 290.0)],
+            },
+            OwnerPersona {
+                first_name: "Philippe",
+                last_name: "Vandermeulen",
+                email: "philippe@residence-parc.be",
+                password: "philippe123",
+                lots: vec![("6A", 600.0), ("6B", 600.0), ("6C", 600.0)],
+            },
+            OwnerPersona {
+                first_name: "Marcel",
+                last_name: "Dupont",
+                email: "marcel@residence-parc.be",
+                password: "marcel123",
+                lots: vec![("4B", 450.0)],
+            },
+        ];
+
+        for persona in &owner_personas {
+            // Create user
+            let user_id = self
+                .create_demo_user(
+                    persona.email,
+                    persona.password,
+                    persona.first_name,
+                    persona.last_name,
+                    "owner",
+                    Some(org_id),
+                )
+                .await?;
+
+            users_result.push(ScenarioUserResult {
+                user_id,
+                email: persona.email.to_string(),
+                password: persona.password.to_string(),
+                role: "owner".to_string(),
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+            });
+
+            // Create owner record
+            let owner_id = self
+                .create_demo_owner(
+                    org_id,
+                    persona.first_name,
+                    persona.last_name,
+                    persona.email,
+                    "+32 400 00 00 00",
+                    "Avenue Louise 42",
+                    "Bruxelles",
+                    "1050",
+                    "Belgique",
+                )
+                .await?;
+
+            // Link user to owner
+            sqlx::query("UPDATE owners SET user_id = $1 WHERE id = $2")
+                .bind(user_id)
+                .bind(owner_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| {
+                    format!("Failed to link owner {} to user: {}", persona.last_name, e)
+                })?;
+
+            owners_result.push(ScenarioOwnerResult {
+                owner_id,
+                user_id,
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+                email: persona.email.to_string(),
+            });
+
+            // Create units and unit_owner relationships
+            for (unit_number, tantiemes) in &persona.lots {
+                let unit_id = self
+                    .create_demo_unit(
+                        org_id,
+                        building_id,
+                        None,
+                        unit_number,
+                        "apartment",
+                        None,
+                        70.0, // default area
+                        *tantiemes,
+                    )
+                    .await?;
+
+                self.create_demo_unit_owner(
+                    unit_id, owner_id, 1.0,  // 100% ownership per unit
+                    true, // primary contact
+                    None, // active (no end_date)
+                )
+                .await?;
+
+                units_result.push(ScenarioUnitResult {
+                    unit_id,
+                    unit_number: unit_number.to_string(),
+                    owner_id,
+                    tantièmes: *tantiemes,
+                });
+            }
+        }
+
+        log::info!(
+            "✅ {} copropriétaires created with {} units",
+            owner_personas.len(),
+            units_result.len()
+        );
+
+        // --- 3 professionals (users only, no units) ---
+        // François Leroy - Syndic
+        let francois_user_id = self
+            .create_demo_user(
+                "francois@syndic-leroy.be",
+                "francois123",
+                "François",
+                "Leroy",
+                "syndic",
+                Some(org_id),
+            )
+            .await?;
+        users_result.push(ScenarioUserResult {
+            user_id: francois_user_id,
+            email: "francois@syndic-leroy.be".to_string(),
+            password: "francois123".to_string(),
+            role: "syndic".to_string(),
+            first_name: "François".to_string(),
+            last_name: "Leroy".to_string(),
+        });
+
+        // Gisèle Vandenberghe - Accountant
+        let gisele_user_id = self
+            .create_demo_user(
+                "gisele@cabinet-vdb.be",
+                "gisele123",
+                "Gisèle",
+                "Vandenberghe",
+                "accountant",
+                Some(org_id),
+            )
+            .await?;
+        users_result.push(ScenarioUserResult {
+            user_id: gisele_user_id,
+            email: "gisele@cabinet-vdb.be".to_string(),
+            password: "gisele123".to_string(),
+            role: "accountant".to_string(),
+            first_name: "Gisèle".to_string(),
+            last_name: "Vandenberghe".to_string(),
+        });
+
+        // Marc Dubois - Contractor (Plombier)
+        let marc_user_id = self
+            .create_demo_user(
+                "marc@plomberie-dubois.be",
+                "marc123",
+                "Marc",
+                "Dubois",
+                "contractor",
+                Some(org_id),
+            )
+            .await?;
+        users_result.push(ScenarioUserResult {
+            user_id: marc_user_id,
+            email: "marc@plomberie-dubois.be".to_string(),
+            password: "marc123".to_string(),
+            role: "contractor".to_string(),
+            first_name: "Marc".to_string(),
+            last_name: "Dubois".to_string(),
+        });
+        // Create contractor profile
+        sqlx::query(
+            r#"INSERT INTO contractor_profiles (user_id, organization_id, profession, siren_or_vat, specialties)
+               VALUES ($1, $2, 'Plombier', 'BE0123456789', ARRAY['plumbing', 'heating'])
+               ON CONFLICT (user_id) DO NOTHING"#,
+        )
+        .bind(marc_user_id)
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create contractor profile for Marc: {}", e))?;
+
+        // Sophie Leroux - Contractor (Électricienne)
+        let sophie_user_id = self
+            .create_demo_user(
+                "sophie@elec-leroux.be",
+                "sophie123",
+                "Sophie",
+                "Leroux",
+                "contractor",
+                Some(org_id),
+            )
+            .await?;
+        users_result.push(ScenarioUserResult {
+            user_id: sophie_user_id,
+            email: "sophie@elec-leroux.be".to_string(),
+            password: "sophie123".to_string(),
+            role: "contractor".to_string(),
+            first_name: "Sophie".to_string(),
+            last_name: "Leroux".to_string(),
+        });
+        sqlx::query(
+            r#"INSERT INTO contractor_profiles (user_id, organization_id, profession, siren_or_vat, specialties)
+               VALUES ($1, $2, 'Électricienne', 'BE0987654321', ARRAY['electrical', 'security'])
+               ON CONFLICT (user_id) DO NOTHING"#,
+        )
+        .bind(sophie_user_id)
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create contractor profile for Sophie: {}", e))?;
+
+        // Admin (already exists globally, just reference it)
+        users_result.push(ScenarioUserResult {
+            user_id: Uuid::parse_str("00000000-0000-0000-0000-000000000001")
+                .map_err(|e| format!("Failed to parse admin UUID: {}", e))?,
+            email: "admin@koprogo.com".to_string(),
+            password: "admin123".to_string(),
+            role: "superadmin".to_string(),
+            first_name: "Super".to_string(),
+            last_name: "Admin".to_string(),
+        });
+
+        log::info!("✅ 5 professionals created (syndic, accountant, 2 contractors, admin)");
+
+        // --- 4 community members (users only, role=owner, no units) ---
+        struct CommunityPersona {
+            first_name: &'static str,
+            last_name: &'static str,
+            email: &'static str,
+            password: &'static str,
+        }
+
+        let community_personas = vec![
+            CommunityPersona {
+                first_name: "Ahmed",
+                last_name: "Mansouri",
+                email: "ahmed@gmail.com",
+                password: "ahmed123",
+            },
+            CommunityPersona {
+                first_name: "Sophie",
+                last_name: "Martin",
+                email: "sophie@gmail.com",
+                password: "sophie123",
+            },
+            CommunityPersona {
+                first_name: "Lucas",
+                last_name: "Martin",
+                email: "lucas.m@school.be",
+                password: "lucas123",
+            },
+            CommunityPersona {
+                first_name: "Fatima",
+                last_name: "El Amrani",
+                email: "fatima@gmail.com",
+                password: "fatima123",
+            },
+        ];
+
+        for persona in &community_personas {
+            let user_id = self
+                .create_demo_user(
+                    persona.email,
+                    persona.password,
+                    persona.first_name,
+                    persona.last_name,
+                    "owner",
+                    Some(org_id),
+                )
+                .await?;
+
+            users_result.push(ScenarioUserResult {
+                user_id,
+                email: persona.email.to_string(),
+                password: persona.password.to_string(),
+                role: "owner".to_string(),
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+            });
+        }
+
+        log::info!("✅ 4 community members created");
+
+        // =====================================================================
+        // Building 2: Le Clos des Hirondelles (small, NO CdC, < 20 lots)
+        // =====================================================================
+        let building2_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#,
+            building2_id,
+            org_id,
+            "Le Clos des Hirondelles",
+            "8 Rue de la Station",
+            "Ixelles",
+            "1050",
+            "Belgique",
+            12,
+            2005,
+            "le-clos-des-hirondelles-ixelles",
+            now,
+            now
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create building 2 (Le Clos des Hirondelles): {}", e))?;
+
+        log::info!("✅ Building 2 created: Le Clos des Hirondelles (12 lots, no CdC)");
+
+        let mut building2_owners: Vec<ScenarioOwnerResult> = Vec::new();
+        let mut building2_units: Vec<ScenarioUnitResult> = Vec::new();
+
+        // Building 2 copropriétaires
+        struct Building2Persona {
+            first_name: &'static str,
+            last_name: &'static str,
+            email: &'static str,
+            password: &'static str,
+            unit_number: &'static str,
+            tantiemes: f64,
+        }
+
+        let building2_personas = vec![
+            Building2Persona {
+                first_name: "Yves",
+                last_name: "Lambert",
+                email: "yves@clos-hirondelles.be",
+                password: "yves123",
+                unit_number: "1A",
+                tantiemes: 350.0,
+            },
+            Building2Persona {
+                first_name: "Claire",
+                last_name: "Fontaine",
+                email: "claire@clos-hirondelles.be",
+                password: "claire123",
+                unit_number: "1B",
+                tantiemes: 300.0,
+            },
+            Building2Persona {
+                first_name: "Robert",
+                last_name: "Mertens",
+                email: "robert@clos-hirondelles.be",
+                password: "robert123",
+                unit_number: "2A",
+                tantiemes: 350.0,
+            },
+        ];
+
+        for persona in &building2_personas {
+            // Create user
+            let user_id = self
+                .create_demo_user(
+                    persona.email,
+                    persona.password,
+                    persona.first_name,
+                    persona.last_name,
+                    "owner",
+                    Some(org_id),
+                )
+                .await?;
+
+            users_result.push(ScenarioUserResult {
+                user_id,
+                email: persona.email.to_string(),
+                password: persona.password.to_string(),
+                role: "owner".to_string(),
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+            });
+
+            // Create owner record
+            let owner_id = self
+                .create_demo_owner(
+                    org_id,
+                    persona.first_name,
+                    persona.last_name,
+                    persona.email,
+                    "+32 400 00 00 00",
+                    "8 Rue de la Station",
+                    "Ixelles",
+                    "1050",
+                    "Belgique",
+                )
+                .await?;
+
+            // Link user to owner
+            sqlx::query("UPDATE owners SET user_id = $1 WHERE id = $2")
+                .bind(user_id)
+                .bind(owner_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| {
+                    format!(
+                        "Failed to link building2 owner {} to user: {}",
+                        persona.last_name, e
+                    )
+                })?;
+
+            building2_owners.push(ScenarioOwnerResult {
+                owner_id,
+                user_id,
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+                email: persona.email.to_string(),
+            });
+
+            // Create unit
+            let unit_id = self
+                .create_demo_unit(
+                    org_id,
+                    building2_id,
+                    None,
+                    persona.unit_number,
+                    "apartment",
+                    None,
+                    70.0,
+                    persona.tantiemes,
+                )
+                .await?;
+
+            // Create unit_owner relationship
+            self.create_demo_unit_owner(
+                unit_id, owner_id, 1.0,  // 100% ownership
+                true, // primary contact
+                None, // active (no end_date)
+            )
+            .await?;
+
+            building2_units.push(ScenarioUnitResult {
+                unit_id,
+                unit_number: persona.unit_number.to_string(),
+                owner_id,
+                tantièmes: persona.tantiemes,
+            });
+        }
+
+        log::info!(
+            "✅ Building 2: {} copropriétaires created with {} units",
+            building2_personas.len(),
+            building2_units.len()
+        );
+
+        // =====================================================================
+        // Building 3: Les Terrasses de Flagey (medium, CdC obligatoire, >= 20 lots)
+        // =====================================================================
+        let building3_id = Uuid::new_v4();
+        sqlx::query!(
+            r#"
+            INSERT INTO buildings (id, organization_id, name, address, city, postal_code, country, total_units, construction_year, slug, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            "#,
+            building3_id,
+            org_id,
+            "Les Terrasses de Flagey",
+            "25 Place Flagey",
+            "Ixelles",
+            "1050",
+            "Belgique",
+            48,
+            1990,
+            "les-terrasses-de-flagey-ixelles",
+            now,
+            now
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create building 3 (Les Terrasses de Flagey): {}", e))?;
+
+        log::info!("✅ Building 3 created: Les Terrasses de Flagey (48 lots, CdC obligatoire)");
+
+        let mut building3_owners: Vec<ScenarioOwnerResult> = Vec::new();
+        let mut building3_units: Vec<ScenarioUnitResult> = Vec::new();
+
+        // Building 3 copropriétaires
+        struct Building3Persona {
+            first_name: &'static str,
+            last_name: &'static str,
+            email: &'static str,
+            password: &'static str,
+            unit_number: &'static str,
+            tantiemes: f64,
+        }
+
+        let building3_personas = vec![
+            Building3Persona {
+                first_name: "Isabelle",
+                last_name: "Renard",
+                email: "isabelle@terrasses-flagey.be",
+                password: "isabelle123",
+                unit_number: "1A",
+                tantiemes: 450.0,
+            },
+            Building3Persona {
+                first_name: "Thomas",
+                last_name: "Berger",
+                email: "thomas@terrasses-flagey.be",
+                password: "thomas123",
+                unit_number: "2A",
+                tantiemes: 380.0,
+            },
+            Building3Persona {
+                first_name: "Aminata",
+                last_name: "Diallo",
+                email: "aminata@terrasses-flagey.be",
+                password: "aminata123",
+                unit_number: "3A",
+                tantiemes: 520.0,
+            },
+            Building3Persona {
+                first_name: "Victor",
+                last_name: "Claessens",
+                email: "victor@terrasses-flagey.be",
+                password: "victor123",
+                unit_number: "4A",
+                tantiemes: 400.0,
+            },
+        ];
+
+        for persona in &building3_personas {
+            // Create user
+            let user_id = self
+                .create_demo_user(
+                    persona.email,
+                    persona.password,
+                    persona.first_name,
+                    persona.last_name,
+                    "owner",
+                    Some(org_id),
+                )
+                .await?;
+
+            users_result.push(ScenarioUserResult {
+                user_id,
+                email: persona.email.to_string(),
+                password: persona.password.to_string(),
+                role: "owner".to_string(),
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+            });
+
+            // Create owner record
+            let owner_id = self
+                .create_demo_owner(
+                    org_id,
+                    persona.first_name,
+                    persona.last_name,
+                    persona.email,
+                    "+32 400 00 00 00",
+                    "25 Place Flagey",
+                    "Ixelles",
+                    "1050",
+                    "Belgique",
+                )
+                .await?;
+
+            // Link user to owner
+            sqlx::query("UPDATE owners SET user_id = $1 WHERE id = $2")
+                .bind(user_id)
+                .bind(owner_id)
+                .execute(&self.pool)
+                .await
+                .map_err(|e| {
+                    format!(
+                        "Failed to link building3 owner {} to user: {}",
+                        persona.last_name, e
+                    )
+                })?;
+
+            building3_owners.push(ScenarioOwnerResult {
+                owner_id,
+                user_id,
+                first_name: persona.first_name.to_string(),
+                last_name: persona.last_name.to_string(),
+                email: persona.email.to_string(),
+            });
+
+            // Create unit
+            let unit_id = self
+                .create_demo_unit(
+                    org_id,
+                    building3_id,
+                    None,
+                    persona.unit_number,
+                    "apartment",
+                    None,
+                    70.0,
+                    persona.tantiemes,
+                )
+                .await?;
+
+            // Create unit_owner relationship
+            self.create_demo_unit_owner(
+                unit_id, owner_id, 1.0,  // 100% ownership
+                true, // primary contact
+                None, // active (no end_date)
+            )
+            .await?;
+
+            building3_units.push(ScenarioUnitResult {
+                unit_id,
+                unit_number: persona.unit_number.to_string(),
+                owner_id,
+                tantièmes: persona.tantiemes,
+            });
+        }
+
+        log::info!(
+            "✅ Building 3: {} copropriétaires created with {} units",
+            building3_personas.len(),
+            building3_units.len()
+        );
+
+        // --- Meeting: AG Ordinaire 2026 — 2e convocation ---
+        let meeting_date = (now + chrono::Duration::days(30))
+            .format("%Y-%m-%d")
+            .to_string();
+
+        let meeting_id = self
+            .create_demo_meeting(
+                building_id,
+                org_id,
+                "AG Ordinaire 2026 — 2e convocation",
+                "ordinary",
+                &meeting_date,
+                "scheduled",
+            )
+            .await?;
+
+        // Set is_second_convocation = true directly in SQL
+        sqlx::query("UPDATE meetings SET is_second_convocation = true WHERE id = $1")
+            .bind(meeting_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to set is_second_convocation: {}", e))?;
+
+        log::info!("✅ Meeting created: AG Ordinaire 2026 — 2e convocation");
+
+        // --- Resolution: Approbation des comptes 2025 (Pending, Absolute majority) ---
+        let resolution_id = Uuid::new_v4();
+        sqlx::query(
+            r#"
+            INSERT INTO resolutions (id, meeting_id, title, description, resolution_type, majority_required, status, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            "#,
+        )
+        .bind(resolution_id)
+        .bind(meeting_id)
+        .bind("Approbation des comptes 2025")
+        .bind("Approbation des comptes annuels de l'exercice 2025 et décharge au syndic.")
+        .bind("Ordinary")
+        .bind("Absolute")
+        .bind("Pending")
+        .bind(now)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to create scenario resolution: {}", e))?;
+
+        log::info!("✅ Resolution created: Approbation des comptes 2025");
+
+        let result = ScenarioWorldResult {
+            organization_id: org_id,
+            building_id,
+            meeting_id,
+            resolution_id,
+            users: users_result,
+            owners: owners_result,
+            units: units_result,
+            building2_id,
+            building2_name: "Le Clos des Hirondelles".to_string(),
+            building2_owners,
+            building2_units,
+            building3_id,
+            building3_name: "Les Terrasses de Flagey".to_string(),
+            building3_owners,
+            building3_units,
+        };
+
+        log::info!("✅ Scenario world seeded successfully (Résidence du Parc Royal)");
+
+        Ok(result)
+    }
+
+    /// Clear all data created by `seed_scenario_world`.
+    ///
+    /// Deletes in reverse FK order, scoped by the scenario organization slug.
+    pub async fn clear_scenario_world(&self) -> Result<String, String> {
+        log::warn!("⚠️  Clearing scenario world data (Résidence du Parc Royal)...");
+
+        // Find the scenario organization
+        let org_id: Option<Uuid> = sqlx::query_scalar(
+            "SELECT id FROM organizations WHERE slug = 'residence-parc-royal-test'",
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to find scenario organization: {}", e))?;
+
+        let org_id =
+            match org_id {
+                Some(id) => id,
+                None => return Ok(
+                    "ℹ️  No scenario world found to clear (residence-parc-royal-test not found)."
+                        .to_string(),
+                ),
+            };
+
+        log::info!("Found scenario organization: {} — clearing data...", org_id);
+
+        // Delete in reverse FK order
+
+        // 1. Votes (reference resolutions and owners)
+        sqlx::query(
+            "DELETE FROM votes WHERE resolution_id IN (SELECT r.id FROM resolutions r INNER JOIN meetings m ON r.meeting_id = m.id WHERE m.organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete votes: {}", e))?;
+
+        // 2. Resolutions (reference meetings)
+        sqlx::query(
+            "DELETE FROM resolutions WHERE meeting_id IN (SELECT id FROM meetings WHERE organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete resolutions: {}", e))?;
+
+        // 3. Convocation recipients (reference convocations)
+        sqlx::query(
+            "DELETE FROM convocation_recipients WHERE convocation_id IN (SELECT id FROM convocations WHERE organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete convocation_recipients: {}", e))?;
+
+        // 4. Convocations (reference meetings)
+        sqlx::query("DELETE FROM convocations WHERE organization_id = $1")
+            .bind(org_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete convocations: {}", e))?;
+
+        // 5. Board decisions (reference meetings)
+        sqlx::query(
+            "DELETE FROM board_decisions WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete board_decisions: {}", e))?;
+
+        // 6. Board members (reference meetings)
+        sqlx::query(
+            "DELETE FROM board_members WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete board_members: {}", e))?;
+
+        // 7. Meetings
+        sqlx::query(
+            "DELETE FROM meetings WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete meetings: {}", e))?;
+
+        // 8. Unit owners (junction table)
+        sqlx::query(
+            "DELETE FROM unit_owners WHERE unit_id IN (SELECT u.id FROM units u INNER JOIN buildings b ON u.building_id = b.id WHERE b.organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete unit_owners: {}", e))?;
+
+        // 9. Units
+        sqlx::query(
+            "DELETE FROM units WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete units: {}", e))?;
+
+        // 10. Owners
+        sqlx::query("DELETE FROM owners WHERE organization_id = $1")
+            .bind(org_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete owners: {}", e))?;
+
+        // 11. Documents
+        sqlx::query(
+            "DELETE FROM documents WHERE building_id IN (SELECT id FROM buildings WHERE organization_id = $1)",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete documents: {}", e))?;
+
+        // 12. Buildings
+        sqlx::query("DELETE FROM buildings WHERE organization_id = $1")
+            .bind(org_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete buildings: {}", e))?;
+
+        // 13. User roles (before users, except superadmin)
+        sqlx::query(
+            "DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE organization_id = $1 AND role != 'superadmin')",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete user_roles: {}", e))?;
+
+        // 14. Users (except admin@koprogo.com)
+        sqlx::query(
+            "DELETE FROM users WHERE organization_id = $1 AND email != 'admin@koprogo.com'",
+        )
+        .bind(org_id)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| format!("Failed to delete users: {}", e))?;
+
+        // 15. PCMN accounts
+        sqlx::query("DELETE FROM accounts WHERE organization_id = $1")
+            .bind(org_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete accounts: {}", e))?;
+
+        // 16. Organization
+        sqlx::query("DELETE FROM organizations WHERE id = $1")
+            .bind(org_id)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to delete organization: {}", e))?;
+
+        log::info!("✅ Scenario world cleared (Résidence du Parc Royal)");
+
+        Ok("✅ Scenario world cleared successfully (Résidence du Parc Royal).".to_string())
     }
 }
 

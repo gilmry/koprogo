@@ -1,9 +1,13 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Convocation API Client
  * Wraps all 14 backend endpoints for automatic AG invitations
  * Belgian legal deadlines: Ordinary 15 days, Extraordinary 8 days
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
  */
 
 export interface Convocation {
@@ -25,26 +29,32 @@ export interface Convocation {
   updated_at: string;
 }
 
+// Hand-written: api.d.ts MeetingType is only "Ordinary"|"Extraordinary";
+// SecondConvocation is needed by UI and exists in backend ConvocationType schema
+// but not in MeetingType schema. Kept as hand-written enum until backend aligns.
 export enum MeetingType {
   Ordinary = "Ordinary",
   Extraordinary = "Extraordinary",
   SecondConvocation = "SecondConvocation",
 }
 
-export enum ConvocationStatus {
-  Draft = "Draft",
-  Scheduled = "Scheduled",
-  Sent = "Sent",
-  Cancelled = "Cancelled",
-}
+// Re-exported from generated api.d.ts — single source of truth.
+export type ConvocationStatus = components["schemas"]["ConvocationStatus"];
+export const ConvocationStatus = {
+  Draft: "Draft" as const,
+  Scheduled: "Scheduled" as const,
+  Sent: "Sent" as const,
+  Cancelled: "Cancelled" as const,
+} satisfies Record<string, ConvocationStatus>;
 
-export enum AttendanceStatus {
-  Pending = "Pending",
-  WillAttend = "WillAttend",
-  WillNotAttend = "WillNotAttend",
-  Attended = "Attended",
-  DidNotAttend = "DidNotAttend",
-}
+export type AttendanceStatus = components["schemas"]["AttendanceStatus"];
+export const AttendanceStatus = {
+  Pending: "Pending" as const,
+  WillAttend: "WillAttend" as const,
+  WillNotAttend: "WillNotAttend" as const,
+  Attended: "Attended" as const,
+  DidNotAttend: "DidNotAttend" as const,
+} satisfies Record<string, AttendanceStatus>;
 
 export interface ConvocationRecipient {
   id: string;

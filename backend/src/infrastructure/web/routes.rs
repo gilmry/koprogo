@@ -120,6 +120,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(reschedule_meeting)
             .service(delete_meeting)
             .service(attach_minutes)
+            .service(validate_meeting_quorum) // POST /meetings/{id}/validate-quorum (Art. 3.87 §5 CC — #271/#272)
             .service(export_meeting_minutes_pdf)
             // Convocations (Automatic AG Invitations - Issue #88 - Phase 2)
             // Specific routes MUST come before parameterized /convocations/{id}
@@ -165,6 +166,7 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             // Tickets (Maintenance Requests - Issue #85 - Phase 2)
             // Specific routes MUST come before parameterized /tickets/{id}
             .service(create_ticket)
+            .service(list_assignable_users) // /tickets/assignable-users BEFORE /tickets/{id}
             .service(list_my_tickets)
             .service(list_assigned_tickets)
             .service(get_ticket_statistics_org) // /tickets/statistics (org-level)
@@ -516,10 +518,12 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
             .service(cancel_reminder) // PUT /payment-reminders/{id}/cancel
             .service(escalate_reminder) // POST /payment-reminders/{id}/escalate
             .service(add_tracking_number) // PUT /payment-reminders/{id}/tracking-number
-            // Seed (SuperAdmin only) - ONE seed only
+            // Seed (SuperAdmin only)
             .service(seed_demo_data)
-            // .service(seed_realistic_data) // Disabled: we only use ONE seed
             .service(clear_demo_data)
+            // Scenario-based seeds for E2E testing (Issue #347)
+            .service(seed_scenario_world)
+            .service(clear_scenario_world)
             // Stats (SuperAdmin only)
             .service(get_dashboard_stats)
             .service(get_seed_data_stats)

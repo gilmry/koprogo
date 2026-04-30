@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import {
     quotesApi,
@@ -12,67 +12,56 @@
   import { UserRole } from '../../lib/types';
   import QuoteStatusBadge from './QuoteStatusBadge.svelte';
   import QuoteDetail from './QuoteDetail.svelte';
+  import { withLoadingState, withErrorHandling } from '../../lib/utils/error.utils';
+  import { formatDate } from '../../lib/utils/date.utils';
+  import { formatAmount } from '../../lib/utils/finance.utils';
 
-  export let buildingId: string;
+  let { buildingId }: { buildingId: string } = $props();
 
-  let quotes: Quote[] = [];
-  let filteredQuotes: Quote[] = [];
-  let loading = true;
-  let error = '';
-  let statusFilter: QuoteStatus | 'all' = 'all';
-  let expandedId: string | null = null;
-  let showCreateForm = false;
-  let createLoading = false;
+  let quotes: Quote[] = $state([]);
+  let loading = $state(true);
+  let error = $state('');
+  let statusFilter: QuoteStatus | 'all' = $state('all');
+  let expandedId: string | null = $state(null);
+  let showCreateForm = $state(false);
+  let createLoading = $state(false);
 
-  // Compare mode
-  let compareMode = false;
-  let selectedForCompare: Set<string> = new Set();
+  let compareMode = $state(false);
+  let selectedForCompare: Set<string> = $state(new Set());
 
-  // Create form fields
-  let newContractorId = '';
-  let newProjectTitle = '';
-  let newProjectDescription = '';
-  let newWorkCategory = '';
+  let newContractorId = $state('');
+  let newProjectTitle = $state('');
+  let newProjectDescription = $state('');
+  let newWorkCategory = $state('');
 
-  $: isAdmin = $authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN;
+  let isAdmin = $derived($authStore.user?.role === UserRole.SYNDIC || $authStore.user?.role === UserRole.SUPERADMIN);
 
-  onMount(async () => {
-    await loadQuotes();
+  $effect(() => {
+    loadQuotes();
   });
 
   async function loadQuotes() {
-    try {
-      loading = true;
-      error = '';
-      quotes = await quotesApi.listByBuilding(buildingId);
-      applyFilters();
-    } catch (err: any) {
-      error = err.message || $_("quotes.list.loadingError");
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => quotesApi.listByBuilding(buildingId),
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string) => error = v,
+      errorMessage: $_("quotes.list.loadingError"),
+      onSuccess: (data) => {
+        quotes = data;
+      },
+    });
   }
 
-  function applyFilters() {
-    filteredQuotes = quotes.filter(q => {
+  let filteredQuotes = $derived.by(() => {
+    return quotes.filter(q => {
       if (statusFilter === 'all') return true;
       return q.status === statusFilter;
     });
-  }
+  });
 
-  $: if (statusFilter) applyFilters();
-
-  function formatAmount(amountCents: number | undefined): string {
+  function formatQuoteAmount(amountCents: number | undefined): string {
     if (!amountCents) return '-';
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amountCents / 100);
-  }
-
-  function formatDate(dateStr: string): string {
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
+    return formatAmount(amountCents);
   }
 
   function toggleExpand(id: string) {
@@ -85,7 +74,7 @@
     } else {
       selectedForCompare.add(id);
     }
-    selectedForCompare = selectedForCompare; // trigger reactivity
+    selectedForCompare = new Set(selectedForCompare);
   }
 
   function goToCompare() {
@@ -103,54 +92,52 @@
       return;
     }
 
-    try {
-      createLoading = true;
-      const data: CreateQuoteDto = {
-        building_id: buildingId,
-        contractor_id: newContractorId,
-        project_title: newProjectTitle,
-        project_description: newProjectDescription,
-        work_category: newWorkCategory,
-      };
-      await quotesApi.create(data);
-      toast.success($_("quotes.list.createSuccess"));
-      showCreateForm = false;
-      newContractorId = '';
-      newProjectTitle = '';
-      newProjectDescription = '';
-      newWorkCategory = '';
-      await loadQuotes();
-    } catch (err: any) {
-      toast.error(err.message || $_("quotes.list.createError"));
-    } finally {
-      createLoading = false;
-    }
+    await withErrorHandling({
+      action: async () => {
+        const data: CreateQuoteDto = {
+          building_id: buildingId,
+          contractor_id: newContractorId,
+          project_title: newProjectTitle,
+          project_description: newProjectDescription,
+          work_category: newWorkCategory,
+        };
+        return quotesApi.create(data);
+      },
+      setLoading: (v: boolean) => createLoading = v,
+      successMessage: $_("quotes.list.createSuccess"),
+      errorMessage: $_("quotes.list.createError"),
+      onSuccess: async () => {
+        showCreateForm = false;
+        newContractorId = '';
+        newProjectTitle = '';
+        newProjectDescription = '';
+        newWorkCategory = '';
+        await loadQuotes();
+      },
+    });
   }
 
-  function handleQuoteUpdated(event: CustomEvent<Quote>) {
-    const updated = event.detail;
+  function handleQuoteUpdated(updated: Quote) {
     quotes = quotes.map(q => q.id === updated.id ? updated : q);
-    applyFilters();
   }
 
   function handleQuoteDeleted(quoteId: string) {
     quotes = quotes.filter(q => q.id !== quoteId);
     expandedId = null;
-    applyFilters();
   }
 
   // Status counts
-  $: statusCounts = {
+  let statusCounts = $derived({
     total: quotes.length,
     requested: quotes.filter(q => q.status === QuoteStatus.Requested).length,
     received: quotes.filter(q => q.status === QuoteStatus.Received).length,
     underReview: quotes.filter(q => q.status === QuoteStatus.UnderReview).length,
     accepted: quotes.filter(q => q.status === QuoteStatus.Accepted).length,
     rejected: quotes.filter(q => q.status === QuoteStatus.Rejected).length,
-  };
+  });
 </script>
 
-<div class="bg-white shadow-md rounded-lg">
+<div class="bg-white shadow-md rounded-lg" data-testid="quote-list">
   <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
     <div class="flex items-center justify-between">
       <div>
@@ -164,22 +151,24 @@
       {#if isAdmin}
         <div class="flex gap-2">
           {#if compareMode}
-            <button on:click={goToCompare}
+            <button onclick={goToCompare}
               class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
               disabled={selectedForCompare.size < 2}>
               {$_("quotes.list.compare")} ({selectedForCompare.size})
             </button>
-            <button on:click={() => { compareMode = false; selectedForCompare = new Set(); }}
+            <button onclick={() => { compareMode = false; selectedForCompare = new Set(); }}
               class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
               {$_("common.cancel")}
             </button>
           {:else}
-            <button on:click={() => compareMode = true}
+            <button onclick={() => compareMode = true}
+              data-testid="compare-quotes-button"
               class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors"
               disabled={quotes.length < 2}>
               {$_("quotes.list.compare")}
             </button>
-            <button on:click={() => showCreateForm = !showCreateForm}
+            <button onclick={() => showCreateForm = !showCreateForm}
+              data-testid="request-quote-button"
               class="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors">
               + {$_("quotes.list.requestQuote")}
             </button>
@@ -204,8 +193,9 @@
   <!-- Filters -->
   <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
     <div class="flex items-center space-x-4">
-      <label class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
-      <select bind:value={statusFilter}
+      <label for="quote-status-filter" class="text-sm font-medium text-gray-700">{$_("common.status")}:</label>
+      <select id="quote-status-filter" bind:value={statusFilter}
+        data-testid="quote-status-filter"
         class="text-sm rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500">
         <option value="all">{$_("common.all")}</option>
         <option value={QuoteStatus.Requested}>{$_("quotes.status.requested")}</option>
@@ -256,11 +246,11 @@
         </div>
       </div>
       <div class="mt-3 flex gap-2">
-        <button on:click={handleCreate} disabled={createLoading}
+        <button onclick={handleCreate} disabled={createLoading}
           class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors">
           {createLoading ? $_("quotes.list.creating") : $_("quotes.list.createRequest")}
         </button>
-        <button on:click={() => showCreateForm = false}
+        <button onclick={() => showCreateForm = false}
           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
           {$_("common.cancel")}
         </button>
@@ -279,7 +269,7 @@
   {:else if error}
     <div class="p-4 m-4 bg-red-50 border border-red-200 rounded-md">
       <p class="text-sm text-red-800">{error}</p>
-      <button on:click={loadQuotes} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+      <button onclick={loadQuotes} class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
         {$_("common.retry")}
       </button>
     </div>
@@ -295,13 +285,18 @@
   {:else}
     <ul class="divide-y divide-gray-200">
       {#each filteredQuotes as quote (quote.id)}
-        <li class="hover:bg-gray-50">
+        <li class="hover:bg-gray-50" data-testid="quote-row">
           <div class="px-4 py-4 sm:px-6">
-            <div class="flex items-center justify-between cursor-pointer" on:click={() => toggleExpand(quote.id)}>
+            <button
+              type="button"
+              class="w-full flex items-center justify-between cursor-pointer text-left bg-transparent border-0 p-0"
+              aria-expanded={expandedId === quote.id}
+              onclick={() => toggleExpand(quote.id)}
+            >
               <div class="flex items-center space-x-3 flex-1 min-w-0">
                 {#if compareMode}
                   <input type="checkbox" checked={selectedForCompare.has(quote.id)}
-                    on:click|stopPropagation={() => toggleCompareSelect(quote.id)}
+                    onclick={(e) => { e.stopPropagation(); toggleCompareSelect(quote.id); }}
                     class="h-4 w-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500" />
                 {/if}
                 <div class="flex-1 min-w-0">
@@ -313,7 +308,7 @@
                     <span>{quote.contractor_name || quote.contractor_id.slice(0, 8)}</span>
                     <span>{quote.work_category}</span>
                     {#if quote.amount_incl_vat_cents}
-                      <span class="font-medium text-gray-700">{formatAmount(quote.amount_incl_vat_cents)}</span>
+                      <span class="font-medium text-gray-700">{formatQuoteAmount(quote.amount_incl_vat_cents)}</span>
                     {/if}
                     <span class="text-xs text-gray-400">{formatDate(quote.created_at)}</span>
                   </div>
@@ -325,13 +320,13 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </div>
+            </button>
 
             {#if expandedId === quote.id}
               <div class="mt-3">
                 <QuoteDetail {quote}
-                  on:updated={handleQuoteUpdated}
-                  on:deleted={() => handleQuoteDeleted(quote.id)} />
+                  onupdated={(updated) => handleQuoteUpdated(updated)}
+                  ondeleted={() => handleQuoteDeleted(quote.id)} />
               </div>
             {/if}
           </div>
@@ -344,7 +339,7 @@
   {#if quotes.length > 0 && quotes.length < 3}
     <div class="px-4 py-3 bg-yellow-50 border-t border-yellow-200">
       <p class="text-xs text-yellow-800">
-        <strong>{$_("quotes.list.bestPracticeTitle")}:</strong> {$_("quotes.list.bestPracticeMessage", { count: quotes.length })}
+        <strong>{$_("quotes.list.bestPracticeTitle")}:</strong> {$_("quotes.list.bestPracticeMessage", { values: { count: quotes.length } })}
       </p>
     </div>
   {/if}

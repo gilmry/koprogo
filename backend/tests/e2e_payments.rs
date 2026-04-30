@@ -194,6 +194,7 @@ async fn test_get_payment_by_id() {
     // Get payment by ID
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/payments/{}", payment_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -208,7 +209,8 @@ async fn test_get_payment_by_id() {
 #[actix_web::test]
 #[serial]
 async fn test_get_payment_not_found() {
-    let (app_state, _container, _org_id) = common::setup_test_db().await;
+    let (app_state, _container, org_id) = common::setup_test_db().await;
+    let token = common::register_and_login(&app_state, org_id).await;
 
     let app = test::init_service(
         App::new()
@@ -220,6 +222,7 @@ async fn test_get_payment_not_found() {
     let fake_id = Uuid::new_v4();
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/payments/{}", fake_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -260,6 +263,7 @@ async fn test_list_owner_payments() {
     // List all payments for the owner
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/owners/{}/payments", owner_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -304,6 +308,7 @@ async fn test_list_building_payments() {
     // List all payments for the building
     let req = test::TestRequest::get()
         .uri(&format!("/api/v1/buildings/{}/payments", building_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -345,6 +350,7 @@ async fn test_list_expense_payments() {
     // List payments for the expense
     let list_req = test::TestRequest::get()
         .uri(&format!("/api/v1/expenses/{}/payments", expense_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, list_req).await;
@@ -704,6 +710,7 @@ async fn test_delete_payment() {
     // Verify deletion
     let get_req = test::TestRequest::get()
         .uri(&format!("/api/v1/payments/{}", payment_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let get_resp = test::call_service(&app, get_req).await;
@@ -757,6 +764,7 @@ async fn test_get_owner_payment_stats() {
     // Get owner payment stats
     let stats_req = test::TestRequest::get()
         .uri(&format!("/api/v1/owners/{}/payments/stats", owner_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let stats_resp = test::call_service(&app, stats_req).await;
@@ -879,6 +887,7 @@ async fn test_list_owner_payment_methods() {
     // List all payment methods for owner
     let list_req = test::TestRequest::get()
         .uri(&format!("/api/v1/owners/{}/payment-methods", owner_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let resp = test::call_service(&app, list_req).await;
@@ -1100,6 +1109,7 @@ async fn test_delete_payment_method() {
     // Verify deletion
     let get_req = test::TestRequest::get()
         .uri(&format!("/api/v1/payment-methods/{}", method_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let get_resp = test::call_service(&app, get_req).await;
@@ -1197,6 +1207,7 @@ async fn test_complete_payment_lifecycle() {
     // 6. Verify payment in lists
     let owner_payments_req = test::TestRequest::get()
         .uri(&format!("/api/v1/owners/{}/payments", owner_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let owner_payments_resp = test::call_service(&app, owner_payments_req).await;
@@ -1206,6 +1217,7 @@ async fn test_complete_payment_lifecycle() {
     // 7. Get payment stats
     let stats_req = test::TestRequest::get()
         .uri(&format!("/api/v1/owners/{}/payments/stats", owner_id))
+        .insert_header((header::AUTHORIZATION, format!("Bearer {}", token)))
         .to_request();
 
     let stats_resp = test::call_service(&app, stats_req).await;

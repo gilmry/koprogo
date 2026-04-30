@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { authStore } from '../../stores/auth';
   import { api } from '../../lib/api';
@@ -7,8 +7,10 @@
   import OwnerEditModal from '../OwnerEditModal.svelte';
   import { ticketsApi } from '../../lib/api/tickets';
   import { notificationsApi } from '../../lib/api/notifications';
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { formatCurrency } from "../../lib/utils/finance.utils";
 
-  $: user = $authStore.user;
+  let user = $derived($authStore.user);
 
   interface SyndicStats {
     total_buildings: number;
@@ -33,20 +35,20 @@
     due_date: string | null;
   }
 
-  let stats: SyndicStats | null = null;
-  let urgentTasks: UrgentTask[] = [];
-  let recentOwners: Owner[] = [];
-  let openTicketsCount = 0;
-  let unreadNotifCount = 0;
-  let loading = true;
-  let error: string | null = null;
+  let stats = $state<SyndicStats | null>(null);
+  let urgentTasks = $state<UrgentTask[]>([]);
+  let recentOwners = $state<Owner[]>([]);
+  let openTicketsCount = $state(0);
+  let unreadNotifCount = $state(0);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
 
   // Modal state
-  let isModalOpen = false;
-  let selectedOwner: Owner | null = null;
+  let isModalOpen = $state(false);
+  let selectedOwner = $state<Owner | null>(null);
 
-  onMount(async () => {
-    await loadDashboardData();
+  $effect(() => {
+    loadDashboardData();
   });
 
   async function loadDashboardData() {
@@ -94,15 +96,6 @@
     await loadDashboardData();
   }
 
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' });
-  }
-
-  function formatAmount(amount: number): string {
-    return new Intl.NumberFormat('fr-BE', { style: 'currency', currency: 'EUR' }).format(amount);
-  }
-
   function getTaskIcon(taskType: string): string {
     switch (taskType) {
       case 'expense': return '💰';
@@ -131,7 +124,7 @@
   }
 </script>
 
-<div>
+<div data-testid="syndic-dashboard">
   <div class="mb-8">
     <h1 class="text-3xl font-bold text-gray-900 mb-2">
       {$_('common.welcome')}, {user?.first_name} 👋
@@ -143,7 +136,7 @@
 
   {#if loading}
     <div class="flex items-center justify-center py-12">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" data-testid="syndic-dashboard-spinner"></div>
     </div>
   {:else if error}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
@@ -177,7 +170,7 @@
           <span class="text-2xl">💰</span>
         </div>
         <p class="text-3xl font-bold text-gray-900">{stats.pending_expenses_count}</p>
-        <p class="text-sm text-orange-600 mt-1">{formatAmount(stats.pending_expenses_amount)}</p>
+        <p class="text-sm text-orange-600 mt-1">{formatCurrency(stats.pending_expenses_amount)}</p>
       </div>
 
       <div class="bg-white rounded-lg shadow p-6">
@@ -186,7 +179,7 @@
           <span class="text-2xl">📅</span>
         </div>
         {#if stats.next_meeting}
-          <p class="text-xl font-bold text-gray-900">{formatDate(stats.next_meeting.date)}</p>
+          <p class="text-xl font-bold text-gray-900">{formatDateShort(stats.next_meeting.date)}</p>
           <p class="text-sm text-gray-500 mt-1">{stats.next_meeting.building_name}</p>
         {:else}
           <p class="text-lg font-medium text-gray-500">{$_('dashboards.syndic.stats.noMeetingsPlanned')}</p>
@@ -306,7 +299,7 @@
                     {/if}
                   </div>
                   <button
-                    on:click={() => openEditModal(owner)}
+                    onclick={() => openEditModal(owner)}
                     class="ml-4 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition"
                   >
                     {$_('common.edit')}
@@ -328,7 +321,7 @@
   <OwnerEditModal
     owner={selectedOwner}
     isOpen={isModalOpen}
-    on:close={closeModal}
-    on:save={handleOwnerSaved}
+    onclose={closeModal}
+    onsave={handleOwnerSaved}
   />
 </div>

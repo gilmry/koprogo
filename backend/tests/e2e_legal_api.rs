@@ -27,14 +27,10 @@ async fn test_legal_rules_list_all() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    // The handler parses embedded JSON and looks for "rules" key.
-    // The legal_index.json uses "legal_rules" key, so this may return 500 or an array.
-    // We accept 200 (if rules found) or 500 (if key mismatch).
-    let status = resp.status().as_u16();
-    assert!(
-        status == 200 || status == 500,
-        "Expected 200 or 500, got {}",
-        status
+    assert_eq!(
+        resp.status().as_u16(),
+        200,
+        "Expected 200 from /legal/rules"
     );
 }
 
@@ -55,11 +51,10 @@ async fn test_legal_rules_filter_by_role() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    let status = resp.status().as_u16();
-    assert!(
-        status == 200 || status == 500,
-        "Expected 200 or 500, got {}",
-        status
+    assert_eq!(
+        resp.status().as_u16(),
+        200,
+        "Expected 200 from /legal/rules?role=syndic"
     );
 }
 
@@ -80,11 +75,10 @@ async fn test_legal_rules_filter_by_category() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    let status = resp.status().as_u16();
-    assert!(
-        status == 200 || status == 500,
-        "Expected 200 or 500, got {}",
-        status
+    assert_eq!(
+        resp.status().as_u16(),
+        200,
+        "Expected 200 from /legal/rules?category=assemblee-generale"
     );
 }
 
@@ -106,11 +100,11 @@ async fn test_legal_rule_get_by_code() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
+    // 200 if rule found, 404 if not found (key AG01 may or may not exist in index)
     let status = resp.status().as_u16();
-    // 200 if rule found, 404 if not found, 500 if JSON key mismatch
     assert!(
-        status == 200 || status == 404 || status == 500,
-        "Expected 200, 404, or 500, got {}",
+        status == 200 || status == 404,
+        "Expected 200 or 404, got {}",
         status
     );
 }
@@ -132,12 +126,10 @@ async fn test_legal_rule_get_nonexistent_code() {
         .to_request();
 
     let resp = test::call_service(&app, req).await;
-    let status = resp.status().as_u16();
-    // 404 if rules key exists but code not found, 500 if JSON key mismatch
-    assert!(
-        status == 404 || status == 500,
-        "Expected 404 or 500 for nonexistent code, got {}",
-        status
+    assert_eq!(
+        resp.status().as_u16(),
+        404,
+        "Expected 404 for nonexistent code"
     );
 }
 

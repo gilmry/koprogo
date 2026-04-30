@@ -1,7 +1,8 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { BookingStatus } from "../../lib/api/bookings";
 
-  export let status: BookingStatus;
+  let { status }: { status: BookingStatus } = $props();
 
   const statusConfig: Record<BookingStatus, { label: string; class: string }> = {
     [BookingStatus.Pending]: {
@@ -30,7 +31,7 @@
     },
   };
 
-  $: config = statusConfig[status];
+  let config = $derived(statusConfig[status]);
 </script>
 
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {config.class}">

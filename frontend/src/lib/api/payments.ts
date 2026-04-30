@@ -1,8 +1,16 @@
 import { api } from "../api";
+import type { components } from "../../types/api";
 
 /**
  * Payment API Client
  * Wraps all 38 backend endpoints (22 payments + 16 payment methods)
+ *
+ * Enums are re-exported from auto-generated api.d.ts (STORY-P7-704) —
+ * TypeScript will refuse any value that doesn't exist in the Rust enum.
+ *
+ * Note: `PaymentStatus` here maps to backend `TransactionStatus` (Stripe
+ * webhook lifecycle). The backend also has a separate `PaymentStatus` that
+ * tracks expense payment state — not exposed through this client.
  */
 
 export interface Payment {
@@ -25,22 +33,27 @@ export interface Payment {
   updated_at: string;
 }
 
-export enum PaymentStatus {
-  Pending = "Pending",
-  Processing = "Processing",
-  RequiresAction = "RequiresAction",
-  Succeeded = "Succeeded",
-  Failed = "Failed",
-  Cancelled = "Cancelled",
-  Refunded = "Refunded",
-}
+// Backend schema is named `TransactionStatus` — frontend keeps the
+// `PaymentStatus` name for historical continuity, but values follow the
+// Rust enum (lowercase_snake).
+export type PaymentStatus = components["schemas"]["TransactionStatus"];
+export const PaymentStatus = {
+  Pending: "pending" as const,
+  Processing: "processing" as const,
+  RequiresAction: "requires_action" as const,
+  Succeeded: "succeeded" as const,
+  Failed: "failed" as const,
+  Cancelled: "cancelled" as const,
+  Refunded: "refunded" as const,
+} satisfies Record<string, PaymentStatus>;
 
-export enum PaymentMethodType {
-  Card = "Card",
-  SepaDebit = "SepaDebit",
-  BankTransfer = "BankTransfer",
-  Cash = "Cash",
-}
+export type PaymentMethodType = components["schemas"]["PaymentMethodType"];
+export const PaymentMethodType = {
+  Card: "card" as const,
+  SepaDebit: "sepa_debit" as const,
+  BankTransfer: "bank_transfer" as const,
+  Cash: "cash" as const,
+} satisfies Record<string, PaymentMethodType>;
 
 export interface PaymentMethod {
   id: string;

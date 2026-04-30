@@ -2,11 +2,18 @@
 KoproGo - Roadmap par Capacités
 =========================================================
 
-:Version: 6.0
+:Version: 7.0
 :Modèle: Progression par jalons et métriques
 :Auteur: Gilles Maury - Fondateur KoproGo ASBL
 :Statut: Document de référence stratégique
-:Dernière mise à jour: 15 mars 2026
+:Dernière mise à jour: 28 mars 2026
+
+.. note::
+
+   **Mise à jour 2026-03-28** : Architecture hexagonale frontend (#343),
+   12 scénarios Documentation Vivante, diagnostic multi-rôles (#345),
+   stratégie Test-Driven Emergence (#346-#350), RFC RACE Adoption (#344).
+   Nouveaux chiffres : 559 endpoints, 59 entités, 80 migrations, 137k+ LOC Rust.
 
 .. note::
 

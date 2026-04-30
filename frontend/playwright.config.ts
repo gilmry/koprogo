@@ -62,6 +62,55 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 720 },
+        locale: "fr-BE",
+        trace: "on",
+      },
+      testIgnore: [/scenarios\//, /smoke\//],
+    },
+
+    /**
+     * API smoke tests — no video, parallel workers, fast.
+     * These test backend API contracts, not UI interactions.
+     *
+     * Run only smokes:  npx playwright test --project=smoke
+     */
+    {
+      name: "smoke",
+      testDir: "./tests/e2e/smoke",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        locale: "fr-BE",
+        video: "off",
+        screenshot: "off",
+      },
+    },
+
+    /**
+     * "Documentation Vivante" scenarios — human-paced UI tests
+     * whose videos are meant to be uploaded to YouTube as living docs.
+     *
+     * Run only scenarios:  npx playwright test --project=scenarios
+     * Run only smoke tests: npx playwright test --project=chromium
+     */
+    {
+      name: "scenarios",
+      testDir: "./tests/e2e/scenarios",
+      testMatch: /\.scenario\.ts$/,
+      timeout: 120_000, // Scenarios are human-paced, need more time
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        // Force French locale so nav testids match hardcoded expectations
+        locale: "fr-BE",
+        // Seed endpoint can be slow on existing data
+        actionTimeout: 30_000,
+        // Slow down EVERY Playwright action by 50ms on top of explicit pauses
+        launchOptions: { slowMo: 50 },
+        video: {
+          mode: "on",
+          size: { width: 1280, height: 720 },
+        },
       },
     },
 

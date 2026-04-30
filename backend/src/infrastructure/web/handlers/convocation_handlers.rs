@@ -108,8 +108,12 @@ pub async fn list_building_convocations(
 #[get("/organizations/{organization_id}/convocations")]
 pub async fn list_organization_convocations(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match state
         .convocation_use_cases
         .list_organization_convocations(*organization_id)
@@ -422,6 +426,7 @@ pub async fn schedule_second_convocation(
         description: Some("Second convocation after quorum not reached".to_string()),
         scheduled_date: req.new_meeting_date,
         location: "Same as first meeting".to_string(),
+        is_second_convocation: true,
     };
 
     // Create the new meeting

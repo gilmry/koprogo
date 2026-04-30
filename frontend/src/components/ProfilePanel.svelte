@@ -6,6 +6,8 @@
   import { UserRole } from '../lib/types';
   import type { GdprExport, GdprCanEraseResponse } from '../lib/types';
   import { toast } from '../stores/toast';
+  import { formatDate } from "../lib/utils/date.utils";
+  import { withErrorHandling } from "../lib/utils/error.utils";
 
   let editMode = false;
   let saving = false;
@@ -48,16 +50,17 @@
       toast.error('Tous les champs sont obligatoires');
       return;
     }
-
-    try {
-      saving = true;
-      await api.put('/gdpr/rectify', {
+    const result = await withErrorHandling({
+      action: () => api.put('/gdpr/rectify', {
         email: editEmail !== user?.email ? editEmail : undefined,
         first_name: editFirstName !== user?.first_name ? editFirstName : undefined,
         last_name: editLastName !== user?.last_name ? editLastName : undefined,
-      });
-
-      // Update local auth store
+      }),
+      setLoading: (v) => saving = v,
+      successMessage: 'Profil mis à jour (Art. 16 RGPD - Droit de rectification)',
+      errorMessage: 'Erreur lors de la mise à jour du profil',
+    });
+    if (result !== undefined) {
       if (user) {
         await authStore.updateUser({
           ...user,
@@ -66,13 +69,7 @@
           last_name: editLastName,
         });
       }
-
-      toast.success('Profil mis à jour (Art. 16 RGPD - Droit de rectification)');
       editMode = false;
-    } catch (err: any) {
-      toast.error(err.message || 'Erreur lors de la mise à jour du profil');
-    } finally {
-      saving = false;
     }
   }
 
@@ -161,14 +158,7 @@
     }
   }
 
-  function formatDate(dateStr: string | undefined): string {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('fr-BE', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-  }
+
 </script>
 
 {#if !user}
@@ -177,7 +167,7 @@
     <p class="mt-2 text-sm text-gray-500">Chargement du profil...</p>
   </div>
 {:else}
-  <div class="space-y-6">
+  <div class="space-y-6" data-testid="profile-panel">
     <!-- Personal Information -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden">
       <div class="bg-gradient-to-r from-amber-600 to-amber-700 px-6 py-4">

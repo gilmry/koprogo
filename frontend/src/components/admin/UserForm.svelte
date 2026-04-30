@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
   import { toast } from '../../stores/toast';
   import { api } from '../../lib/api';
@@ -9,11 +9,19 @@
   import FormSelect from '../ui/FormSelect.svelte';
   import Button from '../ui/Button.svelte';
 
-  export let isOpen = false;
-  export let user: User | null = null;
-  export let mode: 'create' | 'edit' = 'create';
-
-  const dispatch = createEventDispatcher();
+  let {
+    isOpen = false,
+    user = null,
+    mode = 'create',
+    onclose,
+    onsuccess,
+  }: {
+    isOpen?: boolean;
+    user?: User | null;
+    mode?: 'create' | 'edit';
+    onclose?: () => void;
+    onsuccess?: () => void;
+  } = $props();
 
   interface RoleFormEntry {
     id: string;
@@ -38,30 +46,30 @@
     isPrimary,
   });
 
-  let formData = {
+  let formData = $state({
     email: '',
     password: '',
     confirmPassword: '',
     first_name: '',
     last_name: '',
-  };
+  });
 
-  let formRoles: RoleFormEntry[] = [createRoleEntry(UserRole.OWNER, '', true)];
+  let formRoles = $state<RoleFormEntry[]>([createRoleEntry(UserRole.OWNER, '', true)]);
 
-  let errors = {
+  let errors = $state({
     email: '',
     password: '',
     confirmPassword: '',
     first_name: '',
     last_name: '',
     roles: '',
-  };
+  });
 
-  let organizations: Organization[] = [];
-  let organizationOptions: Array<{ value: string; label: string }> = [];
-  let loading = false;
-  let loadingOrgs = false;
-  let currentUserId: string | null = null;
+  let organizations = $state<Organization[]>([]);
+  let organizationOptions = $state<Array<{ value: string; label: string }>>([]);
+  let loading = $state(false);
+  let loadingOrgs = $state(false);
+  let currentUserId = $state<string | null>(null);
 
   const roleOptions = [
     { value: UserRole.OWNER, label: $_('admin.user.roleOwner') },
@@ -70,8 +78,8 @@
     { value: UserRole.SUPERADMIN, label: $_('admin.user.roleSuperAdmin') },
   ];
 
-  onMount(async () => {
-    await loadOrganizations();
+  $effect(() => {
+    loadOrganizations();
   });
 
   async function loadOrganizations() {
@@ -156,17 +164,19 @@
     }
   }
 
-  $: if (isOpen) {
-    if (mode === 'edit' && user && currentUserId !== user.id) {
-      populateFormFromUser(user);
-      currentUserId = user.id;
-    } else if (mode === 'create' && currentUserId !== null) {
-      resetForm();
-      currentUserId = null;
+  $effect(() => {
+    if (isOpen) {
+      if (mode === 'edit' && user && currentUserId !== user.id) {
+        populateFormFromUser(user);
+        currentUserId = user.id;
+      } else if (mode === 'create' && currentUserId !== null) {
+        resetForm();
+        currentUserId = null;
+      }
+    } else if (!isOpen) {
+      currentUserId = mode === 'edit' && user ? user.id : null;
     }
-  } else if (!isOpen) {
-    currentUserId = mode === 'edit' && user ? user.id : null;
-  }
+  });
 
   function setPrimaryRole(index: number) {
     formRoles = formRoles.map((role, idx) => ({
@@ -364,7 +374,7 @@
 
       loading = false;
       handleClose();
-      dispatch('success');
+      onsuccess?.();
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'Une erreur est survenue';
 
@@ -379,17 +389,17 @@
 
   const handleClose = () => {
     if (!loading) {
-      isOpen = false;
       resetForm();
+      onclose?.();
     }
   };
 </script>
 
-<Modal bind:isOpen onClose={handleClose} size="lg" title={mode === 'create' ? $_('admin.user.createUser') : $_('admin.user.editUser')}>
+<Modal {isOpen} onclose={handleClose} size="lg" title={mode === 'create' ? $_('admin.user.createUser') : $_('admin.user.editUser')}>
   <form
     class="space-y-6"
     data-testid="user-form"
-    on:submit|preventDefault={handleSubmit}
+    onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}
   >
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <FormInput
@@ -458,18 +468,18 @@
 
     <div class="border-t border-gray-200 pt-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-900">Rôles attribués</h3>
+        <h3 class="text-lg font-semibold text-gray-900">Roles attribues</h3>
         <Button
           variant="secondary"
           type="button"
-          on:click={addRoleEntry}
+          onclick={addRoleEntry}
           data-testid="user-add-role-button"
         >
-          ➕ Ajouter un rôle
+          + Ajouter un role
         </Button>
       </div>
       <p class="text-sm text-gray-500 mt-1">
-        Définissez un ou plusieurs rôles. Un unique rôle doit être marqué comme principal.
+        Definissez un ou plusieurs roles. Un unique role doit etre marque comme principal.
       </p>
       {#if errors.roles}
         <p class="text-sm text-red-600 mt-2">{errors.roles}</p>
@@ -482,13 +492,14 @@
             data-testid="user-role-row"
           >
             <div class="md:col-span-4">
-              <label class="block text-sm font-medium text-gray-700 mb-1">
-                Rôle <span class="text-red-500">*</span>
+              <label for={`user-role-select-${index}`} class="block text-sm font-medium text-gray-700 mb-1">
+                Role <span class="text-red-500">*</span>
               </label>
               <select
+                id={`user-role-select-${index}`}
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 bind:value={roleEntry.role}
-                on:change={(event) =>
+                onchange={(event) =>
                   handleRoleChange(index, (event.target as HTMLSelectElement).value)}
                 data-testid="user-role-select"
               >
@@ -504,12 +515,12 @@
                   Aucun rattachement d'organisation pour un SuperAdmin.
                 </p>
               {:else}
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label for={`role-org-${index}`} class="block text-sm font-medium text-gray-700 mb-1">
                   Organisation <span class="text-red-500">*</span>
                 </label>
                 <FormSelect
                   id={`role-org-${index}`}
-                  placeholder="Sélectionner une organisation"
+                  placeholder="Selectionner une organisation"
                   options={organizationOptions}
                   bind:value={roleEntry.organizationId}
                   disabled={loadingOrgs}
@@ -524,10 +535,10 @@
                   type="radio"
                   name="primaryRole"
                   checked={roleEntry.isPrimary}
-                  on:change={() => setPrimaryRole(index)}
+                  onchange={() => setPrimaryRole(index)}
                   data-testid="user-primary-role-radio"
                 />
-                <span>Rôle principal</span>
+                <span>Role principal</span>
               </label>
             </div>
 
@@ -536,11 +547,12 @@
                 <button
                   type="button"
                   class="text-red-600 hover:text-red-800 text-sm"
-                  on:click={() => removeRoleEntry(index)}
-                  title="Supprimer ce rôle"
+                  onclick={() => removeRoleEntry(index)}
+                  aria-label="Supprimer ce role"
+                  title="Supprimer ce role"
                   data-testid="delete-user-role-button"
                 >
-                  🗑️
+                  X
                 </button>
               {/if}
             </div>
@@ -550,28 +562,30 @@
     </div>
   </form>
 
-  <div slot="footer" class="flex justify-end space-x-3">
-    <Button
-      variant="secondary"
-      on:click={handleClose}
-      disabled={loading}
-      data-testid="user-cancel-button"
-    >
-      Annuler
-    </Button>
-    <Button
-      variant="primary"
-      on:click={handleSubmit}
-      disabled={loading}
-      data-testid="user-submit-button"
-    >
-      {loading
-        ? mode === 'create'
-          ? 'Création...'
-          : 'Enregistrement...'
-        : mode === 'create'
-        ? 'Créer'
-        : 'Mettre à jour'}
-    </Button>
-  </div>
+  {#snippet footer()}
+    <div class="flex justify-end space-x-3">
+      <Button
+        variant="secondary"
+        onclick={handleClose}
+        disabled={loading}
+        data-testid="user-cancel-button"
+      >
+        Annuler
+      </Button>
+      <Button
+        variant="primary"
+        onclick={handleSubmit}
+        disabled={loading}
+        data-testid="user-submit-button"
+      >
+        {loading
+          ? mode === 'create'
+            ? 'Creation...'
+            : 'Enregistrement...'
+          : mode === 'create'
+          ? 'Creer'
+          : 'Mettre a jour'}
+      </Button>
+    </div>
+  {/snippet}
 </Modal>

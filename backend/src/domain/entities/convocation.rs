@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 /// Convocation type according to Belgian copropriété law
 /// Art. 3.87 §3 Code Civil (ex Art. 577-6 §2): minimum 15 days notice for ALL types
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum ConvocationType {
     /// Ordinary General Assembly (15 days minimum notice)
     Ordinary,
@@ -53,7 +53,7 @@ impl ConvocationType {
 }
 
 /// Convocation status
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum ConvocationStatus {
     /// Draft (not yet sent)
     Draft,

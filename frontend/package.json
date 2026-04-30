@@ -11,41 +11,51 @@
     "astro": "astro",
     "generate:config": "node scripts/generate-config.js",
     "format": "prettier --write .",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:ui": "playwright test --project=chromium --ui",
+    "test:e2e:headed": "playwright test --project=chromium --headed",
+    "test:e2e:debug": "playwright test --project=chromium --debug",
     "test:e2e:report": "playwright show-report",
+    "test:scenarios": "playwright test --project=scenarios",
+    "test:scenarios:headed": "playwright test --project=scenarios --headed",
+    "test:scenarios:debug": "playwright test --project=scenarios --debug",
+    "test:all": "playwright test",
     "test:install": "playwright install chromium --with-deps",
     "codegen": "playwright codegen http://localhost",
     "codegen:mobile": "playwright codegen --device='iPhone 13' http://localhost",
     "docs:videos": "bash ../.claude/scripts/copy-videos.sh",
     "test:docs": "npm run test:e2e && npm run docs:videos",
-    "types:generate": "openapi-typescript ../docs/api/openapi.yaml -o src/types/api.d.ts && prettier --write src/types/api.d.ts",
+    "types:generate": "openapi-typescript ../docs/api/openapi.json -o src/types/api.d.ts && prettier --write src/types/api.d.ts",
     "types:check": "npm run types:generate && git diff --exit-code src/types/api.d.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
-    "@astrojs/node": "^10.0.3",
-    "@astrojs/svelte": "^8.0.3",
+    "@astrojs/node": "^10.0.4",
+    "@astrojs/svelte": "^8.0.4",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "^6.0.8",
-    "svelte": "^5.55.0",
+    "astro": "^6.1.2",
+    "svelte": "^5.55.1",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
-    "vite": "^7.0.0"
+    "vite": "^7.3.2"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.1",
-    "@playwright/test": "^1.58.0",
+    "@playwright/test": "^1.58.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/svelte": "^5.3.1",
     "@types/node": "^25.5.0",
     "@vite-pwa/astro": "^1.2.0",
+    "jsdom": "^29.0.2",
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.1",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-svelte": "^3.4.1",
+    "vitest": "^4.1.4",
     "workbox-window": "^7.4.0"
   },
   "overrides": {
@@ -53,12 +63,14 @@
     "svelte-i18n": {
       "esbuild": "^0.25.0"
     },
-    "lodash": "4.17.23",
+    "lodash": "4.18.1",
+    "defu": ">=6.1.5",
     "serialize-javascript": ">=7.0.3",
+    "yaml": ">=2.8.3",
     "devalue": ">=5.6.4",
-    "vite": "^7.0.0",
+    "vite": "^7.3.2",
     "@vite-pwa/astro": {
-      "astro": "^6.0.0"
+      "astro": "^6.1.2"
     }
   }
 }

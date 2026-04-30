@@ -39,7 +39,7 @@ pub struct Quote {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum QuoteStatus {
     Requested,   // Quote requested from contractor
     Received,    // Contractor submitted quote

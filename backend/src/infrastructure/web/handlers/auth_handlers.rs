@@ -1,6 +1,7 @@
 use crate::application::dto::{
     LoginRequest, RefreshTokenRequest, RegisterRequest, SwitchRoleRequest,
 };
+use crate::application::error::AppError;
 use crate::infrastructure::web::{AppState, AuthenticatedUser};
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use validator::Validate;
@@ -19,21 +20,16 @@ use validator::Validate;
     ),
 )]
 #[post("/auth/login")]
-pub async fn login(data: web::Data<AppState>, request: web::Json<LoginRequest>) -> impl Responder {
-    // Validate request
-    if let Err(errors) = request.validate() {
-        return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "Validation failed",
-            "details": errors.to_string()
-        }));
-    }
+pub async fn login(
+    data: web::Data<AppState>,
+    request: web::Json<LoginRequest>,
+) -> Result<HttpResponse, AppError> {
+    request
+        .validate()
+        .map_err(|errors| AppError::Validation(errors.to_string()))?;
 
-    match data.auth_use_cases.login(request.into_inner()).await {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e
-        })),
-    }
+    let response = data.auth_use_cases.login(request.into_inner()).await?;
+    Ok(HttpResponse::Ok().json(response))
 }
 
 #[utoipa::path(
@@ -83,42 +79,26 @@ pub async fn register(
     ),
 )]
 #[get("/auth/me")]
-pub async fn get_current_user(data: web::Data<AppState>, req: HttpRequest) -> impl Responder {
-    // Extract Authorization header
-    let auth_header = match req.headers().get("Authorization") {
-        Some(header) => match header.to_str() {
-            Ok(s) => s,
-            Err(_) => {
-                return HttpResponse::BadRequest().json(serde_json::json!({
-                    "error": "Invalid authorization header"
-                }))
-            }
-        },
-        None => {
-            return HttpResponse::Unauthorized().json(serde_json::json!({
-                "error": "Missing authorization header"
-            }))
-        }
-    };
+pub async fn get_current_user(
+    data: web::Data<AppState>,
+    req: HttpRequest,
+) -> Result<HttpResponse, AppError> {
+    let auth_header = req
+        .headers()
+        .get("Authorization")
+        .ok_or(AppError::Unauthorized)?
+        .to_str()
+        .map_err(|_| AppError::Validation("invalid authorization header".to_string()))?;
 
     let token = auth_header.trim_start_matches("Bearer ").trim();
 
-    match data.auth_use_cases.verify_token(token) {
-        Ok(claims) => match uuid::Uuid::parse_str(&claims.sub) {
-            Ok(user_id) => match data.auth_use_cases.get_user_by_id(user_id).await {
-                Ok(user) => HttpResponse::Ok().json(user),
-                Err(e) => HttpResponse::NotFound().json(serde_json::json!({
-                    "error": e
-                })),
-            },
-            Err(e) => HttpResponse::BadRequest().json(serde_json::json!({
-                "error": format!("Invalid user ID: {}", e)
-            })),
-        },
-        Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e
-        })),
-    }
+    let claims = data.auth_use_cases.verify_token(token)?;
+
+    let user_id = uuid::Uuid::parse_str(&claims.sub)
+        .map_err(|e| AppError::Validation(format!("invalid user id in token: {}", e)))?;
+
+    let user = data.auth_use_cases.get_user_by_id(user_id).await?;
+    Ok(HttpResponse::Ok().json(user))
 }
 
 #[utoipa::path(
@@ -138,17 +118,12 @@ pub async fn get_current_user(data: web::Data<AppState>, req: HttpRequest) -> im
 pub async fn refresh_token(
     data: web::Data<AppState>,
     request: web::Json<RefreshTokenRequest>,
-) -> impl Responder {
-    match data
+) -> Result<HttpResponse, AppError> {
+    let response = data
         .auth_use_cases
         .refresh_token(request.into_inner())
-        .await
-    {
-        Ok(response) => HttpResponse::Ok().json(response),
-        Err(e) => HttpResponse::Unauthorized().json(serde_json::json!({
-            "error": e
-        })),
-    }
+        .await?;
+    Ok(HttpResponse::Ok().json(response))
 }
 
 #[utoipa::path(

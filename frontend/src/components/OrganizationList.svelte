@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { _ } from '../lib/i18n';
+  import { formatDate } from "../lib/utils/date.utils";
   import { api } from '../lib/api';
   import { toast } from '../stores/toast';
   import { authStore } from '../stores/auth';
@@ -54,15 +55,6 @@
       enterprise: 'bg-purple-100 text-purple-800',
     };
     return classes[plan as keyof typeof classes] || 'bg-gray-100 text-gray-800';
-  }
-
-  function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-BE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
   }
 
   const handleCreate = () => {
@@ -250,6 +242,7 @@
                     <button
                       on:click={() => handleEdit(org)}
                       class="text-primary-600 hover:text-primary-900"
+                      aria-label="Modifier"
                       title="Modifier"
                       data-testid="edit-organization-button"
                       disabled={actionLoading}
@@ -259,6 +252,7 @@
                     <button
                       on:click={() => handleToggleActive(org)}
                       class={org.is_active ? 'text-orange-600 hover:text-orange-900' : 'text-green-600 hover:text-green-900'}
+                      aria-label={org.is_active ? 'Désactiver' : 'Activer'}
                       title={org.is_active ? 'Désactiver' : 'Activer'}
                       data-testid="toggle-organization-button"
                       disabled={actionLoading}
@@ -268,6 +262,7 @@
                     <button
                       on:click={() => handleDeleteClick(org)}
                       class="text-red-600 hover:text-red-900"
+                      aria-label="Supprimer"
                       title="Supprimer"
                       data-testid="delete-organization-button"
                       disabled={actionLoading}
@@ -299,11 +294,11 @@
 
 <!-- Organization Form Modal -->
 <OrganizationForm
-  bind:isOpen={showFormModal}
+  isOpen={showFormModal}
   organization={selectedOrganization}
   mode={formMode}
-  on:success={handleFormSuccess}
-  on:close={() => {
+  onsuccess={handleFormSuccess}
+  onclose={() => {
     showFormModal = false;
     selectedOrganization = null;
   }}
@@ -311,15 +306,15 @@
 
 <!-- Delete Confirmation Dialog -->
 <ConfirmDialog
-  bind:isOpen={showConfirmDialog}
+  isOpen={showConfirmDialog}
   title="Confirmer la suppression"
   message="Êtes-vous sûr de vouloir supprimer l'organisation '{selectedOrganization?.name}' ? Cette action est irréversible et supprimera également tous les utilisateurs, immeubles et données associés."
   confirmText="Supprimer"
   cancelText="Annuler"
   variant="danger"
   loading={actionLoading}
-  on:confirm={handleDeleteConfirm}
-  on:cancel={() => {
+  onconfirm={handleDeleteConfirm}
+  oncancel={() => {
     showConfirmDialog = false;
     selectedOrganization = null;
   }}

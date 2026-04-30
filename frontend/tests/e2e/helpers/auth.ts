@@ -224,6 +224,7 @@ export async function loginAsSyndicWithMeeting(
       scheduled_date: meetingDate.toISOString(),
       meeting_type: "Ordinary",
       location: "Salle communale",
+      is_second_convocation: true,
     },
     headers: { Authorization: `Bearer ${ctx.token}` },
   });

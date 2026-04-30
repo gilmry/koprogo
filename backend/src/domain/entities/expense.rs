@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Catégorie de charges
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub enum ExpenseCategory {
     Maintenance,    // Entretien
     Repairs,        // Réparations
@@ -16,7 +16,7 @@ pub enum ExpenseCategory {
 }
 
 /// Statut de paiement
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PaymentStatus {
     Pending,
@@ -26,7 +26,7 @@ pub enum PaymentStatus {
 }
 
 /// Statut d'approbation pour le workflow de validation
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ApprovalStatus {
     Draft,           // Brouillon - en cours d'édition
@@ -39,7 +39,7 @@ pub enum ApprovalStatus {
 ///
 /// Conforme au PCMN belge (Plan Comptable Minimum Normalisé).
 /// Chaque charge peut être liée à un compte comptable via account_code.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct Expense {
     pub id: Uuid,
     pub organization_id: Uuid,

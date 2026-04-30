@@ -1,6 +1,6 @@
 <script lang="ts">
+  // Svelte 5 runes mode
   import { _ } from '../../lib/i18n';
-  import { onMount } from "svelte";
   import {
     localExchangesApi,
     type LocalExchange,
@@ -12,40 +12,41 @@
   import ExchangeStatusBadge from "./ExchangeStatusBadge.svelte";
   import ExchangeTypeBadge from "./ExchangeTypeBadge.svelte";
   import { toast } from "../../stores/toast";
+  import { formatDateShort } from "../../lib/utils/date.utils";
+  import { withLoadingState, withErrorHandling } from "../../lib/utils/error.utils";
 
-  export let buildingId: string;
-  export let currentOwnerId: string;
-  export let showOnlyAvailable: boolean = false;
-  export let showFilters: boolean = true;
+  let {
+    buildingId,
+    currentOwnerId,
+    showOnlyAvailable = false,
+    showFilters = true,
+  }: {
+    buildingId: string;
+    currentOwnerId: string;
+    showOnlyAvailable?: boolean;
+    showFilters?: boolean;
+  } = $props();
 
-  let exchanges: LocalExchange[] = [];
-  let filteredExchanges: LocalExchange[] = [];
-  let loading: boolean = true;
-  let error: string | null = null;
+  let exchanges: LocalExchange[] = $state([]);
+  let filteredExchanges: LocalExchange[] = $state([]);
+  let loading: boolean = $state(true);
+  let error: string | null = $state(null);
 
   // Filters
-  let filterType: ExchangeType | "all" = "all";
-  let filterStatus: ExchangeStatus | "all" = "all";
-  let searchQuery: string = "";
+  let filterType: ExchangeType | "all" = $state("all");
+  let filterStatus: ExchangeStatus | "all" = $state("all");
+  let searchQuery: string = $state("");
 
   async function loadExchanges() {
-    try {
-      loading = true;
-      error = null;
-
-      if (showOnlyAvailable) {
-        exchanges = await localExchangesApi.listAvailable(buildingId);
-      } else {
-        exchanges = await localExchangesApi.listByBuilding(buildingId);
-      }
-
-      applyFilters();
-    } catch (err: any) {
-      error = err.message || $_('exchanges.load_error');
-      console.error("Error loading exchanges:", err);
-    } finally {
-      loading = false;
-    }
+    await withLoadingState({
+      action: () => showOnlyAvailable
+        ? localExchangesApi.listAvailable(buildingId)
+        : localExchangesApi.listByBuilding(buildingId),
+      setLoading: (v: boolean) => loading = v,
+      setError: (v: string | null) => error = v,
+      onSuccess: (data) => { exchanges = data; applyFilters(); },
+      errorMessage: $_('exchanges.load_error'),
+    });
   }
 
   function applyFilters() {
@@ -91,23 +92,22 @@
   }
 
   async function handleRequest(exchangeId: string) {
-    try {
-      await localExchangesApi.request(exchangeId);
-      await loadExchanges(); // Reload list
-    } catch (err: any) {
-      toast.error($_('common.error', { message: err.message }));
-    }
+    await withErrorHandling({
+      action: () => localExchangesApi.request(exchangeId),
+      errorMessage: $_('common.error'),
+      onSuccess: () => loadExchanges(),
+    });
   }
 
-  onMount(() => {
+  $effect(() => {
     loadExchanges();
   });
 </script>
 
-<div class="space-y-4">
+<div class="space-y-4" data-testid="exchange-list">
   <!-- Filters (optional) -->
   {#if showFilters}
-    <div class="bg-white p-4 rounded-lg shadow">
+    <div class="bg-white p-4 rounded-lg shadow" data-testid="exchange-list-filters">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Search -->
         <div>
@@ -121,8 +121,9 @@
             id="search"
             type="text"
             bind:value={searchQuery}
-            on:input={handleFilterChange}
+            oninput={handleFilterChange}
             placeholder={$_('exchanges.search_placeholder')}
+            data-testid="exchange-search-input"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
@@ -138,7 +139,8 @@
           <select
             id="filter-type"
             bind:value={filterType}
-            on:change={handleFilterChange}
+            onchange={handleFilterChange}
+            data-testid="exchange-filter-type"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">{$_('exchanges.all_types')}</option>
@@ -161,7 +163,8 @@
           <select
             id="filter-status"
             bind:value={filterStatus}
-            on:change={handleFilterChange}
+            onchange={handleFilterChange}
+            data-testid="exchange-filter-status"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">{$_('exchanges.all_statuses')}</option>
@@ -178,7 +181,7 @@
 
   <!-- Loading State -->
   {#if loading}
-    <div class="text-center py-12">
+    <div class="text-center py-12" data-testid="exchange-list-loading">
       <div
         class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"
       ></div>
@@ -188,14 +191,14 @@
 
   <!-- Error State -->
   {#if error}
-    <div class="bg-red-50 border border-red-200 rounded-md p-4">
+    <div class="bg-red-50 border border-red-200 rounded-md p-4" data-testid="exchange-list-error">
       <p class="text-red-800">❌ {error}</p>
     </div>
   {/if}
 
   <!-- Empty State -->
   {#if !loading && !error && filteredExchanges.length === 0}
-    <div class="text-center py-12 bg-gray-50 rounded-lg">
+    <div class="text-center py-12 bg-gray-50 rounded-lg" data-testid="exchange-list-empty">
       <svg
         class="mx-auto h-12 w-12 text-gray-400"
         fill="none"
@@ -223,7 +226,7 @@
     <div class="bg-white shadow rounded-lg overflow-hidden">
       <ul class="divide-y divide-gray-200">
         {#each filteredExchanges as exchange (exchange.id)}
-          <li class="p-6 hover:bg-gray-50 transition-colors">
+          <li class="p-6 hover:bg-gray-50 transition-colors" data-testid="exchange-list-row">
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <!-- Title + Type Badge -->
@@ -256,7 +259,7 @@
                   {#if exchange.requester_name}
                     <span>➡️ {exchange.requester_name}</span>
                   {/if}
-                  <span>📅 {new Date(exchange.offered_at).toLocaleDateString("fr-BE")}</span>
+                  <span>📅 {formatDateShort(exchange.offered_at)}</span>
                   {#if exchange.provider_rating || exchange.requester_rating}
                     <span>
                       {formatRating(exchange.provider_rating || exchange.requester_rating)}
@@ -269,6 +272,7 @@
               <div class="ml-4 flex-shrink-0 space-y-2">
                 <a
                   href={`/exchange-detail?id=${exchange.id}`}
+                  data-testid="exchange-view-btn"
                   class="block w-full text-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {$_('common.view_details')}
@@ -277,7 +281,8 @@
                 {#if canRequest(exchange)}
                   <button
                     type="button"
-                    on:click={() => handleRequest(exchange.id)}
+                    onclick={() => handleRequest(exchange.id)}
+                    data-testid="exchange-request-btn"
                     class="w-full px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     {$_('exchanges.request_exchange')}
@@ -292,7 +297,7 @@
 
     <!-- Results Count -->
     <p class="text-sm text-gray-600 text-center">
-      {$_('exchanges.results_count', { count: filteredExchanges.length })}
+      {$_('exchanges.results_count', { values: { count: filteredExchanges.length } })}
     </p>
   {/if}
 </div>

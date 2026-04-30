@@ -82,8 +82,12 @@ pub async fn list_building_technical_inspections(
 #[get("/organizations/{organization_id}/technical-inspections")]
 pub async fn list_organization_technical_inspections(
     state: web::Data<AppState>,
+    user: AuthenticatedUser,
     organization_id: web::Path<Uuid>,
 ) -> impl Responder {
+    if let Err(e) = user.verify_org_access(*organization_id) {
+        return HttpResponse::Forbidden().json(serde_json::json!({"error": e}));
+    }
     match state
         .technical_inspection_use_cases
         .list_technical_inspections_by_organization(*organization_id)
