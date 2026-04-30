@@ -9,7 +9,6 @@ use actix_web::{test, App};
 use koprogo_api::application::dto::{CreateBuildingDto, CreateOwnerDto, CreateUnitDto};
 use koprogo_api::domain::entities::UnitType;
 use koprogo_api::infrastructure::web::configure_routes;
-use rust_decimal_macros::dec;
 use serde_json::json;
 use serial_test::serial;
 use uuid::Uuid;
