@@ -8,8 +8,8 @@ pub enum UserRole {
     SuperAdmin,
     Syndic,
     Accountant,
-    BoardMember,  // Membre du conseil de copropriété
-    Contractor,   // Prestataire externe (plombier, électricien, etc.)
+    BoardMember, // Membre du conseil de copropriété
+    Contractor,  // Prestataire externe (plombier, électricien, etc.)
     Owner,
 }
 

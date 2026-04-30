@@ -130,9 +130,10 @@ impl PcnMapper {
         // Aggregate expenses by PCN account code
         for expense in expenses {
             let account = Self::map_expense_to_pcn(&expense.category);
-            let entry = aggregated
-                .entry(account.code.clone())
-                .or_insert((account, Decimal::ZERO, 0));
+            let entry =
+                aggregated
+                    .entry(account.code.clone())
+                    .or_insert((account, Decimal::ZERO, 0));
             entry.1 += expense.amount;
             entry.2 += 1;
         }

@@ -16,6 +16,7 @@ on:
       - production
       - staging
       - integration
+      - dev
 
 env:
   REGISTRY: ghcr.io
@@ -43,17 +44,32 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Compute short SHA
+        id: vars-backend
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata (tags, labels) for Backend
         id: meta-backend
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/backend
+          # Tag scheme aligned with GitOps consumers:
+          #   - {branch}            → human-friendly branch tag (dev, integration, staging, production, main)
+          #   - {branch}-latest     → ArgoCD helm-values (mutable, sandbox/dev/integration only)
+          #   - {branch}-{sha7}     → infrastructure/_shared/scripts/gitops-deploy.sh (immutable; staging/production should pin)
+          #   - sha-{sha7} / {sha7} → backwards-compat short-sha tags
+          #   - v{semver}           → published from git tags v*.*.*
+          # Pattern note: helm-values/{env}/helm-values.yaml currently hardcode `tag: {env}-latest`.
+          # PR-A (cluster-profiles) will switch staging/production to digest-pinning per CRITICAL.md ":latest" rule.
           tags: |
             type=ref,event=branch
+            type=ref,event=branch,suffix=-latest
+            type=ref,event=branch,suffix=-${{ steps.vars-backend.outputs.short_sha }},enable=${{ github.event_name == 'push' }}
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,format=short
+            type=sha,prefix=,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Backend Docker image
@@ -90,17 +106,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Compute short SHA
+        id: vars-frontend
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata (tags, labels) for Frontend
         id: meta-frontend
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/frontend
+          # Same scheme as backend (see backend job for full doc)
           tags: |
             type=ref,event=branch
+            type=ref,event=branch,suffix=-latest
+            type=ref,event=branch,suffix=-${{ steps.vars-frontend.outputs.short_sha }},enable=${{ github.event_name == 'push' }}
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,format=short
+            type=sha,prefix=,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Frontend Docker image

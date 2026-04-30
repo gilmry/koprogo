@@ -34,7 +34,9 @@ pub enum SkillCategory {
 }
 
 /// Expertise level for skill proficiency
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema,
+)]
 pub enum ExpertiseLevel {
     /// Beginner (< 1 year experience)
     Beginner,

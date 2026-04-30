@@ -869,7 +869,10 @@ mod tests {
         let invoice = result.unwrap();
 
         // 1000 * 21% = 210 VAT, total = 1210
-        assert_eq!(invoice.amount_excl_vat, Some(rust_decimal_macros::dec!(1000)));
+        assert_eq!(
+            invoice.amount_excl_vat,
+            Some(rust_decimal_macros::dec!(1000))
+        );
         assert_eq!(invoice.vat_rate, Some(rust_decimal_macros::dec!(21)));
         assert_eq!(invoice.vat_amount, Some(rust_decimal_macros::dec!(210.00)));
         assert_eq!(

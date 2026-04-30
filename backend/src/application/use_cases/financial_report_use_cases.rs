@@ -132,7 +132,10 @@ impl FinancialReportUseCases {
         let mut revenue_accounts = Vec::new();
 
         for account in all_accounts {
-            let amount = account_balances.get(&account.code).cloned().unwrap_or(Decimal::ZERO);
+            let amount = account_balances
+                .get(&account.code)
+                .cloned()
+                .unwrap_or(Decimal::ZERO);
 
             let line = AccountLine {
                 code: account.code.clone(),
@@ -228,7 +231,10 @@ impl FinancialReportUseCases {
         let mut revenue_accounts = Vec::new();
 
         for account in all_accounts {
-            let amount = expense_amounts.get(&account.code).cloned().unwrap_or(Decimal::ZERO);
+            let amount = expense_amounts
+                .get(&account.code)
+                .cloned()
+                .unwrap_or(Decimal::ZERO);
 
             // Only include accounts with non-zero amounts
             if amount == Decimal::ZERO {
@@ -329,7 +335,10 @@ impl FinancialReportUseCases {
         let mut liability_accounts = Vec::new();
 
         for account in all_accounts {
-            let balance = account_balances.get(&account.code).cloned().unwrap_or(Decimal::ZERO);
+            let balance = account_balances
+                .get(&account.code)
+                .cloned()
+                .unwrap_or(Decimal::ZERO);
             if balance == Decimal::ZERO {
                 continue;
             }
@@ -431,7 +440,10 @@ impl FinancialReportUseCases {
         let mut revenue_accounts = Vec::new();
 
         for account in all_accounts {
-            let amount = account_balances.get(&account.code).cloned().unwrap_or(Decimal::ZERO);
+            let amount = account_balances
+                .get(&account.code)
+                .cloned()
+                .unwrap_or(Decimal::ZERO);
             if amount == Decimal::ZERO {
                 continue;
             }

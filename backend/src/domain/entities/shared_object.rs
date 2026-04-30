@@ -24,7 +24,9 @@ pub enum SharedObjectCategory {
 }
 
 /// Condition of shared object
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema)]
+#[derive(
+    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, utoipa::ToSchema,
+)]
 pub enum ObjectCondition {
     /// Excellent condition (like new)
     Excellent,
