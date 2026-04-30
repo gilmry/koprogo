@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/svelte";
+import { render, screen, fireEvent } from "../../test-helpers";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ResolutionCreateForm from "./ResolutionCreateForm.svelte";
 
