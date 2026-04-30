@@ -50,6 +50,8 @@ infrastructure/
 
 ## Quick Start
 
+> **For the complete GitOps multi-topology runbook (Mode A cron poller + Mode B ArgoCD, 5 cas d'usage), see [GITOPS.md](GITOPS.md).**
+
 ### Local Development (Docker Compose)
 ```bash
 make dev                    # Start with hot reload (root docker-compose.yml)
