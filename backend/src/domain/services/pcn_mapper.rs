@@ -1,4 +1,5 @@
 use crate::domain::entities::{Expense, ExpenseCategory};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -51,7 +52,7 @@ pub struct PcnReportLine {
     /// PCN account
     pub account: PcnAccount,
     /// Total amount for this account
-    pub total_amount: f64,
+    pub total_amount: Decimal,
     /// Number of expense entries
     pub entry_count: usize,
 }
@@ -124,14 +125,14 @@ impl PcnMapper {
     /// Aggregates expenses by PCN account code
     /// Returns report lines sorted by PCN account code
     pub fn generate_report(expenses: &[Expense]) -> Vec<PcnReportLine> {
-        let mut aggregated: HashMap<String, (PcnAccount, f64, usize)> = HashMap::new();
+        let mut aggregated: HashMap<String, (PcnAccount, Decimal, usize)> = HashMap::new();
 
         // Aggregate expenses by PCN account code
         for expense in expenses {
             let account = Self::map_expense_to_pcn(&expense.category);
             let entry = aggregated
                 .entry(account.code.clone())
-                .or_insert((account, 0.0, 0));
+                .or_insert((account, Decimal::ZERO, 0));
             entry.1 += expense.amount;
             entry.2 += 1;
         }

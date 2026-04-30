@@ -18,6 +18,8 @@
 use crate::application::ports::journal_entry_repository::JournalEntryRepository;
 use crate::domain::entities::journal_entry::{JournalEntry, JournalEntryLine};
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -52,7 +54,7 @@ impl JournalEntryUseCases {
         entry_date: DateTime<Utc>,
         description: Option<String>,
         document_ref: Option<String>,
-        lines: Vec<(String, f64, f64, String)>, // (account_code, debit, credit, line_description)
+        lines: Vec<(String, Decimal, Decimal, String)>, // (account_code, debit, credit, line_description)
     ) -> Result<JournalEntry, String> {
         // Validate journal type if provided (inspired by Noalyss journal types)
         if let Some(ref jtype) = journal_type {
@@ -70,12 +72,12 @@ impl JournalEntryUseCases {
         }
 
         // Calculate totals and validate balance (Noalyss principle)
-        let total_debit: f64 = lines.iter().map(|(_, debit, _, _)| debit).sum();
-        let total_credit: f64 = lines.iter().map(|(_, _, credit, _)| credit).sum();
+        let total_debit: Decimal = lines.iter().map(|(_, debit, _, _)| *debit).sum();
+        let total_credit: Decimal = lines.iter().map(|(_, _, credit, _)| *credit).sum();
 
-        if (total_debit - total_credit).abs() > 0.01 {
+        if (total_debit - total_credit).abs() > dec!(0.01) {
             return Err(format!(
-                "Journal entry is unbalanced: debits={:.2} credits={:.2}. Debits must equal credits.",
+                "Journal entry is unbalanced: debits={} credits={}. Debits must equal credits.",
                 total_debit, total_credit
             ));
         }

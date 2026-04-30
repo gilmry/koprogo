@@ -45,7 +45,8 @@ impl PcnUseCases {
         let report_lines = PcnMapper::generate_report(&expenses);
 
         // Calculate totals
-        let total_amount: f64 = report_lines.iter().map(|l| l.total_amount).sum();
+        let total_amount: rust_decimal::Decimal =
+            report_lines.iter().map(|l| l.total_amount).sum();
         let total_entries: usize = report_lines.iter().map(|l| l.entry_count).sum();
 
         // Convert to DTOs

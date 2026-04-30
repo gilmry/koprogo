@@ -712,7 +712,8 @@ async fn dispatch_tool(
                 Ok(expenses) => {
                     use crate::domain::entities::{ApprovalStatus, PaymentStatus};
 
-                    let total_expenses: f64 = expenses.iter().map(|e| e.amount).sum();
+                    let total_expenses: rust_decimal::Decimal =
+                        expenses.iter().map(|e| e.amount).sum();
                     let pending_count = expenses
                         .iter()
                         .filter(|e| e.approval_status == ApprovalStatus::PendingApproval)
@@ -810,7 +811,8 @@ async fn dispatch_tool(
                 .await
             {
                 Ok(contributions) => {
-                    let total_due: f64 = contributions.iter().map(|c| c.amount).sum();
+                    let total_due: rust_decimal::Decimal =
+                        contributions.iter().map(|c| c.amount).sum();
 
                     let balance = json!({
                         "owner_id": owner_id,
@@ -1310,13 +1312,13 @@ async fn dispatch_tool(
                 Ok(expenses) => {
                     use crate::domain::entities::{ApprovalStatus, PaymentStatus};
 
-                    let total_expenses: f64 = expenses
+                    let total_expenses: rust_decimal::Decimal = expenses
                         .iter()
                         .filter(|e| e.approval_status == ApprovalStatus::Approved)
                         .map(|e| e.amount)
                         .sum();
 
-                    let outstanding: f64 = expenses
+                    let outstanding: rust_decimal::Decimal = expenses
                         .iter()
                         .filter(|e| e.payment_status != PaymentStatus::Paid)
                         .map(|e| e.amount)

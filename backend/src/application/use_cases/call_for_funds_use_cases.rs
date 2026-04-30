@@ -33,7 +33,7 @@ impl CallForFundsUseCases {
         building_id: Uuid,
         title: String,
         description: String,
-        total_amount: f64,
+        total_amount: rust_decimal::Decimal,
         contribution_type: ContributionType,
         call_date: DateTime<Utc>,
         due_date: DateTime<Utc>,
@@ -130,9 +130,9 @@ impl CallForFundsUseCases {
 
             // Create contribution description
             let description = format!(
-                "{} - Quote-part: {:.2}%",
+                "{} - Quote-part: {}%",
                 call_for_funds.title,
-                percentage * 100.0
+                percentage * rust_decimal_macros::dec!(100)
             );
 
             // Create owner contribution
@@ -357,7 +357,7 @@ mod tests {
     // ── Mock: UnitOwnerRepository ─────────────────────────────────────
 
     struct MockUnitOwnerRepo {
-        active_by_building: Mutex<Vec<(Uuid, Uuid, f64)>>,
+        active_by_building: Mutex<Vec<(Uuid, Uuid, rust_decimal::Decimal)>>,
     }
 
     impl MockUnitOwnerRepo {
@@ -367,7 +367,7 @@ mod tests {
             }
         }
 
-        fn with_owners(owners: Vec<(Uuid, Uuid, f64)>) -> Self {
+        fn with_owners(owners: Vec<(Uuid, Uuid, rust_decimal::Decimal)>) -> Self {
             Self {
                 active_by_building: Mutex::new(owners),
             }
@@ -409,7 +409,7 @@ mod tests {
         async fn has_active_owners(&self, _unit_id: Uuid) -> Result<bool, String> {
             unimplemented!()
         }
-        async fn get_total_ownership_percentage(&self, _unit_id: Uuid) -> Result<f64, String> {
+        async fn get_total_ownership_percentage(&self, _unit_id: Uuid) -> Result<rust_decimal::Decimal, String> {
             unimplemented!()
         }
         async fn find_active_by_unit_and_owner(
@@ -422,7 +422,7 @@ mod tests {
         async fn find_active_by_building(
             &self,
             _building_id: Uuid,
-        ) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
+        ) -> Result<Vec<(Uuid, Uuid, rust_decimal::Decimal)>, String> {
             Ok(self.active_by_building.lock().unwrap().clone())
         }
     }
@@ -462,7 +462,7 @@ mod tests {
                 building_id,
                 "Appel Q1".to_string(),
                 "Charges courantes".to_string(),
-                10_000.0,
+                rust_decimal_macros::dec!(10_000),
                 ContributionType::Regular,
                 call_date,
                 due_date,
@@ -473,7 +473,7 @@ mod tests {
 
         assert!(result.is_ok());
         let cff = result.unwrap();
-        assert_eq!(cff.total_amount, 10_000.0);
+        assert_eq!(cff.total_amount, rust_decimal_macros::dec!(10_000));
         assert_eq!(cff.status, CallForFundsStatus::Draft);
         assert_eq!(cff.organization_id, org_id);
         assert_eq!(cff.building_id, building_id);
@@ -493,8 +493,8 @@ mod tests {
         let owner1 = Uuid::new_v4();
         let owner2 = Uuid::new_v4();
         let uo_repo = Arc::new(MockUnitOwnerRepo::with_owners(vec![
-            (unit1, owner1, 0.60),
-            (unit2, owner2, 0.40),
+            (unit1, owner1, rust_decimal_macros::dec!(0.60)),
+            (unit2, owner2, rust_decimal_macros::dec!(0.40)),
         ]));
 
         let uc = make_use_cases(cff_repo.clone(), contrib_repo.clone(), uo_repo);
@@ -507,7 +507,7 @@ mod tests {
                 Uuid::new_v4(),
                 "Appel Q2".to_string(),
                 "Charges extraordinaires".to_string(),
-                5_000.0,
+                rust_decimal_macros::dec!(5_000),
                 ContributionType::Extraordinary,
                 call_date,
                 due_date,
@@ -529,11 +529,11 @@ mod tests {
         let contributions = contrib_repo.store.lock().unwrap();
         assert_eq!(contributions.len(), 2);
 
-        let mut amounts: Vec<f64> = contributions.iter().map(|c| c.amount).collect();
-        amounts.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let mut amounts: Vec<rust_decimal::Decimal> = contributions.iter().map(|c| c.amount).collect();
+        amounts.sort();
         // 40% of 5000 = 2000, 60% of 5000 = 3000
-        assert!((amounts[0] - 2_000.0).abs() < 0.01);
-        assert!((amounts[1] - 3_000.0).abs() < 0.01);
+        assert_eq!(amounts[0], rust_decimal_macros::dec!(2_000));
+        assert_eq!(amounts[1], rust_decimal_macros::dec!(3_000));
     }
 
     // ── 3. Cancel ─────────────────────────────────────────────────────
@@ -553,7 +553,7 @@ mod tests {
                 Uuid::new_v4(),
                 "Appel annulable".to_string(),
                 "Description".to_string(),
-                1_000.0,
+                rust_decimal_macros::dec!(1_000),
                 ContributionType::Regular,
                 call_date,
                 due_date,
@@ -585,7 +585,7 @@ mod tests {
                 Uuid::new_v4(),
                 "Supprimable".to_string(),
                 "Description".to_string(),
-                500.0,
+                rust_decimal_macros::dec!(500),
                 ContributionType::Advance,
                 call_date,
                 due_date,
@@ -608,7 +608,7 @@ mod tests {
         let uo_repo = Arc::new(MockUnitOwnerRepo::with_owners(vec![(
             Uuid::new_v4(),
             Uuid::new_v4(),
-            1.0,
+            rust_decimal_macros::dec!(1),
         )]));
         let uc = make_use_cases(cff_repo.clone(), contrib_repo, uo_repo);
 
@@ -620,7 +620,7 @@ mod tests {
                 Uuid::new_v4(),
                 "Sent call".to_string(),
                 "Description".to_string(),
-                500.0,
+                rust_decimal_macros::dec!(500),
                 ContributionType::Regular,
                 call_date,
                 due_date,
@@ -651,7 +651,7 @@ mod tests {
             Uuid::new_v4(),
             "Overdue call".to_string(),
             "Past due".to_string(),
-            2_000.0,
+            rust_decimal_macros::dec!(2_000),
             ContributionType::Regular,
             call_date,
             due_date,
@@ -693,7 +693,7 @@ mod tests {
             building_id,
             "Appel 1".to_string(),
             "Desc 1".to_string(),
-            1_000.0,
+            rust_decimal_macros::dec!(1_000),
             ContributionType::Regular,
             call_date,
             due_date,
@@ -708,7 +708,7 @@ mod tests {
             building_id,
             "Appel 2".to_string(),
             "Desc 2".to_string(),
-            2_000.0,
+            rust_decimal_macros::dec!(2_000),
             ContributionType::Extraordinary,
             call_date,
             due_date,
@@ -724,7 +724,7 @@ mod tests {
             other_building,
             "Autre appel".to_string(),
             "Autre desc".to_string(),
-            500.0,
+            rust_decimal_macros::dec!(500),
             ContributionType::Regular,
             call_date,
             due_date,

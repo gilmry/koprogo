@@ -10,6 +10,8 @@ use crate::application::ports::{
 };
 use crate::domain::entities::{ApprovalStatus, ReminderStatus};
 use chrono::{Datelike, Timelike, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::collections::HashSet;
 use std::sync::Arc;
 use uuid::Uuid;
@@ -73,9 +75,9 @@ impl DashboardUseCases {
             .collect();
 
         // Calculate total expenses for current month
-        let total_expenses_current_month: f64 = current_month_expenses
+        let total_expenses_current_month: Decimal = current_month_expenses
             .iter()
-            .map(|e| e.amount_incl_vat.unwrap_or(0.0))
+            .map(|e| e.amount_incl_vat.unwrap_or(Decimal::ZERO))
             .sum();
 
         // Calculate paid expenses (status = Approved AND paid_date is set)
@@ -84,9 +86,9 @@ impl DashboardUseCases {
             .filter(|e| e.approval_status == ApprovalStatus::Approved && e.paid_date.is_some())
             .collect();
 
-        let total_paid: f64 = paid_expenses
+        let total_paid: Decimal = paid_expenses
             .iter()
-            .map(|e| e.amount_incl_vat.unwrap_or(0.0))
+            .map(|e| e.amount_incl_vat.unwrap_or(Decimal::ZERO))
             .sum();
 
         // Calculate pending expenses (not paid)
@@ -95,22 +97,22 @@ impl DashboardUseCases {
             .filter(|e| e.paid_date.is_none())
             .collect();
 
-        let total_pending: f64 = pending_expenses
+        let total_pending: Decimal = pending_expenses
             .iter()
-            .map(|e| e.amount_incl_vat.unwrap_or(0.0))
+            .map(|e| e.amount_incl_vat.unwrap_or(Decimal::ZERO))
             .sum();
 
         // Calculate percentages
         let total_all = total_paid + total_pending;
-        let paid_percentage = if total_all > 0.0 {
-            (total_paid / total_all) * 100.0
+        let paid_percentage = if total_all > Decimal::ZERO {
+            (total_paid / total_all) * dec!(100)
         } else {
-            0.0
+            Decimal::ZERO
         };
-        let pending_percentage = if total_all > 0.0 {
-            (total_pending / total_all) * 100.0
+        let pending_percentage = if total_all > Decimal::ZERO {
+            (total_pending / total_all) * dec!(100)
         } else {
-            0.0
+            Decimal::ZERO
         };
 
         // Calculate owners with overdue payments from payment_reminders
@@ -176,7 +178,7 @@ impl DashboardUseCases {
             .iter()
             .map(|expense| {
                 let transaction_type = TransactionType::PaymentMade;
-                let amount_value = expense.amount_incl_vat.unwrap_or(0.0);
+                let amount_value = expense.amount_incl_vat.unwrap_or(Decimal::ZERO);
                 let amount = -amount_value; // Negative for expenses
 
                 RecentTransaction {

@@ -3,6 +3,8 @@ use crate::application::ports::{OwnerRepository, UnitOwnerRepository, UnitReposi
 use crate::domain::entities::unit::UnitType;
 use crate::domain::entities::{Owner, Unit, UnitOwner};
 use async_trait::async_trait;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
@@ -91,9 +93,9 @@ impl UnitOwnerRepository for MockUnitOwnerRepository {
         Ok(!owners.is_empty())
     }
 
-    async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<f64, String> {
+    async fn get_total_ownership_percentage(&self, unit_id: Uuid) -> Result<Decimal, String> {
         let owners = self.find_current_owners_by_unit(unit_id).await?;
-        let total: f64 = owners.iter().map(|o| o.ownership_percentage).sum();
+        let total: Decimal = owners.iter().map(|o| o.ownership_percentage).sum();
         Ok(total)
     }
 
@@ -112,7 +114,7 @@ impl UnitOwnerRepository for MockUnitOwnerRepository {
     async fn find_active_by_building(
         &self,
         _building_id: Uuid,
-    ) -> Result<Vec<(Uuid, Uuid, f64)>, String> {
+    ) -> Result<Vec<(Uuid, Uuid, Decimal)>, String> {
         Ok(vec![])
     }
 }
@@ -252,7 +254,7 @@ fn create_test_unit(org_id: Uuid, building_id: Uuid) -> Unit {
         UnitType::Apartment,
         Some(1),
         75.5,
-        100.0,
+        dec!(100),
     )
     .unwrap()
 }
@@ -306,14 +308,14 @@ async fn test_add_owner_to_unit_success() {
     owner_repo.add_owner(owner.clone());
 
     let result = use_cases
-        .add_owner_to_unit(unit.id, owner.id, 1.0, true)
+        .add_owner_to_unit(unit.id, owner.id, dec!(1), true)
         .await;
 
     assert!(result.is_ok());
     let unit_owner = result.unwrap();
     assert_eq!(unit_owner.unit_id, unit.id);
     assert_eq!(unit_owner.owner_id, owner.id);
-    assert_eq!(unit_owner.ownership_percentage, 1.0);
+    assert_eq!(unit_owner.ownership_percentage, dec!(1));
     assert!(unit_owner.is_primary_contact);
 }
 
@@ -327,7 +329,7 @@ async fn test_add_owner_to_unit_nonexistent_unit() {
 
     let fake_unit_id = Uuid::new_v4();
     let result = use_cases
-        .add_owner_to_unit(fake_unit_id, owner.id, 1.0, true)
+        .add_owner_to_unit(fake_unit_id, owner.id, dec!(1), true)
         .await;
 
     assert!(result.is_err());
@@ -345,7 +347,7 @@ async fn test_add_owner_to_unit_nonexistent_owner() {
 
     let fake_owner_id = Uuid::new_v4();
     let result = use_cases
-        .add_owner_to_unit(unit.id, fake_owner_id, 1.0, true)
+        .add_owner_to_unit(unit.id, fake_owner_id, dec!(1), true)
         .await;
 
     assert!(result.is_err());
@@ -370,13 +372,13 @@ async fn test_add_owner_to_unit_exceeds_100_percent() {
 
     // Add first owner with 70%
     use_cases
-        .add_owner_to_unit(unit.id, owner1.id, 0.7, true)
+        .add_owner_to_unit(unit.id, owner1.id, dec!(0.7), true)
         .await
         .unwrap();
 
     // Try to add second owner with 50% (total would be 120%)
     let result = use_cases
-        .add_owner_to_unit(unit.id, owner2.id, 0.5, false)
+        .add_owner_to_unit(unit.id, owner2.id, dec!(0.5), false)
         .await;
 
     assert!(result.is_err());
@@ -397,13 +399,13 @@ async fn test_add_owner_to_unit_already_active() {
 
     // Add owner first time
     use_cases
-        .add_owner_to_unit(unit.id, owner.id, 1.0, true)
+        .add_owner_to_unit(unit.id, owner.id, dec!(1), true)
         .await
         .unwrap();
 
     // Try to add same owner again
     let result = use_cases
-        .add_owner_to_unit(unit.id, owner.id, 0.5, false)
+        .add_owner_to_unit(unit.id, owner.id, dec!(0.5), false)
         .await;
 
     assert!(result.is_err());
@@ -433,28 +435,28 @@ async fn test_add_multiple_owners_to_unit() {
 
     // Add 3 owners: 50%, 30%, 20%
     let uo1 = use_cases
-        .add_owner_to_unit(unit.id, owner1.id, 0.5, true)
+        .add_owner_to_unit(unit.id, owner1.id, dec!(0.5), true)
         .await
         .unwrap();
     let uo2 = use_cases
-        .add_owner_to_unit(unit.id, owner2.id, 0.3, false)
+        .add_owner_to_unit(unit.id, owner2.id, dec!(0.3), false)
         .await
         .unwrap();
     let uo3 = use_cases
-        .add_owner_to_unit(unit.id, owner3.id, 0.2, false)
+        .add_owner_to_unit(unit.id, owner3.id, dec!(0.2), false)
         .await
         .unwrap();
 
-    assert_eq!(uo1.ownership_percentage, 0.5);
-    assert_eq!(uo2.ownership_percentage, 0.3);
-    assert_eq!(uo3.ownership_percentage, 0.2);
+    assert_eq!(uo1.ownership_percentage, dec!(0.5));
+    assert_eq!(uo2.ownership_percentage, dec!(0.3));
+    assert_eq!(uo3.ownership_percentage, dec!(0.2));
 
     // Verify total
     let total = use_cases
         .get_total_ownership_percentage(unit.id)
         .await
         .unwrap();
-    assert!((total - 1.0).abs() < 0.0001);
+    assert!((total - Decimal::ONE).abs() < dec!(0.0001));
 }
 
 // TESTS: remove_owner_from_unit
@@ -473,7 +475,7 @@ async fn test_remove_owner_from_unit_success() {
 
     // Add owner
     use_cases
-        .add_owner_to_unit(unit.id, owner.id, 1.0, true)
+        .add_owner_to_unit(unit.id, owner.id, dec!(1), true)
         .await
         .unwrap();
 
@@ -523,16 +525,16 @@ async fn test_update_ownership_percentage_success() {
     owner_repo.add_owner(owner.clone());
 
     let uo = use_cases
-        .add_owner_to_unit(unit.id, owner.id, 0.5, true)
+        .add_owner_to_unit(unit.id, owner.id, dec!(0.5), true)
         .await
         .unwrap();
 
     // Update percentage
-    let result = use_cases.update_ownership_percentage(uo.id, 0.75).await;
+    let result = use_cases.update_ownership_percentage(uo.id, dec!(0.75)).await;
 
     assert!(result.is_ok());
     let updated = result.unwrap();
-    assert_eq!(updated.ownership_percentage, 0.75);
+    assert_eq!(updated.ownership_percentage, dec!(0.75));
 }
 
 #[tokio::test]
@@ -552,16 +554,16 @@ async fn test_update_percentage_exceeds_limit() {
     owner_repo.add_owner(owner2.clone());
 
     let uo1 = use_cases
-        .add_owner_to_unit(unit.id, owner1.id, 0.6, true)
+        .add_owner_to_unit(unit.id, owner1.id, dec!(0.6), true)
         .await
         .unwrap();
     use_cases
-        .add_owner_to_unit(unit.id, owner2.id, 0.4, false)
+        .add_owner_to_unit(unit.id, owner2.id, dec!(0.4), false)
         .await
         .unwrap();
 
     // Try to increase owner1 to 0.7 (would make total 1.1)
-    let result = use_cases.update_ownership_percentage(uo1.id, 0.7).await;
+    let result = use_cases.update_ownership_percentage(uo1.id, dec!(0.7)).await;
 
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("exceed 100%"));
@@ -587,7 +589,7 @@ async fn test_transfer_ownership_success() {
 
     // Add initial owner
     use_cases
-        .add_owner_to_unit(unit.id, from_owner.id, 1.0, true)
+        .add_owner_to_unit(unit.id, from_owner.id, dec!(1), true)
         .await
         .unwrap();
 
@@ -604,7 +606,7 @@ async fn test_transfer_ownership_success() {
 
     assert!(created.is_active());
     assert_eq!(created.owner_id, to_owner.id);
-    assert_eq!(created.ownership_percentage, 1.0);
+    assert_eq!(created.ownership_percentage, dec!(1));
     assert_eq!(created.is_primary_contact, ended.is_primary_contact);
 }
 
@@ -626,11 +628,11 @@ async fn test_transfer_ownership_target_already_owns() {
 
     // Both owners already own parts
     use_cases
-        .add_owner_to_unit(unit.id, owner1.id, 0.5, true)
+        .add_owner_to_unit(unit.id, owner1.id, dec!(0.5), true)
         .await
         .unwrap();
     use_cases
-        .add_owner_to_unit(unit.id, owner2.id, 0.5, false)
+        .add_owner_to_unit(unit.id, owner2.id, dec!(0.5), false)
         .await
         .unwrap();
 
@@ -658,7 +660,7 @@ async fn test_get_unit_owners() {
     owner_repo.add_owner(owner.clone());
 
     use_cases
-        .add_owner_to_unit(unit.id, owner.id, 1.0, true)
+        .add_owner_to_unit(unit.id, owner.id, dec!(1), true)
         .await
         .unwrap();
 
@@ -688,11 +690,11 @@ async fn test_get_owner_units() {
     owner_repo.add_owner(owner.clone());
 
     use_cases
-        .add_owner_to_unit(unit1.id, owner.id, 1.0, true)
+        .add_owner_to_unit(unit1.id, owner.id, dec!(1), true)
         .await
         .unwrap();
     use_cases
-        .add_owner_to_unit(unit2.id, owner.id, 1.0, true)
+        .add_owner_to_unit(unit2.id, owner.id, dec!(1), true)
         .await
         .unwrap();
 
@@ -722,11 +724,11 @@ async fn test_set_primary_contact() {
     owner_repo.add_owner(owner2.clone());
 
     let uo1 = use_cases
-        .add_owner_to_unit(unit.id, owner1.id, 0.5, true)
+        .add_owner_to_unit(unit.id, owner1.id, dec!(0.5), true)
         .await
         .unwrap();
     let uo2 = use_cases
-        .add_owner_to_unit(unit.id, owner2.id, 0.5, false)
+        .add_owner_to_unit(unit.id, owner2.id, dec!(0.5), false)
         .await
         .unwrap();
 
@@ -768,7 +770,7 @@ async fn test_total_ownership_percentage() {
 
     // Add 60%
     use_cases
-        .add_owner_to_unit(unit.id, owner.id, 0.6, true)
+        .add_owner_to_unit(unit.id, owner.id, dec!(0.6), true)
         .await
         .unwrap();
 
@@ -797,7 +799,7 @@ async fn test_has_active_owners() {
 
     // Add owner
     use_cases
-        .add_owner_to_unit(unit.id, owner.id, 1.0, true)
+        .add_owner_to_unit(unit.id, owner.id, dec!(1), true)
         .await
         .unwrap();
 
@@ -832,7 +834,7 @@ async fn test_ownership_history() {
 
     // owner1 owns it first
     use_cases
-        .add_owner_to_unit(unit.id, owner1.id, 1.0, true)
+        .add_owner_to_unit(unit.id, owner1.id, dec!(1), true)
         .await
         .unwrap();
 
