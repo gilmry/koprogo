@@ -8,6 +8,7 @@ use actix_web::http::header;
 use actix_web::{test, App};
 use koprogo_api::application::dto::{CreateBuildingDto, CreateOwnerDto, CreateUnitDto};
 use koprogo_api::domain::entities::UnitType;
+use rust_decimal_macros::dec;
 use koprogo_api::infrastructure::web::configure_routes;
 use serde_json::json;
 use serial_test::serial;
@@ -96,7 +97,7 @@ async fn create_call_for_funds_fixtures(
     let _ = app_state
         .unit_owner_use_cases
         .add_owner_to_unit(
-            unit_id, owner_id, 0.25, // 25% ownership share
+            unit_id, owner_id, dec!(0.25), // 25% ownership share
             true, // is primary contact
         )
         .await;
