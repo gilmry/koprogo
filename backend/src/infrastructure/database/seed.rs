@@ -592,7 +592,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit1_id,
             owner1_db_id,
-            1.0,  // 100%
+            rust_decimal_macros::dec!(1), // 100%
             true, // primary contact
             None, // no end_date (active)
         )
@@ -602,7 +602,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit2_id,
             owner2_db_id,
-            0.6,  // 60%
+            rust_decimal_macros::dec!(0.6), // 60%
             true, // primary contact
             None,
         )
@@ -611,7 +611,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit2_id,
             owner3_db_id,
-            0.4,   // 40%
+            rust_decimal_macros::dec!(0.4),   // 40%
             false, // not primary contact
             None,
         )
@@ -621,7 +621,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit3_id,
             owner1_db_id,
-            0.5,  // 50%
+            rust_decimal_macros::dec!(0.5), // 50%
             true, // primary contact
             None,
         )
@@ -630,7 +630,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit3_id,
             owner2_db_id,
-            0.3, // 30%
+            rust_decimal_macros::dec!(0.3), // 30%
             false,
             None,
         )
@@ -639,7 +639,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit3_id,
             owner3_db_id,
-            0.2, // 20%
+            rust_decimal_macros::dec!(0.2), // 20%
             false,
             None,
         )
@@ -649,7 +649,7 @@ impl DatabaseSeeder {
         self.create_demo_unit_owner(
             unit4_id,
             owner3_db_id,
-            1.0,  // 100%
+            rust_decimal_macros::dec!(1), // 100%
             true, // primary contact
             None,
         )
@@ -1470,7 +1470,7 @@ impl DatabaseSeeder {
         &self,
         unit_id: Uuid,
         owner_id: Uuid,
-        ownership_percentage: f64,
+        ownership_percentage: rust_decimal::Decimal,
         is_primary_contact: bool,
         end_date: Option<chrono::DateTime<Utc>>,
     ) -> Result<Uuid, String> {
@@ -3248,9 +3248,11 @@ impl DatabaseSeeder {
                     .await?;
 
                 self.create_demo_unit_owner(
-                    unit_id, owner_id, 1.0,  // 100% ownership per unit
-                    true, // primary contact
-                    None, // active (no end_date)
+                    unit_id,
+                    owner_id,
+                    rust_decimal_macros::dec!(1), // 100% ownership per unit
+                    true,                         // primary contact
+                    None,                         // active (no end_date)
                 )
                 .await?;
 
@@ -3585,9 +3587,11 @@ impl DatabaseSeeder {
 
             // Create unit_owner relationship
             self.create_demo_unit_owner(
-                unit_id, owner_id, 1.0,  // 100% ownership
-                true, // primary contact
-                None, // active (no end_date)
+                unit_id,
+                owner_id,
+                rust_decimal_macros::dec!(1), // 100% ownership
+                true,                         // primary contact
+                None,                         // active (no end_date)
             )
             .await?;
 
@@ -3755,9 +3759,11 @@ impl DatabaseSeeder {
 
             // Create unit_owner relationship
             self.create_demo_unit_owner(
-                unit_id, owner_id, 1.0,  // 100% ownership
-                true, // primary contact
-                None, // active (no end_date)
+                unit_id,
+                owner_id,
+                rust_decimal_macros::dec!(1), // 100% ownership
+                true,                         // primary contact
+                None,                         // active (no end_date)
             )
             .await?;
 

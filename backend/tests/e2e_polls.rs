@@ -11,6 +11,7 @@ use koprogo_api::application::dto::*;
 use koprogo_api::domain::entities::UnitType;
 use koprogo_api::infrastructure::web::configure_routes;
 use koprogo_api::infrastructure::web::AppState;
+use rust_decimal_macros::dec;
 use serde_json::json;
 use serial_test::serial;
 use uuid::Uuid;
@@ -50,7 +51,7 @@ async fn create_test_building_for_polls(
             unit_type: UnitType::Apartment,
             floor: Some(1),
             surface_area: 75.0,
-            quota: 1.0,
+            quota: rust_decimal_macros::dec!(1),
         })
         .await
         .expect("Failed to create unit for polls");
@@ -78,7 +79,7 @@ async fn create_test_building_for_polls(
     // Link owner to unit (100% ownership)
     app_state
         .unit_owner_use_cases
-        .add_owner_to_unit(unit_id, owner_id, 1.0, true)
+        .add_owner_to_unit(unit_id, owner_id, dec!(1), true)
         .await
         .expect("Failed to assign owner to unit for polls");
 
@@ -406,7 +407,7 @@ async fn test_polls_cast_vote() {
             unit_type: UnitType::Apartment,
             floor: Some(1),
             surface_area: 60.0,
-            quota: 1.0,
+            quota: rust_decimal_macros::dec!(1),
         })
         .await
         .expect("create unit for vote test");
@@ -427,7 +428,7 @@ async fn test_polls_cast_vote() {
 
     app_state
         .unit_owner_use_cases
-        .add_owner_to_unit(unit_id, user_id, 1.0, true)
+        .add_owner_to_unit(unit_id, user_id, dec!(1), true)
         .await
         .expect("link owner to unit for vote test");
 

@@ -83,7 +83,7 @@ async fn create_call_for_funds_fixtures(
         unit_type: UnitType::Apartment,
         floor: Some(1),
         surface_area: 80.0,
-        quota: 0.25,
+        quota: rust_decimal_macros::dec!(0.25),
     };
     let unit = app_state
         .unit_use_cases
