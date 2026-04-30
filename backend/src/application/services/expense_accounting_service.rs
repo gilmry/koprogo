@@ -12,6 +12,8 @@
 use crate::application::ports::JournalEntryRepository;
 use crate::domain::entities::{Expense, JournalEntry, JournalEntryLine};
 use chrono::Utc;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -84,7 +86,7 @@ impl ExpenseAccountingService {
         );
 
         // Line 2: Debit VAT recoverable (4110) if VAT > 0
-        if vat_amount > 0.01 {
+        if vat_amount > dec!(0.01) {
             lines.push(
                 JournalEntryLine::new_debit(
                     entry_id,
@@ -93,7 +95,7 @@ impl ExpenseAccountingService {
                     vat_amount,
                     Some(format!(
                         "TVA récupérable {}%",
-                        expense.vat_rate.unwrap_or(0.0) * 100.0
+                        expense.vat_rate.unwrap_or(Decimal::ZERO) * dec!(100)
                     )),
                 )
                 .map_err(|e| format!("Failed to create VAT debit line: {}", e))?,
@@ -296,7 +298,7 @@ mod tests {
         async fn calculate_account_balances(
             &self,
             _organization_id: Uuid,
-        ) -> Result<std::collections::HashMap<String, f64>, String> {
+        ) -> Result<std::collections::HashMap<String, Decimal>, String> {
             unimplemented!()
         }
         async fn calculate_account_balances_for_period(
@@ -304,14 +306,14 @@ mod tests {
             _organization_id: Uuid,
             _start_date: chrono::DateTime<chrono::Utc>,
             _end_date: chrono::DateTime<chrono::Utc>,
-        ) -> Result<std::collections::HashMap<String, f64>, String> {
+        ) -> Result<std::collections::HashMap<String, Decimal>, String> {
             unimplemented!()
         }
         async fn calculate_account_balances_for_building(
             &self,
             _organization_id: Uuid,
             _building_id: Uuid,
-        ) -> Result<std::collections::HashMap<String, f64>, String> {
+        ) -> Result<std::collections::HashMap<String, Decimal>, String> {
             unimplemented!()
         }
         async fn calculate_account_balances_for_building_and_period(
@@ -320,7 +322,7 @@ mod tests {
             _building_id: Uuid,
             _start_date: chrono::DateTime<chrono::Utc>,
             _end_date: chrono::DateTime<chrono::Utc>,
-        ) -> Result<std::collections::HashMap<String, f64>, String> {
+        ) -> Result<std::collections::HashMap<String, Decimal>, String> {
             unimplemented!()
         }
         async fn create_manual_entry(
@@ -380,11 +382,11 @@ mod tests {
             organization_id: org_id,
             building_id: Uuid::new_v4(),
             description: "Facture eau".to_string(),
-            amount: 1210.0,                // Total TTC
-            amount_excl_vat: Some(1000.0), // HT
-            vat_rate: Some(0.21),
-            vat_amount: Some(210.0),
-            amount_incl_vat: Some(1210.0),
+            amount: dec!(1210),                // Total TTC
+            amount_excl_vat: Some(dec!(1000)), // HT
+            vat_rate: Some(dec!(21)),
+            vat_amount: Some(dec!(210)),
+            amount_incl_vat: Some(dec!(1210)),
             expense_date: Utc::now(),
             invoice_date: None,
             due_date: None,
@@ -416,8 +418,8 @@ mod tests {
 
         // Verify balances
         assert!(entry.is_balanced());
-        assert_eq!(entry.total_debits(), 1210.0);
-        assert_eq!(entry.total_credits(), 1210.0);
+        assert_eq!(entry.total_debits(), dec!(1210));
+        assert_eq!(entry.total_credits(), dec!(1210));
 
         // Verify line details
         let expense_line = entry
@@ -425,21 +427,21 @@ mod tests {
             .iter()
             .find(|l| l.account_code == "6100")
             .unwrap();
-        assert_eq!(expense_line.debit, 1000.0);
+        assert_eq!(expense_line.debit, dec!(1000));
 
         let vat_line = entry
             .lines
             .iter()
             .find(|l| l.account_code == "4110")
             .unwrap();
-        assert_eq!(vat_line.debit, 210.0);
+        assert_eq!(vat_line.debit, dec!(210));
 
         let supplier_line = entry
             .lines
             .iter()
             .find(|l| l.account_code == "4400")
             .unwrap();
-        assert_eq!(supplier_line.credit, 1210.0);
+        assert_eq!(supplier_line.credit, dec!(1210));
     }
 
     #[tokio::test]
@@ -453,11 +455,11 @@ mod tests {
             organization_id: org_id,
             building_id: Uuid::new_v4(),
             description: "Facture eau".to_string(),
-            amount: 1210.0,
-            amount_excl_vat: Some(1000.0),
-            vat_rate: Some(0.21),
-            vat_amount: Some(210.0),
-            amount_incl_vat: Some(1210.0),
+            amount: dec!(1210),
+            amount_excl_vat: Some(dec!(1000)),
+            vat_rate: Some(dec!(21)),
+            vat_amount: Some(dec!(210)),
+            amount_incl_vat: Some(dec!(1210)),
             expense_date: Utc::now(),
             invoice_date: None,
             due_date: None,
@@ -487,8 +489,8 @@ mod tests {
 
         // Verify balances
         assert!(entry.is_balanced());
-        assert_eq!(entry.total_debits(), 1210.0);
-        assert_eq!(entry.total_credits(), 1210.0);
+        assert_eq!(entry.total_debits(), dec!(1210));
+        assert_eq!(entry.total_credits(), dec!(1210));
 
         // Verify line details
         let supplier_line = entry
@@ -496,13 +498,13 @@ mod tests {
             .iter()
             .find(|l| l.account_code == "4400")
             .unwrap();
-        assert_eq!(supplier_line.debit, 1210.0);
+        assert_eq!(supplier_line.debit, dec!(1210));
 
         let bank_line = entry
             .lines
             .iter()
             .find(|l| l.account_code == "5500")
             .unwrap();
-        assert_eq!(bank_line.credit, 1210.0);
+        assert_eq!(bank_line.credit, dec!(1210));
     }
 }

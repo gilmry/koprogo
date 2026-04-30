@@ -84,7 +84,7 @@ async fn create_contribution_fixtures(
         unit_type: UnitType::Apartment,
         floor: Some(2),
         surface_area: 95.0,
-        quota: 0.5,
+        quota: rust_decimal_macros::dec!(0.5),
     };
     let unit = app_state
         .unit_use_cases

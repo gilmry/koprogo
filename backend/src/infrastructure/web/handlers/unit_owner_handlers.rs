@@ -487,7 +487,7 @@ pub async fn get_total_ownership_percentage(
         Ok(total) => HttpResponse::Ok().json(serde_json::json!({
             "unit_id": unit_id.to_string(),
             "total_ownership_percentage": total,
-            "percentage_display": format!("{:.2}%", total * 100.0)
+            "percentage_display": format!("{:.2}%", total * rust_decimal_macros::dec!(100))
         })),
         Err(err) => HttpResponse::BadRequest().json(serde_json::json!({
             "error": err

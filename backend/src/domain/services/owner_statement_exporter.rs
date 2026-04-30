@@ -1,17 +1,20 @@
 use crate::domain::entities::{Building, Expense, Owner, Unit};
 use chrono::{DateTime, Utc};
 use printpdf::*;
+use rust_decimal::Decimal;
 use std::io::BufWriter;
 
 /// Owner Financial Statement Exporter - Generates PDF for Relevé de Charges
 ///
 /// Generates statements showing an owner's expenses over a period.
+///
+/// MONETARY: ownership_percentage + sums use rust_decimal::Decimal (cf. ADR-0007).
 pub struct OwnerStatementExporter;
 
 #[derive(Debug, Clone)]
 pub struct UnitWithOwnership {
     pub unit: Unit,
-    pub ownership_percentage: f64, // 0.0 to 1.0
+    pub ownership_percentage: Decimal, // 0.0 to 1.0
 }
 
 impl OwnerStatementExporter {
@@ -162,7 +165,10 @@ impl OwnerStatementExporter {
             );
 
             current_layer.use_text(
-                format!("{:.2}%", unit_info.ownership_percentage * 100.0),
+                format!(
+                    "{:.2}%",
+                    unit_info.ownership_percentage * rust_decimal_macros::dec!(100)
+                ),
                 9.0,
                 Mm(130.0),
                 Mm(y),
@@ -188,8 +194,8 @@ impl OwnerStatementExporter {
         current_layer.use_text("Statut", 10.0, Mm(170.0), Mm(y), &font_bold);
         y -= 6.0;
 
-        let mut total_amount = 0.0;
-        let mut total_paid = 0.0;
+        let mut total_amount = Decimal::ZERO;
+        let mut total_paid = Decimal::ZERO;
 
         for expense in expenses {
             if y < 50.0 {
@@ -275,7 +281,7 @@ impl OwnerStatementExporter {
         y -= 10.0;
 
         // Payment instructions
-        if amount_due > 0.0 {
+        if amount_due > Decimal::ZERO {
             current_layer.use_text(
                 "Modalités de paiement:".to_string(),
                 10.0,
@@ -366,7 +372,7 @@ mod tests {
             unit_type: crate::domain::entities::UnitType::Apartment,
             floor: Some(1),
             surface_area: 75.5,
-            quota: 150.0,
+            quota: rust_decimal_macros::dec!(150),
             owner_id: None,
             created_at: Utc::now(),
             updated_at: Utc::now(),
@@ -374,7 +380,7 @@ mod tests {
 
         let units = vec![UnitWithOwnership {
             unit,
-            ownership_percentage: 0.15, // 15%
+            ownership_percentage: rust_decimal_macros::dec!(0.15), // 15%
         }];
 
         let expenses = vec![Expense {
@@ -382,11 +388,11 @@ mod tests {
             building_id: building.id,
             organization_id: building.organization_id,
             description: "Entretien ascenseur".to_string(),
-            amount: 150.0,
-            amount_excl_vat: Some(123.97),
-            vat_rate: Some(21.0),
-            vat_amount: Some(26.03),
-            amount_incl_vat: Some(150.0),
+            amount: rust_decimal_macros::dec!(150),
+            amount_excl_vat: Some(rust_decimal_macros::dec!(123.97)),
+            vat_rate: Some(rust_decimal_macros::dec!(21)),
+            vat_amount: Some(rust_decimal_macros::dec!(26.03)),
+            amount_incl_vat: Some(rust_decimal_macros::dec!(150)),
             expense_date: Utc::now(),
             invoice_date: None,
             due_date: None,

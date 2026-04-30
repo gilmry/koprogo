@@ -2,23 +2,26 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
-/// DTO for adding an owner to a unit
+/// DTO for adding an owner to a unit.
+///
+/// Note : range 0..=1 sur `ownership_percentage` est enforced en domain
+/// (`UnitOwner::new`). validator crate ne supporte pas Decimal sur range
+/// (cf. expense_dto.rs).
 #[derive(Debug, Deserialize, Validate)]
 pub struct AddOwnerToUnitDto {
     #[validate(length(min = 1))]
     pub owner_id: String,
 
-    #[validate(range(min = 0.0, max = 1.0))]
-    pub ownership_percentage: f64,
+    pub ownership_percentage: rust_decimal::Decimal,
 
     pub is_primary_contact: bool,
 }
 
-/// DTO for updating ownership details
+/// DTO for updating ownership details.
+/// Range 0..=1 enforced en domain (UnitOwner::update_percentage).
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpdateOwnershipDto {
-    #[validate(range(min = 0.0, max = 1.0))]
-    pub ownership_percentage: Option<f64>,
+    pub ownership_percentage: Option<rust_decimal::Decimal>,
 
     pub is_primary_contact: Option<bool>,
 }
@@ -29,7 +32,7 @@ pub struct UnitOwnerResponseDto {
     pub id: String,
     pub unit_id: String,
     pub owner_id: String,
-    pub ownership_percentage: f64,
+    pub ownership_percentage: rust_decimal::Decimal,
     pub start_date: DateTime<Utc>,
     pub end_date: Option<DateTime<Utc>>,
     pub is_primary_contact: bool,
@@ -46,7 +49,7 @@ pub struct UnitWithOwnersDto {
     pub floor: Option<i32>,
     pub area: Option<f64>,
     pub owners: Vec<UnitOwnerWithDetailsDto>,
-    pub total_ownership_percentage: f64,
+    pub total_ownership_percentage: rust_decimal::Decimal,
 }
 
 /// Response DTO for an owner with their units
@@ -62,7 +65,7 @@ pub struct OwnerWithUnitsDto {
 #[derive(Debug, Serialize, Clone)]
 pub struct UnitOwnerWithDetailsDto {
     pub relationship_id: String,
-    pub ownership_percentage: f64,
+    pub ownership_percentage: rust_decimal::Decimal,
     pub is_primary_contact: bool,
     pub start_date: DateTime<Utc>,
     pub end_date: Option<DateTime<Utc>>,

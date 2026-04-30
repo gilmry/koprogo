@@ -52,7 +52,7 @@ pub struct UnitOwnershipDataDto {
     pub building_address: String,
     pub unit_number: String,
     pub floor: Option<i32>,
-    pub ownership_percentage: f64,
+    pub ownership_percentage: rust_decimal::Decimal,
     pub start_date: String,
     pub end_date: Option<String>,
     pub is_primary_contact: bool,

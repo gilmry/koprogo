@@ -1,5 +1,7 @@
 use crate::domain::services::PcnReportLine;
 use printpdf::*;
+use rust_decimal::prelude::ToPrimitive;
+use rust_decimal::Decimal;
 use std::io::BufWriter;
 
 /// PCN Exporter - Generates PDF and Excel reports
@@ -11,7 +13,7 @@ impl PcnExporter {
     pub fn export_to_pdf(
         building_name: &str,
         report_lines: &[PcnReportLine],
-        total_amount: f64,
+        total_amount: Decimal,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document
         let (doc, page1, layer1) = PdfDocument::new("Rapport PCN", Mm(210.0), Mm(297.0), "Layer 1");
@@ -96,7 +98,7 @@ impl PcnExporter {
     pub fn export_to_excel(
         building_name: &str,
         report_lines: &[PcnReportLine],
-        total_amount: f64,
+        total_amount: Decimal,
     ) -> Result<Vec<u8>, String> {
         use rust_xlsxwriter::*;
 
@@ -191,7 +193,12 @@ impl PcnExporter {
                 .write_string(row, 4, &line.account.label_en)
                 .map_err(|e| e.to_string())?;
             worksheet
-                .write_number_with_format(row, 5, line.total_amount, &currency_format)
+                .write_number_with_format(
+                    row,
+                    5,
+                    line.total_amount.to_f64().unwrap_or(0.0),
+                    &currency_format,
+                )
                 .map_err(|e| e.to_string())?;
             worksheet
                 .write_number(row, 6, line.entry_count as f64)
@@ -208,7 +215,7 @@ impl PcnExporter {
             .write_number_with_format(
                 row,
                 5,
-                total_amount,
+                total_amount.to_f64().unwrap_or(0.0),
                 &Format::new().set_bold().set_num_format("#,##0.00 €"),
             )
             .map_err(|e| e.to_string())?;
@@ -226,21 +233,22 @@ mod tests {
     use crate::domain::entities::ExpenseCategory;
     use crate::domain::services::PcnMapper;
 
-    fn create_test_report() -> (Vec<PcnReportLine>, f64) {
+    fn create_test_report() -> (Vec<PcnReportLine>, Decimal) {
+        use rust_decimal_macros::dec;
         let lines = vec![
             PcnReportLine {
                 account: PcnMapper::map_expense_to_pcn(&ExpenseCategory::Maintenance),
-                total_amount: 1500.0,
+                total_amount: dec!(1500),
                 entry_count: 5,
             },
             PcnReportLine {
                 account: PcnMapper::map_expense_to_pcn(&ExpenseCategory::Utilities),
-                total_amount: 800.0,
+                total_amount: dec!(800),
                 entry_count: 3,
             },
             PcnReportLine {
                 account: PcnMapper::map_expense_to_pcn(&ExpenseCategory::Insurance),
-                total_amount: 2000.0,
+                total_amount: dec!(2000),
                 entry_count: 1,
             },
         ];
@@ -266,7 +274,7 @@ mod tests {
 
     #[test]
     fn test_export_pdf_empty_report() {
-        let result = PcnExporter::export_to_pdf("Empty Building", &[], 0.0);
+        let result = PcnExporter::export_to_pdf("Empty Building", &[], Decimal::ZERO);
 
         assert!(result.is_ok());
         let pdf_bytes = result.unwrap();
@@ -302,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_export_excel_empty_report() {
-        let result = PcnExporter::export_to_excel("Empty Building", &[], 0.0);
+        let result = PcnExporter::export_to_excel("Empty Building", &[], Decimal::ZERO);
 
         assert!(result.is_ok());
         let excel_bytes = result.unwrap();

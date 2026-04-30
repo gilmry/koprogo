@@ -1,4 +1,5 @@
 use crate::domain::entities::{Expense, ExpenseCategory};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -51,7 +52,7 @@ pub struct PcnReportLine {
     /// PCN account
     pub account: PcnAccount,
     /// Total amount for this account
-    pub total_amount: f64,
+    pub total_amount: Decimal,
     /// Number of expense entries
     pub entry_count: usize,
 }
@@ -124,14 +125,14 @@ impl PcnMapper {
     /// Aggregates expenses by PCN account code
     /// Returns report lines sorted by PCN account code
     pub fn generate_report(expenses: &[Expense]) -> Vec<PcnReportLine> {
-        let mut aggregated: HashMap<String, (PcnAccount, f64, usize)> = HashMap::new();
+        let mut aggregated: HashMap<String, (PcnAccount, Decimal, usize)> = HashMap::new();
 
         // Aggregate expenses by PCN account code
         for expense in expenses {
             let account = Self::map_expense_to_pcn(&expense.category);
             let entry = aggregated
                 .entry(account.code.clone())
-                .or_insert((account, 0.0, 0));
+                .or_insert((account, Decimal::ZERO, 0));
             entry.1 += expense.amount;
             entry.2 += 1;
         }
@@ -154,6 +155,7 @@ impl PcnMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_decimal_macros::dec;
 
     #[test]
     fn test_map_maintenance_to_pcn_611() {
@@ -224,7 +226,7 @@ mod tests {
     }
 
     // Helper function to create test expenses
-    fn create_test_expense(category: ExpenseCategory, amount: f64) -> Expense {
+    fn create_test_expense(category: ExpenseCategory, amount: Decimal) -> Expense {
         use chrono::Utc;
         use uuid::Uuid;
 
@@ -254,25 +256,25 @@ mod tests {
     #[test]
     fn test_generate_report_single_category() {
         let expenses = vec![
-            create_test_expense(ExpenseCategory::Maintenance, 100.0),
-            create_test_expense(ExpenseCategory::Maintenance, 150.0),
+            create_test_expense(ExpenseCategory::Maintenance, dec!(100)),
+            create_test_expense(ExpenseCategory::Maintenance, dec!(150)),
         ];
 
         let report = PcnMapper::generate_report(&expenses);
 
         assert_eq!(report.len(), 1);
         assert_eq!(report[0].account.code, "611");
-        assert_eq!(report[0].total_amount, 250.0);
+        assert_eq!(report[0].total_amount, dec!(250));
         assert_eq!(report[0].entry_count, 2);
     }
 
     #[test]
     fn test_generate_report_multiple_categories() {
         let expenses = vec![
-            create_test_expense(ExpenseCategory::Maintenance, 100.0),
-            create_test_expense(ExpenseCategory::Utilities, 50.0),
-            create_test_expense(ExpenseCategory::Maintenance, 150.0),
-            create_test_expense(ExpenseCategory::Insurance, 200.0),
+            create_test_expense(ExpenseCategory::Maintenance, dec!(100)),
+            create_test_expense(ExpenseCategory::Utilities, dec!(50)),
+            create_test_expense(ExpenseCategory::Maintenance, dec!(150)),
+            create_test_expense(ExpenseCategory::Insurance, dec!(200)),
         ];
 
         let report = PcnMapper::generate_report(&expenses);
@@ -281,24 +283,24 @@ mod tests {
 
         // Find specific accounts in report
         let maintenance_line = report.iter().find(|l| l.account.code == "611").unwrap();
-        assert_eq!(maintenance_line.total_amount, 250.0);
+        assert_eq!(maintenance_line.total_amount, dec!(250));
         assert_eq!(maintenance_line.entry_count, 2);
 
         let utilities_line = report.iter().find(|l| l.account.code == "615").unwrap();
-        assert_eq!(utilities_line.total_amount, 50.0);
+        assert_eq!(utilities_line.total_amount, dec!(50));
         assert_eq!(utilities_line.entry_count, 1);
 
         let insurance_line = report.iter().find(|l| l.account.code == "613").unwrap();
-        assert_eq!(insurance_line.total_amount, 200.0);
+        assert_eq!(insurance_line.total_amount, dec!(200));
         assert_eq!(insurance_line.entry_count, 1);
     }
 
     #[test]
     fn test_generate_report_sorted_by_account_code() {
         let expenses = vec![
-            create_test_expense(ExpenseCategory::Administration, 100.0), // 620
-            create_test_expense(ExpenseCategory::Works, 200.0),          // 610
-            create_test_expense(ExpenseCategory::Utilities, 50.0),       // 615
+            create_test_expense(ExpenseCategory::Administration, dec!(100)), // 620
+            create_test_expense(ExpenseCategory::Works, dec!(200)),          // 610
+            create_test_expense(ExpenseCategory::Utilities, dec!(50)),       // 615
         ];
 
         let report = PcnMapper::generate_report(&expenses);

@@ -21,7 +21,7 @@
       {
         "ordinal": 3,
         "name": "ownership_percentage",
-        "type_info": "Float8"
+        "type_info": "Numeric"
       },
       {
         "ordinal": 4,
@@ -54,7 +54,7 @@
         "Uuid",
         "Uuid",
         "Uuid",
-        "Float8",
+        "Numeric",
         "Timestamptz",
         "Timestamptz",
         "Bool",
