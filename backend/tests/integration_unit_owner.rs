@@ -4,7 +4,6 @@ use koprogo_api::domain::entities::{Owner, Unit, UnitOwner};
 use koprogo_api::infrastructure::database::{
     create_pool, PostgresOwnerRepository, PostgresUnitOwnerRepository, PostgresUnitRepository,
 };
-use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serial_test::serial;
 use testcontainers_modules::postgres::Postgres;

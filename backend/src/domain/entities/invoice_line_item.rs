@@ -161,10 +161,22 @@ mod tests {
         let expense_id = Uuid::new_v4();
 
         let lines = vec![
-            InvoiceLineItem::new(expense_id, "Item 1".to_string(), dec!(2), dec!(100), dec!(21))
-                .unwrap(),
-            InvoiceLineItem::new(expense_id, "Item 2".to_string(), dec!(1), dec!(300), dec!(21))
-                .unwrap(),
+            InvoiceLineItem::new(
+                expense_id,
+                "Item 1".to_string(),
+                dec!(2),
+                dec!(100),
+                dec!(21),
+            )
+            .unwrap(),
+            InvoiceLineItem::new(
+                expense_id,
+                "Item 2".to_string(),
+                dec!(1),
+                dec!(300),
+                dec!(21),
+            )
+            .unwrap(),
             InvoiceLineItem::new(expense_id, "Item 3".to_string(), dec!(3), dec!(50), dec!(6))
                 .unwrap(),
         ];
@@ -302,13 +314,8 @@ mod tests {
     #[test]
     fn security_create_line_item_empty_description_fails() {
         let expense_id = Uuid::new_v4();
-        let line = InvoiceLineItem::new(
-            expense_id,
-            "   ".to_string(),
-            dec!(1),
-            dec!(100),
-            dec!(21),
-        );
+        let line =
+            InvoiceLineItem::new(expense_id, "   ".to_string(), dec!(1), dec!(100), dec!(21));
         assert!(line.is_err());
         assert_eq!(line.unwrap_err(), "Description cannot be empty");
     }
@@ -318,13 +325,8 @@ mod tests {
         // Empêche un client malveillant de créer une 'remise' déguisée
         // en prix négatif qui contournerait les workflows d'approbation.
         let expense_id = Uuid::new_v4();
-        let line = InvoiceLineItem::new(
-            expense_id,
-            "Test".to_string(),
-            dec!(1),
-            dec!(-50),
-            dec!(21),
-        );
+        let line =
+            InvoiceLineItem::new(expense_id, "Test".to_string(), dec!(1), dec!(-50), dec!(21));
         assert!(line.is_err());
         assert_eq!(line.unwrap_err(), "Unit price cannot be negative");
     }
@@ -347,13 +349,8 @@ mod tests {
     #[test]
     fn security_create_line_item_negative_vat_rate_fails() {
         let expense_id = Uuid::new_v4();
-        let line = InvoiceLineItem::new(
-            expense_id,
-            "Test".to_string(),
-            dec!(1),
-            dec!(100),
-            dec!(-1),
-        );
+        let line =
+            InvoiceLineItem::new(expense_id, "Test".to_string(), dec!(1), dec!(100), dec!(-1));
         assert!(line.is_err());
     }
 
@@ -411,8 +408,13 @@ mod tests {
     #[test]
     fn negative_description_only_whitespace_fails() {
         let expense_id = Uuid::new_v4();
-        let line =
-            InvoiceLineItem::new(expense_id, "\t\n  ".to_string(), dec!(1), dec!(100), dec!(21));
+        let line = InvoiceLineItem::new(
+            expense_id,
+            "\t\n  ".to_string(),
+            dec!(1),
+            dec!(100),
+            dec!(21),
+        );
         assert!(line.is_err());
     }
 }

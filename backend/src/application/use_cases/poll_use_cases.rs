@@ -811,7 +811,10 @@ mod tests {
             unimplemented!()
         }
 
-        async fn get_total_ownership_percentage(&self, _unit_id: Uuid) -> Result<rust_decimal::Decimal, String> {
+        async fn get_total_ownership_percentage(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<rust_decimal::Decimal, String> {
             unimplemented!()
         }
 
@@ -830,7 +833,13 @@ mod tests {
             // Return 10 unique owners (unit_id, owner_id, ownership_percentage)
             // This matches the old hardcoded total_eligible_voters = 10
             Ok((0..10)
-                .map(|_| (Uuid::new_v4(), Uuid::new_v4(), rust_decimal_macros::dec!(0.1)))
+                .map(|_| {
+                    (
+                        Uuid::new_v4(),
+                        Uuid::new_v4(),
+                        rust_decimal_macros::dec!(0.1),
+                    )
+                })
                 .collect())
         }
     }

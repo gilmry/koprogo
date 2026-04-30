@@ -172,7 +172,9 @@ impl AnnualReportExporter {
         let mut category_totals: HashMap<String, Decimal> = HashMap::new();
         for expense in expenses {
             let category_name = Self::category_name(&expense.category);
-            *category_totals.entry(category_name).or_insert(Decimal::ZERO) += expense.amount;
+            *category_totals
+                .entry(category_name)
+                .or_insert(Decimal::ZERO) += expense.amount;
         }
 
         // Sort categories by amount (descending)

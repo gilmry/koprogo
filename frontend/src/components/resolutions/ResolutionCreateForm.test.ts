@@ -54,10 +54,7 @@ describe("ResolutionCreateForm", () => {
     const options = Array.from(select.options);
     expect(options).toHaveLength(2);
     // Values should be snake_case to match backend serde
-    expect(options.map((o) => o.value)).toEqual([
-      "ordinary",
-      "extraordinary",
-    ]);
+    expect(options.map((o) => o.value)).toEqual(["ordinary", "extraordinary"]);
   });
 
   it("has majority dropdown with 4 options (absolute/two_thirds/four_fifths/unanimity)", () => {

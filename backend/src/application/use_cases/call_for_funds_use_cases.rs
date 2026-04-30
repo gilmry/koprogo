@@ -409,7 +409,10 @@ mod tests {
         async fn has_active_owners(&self, _unit_id: Uuid) -> Result<bool, String> {
             unimplemented!()
         }
-        async fn get_total_ownership_percentage(&self, _unit_id: Uuid) -> Result<rust_decimal::Decimal, String> {
+        async fn get_total_ownership_percentage(
+            &self,
+            _unit_id: Uuid,
+        ) -> Result<rust_decimal::Decimal, String> {
             unimplemented!()
         }
         async fn find_active_by_unit_and_owner(
@@ -529,7 +532,8 @@ mod tests {
         let contributions = contrib_repo.store.lock().unwrap();
         assert_eq!(contributions.len(), 2);
 
-        let mut amounts: Vec<rust_decimal::Decimal> = contributions.iter().map(|c| c.amount).collect();
+        let mut amounts: Vec<rust_decimal::Decimal> =
+            contributions.iter().map(|c| c.amount).collect();
         amounts.sort();
         // 40% of 5000 = 2000, 60% of 5000 = 3000
         assert_eq!(amounts[0], rust_decimal_macros::dec!(2_000));

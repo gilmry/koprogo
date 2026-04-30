@@ -327,13 +327,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
 
         Ok(results
             .into_iter()
-            .map(|row| {
-                (
-                    row.unit_id,
-                    row.owner_id,
-                    row.ownership_percentage,
-                )
-            })
+            .map(|row| (row.unit_id, row.owner_id, row.ownership_percentage))
             .collect())
     }
 }
