@@ -68,7 +68,7 @@ pub struct UnitOwnershipData {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ExpenseData {
     pub description: String,
-    pub amount: f64,
+    pub amount: rust_decimal::Decimal,
     pub due_date: DateTime<Utc>,
     pub paid: bool,
     pub building_name: String,
@@ -228,7 +228,7 @@ mod tests {
         let mut export = GdprExport::new(user_data);
         let expense = ExpenseData {
             description: "Monthly maintenance".to_string(),
-            amount: 100.0,
+            amount: rust_decimal_macros::dec!(100.00),
             due_date: Utc::now(),
             paid: true,
             building_name: "Building A".to_string(),

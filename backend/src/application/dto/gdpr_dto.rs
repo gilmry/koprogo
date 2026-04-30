@@ -61,7 +61,8 @@ pub struct UnitOwnershipDataDto {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, utoipa::ToSchema)]
 pub struct ExpenseDataDto {
     pub description: String,
-    pub amount: f64,
+    #[schema(value_type = String, example = "100.00")]
+    pub amount: rust_decimal::Decimal,
     pub due_date: String,
     pub paid: bool,
     pub building_name: String,
