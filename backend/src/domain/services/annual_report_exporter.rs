@@ -1,19 +1,24 @@
 use crate::domain::entities::{Building, Expense, ExpenseCategory};
 use chrono::Utc;
 use printpdf::*;
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use std::collections::HashMap;
 use std::io::BufWriter;
 
 /// Annual Financial Report Exporter - Generates PDF for Rapport Financier Annuel
 ///
 /// Generates comprehensive annual financial reports with expense breakdowns.
+///
+/// MONETARY: budgeted/actual/total_income/reserve_fund use rust_decimal::Decimal
+/// (cf. ADR-0007). Le PDF affiche via `{:.2}` lequel formate Decimal correctement.
 pub struct AnnualReportExporter;
 
 #[derive(Debug, Clone)]
 pub struct BudgetItem {
     pub category: ExpenseCategory,
-    pub budgeted: f64,
-    pub actual: f64,
+    pub budgeted: Decimal,
+    pub actual: Decimal,
 }
 
 impl AnnualReportExporter {
@@ -31,8 +36,8 @@ impl AnnualReportExporter {
         year: i32,
         expenses: &[Expense],
         budget_items: &[BudgetItem],
-        total_income: f64,
-        reserve_fund: f64,
+        total_income: Decimal,
+        reserve_fund: Decimal,
     ) -> Result<Vec<u8>, String> {
         // Create PDF document (A4: 210mm x 297mm)
         let (doc, page1, layer1) =
@@ -106,7 +111,7 @@ impl AnnualReportExporter {
         );
         y -= 8.0;
 
-        let total_expenses: f64 = expenses.iter().map(|e| e.amount).sum();
+        let total_expenses: Decimal = expenses.iter().map(|e| e.amount).sum();
 
         current_layer.use_text(
             format!(
@@ -130,7 +135,7 @@ impl AnnualReportExporter {
         y -= 6.0;
 
         let balance = total_income - total_expenses;
-        let balance_label = if balance >= 0.0 {
+        let balance_label = if balance >= Decimal::ZERO {
             "Excédent"
         } else {
             "Déficit"
@@ -164,10 +169,10 @@ impl AnnualReportExporter {
         y -= 8.0;
 
         // Calculate expenses by category
-        let mut category_totals: HashMap<String, f64> = HashMap::new();
+        let mut category_totals: HashMap<String, Decimal> = HashMap::new();
         for expense in expenses {
             let category_name = Self::category_name(&expense.category);
-            *category_totals.entry(category_name).or_insert(0.0) += expense.amount;
+            *category_totals.entry(category_name).or_insert(Decimal::ZERO) += expense.amount;
         }
 
         // Sort categories by amount (descending)
@@ -186,10 +191,10 @@ impl AnnualReportExporter {
                 break;
             }
 
-            let percentage = if total_expenses > 0.0 {
-                (amount / total_expenses) * 100.0
+            let percentage: Decimal = if total_expenses > Decimal::ZERO {
+                (*amount / total_expenses) * dec!(100)
             } else {
-                0.0
+                Decimal::ZERO
             };
 
             current_layer.use_text(category.clone(), 9.0, Mm(20.0), Mm(y), &font);
@@ -216,8 +221,8 @@ impl AnnualReportExporter {
         current_layer.use_text("Écart", 10.0, Mm(160.0), Mm(y), &font_bold);
         y -= 6.0;
 
-        let mut total_budgeted = 0.0;
-        let mut total_actual = 0.0;
+        let mut total_budgeted = Decimal::ZERO;
+        let mut total_actual = Decimal::ZERO;
 
         for item in budget_items {
             if y < 50.0 {
@@ -227,7 +232,7 @@ impl AnnualReportExporter {
 
             let category_name = Self::category_name(&item.category);
             let variance = item.budgeted - item.actual;
-            let variance_sign = if variance >= 0.0 { "+" } else { "" };
+            let variance_sign = if variance >= Decimal::ZERO { "+" } else { "" };
 
             current_layer.use_text(category_name, 9.0, Mm(20.0), Mm(y), &font);
             current_layer.use_text(
@@ -276,7 +281,11 @@ impl AnnualReportExporter {
         );
 
         let total_variance = total_budgeted - total_actual;
-        let total_variance_sign = if total_variance >= 0.0 { "+" } else { "" };
+        let total_variance_sign = if total_variance >= Decimal::ZERO {
+            "+"
+        } else {
+            ""
+        };
         current_layer.use_text(
             format!("{}{:.2} €", total_variance_sign, total_variance),
             10.0,
@@ -377,11 +386,11 @@ mod tests {
                 building_id: building.id,
                 organization_id: building.organization_id,
                 description: "Entretien ascenseur".to_string(),
-                amount: 1500.0,
-                amount_excl_vat: Some(1239.67),
-                vat_rate: Some(21.0),
-                vat_amount: Some(260.33),
-                amount_incl_vat: Some(1500.0),
+                amount: dec!(1500),
+                amount_excl_vat: Some(dec!(1239.67)),
+                vat_rate: Some(dec!(21)),
+                vat_amount: Some(dec!(260.33)),
+                amount_incl_vat: Some(dec!(1500)),
                 expense_date: Utc::now(),
                 invoice_date: None,
                 due_date: None,
@@ -405,11 +414,11 @@ mod tests {
                 building_id: building.id,
                 organization_id: building.organization_id,
                 description: "Électricité parties communes".to_string(),
-                amount: 800.0,
-                amount_excl_vat: Some(661.16),
-                vat_rate: Some(21.0),
-                vat_amount: Some(138.84),
-                amount_incl_vat: Some(800.0),
+                amount: dec!(800),
+                amount_excl_vat: Some(dec!(661.16)),
+                vat_rate: Some(dec!(21)),
+                vat_amount: Some(dec!(138.84)),
+                amount_incl_vat: Some(dec!(800)),
                 expense_date: Utc::now(),
                 invoice_date: None,
                 due_date: None,
@@ -433,13 +442,13 @@ mod tests {
         let budget_items = vec![
             BudgetItem {
                 category: ExpenseCategory::Maintenance,
-                budgeted: 2000.0,
-                actual: 1500.0,
+                budgeted: dec!(2000),
+                actual: dec!(1500),
             },
             BudgetItem {
                 category: ExpenseCategory::Utilities,
-                budgeted: 1000.0,
-                actual: 800.0,
+                budgeted: dec!(1000),
+                actual: dec!(800),
             },
         ];
 
@@ -448,8 +457,8 @@ mod tests {
             2025,
             &expenses,
             &budget_items,
-            3000.0, // Total income
-            5000.0, // Reserve fund
+            dec!(3000), // Total income
+            dec!(5000), // Reserve fund
         );
 
         assert!(result.is_ok());

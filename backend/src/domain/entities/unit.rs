@@ -1,6 +1,10 @@
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+const MAX_QUOTA: Decimal = dec!(1000);
 
 /// Type de lot (appartement, cave, parking, etc.)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -21,8 +25,8 @@ pub struct Unit {
     pub unit_number: String,
     pub unit_type: UnitType,
     pub floor: Option<i32>,
-    pub surface_area: f64, // en m²
-    pub quota: f64,        // Quote-part en millièmes
+    pub surface_area: f64, // en m² (mesure physique, f64 OK — cf. ADR-0009)
+    pub quota: Decimal,    // Quote-part en millièmes (Decimal exact — cf. ADR-0007)
     pub owner_id: Option<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -36,7 +40,7 @@ impl Unit {
         unit_type: UnitType,
         floor: Option<i32>,
         surface_area: f64,
-        quota: f64,
+        quota: Decimal,
     ) -> Result<Self, String> {
         if unit_number.is_empty() {
             return Err("Unit number cannot be empty".to_string());
@@ -47,7 +51,7 @@ impl Unit {
         // Validate shares (tantièmes) according to Art. 577-2 §4 Code Civil belge
         // Shares must be positive and typically don't exceed 1000 (building tantiemes)
         // Individual unit shares must sum to building.total_shares (usually 1000)
-        if quota <= 0.0 || quota > 1000.0 {
+        if quota <= Decimal::ZERO || quota > MAX_QUOTA {
             return Err("Quota (shares) must be between 0 (exclusive) and 1000 (inclusive), representing building tantièmes".to_string());
         }
 
@@ -74,7 +78,7 @@ impl Unit {
         if self.surface_area <= 0.0 {
             return Err("Surface area must be greater than 0".to_string());
         }
-        if self.quota <= 0.0 || self.quota > 1000.0 {
+        if self.quota <= Decimal::ZERO || self.quota > MAX_QUOTA {
             return Err("Quota must be between 0 and 1000".to_string());
         }
         Ok(())
@@ -106,7 +110,7 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             75.5,
-            50.0,
+            dec!(50),
         );
 
         assert!(unit.is_ok());
@@ -127,7 +131,7 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             0.0,
-            50.0,
+            dec!(50),
         );
 
         assert!(unit.is_err());
@@ -144,7 +148,7 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             75.5,
-            50.0,
+            dec!(50),
         )
         .unwrap();
 

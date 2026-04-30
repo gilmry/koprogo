@@ -227,7 +227,7 @@ mod tests {
             unit_type: UnitType::Apartment,
             floor: Some(1),
             surface_area: 85.0,
-            quota: 50.0,
+            quota: rust_decimal_macros::dec!(50),
         }
     }
 
@@ -246,7 +246,7 @@ mod tests {
         let dto = result.unwrap();
         assert_eq!(dto.unit_number, "A101");
         assert_eq!(dto.surface_area, 85.0);
-        assert_eq!(dto.quota, 50.0);
+        assert_eq!(dto.quota, rust_decimal_macros::dec!(50));
         assert_eq!(dto.building_id, building_id.to_string());
         assert!(dto.owner_id.is_none());
     }
@@ -264,7 +264,7 @@ mod tests {
             unit_type: UnitType::Apartment,
             floor: Some(1),
             surface_area: 85.0,
-            quota: 50.0,
+            quota: rust_decimal_macros::dec!(50),
         };
 
         let result = use_cases.create_unit(dto).await;
@@ -285,7 +285,7 @@ mod tests {
             UnitType::Parking,
             Some(-1),
             15.0,
-            10.0,
+            rust_decimal_macros::dec!(10),
         )
         .unwrap();
         let unit_id = unit.id;
@@ -316,7 +316,7 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             80.0,
-            40.0,
+            rust_decimal_macros::dec!(40),
         )
         .unwrap();
         let unit2 = Unit::new(
@@ -326,7 +326,7 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             65.0,
-            30.0,
+            rust_decimal_macros::dec!(30),
         )
         .unwrap();
         let unit3 = Unit::new(
@@ -336,7 +336,7 @@ mod tests {
             UnitType::Commercial,
             Some(0),
             120.0,
-            100.0,
+            rust_decimal_macros::dec!(100),
         )
         .unwrap();
 
@@ -370,7 +370,7 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             80.0,
-            50.0,
+            rust_decimal_macros::dec!(50),
         )
         .unwrap();
         let unit_id = unit.id;
@@ -400,7 +400,7 @@ mod tests {
             UnitType::Apartment,
             Some(1),
             80.0,
-            50.0,
+            rust_decimal_macros::dec!(50),
         )
         .unwrap();
         let unit_id = unit.id;

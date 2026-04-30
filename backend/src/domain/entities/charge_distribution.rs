@@ -1,4 +1,11 @@
+// Domain Entity: ChargeDistribution
+//
+// MONETARY: amount_due/total_amount/quota_percentage use rust_decimal::Decimal (cf. ADR-0007).
+// Quote-part exactness is critical: rounding errors in distribution sum to user invoices.
+
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -12,28 +19,33 @@ pub struct ChargeDistribution {
     pub unit_id: Uuid,    // Lot concerné
     pub owner_id: Uuid,   // Propriétaire du lot
 
-    pub quota_percentage: f64, // Quote-part (ex: 0.15 pour 15%)
-    pub amount_due: f64,       // Montant à payer par ce propriétaire
+    pub quota_percentage: Decimal, // Quote-part (ex: dec!(0.15) pour 15%)
+    pub amount_due: Decimal,       // Montant à payer par ce propriétaire
 
     pub created_at: DateTime<Utc>,
 }
+
+/// Tolerance for distribution sum vs total (1 centime).
+const DISTRIBUTION_TOLERANCE: Decimal = dec!(0.01);
+/// Tolerance for total quota sum to allow rounding errors (1.0001 = 100.01%).
+const QUOTA_SUM_TOLERANCE: Decimal = dec!(1.0001);
 
 impl ChargeDistribution {
     pub fn new(
         expense_id: Uuid,
         unit_id: Uuid,
         owner_id: Uuid,
-        quota_percentage: f64,
-        total_amount: f64,
+        quota_percentage: Decimal,
+        total_amount: Decimal,
     ) -> Result<Self, String> {
         // Validations
-        if !(0.0..=1.0).contains(&quota_percentage) {
+        if quota_percentage < Decimal::ZERO || quota_percentage > Decimal::ONE {
             return Err(format!(
                 "Quota percentage must be between 0 and 1 (got: {})",
                 quota_percentage
             ));
         }
-        if total_amount < 0.0 {
+        if total_amount < Decimal::ZERO {
             return Err("Total amount cannot be negative".to_string());
         }
 
@@ -52,11 +64,11 @@ impl ChargeDistribution {
     }
 
     /// Recalcule le montant dû si la quote-part ou le total change
-    pub fn recalculate(&mut self, total_amount: f64) -> Result<(), String> {
-        if self.quota_percentage < 0.0 || self.quota_percentage > 1.0 {
+    pub fn recalculate(&mut self, total_amount: Decimal) -> Result<(), String> {
+        if self.quota_percentage < Decimal::ZERO || self.quota_percentage > Decimal::ONE {
             return Err("Quota percentage must be between 0 and 1".to_string());
         }
-        if total_amount < 0.0 {
+        if total_amount < Decimal::ZERO {
             return Err("Total amount cannot be negative".to_string());
         }
 
@@ -68,20 +80,20 @@ impl ChargeDistribution {
     /// Retourne une distribution pour chaque (unit, owner, quota)
     pub fn calculate_distributions(
         expense_id: Uuid,
-        total_amount: f64,
-        unit_ownerships: Vec<(Uuid, Uuid, f64)>, // (unit_id, owner_id, quota_percentage)
+        total_amount: Decimal,
+        unit_ownerships: Vec<(Uuid, Uuid, Decimal)>, // (unit_id, owner_id, quota_percentage)
     ) -> Result<Vec<ChargeDistribution>, String> {
-        if total_amount < 0.0 {
+        if total_amount < Decimal::ZERO {
             return Err("Total amount cannot be negative".to_string());
         }
 
         // Vérifier que la somme des quotes-parts ne dépasse pas 100%
-        let total_quota: f64 = unit_ownerships.iter().map(|(_, _, q)| q).sum();
-        if total_quota > 1.0001 {
+        let total_quota: Decimal = unit_ownerships.iter().map(|(_, _, q)| *q).sum();
+        if total_quota > QUOTA_SUM_TOLERANCE {
             // Tolérance pour arrondi
             return Err(format!(
-                "Total quota percentage exceeds 100% (got: {:.4})",
-                total_quota * 100.0
+                "Total quota percentage exceeds 100% (got: {})",
+                total_quota * dec!(100)
             ));
         }
 
@@ -96,14 +108,17 @@ impl ChargeDistribution {
     }
 
     /// Calcule le montant total distribué (somme des amount_due)
-    pub fn total_distributed(distributions: &[ChargeDistribution]) -> f64 {
+    pub fn total_distributed(distributions: &[ChargeDistribution]) -> Decimal {
         distributions.iter().map(|d| d.amount_due).sum()
     }
 
     /// Vérifie que la distribution est complète (somme = total_amount à 0.01€ près)
-    pub fn verify_distribution(distributions: &[ChargeDistribution], expected_total: f64) -> bool {
+    pub fn verify_distribution(
+        distributions: &[ChargeDistribution],
+        expected_total: Decimal,
+    ) -> bool {
         let total = Self::total_distributed(distributions);
-        (total - expected_total).abs() < 0.01 // Tolérance de 1 centime
+        (total - expected_total).abs() < DISTRIBUTION_TOLERANCE
     }
 }
 
@@ -117,15 +132,16 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, 0.25, 1000.0);
+        let distribution =
+            ChargeDistribution::new(expense_id, unit_id, owner_id, dec!(0.25), dec!(1000));
 
         assert!(distribution.is_ok());
         let distribution = distribution.unwrap();
         assert_eq!(distribution.expense_id, expense_id);
         assert_eq!(distribution.unit_id, unit_id);
         assert_eq!(distribution.owner_id, owner_id);
-        assert_eq!(distribution.quota_percentage, 0.25);
-        assert_eq!(distribution.amount_due, 250.0); // 25% de 1000€
+        assert_eq!(distribution.quota_percentage, dec!(0.25));
+        assert_eq!(distribution.amount_due, dec!(250.00)); // 25% de 1000€
     }
 
     #[test]
@@ -134,7 +150,8 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, -0.1, 1000.0);
+        let distribution =
+            ChargeDistribution::new(expense_id, unit_id, owner_id, dec!(-0.1), dec!(1000));
 
         assert!(distribution.is_err());
         assert!(distribution
@@ -148,7 +165,8 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, 1.5, 1000.0);
+        let distribution =
+            ChargeDistribution::new(expense_id, unit_id, owner_id, dec!(1.5), dec!(1000));
 
         assert!(distribution.is_err());
     }
@@ -160,13 +178,13 @@ mod tests {
         let owner_id = Uuid::new_v4();
 
         let mut distribution =
-            ChargeDistribution::new(expense_id, unit_id, owner_id, 0.20, 1000.0).unwrap();
+            ChargeDistribution::new(expense_id, unit_id, owner_id, dec!(0.20), dec!(1000)).unwrap();
 
-        assert_eq!(distribution.amount_due, 200.0);
+        assert_eq!(distribution.amount_due, dec!(200.00));
 
         // Recalculer avec un nouveau montant total
-        distribution.recalculate(1500.0).unwrap();
-        assert_eq!(distribution.amount_due, 300.0); // 20% de 1500€
+        distribution.recalculate(dec!(1500)).unwrap();
+        assert_eq!(distribution.amount_due, dec!(300.00)); // 20% de 1500€
     }
 
     #[test]
@@ -180,26 +198,26 @@ mod tests {
         let owner3_id = Uuid::new_v4();
 
         let unit_ownerships = vec![
-            (unit1_id, owner1_id, 0.25), // 25%
-            (unit2_id, owner2_id, 0.35), // 35%
-            (unit3_id, owner3_id, 0.40), // 40%
+            (unit1_id, owner1_id, dec!(0.25)), // 25%
+            (unit2_id, owner2_id, dec!(0.35)), // 35%
+            (unit3_id, owner3_id, dec!(0.40)), // 40%
         ];
 
         let distributions =
-            ChargeDistribution::calculate_distributions(expense_id, 1000.0, unit_ownerships);
+            ChargeDistribution::calculate_distributions(expense_id, dec!(1000), unit_ownerships);
 
         assert!(distributions.is_ok());
         let distributions = distributions.unwrap();
         assert_eq!(distributions.len(), 3);
 
-        // Vérifier les montants
-        assert_eq!(distributions[0].amount_due, 250.0);
-        assert_eq!(distributions[1].amount_due, 350.0);
-        assert_eq!(distributions[2].amount_due, 400.0);
+        // Vérifier les montants (Decimal exact)
+        assert_eq!(distributions[0].amount_due, dec!(250.00));
+        assert_eq!(distributions[1].amount_due, dec!(350.00));
+        assert_eq!(distributions[2].amount_due, dec!(400.00));
 
         // Vérifier le total
         let total = ChargeDistribution::total_distributed(&distributions);
-        assert_eq!(total, 1000.0);
+        assert_eq!(total, dec!(1000.00));
     }
 
     #[test]
@@ -211,12 +229,12 @@ mod tests {
         let owner2_id = Uuid::new_v4();
 
         let unit_ownerships = vec![
-            (unit1_id, owner1_id, 0.60), // 60%
-            (unit2_id, owner2_id, 0.50), // 50% -> Total 110%
+            (unit1_id, owner1_id, dec!(0.60)), // 60%
+            (unit2_id, owner2_id, dec!(0.50)), // 50% -> Total 110%
         ];
 
         let distributions =
-            ChargeDistribution::calculate_distributions(expense_id, 1000.0, unit_ownerships);
+            ChargeDistribution::calculate_distributions(expense_id, dec!(1000), unit_ownerships);
 
         assert!(distributions.is_err());
         assert!(distributions
@@ -230,7 +248,7 @@ mod tests {
         let unit_ownerships = vec![];
 
         let distributions =
-            ChargeDistribution::calculate_distributions(expense_id, 1000.0, unit_ownerships);
+            ChargeDistribution::calculate_distributions(expense_id, dec!(1000), unit_ownerships);
 
         assert!(distributions.is_ok());
         let distributions = distributions.unwrap();
@@ -241,17 +259,17 @@ mod tests {
     fn test_verify_distribution_exact_match() {
         let expense_id = Uuid::new_v4();
         let unit_ownerships = vec![
-            (Uuid::new_v4(), Uuid::new_v4(), 0.50),
-            (Uuid::new_v4(), Uuid::new_v4(), 0.50),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.50)),
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.50)),
         ];
 
         let distributions =
-            ChargeDistribution::calculate_distributions(expense_id, 1000.0, unit_ownerships)
+            ChargeDistribution::calculate_distributions(expense_id, dec!(1000), unit_ownerships)
                 .unwrap();
 
         assert!(ChargeDistribution::verify_distribution(
             &distributions,
-            1000.0
+            dec!(1000)
         ));
     }
 
@@ -259,20 +277,20 @@ mod tests {
     fn test_verify_distribution_with_rounding() {
         let expense_id = Uuid::new_v4();
         let unit_ownerships = vec![
-            (Uuid::new_v4(), Uuid::new_v4(), 0.333333), // 1/3
-            (Uuid::new_v4(), Uuid::new_v4(), 0.333333), // 1/3
-            (Uuid::new_v4(), Uuid::new_v4(), 0.333334), // 1/3 avec arrondi
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.333333)), // 1/3
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.333333)), // 1/3
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.333334)), // 1/3 avec arrondi
         ];
 
         let distributions =
-            ChargeDistribution::calculate_distributions(expense_id, 1000.0, unit_ownerships)
+            ChargeDistribution::calculate_distributions(expense_id, dec!(1000), unit_ownerships)
                 .unwrap();
 
         // Le total sera ~999.999 ou 1000.001 à cause des arrondis
         // Devrait passer avec tolérance de 1 centime
         assert!(ChargeDistribution::verify_distribution(
             &distributions,
-            1000.0
+            dec!(1000)
         ));
     }
 
@@ -281,24 +299,27 @@ mod tests {
         // Scénario réaliste: immeuble avec 5 lots, quotes-parts variées
         let expense_id = Uuid::new_v4();
         let unit_ownerships = vec![
-            (Uuid::new_v4(), Uuid::new_v4(), 0.25), // Lot A: 25%
-            (Uuid::new_v4(), Uuid::new_v4(), 0.20), // Lot B: 20%
-            (Uuid::new_v4(), Uuid::new_v4(), 0.20), // Lot C: 20%
-            (Uuid::new_v4(), Uuid::new_v4(), 0.20), // Lot D: 20%
-            (Uuid::new_v4(), Uuid::new_v4(), 0.15), // Lot E: 15%
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.25)), // Lot A: 25%
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.20)), // Lot B: 20%
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.20)), // Lot C: 20%
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.20)), // Lot D: 20%
+            (Uuid::new_v4(), Uuid::new_v4(), dec!(0.15)), // Lot E: 15%
         ];
 
-        let total_invoice = 5000.0;
-        let distributions =
-            ChargeDistribution::calculate_distributions(expense_id, total_invoice, unit_ownerships)
-                .unwrap();
+        let total_invoice = dec!(5000);
+        let distributions = ChargeDistribution::calculate_distributions(
+            expense_id,
+            total_invoice,
+            unit_ownerships,
+        )
+        .unwrap();
 
         assert_eq!(distributions.len(), 5);
-        assert_eq!(distributions[0].amount_due, 1250.0); // 25%
-        assert_eq!(distributions[1].amount_due, 1000.0); // 20%
-        assert_eq!(distributions[2].amount_due, 1000.0); // 20%
-        assert_eq!(distributions[3].amount_due, 1000.0); // 20%
-        assert_eq!(distributions[4].amount_due, 750.0); // 15%
+        assert_eq!(distributions[0].amount_due, dec!(1250.00)); // 25%
+        assert_eq!(distributions[1].amount_due, dec!(1000.00)); // 20%
+        assert_eq!(distributions[2].amount_due, dec!(1000.00)); // 20%
+        assert_eq!(distributions[3].amount_due, dec!(1000.00)); // 20%
+        assert_eq!(distributions[4].amount_due, dec!(750.00)); // 15%
 
         assert!(ChargeDistribution::verify_distribution(
             &distributions,
@@ -309,7 +330,10 @@ mod tests {
     #[test]
     fn test_total_distributed_empty() {
         let distributions: Vec<ChargeDistribution> = vec![];
-        assert_eq!(ChargeDistribution::total_distributed(&distributions), 0.0);
+        assert_eq!(
+            ChargeDistribution::total_distributed(&distributions),
+            Decimal::ZERO
+        );
     }
 
     #[test]
@@ -319,11 +343,12 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, 0.0, 1000.0);
+        let distribution =
+            ChargeDistribution::new(expense_id, unit_id, owner_id, Decimal::ZERO, dec!(1000));
 
         assert!(distribution.is_ok());
         let distribution = distribution.unwrap();
-        assert_eq!(distribution.amount_due, 0.0);
+        assert_eq!(distribution.amount_due, Decimal::ZERO);
     }
 
     #[test]
@@ -333,10 +358,44 @@ mod tests {
         let unit_id = Uuid::new_v4();
         let owner_id = Uuid::new_v4();
 
-        let distribution = ChargeDistribution::new(expense_id, unit_id, owner_id, 1.0, 1000.0);
+        let distribution =
+            ChargeDistribution::new(expense_id, unit_id, owner_id, Decimal::ONE, dec!(1000));
 
         assert!(distribution.is_ok());
         let distribution = distribution.unwrap();
-        assert_eq!(distribution.amount_due, 1000.0);
+        assert_eq!(distribution.amount_due, dec!(1000));
+    }
+
+    /// @edge — Decimal exactness preserved on cumul (ADR-0007).
+    #[test]
+    fn edge_distribution_decimal_exactness() {
+        // 1/10 * 3 = 0.3 exact en Decimal (en f64, 0.1+0.1+0.1 != 0.3)
+        let dist1 = ChargeDistribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            dec!(0.1),
+            dec!(1),
+        )
+        .unwrap();
+        let dist2 = ChargeDistribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            dec!(0.1),
+            dec!(1),
+        )
+        .unwrap();
+        let dist3 = ChargeDistribution::new(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            dec!(0.1),
+            dec!(1),
+        )
+        .unwrap();
+
+        let dists = vec![dist1, dist2, dist3];
+        assert_eq!(ChargeDistribution::total_distributed(&dists), dec!(0.3));
     }
 }

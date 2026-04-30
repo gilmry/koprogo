@@ -776,7 +776,7 @@ pub async fn export_work_quote_pdf(
     // For now, we use simplified single line item approach
     let quote_line_items: Vec<QuoteLineItem> = vec![QuoteLineItem {
         description: expense_dto.description.clone(),
-        quantity: 1.0,
+        quantity: rust_decimal::Decimal::ONE,
         unit_price: expense_dto.amount,
         total: expense_dto.amount,
     }];

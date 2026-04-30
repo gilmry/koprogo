@@ -3,26 +3,30 @@
 // Data Transfer Objects for dashboard statistics and recent transactions
 
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// Accountant dashboard statistics
+/// Accountant dashboard statistics.
+///
+/// MONETARY: amounts use rust_decimal::Decimal (cf. ADR-0007).
+/// Percentages remain Decimal to preserve exactness on display.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AccountantDashboardStats {
     /// Total expenses for current month
-    pub total_expenses_current_month: f64,
+    pub total_expenses_current_month: Decimal,
 
     /// Total paid expenses
-    pub total_paid: f64,
+    pub total_paid: Decimal,
 
     /// Percentage of expenses paid
-    pub paid_percentage: f64,
+    pub paid_percentage: Decimal,
 
     /// Total unpaid/pending expenses
-    pub total_pending: f64,
+    pub total_pending: Decimal,
 
     /// Percentage of expenses pending
-    pub pending_percentage: f64,
+    pub pending_percentage: Decimal,
 
     /// Number of owners with overdue payments
     pub owners_with_overdue: i64,
@@ -60,8 +64,8 @@ pub struct RecentTransaction {
     /// Related entity (owner name, supplier, etc.)
     pub related_entity: Option<String>,
 
-    /// Transaction amount (positive for received, negative for paid)
-    pub amount: f64,
+    /// Transaction amount (positive for received, negative for paid). Decimal exact.
+    pub amount: Decimal,
 
     /// Transaction date
     pub date: DateTime<Utc>,

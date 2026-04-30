@@ -12,6 +12,7 @@
 
 use crate::application::ports::{AccountRepository, ExpenseRepository, JournalEntryRepository};
 use crate::domain::entities::AccountType;
+use rust_decimal::Decimal;
 use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -37,13 +38,13 @@ pub struct BalanceSheetReport {
     /// Equity section (Capital + Net Result)
     pub equity: AccountSection,
     /// Total assets value
-    pub total_assets: f64,
+    pub total_assets: Decimal,
     /// Total liabilities value
-    pub total_liabilities: f64,
+    pub total_liabilities: Decimal,
     /// Total equity value
-    pub total_equity: f64,
+    pub total_equity: Decimal,
     /// Balance (should be 0 in a balanced sheet: Assets = Liabilities + Equity)
-    pub balance: f64,
+    pub balance: Decimal,
 }
 
 #[derive(Debug, Serialize)]
@@ -61,11 +62,11 @@ pub struct IncomeStatementReport {
     /// Revenue section (Class 7 in Belgian PCMN)
     pub revenue: AccountSection,
     /// Total expenses
-    pub total_expenses: f64,
+    pub total_expenses: Decimal,
     /// Total revenue
-    pub total_revenue: f64,
+    pub total_revenue: Decimal,
     /// Net result (revenue - expenses)
-    pub net_result: f64,
+    pub net_result: Decimal,
 }
 
 #[derive(Debug, Serialize)]
@@ -75,7 +76,7 @@ pub struct AccountSection {
     /// List of account lines with balances
     pub accounts: Vec<AccountLine>,
     /// Section total
-    pub total: f64,
+    pub total: Decimal,
 }
 
 #[derive(Debug, Serialize)]
@@ -85,7 +86,7 @@ pub struct AccountLine {
     /// Account label (e.g., "Électricité")
     pub label: String,
     /// Account balance/amount
-    pub amount: f64,
+    pub amount: Decimal,
 }
 
 impl FinancialReportUseCases {
@@ -131,7 +132,7 @@ impl FinancialReportUseCases {
         let mut revenue_accounts = Vec::new();
 
         for account in all_accounts {
-            let amount = account_balances.get(&account.code).cloned().unwrap_or(0.0);
+            let amount = account_balances.get(&account.code).cloned().unwrap_or(Decimal::ZERO);
 
             let line = AccountLine {
                 code: account.code.clone(),
@@ -149,10 +150,10 @@ impl FinancialReportUseCases {
         }
 
         // Calculate totals
-        let total_assets: f64 = assets_accounts.iter().map(|a| a.amount).sum();
-        let total_liabilities: f64 = liabilities_accounts.iter().map(|a| a.amount).sum();
-        let total_expenses: f64 = expense_accounts.iter().map(|a| a.amount).sum();
-        let total_revenue: f64 = revenue_accounts.iter().map(|a| a.amount).sum();
+        let total_assets: Decimal = assets_accounts.iter().map(|a| a.amount).sum();
+        let total_liabilities: Decimal = liabilities_accounts.iter().map(|a| a.amount).sum();
+        let total_expenses: Decimal = expense_accounts.iter().map(|a| a.amount).sum();
+        let total_revenue: Decimal = revenue_accounts.iter().map(|a| a.amount).sum();
 
         // Calculate net result (profit/loss) - this is part of equity
         let net_result = total_revenue - total_expenses;
@@ -160,7 +161,7 @@ impl FinancialReportUseCases {
         // Create equity section with net result
         let equity_accounts = vec![AccountLine {
             code: "RESULT".to_string(),
-            label: if net_result >= 0.0 {
+            label: if net_result >= Decimal::ZERO {
                 "Résultat de l'exercice (Bénéfice)".to_string()
             } else {
                 "Résultat de l'exercice (Perte)".to_string()
@@ -227,10 +228,10 @@ impl FinancialReportUseCases {
         let mut revenue_accounts = Vec::new();
 
         for account in all_accounts {
-            let amount = expense_amounts.get(&account.code).cloned().unwrap_or(0.0);
+            let amount = expense_amounts.get(&account.code).cloned().unwrap_or(Decimal::ZERO);
 
             // Only include accounts with non-zero amounts
-            if amount == 0.0 {
+            if amount == Decimal::ZERO {
                 continue;
             }
 
@@ -248,8 +249,8 @@ impl FinancialReportUseCases {
         }
 
         // Calculate totals
-        let total_expenses: f64 = expense_accounts.iter().map(|a| a.amount).sum();
-        let total_revenue: f64 = revenue_accounts.iter().map(|a| a.amount).sum();
+        let total_expenses: Decimal = expense_accounts.iter().map(|a| a.amount).sum();
+        let total_revenue: Decimal = revenue_accounts.iter().map(|a| a.amount).sum();
         let net_result = total_revenue - total_expenses;
 
         Ok(IncomeStatementReport {
@@ -282,7 +283,7 @@ impl FinancialReportUseCases {
     async fn calculate_account_balances(
         &self,
         organization_id: Uuid,
-    ) -> Result<HashMap<String, f64>, String> {
+    ) -> Result<HashMap<String, Decimal>, String> {
         // Use the journal entry repository to calculate balances
         // This leverages the account_balances view created in the migration
         self.journal_entry_repo
@@ -298,7 +299,7 @@ impl FinancialReportUseCases {
         organization_id: Uuid,
         period_start: chrono::DateTime<chrono::Utc>,
         period_end: chrono::DateTime<chrono::Utc>,
-    ) -> Result<HashMap<String, f64>, String> {
+    ) -> Result<HashMap<String, Decimal>, String> {
         // Use the journal entry repository to calculate balances for the period
         self.journal_entry_repo
             .calculate_account_balances_for_period(organization_id, period_start, period_end)
@@ -328,8 +329,8 @@ impl FinancialReportUseCases {
         let mut liability_accounts = Vec::new();
 
         for account in all_accounts {
-            let balance = account_balances.get(&account.code).cloned().unwrap_or(0.0);
-            if balance == 0.0 {
+            let balance = account_balances.get(&account.code).cloned().unwrap_or(Decimal::ZERO);
+            if balance == Decimal::ZERO {
                 continue;
             }
 
@@ -346,16 +347,16 @@ impl FinancialReportUseCases {
             }
         }
 
-        let total_assets: f64 = asset_accounts.iter().map(|a| a.amount).sum();
-        let total_liabilities: f64 = liability_accounts.iter().map(|a| a.amount).sum();
+        let total_assets: Decimal = asset_accounts.iter().map(|a| a.amount).sum();
+        let total_liabilities: Decimal = liability_accounts.iter().map(|a| a.amount).sum();
 
         // Calculate net result from revenue - expenses
-        let total_revenue: f64 = account_balances
+        let total_revenue: Decimal = account_balances
             .iter()
             .filter(|(code, _)| code.starts_with('7'))
             .map(|(_, balance)| *balance)
             .sum();
-        let total_expenses: f64 = account_balances
+        let total_expenses: Decimal = account_balances
             .iter()
             .filter(|(code, _)| code.starts_with('6'))
             .map(|(_, balance)| *balance)
@@ -364,7 +365,7 @@ impl FinancialReportUseCases {
 
         let equity_line = AccountLine {
             code: "RESULT".to_string(),
-            label: if net_result >= 0.0 {
+            label: if net_result >= Decimal::ZERO {
                 "Résultat de l'exercice (Bénéfice)".to_string()
             } else {
                 "Résultat de l'exercice (Perte)".to_string()
@@ -430,8 +431,8 @@ impl FinancialReportUseCases {
         let mut revenue_accounts = Vec::new();
 
         for account in all_accounts {
-            let amount = account_balances.get(&account.code).cloned().unwrap_or(0.0);
-            if amount == 0.0 {
+            let amount = account_balances.get(&account.code).cloned().unwrap_or(Decimal::ZERO);
+            if amount == Decimal::ZERO {
                 continue;
             }
 
@@ -448,8 +449,8 @@ impl FinancialReportUseCases {
             }
         }
 
-        let total_expenses: f64 = expense_accounts.iter().map(|a| a.amount).sum();
-        let total_revenue: f64 = revenue_accounts.iter().map(|a| a.amount).sum();
+        let total_expenses: Decimal = expense_accounts.iter().map(|a| a.amount).sum();
+        let total_revenue: Decimal = revenue_accounts.iter().map(|a| a.amount).sum();
         let net_result = total_revenue - total_expenses;
 
         Ok(IncomeStatementReport {
@@ -481,6 +482,8 @@ mod tests {
     // Note: These are unit tests for business logic.
     // Integration tests with real database are in tests/integration/
 
+    use rust_decimal_macros::dec;
+
     #[test]
     fn test_balance_sheet_report_structure() {
         // Test that BalanceSheetReport serializes correctly
@@ -492,43 +495,43 @@ mod tests {
                 accounts: vec![AccountLine {
                     code: "550".to_string(),
                     label: "Banque".to_string(),
-                    amount: 10000.0,
+                    amount: dec!(10000),
                 }],
-                total: 10000.0,
+                total: dec!(10000),
             },
             liabilities: AccountSection {
                 account_type: "LIABILITY".to_string(),
                 accounts: vec![AccountLine {
                     code: "4400".to_string(),
                     label: "Fournisseurs".to_string(),
-                    amount: 8000.0,
+                    amount: dec!(8000),
                 }],
-                total: 8000.0,
+                total: dec!(8000),
             },
             equity: AccountSection {
                 account_type: "EQUITY".to_string(),
                 accounts: vec![AccountLine {
                     code: "RESULT".to_string(),
                     label: "Résultat de l'exercice (Bénéfice)".to_string(),
-                    amount: 2000.0,
+                    amount: dec!(2000),
                 }],
-                total: 2000.0,
+                total: dec!(2000),
             },
-            total_assets: 10000.0,
-            total_liabilities: 8000.0,
-            total_equity: 2000.0,
-            balance: 0.0,
+            total_assets: dec!(10000),
+            total_liabilities: dec!(8000),
+            total_equity: dec!(2000),
+            balance: Decimal::ZERO,
         };
 
-        assert_eq!(report.total_assets, 10000.0);
-        assert_eq!(report.total_liabilities, 8000.0);
-        assert_eq!(report.total_equity, 2000.0);
+        assert_eq!(report.total_assets, dec!(10000));
+        assert_eq!(report.total_liabilities, dec!(8000));
+        assert_eq!(report.total_equity, dec!(2000));
         // Assets = Liabilities + Equity
         assert_eq!(
             report.total_assets,
             report.total_liabilities + report.total_equity
         );
-        assert_eq!(report.balance, 0.0);
+        assert_eq!(report.balance, Decimal::ZERO);
     }
 
     #[test]
@@ -544,36 +547,36 @@ mod tests {
                 accounts: vec![AccountLine {
                     code: "604001".to_string(),
                     label: "Électricité".to_string(),
-                    amount: 5000.0,
+                    amount: dec!(5000),
                 }],
-                total: 5000.0,
+                total: dec!(5000),
             },
             revenue: AccountSection {
                 account_type: "REVENUE".to_string(),
                 accounts: vec![AccountLine {
                     code: "700001".to_string(),
                     label: "Appels de fonds".to_string(),
-                    amount: 8000.0,
+                    amount: dec!(8000),
                 }],
-                total: 8000.0,
+                total: dec!(8000),
             },
-            total_expenses: 5000.0,
-            total_revenue: 8000.0,
-            net_result: 3000.0,
+            total_expenses: dec!(5000),
+            total_revenue: dec!(8000),
+            net_result: dec!(3000),
         };
 
-        assert_eq!(report.total_expenses, 5000.0);
-        assert_eq!(report.total_revenue, 8000.0);
-        assert_eq!(report.net_result, 3000.0); // Profit
+        assert_eq!(report.total_expenses, dec!(5000));
+        assert_eq!(report.total_revenue, dec!(8000));
+        assert_eq!(report.net_result, dec!(3000)); // Profit
     }
 
     #[test]
     fn test_income_statement_loss() {
         // Test negative net result (loss)
-        let total_expenses = 10000.0;
-        let total_revenue = 7000.0;
+        let total_expenses = dec!(10000);
+        let total_revenue = dec!(7000);
         let net_result = total_revenue - total_expenses;
 
-        assert_eq!(net_result, -3000.0); // Loss
+        assert_eq!(net_result, dec!(-3000)); // Loss
     }
 }

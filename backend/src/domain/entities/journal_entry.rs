@@ -8,8 +8,13 @@
 // Copyright: Dany De Bontridder <dany@alchimerys.eu>
 //
 // Inspired by Noalyss `jrn` table structure
+//
+// MONETARY: debit/credit use rust_decimal::Decimal (cf. ADR-0007).
+// Tolerance for double-entry balance: dec!(0.011).
 
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
+use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -61,13 +66,16 @@ pub struct JournalEntryLine {
     /// PCMN account code (e.g., "6100", "4400", "5500")
     pub account_code: String,
     /// Debit amount (increases assets/expenses, decreases liabilities/revenue)
-    pub debit: f64,
+    pub debit: Decimal,
     /// Credit amount (decreases assets/expenses, increases liabilities/revenue)
-    pub credit: f64,
+    pub credit: Decimal,
     /// Optional description specific to this line
     pub description: Option<String>,
     pub created_at: DateTime<Utc>,
 }
+
+/// Tolerance for double-entry balance check (1 centime + epsilon).
+const BALANCE_TOLERANCE: Decimal = dec!(0.011);
 
 impl JournalEntry {
     /// Create a new journal entry with validation
@@ -136,15 +144,14 @@ impl JournalEntry {
             return Err("Journal entry must have at least one line".to_string());
         }
 
-        let total_debits: f64 = lines.iter().map(|l| l.debit).sum();
-        let total_credits: f64 = lines.iter().map(|l| l.credit).sum();
+        let total_debits: Decimal = lines.iter().map(|l| l.debit).sum();
+        let total_credits: Decimal = lines.iter().map(|l| l.credit).sum();
 
         let difference = (total_debits - total_credits).abs();
-        const TOLERANCE: f64 = 0.011; // Slightly higher to account for floating-point precision
-        if difference > TOLERANCE {
+        if difference > BALANCE_TOLERANCE {
             return Err(format!(
-                "Journal entry is unbalanced: debits={:.2}€, credits={:.2}€, difference={:.2}€ (tolerance: {:.2}€)",
-                total_debits, total_credits, difference, TOLERANCE
+                "Journal entry is unbalanced: debits={}€, credits={}€, difference={}€ (tolerance: {}€)",
+                total_debits, total_credits, difference, BALANCE_TOLERANCE
             ));
         }
 
@@ -154,16 +161,16 @@ impl JournalEntry {
     /// Validate an individual line
     fn validate_line(line: &JournalEntryLine) -> Result<(), String> {
         // Must be EITHER debit OR credit (not both, not neither)
-        if line.debit > 0.0 && line.credit > 0.0 {
+        if line.debit > Decimal::ZERO && line.credit > Decimal::ZERO {
             return Err("Line cannot have both debit and credit".to_string());
         }
 
-        if line.debit == 0.0 && line.credit == 0.0 {
+        if line.debit == Decimal::ZERO && line.credit == Decimal::ZERO {
             return Err("Line must have either debit or credit".to_string());
         }
 
         // Amounts must be non-negative
-        if line.debit < 0.0 || line.credit < 0.0 {
+        if line.debit < Decimal::ZERO || line.credit < Decimal::ZERO {
             return Err("Debit and credit amounts must be non-negative".to_string());
         }
 
@@ -176,19 +183,18 @@ impl JournalEntry {
     }
 
     /// Calculate total debits for this entry
-    pub fn total_debits(&self) -> f64 {
+    pub fn total_debits(&self) -> Decimal {
         self.lines.iter().map(|l| l.debit).sum()
     }
 
     /// Calculate total credits for this entry
-    pub fn total_credits(&self) -> f64 {
+    pub fn total_credits(&self) -> Decimal {
         self.lines.iter().map(|l| l.credit).sum()
     }
 
     /// Check if this entry is balanced (debits = credits)
     pub fn is_balanced(&self) -> bool {
-        const TOLERANCE: f64 = 0.011; // Slightly higher to account for floating-point precision
-        (self.total_debits() - self.total_credits()).abs() <= TOLERANCE
+        (self.total_debits() - self.total_credits()).abs() <= BALANCE_TOLERANCE
     }
 }
 
@@ -198,10 +204,10 @@ impl JournalEntryLine {
         journal_entry_id: Uuid,
         organization_id: Uuid,
         account_code: String,
-        amount: f64,
+        amount: Decimal,
         description: Option<String>,
     ) -> Result<Self, String> {
-        if amount <= 0.0 {
+        if amount <= Decimal::ZERO {
             return Err("Debit amount must be positive".to_string());
         }
 
@@ -211,7 +217,7 @@ impl JournalEntryLine {
             organization_id,
             account_code,
             debit: amount,
-            credit: 0.0,
+            credit: Decimal::ZERO,
             description,
             created_at: Utc::now(),
         })
@@ -222,10 +228,10 @@ impl JournalEntryLine {
         journal_entry_id: Uuid,
         organization_id: Uuid,
         account_code: String,
-        amount: f64,
+        amount: Decimal,
         description: Option<String>,
     ) -> Result<Self, String> {
-        if amount <= 0.0 {
+        if amount <= Decimal::ZERO {
             return Err("Credit amount must be positive".to_string());
         }
 
@@ -234,7 +240,7 @@ impl JournalEntryLine {
             journal_entry_id,
             organization_id,
             account_code,
-            debit: 0.0,
+            debit: Decimal::ZERO,
             credit: amount,
             description,
             created_at: Utc::now(),
@@ -242,8 +248,8 @@ impl JournalEntryLine {
     }
 
     /// Get the amount (whether debit or credit)
-    pub fn amount(&self) -> f64 {
-        if self.debit > 0.0 {
+    pub fn amount(&self) -> Decimal {
+        if self.debit > Decimal::ZERO {
             self.debit
         } else {
             self.credit
@@ -252,12 +258,12 @@ impl JournalEntryLine {
 
     /// Check if this is a debit line
     pub fn is_debit(&self) -> bool {
-        self.debit > 0.0
+        self.debit > Decimal::ZERO
     }
 
     /// Check if this is a credit line
     pub fn is_credit(&self) -> bool {
-        self.credit > 0.0
+        self.credit > Decimal::ZERO
     }
 }
 
@@ -276,7 +282,7 @@ mod tests {
                 entry_id,
                 org_id,
                 "6100".to_string(),
-                1000.0,
+                dec!(1000),
                 Some("Utilities".to_string()),
             )
             .unwrap(),
@@ -284,7 +290,7 @@ mod tests {
                 entry_id,
                 org_id,
                 "4110".to_string(),
-                210.0,
+                dec!(210),
                 Some("VAT 21%".to_string()),
             )
             .unwrap(),
@@ -292,7 +298,7 @@ mod tests {
                 entry_id,
                 org_id,
                 "4400".to_string(),
-                1210.0,
+                dec!(1210),
                 Some("Supplier".to_string()),
             )
             .unwrap(),
@@ -314,8 +320,8 @@ mod tests {
         assert!(entry.is_ok());
         let entry = entry.unwrap();
         assert!(entry.is_balanced());
-        assert_eq!(entry.total_debits(), 1210.0);
-        assert_eq!(entry.total_credits(), 1210.0);
+        assert_eq!(entry.total_debits(), dec!(1210));
+        assert_eq!(entry.total_credits(), dec!(1210));
     }
 
     #[test]
@@ -325,9 +331,9 @@ mod tests {
 
         // Unbalanced: 1,000€ debit vs 900€ credit
         let lines = vec![
-            JournalEntryLine::new_debit(entry_id, org_id, "6100".to_string(), 1000.0, None)
+            JournalEntryLine::new_debit(entry_id, org_id, "6100".to_string(), dec!(1000), None)
                 .unwrap(),
-            JournalEntryLine::new_credit(entry_id, org_id, "4400".to_string(), 900.0, None)
+            JournalEntryLine::new_credit(entry_id, org_id, "4400".to_string(), dec!(900), None)
                 .unwrap(),
         ];
 
@@ -359,8 +365,8 @@ mod tests {
             journal_entry_id: entry_id,
             organization_id: org_id,
             account_code: "6100".to_string(),
-            debit: 100.0,
-            credit: 100.0, // Invalid!
+            debit: dec!(100),
+            credit: dec!(100), // Invalid!
             description: None,
             created_at: Utc::now(),
         };
@@ -393,8 +399,8 @@ mod tests {
             journal_entry_id: entry_id,
             organization_id: org_id,
             account_code: "6100".to_string(),
-            debit: 0.0,
-            credit: 0.0, // Invalid!
+            debit: Decimal::ZERO,
+            credit: Decimal::ZERO, // Invalid!
             description: None,
             created_at: Utc::now(),
         };
@@ -423,13 +429,13 @@ mod tests {
 
         // Small rounding difference (0.01€) should be accepted
         let lines = vec![
-            JournalEntryLine::new_debit(entry_id, org_id, "6100".to_string(), 100.33, None)
+            JournalEntryLine::new_debit(entry_id, org_id, "6100".to_string(), dec!(100.33), None)
                 .unwrap(),
             JournalEntryLine::new_credit(
                 entry_id,
                 org_id,
                 "4400".to_string(),
-                100.34, // 0.01€ difference
+                dec!(100.34), // 0.01€ difference
                 None,
             )
             .unwrap(),
@@ -453,5 +459,54 @@ mod tests {
         }
         assert!(entry.is_ok());
         assert!(entry.unwrap().is_balanced());
+    }
+
+    /// @edge — Decimal exactness preserved on cumulative sums (ADR-0007).
+    /// IEEE 754 fails this: 0.1 + 0.2 != 0.3 in f64.
+    #[test]
+    fn edge_decimal_exactness_preserved_on_cumul() {
+        let org_id = Uuid::new_v4();
+        let entry_id = Uuid::new_v4();
+
+        let lines = vec![
+            JournalEntryLine::new_debit(entry_id, org_id, "6100".to_string(), dec!(0.1), None)
+                .unwrap(),
+            JournalEntryLine::new_debit(entry_id, org_id, "6101".to_string(), dec!(0.2), None)
+                .unwrap(),
+            JournalEntryLine::new_credit(entry_id, org_id, "4400".to_string(), dec!(0.3), None)
+                .unwrap(),
+        ];
+
+        let entry = JournalEntry::new(
+            org_id,
+            None,
+            Utc::now(),
+            None,
+            None,
+            None,
+            None,
+            None,
+            lines,
+            None,
+        )
+        .expect("0.1 + 0.2 = 0.3 must balance exactly with Decimal");
+
+        assert_eq!(entry.total_debits(), dec!(0.3));
+        assert_eq!(entry.total_credits(), dec!(0.3));
+        assert!(entry.is_balanced());
+    }
+
+    /// @negative — Negative debit must be rejected.
+    #[test]
+    fn negative_debit_amount_rejected() {
+        let result = JournalEntryLine::new_debit(
+            Uuid::new_v4(),
+            Uuid::new_v4(),
+            "6100".to_string(),
+            dec!(-1),
+            None,
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("must be positive"));
     }
 }

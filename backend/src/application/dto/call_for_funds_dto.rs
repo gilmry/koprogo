@@ -9,7 +9,7 @@ pub struct CreateCallForFundsRequest {
     pub building_id: Uuid,
     pub title: String,
     pub description: String,
-    pub total_amount: f64,
+    pub total_amount: rust_decimal::Decimal,
     pub contribution_type: String, // "regular", "extraordinary", "advance", "adjustment"
     pub call_date: DateTime<Utc>,
     pub due_date: DateTime<Utc>,
@@ -24,7 +24,7 @@ pub struct CallForFundsResponse {
     pub building_id: Uuid,
     pub title: String,
     pub description: String,
-    pub total_amount: f64,
+    pub total_amount: rust_decimal::Decimal,
     pub contribution_type: String,
     pub call_date: DateTime<Utc>,
     pub due_date: DateTime<Utc>,

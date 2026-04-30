@@ -1,18 +1,21 @@
 use crate::domain::entities::{Building, Expense, ExpenseCategory};
 use printpdf::*;
+use rust_decimal::Decimal;
 use std::io::BufWriter;
 
 /// Work Quote Document Exporter - Generates PDF for Devis de Travaux
 ///
 /// Generates detailed work quotes for building maintenance and renovations.
+///
+/// MONETARY: quantity/unit_price/total use rust_decimal::Decimal (cf. ADR-0007).
 pub struct WorkQuoteExporter;
 
 #[derive(Debug, Clone)]
 pub struct QuoteLineItem {
     pub description: String,
-    pub quantity: f64,
-    pub unit_price: f64,
-    pub total: f64,
+    pub quantity: Decimal,
+    pub unit_price: Decimal,
+    pub total: Decimal,
 }
 
 impl WorkQuoteExporter {
@@ -163,7 +166,7 @@ impl WorkQuoteExporter {
         current_layer.use_text("Total", 10.0, Mm(170.0), Mm(y), &font_bold);
         y -= 6.0;
 
-        let mut subtotal = 0.0;
+        let mut subtotal = Decimal::ZERO;
 
         for item in line_items {
             if y < 80.0 {
@@ -211,7 +214,7 @@ impl WorkQuoteExporter {
         );
         y -= 6.0;
 
-        let tva = subtotal * 0.21; // Belgian VAT 21% for work
+        let tva = subtotal * rust_decimal_macros::dec!(0.21); // Belgian VAT 21% for work
         current_layer.use_text(
             format!("TVA (21%): {:.2} €", tva),
             11.0,
@@ -347,11 +350,11 @@ mod tests {
             building_id: building.id,
             organization_id: building.organization_id,
             description: "Rénovation de la façade principale".to_string(),
-            amount: 15000.0,
-            amount_excl_vat: Some(12396.69),
-            vat_rate: Some(21.0),
-            vat_amount: Some(2603.31),
-            amount_incl_vat: Some(15000.0),
+            amount: rust_decimal_macros::dec!(15000),
+            amount_excl_vat: Some(rust_decimal_macros::dec!(12396.69)),
+            vat_rate: Some(rust_decimal_macros::dec!(21)),
+            vat_amount: Some(rust_decimal_macros::dec!(2603.31)),
+            amount_incl_vat: Some(rust_decimal_macros::dec!(15000)),
             expense_date: Utc::now(),
             invoice_date: None,
             due_date: None,
@@ -374,21 +377,21 @@ mod tests {
         let line_items = vec![
             QuoteLineItem {
                 description: "Nettoyage haute pression".to_string(),
-                quantity: 100.0,
-                unit_price: 15.0,
-                total: 1500.0,
+                quantity: rust_decimal_macros::dec!(100),
+                unit_price: rust_decimal_macros::dec!(15),
+                total: rust_decimal_macros::dec!(1500),
             },
             QuoteLineItem {
                 description: "Réparation briques endommagées".to_string(),
-                quantity: 50.0,
-                unit_price: 25.0,
-                total: 1250.0,
+                quantity: rust_decimal_macros::dec!(50),
+                unit_price: rust_decimal_macros::dec!(25),
+                total: rust_decimal_macros::dec!(1250),
             },
             QuoteLineItem {
                 description: "Peinture façade".to_string(),
-                quantity: 100.0,
-                unit_price: 20.0,
-                total: 2000.0,
+                quantity: rust_decimal_macros::dec!(100),
+                unit_price: rust_decimal_macros::dec!(20),
+                total: rust_decimal_macros::dec!(2000),
             },
         ];
 

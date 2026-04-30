@@ -2,8 +2,11 @@
 //
 // Represents a collective payment request sent by the Syndic to all owners
 // This is the "master" entity that generates individual OwnerContribution records
+//
+// MONETARY: total_amount uses rust_decimal::Decimal (cf. ADR-0007).
 
 use chrono::{DateTime, Utc};
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -40,7 +43,7 @@ pub struct CallForFunds {
     pub description: String,
 
     // Financial details
-    pub total_amount: f64, // Total amount to be collected from ALL owners
+    pub total_amount: Decimal, // Total amount to be collected from ALL owners
 
     // Type
     pub contribution_type: ContributionType,
@@ -70,14 +73,14 @@ impl CallForFunds {
         building_id: Uuid,
         title: String,
         description: String,
-        total_amount: f64,
+        total_amount: Decimal,
         contribution_type: ContributionType,
         call_date: DateTime<Utc>,
         due_date: DateTime<Utc>,
         account_code: Option<String>,
     ) -> Result<Self, String> {
         // Validate total amount is positive
-        if total_amount <= 0.0 {
+        if total_amount <= Decimal::ZERO {
             return Err("Total amount must be positive".to_string());
         }
 
@@ -158,7 +161,7 @@ mod tests {
             Uuid::new_v4(),
             "Appel de fonds Q1 2025".to_string(),
             "Charges courantes trimestrielles".to_string(),
-            5000.0,
+            rust_decimal_macros::dec!(5000),
             ContributionType::Regular,
             call_date,
             due_date,
@@ -167,7 +170,7 @@ mod tests {
 
         assert!(call.is_ok());
         let call = call.unwrap();
-        assert_eq!(call.total_amount, 5000.0);
+        assert_eq!(call.total_amount, rust_decimal_macros::dec!(5000));
         assert_eq!(call.status, CallForFundsStatus::Draft);
     }
 
@@ -181,7 +184,7 @@ mod tests {
             Uuid::new_v4(),
             "Test".to_string(),
             "Test".to_string(),
-            -100.0,
+            rust_decimal_macros::dec!(-100),
             ContributionType::Regular,
             call_date,
             due_date,
@@ -202,7 +205,7 @@ mod tests {
             Uuid::new_v4(),
             "Test".to_string(),
             "Test".to_string(),
-            100.0,
+            rust_decimal_macros::dec!(100),
             ContributionType::Regular,
             call_date,
             due_date,
@@ -223,7 +226,7 @@ mod tests {
             Uuid::new_v4(),
             "Test".to_string(),
             "Test".to_string(),
-            100.0,
+            rust_decimal_macros::dec!(100),
             ContributionType::Regular,
             call_date,
             due_date,
@@ -250,7 +253,7 @@ mod tests {
             Uuid::new_v4(),
             "Overdue call".to_string(),
             "Test".to_string(),
-            100.0,
+            rust_decimal_macros::dec!(100),
             ContributionType::Regular,
             call_date,
             due_date,
