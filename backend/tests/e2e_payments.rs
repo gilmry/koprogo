@@ -70,7 +70,7 @@ async fn create_test_fixtures(
         organization_id: org_id.to_string(),
         building_id: building_id.to_string(),
         category: koprogo_api::domain::entities::ExpenseCategory::Maintenance,
-        amount: 500.00,
+        amount: rust_decimal_macros::dec!(500),
         description: "Test expense for payment".to_string(),
         expense_date: Utc::now().to_rfc3339(),
         supplier: Some("Test Vendor".to_string()),

@@ -16,7 +16,7 @@
       {
         "ordinal": 2,
         "name": "ownership_percentage",
-        "type_info": "Float8"
+        "type_info": "Numeric"
       }
     ],
     "parameters": {

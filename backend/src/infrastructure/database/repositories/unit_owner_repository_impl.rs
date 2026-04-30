@@ -1,31 +1,14 @@
 //! PostgreSQL impl du UnitOwnerRepository.
 //!
-//! Note ADR-0007/0008 : `ownership_percentage` est `Decimal` côté domain.
-//! La colonne SQL `unit_owners.ownership_percentage` est `DOUBLE PRECISION` :
-//! conversion bornée en lecture/écriture via `Decimal::try_from(f64)` /
-//! `f64::try_from(Decimal)`. Migration NUMERIC(6,5) prévue dans une story
-//! follow-up dédiée (#436 / EXP-003 sub-story SQL).
+//! ADR-0007/0008 : `ownership_percentage` est `Decimal` end-to-end
+//! (domain + SQL NUMERIC(6,5) depuis migration `20260501000000`).
 
 use crate::application::ports::UnitOwnerRepository;
 use crate::domain::entities::UnitOwner;
 use async_trait::async_trait;
-use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 use sqlx::PgPool;
 use uuid::Uuid;
-
-/// Convert Decimal → f64 for binding to DOUBLE PRECISION column.
-/// Bounded values 0.0..=1.0, conversion safe.
-fn decimal_to_f64(d: Decimal) -> f64 {
-    d.to_f64().unwrap_or(0.0)
-}
-
-/// Convert f64 → Decimal when reading DOUBLE PRECISION column.
-/// Bounded values 0.0..=1.0, conversion preserves quote-part semantics
-/// for the legacy column (migration NUMERIC scheduled).
-fn f64_to_decimal(f: f64) -> Decimal {
-    Decimal::try_from(f).unwrap_or(Decimal::ZERO)
-}
 
 pub struct PostgresUnitOwnerRepository {
     pool: PgPool,
@@ -53,7 +36,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             unit_owner.id,
             unit_owner.unit_id,
             unit_owner.owner_id,
-            decimal_to_f64(unit_owner.ownership_percentage),
+            unit_owner.ownership_percentage,
             unit_owner.start_date,
             unit_owner.end_date,
             unit_owner.is_primary_contact,
@@ -68,7 +51,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             id: result.id,
             unit_id: result.unit_id,
             owner_id: result.owner_id,
-            ownership_percentage: f64_to_decimal(result.ownership_percentage),
+            ownership_percentage: result.ownership_percentage,
             start_date: result.start_date,
             end_date: result.end_date,
             is_primary_contact: result.is_primary_contact,
@@ -92,7 +75,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             id: row.id,
             unit_id: row.unit_id,
             owner_id: row.owner_id,
-            ownership_percentage: f64_to_decimal(row.ownership_percentage),
+            ownership_percentage: row.ownership_percentage,
             start_date: row.start_date,
             end_date: row.end_date,
             is_primary_contact: row.is_primary_contact,
@@ -120,7 +103,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
                 id: row.id,
                 unit_id: row.unit_id,
                 owner_id: row.owner_id,
-                ownership_percentage: f64_to_decimal(row.ownership_percentage),
+                ownership_percentage: row.ownership_percentage,
                 start_date: row.start_date,
                 end_date: row.end_date,
                 is_primary_contact: row.is_primary_contact,
@@ -149,7 +132,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
                 id: row.id,
                 unit_id: row.unit_id,
                 owner_id: row.owner_id,
-                ownership_percentage: f64_to_decimal(row.ownership_percentage),
+                ownership_percentage: row.ownership_percentage,
                 start_date: row.start_date,
                 end_date: row.end_date,
                 is_primary_contact: row.is_primary_contact,
@@ -178,7 +161,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
                 id: row.id,
                 unit_id: row.unit_id,
                 owner_id: row.owner_id,
-                ownership_percentage: f64_to_decimal(row.ownership_percentage),
+                ownership_percentage: row.ownership_percentage,
                 start_date: row.start_date,
                 end_date: row.end_date,
                 is_primary_contact: row.is_primary_contact,
@@ -207,7 +190,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
                 id: row.id,
                 unit_id: row.unit_id,
                 owner_id: row.owner_id,
-                ownership_percentage: f64_to_decimal(row.ownership_percentage),
+                ownership_percentage: row.ownership_percentage,
                 start_date: row.start_date,
                 end_date: row.end_date,
                 is_primary_contact: row.is_primary_contact,
@@ -229,7 +212,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             RETURNING *
             "#,
             unit_owner.id,
-            decimal_to_f64(unit_owner.ownership_percentage),
+            unit_owner.ownership_percentage,
             unit_owner.end_date,
             unit_owner.is_primary_contact,
             unit_owner.updated_at
@@ -242,7 +225,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             id: result.id,
             unit_id: result.unit_id,
             owner_id: result.owner_id,
-            ownership_percentage: f64_to_decimal(result.ownership_percentage),
+            ownership_percentage: result.ownership_percentage,
             start_date: result.start_date,
             end_date: result.end_date,
             is_primary_contact: result.is_primary_contact,
@@ -292,7 +275,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
         .await
         .map_err(|e| format!("Failed to get total ownership percentage: {}", e))?;
 
-        Ok(f64_to_decimal(result.total))
+        Ok(result.total)
     }
 
     async fn find_active_by_unit_and_owner(
@@ -316,7 +299,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
             id: row.id,
             unit_id: row.unit_id,
             owner_id: row.owner_id,
-            ownership_percentage: f64_to_decimal(row.ownership_percentage),
+            ownership_percentage: row.ownership_percentage,
             start_date: row.start_date,
             end_date: row.end_date,
             is_primary_contact: row.is_primary_contact,
@@ -348,7 +331,7 @@ impl UnitOwnerRepository for PostgresUnitOwnerRepository {
                 (
                     row.unit_id,
                     row.owner_id,
-                    f64_to_decimal(row.ownership_percentage),
+                    row.ownership_percentage,
                 )
             })
             .collect())

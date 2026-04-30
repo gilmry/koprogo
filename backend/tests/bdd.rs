@@ -726,7 +726,7 @@ async fn then_at_least_one_meeting(world: &mut BuildingWorld) {
 
 // Expenses + documents linking
 #[given(regex = r#"^I create an expense of amount ([-+]?[0-9]*\.?[0-9]+)$"#)]
-async fn given_create_expense(world: &mut BuildingWorld, amount: f64) {
+async fn given_create_expense(world: &mut BuildingWorld, amount: rust_decimal::Decimal) {
     let uc = world.expense_use_cases.as_ref().unwrap();
     let dto = CreateExpenseDto {
         organization_id: world.org_id.unwrap().to_string(),
@@ -821,7 +821,7 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
         email: email.clone(),
         password: "Passw0rd!".to_string(),
     };
-    let res: Result<LoginResponse, String> = auth.login(login).await;
+    let res = auth.login(login).await;
     match res {
         Ok(r) => {
             world.last_user_id = Some(r.user.id);
@@ -832,7 +832,7 @@ async fn when_register_and_login(world: &mut BuildingWorld) {
                 Some(auth.verify_token(&r.token).expect("validate token claims"));
             world.last_result = Some(Ok(r.refresh_token.clone()));
         }
-        Err(e) => world.last_result = Some(Err(e)),
+        Err(e) => world.last_result = Some(Err(e.to_string())),
     }
 }
 
