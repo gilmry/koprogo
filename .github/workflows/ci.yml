@@ -363,6 +363,10 @@ jobs:
       - name: Run svelte-check (enforces frontend↔backend contract + a11y)
         run: |
           cd frontend
+          # astro sync generates .astro/types.d.ts (astro:content + import.meta.env)
+          # required by svelte-check; without it, svelte-check trips on type
+          # references it can't resolve (matches local `npm run build` behavior).
+          npx astro sync
           npx svelte-check --threshold warning
 
       # Gate 4: No hand-written enum re-introductions in lib/api/*.ts
