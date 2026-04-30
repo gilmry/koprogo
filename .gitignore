@@ -88,6 +88,9 @@ backend/.env
 backend/.env.loadtest
 frontend/.env
 frontend/.env.local
+# Leaked artifact from `docker compose cp` to regenerate api.d.ts —
+# the source of truth lives at docs/api/openapi.json
+frontend/openapi.json
 infrastructure/monosite/local/*/.env
 infrastructure/monosite/vps/*/.env
 
