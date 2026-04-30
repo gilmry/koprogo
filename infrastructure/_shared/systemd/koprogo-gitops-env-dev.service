@@ -1,0 +1,36 @@
+# Systemd user unit — KoproGo GitOps watcher for local env-dev topology.
+#
+# Install via: ./infrastructure/_shared/scripts/install-systemd-poller.sh
+# Then:        systemctl --user enable --now koprogo-gitops-env-dev
+# Logs:        journalctl --user -u koprogo-gitops-env-dev -f
+#
+# This unit runs as the unprivileged user (not root) — appropriate for a
+# supervisor's machine running the dev sandbox alongside `make dev`.
+#
+# The placeholder __KOPROGO_REPO_DIR__ is replaced at install time by
+# install-systemd-poller.sh based on `git rev-parse --show-toplevel`.
+
+[Unit]
+Description=KoproGo GitOps Watcher (env-dev local docker-compose)
+Documentation=file:__KOPROGO_REPO_DIR__/infrastructure/monosite/local/env-dev/README.md
+After=docker.service network-online.target
+Wants=network-online.target
+ConditionPathExists=__KOPROGO_REPO_DIR__/.git
+
+[Service]
+Type=simple
+WorkingDirectory=__KOPROGO_REPO_DIR__
+Environment=BRANCH=dev
+Environment=ENV_NAME=env-dev
+Environment=TOPOLOGY=local
+Environment=CHECK_INTERVAL=120
+Environment=REPO_DIR=__KOPROGO_REPO_DIR__
+ExecStart=__KOPROGO_REPO_DIR__/infrastructure/_shared/scripts/gitops-deploy.sh watch
+Restart=always
+RestartSec=30
+# Avoid running as root — this is a user-mode unit (systemctl --user)
+# Memory cap: the script is a thin polling loop; 64M is generous.
+MemoryMax=64M
+
+[Install]
+WantedBy=default.target
