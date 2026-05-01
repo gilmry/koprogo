@@ -10,6 +10,9 @@
 # ("must be of type boolean: string").
 
 # ApplicationSet 1: Infrastructure (Kustomize)
+# Per RFC 0001 (alternative F — hybrid symmetric app/infra), the infra
+# generator targets the `infra-*` branches, distinct from the app generator
+# below which targets `dev`/`integration`/`staging`/`production`.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -21,25 +24,25 @@ spec:
   generators:
     - list:
         elements:
-          - branch: production
+          - branch: infra-prod
             environment: production
             namespace: koprogo-production
             kustomizePath: infrastructure/monosite/k3s/production/kustomize
             autoSync: true
             prune: true
-          - branch: staging
+          - branch: infra-staging
             environment: staging
             namespace: koprogo-staging
             kustomizePath: infrastructure/monosite/k3s/staging/kustomize
             autoSync: true
             prune: true
-          - branch: integration
+          - branch: infra-integration
             environment: integration
             namespace: koprogo-integration
             kustomizePath: infrastructure/monosite/k3s/integration/kustomize
             autoSync: true
             prune: false
-          - branch: dev
+          - branch: infra-dev
             environment: dev
             namespace: koprogo-dev
             kustomizePath: infrastructure/monosite/k3s/dev/kustomize
