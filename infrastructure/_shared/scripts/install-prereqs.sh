@@ -118,13 +118,16 @@ esac
 # ----------------------------------------------------------------------
 # 4. ArgoCD itself
 # ----------------------------------------------------------------------
-if kubectl get ns argocd >/dev/null 2>&1; then
-    log "argocd namespace exists — skipping ArgoCD core install"
-else
-    log "Installing ArgoCD..."
-    kubectl create namespace argocd
-    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-    kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
-fi
+# Always apply (server-side apply is idempotent). Previous "skip if ns exists"
+# logic was brittle: a partial first install (e.g. a single CRD failure) would
+# leave the namespace present but the install incomplete — and every subsequent
+# run would skip the repair, requiring manual intervention.
+log "Ensuring ArgoCD is installed (idempotent server-side apply)..."
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+# --server-side required: ArgoCD CRDs (notably applicationsets.argoproj.io) exceed
+# the 262144-byte limit of the client-side last-applied-configuration annotation.
+kubectl apply -n argocd --server-side --force-conflicts \
+    -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
 
 log "Prerequisites OK for cluster-type=$CLUSTER_TYPE"
