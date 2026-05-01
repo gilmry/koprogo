@@ -4,5 +4,12 @@
     "jsx": "react-jsx",
     "jsxImportSource": "svelte",
     "types": ["node"]
-  }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    ".astro",
+    "playwright-report",
+    "test-results"
+  ]
 }
