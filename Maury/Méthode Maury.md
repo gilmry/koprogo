@@ -8,11 +8,11 @@
 
 # Préliminaire : Pourquoi la Méthode Maury
 
-## La preuve par le code : KoproGo audité par 4 IA indépendantes
+## La preuve par le code : KoproGo revu par 4 IA indépendantes
 
 Avant de confier un projet à quelqu'un, il est légitime de demander : "comment travaille-t-il ?". Plutôt que des mots, le code parle.
 
-Le dépôt [KoproGo](https://github.com/gilmry/koprogo) — plus de 1 031 commits, 110 000+ lignes de Rust, 202 scénarios BDD, une architecture hexagonale stricte avec DDD appliqué au droit belge de la copropriété — a été audité indépendamment par **4 modèles d'IA** (ChatGPT, Claude, Gemini, Grok). Les 4 convergent sur les mêmes conclusions sans se concerter :
+Le dépôt [KoproGo](https://github.com/gilmry/koprogo) — plus de 1 031 commits, 110 000+ lignes de Rust, 202 scénarios BDD, une architecture hexagonale stricte avec DDD appliqué au droit belge de la copropriété — a été revue indépendamment par **4 modèles d'IA** (ChatGPT, Claude, Gemini, Grok). Les 4 convergent sur les mêmes conclusions sans se concerter :
 
 | Axe | Constat unanime |
 |---|---|
@@ -22,9 +22,6 @@ Le dépôt [KoproGo](https://github.com/gilmry/koprogo) — plus de 1 031 commit
 | **Performance & Green IT** | 287 req/s, P50 69ms, 0.12g CO₂/requête, 128 MB RAM, 8% CPU moyen. Anti-bloatware absolu. |
 | **Expertise métier** | Le code traduit fidèlement le droit belge : tantièmes, majorités qualifiées, quorums, PCMN comptable. Une action illégale en droit belge ne compile tout simplement pas. |
 | **Philosophie** | "We deliver when ready, not according to arbitrary dates." Roadmap par jalons de capacités. Pas de sur-ingénierie prématurée (YAGNI). |
-
-> *« KoproGo n'est pas une simple démo technique. C'est un manifeste méthodologique complet. Le dépôt prouve la capacité d'un homme seul à modéliser un domaine juridique complexe, à le sécuriser pour la production, et à l'opérer avec une rigueur d'horloger. »*
-> — Extrait de l'audit engineering KoproGo
 
 ## Qu'est-ce que la Méthode Maury ?
 
