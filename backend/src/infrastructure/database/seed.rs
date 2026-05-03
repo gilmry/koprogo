@@ -5,6 +5,8 @@ use fake::faker::address::en::*;
 use fake::faker::name::en::*;
 use fake::Fake;
 use rand::RngExt;
+use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::Decimal;
 use serde::Serialize;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
@@ -2472,7 +2474,7 @@ impl DatabaseSeeder {
         .map_err(|e| format!("Failed to fetch expense: {}", e))?;
 
         let building_id = expense_row.building_id;
-        let total_amount = expense_row.amount;
+        let total_amount: Decimal = expense_row.amount;
 
         // Get all units with their quotas (NOT unit_owners - one record per unit)
         let units = sqlx::query!(
@@ -2526,10 +2528,11 @@ impl DatabaseSeeder {
                 0.0
             };
 
-            let amount_due = if total_quota > 0.0 {
-                (quota_percentage * total_amount * 100.0).round() / 100.0
+            let amount_due: Decimal = if total_quota > 0.0 {
+                let qp = Decimal::from_f64(quota_percentage).unwrap_or(Decimal::ZERO);
+                (qp * total_amount).round_dp(2)
             } else {
-                0.0
+                Decimal::ZERO
             };
 
             sqlx::query(
@@ -2770,18 +2773,18 @@ impl DatabaseSeeder {
         .await
         .map_err(|e| format!("Failed to fetch expense: {}", e))?;
 
-        let amount_owed = expense.amount;
+        let amount_owed: Decimal = expense.amount;
         let due_date = expense
             .due_date
             .expect("Due date required for payment reminder");
 
         // Calculate penalty (8% annual rate)
-        let penalty_amount = if days_overdue > 0 {
-            let yearly_penalty = amount_owed * 0.08;
-            let daily_penalty = yearly_penalty / 365.0;
-            ((daily_penalty * days_overdue as f64) * 100.0).round() / 100.0
+        let penalty_amount: Decimal = if days_overdue > 0 {
+            let yearly_penalty = amount_owed * Decimal::new(8, 2); // 0.08
+            let daily_penalty = yearly_penalty / Decimal::from(365);
+            (daily_penalty * Decimal::from(days_overdue)).round_dp(2)
         } else {
-            0.0
+            Decimal::ZERO
         };
 
         let total_amount = amount_owed + penalty_amount;

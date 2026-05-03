@@ -3145,8 +3145,8 @@ export interface operations {
     parameters: {
       query: {
         year: number;
-        reserve_fund?: number | null;
-        total_income?: number | null;
+        reserve_fund?: string | null;
+        total_income?: string | null;
       };
       header?: never;
       path: {

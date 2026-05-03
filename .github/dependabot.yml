@@ -1,36 +1,62 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot config — KoproGo
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot-yml-file
+#
+# All PRs target `feature/dev` so they go through the official GitFlow:
+#   feature/dev → dev → integration → staging → production → main
+# Direct dependency bumps to `main` would bypass the CI gates configured in PR-E
+# (ci.yml + security.yml + docker-build-push.yml triggers).
 
 version: 2
 updates:
   # Backend dependencies (Rust/Cargo)
   - package-ecosystem: "cargo"
     directory: "/backend"
+    target-branch: "feature/dev"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
+    # Group patch + minor bumps — reduces PR noise
+    groups:
+      cargo-patch:
+        update-types:
+          - "patch"
+      cargo-minor:
+        update-types:
+          - "minor"
 
   # Frontend dependencies (npm)
   - package-ecosystem: "npm"
     directory: "/frontend"
+    target-branch: "feature/dev"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
+    groups:
+      npm-patch:
+        update-types:
+          - "patch"
+      npm-minor:
+        update-types:
+          - "minor"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "feature/dev"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
+    groups:
+      gh-actions:
+        update-types:
+          - "patch"
+          - "minor"

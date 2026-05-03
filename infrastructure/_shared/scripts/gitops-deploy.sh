@@ -11,14 +11,23 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${REPO_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 BRANCH="${BRANCH:-main}"
 ENV_NAME="${ENV_NAME:-production}"
+# TOPOLOGY: vps (default, per-env on a real OVH VPS) | local (supervisor's machine running env-dev)
+# Determines which monosite/<topology>/<env>/ layout the override + env-file are read from.
+TOPOLOGY="${TOPOLOGY:-vps}"
 
-# Auto-detect compose files based on environment
+# Auto-detect compose files based on topology + environment
 COMPOSE_BASE="${REPO_DIR}/infrastructure/_shared/docker-compose/docker-compose.base.yml"
-COMPOSE_OVERRIDE="${COMPOSE_OVERRIDE:-${REPO_DIR}/infrastructure/monosite/vps/${ENV_NAME}/docker-compose.override.yml}"
-ENV_FILE="${ENV_FILE:-${REPO_DIR}/infrastructure/monosite/vps/${ENV_NAME}/.env}"
+COMPOSE_OVERRIDE="${COMPOSE_OVERRIDE:-${REPO_DIR}/infrastructure/monosite/${TOPOLOGY}/${ENV_NAME}/docker-compose.override.yml}"
+ENV_FILE="${ENV_FILE:-${REPO_DIR}/infrastructure/monosite/${TOPOLOGY}/${ENV_NAME}/.env}"
 
 CHECK_INTERVAL=${CHECK_INTERVAL:-180}
-LOG_FILE="${LOG_FILE:-/var/log/koprogo-gitops-${ENV_NAME}.log}"
+# Default log path: /var/log on VPS (root), $HOME/.local/state on local (user-mode).
+if [ "$TOPOLOGY" = "local" ]; then
+    LOG_FILE="${LOG_FILE:-${HOME}/.local/state/koprogo-gitops-${ENV_NAME}.log}"
+    mkdir -p "$(dirname "$LOG_FILE")"
+else
+    LOG_FILE="${LOG_FILE:-/var/log/koprogo-gitops-${ENV_NAME}.log}"
+fi
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 
@@ -43,7 +52,7 @@ function check_prerequisites() {
     [ ! -d "$REPO_DIR" ] && log_error "Repository not found: $REPO_DIR" && exit 1
     command -v docker &>/dev/null || { log_error "Docker not installed"; exit 1; }
     command -v git &>/dev/null || { log_error "Git not installed"; exit 1; }
-    log "Prerequisites OK (env=${ENV_NAME}, branch=${BRANCH})"
+    log "Prerequisites OK (topology=${TOPOLOGY}, env=${ENV_NAME}, branch=${BRANCH})"
 }
 
 function pull_latest() {
@@ -86,7 +95,7 @@ function deploy() {
 }
 
 function watch_mode() {
-    log "Starting GitOps watch (env=${ENV_NAME}, branch=${BRANCH}, interval=${CHECK_INTERVAL}s)..."
+    log "Starting GitOps watch (topology=${TOPOLOGY}, env=${ENV_NAME}, branch=${BRANCH}, interval=${CHECK_INTERVAL}s)..."
     while true; do
         log_info "Checking for updates..."
         if pull_latest; then
@@ -116,5 +125,5 @@ case "${1:-help}" in
     deploy)  check_prerequisites; pull_latest || true; deploy ;;
     status)  show_status ;;
     logs)    tail -f "$LOG_FILE" ;;
-    help|*)  echo "Usage: $0 [watch|deploy|status|logs]"; echo "Env vars: BRANCH, ENV_NAME, REPO_DIR, COMPOSE_OVERRIDE, ENV_FILE" ;;
+    help|*)  echo "Usage: $0 [watch|deploy|status|logs]"; echo "Env vars: BRANCH, ENV_NAME, TOPOLOGY (vps|local), REPO_DIR, COMPOSE_OVERRIDE, ENV_FILE" ;;
 esac

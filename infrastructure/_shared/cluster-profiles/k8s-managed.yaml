@@ -1,0 +1,38 @@
+# Cluster profile: Managed Kubernetes (Koprogo Cloud SaaS)
+#
+# Use case: Koprogo runs the official cloud SaaS on OVH Managed Kubernetes
+# (or AWS EKS / GKE / AKS in the future).
+#
+# Constraints:
+#   - Cloud-provider CSI for fast SSD storage
+#   - External-secrets controller pulls from HashiCorp Vault
+#   - cert-manager with letsencrypt-prod issuer for production TLS
+#   - Multi-AZ ready (replicas, anti-affinity — set in env helm-values.yaml)
+
+global:
+  storageClassName: csi-cinder-high-speed # OVH Managed K8s default fast SSD
+  ingressClassName: traefik # Traefik installed via gitops-bootstrap.sh (chart traefik/traefik); chosen over nginx for CrowdSec integration ease + base kustomize uses Traefik Middlewares
+  domainOverride: koprogo.be # canonical Koprogo Cloud domain
+  secretsBackend: external-secrets-vault
+  vaultRole: koprogo-prod # Vault role mapped via Kubernetes auth method
+  tls:
+    enabled: true
+    certResolver: letsencrypt
+    issuer: letsencrypt-prod
+
+resources:
+  preset: large # production-grade replicas + limits
+
+# Storage overrides
+postgres:
+  storage: 50Gi
+  storageClass: csi-cinder-high-speed
+  config:
+    sharedBuffers: 1GB
+    effectiveCacheSize: 3GB
+    maxConnections: "50"
+    maxWalSize: 4GB
+
+minio:
+  storage: 100Gi
+  storageClass: csi-cinder-high-speed

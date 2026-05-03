@@ -3447,7 +3447,7 @@ async fn then_owner_should_owe(
         world.distribution_amounts
     );
     let (_, amount) = found.unwrap();
-    let diff = (amount - expected).abs();
+    let diff = (*amount - expected).abs();
     assert!(
         diff < dec!(0.02),
         "Expected {} to owe {}, got {} (diff: {})",

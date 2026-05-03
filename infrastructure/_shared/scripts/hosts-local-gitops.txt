@@ -1,0 +1,36 @@
+# KoproGo local GitOps sandbox — Docker Desktop K8s
+# Append these lines to:
+#   - Linux/Mac : /etc/hosts
+#   - Windows   : C:\Windows\System32\drivers\etc\hosts
+#
+# All entries point to 127.0.0.1 because ingress-nginx-controller is exposed via
+# Docker Desktop on localhost. The Host header from the request determines which
+# environment namespace receives the traffic (per kustomize ingress patches).
+#
+# Note: staging/production hostnames are intentionally overridden to 127.0.0.1
+# so the supervisor can validate the full GitFlow on Docker Desktop K8s before
+# touching any real OVH infrastructure. NEVER apply this hosts file on a host
+# that needs to reach real koprogo.be production!
+
+# ArgoCD UI (port-forward to 8080 — see `make gitops-ui`)
+127.0.0.1 argocd.local
+
+# Dev environment (koprogo-dev namespace)
+127.0.0.1 dev.koprogo.local
+127.0.0.1 api-dev.koprogo.local
+
+# Integration environment (koprogo-integration namespace)
+127.0.0.1 integration.koprogo.local
+127.0.0.1 api-integration.koprogo.local
+
+# Staging environment (koprogo-staging namespace) — sandbox override
+127.0.0.1 staging.koprogo.be
+127.0.0.1 api-staging.koprogo.be
+
+# Production environment (koprogo-production namespace) — sandbox override
+127.0.0.1 app.koprogo.be
+127.0.0.1 api.koprogo.be
+
+# env-dev (Mode A cron poller, for completeness — see monosite/local/env-dev/.env.example)
+127.0.0.1 envdev.koprogo.local
+127.0.0.1 api-envdev.koprogo.local

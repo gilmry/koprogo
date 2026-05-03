@@ -64,8 +64,9 @@ spec:
         name: postgres-data
       spec:
         accessModes: ["ReadWriteOnce"]
-        {{- if .Values.postgres.storageClass }}
-        storageClassName: {{ .Values.postgres.storageClass }}
+        {{- $storageClass := .Values.global.storageClassName | default .Values.postgres.storageClass }}
+        {{- if $storageClass }}
+        storageClassName: {{ $storageClass }}
         {{- end }}
         resources:
           requests:

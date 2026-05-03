@@ -3,7 +3,17 @@ kind: Kustomization
 namespace: koprogo-production
 resources:
   - ../../../../_shared/kustomize/base
-commonLabels:
-  environment: production
+labels:
+  - pairs:
+      environment: production
+# Explicit target: required because the base sets `namespace: koprogo` on the
+# Ingress, while this kustomization rewrites the namespace to koprogo-production.
+# Without an explicit target, kustomize matches by full ID and rejects the
+# patch as "[noNs]". See dev/kustomize/kustomization.yaml for full rationale.
 patches:
   - path: patches/ingress.yaml
+    target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: koprogo-ingress
