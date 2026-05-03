@@ -10,18 +10,18 @@
 #   - Multi-AZ ready (replicas, anti-affinity — set in env helm-values.yaml)
 
 global:
-  storageClassName: csi-cinder-high-speed   # OVH Managed K8s default fast SSD
-  ingressClassName: nginx                   # ingress-nginx-controller installed at bootstrap
-  domainOverride: koprogo.be                # canonical Koprogo Cloud domain
+  storageClassName: csi-cinder-high-speed # OVH Managed K8s default fast SSD
+  ingressClassName: traefik # Traefik installed via gitops-bootstrap.sh (chart traefik/traefik); chosen over nginx for CrowdSec integration ease + base kustomize uses Traefik Middlewares
+  domainOverride: koprogo.be # canonical Koprogo Cloud domain
   secretsBackend: external-secrets-vault
-  vaultRole: koprogo-prod                   # Vault role mapped via Kubernetes auth method
+  vaultRole: koprogo-prod # Vault role mapped via Kubernetes auth method
   tls:
     enabled: true
     certResolver: letsencrypt
     issuer: letsencrypt-prod
 
 resources:
-  preset: large                             # production-grade replicas + limits
+  preset: large # production-grade replicas + limits
 
 # Storage overrides
 postgres:

@@ -11,21 +11,21 @@
 #   - All hostnames resolve via /etc/hosts (see infrastructure/_shared/scripts/hosts-local-gitops.txt)
 
 global:
-  storageClassName: hostpath        # Docker Desktop default
-  ingressClassName: nginx           # ingress-nginx installed via gitops-bootstrap.sh
-  domainOverride: ""                # keep per-env domains; /etc/hosts maps them all to 127.0.0.1
-  secretsBackend: raw               # Helm values in cleartext — sandbox only, NEVER in real prod
+  storageClassName: hostpath # Docker Desktop default
+  ingressClassName: traefik # Traefik installed via gitops-bootstrap.sh (chart traefik/traefik); chosen over nginx for CrowdSec integration ease + base kustomize uses Traefik Middlewares (HSTS, security headers, rate limit)
+  domainOverride: "" # keep per-env domains; /etc/hosts maps them all to 127.0.0.1
+  secretsBackend: raw # Helm values in cleartext — sandbox only, NEVER in real prod
   tls:
     enabled: false
     certResolver: ""
 
 resources:
-  preset: small                     # tight limits to fit multiple envs on one Docker Desktop
+  preset: small # tight limits to fit multiple envs on one Docker Desktop
 
 # Storage overrides (consume global.storageClassName, see PR-A template updates)
 postgres:
-  storage: 1Gi                      # smaller for sandbox
-  storageClass: hostpath            # explicit fallback for templates not yet using global
+  storage: 1Gi # smaller for sandbox
+  storageClass: hostpath # explicit fallback for templates not yet using global
   config:
     sharedBuffers: 64MB
     effectiveCacheSize: 128MB

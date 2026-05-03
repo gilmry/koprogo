@@ -52,9 +52,45 @@ echo "  → Installing pre-push hook..."
 cat > "$HOOKS_DIR/pre-push" << 'EOF'
 #!/bin/bash
 # Git pre-push hook for KoproGo
-# Runs comprehensive CI checks before pushing to remote
+# Runs comprehensive CI checks before pushing to remote.
+#
+# Skips `make ci` when the push contains no new commits relative to origin
+# (e.g., creating a snapshot branch like `infra-dev` from `main`, deleting
+# a branch, or a no-op push). This avoids the heavy CI suite running
+# unchanged code multiple times during admin operations.
 
 set -e
+
+# Detect "no new commits" pushes via the git push hook stdin protocol
+# (each line: <local_ref> <local_sha> <remote_ref> <remote_sha>).
+ZERO_SHA="0000000000000000000000000000000000000000"
+SKIP_CI=true
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$local_sha" = "$ZERO_SHA" ]; then
+        # Branch deletion — no CI to run
+        continue
+    fi
+    if [ "$remote_sha" = "$ZERO_SHA" ]; then
+        # New ref creation — skip CI iff local_sha is already reachable from
+        # any origin/* ref (e.g., creating infra-dev that points to main).
+        if ! git branch -r --contains "$local_sha" 2>/dev/null | grep -q "origin/"; then
+            SKIP_CI=false
+            break
+        fi
+    else
+        # Update of an existing ref — skip CI iff no commits between sha pair
+        if [ "$(git rev-list --count "${remote_sha}..${local_sha}" 2>/dev/null || echo 1)" != "0" ]; then
+            SKIP_CI=false
+            break
+        fi
+    fi
+done
+
+if [ "$SKIP_CI" = "true" ]; then
+    echo "🟢 No new commits vs origin — skipping make ci (snapshot branch, deletion, or no-op)."
+    echo "✅ Pre-push OK (fast path)."
+    exit 0
+fi
 
 echo "🚀 Running pre-push checks..."
 

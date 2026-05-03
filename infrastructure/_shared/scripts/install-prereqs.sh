@@ -41,15 +41,29 @@ warn() { echo -e "${YELLOW}[prereqs]${NC} $1"; }
 # ----------------------------------------------------------------------
 case "$CLUSTER_TYPE" in
     docker-desktop|k8s-managed)
-        if kubectl get ns ingress-nginx >/dev/null 2>&1; then
-            log "ingress-nginx already installed"
+        # Traefik chosen over nginx for:
+        #   - CrowdSec / CrowdStrike integration ease (Traefik plugins ecosystem)
+        #   - Consistency with base kustomize (already uses Traefik Middlewares
+        #     for HSTS, security headers, rate limit + Traefik annotations on Ingress)
+        #   - Same controller across all 3 cluster profiles (k3s ships Traefik)
+        if kubectl get ns traefik >/dev/null 2>&1; then
+            log "traefik already installed"
+        elif kubectl get ns ingress-nginx >/dev/null 2>&1; then
+            warn "ingress-nginx detected in cluster (legacy install) — uninstall before re-running:"
+            warn "  helm uninstall -n ingress-nginx ingress-nginx && kubectl delete ns ingress-nginx"
+            echo "[prereqs] ERROR: ingress-nginx must be removed before installing Traefik (port conflicts on 80/443)" >&2
+            exit 1
         else
-            log "Installing ingress-nginx..."
-            helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx 2>/dev/null || true
+            log "Installing traefik..."
+            helm repo add traefik https://traefik.github.io/charts 2>/dev/null || true
             helm repo update
-            helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
-                --namespace ingress-nginx --create-namespace \
-                --set controller.service.type=LoadBalancer \
+            helm upgrade --install traefik traefik/traefik \
+                --namespace traefik --create-namespace \
+                --set service.type=LoadBalancer \
+                --set ingressClass.enabled=true \
+                --set ingressClass.isDefaultClass=true \
+                --set providers.kubernetesCRD.enabled=true \
+                --set providers.kubernetesCRD.allowCrossNamespace=true \
                 --wait --timeout 5m
         fi
         ;;
