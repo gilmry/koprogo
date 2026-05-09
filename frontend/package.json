@@ -30,11 +30,11 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.8",
-    "@astrojs/node": "^10.0.4",
+    "@astrojs/node": "^10.0.5",
     "@astrojs/svelte": "^8.0.4",
     "@tailwindcss/typography": "^0.5.19",
     "@tailwindcss/vite": "^4.2.2",
-    "astro": "^6.1.2",
+    "astro": "^6.1.6",
     "svelte": "^5.55.1",
     "svelte-i18n": "^4.0.1",
     "tailwindcss": "^4.2.2",
