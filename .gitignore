@@ -54,3 +54,8 @@ podcasts
 
 # Méthode Maury (livrables internes)
 Maury/
+
+# Claude Code local-only artifacts (the rest of .claude/ is versioned)
+.claude/_drafts/
+.claude/settings.local.json
+.claude/worktrees/
