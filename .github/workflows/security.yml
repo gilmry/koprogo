@@ -78,7 +78,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           # TEMP (2026-05-05): relaxed from `moderate` to `high` for the same
           # reason as `npm audit` above. To revert after dep drain.
