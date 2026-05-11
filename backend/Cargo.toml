@@ -23,7 +23,7 @@ serde_json = "1.0"
 
 # Database
 sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "postgres", "uuid", "chrono", "migrate", "rust_decimal"] }
-rust_decimal = "1.36"
+rust_decimal = "1.42"
 rust_decimal_macros = "1.36"
 
 # Configuration
@@ -40,7 +40,7 @@ uuid = { version = "1.23", features = ["serde", "v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 validator = { version = "0.20", features = ["derive"] }
 bcrypt = "0.19"
-jsonwebtoken = { version = "10.3", default-features = false, features = ["aws_lc_rs"] }
+jsonwebtoken = { version = "10.4", default-features = false, features = ["aws_lc_rs"] }
 hex = "0.4"
 sha2 = "0.10"
 md5 = "0.8"
@@ -74,7 +74,7 @@ aws-credential-types = "1"
 printpdf = "0.7"
 
 # Excel generation
-rust_xlsxwriter = "0.94.0"
+rust_xlsxwriter = "0.95.0"
 
 # Random data generation (for seed scripts)
 rand = "0.10"
@@ -90,7 +90,7 @@ reqwest = { version = "0.13", features = ["json", "form", "query"] }
 rumqttc = { version = "0.25", default-features = false }
 
 # OpenAPI documentation
-utoipa = { version = "5.3", features = ["actix_extras", "chrono", "uuid", "decimal"] }
+utoipa = { version = "5.5", features = ["actix_extras", "chrono", "uuid", "decimal"] }
 utoipa-swagger-ui = { version = "9.0", features = ["actix-web"] }
 
 [dev-dependencies]
@@ -102,7 +102,7 @@ testcontainers-modules = { version = "0.15", features = ["postgres", "minio"] }
 rust_decimal_macros = "1.36"
 
 # BDD tests
-cucumber = { version = "0.22", features = ["macros"] }
+cucumber = { version = "0.23", features = ["macros"] }
 
 # E2E tests
 reqwest = { version = "0.13", features = ["json"] }
