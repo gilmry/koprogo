@@ -2,9 +2,9 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [ main, develop, "claude/**", "release/**" ]
+    branches: [ main, dev, integration, staging, production, "claude/**", "release/**" ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, dev, integration, staging, production ]
   workflow_dispatch:
 
 env:

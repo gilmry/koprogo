@@ -16,6 +16,7 @@ on:
       - production
       - staging
       - integration
+      - dev
 
 env:
   REGISTRY: ghcr.io
