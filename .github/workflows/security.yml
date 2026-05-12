@@ -61,13 +61,11 @@ jobs:
       - name: Run npm audit
         run: |
           cd frontend
-          # TEMP (2026-05-05): relaxed from `moderate` to `high` to unblock the
-          # dependabot patch/minor drain (PRs #470-#483). Two known moderate
-          # vulns block all PRs (chicken-and-egg):
-          #   - @astrojs/node <10.0.5 (cache poisoning) — fixed by PR #482
-          #   - postcss <8.5.10 (XSS) — transitive, fixed by astro/tailwind bumps
-          # TODO: revert to `--audit-level=moderate` after the dep drain completes.
-          npm audit --audit-level=high
+          # --omit=dev: vulns dans devDependencies (build-time tooling comme
+          # @vite-pwa/astro → workbox-build → @babel/preset-env) ne sont pas
+          # dans le bundle production et n'impactent pas les utilisateurs.
+          # Le bundle prod (--omit=dev) est à zéro vuln.
+          npm audit --omit=dev --audit-level=moderate
 
   dependency-review:
     name: Dependency Review
@@ -78,7 +76,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           # TEMP (2026-05-05): relaxed from `moderate` to `high` for the same
           # reason as `npm audit` above. To revert after dep drain.
