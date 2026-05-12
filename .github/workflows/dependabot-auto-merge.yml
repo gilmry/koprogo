@@ -1,17 +1,22 @@
-name: Dependabot Auto-Merge
+# Auto-merge Dependabot PRs vers feature/dev quand la CI passe.
+#
+# Politique (décision humaine 2026-05-11, gilmry) :
+#   - TOUS les bumps Dependabot (security + patch + minor + major) sont
+#     auto-merge dès que la CI est verte, y compris les breaking changes.
+#   - Rationale : une faille connue non patchée est pire qu'une régression
+#     fonctionnelle sur feature/dev (qui sera rattrapée avant prod via le
+#     GitFlow dev → integration → staging → production, humain à chaque
+#     gate). Cf. règle #2 CRITICAL.md : prod reste sous contrôle humain.
+#
+# Pré-requis côté repo (à configurer hors fichier, dans Settings → Branches) :
+#   - Branch protection sur `feature/dev` avec required status checks
+#     (au minimum : ci.yml, security.yml). Sans cela, `--auto` merge
+#     immédiatement sans attendre la CI — ce qui contredit la politique.
+#   - "Allow auto-merge" activé dans Settings → General.
+#   - Dependabot doit avoir les permissions write (Settings → Code security
+#     → Dependabot → Allow GitHub Actions to create and approve pull requests).
 
-# Auto-merges Dependabot PRs that are patch or minor version bumps after
-# CI passes. Major version bumps (semver-major) are intentionally NOT
-# auto-merged — they require human review (potential breaking changes).
-#
-# Why `pull_request_target` rather than `pull_request`:
-#   - `pull_request_target` runs in the context of the BASE repo with its
-#     secrets and permissions, which is what we need to call gh CLI.
-#   - It's safe here because we only react to dependabot's actor and never
-#     check out the PR branch — we only call GitHub's API to enable
-#     auto-merge.
-#
-# Refs: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions
+name: Dependabot auto-merge
 
 on:
   pull_request_target:
@@ -24,9 +29,8 @@ permissions:
 
 jobs:
   auto-merge:
-    name: Auto-merge patch/minor dependabot PRs
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
     steps:
       - name: Fetch Dependabot metadata
         id: meta
@@ -34,28 +38,12 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Auto-approve patch/minor updates
-        if: |
-          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
-          steps.meta.outputs.update-type == 'version-update:semver-minor'
-        run: gh pr review --approve "$PR_URL"
+      - name: Enable auto-merge (squash, gated by branch protection)
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Enable auto-merge (squash) for patch/minor updates
-        if: |
-          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
-          steps.meta.outputs.update-type == 'version-update:semver-minor'
-        run: gh pr merge --auto --squash "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Notify on major bump (manual review required)
-        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          DEP_NAMES: ${{ steps.meta.outputs.dependency-names }}
         run: |
-          gh pr comment "$PR_URL" --body "🚨 **Major version bump** (\`${{ steps.meta.outputs.dependency-names }}\` ${{ steps.meta.outputs.previous-version }} → ${{ steps.meta.outputs.new-version }}) — auto-merge intentionally **disabled**. Human review required for potential breaking changes."
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "Dependabot bump: $UPDATE_TYPE on $DEP_NAMES"
+          gh pr merge --auto --squash "$PR_URL"
