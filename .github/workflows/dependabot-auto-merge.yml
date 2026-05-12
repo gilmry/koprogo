@@ -1,0 +1,49 @@
+# Auto-merge Dependabot PRs vers feature/dev quand la CI passe.
+#
+# Politique (décision humaine 2026-05-11, gilmry) :
+#   - TOUS les bumps Dependabot (security + patch + minor + major) sont
+#     auto-merge dès que la CI est verte, y compris les breaking changes.
+#   - Rationale : une faille connue non patchée est pire qu'une régression
+#     fonctionnelle sur feature/dev (qui sera rattrapée avant prod via le
+#     GitFlow dev → integration → staging → production, humain à chaque
+#     gate). Cf. règle #2 CRITICAL.md : prod reste sous contrôle humain.
+#
+# Pré-requis côté repo (à configurer hors fichier, dans Settings → Branches) :
+#   - Branch protection sur `feature/dev` avec required status checks
+#     (au minimum : ci.yml, security.yml). Sans cela, `--auto` merge
+#     immédiatement sans attendre la CI — ce qui contredit la politique.
+#   - "Allow auto-merge" activé dans Settings → General.
+#   - Dependabot doit avoir les permissions write (Settings → Code security
+#     → Dependabot → Allow GitHub Actions to create and approve pull requests).
+
+name: Dependabot auto-merge
+
+on:
+  pull_request_target:
+    branches:
+      - feature/dev
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge (squash, gated by branch protection)
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          DEP_NAMES: ${{ steps.meta.outputs.dependency-names }}
+        run: |
+          echo "Dependabot bump: $UPDATE_TYPE on $DEP_NAMES"
+          gh pr merge --auto --squash "$PR_URL"
